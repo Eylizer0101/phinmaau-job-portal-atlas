@@ -19,7 +19,7 @@ try {
 }
 
 const makePublicUrl = (req, relativePath) => {
-  const base = process.env.PUBLIC_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+  const base = process.env.PUBLIC_BASE_URL || 'https://phinmaau-job-portal-atlas.onrender.com';
   if (/^https?:\/\//i.test(relativePath)) return relativePath;
   if (!relativePath.startsWith('/')) return `${base}/${relativePath}`;
   return `${base}${relativePath}`;
@@ -941,7 +941,7 @@ exports.forgotPassword = async (req, res) => {
 
     await user.save();
 
-    const appUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:3000';
+    const appUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://phinmaau-job-portal-atlas-1.onrender.com';
     const resetUrl = `${appUrl}/reset-password?token=${encodeURIComponent(resetToken)}`;
 
     try {

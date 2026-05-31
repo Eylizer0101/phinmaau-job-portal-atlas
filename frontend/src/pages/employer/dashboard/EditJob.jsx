@@ -950,7 +950,7 @@ const EditJob = () => {
         clearMessages();
 
         const token = localStorage.getItem('token');
-        const res = await axios.get(`http://localhost:5000/api/jobs/${id}`, {
+        const res = await axios.get(`https://phinmaau-job-portal-atlas.onrender.com/api/jobs/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -986,7 +986,7 @@ const EditJob = () => {
           setLocationImagePreview(
             jobData.locationImage.startsWith('http')
               ? jobData.locationImage
-              : `http://localhost:5000${jobData.locationImage}`
+              : `https://phinmaau-job-portal-atlas.onrender.com${jobData.locationImage}`
           );
         } else {
           setLocationImagePreview('');
@@ -1012,7 +1012,7 @@ const EditJob = () => {
 
   const persist = async (payload) => {
     const token = localStorage.getItem('token');
-    const res = await axios.put(`http://localhost:5000/api/jobs/${id}`, payload, {
+    const res = await axios.put(`https://phinmaau-job-portal-atlas.onrender.com/api/jobs/${id}`, payload, {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
     });
 
@@ -1102,7 +1102,7 @@ const EditJob = () => {
       setLocationImagePreview(
         snapshot.locationImage.startsWith('http')
           ? snapshot.locationImage
-          : `http://localhost:5000${snapshot.locationImage}`
+          : `https://phinmaau-job-portal-atlas.onrender.com${snapshot.locationImage}`
       );
     } else {
       setLocationImagePreview('');
@@ -1205,7 +1205,7 @@ const EditJob = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5000/api/jobs/${id}`, {
+      await axios.delete(`https://phinmaau-job-portal-atlas.onrender.com/api/jobs/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

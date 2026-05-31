@@ -396,7 +396,7 @@ const EmployerDashboard = () => {
     try {
       const token = localStorage.getItem('token');
 
-      const response = await axios.get('http://localhost:5000/api/auth/me', {
+      const response = await axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -426,7 +426,7 @@ const EmployerDashboard = () => {
 
       const token = localStorage.getItem('token');
 
-      const res = await axios.get('http://localhost:5000/api/notifications', {
+      const res = await axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/notifications', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -445,7 +445,7 @@ const EmployerDashboard = () => {
   const markNotifAsRead = async (notifId) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:5000/api/notifications/${notifId}/read`, null, {
+      await axios.put(`https://phinmaau-job-portal-atlas.onrender.com/api/notifications/${notifId}/read`, null, {
         headers: { Authorization: `Bearer ${token}` },
       });
     } catch (e) {
@@ -484,22 +484,22 @@ const EmployerDashboard = () => {
 
       const token = localStorage.getItem('token');
 
-      const jobsResponse = await axios.get('http://localhost:5000/api/jobs/employer/my-jobs', {
+      const jobsResponse = await axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/jobs/employer/my-jobs', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const appsResponse = await axios.get('http://localhost:5000/api/applications/employer/all', {
+      const appsResponse = await axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/applications/employer/all', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       const conversationsResponse = await axios
-        .get('http://localhost:5000/api/messages/conversations', {
+        .get('https://phinmaau-job-portal-atlas.onrender.com/api/messages/conversations', {
           headers: { Authorization: `Bearer ${token}` },
         })
         .catch(() => ({ data: { success: false, data: [] } }));
 
       const unreadCountResponse = await axios
-        .get('http://localhost:5000/api/messages/unread-count', {
+        .get('https://phinmaau-job-portal-atlas.onrender.com/api/messages/unread-count', {
           headers: { Authorization: `Bearer ${token}` },
         })
         .catch(() => ({ data: { success: false, data: { unreadCount: 0 } } }));
@@ -640,7 +640,7 @@ const EmployerDashboard = () => {
 
       const token = localStorage.getItem('token');
 
-      const res = await axios.get('http://localhost:5000/api/applications/employer/interview-calendar', {
+      const res = await axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/applications/employer/interview-calendar', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -844,7 +844,7 @@ const EmployerDashboard = () => {
       const token = localStorage.getItem('token');
 
       const response = await axios.put(
-        'http://localhost:5000/api/auth/change-temporary-password',
+        'https://phinmaau-job-portal-atlas.onrender.com/api/auth/change-temporary-password',
         {
           currentPassword: passwordForm.currentPassword,
           newPassword: passwordForm.newPassword,

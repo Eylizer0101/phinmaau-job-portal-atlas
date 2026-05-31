@@ -6,6 +6,10 @@ import JobSeekerLayout from '../../../layouts/JobSeekerLayout';
 import api from '../../../services/api';
 import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
 
+
+const getApiOrigin = () =>
+  String(api?.defaults?.baseURL || process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
+
 const UI = {
   page: 'bg-[#FFFFFF] min-h-screen',
   container:
@@ -2177,7 +2181,7 @@ const Bookmarks = () => {
                                   <div className="mt-2 rounded-xl border border-black/10 overflow-hidden bg-[#FFFFFF]">
                                     {selectedJob.locationImage ? (
                                       <img
-                                        src={`http://localhost:5000${selectedJob.locationImage}`}
+                                        src={`${getApiOrigin()}${selectedJob.locationImage}`}
                                         alt="Work location"
                                         className="w-full h-[160px] object-cover"
                                         onError={(e) => {

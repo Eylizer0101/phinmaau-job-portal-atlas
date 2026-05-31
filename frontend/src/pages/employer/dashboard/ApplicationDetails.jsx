@@ -7,7 +7,7 @@ import { normalizeUserToResumeData, openResumePrintWindow } from '../../../compo
 
 const API_HOST = process.env.REACT_APP_API_URL
   ? process.env.REACT_APP_API_URL.replace(/\/api\/?$/, '')
-  : 'http://localhost:5000';
+  : 'https://phinmaau-job-portal-atlas.onrender.com';
 
 const UI = {
   page: 'mx-auto max-w-7xl px-1 py-8',

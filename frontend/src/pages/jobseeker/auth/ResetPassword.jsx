@@ -7,7 +7,7 @@ const ResetPassword = () => {
   const [searchParams] = useSearchParams();
 
   const token = searchParams.get('token') || '';
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
   const RESET_PASSWORD_API_URL = `${API_BASE_URL}/auth/reset-password`;
 
   const [formData, setFormData] = useState({

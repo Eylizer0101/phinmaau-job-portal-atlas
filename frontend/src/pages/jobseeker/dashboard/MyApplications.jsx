@@ -350,19 +350,24 @@ const MyApplications = () => {
   const tabRefs = useRef({});
   const subTabRefs = useRef({});
 
+  const apiOrigin = useMemo(() => {
+    const base = api?.defaults?.baseURL || process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
+    return String(base).replace(/\/api\/?$/, '');
+  }, []);
+
   const getCompanyLogo = (application) => {
     if (application.job?.companyLogo) {
       const logo = application.job.companyLogo;
       if (logo.startsWith('http')) return logo;
-      if (logo.startsWith('/')) return `http://localhost:5000${logo}`;
-      return `http://localhost:5000/uploads/logos/${logo}`;
+      if (logo.startsWith('/')) return `${apiOrigin}${logo}`;
+      return `${apiOrigin}/uploads/logos/${logo}`;
     }
 
     if (application.employer?.employerProfile?.companyLogo) {
       const logo = application.employer.employerProfile.companyLogo;
       if (logo.startsWith('http')) return logo;
-      if (logo.startsWith('/')) return `http://localhost:5000${logo}`;
-      return `http://localhost:5000/uploads/logos/${logo}`;
+      if (logo.startsWith('/')) return `${apiOrigin}${logo}`;
+      return `${apiOrigin}/uploads/logos/${logo}`;
     }
 
     return null;

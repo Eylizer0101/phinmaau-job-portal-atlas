@@ -420,7 +420,7 @@ const AdminArchiveDetails = () => {
 
   const buildHref = (url) => {
     if (!url) return "";
-    return url.startsWith("http") ? url : `${process.env.REACT_APP_API_URL?.replace(/\/api$/, "") || "http://localhost:5000"}${url}`;
+    return url.startsWith("http") ? url : `${process.env.REACT_APP_API_URL?.replace(/\/api$/, "") || "https://phinmaau-job-portal-atlas.onrender.com"}${url}`;
   };
 
   const getDocUrl = (profile, docKey) => {

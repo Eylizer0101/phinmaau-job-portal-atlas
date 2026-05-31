@@ -28,7 +28,7 @@ const sendCredentialsEmail = async ({ to, fullName, username, password, role }) 
   const safePassword = escapeHtml(password);
   const safeRole = escapeHtml(role || 'User');
 
-  const appUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:3000';
+  const appUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://phinmaau-job-portal-atlas-1.onrender.com';
   const loginUrl = `${appUrl}/login`;
 
   const mailOptions = {

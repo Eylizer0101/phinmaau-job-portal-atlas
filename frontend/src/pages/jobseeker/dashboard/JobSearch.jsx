@@ -588,7 +588,7 @@ const JobSearch = () => {
       if (safeSalaryRange.maxSalary) params.append('maxSalary', safeSalaryRange.maxSalary);
       if (filters.experienceLevel) params.append('experienceLevel', filters.experienceLevel);
 
-      const response = await axios.get(`http://localhost:5000/api/jobs?${params.toString()}`);
+      const response = await api.get(`/jobs?${params.toString()}`);
 
       let jobsData = [];
 

@@ -86,7 +86,7 @@ const UserManagementDetails = () => {
   const [brokenAvatar, setBrokenAvatar] = useState(false);
 
   const apiHost = useMemo(() => {
-    const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+    const apiUrl = process.env.REACT_APP_API_URL || "https://phinmaau-job-portal-atlas.onrender.com/api";
     return apiUrl.replace(/\/api\/?$/, "");
   }, []);
 

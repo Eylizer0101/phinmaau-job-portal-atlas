@@ -199,7 +199,7 @@ const useDebouncedValue = (value, delay = 250) => {
 
 const ArchivedDeclinedApplicants = () => {
   const navigate = useNavigate();
-  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const API_BASE = (process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
 
   const [brokenAvatars, setBrokenAvatars] = useState(() => new Set());
   const [applications, setApplications] = useState([]);
@@ -301,7 +301,7 @@ const ArchivedDeclinedApplicants = () => {
   const fetchJobs = useCallback(async () => {
     try {
       setJobsLoading(true);
-      const res = await axios.get('http://localhost:5000/api/jobs/employer/my-jobs', {
+      const res = await axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/jobs/employer/my-jobs', {
         headers: getAuthHeaders(),
       });
 
@@ -323,7 +323,7 @@ const ArchivedDeclinedApplicants = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await axios.get('http://localhost:5000/api/applications/employer/declined/archived', {
+      const res = await axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/applications/employer/declined/archived', {
         headers: getAuthHeaders(),
       });
 
@@ -446,7 +446,7 @@ const ArchivedDeclinedApplicants = () => {
       setError('');
 
       const res = await axios.patch(
-        `http://localhost:5000/api/applications/${restoreTarget._id}/restore-declined`,
+        `https://phinmaau-job-portal-atlas.onrender.com/api/applications/${restoreTarget._id}/restore-declined`,
         {},
         { headers: getAuthHeaders() }
       );
@@ -478,7 +478,7 @@ const ArchivedDeclinedApplicants = () => {
       setError('');
 
       const res = await axios.delete(
-        `http://localhost:5000/api/applications/${deleteTarget._id}/permanent`,
+        `https://phinmaau-job-portal-atlas.onrender.com/api/applications/${deleteTarget._id}/permanent`,
         { headers: getAuthHeaders() }
       );
 

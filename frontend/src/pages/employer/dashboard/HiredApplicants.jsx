@@ -71,7 +71,7 @@ const useDebouncedValue = (value, delay = 250) => {
 
 const HiredApplicants = () => {
   const navigate = useNavigate();
-  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const API_BASE = (process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
 
   const [applications, setApplications] = useState([]);
   const [jobs, setJobs] = useState([]);
@@ -164,7 +164,7 @@ const HiredApplicants = () => {
     try {
       setJobsLoading(true);
 
-      const res = await axios.get('http://localhost:5000/api/jobs/employer/my-jobs', {
+      const res = await axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/jobs/employer/my-jobs', {
         headers: getAuthHeaders(),
       });
 
@@ -190,7 +190,7 @@ const HiredApplicants = () => {
       const params = {};
       if (selectedJob !== 'all') params.jobId = selectedJob;
 
-      const res = await axios.get('http://localhost:5000/api/applications/employer/hired', {
+      const res = await axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/applications/employer/hired', {
         headers: getAuthHeaders(),
         params,
       });

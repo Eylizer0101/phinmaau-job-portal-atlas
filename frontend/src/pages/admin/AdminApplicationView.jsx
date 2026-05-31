@@ -237,7 +237,7 @@ const StaticLocationMap = ({ job, address, heightClass = "h-[158px]" }) => {
 };
 
 const CompanyLogo = ({ src, name }) => {
-  const apiHost = (process.env.REACT_APP_API_URL || "http://localhost:5000/api").replace(/\/api\/?$/, "");
+  const apiHost = (process.env.REACT_APP_API_URL || "https://phinmaau-job-portal-atlas.onrender.com/api").replace(/\/api\/?$/, "");
   const url = src ? (/^https?:\/\//i.test(src) ? src : `${apiHost}${src.startsWith("/") ? src : `/${src}`}`) : "";
   const initial = String(name || "C").charAt(0).toUpperCase();
 

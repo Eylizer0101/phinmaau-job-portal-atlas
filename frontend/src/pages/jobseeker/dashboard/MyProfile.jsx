@@ -1361,7 +1361,7 @@ const MyProfile = () => {
     };
   }, []);
 
-  const API_BASE = process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL}` : 'http://localhost:5000/api';
+  const API_BASE = process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL}` : 'https://phinmaau-job-portal-atlas.onrender.com/api';
   const navigate = useNavigate();
   const location = useLocation();
 

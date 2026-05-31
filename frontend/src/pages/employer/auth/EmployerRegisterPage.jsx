@@ -9,9 +9,8 @@ import { PH_REGIONS, PH_CITIES_BY_REGION } from '../../../constants/phLocations'
 const EmployerRegisterPage = () => {
   const navigate = useNavigate();
 
-  const API_URL = process.env.REACT_APP_API_URL
-    ? `${process.env.REACT_APP_API_URL}/auth/employer/register`
-    : 'http://localhost:5000/api/auth/employer/register';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
+  const API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/employer/register`;
 
   // ✅ NEW ORDER:
   // 1 = Company Info

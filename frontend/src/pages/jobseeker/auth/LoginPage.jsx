@@ -7,7 +7,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
   const LOGIN_API_URL = `${API_BASE_URL}/auth/login`;
   const FORGOT_PASSWORD_API_URL = `${API_BASE_URL}/auth/forgot-password`;
   const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '';

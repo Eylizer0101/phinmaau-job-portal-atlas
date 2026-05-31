@@ -439,7 +439,7 @@ const truncate = (value, max = 22) => {
 
 const ApplicantAvatar = ({ user }) => {
   const name = getName(user);
-  const apiHost = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+  const apiHost = (process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
   const src = user?.profileImage ? (/^https?:\/\//i.test(user.profileImage) ? user.profileImage : `${apiHost}${user.profileImage.startsWith('/') ? user.profileImage : `/${user.profileImage}`}`) : '';
 
   return (

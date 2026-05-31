@@ -68,7 +68,7 @@ const getProfileImageUrl = (url = '') => {
   if (!cleanUrl) return '';
   if (/^https?:\/\//i.test(cleanUrl) || cleanUrl.startsWith('data:') || cleanUrl.startsWith('blob:')) return cleanUrl;
 
-  const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+  const apiBase = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
   const serverBase = apiBase.replace(/\/api\/?$/, '');
   return cleanUrl.startsWith('/') ? `${serverBase}${cleanUrl}` : `${serverBase}/${cleanUrl}`;
 };

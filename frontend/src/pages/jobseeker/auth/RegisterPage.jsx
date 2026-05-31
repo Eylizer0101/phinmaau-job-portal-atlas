@@ -119,9 +119,8 @@ const SkillChipsBox = ({
 const RegisterPage = () => {
   const navigate = useNavigate();
 
-  const API_URL = process.env.REACT_APP_API_URL
-    ? `${process.env.REACT_APP_API_URL}/auth/register`
-    : 'http://localhost:5000/api/auth/register';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
+  const API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/register`;
 
   // ✅ 3 steps na lang (Step 4 removed; replaced with modal confirmations)
   const [currentStep, setCurrentStep] = useState(1);

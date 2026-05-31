@@ -586,7 +586,7 @@ const CompanyViewDetails = () => {
   const toastTimerRef = useRef(null);
 
   const apiOrigin = useMemo(() => {
-    const base = api?.defaults?.baseURL || "http://localhost:5000/api";
+    const base = api?.defaults?.baseURL || process.env.REACT_APP_API_URL || "https://phinmaau-job-portal-atlas.onrender.com/api";
     return String(base).replace(/\/api\/?$/, "");
   }, []);
 

@@ -548,7 +548,7 @@ const Applicants = () => {
   const { jobId } = useParams();
 
   // ✅ API base (same pattern with EmployerMessages.jsx)
-  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const API_BASE = (process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
 
   // ✅ track broken avatars so we can fallback to initials
   const [brokenAvatars, setBrokenAvatars] = useState(() => new Set());
@@ -705,7 +705,7 @@ const Applicants = () => {
   const fetchJobs = useCallback(async () => {
     try {
       setJobsLoading(true);
-      const res = await axios.get('http://localhost:5000/api/jobs/employer/my-jobs', {
+      const res = await axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/jobs/employer/my-jobs', {
         headers: getAuthHeaders(),
       });
       if (res.data?.success) setJobs(res.data.jobs || []);
@@ -725,8 +725,8 @@ const Applicants = () => {
       setAppsLoading(true);
       clearMessages();
 
-      let url = 'http://localhost:5000/api/applications/employer/all';
-      if (selectedJob !== 'all') url = `http://localhost:5000/api/applications/job/${selectedJob}`;
+      let url = 'https://phinmaau-job-portal-atlas.onrender.com/api/applications/employer/all';
+      if (selectedJob !== 'all') url = `https://phinmaau-job-portal-atlas.onrender.com/api/applications/job/${selectedJob}`;
 
       const res = await axios.get(url, { headers: getAuthHeaders() });
 
@@ -916,7 +916,7 @@ const Applicants = () => {
       const payload = { status: newStatus, ...extraPayload };
 
       const res = await axios.put(
-        `http://localhost:5000/api/applications/${applicationId}/status`,
+        `https://phinmaau-job-portal-atlas.onrender.com/api/applications/${applicationId}/status`,
         payload,
         { headers: getAuthHeaders() }
       );

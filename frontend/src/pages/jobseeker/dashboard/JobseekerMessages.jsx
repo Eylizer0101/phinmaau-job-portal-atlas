@@ -176,17 +176,19 @@ const JobseekerMessages = () => {
 
   const currentUserId = useMemo(() => getUserId(), [getUserId]);
   const getToken = () => localStorage.getItem('token');
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
+  const API_ORIGIN = String(API_BASE_URL).replace(/\/api\/?$/, '');
 
   const getFileUrl = (fileUrl) => {
     if (!fileUrl) return '';
     if (fileUrl.startsWith('http')) return fileUrl;
-    return `http://localhost:5000${fileUrl}`;
+    return `${API_ORIGIN}${fileUrl}`;
   };
 
   const getCompanyLogoUrl = (logoPath) => {
     if (!logoPath || logoPath === '') return null;
     if (logoPath.startsWith('http')) return logoPath;
-    return `http://localhost:5000${logoPath.startsWith('/') ? logoPath : '/' + logoPath}`;
+    return `${API_ORIGIN}${logoPath.startsWith('/') ? logoPath : '/' + logoPath}`;
   };
 
   const getEmployerKey = (employerData) => {
@@ -424,7 +426,7 @@ const JobseekerMessages = () => {
   const fetchConversations = useCallback(async () => {
     try {
       const token = getToken();
-      const response = await axios.get('http://localhost:5000/api/messages/conversations', {
+      const response = await axios.get(`${API_BASE_URL}/messages/conversations`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -438,7 +440,7 @@ const JobseekerMessages = () => {
     async (conversationId) => {
       try {
         const token = getToken();
-        const response = await axios.get(`http://localhost:5000/api/messages/conversation/${conversationId}`, {
+        const response = await axios.get(`${API_BASE_URL}/messages/conversation/${conversationId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -586,7 +588,7 @@ const JobseekerMessages = () => {
       formData.append('receiverId', receiverId);
       formData.append('content', newMessage || '');
 
-      const response = await axios.post('http://localhost:5000/api/messages/send', formData, {
+      const response = await axios.post(`${API_BASE_URL}/messages/send`, formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
       });
 

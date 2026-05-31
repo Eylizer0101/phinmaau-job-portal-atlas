@@ -404,7 +404,7 @@ const PostJob = () => {
     const fetchCurrentEmployer = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:5000/api/auth/me', {
+        const response = await axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/auth/me', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -700,7 +700,7 @@ const PostJob = () => {
       payload.append('locationImage', locationImageFile);
     }
 
-    return axios.post('http://localhost:5000/api/jobs', payload, {
+    return axios.post('https://phinmaau-job-portal-atlas.onrender.com/api/jobs', payload, {
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'multipart/form-data',

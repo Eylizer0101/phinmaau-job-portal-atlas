@@ -35,7 +35,7 @@ const ArchivedJobs = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
 
-      const response = await axios.get('http://localhost:5000/api/jobs/employer/my-jobs?archived=true', {
+      const response = await axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/jobs/employer/my-jobs?archived=true', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -197,7 +197,7 @@ const ArchivedJobs = () => {
       const token = localStorage.getItem('token');
 
       await axios.patch(
-        `http://localhost:5000/api/jobs/${jobId}/restore`,
+        `https://phinmaau-job-portal-atlas.onrender.com/api/jobs/${jobId}/restore`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -225,7 +225,7 @@ const ArchivedJobs = () => {
 
       const token = localStorage.getItem('token');
 
-      await axios.delete(`http://localhost:5000/api/jobs/${jobId}/permanent`, {
+      await axios.delete(`https://phinmaau-job-portal-atlas.onrender.com/api/jobs/${jobId}/permanent`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

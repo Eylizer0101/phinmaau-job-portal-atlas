@@ -461,7 +461,7 @@ const getApiAssetUrl = (src) => {
   if (!value) return "";
   if (/^(https?:|data:|blob:)/i.test(value)) return value;
 
-  const apiBase = api?.defaults?.baseURL || process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+  const apiBase = api?.defaults?.baseURL || process.env.REACT_APP_API_URL || "https://phinmaau-job-portal-atlas.onrender.com/api";
   const apiHost = apiBase.replace(/\/api\/?$/, "").replace(/\/$/, "");
   return `${apiHost}${value.startsWith("/") ? value : `/${value}`}`;
 };

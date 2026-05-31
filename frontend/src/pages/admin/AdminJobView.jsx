@@ -844,7 +844,7 @@ const AdminJobView = () => {
                   <StaticLocationMap job={job} heightClass="h-[160px]" />
                 ) : job.locationImage ? (
                   <img
-                    src={`http://localhost:5000${job.locationImage}`}
+                    src={`https://phinmaau-job-portal-atlas.onrender.com${job.locationImage}`}
                     alt="Work location"
                     className="h-[160px] w-full object-cover"
                   />

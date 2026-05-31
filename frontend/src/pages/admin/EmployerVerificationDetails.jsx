@@ -400,7 +400,7 @@ const EMPLOYER_REJECTION_REASONS = [
 const toPublicUrl = (path) => {
   if (!path) return "";
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
-  if (path.startsWith("/uploads")) return `http://localhost:5000${path}`;
+  if (path.startsWith("/uploads")) return `https://phinmaau-job-portal-atlas.onrender.com${path}`;
   return path;
 };
 

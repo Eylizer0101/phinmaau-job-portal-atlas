@@ -5,7 +5,7 @@ import AdminLayout from '../../layouts/AdminLayout';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
-const API_BASE_URL = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+const API_BASE_URL = (process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
 
 const resolveMediaUrl = (url) => {
   const raw = String(url || '').trim();

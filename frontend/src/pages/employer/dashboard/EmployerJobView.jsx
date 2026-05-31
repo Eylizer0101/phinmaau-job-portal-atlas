@@ -489,7 +489,7 @@ const EmployerJobView = () => {
       setLoading(true);
       setError('');
 
-      const response = await axios.get(`http://localhost:5000/api/jobs/${jobId}`);
+      const response = await axios.get(`https://phinmaau-job-portal-atlas.onrender.com/api/jobs/${jobId}`);
 
       if (response.data.success) {
         const jobData = response.data.job;
@@ -713,7 +713,7 @@ const EmployerJobView = () => {
                   <StaticLocationMap job={job} heightClass="h-[160px]" />
                 ) : job.locationImage ? (
                   <img
-                    src={`http://localhost:5000${job.locationImage}`}
+                    src={`https://phinmaau-job-portal-atlas.onrender.com${job.locationImage}`}
                     alt="Work location"
                     className="h-[160px] w-full object-cover"
                   />

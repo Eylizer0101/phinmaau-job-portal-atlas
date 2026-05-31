@@ -338,7 +338,7 @@ const CompanyDetails = () => {
   const modalRef = useRef(null);
 
   const apiOrigin = useMemo(() => {
-    const base = api?.defaults?.baseURL || "http://localhost:5000/api";
+    const base = api?.defaults?.baseURL || "https://phinmaau-job-portal-atlas.onrender.com/api";
     return String(base).replace(/\/api\/?$/, "");
   }, []);
 

@@ -425,7 +425,7 @@ const getLogoUrl = (logo) => {
   if (!logo) return '';
   const value = String(logo);
   if (value.startsWith('http')) return value;
-  const base = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace('/api', '');
+  const base = (process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace('/api', '');
   return `${base}${value.startsWith('/') ? value : `/${value}`}`;
 };
 

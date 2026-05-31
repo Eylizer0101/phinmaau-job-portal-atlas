@@ -21,6 +21,10 @@ import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
  * ✅ Added clear applied helper text for UI/QA
  */
 
+
+const getApiOrigin = () =>
+  String(api?.defaults?.baseURL || process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
+
 const UI = {
   page: 'bg-white min-h-screen',
 
@@ -658,7 +662,7 @@ const JobDetails = () => {
       setLoading(true);
       setError('');
 
-      const response = await axios.get(`http://localhost:5000/api/jobs/${id}`);
+      const response = await api.get(`/jobs/${id}`);
 
       if (response.data.success) {
         const jobData = response.data.job;
@@ -743,7 +747,7 @@ const JobDetails = () => {
       try {
         if (!category) return;
 
-        const response = await axios.get('http://localhost:5000/api/jobs', {
+        const response = await api.get('/jobs', {
           params: { category, limit: 4 },
         });
 
@@ -1275,7 +1279,7 @@ const JobDetails = () => {
                           <StaticLocationMap job={job} heightClass="h-[130px]" />
                         ) : job.locationImage ? (
                           <img
-                            src={`http://localhost:5000${job.locationImage}`}
+                            src={`${getApiOrigin()}${job.locationImage}`}
                             alt="Work location"
                             className="w-full h-[130px] object-cover"
                           />

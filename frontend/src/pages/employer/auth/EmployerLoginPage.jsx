@@ -7,9 +7,8 @@ const EmployerLoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const API_URL = process.env.REACT_APP_API_URL
-    ? `${process.env.REACT_APP_API_URL}/auth/employer/login`
-    : 'http://localhost:5000/api/auth/employer/login';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
+  const API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/employer/login`;
 
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);

@@ -139,7 +139,7 @@ const ManageJobs = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
 
-      const response = await axios.get('http://localhost:5000/api/jobs/employer/my-jobs?archived=false', {
+      const response = await axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/jobs/employer/my-jobs?archived=false', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -311,7 +311,7 @@ const ManageJobs = () => {
         status: 'published',
       };
 
-      await axios.put(`http://localhost:5000/api/jobs/${jobId}`, updateData, {
+      await axios.put(`https://phinmaau-job-portal-atlas.onrender.com/api/jobs/${jobId}`, updateData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -343,7 +343,7 @@ const ManageJobs = () => {
 
       const token = localStorage.getItem('token');
 
-      await axios.delete(`http://localhost:5000/api/jobs/${jobId}`, {
+      await axios.delete(`https://phinmaau-job-portal-atlas.onrender.com/api/jobs/${jobId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

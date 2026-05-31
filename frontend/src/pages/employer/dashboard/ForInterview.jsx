@@ -1019,7 +1019,7 @@ const ActionMenu = ({ app, name, rowBusy, onHire, onDecline, openMenuId, setOpen
 };
 
 const ForInterview = () => {
-  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const API_BASE = (process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
   const [brokenAvatars, setBrokenAvatars] = useState(() => new Set());
 
   const [applications, setApplications] = useState([]);
