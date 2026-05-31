@@ -16,6 +16,7 @@ const getAllowedOrigins = () => {
   const origins = [
     process.env.FRONTEND_URL,
     process.env.APP_URL,
+    'https://phinmaau-job-portal-atlas-1.onrender.com',
     'http://localhost:3000',
   ]
     .filter(Boolean)
