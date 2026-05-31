@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import ReCAPTCHA from 'react-google-recaptcha';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -32,8 +33,11 @@ const LoginPage = () => {
 
   const [attemptBanner, setAttemptBanner] = useState('');
 
+  const [captchaToken, setCaptchaToken] = useState('');
   const [captchaError, setCaptchaError] = useState('');
-  const [captchaReady, setCaptchaReady] = useState(false);
+  const [captchaRenderKey, setCaptchaRenderKey] = useState(0);
+  const [showCaptcha, setShowCaptcha] = useState(Boolean(RECAPTCHA_SITE_KEY));
+  const recaptchaRef = useRef(null);
 
   // Forgot Password states
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
@@ -168,82 +172,6 @@ const LoginPage = () => {
     }, 50);
     return () => clearTimeout(t);
   }, [showForgotPasswordModal]);
-
-  useEffect(() => {
-    if (!RECAPTCHA_SITE_KEY) {
-      setCaptchaError('reCAPTCHA site key is missing. Please check frontend environment settings.');
-      setCaptchaReady(false);
-      return;
-    }
-
-    if (window.grecaptcha) {
-      window.grecaptcha.ready(() => {
-        setCaptchaReady(true);
-        setCaptchaError('');
-      });
-      return;
-    }
-
-    const existingScript = document.querySelector('script[data-recaptcha-v3="true"]');
-    if (existingScript) {
-      existingScript.addEventListener('load', () => {
-        window.grecaptcha?.ready(() => {
-          setCaptchaReady(true);
-          setCaptchaError('');
-        });
-      });
-      existingScript.addEventListener('error', () => {
-        setCaptchaReady(false);
-        setCaptchaError('reCAPTCHA failed to load. Please refresh the page and try again.');
-      });
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
-    script.async = true;
-    script.defer = true;
-    script.dataset.recaptchaV3 = 'true';
-
-    script.onload = () => {
-      window.grecaptcha?.ready(() => {
-        setCaptchaReady(true);
-        setCaptchaError('');
-      });
-    };
-
-    script.onerror = () => {
-      setCaptchaReady(false);
-      setCaptchaError('reCAPTCHA failed to load. Please refresh the page and try again.');
-    };
-
-    document.body.appendChild(script);
-  }, [RECAPTCHA_SITE_KEY]);
-
-  const getRecaptchaToken = async () => {
-    if (!RECAPTCHA_SITE_KEY) {
-      throw new Error('reCAPTCHA site key is missing. Please check frontend environment settings.');
-    }
-
-    if (!window.grecaptcha) {
-      throw new Error('reCAPTCHA failed to load. Please refresh the page and try again.');
-    }
-
-    return new Promise((resolve, reject) => {
-      window.grecaptcha.ready(async () => {
-        try {
-          const token = await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'login' });
-          if (!token) {
-            reject(new Error('Unable to verify reCAPTCHA. Please refresh the page and try again.'));
-            return;
-          }
-          resolve(token);
-        } catch (err) {
-          reject(err);
-        }
-      });
-    });
-  };
 
   useEffect(() => {
     if (!showForgotPasswordModal) return;
@@ -411,6 +339,32 @@ const LoginPage = () => {
     }
   };
 
+  const handleCaptchaChange = (token) => {
+    setCaptchaToken(token || '');
+    setCaptchaError('');
+    setError('');
+  };
+
+  const resetCaptcha = () => {
+    setCaptchaToken('');
+    if (recaptchaRef.current) {
+      try {
+        recaptchaRef.current.reset();
+      } catch {}
+    }
+  };
+
+  const remountCaptcha = () => {
+    setCaptchaToken('');
+    setCaptchaError('');
+    setShowCaptcha(false);
+
+    setTimeout(() => {
+      setCaptchaRenderKey((prev) => prev + 1);
+      setShowCaptcha(true);
+    }, 250);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -424,15 +378,18 @@ const LoginPage = () => {
       return;
     }
 
+    if (!captchaToken) {
+      setCaptchaError('Please complete the CAPTCHA.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const recaptchaToken = await getRecaptchaToken();
-
       const payload = {
         username: normalizeUsername(formData.username),
         password: formData.password,
-        recaptchaToken,
+        recaptchaToken: captchaToken,
       };
 
       const response = await axios.post(LOGIN_API_URL, payload);
@@ -443,6 +400,7 @@ const LoginPage = () => {
 
       resetAttemptsAndLock();
       storeAuth(token, user);
+      resetCaptcha();
       if (role === 'admin') {
         navigate('/admin/dashboard');
         return;
@@ -481,10 +439,14 @@ const LoginPage = () => {
       if (code === 'RECAPTCHA_REQUIRED' || code === 'RECAPTCHA_FAILED' || code === 'RECAPTCHA_NOT_CONFIGURED') {
         setError(message);
         setCaptchaError(message);
+        resetCaptcha();
+        remountCaptcha();
         return;
       }
 
       const { nextAttempt, locked } = registerFailedAttempt();
+      resetCaptcha();
+      remountCaptcha();
       if (locked) return;
 
       setAttemptBanner(`Incorrect password. Attempt ${nextAttempt} of ${MAX_ATTEMPTS}.`);
@@ -964,11 +926,34 @@ const LoginPage = () => {
                 </div>
 
                 <div className="space-y-1">
-                  {RECAPTCHA_SITE_KEY ? (
-                    <p className="text-[11px] text-gray-500 text-center sm:text-left" role="status" aria-live="polite">
-                      {captchaReady ? 'Protected by reCAPTCHA.' : 'Loading reCAPTCHA...'}
-                    </p>
-                  ) : null}
+                  <div className="flex justify-center sm:justify-start -mt-5">
+                    <div className="origin-center scale-90 min-h-[86px] flex items-center">
+                      {RECAPTCHA_SITE_KEY ? (
+                        showCaptcha ? (
+                          <ReCAPTCHA
+                            key={captchaRenderKey}
+                            ref={recaptchaRef}
+                            sitekey={RECAPTCHA_SITE_KEY}
+                            onChange={handleCaptchaChange}
+                            onExpired={() => setCaptchaToken('')}
+                            onErrored={() => {
+                              setCaptchaToken('');
+                              setCaptchaError('reCAPTCHA failed to load. Please click retry and try again.');
+                              setShowCaptcha(false);
+                            }}
+                          />
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={remountCaptcha}
+                            className="h-11 px-4 rounded-xl border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+                          >
+                            Retry CAPTCHA
+                          </button>
+                        )
+                      ) : null}
+                    </div>
+                  </div>
 
                   {captchaError ? (
                     <p className="text-xs text-red-600 mt-1 text-center sm:text-left" role="alert" aria-live="polite">

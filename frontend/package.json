@@ -31,8 +31,8 @@
     "react-select": "^5.10.2",
     "react-toastify": "^11.0.5",
     "web-vitals": "^2.1.4",
-    "yup": "^1.7.1",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "yup": "^1.7.1"
   },
   "scripts": {
     "start": "react-scripts start",
