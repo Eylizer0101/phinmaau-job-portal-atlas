@@ -1,0 +1,1301 @@
+// src/pages/employer/auth/EmployerRegisterPage.jsx
+import React, { useMemo, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+
+// ✅ ADDED: region/city mapping (Option A separate file)
+import { PH_REGIONS, PH_CITIES_BY_REGION } from '../../../constants/phLocations';
+
+const EmployerRegisterPage = () => {
+  const navigate = useNavigate();
+
+  const API_URL = process.env.REACT_APP_API_URL
+    ? `${process.env.REACT_APP_API_URL}/auth/employer/register`
+    : 'http://localhost:5000/api/auth/employer/register';
+
+  // ✅ NEW ORDER:
+  // 1 = Company Info
+  // 2 = Basic Info
+  // 3 = Documents
+  const [step, setStep] = useState(1);
+
+  const [formData, setFormData] = useState({
+    // Primary user information (Basic Info)
+    firstName: '',
+    middleName: '',
+    lastName: '',
+    extensionName: '',
+    mobileNumber: '',
+
+    // Company information (Company Info)
+    companyName: '',
+    companyWebsiteUrl: '',
+    businessEmail: '',
+    regionCity: '',
+    industry: '',
+  });
+
+  // ✅ ADDED: separate region + city states (optional)
+  const [selectedRegion, setSelectedRegion] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
+
+  const [docs, setDocs] = useState({
+    secRegistration: null,
+    birRegistration: null,
+    dtiRegistration: null,
+    cityPermit: null,
+    businessPermit: null,
+  });
+
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [serverError, setServerError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // ✅ show helper text only when focused
+  const [focused, setFocused] = useState({});
+
+  // ✅ NEW: Popups
+  const [showReadyModal, setShowReadyModal] = useState(false);
+  const [showThanksModal, setShowThanksModal] = useState(false);
+
+  const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
+
+  // ---------- file picker refs (for custom upload UI) ----------
+  const docRefs = {
+    secRegistration: useRef(null),
+    birRegistration: useRef(null),
+    dtiRegistration: useRef(null),
+    cityPermit: useRef(null),
+    businessPermit: useRef(null),
+  };
+
+  const DOC_KEYS = ['secRegistration', 'birRegistration', 'dtiRegistration', 'cityPermit', 'businessPermit'];
+
+  // ✅ UPDATED STEP FIELDS (3 steps only) - NEW ORDER
+  const STEP_FIELDS = {
+    1: ['companyName', 'companyWebsiteUrl', 'industry', 'regionCity'],
+    2: ['firstName', 'middleName', 'lastName', 'extensionName', 'businessEmail', 'mobileNumber'],
+    3: ['secRegistration', 'birRegistration', 'dtiRegistration', 'cityPermit', 'businessPermit'],
+  };
+
+  const steps = [
+    { id: 1, label: 'Company Info', title: 'Company information' },
+    { id: 2, label: 'Primary Contact', title: 'Primary user' },
+    { id: 3, label: 'Company Requirements', title: 'Company documents' },
+  ];
+
+  const EXTENSION_OPTIONS = ['', 'Jr.', 'Sr.', 'II', 'III', 'IV', 'V'];
+
+  const setFieldFocus = (name, isFocused) => {
+    setFocused((prev) => ({ ...prev, [name]: isFocused }));
+  };
+
+  const clearFieldError = (name) => {
+    if (!fieldErrors?.[name]) return;
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+  };
+
+  const focusField = (key) => {
+    const targetId =
+      key === 'regionCity'
+        ? 'region'
+        : DOC_KEYS.includes(key)
+        ? `${key}-btn`
+        : key;
+
+    const el = document.getElementById(targetId);
+    if (el?.focus) el.focus();
+  };
+
+  // ✅ Industry options (exact list you provided)
+  const INDUSTRY_OPTIONS = [
+    'Accounting / Audit / Tax Services',
+    'Advertising / Marketing / Promotion / PR',
+    'Aerospace / Aviation / Airline',
+    'Agricultural / Plantation / Poultry / Fisheries',
+    'Apparel / Fashion',
+    'Architectural Services / Interior Designing',
+    'Arts / Design',
+    'Automobile / Automotive Ancillary / Vehicle',
+    'Banking / Financial Services',
+    'BioTechnology / Pharmaceutical / Clinical research',
+    'Catering / Restaurant Service',
+    'Chemical / Fertilizers / Pesticides',
+    'Commodities Production / Distribution',
+    'Computer / Information Technology (Hardware)',
+    'Computer / Information Technology (Software)',
+    'Construction / Building / Engineering',
+    'Consulting (Business and Management)',
+    'Consulting (IT, Science, Engineering and Technical)',
+    'Consumer Products / FMCG',
+    'Education',
+    'Electrical and Electronics',
+    'Entertainment / Media',
+    'Environment / Health / Safety',
+    'Exhibitions / Event Management / MICE',
+    'Food and Beverage',
+    'Gems / Jewellery',
+    'General and Wholesale Trading',
+    'Government',
+    'Grooming / Beauty / Fitness',
+    'Healthcare / Medical',
+    'Heavy Industrial / Machinery / Equipment',
+    'Home Furnishing / Furniture',
+    'Hotel / Hospitality',
+    'Human Resources Management / Consulting',
+    'Insurance',
+    'Journalism',
+    'Law / Legal',
+    'Oil / Gas / Petroleum',
+    'Online / E-commerce Business',
+    'Others',
+    'Outsourcing (Call Center / BPO)',
+    'Polymer / Plastic / Rubber / Tyres',
+    'Printing / Publishing',
+    'Property / Real Estate',
+    'Repair and Maintenance Services',
+    'Research and Development',
+    'Retail / Merchandising',
+    'Science and Technology',
+    'Security / Law Enforcement',
+    'Semiconductor / Wafer Fabrication',
+    'Sports',
+    'Stockbroking / Securities',
+    'Telecommunication',
+    'Textiles / Garment',
+    'Tobacco and Liquor',
+    'Transportation / Logistics',
+    'Travel / Tourism',
+    'Utilities / Power',
+    'Wood / Fibre / Paper',
+  ];
+
+  const validate = (onlyKeys = null) => {
+    const check = (k) => !onlyKeys || onlyKeys.includes(k);
+    const next = {};
+    const hasNumber = /\d/;
+
+    // Basic Info
+    if (check('firstName')) {
+      if (!formData.firstName.trim()) next.firstName = 'First name is required.';
+      else if (hasNumber.test(formData.firstName)) next.firstName = 'First Name should not contain numbers';
+    }
+
+    if (check('middleName')) {
+      if (hasNumber.test(formData.middleName)) next.middleName = 'Middle Name should not contain numbers';
+    }
+
+    if (check('lastName')) {
+      if (!formData.lastName.trim()) next.lastName = 'Last name is required.';
+      else if (hasNumber.test(formData.lastName)) next.lastName = 'Last Name should not contain numbers';
+    }
+
+    if (check('extensionName')) {
+      if (formData.extensionName && !EXTENSION_OPTIONS.includes(formData.extensionName)) {
+        next.extensionName = 'Invalid suffix/extension.';
+      }
+    }
+
+    if (check('businessEmail')) {
+      const businessEmail = normalizeEmail(formData.businessEmail);
+      if (!businessEmail) next.businessEmail = 'Business email is required.';
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(businessEmail))
+        next.businessEmail = 'Please enter a valid email address.';
+    }
+
+    if (check('mobileNumber')) {
+      const v = formData.mobileNumber.trim();
+      if (!v) next.mobileNumber = 'Phone / Mobile number is required.';
+      else if (!/^\d+$/.test(v)) next.mobileNumber = 'Phone / Mobile number must contain numbers only.';
+      else if (v.length !== 11) next.mobileNumber = 'Phone / Mobile number must be 11 digits only.';
+    }
+
+    // Company info
+    if (check('companyName') && !formData.companyName.trim()) next.companyName = 'Company name is required.';
+
+    if (check('companyWebsiteUrl')) {
+      const v = formData.companyWebsiteUrl.trim();
+      if (v) {
+        const ok = /^https?:\/\/.+/i.test(v) || /^[a-z0-9.-]+\.[a-z]{2,}.*$/i.test(v);
+        if (!ok) next.companyWebsiteUrl = 'Please enter a valid website URL (ex: https://company.com).';
+      }
+    }
+
+    if (check('industry')) {
+      if (!formData.industry.trim()) next.industry = 'Industry is required.';
+    }
+
+    if (check('regionCity')) {
+      if (!selectedRegion) next.regionCity = 'Region is required.';
+      else if (!selectedCity) next.regionCity = 'City/Province is required.';
+      else if (!formData.regionCity.trim()) next.regionCity = 'Region and City/Province are required.';
+    }
+
+    // Documents (now 5 required)
+    if (check('secRegistration') && !docs.secRegistration) next.secRegistration = 'SEC registration document is required.';
+    if (check('birRegistration') && !docs.birRegistration) next.birRegistration = 'BIR registration document is required.';
+    if (check('dtiRegistration') && !docs.dtiRegistration) next.dtiRegistration = 'DTI registration document is required.';
+    if (check('cityPermit') && !docs.cityPermit) next.cityPermit = 'City / Municipality permit document is required.';
+    if (check('businessPermit') && !docs.businessPermit) next.businessPermit = 'Business permit document is required.';
+
+    setFieldErrors((prev) => {
+      if (!onlyKeys) return next;
+      const cleaned = { ...prev };
+      onlyKeys.forEach((k) => delete cleaned[k]);
+      return { ...cleaned, ...next };
+    });
+
+    const firstKey = Object.keys(next)[0];
+    if (firstKey) focusField(firstKey);
+
+    return Object.keys(next).length === 0;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === 'firstName' || name === 'middleName' || name === 'lastName') {
+      if (/\d/.test(value)) return;
+    }
+
+    if (name === 'mobileNumber') {
+      if (!/^\d*$/.test(value)) return;
+      if (value.length > 11) return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    setServerError('');
+    clearFieldError(name);
+  };
+
+  const handleRegionChange = (e) => {
+    const region = e.target.value;
+
+    setSelectedRegion(region);
+    setSelectedCity('');
+
+    const combined = region ? region : '';
+    setFormData((prev) => ({ ...prev, regionCity: combined }));
+
+    setServerError('');
+    clearFieldError('regionCity');
+  };
+
+  const handleCityChange = (e) => {
+    const city = e.target.value;
+
+    setSelectedCity(city);
+
+    const combined =
+      selectedRegion && city ? `${selectedRegion} - ${city}` : selectedRegion ? `${selectedRegion}` : city ? `${city}` : '';
+
+    setFormData((prev) => ({ ...prev, regionCity: combined }));
+
+    setServerError('');
+    clearFieldError('regionCity');
+  };
+
+  const handleDocChange = (e) => {
+    const { name, files } = e.target;
+    const file = files?.[0] || null;
+
+    setDocs((prev) => ({ ...prev, [name]: file }));
+    setServerError('');
+    clearFieldError(name);
+  };
+
+  const openDocPicker = (key) => {
+    if (loading) return;
+    docRefs[key]?.current?.click?.();
+  };
+
+  const clearDoc = (key) => {
+    if (loading) return;
+    setDocs((prev) => ({ ...prev, [key]: null }));
+    clearFieldError(key);
+    if (docRefs[key]?.current) docRefs[key].current.value = '';
+  };
+
+  const stepHasError = (stepId) => {
+    const keys = STEP_FIELDS[stepId] || [];
+    return keys.some((k) => Boolean(fieldErrors?.[k]));
+  };
+
+  const handleBackStep = () => setStep((s) => Math.max(1, s - 1));
+
+  const handleSubmit = async () => {
+    setServerError('');
+
+    const ok = validate(null);
+    if (!ok) return;
+
+    setLoading(true);
+    try {
+      const fd = new FormData();
+
+      fd.append('role', 'employer');
+
+      // Basic Info
+      fd.append('firstName', formData.firstName.trim());
+      fd.append('middleName', formData.middleName.trim());
+      fd.append('lastName', formData.lastName.trim());
+      fd.append('extensionName', formData.extensionName.trim());
+      fd.append('businessEmail', normalizeEmail(formData.businessEmail));
+      fd.append('mobileNumber', formData.mobileNumber.trim());
+
+      // Company Info
+      fd.append('companyName', formData.companyName.trim());
+      fd.append('companyWebsiteUrl', formData.companyWebsiteUrl.trim());
+      fd.append('regionCity', formData.regionCity.trim());
+      fd.append('industry', formData.industry.trim());
+
+      // Documents (5)
+      fd.append('secRegistration', docs.secRegistration);
+      fd.append('birRegistration', docs.birRegistration);
+      fd.append('dtiRegistration', docs.dtiRegistration);
+      fd.append('cityPermit', docs.cityPermit);
+      fd.append('businessPermit', docs.businessPermit);
+
+      await axios.post(API_URL, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      setShowReadyModal(false);
+      setShowThanksModal(true);
+    } catch (err) {
+      setServerError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setShowReadyModal(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBack = () => navigate('/employer/login');
+
+  const labelBase = 'block text-sm font-semibold text-gray-800';
+
+  const inputBase =
+    'block w-full h-11 px-3 text-sm text-gray-900 border border-gray-200 rounded-xl bg-white ' +
+    'shadow-sm transition ' +
+    'focus:outline-none focus:border-[#2e66a6]  ' +
+    'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed';
+
+  const fieldClass = (hasError) => `${inputBase} ${hasError ? 'border-red-400 focus:border-red-600 ' : ''}`;
+
+  const iconWrap = 'absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none';
+
+  const helperText = (id, text) => (
+    <p id={id} className="text-[11px] text-gray-500 mt-1">
+      {text}
+    </p>
+  );
+
+  const errorText = (id, msg) =>
+    msg ? (
+      <p id={id} className="text-xs text-red-600 mt-1" role="alert" aria-live="assertive">
+        {msg}
+      </p>
+    ) : null;
+
+  const describedBy = (...ids) => ids.filter(Boolean).join(' ') || undefined;
+
+  const serverAlert = useMemo(() => {
+    if (!serverError) return null;
+    return (
+      <div className="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-xl" role="alert" aria-live="assertive">
+        <div className="flex items-start">
+          <svg aria-hidden="true" className="w-4 h-4 text-red-600 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fillRule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <p className="text-red-900 font-semibold text-sm">{serverError}</p>
+        </div>
+      </div>
+    );
+  }, [serverError]);
+
+  const Stepper = () => (
+    <div className="mt-3">
+      <div className="flex items-center justify-between">
+        {steps.map((s, idx) => {
+          const isActive = s.id === step;
+          const isDone = s.id < step;
+          const isError = stepHasError(s.id);
+
+          const leftLine =
+            idx === 0 ? 'bg-transparent' : s.id <= step ? 'bg-[#2e66a6]' : 'bg-gray-200';
+
+          const rightLine =
+            idx === steps.length - 1 ? 'bg-transparent' : s.id < step ? 'bg-[#2e66a6]' : 'bg-gray-200';
+
+          const circleBase =
+            'w-9 h-9 rounded-full flex items-center justify-center text-sm font-extrabold transition ' +
+            'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20';
+
+          const circleClass = isDone
+            ? 'bg-[#2e66a6] text-white'
+            : isActive
+            ? 'bg-[#2e66a6] text-white'
+            : 'bg-gray-100 text-gray-600';
+
+          const labelClass = isActive ? 'text-[#2e66a6]' : 'text-gray-500';
+
+          return (
+            <div key={s.id} className="flex-1">
+              <div className="flex items-center">
+                <div className={`h-px flex-1 ${leftLine}`} />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (s.id <= step) setStep(s.id);
+                  }}
+                  className={`${circleBase} ${circleClass} ${
+                    isError ? 'ring-2 ring-red-500 ring-offset-2 ring-offset-white' : ''
+                  }`}
+                  aria-current={isActive ? 'step' : undefined}
+                  aria-label={`Step ${s.id}: ${s.label}`}
+                  disabled={loading}
+                >
+                  {isDone ? (
+                    <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-7.5 7.5a1 1 0 01-1.414 0l-3.5-3.5a1 1 0 011.414-1.414l2.793 2.793 6.793-6.793a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  ) : (
+                    s.id
+                  )}
+                </button>
+                <div className={`h-px flex-1 ${rightLine}`} />
+              </div>
+
+              <p className={`mt-2 text-[11px] font-semibold text-center ${labelClass}`}>{s.label}</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const IconUser = () => (
+    <svg aria-hidden="true" className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+      />
+    </svg>
+  );
+
+  const IconMail = () => (
+    <svg aria-hidden="true" className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+      />
+    </svg>
+  );
+
+  const IconBuilding = () => (
+    <svg aria-hidden="true" className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5"
+      />
+    </svg>
+  );
+
+  const IconGlobe = () => (
+    <svg aria-hidden="true" className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 21a9 9 0 100-18 9 9 0 000 18zm0 0c2.5-2.5 4-5.5 4-9s-1.5-6.5-4-9m0 18c-2.5-2.5-4-5.5-4-9s1.5-6.5 4-9M3 12h18" />
+    </svg>
+  );
+
+  const IconPhone = () => (
+    <svg aria-hidden="true" className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h2l2 5-2 1c1.5 3 4 5.5 7 7l1-2 5 2v2a2 2 0 01-2 2h-1C9.82 20 4 14.18 4 7V6a1 1 0 01-1-1z" />
+    </svg>
+  );
+
+  const IconLocation = () => (
+    <svg aria-hidden="true" className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 11.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.5 10c0 7-7.5 11-7.5 11S4.5 17 4.5 10a7.5 7.5 0 1115 0z" />
+    </svg>
+  );
+
+  const FileRow = ({ k, title }) => {
+    const file = docs[k];
+    return (
+      <div className="space-y-1">
+        <label className={labelBase} htmlFor={k}>
+          {title}
+        </label>
+
+        <input
+          id={k}
+          ref={docRefs[k]}
+          name={k}
+          type="file"
+          accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx"
+          onChange={handleDocChange}
+          disabled={loading}
+          className="sr-only"
+        />
+
+        <div
+          className={`flex items-center justify-between gap-3 rounded-xl border bg-white px-3 py-2 shadow-sm ${
+            fieldErrors?.[k] ? 'border-red-300' : 'border-gray-200'
+          }`}
+        >
+          <p className="text-xs text-gray-700 truncate min-w-0">{file ? file.name : 'No file selected'}</p>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {file && (
+              <button
+                type="button"
+                onClick={() => clearDoc(k)}
+                disabled={loading}
+                className="h-9 px-3 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-100
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20 disabled:opacity-50"
+              >
+                Remove
+              </button>
+            )}
+
+            <button
+              id={`${k}-btn`}
+              type="button"
+              onClick={() => openDocPicker(k)}
+              disabled={loading}
+              className="h-9 px-4 rounded-lg text-xs font-semibold text-white bg-[#2e66a6] hover:bg-[#255489]
+                focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20 disabled:opacity-50"
+            >
+              {file ? 'Replace' : 'Upload'}
+            </button>
+          </div>
+        </div>
+
+        {errorText(`${k}-error`, fieldErrors?.[k])}
+      </div>
+    );
+  };
+
+  const onFormSubmit = (e) => {
+    e.preventDefault();
+
+    const ok = validate(STEP_FIELDS[step]);
+    if (!ok) return;
+
+    if (step < 3) {
+      setStep((s) => Math.min(3, s + 1));
+      return;
+    }
+
+    setShowReadyModal(true);
+  };
+
+  const cityOptions = useMemo(() => {
+    if (!selectedRegion) return [];
+    return PH_CITIES_BY_REGION[selectedRegion] || [];
+  }, [selectedRegion]);
+
+  const ModalShell = ({ children, onClose }) => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-black/20"
+        onClick={() => {
+          if (!loading) onClose?.();
+        }}
+        aria-hidden="true"
+      />
+      <div className="relative w-full max-w-2xl">{children}</div>
+    </div>
+  );
+
+  const ReadyToGoModal = () => {
+    if (!showReadyModal) return null;
+
+    return (
+      <ModalShell
+        onClose={() => {
+          if (!loading) setShowReadyModal(false);
+        }}
+      >
+        <div className="bg-white rounded-2xl shadow-2xl ring-1 ring-black/5">
+          <div className="p-8 sm:p-10">
+            <div className="flex justify-center">
+              <div className="w-14 h-14 rounded-full flex items-center justify-center">
+                <img src="/images/check.png" alt="Check" className="w-20 h-20 object-contain" draggable="false" />
+              </div>
+            </div>
+
+            <h3 className="mt-5 text-center text-3xl font-extrabold text-gray-900">READY TO GO?</h3>
+
+            <div className="mt-5 rounded-xl bg-[#eaf1fb] px-6 py-4 text-center">
+              <p className="text-sm text-gray-800">
+                Before submitting your registration, please ensure that your company information is accurate, complete, and officially authorized. By clicking Submit Registration, you confirm that the details provided are true and legitimate. You also authorize AGAPAY to display your company profile and job postings within the system to facilitate recruitment, talent matching, and communication with qualified graduates.
+              </p>
+            </div>
+
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-5">
+              <button
+                type="button"
+                onClick={() => setShowReadyModal(false)}
+                disabled={loading}
+                className="h-12 w-full sm:w-56 rounded-xl border border-gray-300 bg-white text-sm font-semibold text-gray-900
+                hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20
+                disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Go Back
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={loading}
+                className="h-12 w-full sm:w-56 rounded-xl text-sm font-semibold text-white bg-[#2e66a6] hover:bg-[#245387]
+                focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20
+                disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {loading ? 'Submitting...' : 'Submit Registration'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </ModalShell>
+    );
+  };
+
+  const ThankYouModal = () => {
+    if (!showThanksModal) return null;
+
+    return (
+      <ModalShell
+        onClose={() => {
+          if (!loading) setShowThanksModal(false);
+        }}
+      >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div
+            className="bg-white rounded-2xl shadow-2xl ring-1 ring-black/5 
+                  w-full max-w-[620px] max-h-[90vh] overflow-y-auto"
+          >
+            <div className="px-8 pt-10 pb-8 text-center">
+              <div className="mx-auto mb-5 w-12 h-12 rounded-full flex items-center justify-center">
+                <img src="/images/check.png" alt="Check" className="w-20 h-20 object-contain" draggable="false" />
+              </div>
+
+              <h3 className="text-2xl font-extrabold text-gray-900 tracking-tight">Thank you for signing up!</h3>
+
+              <div className="mt-5 bg-[#eef3fb] rounded-xl px-6 py-5">
+                <p className="text-sm font-semibold text-gray-900 mb-3">You're account is under review</p>
+                <p className="text-sm text-gray-800">
+                  Our team is reviewing the information and credentials you submitted to ensure everything is complete and accurate. This verification process usually takes 24 to 48 hours.
+
+                  Once your account is approved, you’ll receive a confirmation email with your login details. Keep an eye on your inbox if we require any additional information, our team will contact you directly.
+                </p>
+                <p className="text-sm text-gray-800 mt-4">
+                  After verification, you’ll gain full access as an employer, allowing you to post job opportunities, connect with top PHINMA AU graduates, and manage applications efficiently.
+
+                  If you don’t receive a confirmation email within 48 hours or have any questions during this process, please contact us at
+                  agapay@gmail.com
+                </p>
+              </div>
+
+              <div className="mt-8 flex items-center justify-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowThanksModal(false);
+                    navigate('/employer/login', { replace: true });
+                  }}
+                  disabled={loading}
+                  className="h-12 w-full sm:w-56 rounded-xl border border-gray-300 bg-white text-sm font-semibold text-gray-900
+            hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20 disabled:opacity-50"
+                >
+                  Got it!
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ModalShell>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-[#2e66a6]/10 flex items-center justify-center p-4">
+      <ReadyToGoModal />
+      <ThankYouModal />
+
+      <div className="w-full max-w-7xl">
+        <div className="bg-white rounded-2xl shadow-xl ring-1 ring-black/5 overflow-hidden min-h-[90vh]">
+          <div className="flex flex-col lg:flex-row">
+            <div className="relative lg:w-5/12 p-8 lg:p-12 bg-white flex items-center justify-center">
+              <button
+                type="button"
+                onClick={handleBack}
+                className="absolute left-6 top-6 z-50 w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 bg-white hover:bg-gray-50 transition
+    focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20"
+                aria-label="Go back"
+                title="Go back"
+              >
+                <svg className="w-4 h-4 text-gray-700" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path
+                    fillRule="evenodd"
+                    d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+
+              <div className="h-full flex flex-col justify-center">
+                <div className="mt-2 w-full max-w-[420px] mx-auto relative">
+                  <div className="pointer-events-none absolute inset-0 z-0">
+                    <div
+                      className="
+                        absolute
+                        w-[70px]
+                        h-[70px]
+                        rounded-full
+                        blur-[35px]
+                        top-[15%]
+                        right-[15%]
+                        opacity-70
+                      "
+                      style={{
+                        background:
+                          'radial-gradient(circle, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.18) 45%, transparent 75%)',
+                      }}
+                    />
+                  </div>
+
+                  <div
+                    className="
+                      relative z-10
+                      p-6
+                      rounded-2xl
+                      overflow-hidden
+                      text-white
+                      bg-gradient-to-br
+                      from-[#072258]
+                      via-[#2d63a0]
+                      to-[#52b2db]
+                      shadow-[0_8px_24px_rgba(0,0,0,0.18)]
+                    "
+                  >
+                    <h3 className="text-xl font-extrabold text-white text-center mb-6 leading-snug">
+                      How it Works
+                    </h3>
+
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-white text-white font-bold text-sm shrink-0">
+                          1
+                        </div>
+                        <div className="flex-1 rounded-xl bg-white/10 backdrop-blur-sm px-4 py-3">
+                          <p className="text-base font-bold leading-snug">Provide Company Details</p>
+                          <p className="text-sm text-white/80 mt-1.5 leading-relaxed">
+                            Enter accurate and complete company information to ensure proper identification and trust.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-white text-white font-bold text-sm shrink-0">
+                          2
+                        </div>
+                        <div className="flex-1 rounded-xl bg-white/10 backdrop-blur-sm px-4 py-3">
+                          <p className="text-base font-bold leading-snug">Add Contact Information</p>
+                          <p className="text-sm text-white/80 mt-1.5 leading-relaxed">
+                            Provide primary contact details for communication regarding job postings and updates.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-white text-white font-bold text-sm shrink-0">
+                          3
+                        </div>
+                        <div className="flex-1 rounded-xl bg-white/10 backdrop-blur-sm px-4 py-3">
+                          <p className="text-base font-bold leading-snug">Submit Company Documents</p>
+                          <p className="text-sm text-white/80 mt-1.5 leading-relaxed">
+                            Upload required documents to verify legitimacy and maintain a secure environment.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-white text-white font-bold text-sm shrink-0">
+                          4
+                        </div>
+                        <div className="flex-1 rounded-xl bg-white/10 backdrop-blur-sm px-4 py-3">
+                          <p className="text-base font-bold leading-snug">Verification & Approval</p>
+                          <p className="text-sm text-white/80 mt-1.5 leading-relaxed">
+                            The AGAPAY team reviews your submission within 24–48 hours. Approved accounts receive confirmation via email.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="hidden lg:flex items-center justify-center" aria-hidden="true">
+              <div className="w-px h-[85%] bg-gradient-to-b from-transparent via-gray-200 to-transparent" />
+            </div>
+
+            <div className="lg:w-7/12 p-8 lg:p-10 bg-white">
+              <div className="mx-auto w-full max-w-2xl">
+                <div className="text-center">
+                  <h2 className="text-3xl font-bold text-gray-600 tracking-tight">Create Employer Account</h2>
+                </div>
+
+                <Stepper />
+
+                <div className="mt-6">
+                  {serverAlert}
+
+                  <form onSubmit={onFormSubmit} className="space-y-5" noValidate aria-busy={loading}>
+                    {/* STEP 1: COMPANY INFO */}
+                    {step === 1 && (
+                      <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Company name */}
+                          <div className="space-y-1">
+                            <label htmlFor="companyName" className={labelBase}>
+                              Company name
+                            </label>
+                            <div className="relative">
+                              <div className={iconWrap}>
+                                <IconBuilding />
+                              </div>
+                              <input
+                                id="companyName"
+                                name="companyName"
+                                value={formData.companyName}
+                                onChange={handleChange}
+                                onFocus={() => setFieldFocus('companyName', true)}
+                                onBlur={() => setFieldFocus('companyName', false)}
+                                className={`${fieldClass(!!fieldErrors.companyName)} pl-10`}
+                                disabled={loading}
+                                aria-invalid={!!fieldErrors.companyName}
+                                aria-describedby={describedBy(
+                                  fieldErrors.companyName ? 'companyName-error' : null,
+                                  focused.companyName && !fieldErrors.companyName ? 'companyName-help' : null
+                                )}
+                                maxLength={120}
+                              />
+                            </div>
+                            {focused.companyName && !fieldErrors.companyName && helperText('companyName-help')}
+                            {errorText('companyName-error', fieldErrors.companyName)}
+                          </div>
+
+                          {/* Website - OPTIONAL */}
+                          <div className="space-y-1">
+                            <label htmlFor="companyWebsiteUrl" className={labelBase}>
+                              Website <span className="text-gray-400 font-semibold">(optional)</span>
+                            </label>
+                            <div className="relative">
+                              <div className={iconWrap}>
+                                <IconGlobe />
+                              </div>
+                              <input
+                                id="companyWebsiteUrl"
+                                name="companyWebsiteUrl"
+                                value={formData.companyWebsiteUrl}
+                                onChange={handleChange}
+                                onFocus={() => setFieldFocus('companyWebsiteUrl', true)}
+                                onBlur={() => setFieldFocus('companyWebsiteUrl', false)}
+                                className={`${fieldClass(!!fieldErrors.companyWebsiteUrl)} pl-10`}
+                                disabled={loading}
+                                aria-invalid={!!fieldErrors.companyWebsiteUrl}
+                                aria-describedby={describedBy(
+                                  fieldErrors.companyWebsiteUrl ? 'companyWebsiteUrl-error' : null,
+                                  focused.companyWebsiteUrl && !fieldErrors.companyWebsiteUrl ? 'companyWebsiteUrl-help' : null
+                                )}
+                                inputMode="url"
+                                autoCapitalize="none"
+                                spellCheck={false}
+                                maxLength={120}
+                                placeholder="https://company.com"
+                              />
+                            </div>
+                            {focused.companyWebsiteUrl && !fieldErrors.companyWebsiteUrl &&
+                              helperText('companyWebsiteUrl-help', 'Optional. Enter your company website if available.')}
+                            {errorText('companyWebsiteUrl-error', fieldErrors.companyWebsiteUrl)}
+                          </div>
+
+                          {/* Industry - PINALAPAD */}
+                          <div className="space-y-1 md:col-span-2">
+                            <label htmlFor="industry" className={labelBase}>
+                              Industry
+                            </label>
+                            <select
+                              id="industry"
+                              name="industry"
+                              value={formData.industry}
+                              onChange={handleChange}
+                              onFocus={() => setFieldFocus('industry', true)}
+                              onBlur={() => setFieldFocus('industry', false)}
+                              className={`${fieldClass(!!fieldErrors.industry)}`}
+                              disabled={loading}
+                              aria-invalid={!!fieldErrors.industry}
+                              aria-describedby={describedBy(
+                                fieldErrors.industry ? 'industry-error' : null,
+                                focused.industry && !fieldErrors.industry ? 'industry-help' : null
+                              )}
+                            >
+                              <option value="">Select industry</option>
+                              {INDUSTRY_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>
+                                  {opt}
+                                </option>
+                              ))}
+                            </select>
+                            {focused.industry && !fieldErrors.industry && helperText('industry-help')}
+                            {errorText('industry-error', fieldErrors.industry)}
+                          </div>
+
+                          {/* Region */}
+                          <div className="space-y-1">
+                            <label htmlFor="region" className={labelBase}>
+                              Region
+                            </label>
+                            <div className="relative">
+                              <div className={iconWrap}>
+                                <IconLocation />
+                              </div>
+                              <select
+                                id="region"
+                                name="region"
+                                value={selectedRegion}
+                                onChange={handleRegionChange}
+                                onFocus={() => setFieldFocus('regionCity', true)}
+                                onBlur={() => setFieldFocus('regionCity', false)}
+                                className={`${fieldClass(!!fieldErrors.regionCity)} pl-10`}
+                                disabled={loading}
+                                aria-invalid={!!fieldErrors.regionCity}
+                                aria-describedby={describedBy(
+                                  fieldErrors.regionCity ? 'regionCity-error' : null,
+                                  focused.regionCity && !fieldErrors.regionCity ? 'regionCity-help' : null
+                                )}
+                              >
+                                <option value="">Select Region</option>
+                                {PH_REGIONS.map((r) => (
+                                  <option key={r} value={r}>
+                                    {r}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* City */}
+                          <div className="space-y-1">
+                            <label htmlFor="city" className={labelBase}>
+                              City/Province
+                            </label>
+                            <div className="relative">
+                              <div className={iconWrap}>
+                                <IconLocation />
+                              </div>
+                              <select
+                                id="city"
+                                name="city"
+                                value={selectedCity}
+                                onChange={handleCityChange}
+                                onFocus={() => setFieldFocus('regionCity', true)}
+                                onBlur={() => setFieldFocus('regionCity', false)}
+                                className={`${fieldClass(!!fieldErrors.regionCity)} pl-10`}
+                                disabled={loading || !selectedRegion}
+                              >
+                                <option value="">{selectedRegion ? 'Select City/Province' : 'Select Region first'}</option>
+                                {cityOptions.map((c) => (
+                                  <option key={c} value={c}>
+                                    {c}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+
+                          <input type="hidden" name="regionCity" value={formData.regionCity} />
+                          {focused.regionCity && !fieldErrors.regionCity && helperText('regionCity-help', 'Select your region and city/province.')}
+                          {errorText('regionCity-error', fieldErrors.regionCity)}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* STEP 2: BASIC INFO */}
+                    {step === 2 && (
+                      <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* First name */}
+                          <div className="space-y-1">
+                            <label htmlFor="firstName" className={labelBase}>
+                              First name
+                            </label>
+                            <div className="relative">
+                              <div className={iconWrap}>
+                                <IconUser />
+                              </div>
+                              <input
+                                id="firstName"
+                                name="firstName"
+                                value={formData.firstName}
+                                onChange={handleChange}
+                                onFocus={() => setFieldFocus('firstName', true)}
+                                onBlur={() => setFieldFocus('firstName', false)}
+                                className={`${fieldClass(!!fieldErrors.firstName)} pl-10`}
+                                disabled={loading}
+                                aria-invalid={!!fieldErrors.firstName}
+                                aria-describedby={describedBy(
+                                  fieldErrors.firstName ? 'firstName-error' : null,
+                                  focused.firstName && !fieldErrors.firstName ? 'firstName-help' : null
+                                )}
+                                autoComplete="given-name"
+                                maxLength={60}
+                              />
+                            </div>
+                            {focused.firstName && !fieldErrors.firstName && helperText('firstName-help')}
+                            {errorText('firstName-error', fieldErrors.firstName)}
+                          </div>
+
+                          {/* Middle name */}
+                          <div className="space-y-1">
+                            <label htmlFor="middleName" className={labelBase}>
+                              Middle name <span className="text-gray-400 font-semibold">(optional)</span>
+                            </label>
+                            <div className="relative">
+                              <input
+                                id="middleName"
+                                name="middleName"
+                                value={formData.middleName}
+                                onChange={handleChange}
+                                onFocus={() => setFieldFocus('middleName', true)}
+                                onBlur={() => setFieldFocus('middleName', false)}
+                                className={`${fieldClass(!!fieldErrors.middleName)}`}
+                                disabled={loading}
+                                aria-invalid={!!fieldErrors.middleName}
+                                aria-describedby={describedBy(
+                                  fieldErrors.middleName ? 'middleName-error' : null,
+                                  focused.middleName && !fieldErrors.middleName ? 'middleName-help' : null
+                                )}
+                                maxLength={60}
+                              />
+                            </div>
+                            {focused.middleName && !fieldErrors.middleName && helperText('middleName-help')}
+                            {errorText('middleName-error', fieldErrors.middleName)}
+                          </div>
+
+                          {/* Last name */}
+                          <div className="space-y-1">
+                            <label htmlFor="lastName" className={labelBase}>
+                              Last name
+                            </label>
+                            <div className="relative">
+                              <input
+                                id="lastName"
+                                name="lastName"
+                                value={formData.lastName}
+                                onChange={handleChange}
+                                onFocus={() => setFieldFocus('lastName', true)}
+                                onBlur={() => setFieldFocus('lastName', false)}
+                                className={`${fieldClass(!!fieldErrors.lastName)}`}
+                                disabled={loading}
+                                aria-invalid={!!fieldErrors.lastName}
+                                aria-describedby={describedBy(
+                                  fieldErrors.lastName ? 'lastName-error' : null,
+                                  focused.lastName && !fieldErrors.lastName ? 'lastName-help' : null
+                                )}
+                                autoComplete="family-name"
+                                maxLength={60}
+                              />
+                            </div>
+                            {focused.lastName && !fieldErrors.lastName && helperText('lastName-help')}
+                            {errorText('lastName-error', fieldErrors.lastName)}
+                          </div>
+
+                          {/* Suffix / Extension */}
+                          <div className="space-y-1">
+                            <label htmlFor="extensionName" className={labelBase}>
+                              Suffix <span className="text-gray-400 font-semibold">(optional)</span>
+                            </label>
+                            <select
+                              id="extensionName"
+                              name="extensionName"
+                              value={formData.extensionName}
+                              onChange={handleChange}
+                              onFocus={() => setFieldFocus('extensionName', true)}
+                              onBlur={() => setFieldFocus('extensionName', false)}
+                              className={`${fieldClass(!!fieldErrors.extensionName)}`}
+                              disabled={loading}
+                              aria-invalid={!!fieldErrors.extensionName}
+                            >
+                              {EXTENSION_OPTIONS.map((opt) => (
+                                <option key={opt || 'none'} value={opt}>
+                                  {opt || 'None'}
+                                </option>
+                              ))}
+                            </select>
+                            {errorText('extensionName-error', fieldErrors.extensionName)}
+                          </div>
+
+                          {/* Contact Number */}
+                          <div className="space-y-1">
+                            <label htmlFor="mobileNumber" className={labelBase}>
+                              Contact Number
+                            </label>
+                            <div className="relative">
+                              <div className={iconWrap}>
+                                <IconPhone />
+                              </div>
+                              <input
+                                id="mobileNumber"
+                                name="mobileNumber"
+                                value={formData.mobileNumber}
+                                onChange={handleChange}
+                                onFocus={() => setFieldFocus('mobileNumber', true)}
+                                onBlur={() => setFieldFocus('mobileNumber', false)}
+                                className={`${fieldClass(!!fieldErrors.mobileNumber)} pl-10`}
+                                disabled={loading}
+                                aria-invalid={!!fieldErrors.mobileNumber}
+                                aria-describedby={describedBy(
+                                  fieldErrors.mobileNumber ? 'mobileNumber-error' : null,
+                                  focused.mobileNumber && !fieldErrors.mobileNumber ? 'mobileNumber-help' : null
+                                )}
+                                inputMode="numeric"
+                                autoComplete="tel"
+                                maxLength={11}
+                              />
+                            </div>
+                            {focused.mobileNumber && !fieldErrors.mobileNumber && helperText('mobileNumber-help')}
+                            {errorText('mobileNumber-error', fieldErrors.mobileNumber)}
+                          </div>
+
+                          {/* Employee / Company email */}
+                          <div className="space-y-1">
+                            <label htmlFor="businessEmail" className={labelBase}>
+                              Employee / Company email
+                            </label>
+                            <div className="relative">
+                              <div className={iconWrap}>
+                                <IconMail />
+                              </div>
+                              <input
+                                id="businessEmail"
+                                type="email"
+                                name="businessEmail"
+                                value={formData.businessEmail}
+                                onChange={handleChange}
+                                onFocus={() => setFieldFocus('businessEmail', true)}
+                                onBlur={() => setFieldFocus('businessEmail', false)}
+                                className={`${fieldClass(!!fieldErrors.businessEmail)} pl-10`}
+                                disabled={loading}
+                                aria-invalid={!!fieldErrors.businessEmail}
+                                aria-describedby={describedBy(
+                                  fieldErrors.businessEmail ? 'businessEmail-error' : null,
+                                  focused.businessEmail && !fieldErrors.businessEmail ? 'businessEmail-help' : null
+                                )}
+                                autoComplete="email"
+                                inputMode="email"
+                                autoCapitalize="none"
+                                spellCheck={false}
+                                maxLength={80}
+                              />
+                            </div>
+                            {focused.businessEmail && !fieldErrors.businessEmail &&
+                              helperText('businessEmail-help', 'Use an active company email for verification.')}
+                            {errorText('businessEmail-error', fieldErrors.businessEmail)}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* STEP 3: DOCUMENTS */}
+                    {step === 3 && (
+                      <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-sm font-semibold text-gray-700">Upload required documents</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FileRow k="secRegistration" title="SEC registration" />
+                          <FileRow k="birRegistration" title="BIR registration" />
+                          <FileRow k="dtiRegistration" title="DTI registration" />
+                          <FileRow k="cityPermit" title="City / Municipality permit" />
+                          <FileRow k="businessPermit" title="Business permit" />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-center pt-2">
+                      <div className="flex items-center gap-3">
+                        {step > 1 && (
+                          <button
+                            type="button"
+                            onClick={handleBackStep}
+                            disabled={loading}
+                            className="h-11 px-8 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-800 hover:bg-gray-50
+                              focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20
+                              disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Previous
+                          </button>
+                        )}
+
+                        <button
+                          type="submit"
+                          disabled={loading}
+                          className="h-11 px-8 rounded-xl text-sm font-semibold text-white bg-[#2e66a6] hover:bg-[#255489]
+                            focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20
+                            disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+
+                  <div className="mt-7">
+                    <div className="h-px bg-gray-100 mb-4" />
+                    <p className="text-center text-sm text-gray-700">
+                      Already have an account?{' '}
+                      <Link to="/employer/login" className="font-semibold text-[#2e66a6] hover:text-[#255489] underline">
+                        Sign in
+                      </Link>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* end right */}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default EmployerRegisterPage;

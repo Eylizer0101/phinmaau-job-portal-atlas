@@ -1,0 +1,1090 @@
+// src/pages/admin/JobseekerVerification.jsx
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../../services/api";
+import AdminLayout from "../../layouts/AdminLayout";
+
+const cn = (...classes) => classes.filter(Boolean).join(" ");
+
+const Icon = ({ name, className = "h-5 w-5", ...props }) => {
+  const common = {
+    className,
+    fill: "none",
+    stroke: "currentColor",
+    viewBox: "0 0 24 24",
+    strokeWidth: 2,
+    ...props,
+  };
+
+  const icons = {
+    search: (
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.3-4.3m1.3-5.2a7 7 0 11-14 0 7 7 0 0114 0z" />
+    ),
+    refresh: (
+      <>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v6h6M20 20v-6h-6" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M20 9A8 8 0 006.3 5.3L4 10M4 15a8 8 0 0013.7 3.7L20 14" />
+      </>
+    ),
+    eye: (
+      <>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+        />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </>
+    ),
+    x: <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />,
+    calendar: (
+      <>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10m-13 9h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v11a2 2 0 002 2z" />
+      </>
+    ),
+    chevronLeft: <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />,
+    chevronRight: <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />,
+    user: <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />,
+  };
+
+  return <svg {...common}>{icons[name] || null}</svg>;
+};
+
+const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2";
+
+const inputBase =
+  "h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 placeholder-gray-400 shadow-sm " +
+  focusRing +
+  " disabled:bg-gray-50 disabled:opacity-60";
+
+const Button = ({
+  variant = "secondary",
+  size = "md",
+  leftIcon,
+  rightIcon,
+  children,
+  className,
+  disabled,
+  loading,
+  ...props
+}) => {
+  const base =
+    "inline-flex items-center justify-center gap-2 font-semibold transition-all duration-200 " +
+    focusRing +
+    " disabled:cursor-not-allowed";
+
+  const sizes = {
+    sm: "px-3.5 py-2 text-sm rounded-xl",
+    md: "px-4 py-2.5 text-sm rounded-xl",
+  };
+
+  const variants = {
+    primary:
+      "bg-[#2e66a6] text-white hover:bg-[#255487] shadow-sm disabled:bg-gray-200 disabled:text-gray-500 disabled:hover:bg-gray-200",
+    secondary:
+      "border border-gray-200 bg-white text-gray-800 hover:bg-gray-50 shadow-sm disabled:hover:bg-white disabled:shadow-none",
+    danger:
+      "bg-red-600 text-white hover:bg-red-700 shadow-sm disabled:bg-red-200 disabled:text-red-800 disabled:hover:bg-red-200",
+    ghost: "bg-transparent text-gray-700 hover:bg-gray-100",
+  };
+
+  return (
+    <button
+      type="button"
+      className={cn(base, sizes[size], variants[variant], className, loading && "opacity-70 cursor-wait")}
+      disabled={disabled || loading}
+      {...props}
+    >
+      {loading ? (
+        <svg className="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+      ) : (
+        leftIcon
+      )}
+      <span>{children}</span>
+      {!loading && rightIcon}
+    </button>
+  );
+};
+
+const Alert = ({ type = "error", title, children, onClose }) => {
+  const styles = {
+    error: "border-red-200 bg-red-50 text-red-900",
+    success: "border-green-200 bg-green-50 text-green-900",
+  };
+
+  return (
+    <div className={cn("mb-5 flex items-start gap-3 rounded-2xl border p-4", styles[type])}>
+      <div className="flex-1 min-w-0">
+        {title ? <div className="font-semibold mb-1">{title}</div> : null}
+        <div className="text-sm">{children}</div>
+      </div>
+      {onClose ? (
+        <button type="button" onClick={onClose} className={cn("rounded-lg p-1 hover:bg-black/5", focusRing)} aria-label="Dismiss">
+          <Icon name="x" className="h-4 w-4" />
+        </button>
+      ) : null}
+    </div>
+  );
+};
+
+const Card = ({ children, className, padding = true }) => (
+  <div className={cn("rounded-2xl bg-white border border-gray-200 shadow-sm ring-1 ring-black/5", padding && "p-5", className)}>{children}</div>
+);
+
+const SummaryCard = ({ label, value, image, href = null }) => {
+  const content = (
+    <>
+      <div className="pointer-events-none absolute inset-0 z-0">
+        <div
+          className="absolute w-[70px] h-[70px] rounded-full blur-[35px] top-[38%] right-[22%] transition-all duration-700 ease-out
+          group-hover:scale-110 group-hover:blur-[45px] group-hover:opacity-80"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(46,102,166,0.25) 0%, rgba(46,102,166,0.14) 45%, transparent 75%)",
+          }}
+        />
+      </div>
+
+      <div
+        className="relative z-10 h-full p-6 rounded-2xl overflow-hidden text-white
+        bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db]
+        shadow-[0_10px_24px_rgba(46,102,166,0.18)] transition-all duration-300 ease-out
+        group-hover:shadow-[0_16px_34px_rgba(46,102,166,0.24)] group-hover:-translate-y-0.5 group-active:scale-[0.99]
+        group-hover:brightness-[1.03] min-h-[118px]"
+      >
+        <div className="absolute top-4 right-4 transition-all duration-500 ease-out opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0">
+          <svg className="w-5 h-5 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"></svg>
+        </div>
+
+        {image ? (
+          <img
+            src={image}
+            alt=""
+            className="pointer-events-none absolute right-[-18px] top-1/2 -translate-y-1/2 w-20 h-20 md:w-22 md:h-22 object-contain opacity-50 mix-blend-soft-light saturate-150
+            transition-all duration-700 ease-out group-hover:opacity-50 group-hover:saturate-180 group-hover:scale-105 group-hover:right-[-15px]"
+            style={{
+              WebkitMaskImage:
+                "radial-gradient(circle at 35% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 55%, rgba(0,0,0,0) 80%)",
+              maskImage:
+                "radial-gradient(circle at 35% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 55%, rgba(0,0,0,0) 80%)",
+            }}
+          />
+        ) : null}
+
+        <div className="relative z-10">
+          <p className="text-3xl font-semibold leading-none transition-all duration-400 ease-out group-hover:text-[32px]">
+            {Number(value || 0).toLocaleString()}
+          </p>
+
+          <div className="flex items-center justify-between mt-2 gap-2">
+            <p className="text-sm text-white/90 flex items-center gap-1 transition-all duration-400 group-hover:text-white whitespace-nowrap">
+              <span className="whitespace-nowrap">{label}</span>
+              <span className="text-base font-bold opacity-90 ml-1 transition-all duration-400 group-hover:ml-2 group-hover:opacity-100 shrink-0"></span>
+            </p>
+          </div>
+        </div>
+
+        <div className="absolute inset-0 bg-gradient-to-t from-transparent to-transparent opacity-0 group-hover:opacity-5 group-hover:to-white/10 transition-all duration-500 ease-out" />
+      </div>
+
+      <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-white/20 transition-all duration-500 ease-out pointer-events-none" />
+    </>
+  );
+
+  if (href) {
+    return (
+      <button
+        type="button"
+        onClick={() => (window.location.href = href)}
+        className="relative rounded-2xl overflow-hidden group focus:outline-none focus:ring-2 focus:ring-[#2e66a6] text-left"
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return <div className="relative rounded-2xl overflow-hidden group">{content}</div>;
+};
+
+const Badge = ({ children, variant = "neutral" }) => {
+  const variants = {
+    neutral: "bg-gray-100 text-gray-700",
+    success: "bg-green-100 text-green-700",
+    warning: "bg-amber-100 text-amber-700",
+    danger: "bg-red-100 text-red-700",
+    hold: "bg-[#2e66a6]/10 text-[#2e66a6]",
+  };
+
+  return (
+    <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold", variants[variant])}>
+      {children}
+    </span>
+  );
+};
+
+const statusBadge = (status) => {
+  const normalized = String(status || "not_submitted").toLowerCase();
+
+  if (normalized === "verified") return <Badge variant="success">Verified</Badge>;
+  if (normalized === "pending") return <Badge variant="warning">Pending</Badge>;
+  if (normalized === "rejected" || normalized === "declined") return <Badge variant="danger">Declined</Badge>;
+  if (normalized === "hold") return <Badge variant="hold">Hold</Badge>;
+
+  return <Badge variant="neutral">Not Submitted</Badge>;
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return "—";
+  const d = new Date(dateString);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-PH", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+    timeZone: "Asia/Manila",
+  });
+};
+
+const buildAvatar = (item) => {
+  const fullName = item?.fullName || "";
+  return (fullName.trim().charAt(0) || "?").toUpperCase();
+};
+
+const dateOptions = [
+  { value: "all", label: "All Time" },
+  { value: "today", label: "Today" },
+  { value: "yesterday", label: "Yesterday" },
+  { value: "7days", label: "Last 7 Days" },
+  { value: "30days", label: "Last 30 Days" },
+  { value: "thisMonth", label: "This Month" },
+  { value: "lastMonth", label: "Last Month" },
+  { value: "custom", label: "Custom Range" },
+];
+
+const formatDateInput = (date) => {
+  if (!date) return "";
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const getPresetDateRange = (value) => {
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  if (value === "today") {
+    return { dateFrom: formatDateInput(startOfToday), dateTo: formatDateInput(endOfToday) };
+  }
+
+  if (value === "yesterday") {
+    const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+    return { dateFrom: formatDateInput(yesterday), dateTo: formatDateInput(yesterday) };
+  }
+
+  if (value === "7days") {
+    return {
+      dateFrom: formatDateInput(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6)),
+      dateTo: formatDateInput(endOfToday),
+    };
+  }
+
+  if (value === "30days") {
+    return {
+      dateFrom: formatDateInput(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29)),
+      dateTo: formatDateInput(endOfToday),
+    };
+  }
+
+  if (value === "thisMonth") {
+    return {
+      dateFrom: formatDateInput(new Date(today.getFullYear(), today.getMonth(), 1)),
+      dateTo: formatDateInput(endOfToday),
+    };
+  }
+
+  if (value === "lastMonth") {
+    return {
+      dateFrom: formatDateInput(new Date(today.getFullYear(), today.getMonth() - 1, 1)),
+      dateTo: formatDateInput(new Date(today.getFullYear(), today.getMonth(), 0)),
+    };
+  }
+
+  return { dateFrom: "", dateTo: "" };
+};
+
+const formatDateLabel = (value) => {
+  if (!value) return "Select date";
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return "Select date";
+  return date.toLocaleDateString("en-PH", { month: "short", day: "2-digit", year: "numeric" });
+};
+
+const getDateOptionLabel = (value, startDate, endDate) => {
+  if (value === "custom" && startDate && endDate) {
+    return `${formatDateLabel(startDate)} - ${formatDateLabel(endDate)}`;
+  }
+
+  return dateOptions.find((option) => option.value === value)?.label || "All Time";
+};
+
+const addCalendarMonths = (date, amount) => {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + amount);
+  return next;
+};
+
+const monthNames = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+const getYearOptions = () => {
+  const startYear = 1950;
+  const endYear = new Date().getFullYear();
+  return Array.from({ length: endYear - startYear + 1 }, (_, index) => startYear + index);
+};
+
+const CalendarMonth = ({ monthDate, startDate, endDate, onPickDate, onChangeMonth }) => {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const firstWeekday = firstDay.getDay();
+  const gridStart = new Date(year, month, 1 - firstWeekday);
+  const start = startDate ? new Date(`${startDate}T00:00:00`) : null;
+  const end = endDate ? new Date(`${endDate}T00:00:00`) : null;
+
+  const days = Array.from({ length: 42 }, (_, index) => {
+    const d = new Date(gridStart);
+    d.setDate(gridStart.getDate() + index);
+    return d;
+  });
+
+  const isSameDay = (a, b) => a && b && a.toDateString() === b.toDateString();
+  const inRange = (d) => start && end && d >= start && d <= end;
+  const changeByMonth = (amount) => onChangeMonth(addCalendarMonths(monthDate, amount));
+  const changeMonthSelect = (nextMonth) => onChangeMonth(new Date(year, Number(nextMonth), 1));
+  const changeYearSelect = (nextYear) => onChangeMonth(new Date(Number(nextYear), month, 1));
+
+  return (
+    <div className="min-w-0 flex-1">
+      <div className="mb-4 grid grid-cols-[32px_1fr_32px] items-center gap-2">
+        <button type="button" onClick={() => changeByMonth(-1)} className="flex h-8 w-8 items-center justify-center rounded-lg text-2xl leading-none text-slate-700 transition hover:bg-slate-100" aria-label="Previous month">‹</button>
+
+        <div className="grid grid-cols-[1fr_86px] gap-2">
+          <select value={month} onChange={(event) => changeMonthSelect(event.target.value)} className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20" aria-label="Select month">
+            {monthNames.map((name, index) => (
+              <option key={name} value={index}>{name}</option>
+            ))}
+          </select>
+
+          <select value={year} onChange={(event) => changeYearSelect(event.target.value)} className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20" aria-label="Select year">
+            {getYearOptions().map((yearOption) => (
+              <option key={yearOption} value={yearOption}>{yearOption}</option>
+            ))}
+          </select>
+        </div>
+
+        <button type="button" onClick={() => changeByMonth(1)} className="flex h-8 w-8 items-center justify-center rounded-lg text-2xl leading-none text-slate-700 transition hover:bg-slate-100" aria-label="Next month">›</button>
+      </div>
+
+      <div className="grid grid-cols-7 gap-y-2 text-center text-xs font-bold text-slate-500">
+        {["SU", "MO", "TU", "WE", "TH", "FR", "SA"].map((day) => <div key={day}>{day}</div>)}
+      </div>
+
+      <div className="mt-3 grid grid-cols-7 gap-y-1 text-center text-sm text-slate-600">
+        {days.map((day) => {
+          const value = formatDateInput(day);
+          const outside = day.getMonth() !== month;
+          const selected = isSameDay(day, start) || isSameDay(day, end);
+          const ranged = inRange(day);
+          return (
+            <button type="button" key={value} onClick={() => onPickDate(value)} className={cn("mx-auto flex h-9 w-full items-center justify-center transition", outside ? "text-slate-300" : "text-slate-700", ranged ? "bg-[#2e66a6]/10 text-[#2e66a6]" : "", selected ? "rounded-lg bg-[#2e66a6] font-extrabold text-white shadow-md" : "hover:bg-[#2e66a6]/10")}>{day.getDate()}</button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const CustomDateRangeModal = ({ open, startDate, endDate, onCancel, onApply }) => {
+  const today = new Date();
+  const initialStart = startDate || formatDateInput(today);
+  const initialEnd = endDate || formatDateInput(today);
+  const [draftStart, setDraftStart] = useState(initialStart);
+  const [draftEnd, setDraftEnd] = useState(initialEnd);
+  const [leftMonth, setLeftMonth] = useState(new Date(`${initialStart}T00:00:00`));
+  const [rightMonth, setRightMonth] = useState(addCalendarMonths(new Date(`${initialEnd}T00:00:00`), 0));
+
+  useEffect(() => {
+    if (!open) return;
+    const nextStart = startDate || formatDateInput(today);
+    const nextEnd = endDate || formatDateInput(today);
+    setDraftStart(nextStart);
+    setDraftEnd(nextEnd);
+    setLeftMonth(new Date(`${nextStart}T00:00:00`));
+    setRightMonth(addCalendarMonths(new Date(`${nextEnd}T00:00:00`), 0));
+  }, [open, startDate, endDate]);
+
+  if (!open) return null;
+
+  const pickDate = (value) => {
+    if (!draftStart || (draftStart && draftEnd)) {
+      setDraftStart(value);
+      setDraftEnd("");
+      return;
+    }
+    if (new Date(`${value}T00:00:00`) < new Date(`${draftStart}T00:00:00`)) {
+      setDraftEnd(draftStart);
+      setDraftStart(value);
+    } else {
+      setDraftEnd(value);
+    }
+  };
+
+  const apply = () => {
+    if (!draftStart || !draftEnd) return;
+    onApply(draftStart, draftEnd);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 px-4 py-6">
+      <div className="w-full max-w-4xl overflow-hidden rounded-xl bg-white shadow-2xl">
+        <div className="grid gap-5 px-6 pb-5 pt-5 md:grid-cols-[1fr_auto_1fr] md:items-end">
+          <div>
+            <div className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">Start Date</div>
+            <div className="flex h-12 items-center gap-3 rounded-xl bg-slate-100 px-4 text-lg font-bold text-[#2e66a6]"><Icon name="calendar" className="h-5 w-5" /> {formatDateLabel(draftStart)}</div>
+          </div>
+          <div className="hidden pb-3 text-3xl text-slate-500 md:block">→</div>
+          <div>
+            <div className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">End Date</div>
+            <div className="flex h-12 items-center gap-3 rounded-xl bg-slate-100 px-4 text-lg font-bold text-[#2e66a6]"><Icon name="calendar" className="h-5 w-5" /> {formatDateLabel(draftEnd)}</div>
+          </div>
+        </div>
+
+        <div className="grid gap-8 px-6 pb-5 md:grid-cols-2">
+          <CalendarMonth monthDate={leftMonth} startDate={draftStart} endDate={draftEnd} onPickDate={pickDate} onChangeMonth={setLeftMonth} />
+          <CalendarMonth monthDate={rightMonth} startDate={draftStart} endDate={draftEnd} onPickDate={pickDate} onChangeMonth={setRightMonth} />
+        </div>
+
+        <div className="flex items-center justify-end gap-5 border-t border-slate-100 px-6 py-5">
+          <button type="button" onClick={onCancel} className="text-base font-bold text-slate-600">Cancel</button>
+          <button type="button" onClick={apply} disabled={!draftStart || !draftEnd} className="h-11 rounded-xl bg-[#2e66a6] px-8 text-base font-extrabold text-white shadow-lg shadow-[#2e66a6]/25 transition hover:bg-[#255487] disabled:opacity-60">Apply Range</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DateFilterDropdown = ({ value, startDate, endDate, disabled, onSelect }) => {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const close = () => setOpen(false);
+    window.addEventListener("click", close);
+
+    return () => window.removeEventListener("click", close);
+  }, [open]);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={(event) => {
+          event.stopPropagation();
+          setOpen((prev) => !prev);
+        }}
+        className={cn(
+          "flex h-11 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50",
+          focusRing,
+          "disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60"
+        )}
+      >
+        <span className="truncate">{getDateOptionLabel(value, startDate, endDate)}</span>
+        <Icon name="calendar" className="h-4 w-4 text-slate-500" />
+      </button>
+
+      {open ? (
+        <div
+          onClick={(event) => event.stopPropagation()}
+          className="absolute left-0 top-[48px] z-50 w-56 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
+        >
+          <div className="space-y-1">
+            {dateOptions.map((option) => (
+              <button
+                type="button"
+                key={option.value}
+                onClick={() => {
+                  setOpen(false);
+                  onSelect(option.value);
+                }}
+                className={cn(
+                  "w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition",
+                  value === option.value ? "bg-[#2e66a6]/10 text-[#2e66a6]" : "text-slate-600 hover:bg-slate-50"
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+
+const DEFAULT_FILTERS = {
+  search: "",
+  campus: "all",
+  course: "all",
+  status: "all",
+  date: "all",
+  dateFrom: "",
+  dateTo: "",
+  sort: "newest",
+  page: 1,
+  limit: 10,
+};
+
+const JobseekerVerification = () => {
+  const navigate = useNavigate();
+
+  const [rows, setRows] = useState([]);
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    verified: 0,
+    rejected: 0,
+    hold: 0,
+    notSubmitted: 0,
+  });
+
+  const [filterOptions, setFilterOptions] = useState({
+    campuses: [],
+    courses: [],
+    statuses: [],
+  });
+
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [searchDraft, setSearchDraft] = useState("");
+
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    totalItems: 0,
+    totalPages: 1,
+    hasPrevPage: false,
+    hasNextPage: false,
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [showCustomDateModal, setShowCustomDateModal] = useState(false);
+
+  const clearMessages = useCallback(() => {
+    setError("");
+    setSuccess("");
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilters((prev) => ({
+        ...prev,
+        search: searchDraft.trim(),
+        page: 1,
+      }));
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [searchDraft]);
+
+  const fetchJobseekers = useCallback(
+    async ({ silent = false } = {}) => {
+      try {
+        clearMessages();
+        if (silent) setRefreshing(true);
+        else setLoading(true);
+
+        const params = {
+          page: filters.page,
+          limit: filters.limit,
+          sort: filters.sort,
+        };
+
+        if (filters.search) params.search = filters.search;
+        if (filters.campus !== "all") params.campus = filters.campus;
+        if (filters.course !== "all") params.course = filters.course;
+        if (filters.status !== "all") params.status = filters.status;
+        if (filters.dateFrom) params.dateFrom = filters.dateFrom;
+        if (filters.dateTo) params.dateTo = filters.dateTo;
+
+        const res = await api.get("/admin/jobseekers/verification", { params });
+        const payload = res?.data || {};
+
+        if (!payload.success) {
+          throw new Error(payload.message || "Failed to load jobseekers.");
+        }
+
+        setRows(payload.jobseekers || []);
+        setStats(
+          payload.stats || {
+            total: 0,
+            pending: 0,
+            verified: 0,
+            rejected: 0,
+            hold: 0,
+            notSubmitted: 0,
+          }
+        );
+        setFilterOptions(
+          payload.filters || {
+            campuses: [],
+            courses: [],
+            statuses: [],
+          }
+        );
+        setPagination(
+          payload.pagination || {
+            page: 1,
+            limit: 10,
+            totalItems: 0,
+            totalPages: 1,
+            hasPrevPage: false,
+            hasNextPage: false,
+          }
+        );
+      } catch (err) {
+        setRows([]);
+        setError(err?.response?.data?.message || err.message || "Failed to load jobseekers.");
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [filters, clearMessages]
+  );
+
+  useEffect(() => {
+    fetchJobseekers();
+  }, [fetchJobseekers]);
+
+  const onChangeFilter = (key, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: value,
+      page: key === "page" ? value : 1,
+    }));
+  };
+
+  const onChangeDateFilter = (value) => {
+    if (value === "custom") {
+      setShowCustomDateModal(true);
+      return;
+    }
+
+    const range = getPresetDateRange(value);
+
+    setFilters((prev) => ({
+      ...prev,
+      date: value,
+      dateFrom: range.dateFrom,
+      dateTo: range.dateTo,
+      page: 1,
+    }));
+  };
+
+  const applyCustomDateRange = (dateFrom, dateTo) => {
+    setFilters((prev) => ({
+      ...prev,
+      date: "custom",
+      dateFrom,
+      dateTo,
+      page: 1,
+    }));
+    setShowCustomDateModal(false);
+  };
+
+  const clearAllFilters = () => {
+    setSearchDraft("");
+    setFilters(DEFAULT_FILTERS);
+  };
+
+  const pageLabel = useMemo(() => {
+    if (!pagination.totalItems) return "Showing 0 entries";
+    const start = (pagination.page - 1) * pagination.limit + 1;
+    const end = Math.min(pagination.page * pagination.limit, pagination.totalItems);
+    return `Showing ${start} to ${end} of ${pagination.totalItems} entries`;
+  }, [pagination]);
+
+  // Alisin sa listing ang verified at declined/rejected
+  const visibleRows = useMemo(() => {
+    return rows.filter((item) => {
+      const status = String(item?.verificationStatus || "not_submitted").toLowerCase();
+      return status !== "verified" && status !== "rejected" && status !== "declined";
+    });
+  }, [rows]);
+
+  // Alisin sa status filter ang not_submitted, verified, declined/rejected
+  const visibleStatusOptions = useMemo(() => {
+    return (filterOptions.statuses || []).filter((status) => {
+      const value = String(status?.value || "").toLowerCase();
+      return value !== "not_submitted" && value !== "verified" && value !== "rejected" && value !== "declined";
+    });
+  }, [filterOptions.statuses]);
+
+  return (
+    <AdminLayout>
+      <div className="mx-auto max-w-7xl px-1 py-8">
+        <div className="mb-6">
+          <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Jobseeker Verification</h1>
+          <p className="mt-1 text-sm text-gray-600">Review, filter, and manage jobseeker verification requests</p>
+        </div>
+
+        {error ? (
+          <Alert type="error" title="Error" onClose={() => setError("")}>
+            {error}
+          </Alert>
+        ) : null}
+
+        {success ? (
+          <Alert type="success" title="Success" onClose={() => setSuccess("")}>
+            {success}
+          </Alert>
+        ) : null}
+
+        <Card className="relative z-20 mb-6 overflow-visible" padding={false}>
+          <div className="p-5">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+              <div className="relative min-w-0 xl:w-[420px] xl:flex-none">
+                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Icon name="search" className="h-5 w-5" />
+                </span>
+
+                <input
+                  value={searchDraft}
+                  onChange={(e) => setSearchDraft(e.target.value)}
+                  className={cn(inputBase, "pl-11 pr-10")}
+                  placeholder="Search name, email..."
+                  disabled={loading}
+                />
+
+                {searchDraft ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearchDraft("")}
+                    className={cn("absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-gray-500 hover:bg-gray-100", focusRing)}
+                    aria-label="Clear search"
+                  >
+                    <Icon name="x" className="h-4 w-4" />
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                <select
+                  value={filters.campus}
+                  onChange={(e) => onChangeFilter("campus", e.target.value)}
+                  className={inputBase}
+                  disabled={loading}
+                >
+                  <option value="all">All Campus</option>
+                  {filterOptions.campuses.map((campus) => (
+                    <option key={campus} value={campus}>
+                      {campus}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={filters.course}
+                  onChange={(e) => onChangeFilter("course", e.target.value)}
+                  className={inputBase}
+                  disabled={loading}
+                >
+                  <option value="all">All Courses</option>
+                  {filterOptions.courses.map((course) => (
+                    <option key={course} value={course}>
+                      {course}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={filters.status}
+                  onChange={(e) => onChangeFilter("status", e.target.value)}
+                  className={inputBase}
+                  disabled={loading}
+                >
+                  <option value="all">All Status</option>
+                  {visibleStatusOptions.map((status) => (
+                    <option key={status.value} value={status.value}>
+                      {status.label === "Rejected" ? "Declined" : status.label}
+                    </option>
+                  ))}
+                </select>
+
+                <DateFilterDropdown
+                  value={filters.date}
+                  startDate={filters.dateFrom}
+                  endDate={filters.dateTo}
+                  disabled={loading}
+                  onSelect={onChangeDateFilter}
+                />
+              </div>
+            </div>
+
+            {(searchDraft ||
+              filters.campus !== "all" ||
+              filters.course !== "all" ||
+              filters.status !== "all" ||
+              filters.date !== "all" ||
+              filters.dateFrom ||
+              filters.dateTo) && (
+              <div className="mt-3 flex justify-end">
+                <Button
+                  variant="secondary"
+                  className="h-11 px-6"
+                  onClick={clearAllFilters}
+                  disabled={loading}
+                >
+                  Clear All
+                </Button>
+              </div>
+            )}
+          </div>
+        </Card>
+
+        <Card className="overflow-hidden" padding={false}>
+          <div className="border-t border-gray-100">
+            {loading ? (
+              <div className="py-16 text-center">
+                <div className="mx-auto inline-block h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-[#2e66a6]" />
+                <p className="mt-4 text-sm text-gray-600">Loading jobseekers...</p>
+              </div>
+            ) : visibleRows.length === 0 ? (
+              <div className="py-14 text-center">
+                <h3 className="text-lg font-semibold text-gray-900">No jobseekers found</h3>
+                <p className="mt-2 text-sm text-gray-600">Try changing filters or search.</p>
+              </div>
+            ) : (
+              <>
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="w-full min-w-[1000px]">
+                    <thead className="bg-slate-50 border-b border-gray-100">
+                      <tr>
+                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Job Seeker</th>
+                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Campus</th>
+                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Course</th>
+                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Registered</th>
+                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Status</th>
+                        <th className="px-5 py-4 text-right text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Actions</th>
+                      </tr>
+                    </thead>
+
+                    <tbody className="divide-y divide-gray-100 bg-white">
+                      {visibleRows.map((item) => {
+                        const fullName = item.fullName || "No Name";
+                        const email = item.email || "—";
+                        const campus = item.campus || item.jobSeekerProfile?.campus || "—";
+                        const course = item.course || item.jobSeekerProfile?.course || "—";
+                        const status = item.verificationStatus || "not_submitted";
+
+                        return (
+                          <tr key={item._id} className="hover:bg-gray-50/70 transition-colors">
+                            <td className="px-5 py-4">
+                              <div className="flex items-center gap-3 min-w-0">
+                                {item.profileImage ? (
+                                  <img
+                                    src={item.profileImage}
+                                    alt={fullName}
+                                    className="h-11 w-11 rounded-full object-cover border border-gray-200"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = "none";
+                                    }}
+                                  />
+                                ) : (
+                                  <div className="h-11 w-11 rounded-full border border-gray-200 bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-700">
+                                    {buildAvatar(item)}
+                                  </div>
+                                )}
+
+                                <div className="min-w-0">
+                                  <div className="text-sm font-semibold text-gray-900 truncate">{fullName}</div>
+                                  <div className="text-xs text-gray-500 truncate">{email}</div>
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="px-5 py-4 text-sm text-gray-700">{campus}</td>
+                            <td className="px-5 py-4 text-sm text-gray-700">{course}</td>
+                            <td className="px-5 py-4 text-sm text-gray-700">{formatDate(item.createdAt)}</td>
+                            <td className="px-5 py-4">{statusBadge(status)}</td>
+                            <td className="px-5 py-4">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  leftIcon={<Icon name="eye" className="h-4 w-4" />}
+                                  onClick={() => navigate(`/admin/jobseeker-verification/${item._id}`)}
+                                  title="View"
+                                >
+                                 
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="space-y-3 p-4 lg:hidden">
+                  {visibleRows.map((item) => {
+                    const fullName = item.fullName || "No Name";
+                    const email = item.email || "—";
+                    const campus = item.campus || item.jobSeekerProfile?.campus || "—";
+                    const course = item.course || item.jobSeekerProfile?.course || "—";
+                    const status = item.verificationStatus || "not_submitted";
+
+                    return (
+                      <Card key={item._id} className="p-4">
+                        <div className="flex items-start gap-3">
+                          {item.profileImage ? (
+                            <img
+                              src={item.profileImage}
+                              alt={fullName}
+                              className="h-11 w-11 rounded-full object-cover border border-gray-200"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <div className="h-11 w-11 rounded-full border border-gray-200 bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-700 shrink-0">
+                              {buildAvatar(item)}
+                            </div>
+                          )}
+
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-semibold text-gray-900">{fullName}</div>
+                            <div className="text-xs text-gray-500 truncate">{email}</div>
+
+                            <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-600">
+                              <div>
+                                <span className="font-semibold text-gray-800">Campus:</span> {campus}
+                              </div>
+                              <div>
+                                <span className="font-semibold text-gray-800">Course:</span> {course}
+                              </div>
+                              <div>
+                                <span className="font-semibold text-gray-800">Registered:</span> {formatDate(item.createdAt)}
+                              </div>
+                              <div>{statusBadge(status)}</div>
+                            </div>
+
+                            <div className="mt-4 flex justify-end gap-2">
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                leftIcon={<Icon name="eye" className="h-4 w-4" />}
+                                onClick={() => navigate(`/admin/jobseeker-verification/${item._id}`)}
+                              >
+                                View
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+
+                <div className="border-t border-gray-100 px-4 py-4 sm:px-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-gray-500">{pageLabel}</p>
+
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        leftIcon={<Icon name="chevronLeft" className="h-4 w-4" />}
+                        disabled={!pagination.hasPrevPage}
+                        onClick={() => onChangeFilter("page", pagination.page - 1)}
+                      >
+                        Previous
+                      </Button>
+
+                      <div className="inline-flex items-center gap-1">
+                        {Array.from({ length: pagination.totalPages }, (_, index) => index + 1)
+                          .slice(Math.max(0, pagination.page - 2), Math.min(pagination.totalPages, pagination.page + 1))
+                          .map((pageNum) => (
+                            <button
+                              key={pageNum}
+                              type="button"
+                              onClick={() => onChangeFilter("page", pageNum)}
+                              className={cn(
+                                "inline-flex h-9 min-w-[36px] items-center justify-center rounded-lg border px-3 text-sm font-semibold transition",
+                                pageNum === pagination.page
+                                  ? "border-[#1154cc] bg-[#1154cc] text-white"
+                                  : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50",
+                                focusRing
+                              )}
+                            >
+                              {pageNum}
+                            </button>
+                          ))}
+                      </div>
+
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        rightIcon={<Icon name="chevronRight" className="h-4 w-4" />}
+                        disabled={!pagination.hasNextPage}
+                        onClick={() => onChangeFilter("page", pagination.page + 1)}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </Card>
+      </div>
+
+      <CustomDateRangeModal
+        open={showCustomDateModal}
+        startDate={filters.dateFrom}
+        endDate={filters.dateTo}
+        onCancel={() => setShowCustomDateModal(false)}
+        onApply={applyCustomDateRange}
+      />
+    </AdminLayout>
+  );
+};
+
+export default JobseekerVerification;

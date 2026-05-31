@@ -1,0 +1,21 @@
+// src/constants/softSkills.js
+export const SOFT_SKILLS = [
+  "Communication",
+  "Teamwork",
+  "Time Management",
+  "Problem Solving",
+  "Adaptability",
+  "Leadership",
+  "Critical Thinking",
+  "Creativity",
+  "Work Ethic",
+  "Attention to Detail",
+  "Conflict Resolution",
+  "Active Listening",
+  "Decision Making",
+  "Stress Management",
+  "Collaboration",
+  "Empathy",
+  "Accountability",
+  "Flexibility",
+];

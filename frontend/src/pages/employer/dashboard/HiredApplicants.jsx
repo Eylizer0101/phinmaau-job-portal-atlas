@@ -1,0 +1,678 @@
+// src/pages/employer/dashboard/HiredApplicants.jsx
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import EmployerLayout from '../../../layouts/EmployerLayout';
+
+const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
+  const common = { className, fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', ...props };
+
+  switch (name) {
+    case 'search':
+      return (
+        <svg {...common}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.3-4.3m1.3-5.2a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      );
+    case 'eye':
+      return (
+        <svg {...common}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      );
+    case 'x':
+      return (
+        <svg {...common}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+};
+
+const cn = (...classes) => classes.filter(Boolean).join(' ');
+
+const formatDate = (dateValue) => {
+  if (!dateValue) return '—';
+  const d = dateValue instanceof Date ? dateValue : new Date(dateValue);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' });
+};
+
+const formatSalary = (min, max) => {
+  const hasMin = Number.isFinite(Number(min));
+  const hasMax = Number.isFinite(Number(max));
+
+  if (!hasMin && !hasMax) return '—';
+
+  const peso = new Intl.NumberFormat('en-PH', {
+    style: 'currency',
+    currency: 'PHP',
+    maximumFractionDigits: 0,
+  });
+
+  if (hasMin && hasMax) return `${peso.format(Number(min))} - ${peso.format(Number(max))}`;
+  if (hasMin) return `${peso.format(Number(min))}+`;
+  return `Up to ${peso.format(Number(max))}`;
+};
+
+const useDebouncedValue = (value, delay = 250) => {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+
+  return debounced;
+};
+
+const HiredApplicants = () => {
+  const navigate = useNavigate();
+  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+  const [applications, setApplications] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [jobsLoading, setJobsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const [query, setQuery] = useState('');
+  const [selectedJob, setSelectedJob] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('recent');
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const [brokenAvatars, setBrokenAvatars] = useState(() => new Set());
+
+  const debouncedQuery = useDebouncedValue(query, 250);
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return { Authorization: `Bearer ${token}` };
+  };
+
+  const handleAuthError = useCallback(() => {
+    localStorage.removeItem('token');
+    navigate('/employer/login');
+  }, [navigate]);
+
+  const getImageUrl = useCallback(
+    (url) => {
+      if (!url) return '';
+      if (url.startsWith('http')) return url;
+      return `${API_BASE}${url}`;
+    },
+    [API_BASE]
+  );
+
+  const markBroken = useCallback((key) => {
+    setBrokenAvatars((prev) => {
+      const next = new Set(prev);
+      next.add(String(key));
+      return next;
+    });
+  }, []);
+
+  const buildApplicantName = useCallback((u) => {
+    const full = (u?.fullName || '').trim();
+    if (full) return full;
+
+    const parts = [u?.firstName, u?.middleName, u?.lastName]
+      .map((p) => (p || '').trim())
+      .filter(Boolean);
+
+    if (parts.length) return parts.join(' ');
+
+    const email = (u?.email || '').trim();
+    if (email && email.includes('@')) return email.split('@')[0];
+
+    return 'Applicant';
+  }, []);
+
+  const Avatar = useCallback(
+    ({ img, name, size = 48, altKey }) => {
+      const initial = (name?.trim()?.[0] || 'U').toUpperCase();
+      const src = img ? getImageUrl(img) : '';
+      const isBroken = brokenAvatars.has(String(altKey));
+      const boxStyle = { height: `${size}px`, width: `${size}px` };
+
+      return (
+        <div
+          className="flex items-center justify-center rounded-full border border-gray-200 bg-gray-100 overflow-hidden shrink-0"
+          style={boxStyle}
+        >
+          {src && !isBroken ? (
+            <img
+              src={src}
+              alt={`${name}'s profile`}
+              className="h-full w-full object-cover"
+              loading="lazy"
+              onError={() => markBroken(altKey)}
+            />
+          ) : (
+            <span className="text-sm font-bold text-gray-700">{initial}</span>
+          )}
+        </div>
+      );
+    },
+    [brokenAvatars, getImageUrl, markBroken]
+  );
+
+  const fetchJobs = useCallback(async () => {
+    try {
+      setJobsLoading(true);
+
+      const res = await axios.get('http://localhost:5000/api/jobs/employer/my-jobs', {
+        headers: getAuthHeaders(),
+      });
+
+      if (res.data?.success) {
+        setJobs(res.data.jobs || []);
+      } else {
+        setJobs([]);
+      }
+    } catch (err) {
+      console.error(err);
+      if (err.response?.status === 401) return handleAuthError();
+      setJobs([]);
+    } finally {
+      setJobsLoading(false);
+    }
+  }, [handleAuthError]);
+
+  const fetchHiredApplicants = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      const params = {};
+      if (selectedJob !== 'all') params.jobId = selectedJob;
+
+      const res = await axios.get('http://localhost:5000/api/applications/employer/hired', {
+        headers: getAuthHeaders(),
+        params,
+      });
+
+      if (res.data?.success) {
+        setApplications(res.data.applications || []);
+      } else {
+        setApplications([]);
+      }
+    } catch (err) {
+      console.error(err);
+      if (err.response?.status === 401) return handleAuthError();
+      setError('Failed to load hired applicants.');
+      setApplications([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [handleAuthError, selectedJob]);
+
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
+
+  useEffect(() => {
+    fetchHiredApplicants();
+  }, [fetchHiredApplicants]);
+
+  const filteredApplications = useMemo(() => {
+    const q = debouncedQuery.trim().toLowerCase();
+
+    const searched = !q
+      ? applications
+      : applications.filter((a) => {
+          const name = buildApplicantName(a.jobseeker).toLowerCase();
+          const email = String(a.jobseeker?.email || '').toLowerCase();
+          const jobTitle = String(a.job?.title || '').toLowerCase();
+          return [name, email, jobTitle].some((v) => v.includes(q));
+        });
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const startOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+
+    const dayOfWeek = now.getDay();
+    const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset);
+    const startOfNextWeek = new Date(startOfWeek);
+    startOfNextWeek.setDate(startOfWeek.getDate() + 7);
+
+    const sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const thirtyDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const startOfNextYear = new Date(now.getFullYear() + 1, 0, 1);
+
+    const filteredByDate = searched.filter((a) => {
+      if (dateFilter === 'all') return true;
+
+      const appliedDate = new Date(a.appliedAt || 0);
+      if (Number.isNaN(appliedDate.getTime())) return false;
+
+      if (dateFilter === 'today') {
+        return appliedDate >= startOfToday && appliedDate < startOfTomorrow;
+      }
+
+      if (dateFilter === 'yesterday') {
+        return appliedDate >= startOfYesterday && appliedDate < startOfToday;
+      }
+
+      if (dateFilter === 'this_week') {
+        return appliedDate >= startOfWeek && appliedDate < startOfNextWeek;
+      }
+
+      if (dateFilter === 'last_7_days') {
+        return appliedDate >= sevenDaysAgo && appliedDate < startOfTomorrow;
+      }
+
+      if (dateFilter === 'this_month') {
+        return appliedDate >= startOfMonth && appliedDate < startOfNextMonth;
+      }
+
+      if (dateFilter === 'last_30_days') {
+        return appliedDate >= thirtyDaysAgo && appliedDate < startOfTomorrow;
+      }
+
+      if (dateFilter === 'this_year') {
+        return appliedDate >= startOfYear && appliedDate < startOfNextYear;
+      }
+
+      if (dateFilter === 'last_year') {
+        const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
+        const startOfThisYear = new Date(now.getFullYear(), 0, 1);
+        return appliedDate >= startOfLastYear && appliedDate < startOfThisYear;
+      }
+
+      return true;
+    });
+
+    const getSalaryValue = (app) => Math.max(Number(app.job?.salaryMax) || 0, Number(app.job?.salaryMin) || 0);
+    const getExpiryValue = (app) => {
+      const expiry = app.job?.expiryDate || app.job?.expiresAt || app.job?.deadline || app.job?.applicationDeadline || app.job?.validUntil;
+      const time = new Date(expiry || 0).getTime();
+      return Number.isNaN(time) || time === 0 ? Number.MAX_SAFE_INTEGER : time;
+    };
+
+    const sorted = [...filteredByDate].sort((a, b) => {
+      if (sortBy === 'salary_desc') return getSalaryValue(b) - getSalaryValue(a);
+      if (sortBy === 'expiry_soonest') return getExpiryValue(a) - getExpiryValue(b);
+
+      const da = new Date(a.appliedAt || 0).getTime();
+      const db = new Date(b.appliedAt || 0).getTime();
+      return db - da;
+    });
+
+    return sorted;
+  }, [applications, buildApplicantName, dateFilter, debouncedQuery, sortBy]);
+
+  const clearFilters = () => {
+    setQuery('');
+    setSelectedJob('all');
+    setDateFilter('all');
+    setSortBy('recent');
+  };
+
+  const jobOptions = useMemo(() => {
+    return [
+      { value: 'all', label: 'All Jobs' },
+      ...jobs.map((j) => ({
+        value: j._id,
+        label: j.title || '(Untitled)',
+      })),
+    ];
+  }, [jobs]);
+
+  const dateFilterOptions = [
+    { value: 'all', label: 'Overall' },
+    { value: 'today', label: 'Today' },
+    { value: 'yesterday', label: 'Yesterday' },
+    { value: 'this_week', label: 'This Week' },
+    { value: 'last_7_days', label: 'Last 7 Days' },
+    { value: 'this_month', label: 'This Month' },
+    { value: 'last_30_days', label: 'Last 30 Days' },
+    { value: 'this_year', label: 'This Year' },
+    { value: 'last_year', label: 'Last Year' },
+  ];
+
+  const sortOptions = [
+    { value: 'salary_desc', label: 'Salary Highest to Lowest' },
+    { value: 'expiry_soonest', label: 'Expiry Date Soonest to Latest' },
+    { value: 'recent', label: 'Most Recent Newest to Oldest' },
+  ];
+
+  const hasActiveFilters =
+    query.trim() || selectedJob !== 'all' || dateFilter !== 'all' || sortBy !== 'recent';
+
+  const DropdownFilter = ({ id, label, value, onChange, options, disabled }) => {
+    const isOpen = openDropdown === id;
+
+    return (
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setOpenDropdown(isOpen ? null : id)}
+          className="inline-flex h-[54px] w-full min-w-[105px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
+          disabled={disabled}
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
+        >
+          <span>{label}</span>
+          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.25a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clipRule="evenodd" />
+          </svg>
+        </button>
+
+        {isOpen && (
+          <div className="absolute right-0 z-[9999] mt-2 w-64 overflow-hidden rounded-xl border border-gray-200 bg-white py-2 shadow-xl">
+            <div className="px-4 py-2 text-sm font-semibold text-gray-900">{label}</div>
+            {options.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => {
+                  onChange(option.value);
+                  setOpenDropdown(null);
+                }}
+                className={cn(
+                  'block w-full px-4 py-2 text-left text-sm hover:bg-gray-100',
+                  value === option.value ? 'font-semibold text-[#0b5bd3]' : 'font-medium text-gray-800'
+                )}
+                role="option"
+                aria-selected={value === option.value}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const inputBase =
+  'h-[54px] w-full rounded-xl border border-gray-300 pl-11 pr-10 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60';
+
+const selectBase =
+  'h-[54px] w-full rounded-xl border border-gray-300 px-4 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60';
+
+  return (
+    <EmployerLayout>
+      <div className="mx-auto max-w-7xl px-1 py-8">
+        <div className="mb-6">
+          <h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">Hired Applicants</h1>
+          <p className="mt-1 text-sm text-gray-600">Applicants successfully hired and officially joined company</p>
+        </div>
+
+        {error && (
+          <div
+            className="mb-5 flex items-start justify-between gap-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-900"
+            role="alert"
+            aria-live="assertive"
+          >
+            <div className="min-w-0">{error}</div>
+            <button
+              type="button"
+              onClick={() => setError('')}
+              className="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
+              aria-label="Dismiss message"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {/* Filters */}
+        <div className="relative z-20 mb-6 overflow-visible rounded-[22px] border border-gray-300 bg-[#ffffff] shadow-sm">
+          <div className="overflow-visible p-5">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
+              <div className="lg:col-span-5">
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-4 top-3.5 text-gray-400">
+                    <Icon name="search" className="h-5 w-5" />
+                  </span>
+
+                  <label className="sr-only" htmlFor="hiredSearch">
+                    Search hired applicants
+                  </label>
+                  <input
+                    id="hiredSearch"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className={inputBase}
+                    placeholder="Search applicant, email, job title..."
+                    disabled={loading}
+                    autoComplete="off"
+                  />
+
+                  {query && (
+                    <button
+                      type="button"
+                      onClick={() => setQuery('')}
+                      className="absolute right-3 top-3.5 rounded-lg p-1 text-gray-500 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                      aria-label="Clear search"
+                    >
+                      <Icon name="x" className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="lg:col-span-3">
+                <label className="sr-only" htmlFor="jobFilter">
+                  Filter by job
+                </label>
+                <select
+                  id="jobFilter"
+                  value={selectedJob}
+                  onChange={(e) => setSelectedJob(e.target.value)}
+                  className={selectBase}
+                  disabled={jobsLoading}
+                >
+                  {jobOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="lg:col-span-2">
+                <DropdownFilter
+                  id="dateFilter"
+                  label="Filter By"
+                  value={dateFilter}
+                  onChange={setDateFilter}
+                  options={dateFilterOptions}
+                  disabled={loading}
+                />
+              </div>
+
+              <div className="lg:col-span-2">
+                <DropdownFilter
+                  id="sortFilter"
+                  label="Sort By"
+                  value={sortBy}
+                  onChange={setSortBy}
+                  options={sortOptions}
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600">
+              <div>
+                Showing <span className="font-semibold text-gray-800">{filteredApplications.length}</span> result(s).
+              </div>
+
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="overflow-hidden rounded-[22px] border border-gray-300 bg-white shadow-sm">
+          {loading ? (
+            <div className="py-14 text-center" role="status" aria-live="polite">
+              <div className="mx-auto inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-[#2e66a6]" />
+              <p className="mt-4 text-sm text-gray-600">Loading hired applicants…</p>
+            </div>
+          ) : filteredApplications.length === 0 ? (
+            <div className="py-14 text-center">
+              <h3 className="text-lg font-semibold text-gray-900">No hired applicants found</h3>
+              <p className="mt-2 text-sm text-gray-600">Try changing filters or search.</p>
+            </div>
+          ) : (
+            <>
+              {/* Desktop */}
+              <div className="hidden overflow-x-auto md:block">
+                <table className="min-w-full">
+                  <thead className="border-b border-gray-200 bg-[#fafafa]">
+                    <tr>
+                      <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
+                        Applicant
+                      </th>
+                      <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
+                        Job Applied
+                      </th>
+                      <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
+                        Applied Date
+                      </th>
+                      <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
+                        Salary
+                      </th>
+                      <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {filteredApplications.map((app) => {
+                      const name = buildApplicantName(app.jobseeker);
+                      const email = app.jobseeker?.email || '—';
+                      const jobTitle = app.job?.title || '—';
+                      const salaryText = formatSalary(app.job?.salaryMin, app.job?.salaryMax);
+
+                      return (
+                        <tr key={app._id} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-4">
+                              <Avatar
+                                img={app.jobseeker?.profileImage}
+                                name={name}
+                                size={48}
+                                altKey={`hired_${app._id}`}
+                              />
+                              <div className="min-w-0">
+                                <div className="truncate text-[15px] font-semibold text-gray-900">{name}</div>
+                                <div className="truncate text-sm text-gray-500">{email}</div>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="px-6 py-4">
+                            <div className="text-[15px] font-semibold text-gray-900">{jobTitle}</div>
+                            <div className="text-sm text-gray-500">{app.job?.companyName || '—'}</div>
+                          </td>
+
+                          <td className="px-6 py-4 text-[15px] text-gray-700">
+                            {formatDate(app.appliedAt)}
+                          </td>
+
+                          <td className="px-6 py-4 text-sm font-medium text-gray-800">
+                            {salaryText}
+                          </td>
+
+                          <td className="px-6 py-4">
+                            <Link
+                              to={`/employer/application/${app._id}`}
+                              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                              aria-label={`View details of ${name}`}
+                            >
+                              <Icon name="eye" className="h-4 w-4" />
+                              <span>View Application</span>
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile */}
+              <div className="space-y-3 p-4 md:hidden">
+                {filteredApplications.map((app) => {
+                  const name = buildApplicantName(app.jobseeker);
+                  const email = app.jobseeker?.email || '—';
+                  const jobTitle = app.job?.title || '—';
+                  const salaryText = formatSalary(app.job?.salaryMin, app.job?.salaryMax);
+
+                  return (
+                    <div key={app._id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                      <div className="flex items-start gap-3">
+                        <Avatar
+                          img={app.jobseeker?.profileImage}
+                          name={name}
+                          size={46}
+                          altKey={`hired_mobile_${app._id}`}
+                        />
+
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-semibold text-gray-900">{name}</div>
+                          <div className="truncate text-xs text-gray-600">{email}</div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 space-y-2 rounded-xl bg-gray-50 p-3">
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Job Applied</p>
+                          <p className="text-sm font-semibold text-gray-900">{jobTitle}</p>
+                        </div>
+
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Applied Date</p>
+                          <p className="text-sm text-gray-800">{formatDate(app.appliedAt)}</p>
+                        </div>
+
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Salary</p>
+                          <p className="text-sm text-gray-800">{salaryText}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3">
+                        <Link
+                          to={`/employer/application/${app._id}`}
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                        >
+                          <Icon name="eye" className="h-5 w-5" />
+                          View details
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </EmployerLayout>
+  );
+};
+
+export default HiredApplicants;
