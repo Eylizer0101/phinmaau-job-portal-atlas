@@ -1,7 +1,6 @@
 const multer = require('multer');
 const path = require('path');
 const { v2: cloudinary } = require('cloudinary');
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 const ALLOWED_ALUMNI_DOC_TYPES = ['cv', 'tor', 'diploma', 'sss', 'philhealth', 'pagibig', 'tin', 'validId'];
 const ALLOWED_EMPLOYER_DOC_TYPES = ['secRegistration', 'birRegistration', 'dtiRegistration', 'cityPermit', 'businessPermit'];
@@ -47,16 +46,6 @@ const getOwnerId = (req) => String(req.user?._id || req.body?.userId || 'anon');
 const getEmailPrefix = (req, fallback = 'user') =>
   sanitizePublicIdPart(req.body?.businessEmail || req.body?.email || fallback, fallback);
 
-const getCloudinaryStorage = ({ folderResolver, publicIdResolver, resourceType = 'auto' }) =>
-  new CloudinaryStorage({
-    cloudinary,
-    params: async (req, file) => ({
-      folder: `${CLOUDINARY_ROOT_FOLDER}/${folderResolver(req, file)}`,
-      public_id: publicIdResolver(req, file),
-      resource_type: resourceType,
-    }),
-  });
-
 const createUniquePublicId = (prefix, file) => {
   const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
   const original = sanitizePublicIdPart(path.parse(file.originalname || 'file').name, 'file');
@@ -86,42 +75,118 @@ const getResubmitDocConfig = (docType) => {
   return null;
 };
 
-const resumeStorage = getCloudinaryStorage({
+const uploadBufferToCloudinary = ({ file, folder, publicId, resourceType = 'auto' }) =>
+  new Promise((resolve, reject) => {
+    if (!isCloudinaryConfigured()) {
+      return reject(new Error('Cloudinary is not fully configured.'));
+    }
+
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: `${CLOUDINARY_ROOT_FOLDER}/${folder}`,
+        public_id: publicId,
+        resource_type: resourceType,
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        return resolve(result);
+      }
+    );
+
+    uploadStream.end(file.buffer);
+  });
+
+const createCloudinaryStorage = ({ folderResolver, publicIdResolver, resourceType = 'auto' }) => ({
+  _handleFile: async (req, file, cb) => {
+    try {
+      const chunks = [];
+
+      file.stream.on('data', (chunk) => {
+        chunks.push(chunk);
+      });
+
+      file.stream.on('error', cb);
+
+      file.stream.on('end', async () => {
+        try {
+          const buffer = Buffer.concat(chunks);
+          const fileForUpload = {
+            ...file,
+            buffer,
+          };
+
+          const folder = folderResolver(req, fileForUpload);
+          const publicId = publicIdResolver(req, fileForUpload);
+
+          const result = await uploadBufferToCloudinary({
+            file: fileForUpload,
+            folder,
+            publicId,
+            resourceType,
+          });
+
+          cb(null, {
+            path: result.secure_url,
+            secure_url: result.secure_url,
+            url: result.secure_url,
+            filename: result.public_id,
+            public_id: result.public_id,
+            asset_id: result.asset_id,
+            bytes: result.bytes,
+            size: result.bytes || buffer.length,
+            format: result.format,
+            resource_type: result.resource_type,
+            originalname: file.originalname,
+            mimetype: file.mimetype,
+          });
+        } catch (error) {
+          cb(error);
+        }
+      });
+    } catch (error) {
+      cb(error);
+    }
+  },
+
+  _removeFile: async (req, file, cb) => {
+    try {
+      if (file?.public_id) {
+        await cloudinary.uploader.destroy(file.public_id, {
+          resource_type: file.resource_type || 'image',
+        });
+      }
+
+      cb(null);
+    } catch (error) {
+      cb(error);
+    }
+  },
+});
+
+const resumeStorage = createCloudinaryStorage({
   folderResolver: () => 'resumes',
   publicIdResolver: (req, file) => createUniquePublicId(getOwnerId(req), file),
 });
 
-const logoStorage = getCloudinaryStorage({
+const logoStorage = createCloudinaryStorage({
   folderResolver: () => 'logos',
   publicIdResolver: (req, file) => createUniquePublicId(getOwnerId(req), file),
   resourceType: 'image',
 });
 
-const coverPhotoStorage = getCloudinaryStorage({
-  folderResolver: () => 'company-cover-photos',
-  publicIdResolver: (req, file) => createUniquePublicId(`${getOwnerId(req)}-cover`, file),
-  resourceType: 'image',
-});
-
-const galleryStorage = getCloudinaryStorage({
-  folderResolver: () => 'company-gallery',
-  publicIdResolver: (req, file) => createUniquePublicId(`${getOwnerId(req)}-gallery`, file),
-  resourceType: 'image',
-});
-
-const profileImageStorage = getCloudinaryStorage({
+const profileImageStorage = createCloudinaryStorage({
   folderResolver: () => 'profile-images',
   publicIdResolver: (req, file) => createUniquePublicId(getOwnerId(req), file),
   resourceType: 'image',
 });
 
-const jobLocationImageStorage = getCloudinaryStorage({
+const jobLocationImageStorage = createCloudinaryStorage({
   folderResolver: () => 'job-location-images',
   publicIdResolver: (req, file) => createUniquePublicId(`${getOwnerId(req)}-location`, file),
   resourceType: 'image',
 });
 
-const alumniVerificationStorage = getCloudinaryStorage({
+const alumniVerificationStorage = createCloudinaryStorage({
   folderResolver: (req) => {
     const docType = req.params.docType || 'tor';
     if (!ALLOWED_ALUMNI_DOC_TYPES.includes(docType)) throw new Error('Invalid document type');
@@ -133,7 +198,7 @@ const alumniVerificationStorage = getCloudinaryStorage({
   },
 });
 
-const alumniResubmitStorage = getCloudinaryStorage({
+const alumniResubmitStorage = createCloudinaryStorage({
   folderResolver: (req) => {
     const docType = String(req.body?.docType || '').trim();
     const config = getResubmitDocConfig(docType);
@@ -148,7 +213,7 @@ const alumniResubmitStorage = getCloudinaryStorage({
   },
 });
 
-const registerDocsStorage = getCloudinaryStorage({
+const registerDocsStorage = createCloudinaryStorage({
   folderResolver: (req, file) => {
     const allowedFields = ['cv', 'diploma', 'validId', 'tor', 'sss', 'philhealth', 'pagibig', 'tin'];
     const field = String(file.fieldname || '').trim();
@@ -161,7 +226,7 @@ const registerDocsStorage = getCloudinaryStorage({
   },
 });
 
-const employerVerificationStorage = getCloudinaryStorage({
+const employerVerificationStorage = createCloudinaryStorage({
   folderResolver: (req) => {
     const docType = req.params.docType || 'secRegistration';
     const folder = EMPLOYER_DOC_FOLDER_MAP[docType] || 'sec';
@@ -173,7 +238,7 @@ const employerVerificationStorage = getCloudinaryStorage({
   },
 });
 
-const employerRegisterDocsStorage = getCloudinaryStorage({
+const employerRegisterDocsStorage = createCloudinaryStorage({
   folderResolver: (req, file) => {
     const allowedFields = ['secRegistration', 'birRegistration', 'dtiRegistration', 'cityPermit', 'businessPermit', 'companyLogo'];
     const field = String(file.fieldname || '').trim();
@@ -190,7 +255,7 @@ const employerRegisterDocsStorage = getCloudinaryStorage({
   },
 });
 
-const employerCompanyMediaStorage = getCloudinaryStorage({
+const employerCompanyMediaStorage = createCloudinaryStorage({
   folderResolver: (req, file) => {
     if (file.fieldname === 'companyLogo') return 'logos';
     if (file.fieldname === 'coverPhotoFile') return 'company-cover-photos';
