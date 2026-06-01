@@ -1195,12 +1195,14 @@ exports.updateEmployerVerificationStatus = async (req, res) => {
 
       await employer.save();
 
-      await sendCredentialsEmail({
+      sendCredentialsEmail({
         to: employer.email,
         fullName: employer.fullName || employer.email,
         username: newUsername,
         password: tempPassword,
         role: 'Employer',
+      }).catch((emailError) => {
+        console.error('Failed to send employer credentials email:', emailError);
       });
 
       return res.status(200).json({
@@ -1222,11 +1224,13 @@ exports.updateEmployerVerificationStatus = async (req, res) => {
     await employer.save();
 
     if (overallStatus === 'rejected') {
-      await sendVerificationRejectedEmail({
+      sendVerificationRejectedEmail({
         to: employer.email,
         fullName: employer.employerProfile?.companyName || employer.fullName || employer.email,
         reasons: employer.employerProfile.verificationDocs.rejectionReasons || [],
         message: employer.employerProfile.verificationDocs.rejectionMessage || '',
+      }).catch((emailError) => {
+        console.error('Failed to send employer rejection email:', emailError);
       });
     }
 
@@ -1313,15 +1317,17 @@ exports.holdEmployerVerification = async (req, res) => {
 
     await employer.save();
 
-    const frontendUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:3000';
+    const frontendUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://phinmaau-job-portal-atlas-1.onrender.com';
     const resubmitUrl = `${frontendUrl}/resubmit-document?token=${rawToken}`;
 
-    await sendResubmitDocumentEmail({
+    sendResubmitDocumentEmail({
       to: employer.email,
       fullName: employer.fullName || employer.email,
       docLabel: EMPLOYER_DOC_LABELS[docType] || docType,
       reasonMessage: String(reasonMessage).trim(),
       resubmitUrl,
+    }).catch((emailError) => {
+      console.error('Failed to send employer resubmit email:', emailError);
     });
 
     res.status(200).json({
@@ -1862,12 +1868,14 @@ exports.updateJobseekerVerificationStatus = async (req, res) => {
 
       await jobseeker.save();
 
-      await sendCredentialsEmail({
+      sendCredentialsEmail({
         to: jobseeker.email,
         fullName: jobseeker.fullName || jobseeker.email,
         username: finalUsername,
         password: tempPassword,
         role: 'Jobseeker',
+      }).catch((emailError) => {
+        console.error('Failed to send jobseeker credentials email:', emailError);
       });
 
       return res.status(200).json({
@@ -1892,11 +1900,13 @@ exports.updateJobseekerVerificationStatus = async (req, res) => {
     await jobseeker.save();
 
     if (overallStatus === 'rejected') {
-      await sendVerificationRejectedEmail({
+      sendVerificationRejectedEmail({
         to: jobseeker.email,
         fullName: jobseeker.fullName || jobseeker.email,
         reasons: jobseeker.jobSeekerProfile.verificationDocs.rejectionReasons || [],
         message: jobseeker.jobSeekerProfile.verificationDocs.rejectionMessage || '',
+      }).catch((emailError) => {
+        console.error('Failed to send jobseeker rejection email:', emailError);
       });
     }
 
@@ -1990,15 +2000,17 @@ exports.holdJobseekerVerification = async (req, res) => {
 
     await jobseeker.save();
 
-    const frontendUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:3000';
+    const frontendUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://phinmaau-job-portal-atlas-1.onrender.com';
     const resubmitUrl = `${frontendUrl}/resubmit-document?token=${rawToken}`;
 
-    await sendResubmitDocumentEmail({
+    sendResubmitDocumentEmail({
       to: jobseeker.email,
       fullName: jobseeker.fullName || jobseeker.email,
       docLabel: JOBSEEKER_DOC_LABELS[docType] || docType,
       reasonMessage: String(reasonMessage).trim(),
       resubmitUrl,
+    }).catch((emailError) => {
+      console.error('Failed to send jobseeker resubmit email:', emailError);
     });
 
     res.status(200).json({
