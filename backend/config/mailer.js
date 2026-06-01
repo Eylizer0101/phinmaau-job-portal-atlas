@@ -1,15 +1,20 @@
 // backend/config/mailer.js
 const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport({
-  host: process.env.BREVO_SMTP_HOST || process.env.EMAIL_HOST,
-  port: Number(process.env.BREVO_SMTP_PORT || process.env.EMAIL_PORT),
-  secure: Number(process.env.BREVO_SMTP_PORT || process.env.EMAIL_PORT) === 465,
-  auth: {
-    user: process.env.BREVO_SMTP_USERNAME || process.env.EMAIL_USER,
-    pass: process.env.BREVO_SMTP_PASSWORD || process.env.EMAIL_PASS,
-  },
-});
+const createTransporter = () => {
+  return nodemailer.createTransport({
+    host: process.env.BREVO_SMTP_HOST || process.env.EMAIL_HOST,
+    port: Number(process.env.BREVO_SMTP_PORT || process.env.EMAIL_PORT || 587),
+    secure: Number(process.env.BREVO_SMTP_PORT || process.env.EMAIL_PORT || 587) === 465,
+    auth: {
+      user: process.env.BREVO_SMTP_USERNAME || process.env.EMAIL_USER,
+      pass: process.env.BREVO_SMTP_PASSWORD || process.env.EMAIL_PASS,
+    },
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
+  });
+};
 
 const escapeHtml = (unsafe) => {
   return String(unsafe || '')
@@ -18,6 +23,61 @@ const escapeHtml = (unsafe) => {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+};
+
+const getSender = () => {
+  const email = process.env.BREVO_FROM_EMAIL || process.env.EMAIL_USER;
+  const name = process.env.BREVO_FROM_NAME || 'AGAPAY';
+
+  if (!email) {
+    throw new Error('Sender email missing. Set BREVO_FROM_EMAIL or EMAIL_USER.');
+  }
+
+  return { email, name };
+};
+
+const getFromHeader = () => {
+  const sender = getSender();
+  return `"${sender.name}" <${sender.email}>`;
+};
+
+const sendMail = async ({ to, subject, html }) => {
+  if (!to) throw new Error('Recipient email missing');
+
+  const sender = getSender();
+
+  if (process.env.BREVO_API_KEY) {
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'api-key': process.env.BREVO_API_KEY,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        sender,
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Brevo API email failed: ${response.status} ${errorText}`);
+    }
+
+    return;
+  }
+
+  const transporter = createTransporter();
+
+  await transporter.sendMail({
+    from: getFromHeader(),
+    to,
+    subject,
+    html,
+  });
 };
 
 const sendCredentialsEmail = async ({ to, fullName, username, password, role }) => {
@@ -31,11 +91,7 @@ const sendCredentialsEmail = async ({ to, fullName, username, password, role }) 
   const appUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://phinmaau-job-portal-atlas-1.onrender.com';
   const loginUrl = `${appUrl}/login`;
 
-  const mailOptions = {
-    from:
-      process.env.BREVO_FROM_EMAIL && process.env.BREVO_FROM_NAME
-        ? `"${process.env.BREVO_FROM_NAME}" <${process.env.BREVO_FROM_EMAIL}>`
-        : process.env.EMAIL_FROM,
+  await sendMail({
     to,
     subject: `AGAPAY Account Approved`,
     html: `
@@ -86,9 +142,7 @@ const sendCredentialsEmail = async ({ to, fullName, username, password, role }) 
         </div>
       </div>
     `,
-  };
-
-  await transporter.sendMail(mailOptions);
+  });
 };
 
 const sendPasswordResetEmail = async ({ to, fullName, resetUrl, expiresInMinutes }) => {
@@ -98,11 +152,7 @@ const sendPasswordResetEmail = async ({ to, fullName, resetUrl, expiresInMinutes
   const safeResetUrl = escapeHtml(resetUrl);
   const safeExpiry = escapeHtml(expiresInMinutes);
 
-  const mailOptions = {
-    from:
-      process.env.BREVO_FROM_EMAIL && process.env.BREVO_FROM_NAME
-        ? `"${process.env.BREVO_FROM_NAME}" <${process.env.BREVO_FROM_EMAIL}>`
-        : process.env.EMAIL_FROM,
+  await sendMail({
     to,
     subject: 'AGAPAY Password Reset Request',
     html: `
@@ -152,9 +202,7 @@ const sendPasswordResetEmail = async ({ to, fullName, resetUrl, expiresInMinutes
         </div>
       </div>
     `,
-  };
-
-  await transporter.sendMail(mailOptions);
+  });
 };
 
 const sendResubmitDocumentEmail = async ({ to, fullName, docLabel, reasonMessage, resubmitUrl }) => {
@@ -165,11 +213,7 @@ const sendResubmitDocumentEmail = async ({ to, fullName, docLabel, reasonMessage
   const safeReason = escapeHtml(reasonMessage || 'Please upload a clearer and valid document.');
   const safeResubmitUrl = escapeHtml(resubmitUrl);
 
-  const mailOptions = {
-    from:
-      process.env.BREVO_FROM_EMAIL && process.env.BREVO_FROM_NAME
-        ? `"${process.env.BREVO_FROM_NAME}" <${process.env.BREVO_FROM_EMAIL}>`
-        : process.env.EMAIL_FROM,
+  await sendMail({
     to,
     subject: 'AGAPAY Document Resubmission Request',
     html: `
@@ -225,9 +269,7 @@ const sendResubmitDocumentEmail = async ({ to, fullName, docLabel, reasonMessage
         </div>
       </div>
     `,
-  };
-
-  await transporter.sendMail(mailOptions);
+  });
 };
 
 const sendVerificationRejectedEmail = async ({ to, fullName, reasons = [], message = '' }) => {
@@ -252,11 +294,7 @@ const sendVerificationRejectedEmail = async ({ to, fullName, reasons = [], messa
     `
     : '';
 
-  const mailOptions = {
-    from:
-      process.env.BREVO_FROM_EMAIL && process.env.BREVO_FROM_NAME
-        ? `"${process.env.BREVO_FROM_NAME}" <${process.env.BREVO_FROM_EMAIL}>`
-        : process.env.EMAIL_FROM,
+  await sendMail({
     to,
     subject: 'Verification Request Rejected',
     html: `
@@ -295,9 +333,7 @@ const sendVerificationRejectedEmail = async ({ to, fullName, reasons = [], messa
         </div>
       </div>
     `,
-  };
-
-  await transporter.sendMail(mailOptions);
+  });
 };
 
 const sendSettingsEmailVerificationCode = async ({ to, fullName, code, expiresInMinutes = 10 }) => {
@@ -307,11 +343,7 @@ const sendSettingsEmailVerificationCode = async ({ to, fullName, code, expiresIn
   const safeCode = escapeHtml(code);
   const safeExpiry = escapeHtml(expiresInMinutes);
 
-  const mailOptions = {
-    from:
-      process.env.BREVO_FROM_EMAIL && process.env.BREVO_FROM_NAME
-        ? `"${process.env.BREVO_FROM_NAME}" <${process.env.BREVO_FROM_EMAIL}>`
-        : process.env.EMAIL_FROM,
+  await sendMail({
     to,
     subject: 'AGAPAY Email Verification Code',
     html: `
@@ -328,9 +360,7 @@ const sendSettingsEmailVerificationCode = async ({ to, fullName, code, expiresIn
         </div>
       </div>
     `,
-  };
-
-  await transporter.sendMail(mailOptions);
+  });
 };
 
 module.exports = {
