@@ -327,17 +327,32 @@ app.use('*', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(' Server Error:', err.stack);
+  console.error(' Server Error Details:', {
+    message: err?.message,
+    code: err?.code,
+    name: err?.name,
+    stack: err?.stack,
+  });
 
   if (err.code === 'LIMIT_FILE_SIZE') {
     return res.status(400).json({
       message: 'File too large. Maximum size is 10MB for resumes/docs, 5MB for images',
+      error: err.message,
+    });
+  }
+
+  if (err.name === 'MulterError') {
+    return res.status(400).json({
+      message: 'Upload error',
+      error: err.message,
+      code: err.code,
     });
   }
 
   res.status(500).json({
     message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+    error: err?.message || 'Unknown server error',
+    code: err?.code,
   });
 });
 
