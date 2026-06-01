@@ -352,5 +352,6 @@ app.listen(PORT, () => {
   console.log(` Health check: ${publicBaseUrl}/health`);
   console.log(` Frontend allowed origins: ${allowedOrigins.join(', ')}`);
   console.log(` Uploads available at: ${publicBaseUrl}/uploads/`);
+  console.log(` Cloudinary configured: ${process.env.CLOUDINARY_CLOUD_NAME ? 'YES' : 'NO'}`);
   console.log(` Admin API: ${publicBaseUrl}/api/admin/users`);
 });

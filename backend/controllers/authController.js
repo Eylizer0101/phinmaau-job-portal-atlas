@@ -25,6 +25,18 @@ const makePublicUrl = (req, relativePath) => {
   return `${base}${relativePath}`;
 };
 
+const getUploadedFileUrl = (req, file, fallbackRelativePath) => {
+  if (file?.path && /^https?:\/\//i.test(file.path)) {
+    return file.path;
+  }
+
+  if (file?.secure_url && /^https?:\/\//i.test(file.secure_url)) {
+    return file.secure_url;
+  }
+
+  return makePublicUrl(req, fallbackRelativePath);
+};
+
 const boolFromBody = (v) => String(v || '').toLowerCase() === 'true';
 
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
@@ -201,7 +213,7 @@ const buildAlumniDocMeta = (req, file, fieldName) => {
   if (!file) return null;
   const rel = `/uploads/verification/alumni/${fieldName}/${file.filename}`;
   return {
-    url: makePublicUrl(req, rel),
+    url: getUploadedFileUrl(req, file, rel),
     status: 'pending',
     uploadedAt: new Date(),
     filename: file.originalname,
@@ -215,7 +227,7 @@ const buildEmployerDocMeta = (req, file, folder) => {
   if (!file) return null;
   const rel = `/uploads/verification/employer/${folder}/${file.filename}`;
   return {
-    url: makePublicUrl(req, rel),
+    url: getUploadedFileUrl(req, file, rel),
     status: 'pending',
     uploadedAt: new Date(),
     filename: file.originalname,
@@ -277,13 +289,13 @@ const isStrongPassword = (value) => {
 // NEW helpers for employer media
 const buildEmployerCoverPhotoMeta = (req, file) => {
   if (!file) return '';
-  return makePublicUrl(req, `/uploads/company-cover-photos/${file.filename}`);
+  return getUploadedFileUrl(req, file, `/uploads/company-cover-photos/${file.filename}`);
 };
 
 const buildEmployerGalleryImageMeta = (req, file) => {
   if (!file) return null;
   return {
-    url: makePublicUrl(req, `/uploads/company-gallery/${file.filename}`),
+    url: getUploadedFileUrl(req, file, `/uploads/company-gallery/${file.filename}`),
     caption: '',
     uploadedAt: new Date(),
   };
@@ -685,7 +697,7 @@ exports.registerEmployer = async (req, res) => {
     let companyLogoUrl = '';
     if (files?.companyLogo?.[0]) {
       const logoRel = `/uploads/logos/${files.companyLogo[0].filename}`;
-      companyLogoUrl = makePublicUrl(req, logoRel);
+      companyLogoUrl = getUploadedFileUrl(req, files.companyLogo[0], logoRel);
     }
 
     const userData = {
@@ -1346,7 +1358,7 @@ exports.uploadResume = async (req, res) => {
     if (!req.file) return res.status(400).json({ success: false, message: 'Please upload a resume file' });
 
     const resumeUrl = `/uploads/resumes/${req.file.filename}`;
-    const fullResumeUrl = makePublicUrl(req, resumeUrl);
+    const fullResumeUrl = getUploadedFileUrl(req, req.file, resumeUrl);
 
     const updatedUser = await User.findByIdAndUpdate(
       req.user._id,
@@ -1369,7 +1381,7 @@ exports.uploadProfileImage = async (req, res) => {
     if (!req.file) return res.status(400).json({ success: false, message: 'Please upload an image file' });
 
     const imageUrl = `/uploads/profile-images/${req.file.filename}`;
-    const fullImageUrl = makePublicUrl(req, imageUrl);
+    const fullImageUrl = getUploadedFileUrl(req, req.file, imageUrl);
 
     const updatedUser = await User.findByIdAndUpdate(req.user._id, { $set: { profileImage: fullImageUrl } }, { new: true }).select('-password');
 
@@ -1435,7 +1447,7 @@ exports.uploadAlumniVerificationDoc = async (req, res) => {
     if (!req.file) return res.status(400).json({ success: false, message: 'Please upload a file' });
 
     const docUrl = `/uploads/verification/alumni/${docType}/${req.file.filename}`;
-    const fullDocUrl = makePublicUrl(req, docUrl);
+    const fullDocUrl = getUploadedFileUrl(req, req.file, docUrl);
 
     const user = await User.findById(userId);
     const currentProfile = user.jobSeekerProfile || {};
@@ -1614,7 +1626,7 @@ exports.updateCompanyProfile = async (req, res) => {
 
     if (req.files?.companyLogo?.[0]) {
       const logoUrl = `/uploads/logos/${req.files.companyLogo[0].filename}`;
-      employerProfileUpdate.companyLogo = makePublicUrl(req, logoUrl);
+      employerProfileUpdate.companyLogo = getUploadedFileUrl(req, req.files.companyLogo[0], logoUrl);
     }
 
     if (req.files?.coverPhotoFile?.[0]) {
@@ -1659,7 +1671,7 @@ exports.uploadEmployerVerificationDoc = async (req, res) => {
     else if (docType === 'businessPermit') folder = 'business';
 
     const docUrl = `/uploads/verification/employer/${folder}/${req.file.filename}`;
-    const fullDocUrl = makePublicUrl(req, docUrl);
+    const fullDocUrl = getUploadedFileUrl(req, req.file, docUrl);
 
     const user = await User.findById(userId);
     const currentProfile = user.employerProfile || {};
@@ -2287,7 +2299,7 @@ exports.resubmitDocument = async (req, res) => {
 
       const verificationDocs = user.jobSeekerProfile.verificationDocs;
 
-      const fileUrl = makePublicUrl(req, `/uploads/verification/alumni/${docType}/${req.file.filename}`);
+      const fileUrl = getUploadedFileUrl(req, req.file, `/uploads/verification/alumni/${docType}/${req.file.filename}`);
 
       verificationDocs[docType] = {
         url: fileUrl,
@@ -2342,7 +2354,7 @@ exports.resubmitDocument = async (req, res) => {
         });
       }
 
-      const fileUrl = makePublicUrl(req, `/uploads/verification/employer/${folder}/${req.file.filename}`);
+      const fileUrl = getUploadedFileUrl(req, req.file, `/uploads/verification/employer/${folder}/${req.file.filename}`);
 
       verificationDocs[docType] = {
         url: fileUrl,
