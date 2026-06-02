@@ -2823,13 +2823,54 @@ exports.downloadResume = async (req, res) => {
     const fullName = resumeFullName(user) || 'Resume';
     const safeFileName = `${fullName.replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '') || 'Resume'}_CV.pdf`;
 
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    });
+    const launchOptions = {
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--no-zygote',
+        '--single-process',
+      ],
+    };
+
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+      launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    }
+
+    browser = await puppeteer.launch(launchOptions);
 
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+
+    page.setDefaultNavigationTimeout(60000);
+    page.setDefaultTimeout(60000);
+
+    await page.setViewport({
+      width: 1240,
+      height: 1754,
+      deviceScaleFactor: 1,
+    });
+
+    await page.setContent(html, {
+      waitUntil: 'domcontentloaded',
+      timeout: 60000,
+    });
+
+    try {
+      await page.evaluateHandle('document.fonts.ready');
+    } catch (fontError) {
+      console.warn('Resume PDF font loading warning:', fontError?.message || fontError);
+    }
+
+    try {
+      await page.waitForNetworkIdle({
+        idleTime: 500,
+        timeout: 10000,
+      });
+    } catch (networkError) {
+      console.warn('Resume PDF network idle warning:', networkError?.message || networkError);
+    }
 
     const pdf = await page.pdf({
       format: 'A4',
@@ -2849,14 +2890,23 @@ exports.downloadResume = async (req, res) => {
 
     return res.end(pdfBuffer);
   } catch (error) {
-    console.error('Error generating resume PDF:', error);
+    console.error('Error generating resume PDF:', {
+      message: error?.message,
+      name: error?.name,
+      stack: error?.stack,
+    });
+
     return res.status(500).json({
       success: false,
       message: error.message || 'Error generating resume PDF',
     });
   } finally {
     if (browser) {
-      await browser.close();
+      try {
+        await browser.close();
+      } catch (closeError) {
+        console.warn('Resume PDF browser close warning:', closeError?.message || closeError);
+      }
     }
   }
 };
