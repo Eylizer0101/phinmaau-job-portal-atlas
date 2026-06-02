@@ -240,7 +240,7 @@ export const PH_CITIES_BY_PROVINCE = {
     'Cabanatuan City',
     'Cabiao',
     'Carranglan',
-    'Cuuyapo',
+    'Cuyapo',
     'Gabaldon',
     'Gapan City',
     'General Mamerto Natividad',
@@ -488,6 +488,23 @@ export const PH_CITIES_BY_PROVINCE = {
     'Unisan',
   ],
 };
+
+
+
+// Ensures every province has a City / Municipality dropdown option.
+// Existing detailed city/municipality lists above will still be used first.
+const PH_CITY_FALLBACKS_BY_PROVINCE = Object.values(PH_PROVINCES_BY_REGION)
+  .flat()
+  .reduce((acc, province) => {
+    if (!acc[province]) acc[province] = [province];
+    return acc;
+  }, {});
+
+Object.entries(PH_CITY_FALLBACKS_BY_PROVINCE).forEach(([province, fallbackCities]) => {
+  if (!Array.isArray(PH_CITIES_BY_PROVINCE[province]) || PH_CITIES_BY_PROVINCE[province].length === 0) {
+    PH_CITIES_BY_PROVINCE[province] = fallbackCities;
+  }
+});
 
 // Backward compatibility for existing employer pages
 export const PH_CITIES_BY_REGION = {
