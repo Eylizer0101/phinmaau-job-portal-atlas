@@ -1365,15 +1365,19 @@ const MyProfile = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const storedApplyFlowState = useMemo(() => {
+  const getStoredApplyFlowState = () => {
     try {
       return JSON.parse(sessionStorage.getItem('pendingApplyFlow') || 'null') || {};
     } catch {
       return {};
     }
-  }, []);
+  };
 
-  const applyFlowState = location.state?.fromApplyFlow ? location.state : storedApplyFlowState;
+  const applyFlowState = useMemo(() => {
+    if (location.state?.fromApplyFlow) return location.state;
+    return getStoredApplyFlowState();
+  }, [location.state]);
+
   const isApplyFlow = Boolean(applyFlowState?.fromApplyFlow);
   const applyJob = applyFlowState?.applyJob || null;
   const returnTo = applyFlowState?.returnTo || '/jobseeker/job-search';
@@ -1780,6 +1784,7 @@ const MyProfile = () => {
       reopenApplyModal: true,
       reopenApplyStep: 1,
       applyJob,
+      flowKey: Date.now(),
     };
 
     try {
@@ -1796,6 +1801,7 @@ const MyProfile = () => {
       reopenApplyModal: true,
       reopenApplyStep: 3,
       applyJob,
+      flowKey: Date.now(),
     };
 
     try {

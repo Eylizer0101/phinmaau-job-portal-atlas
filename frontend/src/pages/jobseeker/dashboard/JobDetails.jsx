@@ -812,7 +812,7 @@ const JobDetails = () => {
     } catch {}
 
     navigate(location.pathname, { replace: true, state: { sourcePage } });
-  }, [job, location.state, location.pathname, navigate, sourcePage]);
+  }, [job, location.state, location.key, location.pathname, navigate, sourcePage]);
 
   const statusBadge = useMemo(() => {
     if (!hasApplied) return null;
