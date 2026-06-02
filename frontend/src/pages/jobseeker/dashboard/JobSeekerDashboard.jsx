@@ -1401,13 +1401,13 @@ const JobSeekerDashboard = () => {
                               </div>
                             </div>
 
-                            <div className="flex flex-wrap items-center gap-4 text-sm mb-4">
+                            <div className="flex flex-wrap items-center gap-4 text-sm mb-4 min-w-0">
                               {app.job?.location && (
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <div className="w-4 h-4 flex items-center justify-center text-gray-400">
-                                    <FontAwesomeIcon icon={faMapMarkerAlt} className="w-3.5 h-3.5" />
+                                <div className="flex items-center gap-2 text-gray-600 min-w-0 w-full max-w-full">
+                                  <div className="w-4 h-4 flex-shrink-0 flex items-center justify-center text-gray-400">
+                                    <FontAwesomeIcon icon={faMapMarkerAlt} className="w-3.5 h-3.5 flex-shrink-0" />
                                   </div>
-                                  <span className="leading-none">{formatLocationDisplay(app.job.location)}</span>
+                                  <span className="leading-none block min-w-0 max-w-full truncate">{formatLocationDisplay(app.job.location)}</span>
                                 </div>
                               )}
 
@@ -1594,9 +1594,9 @@ const JobSeekerDashboard = () => {
                         </div>
 
                         <div className="mt-4 rounded-xl p-4 bg-[#F8FAFC]">
-                          <div className="flex items-center gap-2 text-sm text-black">
+                          <div className="flex items-center gap-2 text-sm text-black min-w-0">
                             <svg
-                              className="w-4 h-4 text-gray-600"
+                              className="w-4 h-4 text-gray-600 flex-shrink-0"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -1615,7 +1615,7 @@ const JobSeekerDashboard = () => {
                                 d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                               />
                             </svg>
-                            <span className="truncate">{formatLocationDisplay(job.location)}</span>
+                            <span className="truncate min-w-0">{formatLocationDisplay(job.location)}</span>
                           </div>
 
                           <div className="mt-2 flex items-center gap-2 text-sm text-black">
