@@ -1365,7 +1365,15 @@ const MyProfile = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const applyFlowState = location.state || {};
+  const storedApplyFlowState = useMemo(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('pendingApplyFlow') || 'null') || {};
+    } catch {
+      return {};
+    }
+  }, []);
+
+  const applyFlowState = location.state?.fromApplyFlow ? location.state : storedApplyFlowState;
   const isApplyFlow = Boolean(applyFlowState?.fromApplyFlow);
   const applyJob = applyFlowState?.applyJob || null;
   const returnTo = applyFlowState?.returnTo || '/jobseeker/job-search';
@@ -1768,22 +1776,34 @@ const MyProfile = () => {
   };
 
   const handleApplyFlowBack = () => {
+    const reopenState = {
+      reopenApplyModal: true,
+      reopenApplyStep: 1,
+      applyJob,
+    };
+
+    try {
+      sessionStorage.setItem('pendingApplyReopen', JSON.stringify(reopenState));
+    } catch {}
+
     navigate(returnTo, {
-      state: {
-        reopenApplyModal: true,
-        reopenApplyStep: 1,
-        applyJob,
-      },
+      state: reopenState,
     });
   };
 
   const handleApplyFlowContinue = () => {
+    const reopenState = {
+      reopenApplyModal: true,
+      reopenApplyStep: 3,
+      applyJob,
+    };
+
+    try {
+      sessionStorage.setItem('pendingApplyReopen', JSON.stringify(reopenState));
+    } catch {}
+
     navigate(returnTo, {
-      state: {
-        reopenApplyModal: true,
-        reopenApplyStep: 3,
-        applyJob,
-      },
+      state: reopenState,
     });
   };
 

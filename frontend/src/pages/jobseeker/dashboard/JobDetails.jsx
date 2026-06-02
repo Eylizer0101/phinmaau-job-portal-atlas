@@ -774,10 +774,25 @@ const JobDetails = () => {
   }, [job?.category, fetchSimilarJobs]);
 
   useEffect(() => {
-    if (!job || !location.state?.reopenApplyModal) return;
+    if (!job) return;
 
-    const reopenStep = Number(location.state?.reopenApplyStep) === 3 ? 3 : 1;
-    const stateJob = location.state?.applyJob || {};
+    let reopenState = location.state?.reopenApplyModal ? location.state : null;
+
+    if (!reopenState) {
+      try {
+        const stored = JSON.parse(sessionStorage.getItem('pendingApplyReopen') || 'null');
+        if (stored?.reopenApplyModal) {
+          reopenState = stored;
+        }
+      } catch {
+        reopenState = null;
+      }
+    }
+
+    if (!reopenState?.reopenApplyModal) return;
+
+    const reopenStep = Number(reopenState?.reopenApplyStep) === 3 ? 3 : 1;
+    const stateJob = reopenState?.applyJob || {};
 
     setApplyModalInitialStep(reopenStep);
     setApplyingJob({
@@ -790,6 +805,11 @@ const JobDetails = () => {
       location: stateJob?.location || job?.location || '',
     });
     setShowApplyModal(true);
+
+    try {
+      sessionStorage.removeItem('pendingApplyReopen');
+      sessionStorage.removeItem('pendingApplyFlow');
+    } catch {}
 
     navigate(location.pathname, { replace: true, state: { sourcePage } });
   }, [job, location.state, location.pathname, navigate, sourcePage]);

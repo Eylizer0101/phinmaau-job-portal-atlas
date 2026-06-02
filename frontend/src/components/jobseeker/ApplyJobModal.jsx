@@ -266,19 +266,25 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
   };
 
   const handleGoToProfile = () => {
+    const pendingApplyFlow = {
+      fromApplyFlow: true,
+      applyJob: {
+        _id: job?._id || job?.id || '',
+        id: job?._id || job?.id || '',
+        title: job?.title || '',
+        companyName: job?.companyName || '',
+        location: job?.location || '',
+      },
+      returnTo: '/jobseeker/job-details/' + (job?._id || job?.id || ''),
+    };
+
+    try {
+      sessionStorage.setItem('pendingApplyFlow', JSON.stringify(pendingApplyFlow));
+    } catch {}
+
     closeAndReset();
     navigate('/jobseeker/my-profile', {
-      state: {
-        fromApplyFlow: true,
-        applyJob: {
-          _id: job?._id || job?.id || '',
-          id: job?._id || job?.id || '',
-          title: job?.title || '',
-          companyName: job?.companyName || '',
-          location: job?.location || '',
-        },
-        returnTo: '/jobseeker/job-details/' + (job?._id || job?.id || ''),
-      },
+      state: pendingApplyFlow,
     });
   };
 
