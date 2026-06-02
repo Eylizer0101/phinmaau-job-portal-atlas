@@ -31,6 +31,22 @@ const normalizePerksAndBenefits = (value) => {
   return [];
 };
 
+
+const normalizeSalaryAmount = (value) => {
+  if (value === undefined || value === null || value === '') return undefined;
+
+  const numericValue = Number(String(value).replace(/[^\d.-]/g, ''));
+  if (!Number.isFinite(numericValue)) return undefined;
+
+  const roundedValue = Math.round(numericValue);
+
+  if (roundedValue >= 1000 && roundedValue % 1000 === 998) {
+    return roundedValue + 2;
+  }
+
+  return roundedValue;
+};
+
 const applyIfDefined = (obj, key, value) => {
   if (value !== undefined) obj[key] = value;
 };
@@ -235,8 +251,8 @@ exports.createJob = async (req, res) => {
     jobData.experienceLevel = normalizedExperience || 'No experience required';
     jobData.educationLevel = edu || "Bachelor / College degree graduate's";
 
-    if (salaryMin !== undefined && salaryMin !== '') jobData.salaryMin = salaryMin;
-    if (salaryMax !== undefined && salaryMax !== '') jobData.salaryMax = salaryMax;
+    if (salaryMin !== undefined && salaryMin !== '') jobData.salaryMin = normalizeSalaryAmount(salaryMin);
+    if (salaryMax !== undefined && salaryMax !== '') jobData.salaryMax = normalizeSalaryAmount(salaryMax);
 
     if (skillsArray.length > 0) jobData.skillsRequired = skillsArray;
 
@@ -690,11 +706,21 @@ exports.updateJob = async (req, res) => {
       }
     }
 
+    if (req.body.salaryMin !== undefined) {
+      job.salaryMin = req.body.salaryMin === '' ? undefined : normalizeSalaryAmount(req.body.salaryMin);
+    }
+
+    if (req.body.salaryMax !== undefined) {
+      job.salaryMax = req.body.salaryMax === '' ? undefined : normalizeSalaryAmount(req.body.salaryMax);
+    }
+
     Object.keys(req.body).forEach(key => {
       if (key === 'companyLogo') return;
       if (key === 'skillsRequired') return;
       if (key === 'perksAndBenefits') return;
       if (key === 'status') return;
+      if (key === 'salaryMin') return;
+      if (key === 'salaryMax') return;
 
       if (key === 'experienceLevel') {
         job.experienceLevel = normalizeExperienceLevel(req.body.experienceLevel);

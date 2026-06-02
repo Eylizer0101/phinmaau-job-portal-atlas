@@ -1,5 +1,20 @@
 const mongoose = require('mongoose');
 
+const normalizeSalaryAmount = (value) => {
+    if (value === undefined || value === null || value === '') return value;
+
+    const numericValue = Number(String(value).replace(/[^\d.-]/g, ''));
+    if (!Number.isFinite(numericValue)) return value;
+
+    const roundedValue = Math.round(numericValue);
+
+    if (roundedValue >= 1000 && roundedValue % 1000 === 998) {
+        return roundedValue + 2;
+    }
+
+    return roundedValue;
+};
+
 const jobSchema = new mongoose.Schema({
     status: {
         type: String,
@@ -51,11 +66,13 @@ const jobSchema = new mongoose.Schema({
 
     salaryMin: {
         type: Number,
-        min: 0
+        min: 0,
+        set: normalizeSalaryAmount
     },
     salaryMax: {
         type: Number,
-        min: 0
+        min: 0,
+        set: normalizeSalaryAmount
     },
     location: {
         type: String,
