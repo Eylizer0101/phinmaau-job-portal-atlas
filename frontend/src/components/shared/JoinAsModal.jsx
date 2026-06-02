@@ -72,7 +72,7 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
 
     return (
       <div
-        className="w-full bg-white shadow-lg border border-gray-200 -mt-16"
+        className="w-full bg-white shadow-lg border border-gray-200 sm:-mt-16"
         style={{
           maxWidth: "520px",
           borderRadius: "18px",
@@ -176,14 +176,14 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
 
     return (
       <div
-  className="w-full bg-white shadow-lg border border-gray-200 -mt-16"
-  style={{
-    maxWidth: "760px",
-    borderRadius: "18px",
-  }}
->
+        className="w-full bg-white shadow-lg border border-gray-200 sm:-mt-16 flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden"
+        style={{
+          maxWidth: "760px",
+          borderRadius: "18px",
+        }}
+      >
         {/* close */}
-        <div className="flex items-start justify-between px-6 pt-6">
+        <div className="flex items-start justify-between px-4 pt-4 sm:px-6 sm:pt-6 shrink-0">
           <button
             ref={topButtonRef}
             type="button"
@@ -221,7 +221,7 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
           </button>
         </div>
 
-        <div className="px-10 pb-10">
+        <div className="overflow-y-auto px-4 pb-5 sm:px-10 sm:pb-10">
           {/* icon */}
           <div className="flex justify-center">
             <div
@@ -233,7 +233,7 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
             >
               <div
                 className="flex items-center justify-center rounded-full"
-                style={{ width: 160, height: 160 }}
+                className="w-[96px] h-[96px] sm:w-[160px] sm:h-[160px]"
               >
                 <img
                   src="/images/lock.png"
@@ -251,9 +251,8 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
 
           {/* title */}
           <h2
-            className="mt-4 text-center font-extrabold text-gray-900"
+            className="mt-3 sm:mt-4 text-center font-extrabold text-gray-900 text-[22px] sm:text-[26px]"
             style={{
-              fontSize: "26px",
               letterSpacing: "0.08em",
             }}
           >
@@ -262,22 +261,22 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
 
           {/* purple box */}
           <div
-            className="mt-5 mx-auto text-center"
+            className="mt-4 sm:mt-5 mx-auto text-center"
             style={{
               maxWidth: "650px",
               backgroundColor: "#e9e9ff",
               borderRadius: "14px",
-              padding: "18px 22px",
+              padding: "16px 18px",
             }}
           >
-            <p className="text-sm text-gray-800 leading-6 whitespace-pre-line">
+            <p className="text-[13px] sm:text-sm text-gray-800 leading-6 whitespace-pre-line">
               {privacyNoticeText}
             </p>
           </div>
 
           {/* checkbox row */}
-          <div className="mt-6 mx-auto" style={{ maxWidth: "650px" }}>
-            <label className="flex items-center gap-3 cursor-pointer select-none">
+          <div className="mt-5 sm:mt-6 mx-auto" style={{ maxWidth: "650px" }}>
+            <label className="flex items-start sm:items-center gap-3 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={agreePrivacy}
@@ -285,12 +284,12 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
                 className="h-6 w-6 rounded border-gray-300"
                 style={{ accentColor: BLUE.primary }}
               />
-              <span className="text-sm text-gray-900">I agree to the AGAPAY Privacy Policy</span>
+              <span className="text-sm leading-6 text-gray-900">I agree to the AGAPAY Privacy Policy</span>
             </label>
           </div>
 
           {/* proceed button */}
-          <div className="mt-8 flex justify-center">
+          <div className="mt-6 sm:mt-8 flex justify-center pb-1">
             <button
               type="button"
               onClick={proceedFromPrivacy}
@@ -323,7 +322,7 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
   };
 
   return (
-  <div className="relative h-screen overflow-hidden px-4 pt-24 pb-4 bg-slate-50">
+  <div className="relative min-h-[100dvh] overflow-y-auto px-4 pt-4 pb-4 sm:pt-24 bg-slate-50">
 
     {/* SOFT GLOW LIGHT */}
     <div className="pointer-events-none absolute inset-0 z-0">
@@ -347,7 +346,7 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
 
  
     {/* CONTENT */}
-    <div className="relative z-10 mx-auto h-full flex items-center justify-center">
+    <div className="relative z-10 mx-auto flex min-h-[calc(100dvh-2rem)] items-start justify-center sm:min-h-[calc(100dvh-7rem)] sm:items-center">
       {step === "role" ? <RolePage /> : <PrivacyPage />}
     </div>
 
