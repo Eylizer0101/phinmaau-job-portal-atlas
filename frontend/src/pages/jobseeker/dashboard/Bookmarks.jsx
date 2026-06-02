@@ -373,6 +373,134 @@ const formatLocationDisplay = (loc) => {
   return v || '—';
 };
 
+
+const getJobCoordinates = (jobData) => {
+  const lat = Number(jobData?.locationLatitude);
+  const lng = Number(jobData?.locationLongitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
+};
+
+const isUsableCoordinates = (coords) => {
+  if (!coords) return false;
+  if (!Number.isFinite(coords.lat) || !Number.isFinite(coords.lng)) return false;
+  if (Math.abs(coords.lat) < 0.0001 && Math.abs(coords.lng) < 0.0001) return false;
+  return true;
+};
+
+const buildOpenStreetMapUrl = ({ coords, address }) => {
+  const cleanAddress = String(address || '').trim();
+
+  if (isUsableCoordinates(coords)) {
+    return `https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=17/${coords.lat}/${coords.lng}`;
+  }
+
+  if (cleanAddress && cleanAddress !== '—') {
+    return `https://www.openstreetmap.org/search?query=${encodeURIComponent(cleanAddress)}`;
+  }
+
+  return 'https://www.openstreetmap.org';
+};
+
+const StaticLocationMap = ({ job, heightClass = 'h-[160px]' }) => {
+  const savedCoords = getJobCoordinates(job);
+  const address = formatLocationDisplay(job?.location);
+  const [resolvedCoords, setResolvedCoords] = useState(isUsableCoordinates(savedCoords) ? savedCoords : null);
+  const [lookupDone, setLookupDone] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const runLookup = async () => {
+      if (isUsableCoordinates(savedCoords)) {
+        setResolvedCoords(savedCoords);
+        setLookupDone(true);
+        return;
+      }
+
+      const cleanAddress = String(job?.location || '').trim();
+      if (!cleanAddress) {
+        setResolvedCoords(null);
+        setLookupDone(true);
+        return;
+      }
+
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=ph&accept-language=en&q=${encodeURIComponent(cleanAddress)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        const first = Array.isArray(data) ? data[0] : null;
+        const nextLat = Number(first?.lat);
+        const nextLng = Number(first?.lon);
+
+        if (!cancelled && Number.isFinite(nextLat) && Number.isFinite(nextLng)) {
+          setResolvedCoords({
+            lat: Number(nextLat.toFixed(6)),
+            lng: Number(nextLng.toFixed(6)),
+          });
+        }
+      } catch {
+        if (!cancelled) setResolvedCoords(null);
+      } finally {
+        if (!cancelled) setLookupDone(true);
+      }
+    };
+
+    runLookup();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [job?.location, savedCoords?.lat, savedCoords?.lng]);
+
+  const openMapUrl = buildOpenStreetMapUrl({ coords: resolvedCoords || savedCoords, address });
+
+  if (!isUsableCoordinates(resolvedCoords)) {
+    return (
+      <a
+        href={openMapUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${heightClass} relative flex w-full items-center justify-center bg-black/5 text-black/40 hover:bg-black/10 transition`}
+        title="Open work location in OpenStreetMap"
+        aria-label="Open work location in OpenStreetMap"
+      >
+        <div className="text-center px-4">
+          <SvgIcon name="location" className="mx-auto h-7 w-7" />
+          <p className="mt-2 text-xs text-black/50">
+            {lookupDone ? 'Click to open work location' : 'Loading work location map...'}
+          </p>
+        </div>
+      </a>
+    );
+  }
+
+  const bbox = `${resolvedCoords.lng - 0.01},${resolvedCoords.lat - 0.01},${resolvedCoords.lng + 0.01},${resolvedCoords.lat + 0.01}`;
+  const src = `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&layer=mapnik&marker=${resolvedCoords.lat},${resolvedCoords.lng}`;
+
+  return (
+    <a
+      href={openMapUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`${heightClass} relative block w-full overflow-hidden bg-black/5 group`}
+      title="Open work location in OpenStreetMap"
+      aria-label="Open work location in OpenStreetMap"
+    >
+      <iframe
+        title="Work location map"
+        src={src}
+        className="h-full w-full border-0 pointer-events-none"
+        loading="lazy"
+      />
+      <span className="absolute inset-0 bg-transparent group-hover:bg-black/5 transition" aria-hidden="true" />
+      <span className="absolute bottom-2 right-2 rounded-full bg-white/95 px-3 py-1 text-[11px] font-semibold text-[#2e66a6] shadow-sm">
+        Open Map
+      </span>
+    </a>
+  );
+};
+
 const formatSalary = (min, max) => {
   const hasMin = min !== undefined && min !== null && min !== '' && !Number.isNaN(Number(min));
   const hasMax = max !== undefined && max !== null && max !== '' && !Number.isNaN(Number(max));
@@ -2179,26 +2307,7 @@ const Bookmarks = () => {
                                 <div>
                                   <p className={UI.caption}>Work Location</p>
                                   <div className="mt-2 rounded-xl border border-black/10 overflow-hidden bg-[#FFFFFF]">
-                                    {selectedJob.locationImage ? (
-                                      <img
-                                        src={`${getApiOrigin()}${selectedJob.locationImage}`}
-                                        alt="Work location"
-                                        className="w-full h-[160px] object-cover"
-                                        onError={(e) => {
-                                          e.currentTarget.style.display = 'none';
-                                          const fallback = e.currentTarget.nextElementSibling;
-                                          if (fallback) fallback.classList.remove('hidden');
-                                        }}
-                                      />
-                                    ) : null}
-
-                                    <div
-                                      className={`h-[160px] bg-black/[0.03] flex items-center justify-center text-black/35 ${
-                                        selectedJob.locationImage ? 'hidden' : ''
-                                      }`}
-                                    >
-                                      <SvgIcon name="location" className="w-6 h-6" />
-                                    </div>
+                                    <StaticLocationMap job={selectedJob} heightClass="h-[160px]" />
 
                                     <div className="px-3 py-2.5 border-t border-black/10">
                                       <p className="text-xs text-black/70">{formatLocationDisplay(selectedJob.location)}</p>
