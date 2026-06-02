@@ -12,7 +12,7 @@ import {
   faMapMarkerAlt,
 } from '@fortawesome/free-solid-svg-icons';
 
-const TOP_CARD_HEIGHT = 'lg:h-[430px]';
+const TOP_CARD_HEIGHT = 'lg:h-[460px]';
 const PROFILE_REMINDER_ICON = '/images/clock.png';
 
 const normalizeBoolean = (value) => {
