@@ -2,19 +2,38 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 
+const isMeaningfulResumeValue = (value) => {
+  const text = String(value ?? '').trim();
+  return Boolean(text) && !/^(not\s+provided|n\/?a)$/i.test(text);
+};
+
 const getText = (value, fallback = '') => {
   const text = String(value || '').trim();
-  return text || fallback;
+  return isMeaningfulResumeValue(text) ? text : fallback;
 };
 
 const toArray = (value) => {
-  if (Array.isArray(value)) return value.map((item) => String(item || '').trim()).filter(Boolean);
-  if (typeof value === 'string') {
+  if (Array.isArray(value)) {
     return value
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean);
+      .map((item) => String(item || '').trim())
+      .filter(isMeaningfulResumeValue);
   }
+
+  if (typeof value === 'string') {
+    const clean = value.trim();
+    if (!isMeaningfulResumeValue(clean)) return [];
+
+    const parts = clean.includes('||')
+      ? clean.split('||')
+      : /\s[—-]\s(Basic|Novice|Intermediate|Advanced|Expert)$/i.test(clean)
+        ? [clean]
+        : clean.split(',');
+
+    return parts
+      .map((item) => item.trim())
+      .filter(isMeaningfulResumeValue);
+  }
+
   return [];
 };
 
@@ -110,7 +129,7 @@ const Section = ({ title, children, hidden = false }) => {
 
 const TwoColumnRows = ({ rows = [] }) => {
   const cleanRows = rows.filter((row) => getText(row.value));
-  if (!cleanRows.length) return <p className="empty-text">Not provided</p>;
+  if (!cleanRows.length) return null;
 
   const middle = Math.ceil(cleanRows.length / 2);
   const columns = [cleanRows.slice(0, middle), cleanRows.slice(middle)];
@@ -226,6 +245,7 @@ const ResumePreviewPage = () => {
   const educationEntries = Array.isArray(formData.educationEntries) ? formData.educationEntries : [];
   const technicalSkills = toArray(formData.technicalSkills);
   const softSkills = toArray(formData.softSkills);
+  const allSkills = [...technicalSkills, ...softSkills].filter(isMeaningfulResumeValue);
   const certifications = Array.isArray(formData.certifications) ? formData.certifications : [];
   const projects = Array.isArray(formData.projects) ? formData.projects : [];
   const seminars = Array.isArray(formData.seminars) ? formData.seminars : [];
@@ -628,7 +648,7 @@ const ResumePreviewPage = () => {
             </header>
 
             <Section title="Objective">
-              <p className="objective-text">{getText(formData.aboutMe, 'Not provided')}</p>
+              <p className="objective-text">{getText(formData.aboutMe)}</p>
             </Section>
 
             <Section title="Availability & Preferences">
@@ -647,10 +667,10 @@ const ResumePreviewPage = () => {
               ))}
             </Section>
 
-            {[...technicalSkills, ...softSkills].length ? (
+            {allSkills.length ? (
               <Section title="Skills">
                 <div className="skills-grid">
-                  {[...technicalSkills, ...softSkills].map((skill, index) => (
+                  {allSkills.map((skill, index) => (
                     <div className="skill-row" key={`skill-${skill}-${index}`}>
                       <span className="skill-label">{skill}</span>
                     </div>

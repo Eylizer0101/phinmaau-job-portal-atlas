@@ -1,8 +1,13 @@
 // src/components/shared/resumePrintTemplate.js
 
+const isMeaningfulResumeValue = (value) => {
+  const text = String(value ?? '').trim();
+  return Boolean(text) && !/^(not\s+provided|n\/?a)$/i.test(text);
+};
+
 const getText = (value, fallback = '') => {
   const text = String(value || '').trim();
-  return text || fallback;
+  return isMeaningfulResumeValue(text) ? text : fallback;
 };
 
 const escapeHtml = (value = '') =>
@@ -14,13 +19,27 @@ const escapeHtml = (value = '') =>
     .replace(/'/g, '&#039;');
 
 const toArray = (value) => {
-  if (Array.isArray(value)) return value.map((item) => String(item || '').trim()).filter(Boolean);
-  if (typeof value === 'string') {
+  if (Array.isArray(value)) {
     return value
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean);
+      .map((item) => String(item || '').trim())
+      .filter(isMeaningfulResumeValue);
   }
+
+  if (typeof value === 'string') {
+    const clean = value.trim();
+    if (!isMeaningfulResumeValue(clean)) return [];
+
+    const parts = clean.includes('||')
+      ? clean.split('||')
+      : /\s[—-]\s(Basic|Novice|Intermediate|Advanced|Expert)$/i.test(clean)
+        ? [clean]
+        : clean.split(',');
+
+    return parts
+      .map((item) => item.trim())
+      .filter(isMeaningfulResumeValue);
+  }
+
   return [];
 };
 
@@ -95,7 +114,7 @@ const sectionHtml = (title, children, hidden = false) => {
 
 const twoColumnRowsHtml = (rows = []) => {
   const cleanRows = rows.filter((row) => getText(row.value));
-  if (!cleanRows.length) return '<p class="empty-text">Not provided</p>';
+  if (!cleanRows.length) return '';
 
   const middle = Math.ceil(cleanRows.length / 2);
   const columns = [cleanRows.slice(0, middle), cleanRows.slice(middle)];
@@ -571,7 +590,7 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
     !workExperiences.length
   );
 
-  const allSkills = [...technicalSkills, ...softSkills];
+  const allSkills = [...technicalSkills, ...softSkills].filter(isMeaningfulResumeValue);
 
   const skillsHtml = sectionHtml(
     'Skills',
@@ -635,7 +654,7 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
             ${photoHtml}
           </header>
 
-          ${sectionHtml('Objective', `<p class="objective-text">${escapeHtml(getText(formData.aboutMe, 'Not provided'))}</p>`)}
+          ${getText(formData.aboutMe) ? sectionHtml('Objective', `<p class="objective-text">${escapeHtml(getText(formData.aboutMe))}</p>`) : ''}
           ${sectionHtml('Availability & Preferences', twoColumnRowsHtml(availabilityRows))}
           ${workExperienceHtml}
           ${skillsHtml}
