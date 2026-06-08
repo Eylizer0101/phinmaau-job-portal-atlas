@@ -2574,6 +2574,7 @@ const MyProfile = () => {
   const [addSectionsModalOpen, setAddSectionsModalOpen] = useState(false);
   const [skillProficiencyModalOpen, setSkillProficiencyModalOpen] = useState(false);
   const [addedMoreSections, setAddedMoreSections] = useState([]);
+  const [moreSectionMenuOpen, setMoreSectionMenuOpen] = useState('');
 
   const [uploadingDocs, setUploadingDocs] = useState({});
   const [docErrors, setDocErrors] = useState({});
@@ -3982,6 +3983,83 @@ const MyProfile = () => {
     setAddSectionsModalOpen(false);
   };
 
+  useEffect(() => {
+    if (!moreSectionMenuOpen) return undefined;
+
+    const closeMenu = () => setMoreSectionMenuOpen('');
+    document.addEventListener('mousedown', closeMenu);
+    document.addEventListener('touchstart', closeMenu);
+
+    return () => {
+      document.removeEventListener('mousedown', closeMenu);
+      document.removeEventListener('touchstart', closeMenu);
+    };
+  }, [moreSectionMenuOpen]);
+
+  const handleDeleteMoreSection = (sectionKey) => {
+    const sectionTitle = MORE_PROFILE_SECTIONS[sectionKey]?.title || 'Section';
+    setMoreSectionMenuOpen('');
+
+    setConfirmState({
+      open: true,
+      title: `Delete ${sectionTitle}?`,
+      message: `This will remove all saved data under ${sectionTitle}. This action will also update your database.`,
+      confirmText: 'Delete Section',
+      cancelText: 'Cancel',
+      tone: 'danger',
+      onConfirmAction: async () => {
+        try {
+          setSavingSection(sectionKey);
+          setError('');
+
+          const token = localStorage.getItem('token');
+          const payload = {
+            jobSeekerProfile: {
+              [sectionKey]: [],
+            },
+          };
+
+          const response = await axios.put(`${API_BASE}/auth/update-profile`, payload, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (response.data?.success) {
+            setFormData((prev) => ({ ...prev, [sectionKey]: [] }));
+            setDrafts((prev) => ({ ...prev, [sectionKey]: [] }));
+            setAddedMoreSections((prev) => prev.filter((key) => key !== sectionKey));
+            setOpenTabs((prev) => prev.filter((key) => key !== sectionKey));
+            setEditing((prev) => ({ ...prev, [sectionKey]: false }));
+            setEditModalSection((current) => (current === sectionKey ? '' : current));
+
+            if (response.data.user) {
+              setUserData(response.data.user);
+              localStorage.setItem('user', JSON.stringify(response.data.user));
+            }
+
+            showSuccess('Deleted Successfully', `${sectionTitle} has been removed.`);
+          }
+        } catch (err) {
+          console.error(err);
+          setError(err.response?.data?.message || `Failed to delete ${sectionTitle}.`);
+        } finally {
+          setSavingSection('');
+          setConfirmState({
+            open: false,
+            title: '',
+            message: '',
+            confirmText: 'Yes',
+            cancelText: 'Cancel',
+            tone: 'primary',
+            onConfirmAction: null,
+          });
+        }
+      },
+    });
+  };
+
  const personalDisplayItems = [
   { label: 'Birthday', value: formData.birthday },
   { label: 'Civil Status', value: formData.civilStatus },
@@ -4449,6 +4527,7 @@ const MyProfile = () => {
                     ].map((section) => {
                       const targetTab = section.key === 'about' ? 'about' : section.key === 'work' ? 'work' : section.key === 'skills' ? 'skills' : section.key;
                       const isOpen = openTabs.includes(targetTab);
+                      const isMoreProfileSection = MORE_PROFILE_TAB_KEYS.includes(section.key);
 
                       return (
                         <div key={section.key} className="w-full bg-white">
@@ -4468,7 +4547,7 @@ const MyProfile = () => {
                               <span className="font-serif text-[16px] font-bold uppercase tracking-wide text-gray-900 truncate">{section.label}</span>
                             </button>
 
-                            <div className="flex items-center gap-3 shrink-0">
+                            <div className="relative flex items-center gap-3 shrink-0">
                               {section.key === 'skills' ? (
                                 <button
                                   type="button"
@@ -4487,6 +4566,46 @@ const MyProfile = () => {
                                 >
                                   {section.actionLabel}
                                 </button>
+                              ) : null}
+                              {isMoreProfileSection ? (
+                                <div
+                                  className="relative"
+                                  onMouseDown={(event) => event.stopPropagation()}
+                                  onTouchStart={(event) => event.stopPropagation()}
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      event.stopPropagation();
+                                      setMoreSectionMenuOpen((current) => (current === section.key ? '' : section.key));
+                                    }}
+                                    className="h-8 w-7 rounded-md text-gray-400 hover:bg-gray-50 hover:text-gray-700 inline-flex items-center justify-center text-[22px] leading-none"
+                                    aria-label={`More options for ${section.label}`}
+                                    aria-haspopup="menu"
+                                    aria-expanded={moreSectionMenuOpen === section.key}
+                                  >
+                                    ⋮
+                                  </button>
+
+                                  {moreSectionMenuOpen === section.key ? (
+                                    <div
+                                      className="absolute right-0 top-9 z-[120] w-[150px] rounded-md border border-gray-200 bg-white py-2 shadow-lg"
+                                      role="menu"
+                                      onClick={(event) => event.stopPropagation()}
+                                    >
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteMoreSection(section.key)}
+                                        disabled={savingSection === section.key}
+                                        className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-red-50 disabled:opacity-60"
+                                        role="menuitem"
+                                      >
+                                        Delete Section
+                                      </button>
+                                    </div>
+                                  ) : null}
+                                </div>
                               ) : null}
                             </div>
                           </div>
