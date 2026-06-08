@@ -1104,15 +1104,6 @@ const BasicInfoModal = ({
                 >
                   {profileImageUploading ? <Spinner size="small" /> : <FaCamera className="text-xs" />}
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => setAddSectionsModalOpen(true)}
-                  className="h-9 sm:h-10 px-3 sm:px-4 rounded-full bg-white text-gray-700 border border-gray-200 text-xs sm:text-sm font-semibold inline-flex items-center gap-2 hover:bg-gray-50"
-                >
-                  <FaPlus className="text-xs" />
-                  Add Sections
-                </button>
               </div>
             </div>
 
