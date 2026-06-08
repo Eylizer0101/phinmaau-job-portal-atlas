@@ -118,6 +118,85 @@ const CIVIL_STATUS_OPTIONS = [
   'Separated',
 ];
 
+const PROFICIENCY_LEVEL_OPTIONS = [
+  'Basic',
+  'Novice',
+  'Intermediate',
+  'Advanced',
+  'Expert',
+];
+
+const DEFAULT_PROFICIENCY_LEVEL = 'Basic';
+
+const parseSkillWithProficiency = (value = '') => {
+  const clean = String(value || '').trim();
+  if (!clean) return { skill: '', proficiency: DEFAULT_PROFICIENCY_LEVEL };
+
+  const separatorMatch = clean.match(/\s[—-]\s(?=(Basic|Novice|Intermediate|Advanced|Expert)$)/i);
+  if (!separatorMatch) return { skill: clean, proficiency: DEFAULT_PROFICIENCY_LEVEL };
+
+  const separatorIndex = separatorMatch.index;
+  const skill = clean.slice(0, separatorIndex).trim();
+  const proficiency = clean.slice(separatorIndex).replace(/^[\s—-]+/, '').trim();
+
+  return {
+    skill,
+    proficiency: PROFICIENCY_LEVEL_OPTIONS.includes(proficiency) ? proficiency : DEFAULT_PROFICIENCY_LEVEL,
+  };
+};
+
+const formatSkillWithProficiency = (item = {}) => {
+  const skill = String(item.skill || '').trim();
+  if (!skill) return '';
+  const proficiency = PROFICIENCY_LEVEL_OPTIONS.includes(item.proficiency) ? item.proficiency : DEFAULT_PROFICIENCY_LEVEL;
+  return `${skill} — ${proficiency}`;
+};
+
+const normalizeSkillRows = (items = []) => {
+  const source = Array.isArray(items) ? items : [];
+  const rows = source
+    .map((item) => {
+      if (item && typeof item === 'object') {
+        return {
+          skill: String(item.skill || item.name || '').trim(),
+          proficiency: PROFICIENCY_LEVEL_OPTIONS.includes(item.proficiency) ? item.proficiency : DEFAULT_PROFICIENCY_LEVEL,
+        };
+      }
+
+      return parseSkillWithProficiency(item);
+    })
+    .filter((item) => item.skill);
+
+  return rows.length ? rows : [{ skill: '', proficiency: DEFAULT_PROFICIENCY_LEVEL }];
+};
+
+const serializeSkillRows = (rows = []) =>
+  normalizeSkillRows(rows)
+    .map(formatSkillWithProficiency)
+    .filter(Boolean)
+    .join(' || ');
+
+const normalizeSkillsFromProfile = (raw) => {
+  const clean = String(raw || '').trim();
+  if (!clean) return [];
+
+  if (clean.includes('||')) {
+    return clean
+      .split('||')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  if (/\s[—-]\s(Basic|Novice|Intermediate|Advanced|Expert)$/i.test(clean)) {
+    return [clean];
+  }
+
+  return clean
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
 const normalizeExtensionName = (value) => {
   const clean = String(value || '').trim();
   return clean.toLowerCase() === 'none' ? '' : clean;
@@ -1600,7 +1679,7 @@ const SkillProficiencyDescriptionModal = ({ open, onClose }) => {
   ];
 
   return (
-    <div className="fixed inset-0 z-[10006] bg-black/75 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="skill-proficiency-title">
+    <div className="fixed inset-0 z-[10008] bg-black/75 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="skill-proficiency-title">
       <div className="relative w-full max-w-[720px] max-h-[78vh] bg-white rounded-[6px] shadow-2xl border border-[#d8e2ee] overflow-hidden">
         <div className="sticky top-0 z-10 bg-white px-6 sm:px-8 pt-7 pb-4 border-b border-[#d8e2ee]">
           <div className="flex items-start justify-between gap-4">
@@ -1694,6 +1773,10 @@ const ProfileEditModal = ({
   yearOptions = [],
   onChange,
   onArrayTextChange,
+  onSkillRowChange,
+  onAddSkillRow,
+  onRemoveSkillRow,
+  onOpenSkillProficiencyDescription,
   onSave,
   onClose,
   onAddProfileItem,
@@ -1748,27 +1831,66 @@ const ProfileEditModal = ({
     }
 
     if (sectionKey === 'skills') {
+      const skillRows = normalizeSkillRows(drafts.skillRows || [
+        ...(drafts.technicalSkills || []),
+        ...(drafts.softSkills || []),
+      ]);
+
       return (
         <div className="space-y-5">
-          <Input
-            label="Technical Skills"
-            value={(drafts.technicalSkills || []).join(', ')}
-            onChange={(e) => onArrayTextChange('technicalSkills', e.target.value)}
-            placeholder="e.g. Figma, MS Word, MS Excel"
-          />
-          <Input
-            label="Soft Skills"
-            value={(drafts.softSkills || []).join(', ')}
-            onChange={(e) => onArrayTextChange('softSkills', e.target.value)}
-            placeholder="e.g. Communication, Teamwork, Time Management"
-          />
-          <TextArea
-            label="What Have You Done"
-            rows={4}
-            value={drafts.whatHaveYouDone}
-            onChange={(e) => onChange('whatHaveYouDone', e.target.value)}
-            placeholder="Describe your skills, experience, or achievements."
-          />
+          <div className="space-y-4">
+            {skillRows.map((item, index) => (
+              <div key={`skill-row-${index}`} className="grid grid-cols-1 md:grid-cols-[1fr_170px_36px] gap-3 items-center">
+                <input
+                  type="text"
+                  value={item.skill || ''}
+                  onChange={(e) => onSkillRowChange(index, 'skill', e.target.value)}
+                  placeholder="e.g. Communication, Canva, Figma, Coding"
+                  className="w-full h-12 px-4 rounded-[6px] border border-gray-300 bg-white text-black outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6]"
+                />
+
+                <select
+                  value={item.proficiency || DEFAULT_PROFICIENCY_LEVEL}
+                  onChange={(e) => onSkillRowChange(index, 'proficiency', e.target.value)}
+                  className="w-full h-12 px-4 rounded-[6px] border border-gray-300 bg-white text-black outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6]"
+                >
+                  {PROFICIENCY_LEVEL_OPTIONS.map((level) => (
+                    <option key={level} value={level}>{level}</option>
+                  ))}
+                </select>
+
+                <button
+                  type="button"
+                  onClick={() => onRemoveSkillRow(index)}
+                  className="w-9 h-9 rounded-md text-red-500 hover:bg-red-50 inline-flex items-center justify-center"
+                  aria-label="Remove skill"
+                  title="Remove skill"
+                >
+                  <FaTrash className="text-sm" />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={onAddSkillRow}
+            className="h-10 px-4 rounded-[6px] border border-gray-300 bg-white text-black font-medium hover:bg-gray-50 inline-flex items-center gap-2"
+          >
+            <FaPlus className="text-xs" />
+            Add Skill
+          </button>
+
+          <div className="border-t border-gray-200 pt-4">
+            <button
+              type="button"
+              onClick={onOpenSkillProficiencyDescription}
+              className="inline-flex items-center gap-2 text-[#2e66a6] font-medium hover:underline"
+            >
+              <FaInfoCircle className="text-sm" />
+              Proficiency Level Description
+            </button>
+          </div>
         </div>
       );
     }
@@ -1992,6 +2114,7 @@ const MyProfile = () => {
     preferredWorkMode: '',
     technicalSkills: [],
     softSkills: [],
+    skillRows: [{ skill: '', proficiency: DEFAULT_PROFICIENCY_LEVEL }],
     whatHaveYouDone: '',
     howSoonCanYouStart: '',
     employmentType: '',
@@ -2376,11 +2499,7 @@ const MyProfile = () => {
         const user = response.data.user;
         const profile = user.jobSeekerProfile || {};
 
-        const parseSkills = (raw) =>
-          String(raw || '')
-            .split(',')
-            .map((x) => String(x || '').trim())
-            .filter(Boolean);
+        const parseSkills = (raw) => normalizeSkillsFromProfile(raw);
 
         const normalizeProfileList = (items) =>
           Array.isArray(items)
@@ -2437,6 +2556,10 @@ const MyProfile = () => {
           preferredWorkMode: profile.preferredWorkMode || '',
           technicalSkills: parseSkills(profile.technicalSkills),
           softSkills: parseSkills(profile.softSkills),
+          skillRows: normalizeSkillRows([
+            ...parseSkills(profile.technicalSkills),
+            ...parseSkills(profile.softSkills),
+          ]),
           whatHaveYouDone: profile.whatHaveYouDone || '',
           howSoonCanYouStart: profile.howSoonCanYouStart || '',
           employmentType: profile.employmentType || '',
@@ -2657,11 +2780,16 @@ const MyProfile = () => {
       }
 
       if (sectionKey === 'career') {
+        const savedSkillRows = normalizeSkillRows(drafts.skillRows || [
+          ...(drafts.technicalSkills || []),
+          ...(drafts.softSkills || []),
+        ]).filter((item) => String(item.skill || '').trim());
+
         payload = {
           jobSeekerProfile: {
             preferredWorkMode: drafts.preferredWorkMode,
-            technicalSkills: (drafts.technicalSkills || []).join(', '),
-            softSkills: (drafts.softSkills || []).join(', '),
+            technicalSkills: serializeSkillRows(savedSkillRows),
+            softSkills: '',
             whatHaveYouDone: drafts.whatHaveYouDone,
             howSoonCanYouStart: drafts.howSoonCanYouStart,
             employmentType: drafts.employmentType,
@@ -2765,6 +2893,24 @@ const MyProfile = () => {
 
           setFormData((prev) => ({ ...prev, [sectionKey]: nextItems }));
           setDrafts((prev) => ({ ...prev, [sectionKey]: nextItems }));
+        } else if (sectionKey === 'career') {
+          const nextTechnicalSkills = normalizeSkillsFromProfile(payload.jobSeekerProfile?.technicalSkills);
+          const nextSkillRows = normalizeSkillRows(nextTechnicalSkills);
+
+          setFormData((prev) => ({
+            ...prev,
+            ...drafts,
+            technicalSkills: nextTechnicalSkills,
+            softSkills: [],
+            skillRows: nextSkillRows,
+          }));
+          setDrafts((prev) => ({
+            ...prev,
+            ...drafts,
+            technicalSkills: nextTechnicalSkills,
+            softSkills: [],
+            skillRows: nextSkillRows,
+          }));
         } else if (sectionKey === 'basic') {
           const combinedAddress = buildAddressString(drafts);
           setFormData((prev) => ({
@@ -2823,6 +2969,19 @@ const MyProfile = () => {
 
     if (sectionKey === 'credentials') return;
 
+    if (sectionKey === 'skills') {
+      setDrafts((prev) => ({
+        ...prev,
+        ...formData,
+        skillRows: normalizeSkillRows([
+          ...(formData.technicalSkills || []),
+          ...(formData.softSkills || []),
+        ]),
+      }));
+      setEditModalSection(sectionKey);
+      return;
+    }
+
     setDrafts((prev) => {
       const next = sectionKey === 'education' ? resetEducationDraftFields(formData) : { ...formData };
 
@@ -2855,6 +3014,49 @@ const MyProfile = () => {
       .map((item) => item.trim())
       .filter(Boolean);
     setDrafts((prev) => ({ ...prev, [field]: nextValues }));
+  };
+
+  const handleSkillRowChange = (index, field, value) => {
+    setDrafts((prev) => {
+      const rows = normalizeSkillRows(prev.skillRows || [
+        ...(prev.technicalSkills || []),
+        ...(prev.softSkills || []),
+      ]);
+
+      return {
+        ...prev,
+        skillRows: rows.map((item, itemIndex) =>
+          itemIndex === index ? { ...item, [field]: value } : item
+        ),
+      };
+    });
+  };
+
+  const addSkillRow = () => {
+    setDrafts((prev) => ({
+      ...prev,
+      skillRows: [
+        ...normalizeSkillRows(prev.skillRows || [
+          ...(prev.technicalSkills || []),
+          ...(prev.softSkills || []),
+        ]),
+        { skill: '', proficiency: DEFAULT_PROFICIENCY_LEVEL },
+      ],
+    }));
+  };
+
+  const removeSkillRow = (index) => {
+    setDrafts((prev) => {
+      const rows = normalizeSkillRows(prev.skillRows || [
+        ...(prev.technicalSkills || []),
+        ...(prev.softSkills || []),
+      ]).filter((_, itemIndex) => itemIndex !== index);
+
+      return {
+        ...prev,
+        skillRows: rows.length ? rows : [{ skill: '', proficiency: DEFAULT_PROFICIENCY_LEVEL }],
+      };
+    });
   };
 
   const startEditingProfileList = (sectionKey) => {
@@ -3361,10 +3563,18 @@ const MyProfile = () => {
     }
 
     if (sectionKey === 'skills') {
-      const allSkills = [...(formData.technicalSkills || []), ...(formData.softSkills || [])].filter(Boolean);
+      const allSkills = [...(formData.technicalSkills || []), ...(formData.softSkills || [])]
+        .map((item) => String(item || '').trim())
+        .filter(Boolean);
       return allSkills.length || formData.whatHaveYouDone ? (
         <div className="px-0 pb-5 pt-2 font-serif text-[13px] leading-5 text-gray-900">
-          {allSkills.length ? <div><b>{allSkills.join(', ')}</b></div> : null}
+          {allSkills.length ? (
+            <div className="space-y-1">
+              {allSkills.map((item, index) => (
+                <div key={`skill-display-${index}`}><b>{item}</b></div>
+              ))}
+            </div>
+          ) : null}
           {formData.whatHaveYouDone ? <div className="mt-2">{formData.whatHaveYouDone}</div> : null}
         </div>
       ) : renderEmptyLine('Enumerate your skills, competencies, and talents including proficiency levels.');
@@ -3576,6 +3786,10 @@ const MyProfile = () => {
         yearOptions={yearOptions}
         onChange={handleLocalChange}
         onArrayTextChange={handleArrayTextChange}
+        onSkillRowChange={handleSkillRowChange}
+        onAddSkillRow={addSkillRow}
+        onRemoveSkillRow={removeSkillRow}
+        onOpenSkillProficiencyDescription={() => setSkillProficiencyModalOpen(true)}
         onSave={saveProfileEditModal}
         onClose={closeProfileEditModal}
         onAddProfileItem={addProfileListItem}
