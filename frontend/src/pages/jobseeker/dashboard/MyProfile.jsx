@@ -4387,7 +4387,7 @@ const MyProfile = () => {
         onChangeProfileItem={updateProfileListItem}
       />
 
-      <div className={`min-h-[100dvh] h-auto bg-white overflow-x-hidden overflow-y-visible ${isApplyFlow ? 'pb-28 sm:pb-32' : 'pb-6'}`}>
+      <div className={`min-h-[100dvh] h-auto bg-transparent overflow-x-hidden overflow-y-visible ${isApplyFlow ? 'pb-28 sm:pb-32' : 'pb-6'}`}>
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
           {error ? <Alert type="error" title="Error" message={error} onClose={() => setError('')} /> : null}
 
@@ -4397,8 +4397,8 @@ const MyProfile = () => {
             </div>
           ) : null}
 
-          <div className="bg-white overflow-visible">
-            <div className="relative z-50 w-full max-w-full px-0 py-10">
+          <div className="bg-transparent overflow-visible">
+            <div className="relative z-0 w-full max-w-full px-0 py-10">
               <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1040px)] justify-center gap-10 items-start">
                 <div className="bg-white border border-[#d8e2ee] rounded-[18px] shadow-[0_8px_30px_rgba(46,102,166,0.10)] min-h-[760px] px-6 sm:px-10 lg:px-14 py-10">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
