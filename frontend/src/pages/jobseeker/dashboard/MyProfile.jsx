@@ -3206,7 +3206,7 @@ const MyProfile = () => {
     return (
       <JobSeekerLayout>
         <div className="max-w-6xl mx-auto px-4 py-8">
-          <div className="animate-pulse rounded-[24px] bg-white border border-gray-200 overflow-hidden">
+          <div className="animate-pulse rounded-[24px]  border border-gray-200 overflow-hidden">
             <div className="h-40 bg-gray-200" />
             <div className="h-[900px] bg-gray-100" />
           </div>
