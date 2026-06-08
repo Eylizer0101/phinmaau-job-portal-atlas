@@ -2569,7 +2569,7 @@ const MyProfile = () => {
     references: false,
   });
 
-  const [activeTab, setActiveTab] = useState('personal');
+  const [openTabs, setOpenTabs] = useState(['personal']);
   const [editModalSection, setEditModalSection] = useState('');
   const [addSectionsModalOpen, setAddSectionsModalOpen] = useState(false);
   const [skillProficiencyModalOpen, setSkillProficiencyModalOpen] = useState(false);
@@ -3978,7 +3978,7 @@ const MyProfile = () => {
 
   const handleAddMoreSection = (sectionKey) => {
     setAddedMoreSections((prev) => (prev.includes(sectionKey) ? prev : [...prev, sectionKey]));
-    setActiveTab(sectionKey);
+    setOpenTabs((prev) => (prev.includes(sectionKey) ? prev : [...prev, sectionKey]));
     setAddSectionsModalOpen(false);
   };
 
@@ -4448,7 +4448,7 @@ const MyProfile = () => {
                       ...addedMoreSections.map((key) => ({ key, label: MORE_PROFILE_SECTIONS[key]?.title || key, actionLabel: (formData[key] || []).length ? 'EDIT' : 'ADD' })),
                     ].map((section) => {
                       const targetTab = section.key === 'about' ? 'about' : section.key === 'work' ? 'work' : section.key === 'skills' ? 'skills' : section.key;
-                      const isOpen = activeTab === targetTab;
+                      const isOpen = openTabs.includes(targetTab);
 
                       return (
                         <div key={section.key} className="w-full bg-white">
@@ -4456,7 +4456,11 @@ const MyProfile = () => {
                             <button
                               type="button"
                               onClick={() => {
-                                setActiveTab((currentTab) => (currentTab === targetTab ? '' : targetTab));
+                                setOpenTabs((currentTabs) =>
+                                  currentTabs.includes(targetTab)
+                                    ? currentTabs.filter((tab) => tab !== targetTab)
+                                    : [...currentTabs, targetTab]
+                                );
                               }}
                               className="flex-1 min-h-[44px] inline-flex items-center gap-3 min-w-0 text-left"
                             >
