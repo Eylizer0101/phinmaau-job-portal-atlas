@@ -35,12 +35,6 @@ import {
   FaPlus,
   FaArrowLeft,
   FaCamera,
-  FaFolderOpen,
-  FaBookOpen,
-  FaAward,
-  FaUsers,
-  FaWaveSquare,
-  FaUserCheck,
 } from 'react-icons/fa';
 
 const COLORS = {
@@ -145,27 +139,6 @@ const MORE_PROFILE_SECTIONS = {
 };
 
 const MORE_PROFILE_TAB_KEYS = Object.keys(MORE_PROFILE_SECTIONS);
-
-const MORE_SECTION_MODAL_STYLES = {
-  certifications: { icon: <FaGraduationCap />, color: '#f97316' },
-  projects: { icon: <FaFolderOpen />, color: '#3b82f6' },
-  seminars: { icon: <FaBookOpen />, color: '#06b6d4' },
-  awards: { icon: <FaAward />, color: '#eab308' },
-  affiliations: { icon: <FaUsers />, color: '#14b8a6' },
-  cocurricular: { icon: <FaWaveSquare />, color: '#a855f7' },
-  references: { icon: <FaUserCheck />, color: '#22c55e' },
-};
-
-const MORE_SECTION_DESCRIPTIONS = {
-  certifications: 'There are jobs that require certain certifications or licensure. Being officially qualified is a plus.',
-  projects: 'Showcase your personal or professional projects that demonstrate your skills and initiative.',
-  seminars: 'Tell employers that you have certain skills and insights from trainings or other professionals.',
-  awards: 'Highlight recognitions, awards, and achievements that set you apart from other candidates.',
-  affiliations: 'Share organizations, memberships, or affiliations that help employers understand your background.',
-  cocurricular: 'Add extracurricular and co-curricular activities that show leadership and personality.',
-  references: 'Add professional references who can vouch for your skills, work ethic, and character.',
-};
-
 
 const buildAddressString = (source = {}) => {
   const parts = [
@@ -949,6 +922,94 @@ const EditableProfileListSection = ({
   );
 };
 
+
+const ADD_MORE_SECTION_DETAILS = {
+  certifications: {
+    description: 'There are jobs that require certain certifications or licensure. Being officially qualified or skilled in a certain area is a plus.',
+    icon: <FaGraduationCap />,
+    iconClass: 'text-orange-500 border-orange-200 bg-orange-50',
+  },
+  projects: {
+    description: 'Showcase your personal or professional projects that demonstrate your skills and initiative.',
+    icon: <FaFileAlt />,
+    iconClass: 'text-blue-500 border-blue-200 bg-blue-50',
+  },
+  seminars: {
+    description: 'This section is another way of telling employers that you have certain skills and insights from other professionals.',
+    icon: <FaUniversity />,
+    iconClass: 'text-cyan-500 border-cyan-200 bg-cyan-50',
+  },
+  awards: {
+    description: 'Highlight recognitions, awards, and notable achievements that set you apart from other candidates.',
+    icon: <FaCheckCircle />,
+    iconClass: 'text-yellow-500 border-yellow-200 bg-yellow-50',
+  },
+  affiliations: {
+    description: 'Add organizations, clubs, or groups that help employers understand your involvement and background.',
+    icon: <FaUser />,
+    iconClass: 'text-teal-500 border-teal-200 bg-teal-50',
+  },
+  cocurricular: {
+    description: 'Extracurricular and co-curricular activities show your well-rounded personality and leadership potential.',
+    icon: <FaBriefcase />,
+    iconClass: 'text-purple-500 border-purple-200 bg-purple-50',
+  },
+  references: {
+    description: 'Professional references who can vouch for your skills, work ethic, and character.',
+    icon: <FaCheckCircle />,
+    iconClass: 'text-green-500 border-green-200 bg-green-50',
+  },
+};
+
+const AddMoreSectionsModal = ({ open, addedSections = [], onClose, onAdd }) => {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[10005] bg-black/75 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true">
+      <div className="w-full max-w-[640px] max-h-[78vh] bg-white rounded-[8px] shadow-2xl overflow-hidden flex flex-col">
+        <div className="px-7 py-5 flex items-center justify-between border-b border-gray-100">
+          <h2 className="text-[22px] font-semibold text-gray-900">Add More Sections</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-9 h-9 rounded-full text-gray-500 hover:bg-gray-100 text-2xl leading-none"
+            aria-label="Close add sections modal"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="overflow-y-auto px-7 py-2">
+          {MORE_PROFILE_TAB_KEYS.map((sectionKey) => {
+            const config = MORE_PROFILE_SECTIONS[sectionKey];
+            const details = ADD_MORE_SECTION_DETAILS[sectionKey] || {};
+            const alreadyAdded = addedSections.includes(sectionKey);
+
+            return (
+              <div key={sectionKey} className="grid grid-cols-[52px_1fr_auto] gap-4 py-5 border-b border-gray-200 last:border-b-0 items-center">
+                <div className={`w-11 h-11 rounded-xl border flex items-center justify-center text-2xl ${details.iconClass || 'text-[#2e66a6] border-blue-200 bg-blue-50'}`}>
+                  {details.icon || <FaFileAlt />}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[17px] font-bold text-gray-900">{config.title}</div>
+                  <div className="text-[13px] leading-6 text-gray-500 mt-1">{details.description}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onAdd(sectionKey)}
+                  className={`h-11 min-w-[98px] rounded-lg px-5 text-white text-sm font-bold ${alreadyAdded ? 'bg-[#2aa79b]' : 'bg-[#2aa79b] hover:bg-[#248f85]'}`}
+                >
+                  {alreadyAdded ? 'ADDED' : 'ADD'}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const WorkExperienceModal = ({
   open,
   mode,
@@ -1371,276 +1432,6 @@ const EmailUpdateModal = ({
   );
 };
 
-
-const AddSectionsModal = ({ open, addedSections = [], onAdd, onClose }) => {
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-[10005] bg-black/75 flex items-start justify-center px-4 py-20" role="dialog" aria-modal="true">
-      <div className="relative w-full max-w-[625px] max-h-[78vh] bg-white rounded-[6px] shadow-2xl overflow-hidden">
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-5 top-4 z-10 text-gray-500 hover:text-gray-800 text-2xl leading-none"
-          aria-label="Close add sections modal"
-        >
-          ×
-        </button>
-
-        <div className="max-h-[78vh] overflow-y-auto px-8 pt-7 pb-4">
-          <h2 className="text-[24px] font-bold text-gray-900 mb-4">Add More Sections</h2>
-
-          {MORE_PROFILE_TAB_KEYS.map((key) => {
-            const config = MORE_PROFILE_SECTIONS[key];
-            const alreadyAdded = addedSections.includes(key);
-            const style = MORE_SECTION_MODAL_STYLES[key] || { icon: <FaPlus />, color: '#27a69a' };
-
-            return (
-              <div key={key} className="grid grid-cols-[48px_1fr_104px] items-center gap-5 py-5 border-b border-gray-200 last:border-b-0">
-                <div className="text-[38px] flex items-center justify-center shrink-0" style={{ color: style.color }}>
-                  {style.icon}
-                </div>
-
-                <div className="min-w-0">
-                  <div className="text-[17px] font-bold text-gray-900">{config.title}</div>
-                  <p className="text-[14px] leading-6 text-gray-500 mt-1">
-                    {MORE_SECTION_DESCRIPTIONS[key] || 'Add this section to complete your profile.'}
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => onAdd(key)}
-                  disabled={alreadyAdded}
-                  className={`h-11 rounded-[7px] text-[15px] font-bold text-white transition ${alreadyAdded ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#27a69a] hover:bg-[#208d83]'}`}
-                >
-                  {alreadyAdded ? 'ADDED' : 'ADD'}
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-
-const ProfileTodoList = ({ completed = [] }) => {
-  const items = [
-    { key: 'basic', label: 'Complete Basic Info' },
-    { key: 'career', label: 'Availability and Preferences' },
-    { key: 'work', label: 'Work Experience' },
-    { key: 'skills', label: 'Skills' },
-    { key: 'education', label: 'Education' },
-    { key: 'certifications', label: 'Certifications' },
-    { key: 'projects', label: 'Projects' },
-    { key: 'seminars', label: 'Seminars and Trainings' },
-    { key: 'awards', label: 'Awards and Achievements' },
-    { key: 'affiliations', label: 'Affiliations' },
-    { key: 'cocurricular', label: 'Co-curricular Activities' },
-    { key: 'references', label: 'References' },
-  ];
-
-  const doneCount = items.filter((item) => completed.includes(item.key)).length;
-  const percent = Math.round((doneCount / items.length) * 100);
-
-  return (
-    <aside className="w-full rounded-[14px] border border-gray-200 bg-white px-5 py-5 shadow-sm">
-      <h3 className="text-[18px] font-bold text-gray-900 mb-4">To-Do List</h3>
-      <div className="text-center text-[#008f80] font-bold text-sm mb-2">{percent}% Done</div>
-      <div className="h-2 rounded-full bg-[#ecebea] overflow-hidden mb-4">
-        <div className="h-full bg-[#0f9f91] transition-all" style={{ width: `${percent}%` }} />
-      </div>
-      <div className="space-y-3">
-        {items.map((item) => {
-          const done = completed.includes(item.key);
-          return (
-            <div key={item.key} className="flex items-center gap-3 text-[15px] text-gray-900">
-              <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${done ? 'border-[#0f9f91] bg-[#0f9f91]' : 'border-gray-300 bg-white'}`}>
-                {done ? <FaCheckCircle className="text-white text-[10px]" /> : null}
-              </span>
-              <span className="flex-1 leading-5">{item.label}</span>
-              <FaInfoCircle className="text-gray-300 text-[15px] shrink-0" />
-            </div>
-          );
-        })}
-      </div>
-    </aside>
-  );
-};
-
-
-const ProfileEditModal = ({
-  open,
-  sectionKey,
-  drafts,
-  saving,
-  error,
-  yearOptions = [],
-  onChange,
-  onArrayTextChange,
-  onSave,
-  onClose,
-  onAddProfileItem,
-  onRemoveProfileItem,
-  onChangeProfileItem,
-}) => {
-  if (!open || !sectionKey) return null;
-
-  const titleMap = {
-    about: 'Edit Objective',
-    career: 'Edit Availability & Preferences',
-    skills: 'Edit Skills',
-    education: 'Edit Education',
-  };
-
-  const moreConfig = MORE_PROFILE_SECTIONS[sectionKey];
-  const title = moreConfig?.title ? `Edit ${moreConfig.title}` : titleMap[sectionKey] || 'Edit Section';
-
-  const renderContent = () => {
-    if (sectionKey === 'about') {
-      return (
-        <TextArea
-          label="Objective"
-          rows={8}
-          value={drafts.aboutMe}
-          onChange={(e) => onChange('aboutMe', e.target.value)}
-          placeholder="Write a short paragraph (3-5 sentences) about yourself"
-        />
-      );
-    }
-
-    if (sectionKey === 'career') {
-      return (
-        <div className="grid md:grid-cols-2 gap-5">
-          <Input label="Preferred Work Mode" value={drafts.preferredWorkMode} onChange={(e) => onChange('preferredWorkMode', e.target.value)} placeholder="Preferred Work Mode" />
-          <Input label="Employment Type" value={drafts.employmentType} onChange={(e) => onChange('employmentType', e.target.value)} placeholder="Employment Type" />
-          <Input label="Willing to Relocate" value={drafts.willingToRelocate} onChange={(e) => onChange('willingToRelocate', e.target.value)} placeholder="Willing to Relocate" />
-          <Input label="How Soon Can Start" value={drafts.howSoonCanYouStart} onChange={(e) => onChange('howSoonCanYouStart', e.target.value)} placeholder="How Soon Can Start" />
-          <Input label="Preferred Language" value={drafts.preferredLanguage} onChange={(e) => onChange('preferredLanguage', e.target.value)} placeholder="Preferred Language" />
-          <Input label="Educational Attainment" value={drafts.educationalAttainment} onChange={(e) => onChange('educationalAttainment', e.target.value)} placeholder="Educational Attainment" />
-          <Input label="Study Field" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} placeholder="Study Field" />
-          <Input label="Minimum Salary" value={drafts.minimumSalary} onChange={(e) => onChange('minimumSalary', e.target.value)} placeholder="Minimum Salary" />
-          <Input label="Maximum Salary" value={drafts.maximumSalary} onChange={(e) => onChange('maximumSalary', e.target.value)} placeholder="Maximum Salary" />
-          <Input label="Height" value={drafts.height} onChange={(e) => onChange('height', e.target.value)} placeholder="Height" />
-          <Input label="Weight" value={drafts.weight} onChange={(e) => onChange('weight', e.target.value)} placeholder="Weight" />
-          <Input label="Nationality" value={drafts.nationality} onChange={(e) => onChange('nationality', e.target.value)} placeholder="Nationality" />
-          <Input label="Gender" value={drafts.gender} onChange={(e) => onChange('gender', e.target.value)} placeholder="Gender" />
-          <Input label="Civil Status" value={drafts.civilStatus} onChange={(e) => onChange('civilStatus', e.target.value)} placeholder="Civil Status" />
-          <Input label="Birthday" type="date" value={drafts.birthday} onChange={(e) => onChange('birthday', e.target.value)} />
-        </div>
-      );
-    }
-
-    if (sectionKey === 'skills') {
-      return (
-        <div className="space-y-5">
-          <Input
-            label="Technical Skills"
-            value={(drafts.technicalSkills || []).join(', ')}
-            onChange={(e) => onArrayTextChange('technicalSkills', e.target.value)}
-            placeholder="e.g. Figma, MS Word, MS Excel"
-          />
-          <Input
-            label="Soft Skills"
-            value={(drafts.softSkills || []).join(', ')}
-            onChange={(e) => onArrayTextChange('softSkills', e.target.value)}
-            placeholder="e.g. Communication, Teamwork, Time Management"
-          />
-          <TextArea
-            label="What Have You Done"
-            rows={4}
-            value={drafts.whatHaveYouDone}
-            onChange={(e) => onChange('whatHaveYouDone', e.target.value)}
-            placeholder="Describe your skills, experience, or achievements."
-          />
-        </div>
-      );
-    }
-
-    if (sectionKey === 'education') {
-      return (
-        <div className="grid md:grid-cols-2 gap-5">
-          <Select label="Educational Attainment" value={drafts.eduLevel} onChange={(e) => onChange('eduLevel', e.target.value)} options={EDUCATION_LEVEL_OPTIONS} placeholder="Select educational attainment" />
-          <Select label="Campus / School" value={drafts.eduCampus} onChange={(e) => onChange('eduCampus', e.target.value)} options={CAMPUS_OPTIONS} placeholder="Select campus / school" />
-          <Select label="Course" value={drafts.eduCourse} onChange={(e) => onChange('eduCourse', e.target.value)} options={MAJOR_COURSE_OPTIONS} placeholder="Select course" />
-          <Input label="Study Field" value={drafts.eduStudyField} onChange={(e) => onChange('eduStudyField', e.target.value)} placeholder="Study field" />
-          <Select label="From Year" value={drafts.eduStartYear} onChange={(e) => onChange('eduStartYear', e.target.value)} options={yearOptions} placeholder="Year" />
-          <Select label="To Year" value={drafts.eduEndYear} onChange={(e) => onChange('eduEndYear', e.target.value)} options={yearOptions} placeholder="Year" />
-        </div>
-      );
-    }
-
-    if (moreConfig) {
-      const items = Array.isArray(drafts[sectionKey]) ? drafts[sectionKey] : [];
-      const fields = moreConfig.fields || [];
-
-      return (
-        <div className="space-y-5">
-          {items.map((item, index) => (
-            <div key={`${sectionKey}-${index}`} className="rounded-[14px] border border-gray-200 bg-gray-50 p-4 space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-sm font-bold text-gray-700">Entry {index + 1}</div>
-                <button
-                  type="button"
-                  onClick={() => onRemoveProfileItem(sectionKey, index)}
-                  className="h-9 px-3 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 text-sm font-semibold"
-                >
-                  Remove
-                </button>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                {fields.map((field) => (
-                  <div key={field.key} className={field.type === 'textarea' ? 'md:col-span-2' : ''}>
-                    {field.type === 'textarea' ? (
-                      <TextArea label={field.label} rows={3} value={item[field.key]} onChange={(e) => onChangeProfileItem(sectionKey, index, field.key, e.target.value)} placeholder={field.placeholder} />
-                    ) : (
-                      <Input label={field.label} value={item[field.key]} onChange={(e) => onChangeProfileItem(sectionKey, index, field.key, e.target.value)} placeholder={field.placeholder} />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-
-          <button
-            type="button"
-            onClick={() => onAddProfileItem(sectionKey)}
-            className="h-11 px-5 rounded-lg text-white font-semibold inline-flex items-center gap-2 bg-[#2e66a6]"
-          >
-            <FaPlus className="text-xs" /> Add Entry
-          </button>
-        </div>
-      );
-    }
-
-    return null;
-  };
-
-  return (
-    <div className="fixed inset-0 z-[10006] bg-black/45 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true">
-      <div className="w-full max-w-4xl max-h-[86vh] bg-white rounded-[6px] shadow-2xl border border-gray-200 overflow-hidden">
-        <div className="h-12 px-6 bg-[#0558ff] flex items-center justify-between gap-3">
-          <div className="text-white font-bold text-[15px] uppercase">{title}</div>
-          <button type="button" onClick={onClose} className="w-8 h-8 rounded-md text-white/90 hover:bg-white/15 text-2xl leading-none" aria-label="Close edit modal">×</button>
-        </div>
-
-        <div className="px-6 py-6 max-h-[calc(86vh-112px)] overflow-y-auto">
-          {error ? <Alert type="error" message={error} /> : null}
-          {renderContent()}
-        </div>
-
-        <div className="px-6 py-5 border-t border-gray-200 flex justify-end gap-3 bg-white">
-          <button type="button" onClick={onClose} className="px-5 h-10 rounded-[3px] border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50">Cancel</button>
-          <button type="button" onClick={onSave} disabled={saving} className="px-6 h-10 rounded-[3px] bg-[#0558ff] text-white font-semibold disabled:opacity-70">{saving ? 'Saving...' : 'Save'}</button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const MyProfile = () => {
   useEffect(() => {
     const previousHtmlOverflowY = document.documentElement.style.overflowY;
@@ -1726,7 +1517,6 @@ const MyProfile = () => {
   });
 
   const [activeTab, setActiveTab] = useState('personal');
-  const [editModalSection, setEditModalSection] = useState('');
   const [addSectionsModalOpen, setAddSectionsModalOpen] = useState(false);
   const [addedMoreSections, setAddedMoreSections] = useState([]);
 
@@ -1913,6 +1703,17 @@ const MyProfile = () => {
   const displayedAddress = useMemo(() => {
     const built = buildAddressString(formData);
     return built || formData.address || '';
+  }, [formData]);
+
+  useEffect(() => {
+    const sectionsWithData = MORE_PROFILE_TAB_KEYS.filter((sectionKey) => {
+      const value = formData[sectionKey];
+      return Array.isArray(value) && value.length > 0;
+    });
+
+    if (sectionsWithData.length) {
+      setAddedMoreSections((prev) => Array.from(new Set([...prev, ...sectionsWithData])));
+    }
   }, [formData]);
 
   const getEducationYearText = (entry) => {
@@ -2586,55 +2387,6 @@ const MyProfile = () => {
     setEditing((prev) => ({ ...prev, [sectionKey]: false }));
   };
 
-
-  const openProfileEditModal = (sectionKey) => {
-    if (sectionKey === 'personal') {
-      setDrafts(formData);
-      setEditing((prev) => ({ ...prev, basic: true }));
-      return;
-    }
-
-    if (sectionKey === 'work') {
-      openAddWorkExperienceModal();
-      return;
-    }
-
-    if (sectionKey === 'credentials') return;
-
-    setDrafts((prev) => {
-      const next = sectionKey === 'education' ? resetEducationDraftFields(formData) : { ...formData };
-
-      if (MORE_PROFILE_TAB_KEYS.includes(sectionKey)) {
-        const currentItems = Array.isArray(formData[sectionKey]) ? formData[sectionKey] : [];
-        next[sectionKey] = currentItems.length > 0 ? currentItems : [createEmptyProfileEntry(sectionKey)];
-      }
-
-      return next;
-    });
-
-    setEditModalSection(sectionKey);
-  };
-
-  const closeProfileEditModal = () => {
-    setDrafts(formData);
-    setError('');
-    setEditModalSection('');
-  };
-
-  const saveProfileEditModal = async () => {
-    if (!editModalSection) return;
-    await saveSection(editModalSection === 'skills' ? 'career' : editModalSection);
-    setEditModalSection('');
-  };
-
-  const handleArrayTextChange = (field, rawValue) => {
-    const nextValues = String(rawValue || '')
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean);
-    setDrafts((prev) => ({ ...prev, [field]: nextValues }));
-  };
-
   const startEditingProfileList = (sectionKey) => {
     setDrafts((prev) => ({
       ...prev,
@@ -2651,6 +2403,17 @@ const MyProfile = () => {
         createEmptyProfileEntry(sectionKey),
       ],
     }));
+  };
+
+  const handleAddSectionFromModal = (sectionKey) => {
+    const existingItems = Array.isArray(formData[sectionKey]) ? formData[sectionKey] : [];
+    const nextItems = existingItems.length > 0 ? existingItems : [createEmptyProfileEntry(sectionKey)];
+
+    setAddedMoreSections((prev) => Array.from(new Set([...prev, sectionKey])));
+    setDrafts((prev) => ({ ...prev, [sectionKey]: nextItems }));
+    setEditing((prev) => ({ ...prev, [sectionKey]: true }));
+    setActiveTab(sectionKey);
+    setAddSectionsModalOpen(false);
   };
 
   const removeProfileListItem = (sectionKey, index) => {
@@ -2971,19 +2734,6 @@ const MyProfile = () => {
     });
   };
 
-
-  useEffect(() => {
-    const filledSections = MORE_PROFILE_TAB_KEYS.filter((key) => Array.isArray(formData[key]) && formData[key].length > 0);
-    if (filledSections.length === 0) return;
-    setAddedMoreSections((prev) => Array.from(new Set([...prev, ...filledSections])));
-  }, [formData]);
-
-  const handleAddMoreSection = (sectionKey) => {
-    setAddedMoreSections((prev) => (prev.includes(sectionKey) ? prev : [...prev, sectionKey]));
-    setActiveTab(sectionKey);
-    setAddSectionsModalOpen(false);
-  };
-
  const personalDisplayItems = [
   { label: 'Birthday', value: formData.birthday },
   { label: 'Civil Status', value: formData.civilStatus },
@@ -3111,28 +2861,11 @@ const MyProfile = () => {
         onResendCode={handleResendEmailUpdateCode}
       />
 
-
-      <AddSectionsModal
+      <AddMoreSectionsModal
         open={addSectionsModalOpen}
         addedSections={addedMoreSections}
-        onAdd={handleAddMoreSection}
         onClose={() => setAddSectionsModalOpen(false)}
-      />
-
-      <ProfileEditModal
-        open={Boolean(editModalSection)}
-        sectionKey={editModalSection}
-        drafts={drafts}
-        saving={savingSection === editModalSection || (editModalSection === 'skills' && savingSection === 'career')}
-        error={error}
-        yearOptions={yearOptions}
-        onChange={handleLocalChange}
-        onArrayTextChange={handleArrayTextChange}
-        onSave={saveProfileEditModal}
-        onClose={closeProfileEditModal}
-        onAddProfileItem={addProfileListItem}
-        onRemoveProfileItem={removeProfileListItem}
-        onChangeProfileItem={updateProfileListItem}
+        onAdd={handleAddSectionFromModal}
       />
 
       <div className={`min-h-[100dvh] h-auto pt-2 bg-gray-50 overflow-x-hidden overflow-y-visible ${isApplyFlow ? 'pb-28 sm:pb-32' : 'pb-6'}`}>
@@ -3145,106 +2878,789 @@ const MyProfile = () => {
             </div>
           ) : null}
 
-          <div className="bg-white border border-[#d7dbe3] rounded-[18px] sm:rounded-[24px] overflow-visible shadow-sm">
-            <div className="relative z-50 w-full max-w-full px-4 sm:px-10 py-8">
-              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-10 items-start">
-                <div>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
-                    <div>
-                      <h2 className="text-[22px] font-bold text-gray-900">Profile</h2>
-                    </div>
+          <div className="bg-white border border-[#d7dbe3] rounded-[18px] sm:rounded-[24px] overflow-hidden sm:overflow-visible shadow-sm">
+            <div className="bg-gradient-to-r from-[#4a9fc3] via-[#336eb2] to-[#0f3e9c] min-h-[126px] sm:min-h-[106px] px-4 sm:px-8 relative">
+              <div className="absolute top-4 right-4 sm:top-6 sm:right-6 flex flex-wrap justify-end gap-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={handlePreviewResume}
+                  className="h-9 sm:h-10 px-3 sm:px-4 rounded-full bg-white text-gray-700 border border-gray-200 text-xs sm:text-sm font-semibold inline-flex items-center gap-2 hover:bg-gray-50"
+                >
+                  <FaEye className="text-xs" />
+                  Preview
+                </button>
 
-                    <div className="flex flex-wrap items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={handlePreviewResume}
-                        className="h-10 px-4 rounded-md bg-white text-gray-500 text-sm font-semibold inline-flex items-center gap-2 hover:bg-gray-50"
-                      >
-                        <FaEye className="text-xs" />
-                        Preview
-                      </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadResume}
+                  className="h-9 sm:h-10 px-3 sm:px-4 rounded-full text-white text-xs sm:text-sm font-semibold inline-flex items-center gap-2"
+                  style={{ backgroundColor: '#0f5fe0' }}
+                >
+                  <FaDownload className="text-xs" />
+                  Download CV
+                </button>
 
-                      <button
-                        type="button"
-                        onClick={handleDownloadResume}
-                        className="h-10 px-4 rounded-md bg-[#26a69a] text-white text-sm font-bold inline-flex items-center gap-2 hover:bg-[#208d83]"
-                      >
-                        <FaDownload className="text-xs" />
-                        Download CV
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setAddSectionsModalOpen(true)}
-                        className="h-10 px-4 rounded-md border border-gray-200 bg-white text-gray-800 font-semibold inline-flex items-center justify-center gap-2 hover:bg-gray-50"
-                      >
-                        <FaPlus className="text-sm" />
-                        Add Sections
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="bg-white">
-                    {[
-                      { key: 'personal', label: 'Basic Information', actionLabel: 'EDIT' },
-                      { key: 'about', label: 'Objective', actionLabel: formData.aboutMe ? 'EDIT' : 'ADD' },
-                      { key: 'career', label: 'Availability & Preferences', actionLabel: 'ADD' },
-                      { key: 'work', label: 'Work Experience', actionLabel: workExperiences.length ? 'EDIT' : 'ADD' },
-                      { key: 'skills', label: 'Skills', actionLabel: 'ADD' },
-                      { key: 'education', label: 'Education', actionLabel: hasEducationEntries ? 'EDIT' : 'ADD' },
-                      { key: 'credentials', label: 'Credentials', actionLabel: '' },
-                      ...addedMoreSections.map((key) => ({ key, label: MORE_PROFILE_SECTIONS[key]?.title || key, actionLabel: (formData[key] || []).length ? 'EDIT' : 'ADD' })),
-                    ].map((section) => {
-                      const targetTab = section.key === 'about' ? 'about' : section.key === 'work' ? 'work' : section.key === 'skills' ? 'skills' : section.key;
-                      const isOpen = activeTab === targetTab;
-
-                      return (
-                        <div
-                          key={section.key}
-                          className="w-full min-h-[44px] px-1 border-b border-gray-200 flex items-center justify-between gap-4 text-left bg-white hover:bg-gray-50 transition"
-                        >
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (section.key === 'about') setActiveTab('about');
-                              else if (section.key === 'work') setActiveTab('work');
-                              else if (section.key === 'skills') setActiveTab('skills');
-                              else setActiveTab(section.key);
-                            }}
-                            className="flex-1 min-h-[44px] inline-flex items-center gap-3 min-w-0 text-left"
-                          >
-                            <span className="text-gray-500 text-[14px] leading-none">{isOpen ? '⌃' : '⌄'}</span>
-                            <span className="text-[15px] font-bold uppercase tracking-wide text-gray-900 truncate">{section.label}</span>
-                          </button>
-
-                          {section.actionLabel ? (
-                            <button
-                              type="button"
-                              onClick={() => openProfileEditModal(section.key)}
-                              className="h-9 px-2 text-[#0b73ff] text-sm font-bold shrink-0 hover:underline"
-                            >
-                              {section.actionLabel}
-                            </button>
-                          ) : null}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <ProfileTodoList
-                  completed={[
-                    formData.firstName && formData.lastName ? 'basic' : '',
-                    formData.preferredWorkMode || formData.employmentType ? 'career' : '',
-                    workExperiences.length > 0 ? 'work' : '',
-                    (formData.technicalSkills?.length || formData.softSkills?.length) ? 'skills' : '',
-                    hasEducationEntries ? 'education' : '',
-                    ...MORE_PROFILE_TAB_KEYS.filter((key) => Array.isArray(formData[key]) && formData[key].length > 0),
-                  ].filter(Boolean)}
-                />
+                <button
+                  type="button"
+                  onClick={() => setAddSectionsModalOpen(true)}
+                  className="h-9 sm:h-10 px-3 sm:px-4 rounded-full bg-white text-gray-700 border border-gray-200 text-xs sm:text-sm font-semibold inline-flex items-center gap-2 hover:bg-gray-50"
+                >
+                  <FaPlus className="text-xs" />
+                  Add Sections
+                </button>
               </div>
             </div>
 
+            <div className="px-4 sm:px-8 pt-0 pb-5">
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                <div className="flex flex-col sm:flex-row gap-4 flex-1 min-w-0">
+                  <div className="relative -mt-12 sm:-mt-11 shrink-0 self-center sm:self-auto">
+                    <div className="w-[104px] h-[104px] sm:w-[116px] sm:h-[116px] rounded-full border-[5px] border-white bg-white overflow-hidden shadow-md">
+                      {userData?.profileImage ? (
+                        <img src={userData.profileImage} alt={fullName} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-blue-100 text-[#2e66a6] font-bold text-4xl flex items-center justify-center">
+                          {(fullName || 'U').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="pt-1 sm:pt-5 flex-1 min-w-0 text-center sm:text-left">
+                    <div className="relative flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 min-w-0">
+                      <div className="min-w-0">
+                        <h1 className="text-[24px] sm:text-[31px] font-bold text-[#1f2937] leading-tight break-words">
+                          {fullName || 'Your Name'}
+                        </h1>
+
+                       
+                       <div className="mt-3 flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3 text-gray-700 min-w-0">
+  <div className="inline-flex items-center gap-2 text-[13px] sm:text-[15px] font-medium min-w-0 max-w-full">
+    <FaGraduationCap className="text-gray-500" />
+    <span className="break-words">{courseText}</span>
+  </div>
+
+  <div className="inline-flex items-center gap-2 text-[13px] sm:text-[15px] font-medium min-w-0 max-w-full">
+    <FaUniversity className="text-gray-500" />
+    <span className="break-words">{formData.campus || 'Campus not set'}</span>
+  </div>
+
+  <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold tracking-wide bg-[#dfe8ff] text-[#4766c2]">
+    {classOfText}
+  </span>
+</div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDrafts(formData);
+                          setEditing((prev) => ({ ...prev, basic: true }));
+                        }}
+                        className="absolute right-0 top-1 sm:top-0 w-11 h-11 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-gray-700 hover:bg-gray-50"
+                        aria-label="Edit basic information"
+                      >
+                        <FaPen className="text-sm" />
+                      </button>
+                    </div>
+
+                    <div className="mt-3 mx-auto sm:mx-0 flex w-full max-w-[320px] flex-col items-stretch gap-2 text-sm text-gray-500 min-w-0 text-left sm:max-w-none sm:flex-row sm:flex-wrap sm:items-start sm:gap-x-6">
+                      <div className="flex w-full items-start gap-2 min-w-0 sm:w-auto sm:max-w-full">
+                        <FaEnvelope className="mt-0.5 text-gray-400 shrink-0" />
+                        <span className="min-w-0 flex-1 break-all text-left leading-5">{formData.email || 'Not provided'}</span>
+                      </div>
+
+                      <div className="flex w-full items-start gap-2 min-w-0 sm:w-auto sm:max-w-full">
+                        <FaPhoneAlt className="mt-0.5 text-gray-400 shrink-0" />
+                        <span className="min-w-0 flex-1 break-all text-left leading-5">{formData.phoneNumber || 'Not provided'}</span>
+                      </div>
+
+                      <div className="flex w-full items-start gap-2 min-w-0 sm:w-auto sm:max-w-[360px]">
+                        <FaMapMarkerAlt className="mt-0.5 text-gray-400 shrink-0" />
+                        <span className="min-w-0 flex-1 break-words text-left leading-5">
+                          {displayedAddress || 'Address not provided'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-[#d7dbe3]" />
+
+            <div>
+              <SectionHeader title="Objective" editLabel="Edit Objective" onEdit={() => setEditing((prev) => ({ ...prev, about: !prev.about }))} />
+              <div className="px-6 sm:px-10 pb-6">
+                {!editing.about ? (
+                  <div className="rounded-[20px] border border-gray-200 bg-[#fcfcfd] p-5 sm:p-6">
+                    <p className={`text-[16px] leading-8 ${formData.aboutMe ? 'text-gray-600' : 'text-gray-400'}`}>
+                      {formData.aboutMe || 'Add a short professional summary about yourself.'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 rounded-[20px] border border-gray-200 bg-[#fcfcfd] p-5 sm:p-6">
+                    <TextArea
+                      label="Objective"
+                      rows={5}
+                      value={drafts.aboutMe}
+                      onChange={(e) => handleLocalChange('aboutMe', e.target.value)}
+                      placeholder="Write a short professional introduction..."
+                    />
+                    <div className="flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={() => cancelEdit('about')}
+                        className="px-4 h-11 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => saveSection('about')}
+                        disabled={savingSection === 'about'}
+                        className="px-5 h-11 rounded-xl text-white font-semibold disabled:opacity-70"
+                        style={{ backgroundColor: COLORS.primary }}
+                      >
+                        {savingSection === 'about' ? 'Saving...' : 'Save'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="border-t border-[#d7dbe3]" />
+
+            <div>
+              <div className="px-6 sm:px-10 py-5 flex items-center justify-between gap-3">
+                <h2 className="text-[18px] sm:text-[20px] font-bold text-gray-900">WORK EXPERIENCE</h2>
+              </div>
+              <div className="px-6 sm:px-10 pb-6">
+                <div className="rounded-[20px] border border-gray-200 bg-[#fcfcfd] p-5 sm:p-6">
+                  {workExperienceLoading ? (
+                    <div className="flex items-center justify-center py-10">
+                      <Spinner />
+                    </div>
+                  ) : workExperiences.length === 0 ? (
+                    <div className="rounded-[18px] border border-dashed border-gray-300 bg-white px-6 py-10 text-center">
+                      <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4">
+                        <FaBriefcase className="text-xl" />
+                      </div>
+                      <div className="text-[18px] font-bold text-gray-900">No work experience added yet</div>
+                      <div className="text-sm text-gray-500 mt-2">
+                        Add your work experience so employers can better see your background.
+                      </div>
+                      <button
+                        type="button"
+                        onClick={openAddWorkExperienceModal}
+                        className="mt-5 h-11 px-5 rounded-xl text-white font-semibold inline-flex items-center gap-2"
+                        style={{ backgroundColor: COLORS.primary }}
+                      >
+                        <FaPlus className="text-xs" />
+                        Add Work Experience
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {workExperiences.map((item, index) => (
+                        <div
+                          key={item._id || item.id || `${item.companyName}-${item.positionTitle}-${index}`}
+                          className="rounded-[18px] border border-gray-200 bg-white px-5 py-5"
+                        >
+                          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                            <div className="min-w-0">
+                              <div className="text-[24px] font-bold text-gray-900 leading-tight">
+                                {item.companyName || 'Company not provided'}
+                              </div>
+                              <div className="text-[17px] text-gray-600 font-medium mt-2">
+                                {item.positionTitle || 'Position not provided'}
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col items-start md:items-end gap-3 shrink-0">
+                              <div className="text-sm text-gray-400 italic">
+                                {getWorkExperienceDateRange(item)}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => openEditWorkExperienceModal(item)}
+                                  className="h-10 px-3 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 inline-flex items-center gap-2"
+                                >
+                                  <FaPen className="text-xs" />
+                                  <span className="text-sm font-semibold">Edit</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteWorkExperience(item)}
+                                  className="h-10 px-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 inline-flex items-center gap-2"
+                                >
+                                  <FaTrash className="text-xs" />
+                                  <span className="text-sm font-semibold">Delete</span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-[15px] leading-7 text-gray-600 mt-4">
+                            {item.description || 'No description provided.'}
+                          </div>
+                        </div>
+                      ))}
+
+                      <div className="pt-2">
+                        <button
+                          type="button"
+                          onClick={openAddWorkExperienceModal}
+                          className="h-11 px-5 rounded-xl text-white font-semibold inline-flex items-center gap-2"
+                          style={{ backgroundColor: COLORS.primary }}
+                        >
+                          <FaPlus className="text-xs" />
+                          Add Another Work Experience
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-[#d7dbe3]" />
+
+            <div className="relative z-50 w-full max-w-full px-4 sm:px-10 py-3 overflow-hidden">
+              <div className="w-full max-w-full overflow-x-auto overflow-y-hidden [-webkit-overflow-scrolling:touch] touch-pan-x">
+                <div className="flex min-w-max items-center gap-3 sm:gap-5 border-b border-gray-200 pb-px" role="tablist" aria-label="Profile sections">
+                <NavTab
+                  active={activeTab === 'personal'}
+                  icon={<FaUser />}
+                  label="Personal Info"
+                  panelId="panel-personal"
+                  onClick={() => setActiveTab('personal')}
+                />
+                <NavTab
+                  active={activeTab === 'career'}
+                  icon={<FaBriefcase />}
+                  label="Career Profile"
+                  panelId="panel-career"
+                  onClick={() => setActiveTab('career')}
+                />
+                <NavTab
+                  active={activeTab === 'credentials'}
+                  icon={<FaShieldAlt />}
+                  label="Credentials"
+                  panelId="panel-credentials"
+                  onClick={() => setActiveTab('credentials')}
+                />
+                <NavTab
+                  active={activeTab === 'education'}
+                  icon={<FaGraduationCap />}
+                  label="Education"
+                  panelId="panel-education"
+                  onClick={() => setActiveTab('education')}
+                />
+                <ProfileMoreDropdown activeTab={activeTab} onChange={setActiveTab} visibleSections={addedMoreSections} />
+                </div>
+              </div>
+            </div>
+
+            {activeTab === 'personal' && (
+              <div id="panel-personal" role="tabpanel">
+                <SectionHeader title="Personal Information" editLabel="Edit personal information" onEdit={() => setEditing((prev) => ({ ...prev, personal: !prev.personal }))} />
+                <div className="px-4 sm:px-10 pb-8">
+                  {!editing.personal ? (
+                    <ReadSectionCard items={personalDisplayItems} />
+                  ) : (
+                    <div className="space-y-5 rounded-[20px] border border-gray-200 bg-[#fcfcfd] p-5 sm:p-6">
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <Input label="Birthday" type="date" value={drafts.birthday} onChange={(e) => handleLocalChange('birthday', e.target.value)} />
+                        <Input label="Height" value={drafts.height} onChange={(e) => handleLocalChange('height', e.target.value)} placeholder={`e.g. 5'7" (170 cm)`} />
+                        <Input label="Nationality" value={drafts.nationality} onChange={(e) => handleLocalChange('nationality', e.target.value)} placeholder="e.g. Filipino" />
+                        <Select
+                          label="Gender"
+                          value={drafts.gender}
+                          onChange={(e) => handleLocalChange('gender', e.target.value)}
+                          options={['Male', 'Female', 'Prefer not to say']}
+                        />
+                        <Select
+                          label="Civil Status"
+                          value={drafts.civilStatus}
+                          onChange={(e) => handleLocalChange('civilStatus', e.target.value)}
+                          options={['Single', 'Married', 'Separated', 'Widowed']}
+                        />
+                        <Input label="Weight" value={drafts.weight} onChange={(e) => handleLocalChange('weight', e.target.value)} placeholder="e.g. 65 kg" />
+                        <Input label="Preferred Language" value={drafts.preferredLanguage} onChange={(e) => handleLocalChange('preferredLanguage', e.target.value)} placeholder="e.g. English, Filipino" />
+                      </div>
+
+                      <div className="flex justify-end gap-3">
+                        <button
+                          type="button"
+                          onClick={() => cancelEdit('personal')}
+                          className="px-4 h-11 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => saveSection('personal')}
+                          disabled={savingSection === 'personal'}
+                          className="px-5 h-11 rounded-xl text-white font-semibold disabled:opacity-70"
+                          style={{ backgroundColor: COLORS.primary }}
+                        >
+                          {savingSection === 'personal' ? 'Saving...' : 'Save'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'career' && (
+              <div id="panel-career" role="tabpanel">
+                <SectionHeader title="Career Profile" editLabel="Edit career profile" onEdit={() => setEditing((prev) => ({ ...prev, career: !prev.career }))} />
+                <div className="px-4 sm:px-10 pb-8">
+                  {!editing.career ? (
+                    <div className="space-y-6 rounded-[20px] border border-gray-200 bg-[#fcfcfd] p-5 sm:p-6">
+                      <div className="rounded-[18px] border border-gray-200 bg-white p-5 sm:p-6">
+                        <div className="text-[12px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-4">
+                          Salary Expectation
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-8">
+                          <div>
+                            <div className="text-[10px] sm:text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">Minimum Salary (PHP)</div>
+                            <div className={`text-[36px] font-bold ${formData.minimumSalary ? 'text-gray-900' : 'text-gray-300'}`}>
+                              {formData.minimumSalary ? `₱ ${Number(formData.minimumSalary).toLocaleString()}` : 'Not set'}
+                            </div>
+                            <div className="text-sm text-gray-400 mt-1">Philippine Peso (PHP) only</div>
+                          </div>
+
+                          <div>
+                            <div className="text-[10px] sm:text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">Maximum Salary (PHP)</div>
+                            <div className={`text-[36px] font-bold ${formData.maximumSalary ? 'text-gray-900' : 'text-gray-300'}`}>
+                              {formData.maximumSalary ? `₱ ${Number(formData.maximumSalary).toLocaleString()}` : 'Not set'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-[10px] sm:text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-3">Technical Skills</div>
+                        <div className="flex flex-wrap gap-2">
+                          {(formData.technicalSkills || []).length > 0 ? (
+                            (formData.technicalSkills || []).map((skill) => <TinyChip key={`tech-${skill}`}>{skill}</TinyChip>)
+                          ) : (
+                            <span className="text-gray-400">Not provided</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-[10px] sm:text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-3">Soft Skills</div>
+                        <div className="flex flex-wrap gap-2">
+                          {(formData.softSkills || []).length > 0 ? (
+                            (formData.softSkills || []).map((skill) => <TinyChip key={`soft-${skill}`}>{skill}</TinyChip>)
+                          ) : (
+                            <span className="text-gray-400">Not provided</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <ReadSectionCard items={careerDisplayItems} />
+                    </div>
+                  ) : (
+                    <div className="space-y-6 rounded-[20px] border border-gray-200 bg-[#fcfcfd] p-5 sm:p-6">
+                      <div className="rounded-2xl border border-gray-200 p-4 bg-white">
+                        <div className="text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-4">Salary Expectation</div>
+                        <div className="grid md:grid-cols-2 gap-6">
+                          <Input
+                            label="Minimum Salary (PHP)"
+                            type="number"
+                            value={drafts.minimumSalary}
+                            onChange={(e) => handleLocalChange('minimumSalary', e.target.value)}
+                            placeholder="25000"
+                          />
+                          <Input
+                            label="Maximum Salary (PHP)"
+                            type="number"
+                            value={drafts.maximumSalary}
+                            onChange={(e) => handleLocalChange('maximumSalary', e.target.value)}
+                            placeholder="40000"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <Select
+                          label="Preferred Work Mode"
+                          value={drafts.preferredWorkMode}
+                          onChange={(e) => handleLocalChange('preferredWorkMode', e.target.value)}
+                          options={['On-site', 'Blended', 'Remote', 'Work from home']}
+                        />
+                        <Select
+                          label="Employment Type"
+                          value={drafts.employmentType}
+                          onChange={(e) => handleLocalChange('employmentType', e.target.value)}
+                          options={['Full time', 'Part time', 'Contractual', 'Permanent']}
+                        />
+                        <Select
+                          label="Educational Attainment"
+                          value={drafts.educationalAttainment}
+                          onChange={(e) => handleLocalChange('educationalAttainment', e.target.value)}
+                          options={["Bachelor’s / College degree graduate's", 'Master’s degree', 'Doctorate', 'Vocational / Trade Course', 'Senior High Diploma']}
+                        />
+                        <Input
+                          label="Study Field"
+                          value={drafts.studyField}
+                          onChange={(e) => handleLocalChange('studyField', e.target.value)}
+                          placeholder="e.g. Information Technology"
+                        />
+                        <Select
+                          label="Willing to Relocate"
+                          value={drafts.willingToRelocate}
+                          onChange={(e) => handleLocalChange('willingToRelocate', e.target.value)}
+                          options={['Yes — willing to relocate', 'No — position is fixed location', 'Open to relocation if necessary']}
+                        />
+                        <Select
+                          label="How Soon Can You Start"
+                          value={drafts.howSoonCanYouStart}
+                          onChange={(e) => handleLocalChange('howSoonCanYouStart', e.target.value)}
+                          options={['Ready to start', 'Within a few days', 'Within 1 week', 'Within 2 week', 'Within a month']}
+                        />
+                      </div>
+
+                      <div className="grid lg:grid-cols-2 gap-6">
+                        <div className="rounded-2xl border border-gray-200 p-4 bg-white">
+                          <div className="text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-3">Technical Skills</div>
+                          <div className="flex gap-2">
+                            <input
+                              value={techInput}
+                              onChange={(e) => setTechInput(e.target.value)}
+                              placeholder="Search or type a skill"
+                              className="flex-1 h-11 px-4 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                addSkill('technical', techInput);
+                                setTechInput('');
+                              }}
+                              className="px-4 h-11 rounded-xl text-white font-semibold"
+                              style={{ backgroundColor: COLORS.primary }}
+                            >
+                              Add
+                            </button>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2 mt-4">
+                            {(drafts.technicalSkills || []).map((skill) => (
+                              <span
+                                key={skill}
+                                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 border border-gray-200 text-xs font-semibold text-gray-700"
+                              >
+                                {skill}
+                                <button type="button" aria-label={`Remove ${skill} technical skill`} onClick={() => removeSkill('technical', skill)}>
+                                  ×
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+
+                          <div className="flex flex-wrap gap-2 mt-4">
+                            {techInput.trim()
+                              ? techSuggestions
+                                  .filter((skill) => !drafts.technicalSkills.includes(skill))
+                                  .map((skill) => (
+                                    <button
+                                      key={skill}
+                                      type="button"
+                                      onClick={() => addSkill('technical', skill)}
+                                      className="px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-xs font-semibold text-blue-700"
+                                    >
+                                      {skill}
+                                    </button>
+                                  ))
+                              : null}
+                          </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-gray-200 p-4 bg-white">
+                          <div className="text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-3">Soft Skills</div>
+                          <div className="flex gap-2">
+                            <input
+                              value={softInput}
+                              onChange={(e) => setSoftInput(e.target.value)}
+                              placeholder="Search or type a skill"
+                              className="flex-1 h-11 px-4 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                addSkill('soft', softInput);
+                                setSoftInput('');
+                              }}
+                              className="px-4 h-11 rounded-xl text-white font-semibold"
+                              style={{ backgroundColor: COLORS.primary }}
+                            >
+                              Add
+                            </button>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2 mt-4">
+                            {(drafts.softSkills || []).map((skill) => (
+                              <span
+                                key={skill}
+                                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 border border-gray-200 text-xs font-semibold text-gray-700"
+                              >
+                                {skill}
+                                <button type="button" aria-label={`Remove ${skill} soft skill`} onClick={() => removeSkill('soft', skill)}>
+                                  ×
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+
+                          <div className="flex flex-wrap gap-2 mt-4">
+                            {softInput.trim()
+                              ? softSuggestions
+                                  .filter((skill) => !drafts.softSkills.includes(skill))
+                                  .map((skill) => (
+                                    <button
+                                      key={skill}
+                                      type="button"
+                                      onClick={() => addSkill('soft', skill)}
+                                      className="px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-xs font-semibold text-blue-700"
+                                    >
+                                      {skill}
+                                    </button>
+                                  ))
+                              : null}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <Select
+                          label="What Have You Done?"
+                          value={drafts.whatHaveYouDone}
+                          onChange={(e) => handleLocalChange('whatHaveYouDone', e.target.value)}
+                          options={['Internships / OJT', 'Freelance projects', 'Academic projects', "Volunteer work's", 'I have done something that is not listed here']}
+                        />
+                      </div>
+
+                      <div className="flex justify-end gap-3">
+                        <button
+                          type="button"
+                          onClick={() => cancelEdit('career')}
+                          className="px-4 h-11 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => saveSection('career')}
+                          disabled={savingSection === 'career'}
+                          className="px-5 h-11 rounded-xl text-white font-semibold disabled:opacity-70"
+                          style={{ backgroundColor: COLORS.primary }}
+                        >
+                          {savingSection === 'career' ? 'Saving...' : 'Save'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'credentials' && (
+              <div id="panel-credentials" role="tabpanel">
+                <div className="px-6 sm:px-10 py-5 flex items-center justify-between gap-4 flex-wrap">
+                  <h2 className="text-[18px] sm:text-[20px] font-bold text-black">Credentials</h2>
+                  <div className="text-sm text-black/50">{uploadedRequiredCount}/{REQUIRED_DOC_TYPES.length} required uploaded</div>
+                </div>
+
+                <div className="px-4 sm:px-10 pb-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {documentConfig.map((doc) => (
+                      <div key={doc.type}>
+                        <CredentialItem
+                          docType={doc.type}
+                          title={doc.title}
+                          icon={doc.icon}
+                          uploaded={Boolean(verificationDocs[doc.type]?.url)}
+                          fileName={verificationDocs[doc.type]?.filename}
+                          fileUrl={verificationDocs[doc.type]?.url}
+                          uploading={uploadingDocs[doc.type]}
+                          popoverOpen={activeCredentialPopover === doc.type}
+                          onOpen={() => setActiveCredentialPopover(doc.type)}
+                          onClose={() => setActiveCredentialPopover('')}
+                          onUpload={(file) => handleVerificationUpload(doc.type, file)}
+                        />
+                        {docErrors[doc.type] ? <div className="text-xs text-red-600 mt-2">{docErrors[doc.type]}</div> : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'education' && (
+              <div id="panel-education" role="tabpanel">
+                <div className="px-6 sm:px-10 py-5 flex items-center justify-between gap-3 flex-wrap">
+                  <h2 className="text-[18px] sm:text-[20px] font-bold text-gray-900">Educational Background</h2>
+
+                  {!editing.education ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDrafts(resetEducationDraftFields(drafts));
+                        setEditing((prev) => ({ ...prev, education: true }));
+                      }}
+                      className="h-11 px-5 rounded-xl text-white font-semibold"
+                      style={{ backgroundColor: COLORS.primary }}
+                    >
+                      + Add Educational Background
+                    </button>
+                  ) : null}
+                </div>
+
+                <div className="px-6 sm:px-10 pb-8 space-y-6">
+                  {!hasEducationEntries && !editing.education ? (
+                    <div className="rounded-[20px] border border-dashed border-gray-300 bg-[#fcfcfd] p-8 sm:p-10 text-center">
+                      <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4">
+                        <FaGraduationCap className="text-xl" />
+                      </div>
+                      <div className="text-[18px] font-bold text-gray-900">No educational background added yet</div>
+                      <div className="text-sm text-gray-500 mt-2">Click the button below to add your educational background.</div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDrafts(resetEducationDraftFields(drafts));
+                          setEditing((prev) => ({ ...prev, education: true }));
+                        }}
+                        className="mt-5 h-11 px-5 rounded-xl text-white font-semibold"
+                        style={{ backgroundColor: COLORS.primary }}
+                      >
+                        + Add Educational Background
+                      </button>
+                    </div>
+                  ) : null}
+
+                  {editing.education ? (
+                    <div className="space-y-5 rounded-[20px] border border-gray-200 bg-[#fcfcfd] p-5 sm:p-6">
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <Select
+                          label="Education Level"
+                          value={drafts.eduLevel}
+                          onChange={(e) => handleLocalChange('eduLevel', e.target.value)}
+                          options={EDUCATION_LEVEL_OPTIONS}
+                          placeholder="Select education level"
+                        />
+                        <Select
+                          label="Campus"
+                          value={drafts.eduCampus}
+                          onChange={(e) => handleLocalChange('eduCampus', e.target.value)}
+                          options={CAMPUS_OPTIONS}
+                          placeholder="Select campus"
+                        />
+                        <Select
+                          label="Course"
+                          value={drafts.eduCourse}
+                          onChange={(e) => handleLocalChange('eduCourse', e.target.value)}
+                          options={MAJOR_COURSE_OPTIONS}
+                          placeholder="Select course"
+                        />
+
+                        <Select
+                          label="Start Year"
+                          value={drafts.eduStartYear}
+                          onChange={(e) => handleLocalChange('eduStartYear', e.target.value)}
+                          options={yearOptions}
+                          placeholder="Select start year"
+                        />
+                        <Select
+                          label="Year Graduated"
+                          value={drafts.eduEndYear}
+                          onChange={(e) => handleLocalChange('eduEndYear', e.target.value)}
+                          options={yearOptions}
+                          placeholder="Select year graduated"
+                        />
+                      </div>
+
+                      <div className="flex justify-end gap-3">
+                        <button
+                          type="button"
+                          onClick={() => cancelEdit('education')}
+                          className="px-4 h-11 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => saveSection('education')}
+                          disabled={savingSection === 'education'}
+                          className="px-5 h-11 rounded-xl text-white font-semibold disabled:opacity-70"
+                          style={{ backgroundColor: COLORS.primary }}
+                        >
+                          {savingSection === 'education' ? 'Saving...' : 'Save Education'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {hasEducationEntries ? (
+                    <div className="space-y-4">
+                      {educationEntries.map((entry, index) => (
+                        <div
+                          key={`${entry.level || 'education'}-${entry.campus || 'campus'}-${entry.course || 'course'}-${index}`}
+                          className="rounded-[20px] border border-gray-200 bg-[#fcfcfd] p-4 sm:p-5"
+                        >
+                          <div className="rounded-[18px] border border-gray-200 bg-white px-5 py-4 flex items-start gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+                              <FaUniversity />
+                            </div>
+
+                            <div className="min-w-0">
+                              <div className="text-[12px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-1">
+                                {entry.level || 'Educational Background'}
+                              </div>
+                              <div className="text-[20px] font-bold text-gray-900 leading-tight">
+                                {entry.campus || 'Campus not provided'}
+                              </div>
+                              <div className="text-gray-700 font-medium mt-2">
+                                {entry.course || 'Course not provided'}
+                              </div>
+                              <div className="text-gray-500 mt-1">{getEducationYearText(entry)}</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            )}
+
+            {MORE_PROFILE_TAB_KEYS.includes(activeTab) && (
+              <div id={`panel-${activeTab}`} role="tabpanel">
+                <EditableProfileListSection
+                  sectionKey={activeTab}
+                  config={MORE_PROFILE_SECTIONS[activeTab]}
+                  items={formData[activeTab]}
+                  drafts={drafts[activeTab]}
+                  editing={editing[activeTab]}
+                  saving={savingSection === activeTab}
+                  onEdit={() => startEditingProfileList(activeTab)}
+                  onCancel={() => cancelEdit(activeTab)}
+                  onSave={() => saveSection(activeTab)}
+                  onAddItem={() => addProfileListItem(activeTab)}
+                  onRemoveItem={(index) => removeProfileListItem(activeTab, index)}
+                  onChangeItem={(index, field, value) => updateProfileListItem(activeTab, index, field, value)}
+                />
+              </div>
+            )}
 
             {isApplyFlow && (
               <div className="sticky bottom-0 z-[120] -mx-px mt-6 border-t border-[#d8e2ee] bg-white/95 px-6 sm:px-8 py-4 shadow-[0_-14px_34px_rgba(46,102,166,0.10)] backdrop-blur supports-[backdrop-filter]:bg-white/85">
