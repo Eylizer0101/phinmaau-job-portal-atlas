@@ -822,26 +822,55 @@ const CredentialItem = ({
     inputRef.current?.click();
   };
 
-  const handleViewFile = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!fileUrl) return;
-    window.open(fileUrl, '_blank', 'noopener,noreferrer');
+  const getCredentialDownloadUrl = (disposition = 'attachment') => {
+    const apiBase = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
+    return `${apiBase}/auth/download-alumni-verification/${encodeURIComponent(docType)}?disposition=${encodeURIComponent(disposition)}`;
   };
 
-  const handleDownloadFile = (e) => {
+  const handleViewFile = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     if (!fileUrl) return;
 
-    const link = document.createElement('a');
-    link.href = fileUrl;
-    link.target = '_blank';
-    link.rel = 'noreferrer';
-    link.download = fileName || title;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(getCredentialDownloadUrl('inline'), {
+        responseType: 'blob',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data], { type: response.headers['content-type'] || 'application/octet-stream' }));
+      window.open(blobUrl, '_blank', 'noopener,noreferrer');
+      window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
+    } catch (error) {
+      console.error('Error viewing credential file:', error);
+      window.open(fileUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleDownloadFile = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!fileUrl) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(getCredentialDownloadUrl('attachment'), {
+        responseType: 'blob',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data], { type: response.headers['content-type'] || 'application/octet-stream' }));
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName || `${title}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Error downloading credential file:', error);
+    }
   };
 
   return (

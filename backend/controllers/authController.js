@@ -9,6 +9,16 @@ const https = require('https');
 const querystring = require('querystring');
 const { sendCredentialsEmail, sendPasswordResetEmail, sendSettingsEmailVerificationCode } = require('../config/mailer');
 const puppeteer = require('puppeteer');
+const { v2: cloudinary } = require('cloudinary');
+
+if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true,
+  });
+}
 
 // Optional email sending
 let nodemailer = null;
@@ -387,6 +397,141 @@ const ALUMNI_DOC_LABELS = {
   pagibig: 'Pag-IBIG ID',
   tin: 'TIN ID',
   validId: 'Valid ID',
+};
+
+
+const ALUMNI_VERIFICATION_DOWNLOAD_DOC_TYPES = ['cv', 'tor', 'diploma', 'sss', 'philhealth', 'pagibig', 'tin', 'validId'];
+
+const sanitizeDownloadFileName = (value, fallback = 'credential') => {
+  const clean = String(value || fallback)
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, '-')
+    .replace(/\s+/g, ' ');
+
+  return clean || fallback;
+};
+
+const parseCloudinaryDeliveryUrl = (rawUrl = '') => {
+  try {
+    const parsed = new URL(rawUrl);
+    if (!/res\.cloudinary\.com$/i.test(parsed.hostname)) return null;
+
+    const pathParts = parsed.pathname.split('/').filter(Boolean);
+    const resourceType = pathParts[1] || 'image';
+    const deliveryType = pathParts[2] || 'upload';
+    const versionIndex = pathParts.findIndex((part) => /^v\d+$/.test(part));
+    const publicParts = versionIndex >= 0 ? pathParts.slice(versionIndex + 1) : pathParts.slice(3);
+    const publicIdWithExtension = publicParts.join('/');
+
+    if (!publicIdWithExtension) return null;
+
+    const lastSlashIndex = publicIdWithExtension.lastIndexOf('/');
+    const filePart = lastSlashIndex >= 0 ? publicIdWithExtension.slice(lastSlashIndex + 1) : publicIdWithExtension;
+    const dotIndex = filePart.lastIndexOf('.');
+    const format = dotIndex > 0 ? filePart.slice(dotIndex + 1) : '';
+    const publicId = format ? publicIdWithExtension.slice(0, -(format.length + 1)) : publicIdWithExtension;
+
+    return { resourceType, deliveryType, publicId, format, originalUrl: rawUrl };
+  } catch {
+    return null;
+  }
+};
+
+const getContentTypeFromFileName = (fileName = '', fallback = 'application/octet-stream') => {
+  const lower = String(fileName || '').toLowerCase();
+  if (lower.endsWith('.pdf')) return 'application/pdf';
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  return fallback;
+};
+
+const fetchUrlBuffer = (rawUrl, redirectCount = 0) => new Promise((resolve, reject) => {
+  if (redirectCount > 5) return reject(new Error('Too many redirects while downloading file.'));
+
+  let parsed;
+  try {
+    parsed = new URL(rawUrl);
+  } catch (error) {
+    return reject(error);
+  }
+
+  const client = parsed.protocol === 'http:' ? require('http') : https;
+  const request = client.get(parsed, (response) => {
+    const statusCode = response.statusCode || 0;
+
+    if ([301, 302, 303, 307, 308].includes(statusCode) && response.headers.location) {
+      response.resume();
+      const redirectUrl = new URL(response.headers.location, rawUrl).toString();
+      return resolve(fetchUrlBuffer(redirectUrl, redirectCount + 1));
+    }
+
+    if (statusCode < 200 || statusCode >= 300) {
+      let body = '';
+      response.setEncoding('utf8');
+      response.on('data', (chunk) => { body += chunk; });
+      response.on('end', () => reject(new Error(`File source responded with ${statusCode}${body ? `: ${body.slice(0, 160)}` : ''}`)));
+      return;
+    }
+
+    const chunks = [];
+    response.on('data', (chunk) => chunks.push(chunk));
+    response.on('end', () => resolve({
+      buffer: Buffer.concat(chunks),
+      contentType: response.headers['content-type'] || '',
+    }));
+  });
+
+  request.on('error', reject);
+  request.setTimeout(45000, () => {
+    request.destroy(new Error('File download timed out.'));
+  });
+});
+
+const buildCredentialDownloadCandidates = ({ rawUrl, fileName, disposition }) => {
+  const candidates = [];
+  const cloudinaryInfo = parseCloudinaryDeliveryUrl(rawUrl);
+  const attachmentFlag = disposition === 'attachment'
+    ? `attachment:${sanitizeDownloadFileName(fileName || 'credential')}`
+    : undefined;
+
+  if (cloudinaryInfo && process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+    const { publicId, format, resourceType, deliveryType } = cloudinaryInfo;
+
+    try {
+      if (typeof cloudinary.utils.private_download_url === 'function' && format) {
+        candidates.push(cloudinary.utils.private_download_url(publicId, format, {
+          resource_type: resourceType,
+          type: deliveryType,
+          attachment: disposition === 'attachment',
+        }));
+      }
+    } catch (error) {
+      console.warn('Unable to build Cloudinary private download URL:', error.message);
+    }
+
+    try {
+      candidates.push(cloudinary.url(publicId, {
+        resource_type: resourceType,
+        type: deliveryType,
+        secure: true,
+        sign_url: true,
+        format: format || undefined,
+        flags: attachmentFlag || undefined,
+      }));
+    } catch (error) {
+      console.warn('Unable to build signed Cloudinary URL:', error.message);
+    }
+  }
+
+  if (rawUrl) {
+    if (disposition === 'attachment' && /\/upload\//.test(rawUrl)) {
+      candidates.push(rawUrl.replace('/upload/', `/upload/fl_attachment:${encodeURIComponent(sanitizeDownloadFileName(fileName || 'credential'))}/`));
+      candidates.push(rawUrl.replace('/upload/', '/upload/fl_attachment/'));
+    }
+    candidates.push(rawUrl);
+  }
+
+  return [...new Set(candidates.filter(Boolean))];
 };
 
 const EMPLOYER_DOC_LABELS = {
@@ -1541,6 +1686,67 @@ exports.deleteAlumniVerificationDoc = async (req, res) => {
   } catch (error) {
     console.error('Error deleting verification document:', error);
     res.status(500).json({ success: false, message: error.message || 'Error deleting document' });
+  }
+};
+
+
+exports.downloadAlumniVerificationDoc = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const docType = String(req.params.docType || '').trim();
+    const disposition = String(req.query.disposition || 'attachment').toLowerCase() === 'inline' ? 'inline' : 'attachment';
+
+    if (req.user.role !== 'jobseeker') {
+      return res.status(403).json({ success: false, message: 'Only job seekers can download verification documents' });
+    }
+
+    if (!ALUMNI_VERIFICATION_DOWNLOAD_DOC_TYPES.includes(docType)) {
+      return res.status(400).json({ success: false, message: 'Invalid document type.' });
+    }
+
+    const user = await User.findById(userId).select('jobSeekerProfile');
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const doc = user.jobSeekerProfile?.verificationDocs?.[docType] || {};
+    const rawUrl = String(doc.url || '').trim();
+
+    if (!rawUrl) {
+      return res.status(404).json({ success: false, message: 'Document not found.' });
+    }
+
+    const fallbackFileName = `${ALUMNI_DOC_LABELS[docType] || docType}.pdf`;
+    const fileName = sanitizeDownloadFileName(doc.filename || fallbackFileName, fallbackFileName);
+    const sourceUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : makePublicUrl(req, rawUrl);
+    const candidates = buildCredentialDownloadCandidates({ rawUrl: sourceUrl, fileName, disposition });
+
+    let downloaded = null;
+    let lastError = null;
+
+    for (const candidate of candidates) {
+      try {
+        downloaded = await fetchUrlBuffer(candidate);
+        if (downloaded?.buffer?.length) break;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    if (!downloaded?.buffer?.length) {
+      console.error('Credential download failed:', lastError);
+      return res.status(502).json({ success: false, message: 'Unable to download credential file from storage.' });
+    }
+
+    const contentType = downloaded.contentType || doc.mimeType || getContentTypeFromFileName(fileName);
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Length', downloaded.buffer.length);
+    res.setHeader('Content-Disposition', `${disposition}; filename="${fileName.replace(/"/g, '')}"`);
+    res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+
+    return res.send(downloaded.buffer);
+  } catch (error) {
+    console.error('Error downloading alumni verification document:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Error downloading verification document' });
   }
 };
 

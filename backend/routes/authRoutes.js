@@ -167,6 +167,13 @@ router.delete(
 );
 
 router.get(
+  '/download-alumni-verification/:docType',
+  protect,
+  authorize('jobseeker'),
+  authController.downloadAlumniVerificationDoc
+);
+
+router.get(
   '/alumni-verification-status',
   protect,
   authorize('jobseeker'),
