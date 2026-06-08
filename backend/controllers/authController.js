@@ -2489,7 +2489,7 @@ const renderResumeSection = (title, content) => {
 
 const renderResumeRows = (rows = []) => {
   const cleanRows = rows.filter((row) => resumeText(row.value));
-  if (!cleanRows.length) return '<p class="empty-text">Not provided</p>';
+  if (!cleanRows.length) return '';
 
   const middle = Math.ceil(cleanRows.length / 2);
   const columns = [cleanRows.slice(0, middle), cleanRows.slice(middle)];
@@ -2634,6 +2634,7 @@ const buildResumeHtmlForPdf = (user = {}) => {
 
   const technicalSkills = resumeArray(profile.technicalSkills);
   const softSkills = resumeArray(profile.softSkills);
+  const allSkills = [...technicalSkills, ...softSkills].filter(isMeaningfulResumeValue);
   const workExperiences = Array.isArray(profile.workExperiences) ? sortWorkExperiences(profile.workExperiences) : [];
   const educationEntries = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
 
@@ -2657,27 +2658,18 @@ const buildResumeHtmlForPdf = (user = {}) => {
       )
     : '';
 
-  const skillsHtml = renderResumeSection(
-    'Skills',
-    `
-      <div class="skills-grid">
-        <div>
-          ${
-            technicalSkills.length
-              ? technicalSkills.map((skill) => `<div class="skill-row"><span class="skill-label">${resumeEscapeHtml(skill)}</span></div>`).join('')
-              : '<p class="empty-text">Not provided</p>'
-          }
-        </div>
-        <div>
-          ${
-            softSkills.length
-              ? softSkills.map((skill) => `<div class="skill-row"><span class="skill-label">${resumeEscapeHtml(skill)}</span></div>`).join('')
-              : '<p class="empty-text">Not provided</p>'
-          }
-        </div>
-      </div>
-    `
-  );
+  const skillsHtml = allSkills.length
+    ? renderResumeSection(
+        'Skills',
+        `
+          <div class="skills-grid">
+            ${allSkills
+              .map((skill) => `<div class="skill-row"><span class="skill-label">${resumeEscapeHtml(skill)}</span></div>`)
+              .join('')}
+          </div>
+        `
+      )
+    : '';
 
   const educationHtml = renderResumeSection(
     'Education',
@@ -2754,7 +2746,7 @@ const buildResumeHtmlForPdf = (user = {}) => {
               ${educationSummary ? `<div class="resume-education-summary">${resumeEscapeHtml(educationSummary)}</div>` : ''}
               ${photoHtml}
             </header>
-            ${renderResumeSection('Objective', `<p class="objective-text">${resumeEscapeHtml(resumeText(profile.aboutMe, 'Not provided'))}</p>`)}
+            ${resumeText(profile.aboutMe) ? renderResumeSection('Objective', `<p class="objective-text">${resumeEscapeHtml(resumeText(profile.aboutMe))}</p>`) : ''}
             ${renderResumeSection('Availability & Preferences', renderResumeRows(availabilityRows))}
             ${workExperienceHtml}
             ${skillsHtml}
