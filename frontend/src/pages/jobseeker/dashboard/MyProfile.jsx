@@ -1081,6 +1081,7 @@ const BasicInfoModal = ({
   regionOptions,
   provinceOptions,
   cityOptions,
+  yearOptions,
   onEmailUpdate,
 }) => {
   if (!open) return null;
@@ -1245,6 +1246,52 @@ const BasicInfoModal = ({
                     onChange={(e) => onChange('phoneNumber', e.target.value)}
                     className="h-11 px-3 border border-gray-300 rounded-[3px] outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                   />
+                </div>
+
+                <div className="pt-4 border-t border-gray-200">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm text-gray-500 mb-2">Campus</label>
+                      <select
+                        value={drafts.campus || ''}
+                        onChange={(e) => onChange('campus', e.target.value)}
+                        className="w-full h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
+                      >
+                        <option value="">Select campus</option>
+                        {CAMPUS_OPTIONS.map((opt) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm text-gray-500 mb-2">Course</label>
+                      <select
+                        value={drafts.course || ''}
+                        onChange={(e) => onChange('course', e.target.value)}
+                        className="w-full h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
+                      >
+                        <option value="">Select course</option>
+                        {MAJOR_COURSE_OPTIONS.map((opt) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm text-gray-500 mb-2">Year Graduated</label>
+                      <select
+                        value={drafts.yearGraduated || ''}
+                        onChange={(e) => onChange('yearGraduated', e.target.value)}
+                        className="w-full h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
+                      >
+                        <option value="">Select year</option>
+                        {yearOptions.map((opt) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2411,6 +2458,9 @@ const MyProfile = () => {
           jobSeekerProfile: {
             phoneNumber: drafts.phoneNumber,
             address: buildAddressString(drafts),
+            campus: drafts.campus,
+            course: drafts.course,
+            yearGraduated: drafts.yearGraduated,
           },
         };
       }
@@ -3280,6 +3330,7 @@ const MyProfile = () => {
         regionOptions={regionOptions}
         provinceOptions={provinceOptions}
         cityOptions={cityOptions}
+        yearOptions={yearOptions}
         onEmailUpdate={openEmailUpdateModal}
       />
 
