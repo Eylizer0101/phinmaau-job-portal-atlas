@@ -3156,13 +3156,13 @@ const MyProfile = () => {
                 title={doc.title}
                 uploaded={Boolean(docData.url)}
                 icon={doc.icon}
-                onUpload={(file) => handleVerificationUpload(doc.type, file)}
-                uploading={Boolean(uploadingDocs[doc.type])}
+                onUpload={(file) => handleCredentialUpload(doc.type, file)}
+                uploading={uploadingDocType === doc.type}
                 fileName={docData.filename}
                 fileUrl={docData.url}
-                popoverOpen={activeCredentialPopover === doc.type}
-                onOpen={() => setActiveCredentialPopover(doc.type)}
-                onClose={() => setActiveCredentialPopover('')}
+                popoverOpen={credentialPopover === doc.type}
+                onOpen={() => setCredentialPopover(doc.type)}
+                onClose={() => setCredentialPopover('')}
               />
             );
           })}
