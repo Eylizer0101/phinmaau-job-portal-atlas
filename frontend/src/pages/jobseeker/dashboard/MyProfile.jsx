@@ -1087,7 +1087,7 @@ const BasicInfoModal = ({
 
   return (
     <div className="fixed inset-0 z-[10002] bg-black/35 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true">
-      <div className="w-full max-w-4xl bg-white rounded-[4px] shadow-2xl border border-gray-200 overflow-hidden">
+      <div className="w-full max-w-4xl  rounded-[4px] shadow-2xl border border-gray-200 overflow-hidden">
         <div className="h-12 px-5 sm:px-6 bg-[#0b8ee8] flex items-center justify-between gap-3">
           <div className="text-white font-bold text-[15px]">Edit Basic Information</div>
           <button
