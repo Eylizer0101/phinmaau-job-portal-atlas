@@ -1470,6 +1470,177 @@ const ProfileTodoList = ({ completed = [] }) => {
   );
 };
 
+
+const ProfileEditModal = ({
+  open,
+  sectionKey,
+  drafts,
+  saving,
+  error,
+  yearOptions = [],
+  onChange,
+  onArrayTextChange,
+  onSave,
+  onClose,
+  onAddProfileItem,
+  onRemoveProfileItem,
+  onChangeProfileItem,
+}) => {
+  if (!open || !sectionKey) return null;
+
+  const titleMap = {
+    about: 'Edit Objective',
+    career: 'Edit Availability & Preferences',
+    skills: 'Edit Skills',
+    education: 'Edit Education',
+  };
+
+  const moreConfig = MORE_PROFILE_SECTIONS[sectionKey];
+  const title = moreConfig?.title ? `Edit ${moreConfig.title}` : titleMap[sectionKey] || 'Edit Section';
+
+  const renderContent = () => {
+    if (sectionKey === 'about') {
+      return (
+        <TextArea
+          label="Objective"
+          rows={8}
+          value={drafts.aboutMe}
+          onChange={(e) => onChange('aboutMe', e.target.value)}
+          placeholder="Write a short paragraph (3-5 sentences) about yourself"
+        />
+      );
+    }
+
+    if (sectionKey === 'career') {
+      return (
+        <div className="grid md:grid-cols-2 gap-5">
+          <Input label="Preferred Work Mode" value={drafts.preferredWorkMode} onChange={(e) => onChange('preferredWorkMode', e.target.value)} placeholder="Preferred Work Mode" />
+          <Input label="Employment Type" value={drafts.employmentType} onChange={(e) => onChange('employmentType', e.target.value)} placeholder="Employment Type" />
+          <Input label="Willing to Relocate" value={drafts.willingToRelocate} onChange={(e) => onChange('willingToRelocate', e.target.value)} placeholder="Willing to Relocate" />
+          <Input label="How Soon Can Start" value={drafts.howSoonCanYouStart} onChange={(e) => onChange('howSoonCanYouStart', e.target.value)} placeholder="How Soon Can Start" />
+          <Input label="Preferred Language" value={drafts.preferredLanguage} onChange={(e) => onChange('preferredLanguage', e.target.value)} placeholder="Preferred Language" />
+          <Input label="Educational Attainment" value={drafts.educationalAttainment} onChange={(e) => onChange('educationalAttainment', e.target.value)} placeholder="Educational Attainment" />
+          <Input label="Study Field" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} placeholder="Study Field" />
+          <Input label="Minimum Salary" value={drafts.minimumSalary} onChange={(e) => onChange('minimumSalary', e.target.value)} placeholder="Minimum Salary" />
+          <Input label="Maximum Salary" value={drafts.maximumSalary} onChange={(e) => onChange('maximumSalary', e.target.value)} placeholder="Maximum Salary" />
+          <Input label="Height" value={drafts.height} onChange={(e) => onChange('height', e.target.value)} placeholder="Height" />
+          <Input label="Weight" value={drafts.weight} onChange={(e) => onChange('weight', e.target.value)} placeholder="Weight" />
+          <Input label="Nationality" value={drafts.nationality} onChange={(e) => onChange('nationality', e.target.value)} placeholder="Nationality" />
+          <Input label="Gender" value={drafts.gender} onChange={(e) => onChange('gender', e.target.value)} placeholder="Gender" />
+          <Input label="Civil Status" value={drafts.civilStatus} onChange={(e) => onChange('civilStatus', e.target.value)} placeholder="Civil Status" />
+          <Input label="Birthday" type="date" value={drafts.birthday} onChange={(e) => onChange('birthday', e.target.value)} />
+        </div>
+      );
+    }
+
+    if (sectionKey === 'skills') {
+      return (
+        <div className="space-y-5">
+          <Input
+            label="Technical Skills"
+            value={(drafts.technicalSkills || []).join(', ')}
+            onChange={(e) => onArrayTextChange('technicalSkills', e.target.value)}
+            placeholder="e.g. Figma, MS Word, MS Excel"
+          />
+          <Input
+            label="Soft Skills"
+            value={(drafts.softSkills || []).join(', ')}
+            onChange={(e) => onArrayTextChange('softSkills', e.target.value)}
+            placeholder="e.g. Communication, Teamwork, Time Management"
+          />
+          <TextArea
+            label="What Have You Done"
+            rows={4}
+            value={drafts.whatHaveYouDone}
+            onChange={(e) => onChange('whatHaveYouDone', e.target.value)}
+            placeholder="Describe your skills, experience, or achievements."
+          />
+        </div>
+      );
+    }
+
+    if (sectionKey === 'education') {
+      return (
+        <div className="grid md:grid-cols-2 gap-5">
+          <Select label="Educational Attainment" value={drafts.eduLevel} onChange={(e) => onChange('eduLevel', e.target.value)} options={EDUCATION_LEVEL_OPTIONS} placeholder="Select educational attainment" />
+          <Select label="Campus / School" value={drafts.eduCampus} onChange={(e) => onChange('eduCampus', e.target.value)} options={CAMPUS_OPTIONS} placeholder="Select campus / school" />
+          <Select label="Course" value={drafts.eduCourse} onChange={(e) => onChange('eduCourse', e.target.value)} options={MAJOR_COURSE_OPTIONS} placeholder="Select course" />
+          <Input label="Study Field" value={drafts.eduStudyField} onChange={(e) => onChange('eduStudyField', e.target.value)} placeholder="Study field" />
+          <Select label="From Year" value={drafts.eduStartYear} onChange={(e) => onChange('eduStartYear', e.target.value)} options={yearOptions} placeholder="Year" />
+          <Select label="To Year" value={drafts.eduEndYear} onChange={(e) => onChange('eduEndYear', e.target.value)} options={yearOptions} placeholder="Year" />
+        </div>
+      );
+    }
+
+    if (moreConfig) {
+      const items = Array.isArray(drafts[sectionKey]) ? drafts[sectionKey] : [];
+      const fields = moreConfig.fields || [];
+
+      return (
+        <div className="space-y-5">
+          {items.map((item, index) => (
+            <div key={`${sectionKey}-${index}`} className="rounded-[14px] border border-gray-200 bg-gray-50 p-4 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm font-bold text-gray-700">Entry {index + 1}</div>
+                <button
+                  type="button"
+                  onClick={() => onRemoveProfileItem(sectionKey, index)}
+                  className="h-9 px-3 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 text-sm font-semibold"
+                >
+                  Remove
+                </button>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                {fields.map((field) => (
+                  <div key={field.key} className={field.type === 'textarea' ? 'md:col-span-2' : ''}>
+                    {field.type === 'textarea' ? (
+                      <TextArea label={field.label} rows={3} value={item[field.key]} onChange={(e) => onChangeProfileItem(sectionKey, index, field.key, e.target.value)} placeholder={field.placeholder} />
+                    ) : (
+                      <Input label={field.label} value={item[field.key]} onChange={(e) => onChangeProfileItem(sectionKey, index, field.key, e.target.value)} placeholder={field.placeholder} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={() => onAddProfileItem(sectionKey)}
+            className="h-11 px-5 rounded-lg text-white font-semibold inline-flex items-center gap-2 bg-[#2e66a6]"
+          >
+            <FaPlus className="text-xs" /> Add Entry
+          </button>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  return (
+    <div className="fixed inset-0 z-[10006] bg-black/45 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true">
+      <div className="w-full max-w-4xl max-h-[86vh] bg-white rounded-[6px] shadow-2xl border border-gray-200 overflow-hidden">
+        <div className="h-12 px-6 bg-[#0558ff] flex items-center justify-between gap-3">
+          <div className="text-white font-bold text-[15px] uppercase">{title}</div>
+          <button type="button" onClick={onClose} className="w-8 h-8 rounded-md text-white/90 hover:bg-white/15 text-2xl leading-none" aria-label="Close edit modal">×</button>
+        </div>
+
+        <div className="px-6 py-6 max-h-[calc(86vh-112px)] overflow-y-auto">
+          {error ? <Alert type="error" message={error} /> : null}
+          {renderContent()}
+        </div>
+
+        <div className="px-6 py-5 border-t border-gray-200 flex justify-end gap-3 bg-white">
+          <button type="button" onClick={onClose} className="px-5 h-10 rounded-[3px] border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50">Cancel</button>
+          <button type="button" onClick={onSave} disabled={saving} className="px-6 h-10 rounded-[3px] bg-[#0558ff] text-white font-semibold disabled:opacity-70">{saving ? 'Saving...' : 'Save'}</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const MyProfile = () => {
   useEffect(() => {
     const previousHtmlOverflowY = document.documentElement.style.overflowY;
@@ -1555,6 +1726,7 @@ const MyProfile = () => {
   });
 
   const [activeTab, setActiveTab] = useState('personal');
+  const [editModalSection, setEditModalSection] = useState('');
   const [addSectionsModalOpen, setAddSectionsModalOpen] = useState(false);
   const [addedMoreSections, setAddedMoreSections] = useState([]);
 
@@ -2414,6 +2586,55 @@ const MyProfile = () => {
     setEditing((prev) => ({ ...prev, [sectionKey]: false }));
   };
 
+
+  const openProfileEditModal = (sectionKey) => {
+    if (sectionKey === 'personal') {
+      setDrafts(formData);
+      setEditing((prev) => ({ ...prev, basic: true }));
+      return;
+    }
+
+    if (sectionKey === 'work') {
+      openAddWorkExperienceModal();
+      return;
+    }
+
+    if (sectionKey === 'credentials') return;
+
+    setDrafts((prev) => {
+      const next = sectionKey === 'education' ? resetEducationDraftFields(formData) : { ...formData };
+
+      if (MORE_PROFILE_TAB_KEYS.includes(sectionKey)) {
+        const currentItems = Array.isArray(formData[sectionKey]) ? formData[sectionKey] : [];
+        next[sectionKey] = currentItems.length > 0 ? currentItems : [createEmptyProfileEntry(sectionKey)];
+      }
+
+      return next;
+    });
+
+    setEditModalSection(sectionKey);
+  };
+
+  const closeProfileEditModal = () => {
+    setDrafts(formData);
+    setError('');
+    setEditModalSection('');
+  };
+
+  const saveProfileEditModal = async () => {
+    if (!editModalSection) return;
+    await saveSection(editModalSection === 'skills' ? 'career' : editModalSection);
+    setEditModalSection('');
+  };
+
+  const handleArrayTextChange = (field, rawValue) => {
+    const nextValues = String(rawValue || '')
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+    setDrafts((prev) => ({ ...prev, [field]: nextValues }));
+  };
+
   const startEditingProfileList = (sectionKey) => {
     setDrafts((prev) => ({
       ...prev,
@@ -2898,6 +3119,22 @@ const MyProfile = () => {
         onClose={() => setAddSectionsModalOpen(false)}
       />
 
+      <ProfileEditModal
+        open={Boolean(editModalSection)}
+        sectionKey={editModalSection}
+        drafts={drafts}
+        saving={savingSection === editModalSection || (editModalSection === 'skills' && savingSection === 'career')}
+        error={error}
+        yearOptions={yearOptions}
+        onChange={handleLocalChange}
+        onArrayTextChange={handleArrayTextChange}
+        onSave={saveProfileEditModal}
+        onClose={closeProfileEditModal}
+        onAddProfileItem={addProfileListItem}
+        onRemoveProfileItem={removeProfileListItem}
+        onChangeProfileItem={updateProfileListItem}
+      />
+
       <div className={`min-h-[100dvh] h-auto pt-2 bg-gray-50 overflow-x-hidden overflow-y-visible ${isApplyFlow ? 'pb-28 sm:pb-32' : 'pb-6'}`}>
         <div className="max-w-6xl mx-auto px-0 sm:px-6">
           {error ? <Alert type="error" title="Error" message={error} onClose={() => setError('')} /> : null}
@@ -2962,23 +3199,34 @@ const MyProfile = () => {
                       const isOpen = activeTab === targetTab;
 
                       return (
-                        <button
+                        <div
                           key={section.key}
-                          type="button"
-                          onClick={() => {
-                            if (section.key === 'about') setActiveTab('about');
-                            else if (section.key === 'work') setActiveTab('work');
-                            else if (section.key === 'skills') setActiveTab('skills');
-                            else setActiveTab(section.key);
-                          }}
                           className="w-full min-h-[44px] px-1 border-b border-gray-200 flex items-center justify-between gap-4 text-left bg-white hover:bg-gray-50 transition"
                         >
-                          <span className="inline-flex items-center gap-3 min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (section.key === 'about') setActiveTab('about');
+                              else if (section.key === 'work') setActiveTab('work');
+                              else if (section.key === 'skills') setActiveTab('skills');
+                              else setActiveTab(section.key);
+                            }}
+                            className="flex-1 min-h-[44px] inline-flex items-center gap-3 min-w-0 text-left"
+                          >
                             <span className="text-gray-500 text-[14px] leading-none">{isOpen ? '⌃' : '⌄'}</span>
                             <span className="text-[15px] font-bold uppercase tracking-wide text-gray-900 truncate">{section.label}</span>
-                          </span>
-                          {section.actionLabel ? <span className="text-[#0b73ff] text-sm font-bold shrink-0">{section.actionLabel}</span> : null}
-                        </button>
+                          </button>
+
+                          {section.actionLabel ? (
+                            <button
+                              type="button"
+                              onClick={() => openProfileEditModal(section.key)}
+                              className="h-9 px-2 text-[#0b73ff] text-sm font-bold shrink-0 hover:underline"
+                            >
+                              {section.actionLabel}
+                            </button>
+                          ) : null}
+                        </div>
                       );
                     })}
                   </div>
