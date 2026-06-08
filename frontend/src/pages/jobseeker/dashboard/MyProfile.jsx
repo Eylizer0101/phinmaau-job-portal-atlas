@@ -1540,6 +1540,106 @@ const AddSectionsModal = ({ open, addedSections = [], onAdd, onClose }) => {
 };
 
 
+
+const SkillProficiencyDescriptionModal = ({ open, onClose }) => {
+  if (!open) return null;
+
+  const levels = [
+    {
+      title: 'Basic',
+      subtitle: 'Basic knowledge / Fundamental awareness',
+      paragraphs: [
+        'You have a common knowledge or an understanding of basic techniques and concepts.',
+        'Focus is on learning.',
+      ],
+    },
+    {
+      title: 'Novice',
+      subtitle: 'Limited experience',
+      paragraphs: [
+        'You have the level of experience gained in a classroom and/or experimental scenarios or as a trainee-on-the-job. You are expected to need help when performing this skill.',
+        'Focus is on developing through on-the-job experience.',
+        'You understand and can discuss terminology, concepts, principles, and issues related to this competency.',
+        'You utilize the full range of reference and resource materials in this competency.',
+      ],
+    },
+    {
+      title: 'Intermediate',
+      subtitle: 'Practical application',
+      paragraphs: [
+        'You are able to successfully complete tasks in this competency as requested. Help from an expert may be required from time to time, but you can usually perform this skill independently.',
+        'Focus is on applying and enhancing knowledge or skill.',
+        'You have applied this competency to situations occasionally while needing minimal guidance to perform successfully.',
+        'You understand and can discuss the application and implications of changes to processes, policies, and procedures in this area.',
+      ],
+    },
+    {
+      title: 'Advanced',
+      subtitle: 'Applied Theory',
+      paragraphs: [
+        'You can perform the actions associated with this skill without assistance. You are certainly recognized within your immediate organization as a person to ask when difficult questions arise regarding this skill.',
+        'Focus is on broad organizational/professional issues.',
+        'You have consistently provided practical/relevant ideas and perspectives on process or practice improvements which may be implemented easily.',
+        'You are capable of coaching others in the application of this competency by translating complex nuances relating to this competency into easy to understand terms.',
+        'You participate in senior level discussions regarding this competency.',
+        'You assist in the development of reference and resource materials in this competency.',
+      ],
+    },
+    {
+      title: 'Expert',
+      subtitle: 'Recognized Authority',
+      paragraphs: [
+        'You are known as an expert in this area. You can provide guidance, troubleshoot, and answer questions related to this area of expertise and the field where the skill is used.',
+        'Focus is strategic.',
+        'You have demonstrated consistent excellence in applying this competency across multiple projects and/or organizations.',
+        'You are considered the go to person in this area within and/or outside organizations.',
+        'You create new applications for and/or lead the development of reference and resource materials for this competency.',
+        'You are able to diagram or explain the relevant process elements and issues in relation to organizational issues and trends in sufficient detail during discussions and presentations, to foster a greater understanding among internal and external colleagues and constituents.',
+      ],
+    },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-[10006] bg-black/75 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="skill-proficiency-title">
+      <div className="relative w-full max-w-[720px] max-h-[78vh] bg-white rounded-[6px] shadow-2xl border border-[#d8e2ee] overflow-hidden">
+        <div className="sticky top-0 z-10 bg-white px-6 sm:px-8 pt-7 pb-4 border-b border-[#d8e2ee]">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 id="skill-proficiency-title" className="text-[21px] font-bold text-black">Skill Proficiency Description</h2>
+              <p className="mt-4 text-[15px] leading-6 text-[#4b5563]">
+                Our skills proficiency level is based on the NIH Proficiency Scale which is used to measure one's ability to demonstrate competency on the job. The scale captures a wide range of ability levels and organizes them into five steps.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-8 h-8 rounded-md border border-[#2e66a6]/40 text-[#2e66a6] hover:bg-[#f7faff] text-2xl leading-none flex items-center justify-center shrink-0"
+              aria-label="Close skill proficiency description modal"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+
+        <div className="max-h-[calc(78vh-132px)] overflow-y-auto px-6 sm:px-8 py-5 space-y-7 bg-white">
+          {levels.map((level) => (
+            <section key={level.title}>
+              <h3 className="text-[18px] font-bold text-black">{level.title}</h3>
+              <div className="mt-1 text-[15px] font-bold italic text-[#008f80]">{level.subtitle}</div>
+              <div className="mt-2 space-y-5 text-[15px] leading-7 text-[#4b5563]">
+                {level.paragraphs.map((paragraph, index) => (
+                  <p key={`${level.title}-${index}`}>{paragraph}</p>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ProfileTodoList = ({ completed = [] }) => {
   const items = [
     { key: 'basic', label: 'Complete Basic Info' },
@@ -1842,6 +1942,7 @@ const MyProfile = () => {
   const [activeTab, setActiveTab] = useState('personal');
   const [editModalSection, setEditModalSection] = useState('');
   const [addSectionsModalOpen, setAddSectionsModalOpen] = useState(false);
+  const [skillProficiencyModalOpen, setSkillProficiencyModalOpen] = useState(false);
   const [addedMoreSections, setAddedMoreSections] = useState([]);
 
   const [uploadingDocs, setUploadingDocs] = useState({});
@@ -3461,6 +3562,11 @@ const MyProfile = () => {
         onClose={() => setAddSectionsModalOpen(false)}
       />
 
+      <SkillProficiencyDescriptionModal
+        open={skillProficiencyModalOpen}
+        onClose={() => setSkillProficiencyModalOpen(false)}
+      />
+
       <ProfileEditModal
         open={Boolean(editModalSection)}
         sectionKey={editModalSection}
@@ -3556,7 +3662,12 @@ const MyProfile = () => {
 
                             <div className="flex items-center gap-3 shrink-0">
                               {section.key === 'skills' ? (
-                                <button type="button" className="hidden sm:inline-flex items-center gap-1 text-[#2e66a6] text-sm hover:underline">
+                                <button
+                                  type="button"
+                                  onClick={() => setSkillProficiencyModalOpen(true)}
+                                  className="hidden sm:inline-flex items-center gap-1 text-[#2e66a6] text-sm hover:underline"
+                                  aria-haspopup="dialog"
+                                >
                                   <FaInfoCircle className="text-sm" /> Proficiency Level Description
                                 </button>
                               ) : null}
