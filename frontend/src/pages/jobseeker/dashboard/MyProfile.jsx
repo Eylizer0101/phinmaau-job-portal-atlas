@@ -147,13 +147,13 @@ const MORE_PROFILE_SECTIONS = {
 const MORE_PROFILE_TAB_KEYS = Object.keys(MORE_PROFILE_SECTIONS);
 
 const MORE_SECTION_MODAL_STYLES = {
-  certifications: { icon: <FaGraduationCap />, color: '#f97316' },
-  projects: { icon: <FaFolderOpen />, color: '#3b82f6' },
-  seminars: { icon: <FaBookOpen />, color: '#06b6d4' },
-  awards: { icon: <FaAward />, color: '#eab308' },
-  affiliations: { icon: <FaUsers />, color: '#14b8a6' },
-  cocurricular: { icon: <FaWaveSquare />, color: '#a855f7' },
-  references: { icon: <FaUserCheck />, color: '#22c55e' },
+  certifications: { icon: <FaGraduationCap />, color: COLORS.primary },
+  projects: { icon: <FaFolderOpen />, color: COLORS.primary },
+  seminars: { icon: <FaBookOpen />, color: COLORS.primary },
+  awards: { icon: <FaAward />, color: COLORS.primary },
+  affiliations: { icon: <FaUsers />, color: COLORS.primary },
+  cocurricular: { icon: <FaWaveSquare />, color: COLORS.primary },
+  references: { icon: <FaUserCheck />, color: COLORS.primary },
 };
 
 const MORE_SECTION_DESCRIPTIONS = {
@@ -428,7 +428,7 @@ const Input = ({ label, value, onChange, placeholder = '', disabled = false, typ
         onChange={onChange}
         placeholder={placeholder}
         disabled={disabled}
-        className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 disabled:bg-gray-50 disabled:text-gray-500"
+        className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6] disabled:bg-gray-50 disabled:text-gray-500"
       />
     </div>
   );
@@ -443,7 +443,7 @@ const TextArea = ({ label, value, onChange, placeholder = '', rows = 4 }) => {
         value={value || ''}
         onChange={onChange}
         placeholder={placeholder}
-        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 resize-none"
+        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6] resize-none"
       />
     </div>
   );
@@ -457,7 +457,7 @@ const Select = ({ label, value, onChange, options = [], placeholder = 'Select op
         value={value || ''}
         onChange={onChange}
         disabled={disabled}
-        className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 disabled:bg-gray-50 disabled:text-gray-500"
+        className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6] disabled:bg-gray-50 disabled:text-gray-500"
       >
         <option value="">{placeholder}</option>
         {options.map((opt) => (
@@ -521,12 +521,12 @@ const NavTab = ({ active, icon, label, onClick, panelId }) => {
       aria-controls={panelId}
       onClick={onClick}
       className={`relative h-11 shrink-0 inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors ${
-        active ? 'text-[#1658d3]' : 'text-gray-500 hover:text-gray-700'
+        active ? 'text-[#2e66a6]' : 'text-gray-500 hover:text-gray-700'
       }`}
     >
       <span className="text-[12px] sm:text-[13px] shrink-0">{icon}</span>
       <span>{label}</span>
-      <span className={`absolute left-0 right-0 -bottom-[11px] h-[2px] ${active ? 'bg-[#1658d3]' : 'bg-transparent'}`} />
+      <span className={`absolute left-0 right-0 -bottom-[11px] h-[2px] ${active ? 'bg-[#2e66a6]' : 'bg-transparent'}`} />
     </button>
   );
 };
@@ -844,7 +844,7 @@ const EditableProfileListSection = ({
                       <div className="text-sm text-gray-600 mt-1">{getProfileEntrySubLine(sectionKey, item)}</div>
                     ) : null}
                     {item.phone ? <div className="text-sm text-gray-600 mt-3">{item.phone}</div> : null}
-                    {item.email ? <div className="text-sm text-[#1658d3] mt-1 break-all">{item.email}</div> : null}
+                    {item.email ? <div className="text-sm text-[#2e66a6] mt-1 break-all">{item.email}</div> : null}
                   </div>
                 ))}
               </div>
@@ -1088,7 +1088,7 @@ const BasicInfoModal = ({
   return (
     <div className="fixed inset-0 z-[10002] bg-black/35 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true">
       <div className="w-full max-w-4xl bg-white rounded-[4px] shadow-2xl border border-gray-200 overflow-hidden">
-        <div className="h-12 px-5 sm:px-6 bg-[#0b8ee8] flex items-center justify-between gap-3">
+        <div className="h-12 px-5 sm:px-6 bg-[#2e66a6] flex items-center justify-between gap-3">
           <div className="text-white font-bold text-[15px]">Edit Basic Information</div>
           <button
             type="button"
@@ -1108,7 +1108,7 @@ const BasicInfoModal = ({
                   {userData?.profileImage ? (
                     <img src={userData.profileImage} alt={fullName} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full bg-blue-100 text-[#2e66a6] font-bold text-3xl flex items-center justify-center">
+                    <div className="w-full h-full bg-[#e8f1ff] text-[#2e66a6] font-bold text-3xl flex items-center justify-center">
                       {(fullName || 'U').charAt(0).toUpperCase()}
                     </div>
                   )}
@@ -1126,7 +1126,7 @@ const BasicInfoModal = ({
                   type="button"
                   onClick={onImageClick}
                   disabled={profileImageUploading}
-                  className="absolute -right-1 bottom-1 w-8 h-8 rounded-full bg-white border border-gray-200 shadow flex items-center justify-center text-[#0b8ee8] disabled:opacity-70"
+                  className="absolute -right-1 bottom-1 w-8 h-8 rounded-full bg-white border border-gray-200 shadow flex items-center justify-center text-[#2e66a6] disabled:opacity-70"
                   title="Update photo"
                 >
                   {profileImageUploading ? <Spinner size="small" /> : <FaCamera className="text-xs" />}
@@ -1141,7 +1141,7 @@ const BasicInfoModal = ({
                   <input
                     value={drafts.firstName || ''}
                     onChange={(e) => onChange('firstName', e.target.value)}
-                    className="h-11 px-3 border border-gray-300 rounded-[3px] outline-none focus:border-[#0b8ee8] focus:ring-1 focus:ring-[#0b8ee8]"
+                    className="h-11 px-3 border border-gray-300 rounded-[3px] outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                   />
                 </div>
 
@@ -1149,7 +1149,7 @@ const BasicInfoModal = ({
                   value={drafts.lastName || ''}
                   onChange={(e) => onChange('lastName', e.target.value)}
                   placeholder="Last Name"
-                  className="h-11 px-3 border border-gray-300 rounded-[3px] outline-none focus:border-[#0b8ee8] focus:ring-1 focus:ring-[#0b8ee8]"
+                  className="h-11 px-3 border border-gray-300 rounded-[3px] outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                 />
 
                 <div className="grid grid-cols-[120px_1fr] items-center gap-3 md:col-start-1">
@@ -1157,14 +1157,14 @@ const BasicInfoModal = ({
                   <input
                     value={drafts.middleName || ''}
                     onChange={(e) => onChange('middleName', e.target.value)}
-                    className="h-11 px-3 border border-gray-300 rounded-[3px] outline-none focus:border-[#0b8ee8] focus:ring-1 focus:ring-[#0b8ee8]"
+                    className="h-11 px-3 border border-gray-300 rounded-[3px] outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                   />
                 </div>
 
                 <select
                   value={drafts.extensionName || ''}
                   onChange={(e) => onChange('extensionName', e.target.value)}
-                  className="h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#0b8ee8] focus:ring-1 focus:ring-[#0b8ee8]"
+                  className="h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                 >
                   <option value="">None</option>
                   {EXTENSION_NAME_OPTIONS.map((item) => (
@@ -1178,7 +1178,7 @@ const BasicInfoModal = ({
                 <select
                   value={drafts.region || ''}
                   onChange={(e) => onChange('region', e.target.value)}
-                  className="h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#0b8ee8] focus:ring-1 focus:ring-[#0b8ee8]"
+                  className="h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                 >
                   <option value="">Select region</option>
                   {regionOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
@@ -1191,7 +1191,7 @@ const BasicInfoModal = ({
                   value={drafts.province || ''}
                   onChange={(e) => onChange('province', e.target.value)}
                   disabled={!drafts.region}
-                  className="h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#0b8ee8] focus:ring-1 focus:ring-[#0b8ee8] disabled:bg-gray-50 disabled:text-gray-400"
+                  className="h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6] disabled:bg-gray-50 disabled:text-gray-400"
                 >
                   <option value="">Select province</option>
                   {provinceOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
@@ -1204,7 +1204,7 @@ const BasicInfoModal = ({
                   value={drafts.cityMunicipality || ''}
                   onChange={(e) => onChange('cityMunicipality', e.target.value)}
                   disabled={!drafts.province}
-                  className="h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#0b8ee8] focus:ring-1 focus:ring-[#0b8ee8] disabled:bg-gray-50 disabled:text-gray-400"
+                  className="h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6] disabled:bg-gray-50 disabled:text-gray-400"
                 >
                   <option value="">Select city / municipality</option>
                   {cityOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
@@ -1217,7 +1217,7 @@ const BasicInfoModal = ({
                   value={drafts.streetAddress || ''}
                   onChange={(e) => onChange('streetAddress', e.target.value)}
                   placeholder="e.g. #89 Garcia St"
-                  className="h-11 px-3 border border-gray-300 rounded-[3px] outline-none focus:border-[#0b8ee8] focus:ring-1 focus:ring-[#0b8ee8]"
+                  className="h-11 px-3 border border-gray-300 rounded-[3px] outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                 />
               </div>
 
@@ -1232,7 +1232,7 @@ const BasicInfoModal = ({
                   <button
                     type="button"
                     onClick={onEmailUpdate}
-                    className="h-11 px-4 text-[#0b8ee8] font-bold text-sm hover:underline"
+                    className="h-11 px-4 text-[#2e66a6] font-bold text-sm hover:underline"
                   >
                     UPDATE
                   </button>
@@ -1243,7 +1243,7 @@ const BasicInfoModal = ({
                   <input
                     value={drafts.phoneNumber || ''}
                     onChange={(e) => onChange('phoneNumber', e.target.value)}
-                    className="h-11 px-3 border border-gray-300 rounded-[3px] outline-none focus:border-[#0b8ee8] focus:ring-1 focus:ring-[#0b8ee8]"
+                    className="h-11 px-3 border border-gray-300 rounded-[3px] outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                   />
                 </div>
               </div>
@@ -1263,7 +1263,7 @@ const BasicInfoModal = ({
             type="button"
             onClick={onSave}
             disabled={saving}
-            className="px-6 h-10 rounded-[3px] bg-[#0b8ee8] text-white font-semibold disabled:opacity-70"
+            className="px-6 h-10 rounded-[3px] bg-[#2e66a6] text-white font-semibold disabled:opacity-70"
           >
             {saving ? 'Saving...' : 'Save'}
           </button>
@@ -1290,7 +1290,7 @@ const EmailUpdateModal = ({
   return (
     <div className="fixed inset-0 z-[10004] bg-black/35 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true">
       <div className="w-full max-w-md bg-white rounded-[4px] shadow-2xl border border-gray-200 overflow-hidden">
-        <div className="h-12 px-5 bg-[#0b8ee8] flex items-center justify-between gap-3">
+        <div className="h-12 px-5 bg-[#2e66a6] flex items-center justify-between gap-3">
           <div className="text-white font-bold text-[15px]">Update Email</div>
           <button
             type="button"
@@ -1339,7 +1339,7 @@ const EmailUpdateModal = ({
                 type="button"
                 onClick={onResendCode}
                 disabled={loading}
-                className="text-sm font-semibold text-[#0b8ee8] hover:underline disabled:opacity-70"
+                className="text-sm font-semibold text-[#2e66a6] hover:underline disabled:opacity-70"
               >
                 Resend code
               </button>
@@ -1360,7 +1360,7 @@ const EmailUpdateModal = ({
             <button
               type="submit"
               disabled={loading}
-              className="px-5 h-10 rounded-[3px] bg-[#0b8ee8] text-white font-semibold disabled:opacity-70"
+              className="px-5 h-10 rounded-[3px] bg-[#2e66a6] text-white font-semibold disabled:opacity-70"
             >
               {loading ? 'Please wait...' : step === 'verify' ? 'Verify Email' : 'Send Code'}
             </button>
@@ -1393,7 +1393,7 @@ const AddSectionsModal = ({ open, addedSections = [], onAdd, onClose }) => {
           {MORE_PROFILE_TAB_KEYS.map((key) => {
             const config = MORE_PROFILE_SECTIONS[key];
             const alreadyAdded = addedSections.includes(key);
-            const style = MORE_SECTION_MODAL_STYLES[key] || { icon: <FaPlus />, color: '#27a69a' };
+            const style = MORE_SECTION_MODAL_STYLES[key] || { icon: <FaPlus />, color: '#2e66a6' };
 
             return (
               <div key={key} className="grid grid-cols-[48px_1fr_104px] items-center gap-5 py-5 border-b border-gray-200 last:border-b-0">
@@ -1412,7 +1412,7 @@ const AddSectionsModal = ({ open, addedSections = [], onAdd, onClose }) => {
                   type="button"
                   onClick={() => onAdd(key)}
                   disabled={alreadyAdded}
-                  className={`h-11 rounded-[7px] text-[15px] font-bold text-white transition ${alreadyAdded ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#27a69a] hover:bg-[#208d83]'}`}
+                  className={`h-11 rounded-[7px] text-[15px] font-bold text-white transition ${alreadyAdded ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#2e66a6] hover:bg-[#2e66a6]/90'}`}
                 >
                   {alreadyAdded ? 'ADDED' : 'ADD'}
                 </button>
@@ -1622,7 +1622,7 @@ const ProfileEditModal = ({
   return (
     <div className="fixed inset-0 z-[10006] bg-black/45 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true">
       <div className="w-full max-w-4xl max-h-[86vh] bg-white rounded-[6px] shadow-2xl border border-gray-200 overflow-hidden">
-        <div className="h-12 px-6 bg-[#0558ff] flex items-center justify-between gap-3">
+        <div className="h-12 px-6 bg-[#2e66a6] flex items-center justify-between gap-3">
           <div className="text-white font-bold text-[15px] uppercase">{title}</div>
           <button type="button" onClick={onClose} className="w-8 h-8 rounded-md text-white/90 hover:bg-white/15 text-2xl leading-none" aria-label="Close edit modal">×</button>
         </div>
@@ -1634,7 +1634,7 @@ const ProfileEditModal = ({
 
         <div className="px-6 py-5 border-t border-gray-200 flex justify-end gap-3 bg-white">
           <button type="button" onClick={onClose} className="px-5 h-10 rounded-[3px] border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50">Cancel</button>
-          <button type="button" onClick={onSave} disabled={saving} className="px-6 h-10 rounded-[3px] bg-[#0558ff] text-white font-semibold disabled:opacity-70">{saving ? 'Saving...' : 'Save'}</button>
+          <button type="button" onClick={onSave} disabled={saving} className="px-6 h-10 rounded-[3px] bg-[#2e66a6] text-white font-semibold disabled:opacity-70">{saving ? 'Saving...' : 'Save'}</button>
         </div>
       </div>
     </div>
