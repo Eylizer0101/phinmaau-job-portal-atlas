@@ -176,17 +176,25 @@ const formatDate = (dateValue, withTime = false) => {
   return d.toLocaleDateString('en-PH', options);
 };
 
+const joinMonthYear = (month, year) =>
+  [month, year].map((item) => String(item || '').trim()).filter(Boolean).join(' ');
+
 const formatYearRange = (item = {}) => {
-  const start = item.startYear || item.startDate || '';
-  const end = item.endYear || item.endDate || item.yearGraduated || '';
+  if (item.date) return item.date;
+
+  const start = joinMonthYear(item.startMonth, item.startYear) || item.startYear || item.startDate || '';
+  const end = item.isPresent
+    ? 'Present'
+    : joinMonthYear(item.endMonth, item.endYear || item.yearGraduated) || item.endYear || item.endDate || item.yearGraduated || '';
+
   if (start && end) return `${start} - ${end}`;
-  return start || end || item.date || '';
+  return start || end || '';
 };
 
 const parseList = (value) => {
   if (Array.isArray(value)) return value.map((x) => String(x || '').trim()).filter(Boolean);
   return String(value || '')
-    .split(/[\n,•]+/g)
+    .split(/\|\||[\n,•]+/g)
     .map((x) => x.trim())
     .filter(Boolean);
 };
@@ -464,7 +472,7 @@ const ApplicationDetails = () => {
 
   const educationEntries = Array.isArray(profile.educationEntries) && profile.educationEntries.length
     ? profile.educationEntries
-    : [{ level: profile.educationalAttainment || 'Education', campus: profile.campus, course: profile.course, studyField: profile.studyField, endYear: profile.yearGraduated }].filter((item) => item.campus || item.course || item.studyField || item.endYear);
+    : [{ level: profile.educationalAttainment || 'Education', school: profile.campus, campus: profile.campus, endYear: profile.yearGraduated }].filter((item) => item.school || item.campus || item.endYear);
 
   const downloadResume = async () => {
     const resumeData = normalizeUserToResumeData({
@@ -618,8 +626,8 @@ const ApplicationDetails = () => {
                   <h3 className="text-lg font-semibold tracking-[-0.005em] text-slate-900">Educational Background</h3>
                   <div className="mt-4 space-y-3">
                     {educationEntries.length ? educationEntries.map((edu, index) => (
-                      <TimelineItem key={`${edu.level || edu.course}-${index}`} icon="school" title={display(edu.course || edu.level || edu.educationalAttainment, 'Education')} subtitle={display(edu.campus || edu.studyField, '')} date={formatYearRange(edu)}>
-                        {edu.studyField && edu.course !== edu.studyField ? <p>{edu.studyField}</p> : null}
+                      <TimelineItem key={`${edu.level || edu.school || edu.campus}-${index}`} icon="school" title={display(edu.level || edu.educationalAttainment, 'Education')} subtitle={display(edu.school || edu.campus, '')} date={formatYearRange(edu)}>
+                        {edu.description ? <p>{edu.description}</p> : null}
                       </TimelineItem>
                     )) : <EmptyState text="No educational background added yet." />}
                   </div>
