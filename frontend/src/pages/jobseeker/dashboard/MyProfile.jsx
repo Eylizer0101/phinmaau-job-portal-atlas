@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -3018,6 +3017,50 @@ const MyProfile = () => {
 
   const uploadedRequiredCount = REQUIRED_DOC_TYPES.filter((key) => verificationDocs[key]?.url).length;
 
+  const renderInlineSectionContent = (sectionKey) => {
+    if (sectionKey !== 'credentials') return null;
+
+    return (
+      <div className="px-0 pb-5 pt-2 border-b border-gray-200 bg-white">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {documentConfig.map((doc) => {
+            const current = verificationDocs[doc.type] || {};
+            const uploaded = Boolean(current.url);
+
+            return (
+              <CredentialItem
+                key={doc.type}
+                docType={doc.type}
+                title={doc.title}
+                icon={doc.icon}
+                uploaded={uploaded}
+                fileName={current.filename}
+                fileUrl={current.url}
+                uploading={Boolean(uploadingDocs[doc.type])}
+                onUpload={(file) => handleVerificationUpload(doc.type, file)}
+                popoverOpen={activeCredentialPopover === doc.type}
+                onOpen={() => setActiveCredentialPopover(doc.type)}
+                onClose={() => setActiveCredentialPopover('')}
+              />
+            );
+          })}
+        </div>
+
+        {Object.values(docErrors || {}).some(Boolean) ? (
+          <div className="mt-3 space-y-2">
+            {Object.entries(docErrors).map(([key, message]) =>
+              message ? (
+                <div key={key} className="text-xs text-red-600">
+                  {message}
+                </div>
+              ) : null
+            )}
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <JobSeekerLayout>
@@ -3200,34 +3243,37 @@ const MyProfile = () => {
                       const isOpen = activeTab === targetTab;
 
                       return (
-                        <div
-                          key={section.key}
-                          className="w-full min-h-[44px] px-1 border-b border-gray-200 flex items-center justify-between gap-4 text-left bg-white hover:bg-gray-50 transition"
-                        >
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (section.key === 'about') setActiveTab('about');
-                              else if (section.key === 'work') setActiveTab('work');
-                              else if (section.key === 'skills') setActiveTab('skills');
-                              else setActiveTab(section.key);
-                            }}
-                            className="flex-1 min-h-[44px] inline-flex items-center gap-3 min-w-0 text-left"
+                        <React.Fragment key={section.key}>
+                          <div
+                            className="w-full min-h-[44px] px-1 border-b border-gray-200 flex items-center justify-between gap-4 text-left bg-white hover:bg-gray-50 transition"
                           >
-                            <span className="text-gray-500 text-[14px] leading-none">{isOpen ? '⌃' : '⌄'}</span>
-                            <span className="text-[15px] font-bold uppercase tracking-wide text-gray-900 truncate">{section.label}</span>
-                          </button>
-
-                          {section.actionLabel ? (
                             <button
                               type="button"
-                              onClick={() => openProfileEditModal(section.key)}
-                              className="h-9 px-2 text-[#0b73ff] text-sm font-bold shrink-0 hover:underline"
+                              onClick={() => {
+                                if (section.key === 'about') setActiveTab('about');
+                                else if (section.key === 'work') setActiveTab('work');
+                                else if (section.key === 'skills') setActiveTab('skills');
+                                else setActiveTab((prev) => (prev === section.key ? '' : section.key));
+                              }}
+                              className="flex-1 min-h-[44px] inline-flex items-center gap-3 min-w-0 text-left"
                             >
-                              {section.actionLabel}
+                              <span className="text-gray-500 text-[14px] leading-none">{isOpen ? '⌃' : '⌄'}</span>
+                              <span className="text-[15px] font-bold uppercase tracking-wide text-gray-900 truncate">{section.label}</span>
                             </button>
-                          ) : null}
-                        </div>
+
+                            {section.actionLabel ? (
+                              <button
+                                type="button"
+                                onClick={() => openProfileEditModal(section.key)}
+                                className="h-9 px-2 text-[#0b73ff] text-sm font-bold shrink-0 hover:underline"
+                              >
+                                {section.actionLabel}
+                              </button>
+                            ) : null}
+                          </div>
+
+                          {isOpen ? renderInlineSectionContent(section.key) : null}
+                        </React.Fragment>
                       );
                     })}
                   </div>
