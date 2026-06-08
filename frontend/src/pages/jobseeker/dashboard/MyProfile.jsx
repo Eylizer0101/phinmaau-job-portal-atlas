@@ -80,6 +80,11 @@ const MONTH_OPTIONS = [
   'December',
 ];
 
+const PROFILE_YEAR_OPTIONS = Array.from(
+  { length: 81 },
+  (_, index) => String(new Date().getFullYear() + 5 - index)
+);
+
 const EXTENSION_NAME_OPTIONS = ['Jr', 'Sr', 'II', 'III', 'IV', 'V'];
 
 const PREFERRED_WORK_MODE_OPTIONS = [
@@ -325,69 +330,69 @@ const MORE_PROFILE_SECTIONS = {
     title: 'Certifications',
     emptyTitle: 'No certifications added yet',
     fields: [
-      { key: 'title', label: 'Certification Name', placeholder: 'e.g. AWS Cloud Practitioner Certification' },
-      { key: 'issuer', label: 'Issued By / Provider', placeholder: 'e.g. Amazon Web Services' },
-      { key: 'date', label: 'Date / Validity', placeholder: 'e.g. March 2023 — March 2026' },
+      { key: 'title', label: 'Certification Title', placeholder: 'Search or enter licenses' },
+      { key: 'issuer', label: 'Issuer', placeholder: 'Who authorized the certificate' },
+      { key: 'date', label: 'Issuance Date', placeholder: 'Month Year' },
     ],
   },
   projects: {
     title: 'Projects',
     emptyTitle: 'No projects added yet',
     fields: [
-      { key: 'title', label: 'Project Title', placeholder: 'e.g. HealthTrack — Patient Management System' },
-      { key: 'role', label: 'Role', placeholder: 'e.g. Full Stack Developer' },
-      { key: 'date', label: 'Date / Duration', placeholder: 'e.g. June 2023 — November 2023' },
-      { key: 'description', label: 'Description', type: 'textarea', placeholder: 'Add project details, tools used, and achievements.' },
+      { key: 'title', label: 'Project Name', placeholder: 'Project name' },
+      { key: 'role', label: 'Role', placeholder: 'Role on the Project' },
+      { key: 'date', label: 'Date', placeholder: 'Month Year — Month Year' },
+      { key: 'description', label: 'Description (optional)', type: 'textarea', placeholder: '' },
     ],
   },
   seminars: {
     title: 'Seminars and Trainings',
     emptyTitle: 'No seminars and trainings added yet',
     fields: [
-      { key: 'title', label: 'Seminar / Training Title', placeholder: 'e.g. AWS Cloud Computing Workshop' },
-      { key: 'organization', label: 'Organizer / Provider', placeholder: 'e.g. Amazon Web Services Philippines' },
-      { key: 'date', label: 'Date', placeholder: 'e.g. March 2023' },
+      { key: 'title', label: 'Title', placeholder: 'e.g. Leadership training' },
+      { key: 'organization', label: 'Organizer', placeholder: 'Who is the Organizer?' },
+      { key: 'date', label: 'Date', placeholder: 'Month Year — Month Year' },
     ],
   },
   awards: {
     title: 'Awards and Achievements',
     emptyTitle: 'No awards and achievements added yet',
     fields: [
-      { key: 'title', label: 'Award / Achievement Title', placeholder: 'e.g. Best Thesis Award' },
-      { key: 'issuer', label: 'Issued By', placeholder: 'e.g. DLSU Computer Science Department' },
-      { key: 'date', label: 'Date', placeholder: 'e.g. May 2024' },
-      { key: 'description', label: 'Description', type: 'textarea', placeholder: 'Add details about the award or achievement.' },
+      { key: 'title', label: 'Title', placeholder: 'Title' },
+      { key: 'issuer', label: 'Issuer', placeholder: 'Who issued the award?' },
+      { key: 'date', label: 'Date', placeholder: 'Month Year' },
+      { key: 'description', label: 'Description (optional)', type: 'textarea', placeholder: '' },
     ],
   },
   affiliations: {
     title: 'Affiliations',
     emptyTitle: 'No affiliations added yet',
     fields: [
-      { key: 'organization', label: 'Organization / Club', placeholder: 'e.g. Google Developer Student Club' },
-      { key: 'role', label: 'Role', placeholder: 'e.g. Technical Lead' },
-      { key: 'date', label: 'Date / Duration', placeholder: 'e.g. August 2022 — May 2024' },
-      { key: 'description', label: 'Description', type: 'textarea', placeholder: 'Add your responsibilities or participation details.' },
+      { key: 'organization', label: 'Organization', placeholder: 'Name of Organization' },
+      { key: 'role', label: 'Role', placeholder: 'Role on the Organization' },
+      { key: 'date', label: 'Date', placeholder: 'Month Year — Month Year' },
+      { key: 'description', label: 'Description (optional)', type: 'textarea', placeholder: '' },
     ],
   },
   cocurricular: {
     title: 'Co-curricular Activities',
     emptyTitle: 'No co-curricular activities added yet',
     fields: [
-      { key: 'organization', label: 'Organization / Activity', placeholder: 'e.g. DLSU Volunteer Corps' },
-      { key: 'role', label: 'Role', placeholder: 'e.g. Member' },
-      { key: 'date', label: 'Date / Duration', placeholder: 'e.g. June 2021 — May 2024' },
-      { key: 'description', label: 'Description', type: 'textarea', placeholder: 'Add activity details or contributions.' },
+      { key: 'organization', label: 'Organization', placeholder: 'Name of Organization' },
+      { key: 'role', label: 'Role', placeholder: 'Role on the Organization' },
+      { key: 'date', label: 'Date', placeholder: 'Month Year — Month Year' },
+      { key: 'description', label: 'Description (optional)', type: 'textarea', placeholder: '' },
     ],
   },
   references: {
     title: 'References',
     emptyTitle: 'No references added yet',
     fields: [
-      { key: 'name', label: 'Reference Name', placeholder: 'e.g. Dr. Maria Santos' },
-      { key: 'position', label: 'Position / Title', placeholder: 'e.g. Associate Professor' },
-      { key: 'company', label: 'Company / School', placeholder: 'e.g. De La Salle University' },
-      { key: 'phone', label: 'Phone Number', placeholder: 'e.g. +63 917 555 1234' },
-      { key: 'email', label: 'Email', placeholder: 'e.g. maria.santos@dlsu.edu.ph' },
+      { key: 'name', label: 'Name', placeholder: 'Reference name' },
+      { key: 'position', label: 'Occupation / Position', placeholder: 'Occupation / Position' },
+      { key: 'company', label: 'Company', placeholder: 'Company' },
+      { key: 'phone', label: 'Contact Number', placeholder: 'Phone number' },
+      { key: 'email', label: 'Email', placeholder: 'Email address' },
     ],
   },
 };
@@ -1053,6 +1058,344 @@ const createEmptyProfileEntry = (sectionKey) => {
   }, {});
 };
 
+const splitDateLabel = (value = '') => {
+  const clean = String(value || '').trim();
+  if (!clean) {
+    return {
+      fromMonth: '',
+      fromYear: '',
+      toMonth: '',
+      toYear: '',
+      isPresent: false,
+      isSingleDate: false,
+    };
+  }
+
+  const normalized = clean.replace(/\s+to\s+/i, ' — ').replace(/\s+-\s+/g, ' — ');
+  const [fromRaw = '', toRaw = ''] = normalized.split('—').map((item) => item.trim());
+
+  const parsePart = (part = '') => {
+    const tokens = String(part || '').trim().split(/\s+/).filter(Boolean);
+    const month = tokens.find((item) => MONTH_OPTIONS.includes(item)) || '';
+    const year = tokens.find((item) => /^\d{4}$/.test(item)) || '';
+    return { month, year };
+  };
+
+  const from = parsePart(fromRaw);
+  const isPresent = /^present$/i.test(toRaw);
+  const to = isPresent ? { month: '', year: '' } : parsePart(toRaw);
+
+  return {
+    fromMonth: from.month,
+    fromYear: from.year,
+    toMonth: to.month,
+    toYear: to.year,
+    isPresent,
+    isSingleDate: !toRaw,
+  };
+};
+
+const composeSingleDateLabel = ({ month = '', year = '' } = {}) => [month, year].filter(Boolean).join(' ').trim();
+
+const composeRangeDateLabel = ({ fromMonth = '', fromYear = '', toMonth = '', toYear = '', isPresent = false } = {}) => {
+  const fromText = composeSingleDateLabel({ month: fromMonth, year: fromYear });
+  const toText = isPresent ? 'Present' : composeSingleDateLabel({ month: toMonth, year: toYear });
+
+  if (fromText && toText) return `${fromText} — ${toText}`;
+  return fromText || toText;
+};
+
+const RequiredMark = () => <span className="text-red-500"> *</span>;
+
+const FormLabel = ({ children, required = false }) => (
+  <label className="block text-[16px] text-gray-600 mb-1">
+    {children}{required ? <RequiredMark /> : null}
+  </label>
+);
+
+const PlainInput = ({ value, onChange, placeholder = '' }) => (
+  <input
+    value={value || ''}
+    onChange={onChange}
+    placeholder={placeholder}
+    className="w-full h-11 px-3 border border-gray-300 rounded-[5px] bg-white text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
+  />
+);
+
+const PlainTextArea = ({ value, onChange, placeholder = '' }) => (
+  <textarea
+    rows={5}
+    value={value || ''}
+    onChange={onChange}
+    placeholder={placeholder}
+    className="w-full px-3 py-3 border border-gray-300 rounded-[5px] bg-white text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6] resize-y"
+  />
+);
+
+const SmallSelect = ({ value, onChange, options = [], placeholder = 'Select', disabled = false }) => (
+  <select
+    value={value || ''}
+    onChange={onChange}
+    disabled={disabled}
+    className="h-11 min-w-[108px] px-3 border border-gray-300 rounded-[5px] bg-white text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
+  >
+    <option value="">{placeholder}</option>
+    {options.map((option) => (
+      <option key={option} value={option}>{option}</option>
+    ))}
+  </select>
+);
+
+const DatePickerRow = ({ value, onChange, mode = 'range', allowPresent = false, allowSingleDate = false, singleDateLabel = 'Single Date' }) => {
+  const parts = splitDateLabel(value);
+
+  const updateSingle = (key, nextValue) => {
+    const next = { month: parts.fromMonth, year: parts.fromYear, [key]: nextValue };
+    onChange(composeSingleDateLabel(next));
+  };
+
+  const updateRange = (patch) => {
+    onChange(composeRangeDateLabel({ ...parts, ...patch }));
+  };
+
+  if (mode === 'single') {
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        <SmallSelect value={parts.fromMonth} onChange={(e) => updateSingle('month', e.target.value)} options={MONTH_OPTIONS} placeholder="Month" />
+        <SmallSelect value={parts.fromYear} onChange={(e) => updateSingle('year', e.target.value)} options={PROFILE_YEAR_OPTIONS} placeholder="Year" />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-[16px] text-gray-600">From<RequiredMark /></span>
+        <SmallSelect value={parts.fromMonth} onChange={(e) => updateRange({ fromMonth: e.target.value })} options={MONTH_OPTIONS} placeholder="Month" />
+        <SmallSelect value={parts.fromYear} onChange={(e) => updateRange({ fromYear: e.target.value })} options={PROFILE_YEAR_OPTIONS} placeholder="Year" />
+
+        <span className="ml-1 text-[16px] text-gray-600">To<RequiredMark /></span>
+        <SmallSelect
+          value={parts.toMonth}
+          onChange={(e) => updateRange({ toMonth: e.target.value })}
+          options={MONTH_OPTIONS}
+          placeholder="Month"
+          disabled={parts.isPresent}
+        />
+        <SmallSelect
+          value={parts.toYear}
+          onChange={(e) => updateRange({ toYear: e.target.value })}
+          options={PROFILE_YEAR_OPTIONS}
+          placeholder="Year"
+          disabled={parts.isPresent}
+        />
+      </div>
+
+      {allowPresent ? (
+        <label className="mt-3 inline-flex items-center gap-2 text-[16px] text-gray-900">
+          <input
+            type="checkbox"
+            checked={parts.isPresent}
+            onChange={(e) => updateRange({ isPresent: e.target.checked, toMonth: '', toYear: '' })}
+            className="w-4 h-4 rounded border-gray-300 accent-[#2e66a6]"
+          />
+          Present
+        </label>
+      ) : null}
+
+      {allowSingleDate ? (
+        <label className="mt-3 inline-flex items-center gap-2 text-[16px] text-gray-900">
+          <input
+            type="checkbox"
+            checked={parts.isSingleDate}
+            onChange={(e) => {
+              if (e.target.checked) {
+                onChange(composeSingleDateLabel({ month: parts.fromMonth, year: parts.fromYear }));
+              } else {
+                onChange(composeRangeDateLabel({ ...parts, toMonth: '', toYear: '' }));
+              }
+            }}
+            className="w-4 h-4 rounded border-gray-300 accent-[#2e66a6]"
+          />
+          {singleDateLabel}
+        </label>
+      ) : null}
+    </>
+  );
+};
+
+const RichDescriptionToolbar = () => (
+  <div className="h-12 border border-b-0 border-gray-300 rounded-t-[5px] bg-white flex items-center gap-5 px-6 text-[11px] font-bold text-gray-800 uppercase">
+    <span>B</span>
+    <span className="italic">I</span>
+    <span className="underline">U</span>
+    <span className="h-7 border-l border-gray-300" />
+    <span>•</span>
+    <span>1.</span>
+    <span className="h-7 border-l border-gray-300" />
+    <span>Left</span>
+    <span>Ctr</span>
+    <span>Rght</span>
+  </div>
+);
+
+const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
+  const change = (fieldKey, value) => onChangeItem(index, fieldKey, value);
+
+  if (sectionKey === 'certifications') {
+    return (
+      <>
+        <div>
+          <FormLabel required>Certification Title</FormLabel>
+          <PlainInput value={item.title} onChange={(e) => change('title', e.target.value)} placeholder="Search or enter licenses" />
+        </div>
+        <div>
+          <FormLabel required>Issuer</FormLabel>
+          <PlainInput value={item.issuer} onChange={(e) => change('issuer', e.target.value)} placeholder="Who authorized the certificate" />
+        </div>
+        <div>
+          <FormLabel required>Issuance Date</FormLabel>
+          <DatePickerRow mode="single" value={item.date} onChange={(value) => change('date', value)} />
+        </div>
+      </>
+    );
+  }
+
+  if (sectionKey === 'projects') {
+    return (
+      <>
+        <div>
+          <FormLabel required>Project Name</FormLabel>
+          <PlainInput value={item.title} onChange={(e) => change('title', e.target.value)} placeholder="Project name" />
+        </div>
+        <div>
+          <FormLabel required>Role</FormLabel>
+          <PlainInput value={item.role} onChange={(e) => change('role', e.target.value)} placeholder="Role on the Project" />
+        </div>
+        <DatePickerRow value={item.date} onChange={(value) => change('date', value)} allowPresent />
+        <div>
+          <FormLabel>Description (optional)</FormLabel>
+          <RichDescriptionToolbar />
+          <textarea
+            rows={5}
+            value={item.description || ''}
+            onChange={(e) => change('description', e.target.value)}
+            className="w-full px-3 py-3 border border-gray-300 rounded-b-[5px] bg-white text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6] resize-y"
+          />
+        </div>
+      </>
+    );
+  }
+
+  if (sectionKey === 'seminars') {
+    return (
+      <>
+        <div>
+          <FormLabel required>Title</FormLabel>
+          <PlainInput value={item.title} onChange={(e) => change('title', e.target.value)} placeholder="e.g. Leadership training" />
+        </div>
+        <div>
+          <FormLabel required>Organizer</FormLabel>
+          <PlainInput value={item.organization} onChange={(e) => change('organization', e.target.value)} placeholder="Who is the Organizer?" />
+        </div>
+        <DatePickerRow value={item.date} onChange={(value) => change('date', value)} allowSingleDate singleDateLabel="Single Date" />
+      </>
+    );
+  }
+
+  if (sectionKey === 'awards') {
+    return (
+      <>
+        <div>
+          <FormLabel required>Title</FormLabel>
+          <PlainInput value={item.title} onChange={(e) => change('title', e.target.value)} placeholder="Title" />
+        </div>
+        <div>
+          <FormLabel required>Issuer</FormLabel>
+          <PlainInput value={item.issuer} onChange={(e) => change('issuer', e.target.value)} placeholder="Who issued the award?" />
+        </div>
+        <div>
+          <FormLabel required>Date</FormLabel>
+          <DatePickerRow mode="single" value={item.date} onChange={(value) => change('date', value)} />
+        </div>
+        <div>
+          <FormLabel>Description (optional)</FormLabel>
+          <PlainTextArea value={item.description} onChange={(e) => change('description', e.target.value)} />
+        </div>
+      </>
+    );
+  }
+
+  if (sectionKey === 'affiliations' || sectionKey === 'cocurricular') {
+    return (
+      <>
+        <div>
+          <FormLabel required>Organization</FormLabel>
+          <PlainInput value={item.organization} onChange={(e) => change('organization', e.target.value)} placeholder="Name of Organization" />
+        </div>
+        <div>
+          <FormLabel required>Role</FormLabel>
+          <PlainInput value={item.role} onChange={(e) => change('role', e.target.value)} placeholder="Role on the Organization" />
+        </div>
+        <DatePickerRow value={item.date} onChange={(value) => change('date', value)} allowPresent />
+        <div>
+          <FormLabel>Description (optional)</FormLabel>
+          <PlainTextArea value={item.description} onChange={(e) => change('description', e.target.value)} />
+        </div>
+      </>
+    );
+  }
+
+  if (sectionKey === 'references') {
+    return (
+      <>
+        <div>
+          <FormLabel required>Name</FormLabel>
+          <PlainInput value={item.name} onChange={(e) => change('name', e.target.value)} placeholder="Reference name" />
+        </div>
+        <div>
+          <FormLabel required>Occupation / Position</FormLabel>
+          <PlainInput value={item.position} onChange={(e) => change('position', e.target.value)} placeholder="Occupation / Position" />
+        </div>
+        <div>
+          <FormLabel required>Company</FormLabel>
+          <PlainInput value={item.company} onChange={(e) => change('company', e.target.value)} placeholder="Company" />
+        </div>
+        <div>
+          <FormLabel required>Contact Number</FormLabel>
+          <PlainInput value={item.phone} onChange={(e) => change('phone', e.target.value)} placeholder="Phone number" />
+        </div>
+        <div>
+          <FormLabel required>Email</FormLabel>
+          <PlainInput value={item.email} onChange={(e) => change('email', e.target.value)} placeholder="Email address" />
+        </div>
+      </>
+    );
+  }
+
+  const fields = MORE_PROFILE_SECTIONS[sectionKey]?.fields || [];
+  return fields.map((field) => (
+    <div key={field.key}>
+      {field.type === 'textarea' ? (
+        <TextArea
+          label={field.label}
+          rows={3}
+          value={item[field.key]}
+          onChange={(e) => change(field.key, e.target.value)}
+          placeholder={field.placeholder}
+        />
+      ) : (
+        <Input
+          label={field.label}
+          value={item[field.key]}
+          onChange={(e) => change(field.key, e.target.value)}
+          placeholder={field.placeholder}
+        />
+      )}
+    </div>
+  ));
+};
+
 const EditableProfileListSection = ({
   sectionKey,
   config,
@@ -1069,11 +1412,10 @@ const EditableProfileListSection = ({
 }) => {
   const displayItems = Array.isArray(items) ? items : [];
   const draftItems = Array.isArray(drafts) ? drafts : [];
-  const fields = Array.isArray(config.fields) ? config.fields : [];
 
   return (
     <>
-      <SectionHeader title={config.title} editLabel={`Edit ${config.title}`} onEdit={onEdit} />
+      {!editing ? <SectionHeader title={config.title} editLabel={`Edit ${config.title}`} onEdit={onEdit} /> : null}
 
       <div className="px-4 sm:px-10 pb-8">
         {!editing ? (
@@ -1122,73 +1464,64 @@ const EditableProfileListSection = ({
             )}
           </div>
         ) : (
-          <div className="space-y-5 rounded-[20px] border border-gray-200 bg-[#fcfcfd] p-5 sm:p-6">
-            {draftItems.map((item, index) => (
-              <div key={item._id || `${config.title}-draft-${index}`} className="rounded-[18px] border border-gray-200 bg-white p-4 space-y-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-sm font-bold text-gray-700">Entry {index + 1}</div>
-                  <button
-                    type="button"
-                    onClick={() => onRemoveItem(index)}
-                    className="h-9 px-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 inline-flex items-center gap-2 text-sm font-semibold"
-                  >
-                    <FaTrash className="text-xs" />
-                    Remove
-                  </button>
-                </div>
+          <div className="rounded-[4px] border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="h-12 px-7 bg-[#2e66a6] text-white flex items-center gap-2 font-bold text-[14px] uppercase">
+              <span>Edit</span>
+              <span>{config.title}</span>
+            </div>
 
-                <div className="grid md:grid-cols-2 gap-5">
-                  {fields.map((field) => (
-                    <div key={field.key} className={field.type === 'textarea' ? 'md:col-span-2' : ''}>
-                      {field.type === 'textarea' ? (
-                        <TextArea
-                          label={field.label}
-                          rows={3}
-                          value={item[field.key]}
-                          onChange={(e) => onChangeItem(index, field.key, e.target.value)}
-                          placeholder={field.placeholder}
-                        />
-                      ) : (
-                        <Input
-                          label={field.label}
-                          value={item[field.key]}
-                          onChange={(e) => onChangeItem(index, field.key, e.target.value)}
-                          placeholder={field.placeholder}
-                        />
-                      )}
-                    </div>
-                  ))}
+            <div className="px-7 py-7 space-y-7">
+              {draftItems.map((item, index) => (
+                <div key={item._id || `${config.title}-draft-${index}`} className="space-y-5 border-b border-gray-200 last:border-b-0 pb-7 last:pb-0">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm font-bold text-gray-700">{draftItems.length > 1 ? `${config.title} ${index + 1}` : ''}</div>
+                    {draftItems.length > 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => onRemoveItem(index)}
+                        className="h-9 px-3 rounded-[5px] border border-red-200 text-red-600 hover:bg-red-50 inline-flex items-center gap-2 text-sm font-semibold"
+                      >
+                        <FaTrash className="text-xs" />
+                        Remove
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <MoreSectionFieldSet
+                    sectionKey={sectionKey}
+                    item={item}
+                    index={index}
+                    onChangeItem={onChangeItem}
+                  />
                 </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={onAddItem}
+                className="h-10 px-4 rounded-[5px] border border-[#2e66a6] text-[#2e66a6] font-semibold inline-flex items-center gap-2 hover:bg-[#f7faff]"
+              >
+                <FaPlus className="text-xs" />
+                Add {config.title.replace(/s$/, '')}
+              </button>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  className="px-5 h-10 rounded-[3px] border border-[#2e66a6] text-[#2e66a6] font-semibold hover:bg-blue-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={onSave}
+                  disabled={saving}
+                  className="px-6 h-10 rounded-[3px] bg-[#2e66a6] text-white font-semibold disabled:opacity-70"
+                >
+                  {saving ? 'Saving...' : 'Save'}
+                </button>
               </div>
-            ))}
-
-            <button
-              type="button"
-              onClick={onAddItem}
-              className="h-11 px-5 rounded-xl text-white font-semibold inline-flex items-center gap-2"
-              style={{ backgroundColor: COLORS.primary }}
-            >
-              <FaPlus className="text-xs" />
-              Add Entry
-            </button>
-
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={onCancel}
-                className="px-4 h-11 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={onSave}
-                disabled={saving}
-                className="px-5 h-11 rounded-xl text-white font-semibold disabled:opacity-70"
-                style={{ backgroundColor: COLORS.primary }}
-              >
-                {saving ? 'Saving...' : 'Save'}
-              </button>
             </div>
           </div>
         )}
@@ -1235,13 +1568,13 @@ const WorkExperienceModal = ({
         <div className="px-6 sm:px-8 py-6 space-y-5 max-h-[80vh] overflow-y-auto">
           <div className="grid md:grid-cols-2 gap-6">
             <Input
-              label="Company / Organization Name"
+              label="Company"
               value={form.companyName}
               onChange={(e) => onChange('companyName', e.target.value)}
               placeholder="e.g. Phinma Araullo University"
             />
             <Input
-              label="Position / Role Title"
+              label="Job Title"
               value={form.positionTitle}
               onChange={(e) => onChange('positionTitle', e.target.value)}
               placeholder="e.g. UI / UX Designer"
