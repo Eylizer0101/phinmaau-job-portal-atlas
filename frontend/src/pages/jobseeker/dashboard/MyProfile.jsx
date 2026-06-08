@@ -962,7 +962,7 @@ const WorkExperienceModal = ({
 
   return (
     <div className="fixed inset-0 z-[10001] bg-black/35 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true">
-      <div className="w-full max-w-3xl bg-white rounded-[24px] shadow-2xl border border-gray-100 overflow-hidden">
+      <div className="w-full max-w-3xl  rounded-[24px] shadow-2xl border border-gray-100 overflow-hidden">
         <div className="px-6 sm:px-8 py-5 border-b border-gray-200 flex items-center justify-between gap-3">
           <div>
             <div className="text-[20px] font-bold text-gray-900">
