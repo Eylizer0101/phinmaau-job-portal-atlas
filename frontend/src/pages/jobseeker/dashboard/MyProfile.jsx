@@ -1104,6 +1104,15 @@ const BasicInfoModal = ({
                 >
                   {profileImageUploading ? <Spinner size="small" /> : <FaCamera className="text-xs" />}
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAddSectionsModalOpen(true)}
+                  className="h-9 sm:h-10 px-3 sm:px-4 rounded-full bg-white text-gray-700 border border-gray-200 text-xs sm:text-sm font-semibold inline-flex items-center gap-2 hover:bg-gray-50"
+                >
+                  <FaPlus className="text-xs" />
+                  Add Sections
+                </button>
               </div>
             </div>
 
@@ -1429,6 +1438,8 @@ const MyProfile = () => {
   });
 
   const [activeTab, setActiveTab] = useState('personal');
+  const [addSectionsModalOpen, setAddSectionsModalOpen] = useState(false);
+  const [addedProfileSections, setAddedProfileSections] = useState([]);
 
   const [uploadingDocs, setUploadingDocs] = useState({});
   const [docErrors, setDocErrors] = useState({});
@@ -2653,6 +2664,61 @@ const MyProfile = () => {
     { type: 'pagibig', title: 'Pag-IBIG', icon: <FaFileAlt className="text-sm" /> },
   ];
 
+
+  const addSectionDescriptions = {
+    certifications: {
+      icon: '🎓',
+      color: '#f97316',
+      description: 'There are jobs that require certain certifications or licensure. Being officially qualified or skilled in a certain area is a plus.',
+    },
+    projects: {
+      icon: '📁',
+      color: '#3b82f6',
+      description: 'Showcase your personal or professional projects that demonstrate your skills and initiative.',
+    },
+    seminars: {
+      icon: '📖',
+      color: '#06b6d4',
+      description: 'This section is another way of telling employers that you have certain skills and insights from other professionals.',
+    },
+    awards: {
+      icon: '🏅',
+      color: '#eab308',
+      description: 'Highlight recognitions, awards, and notable achievements that set you apart from other candidates.',
+    },
+    affiliations: {
+      icon: '👥',
+      color: '#14b8a6',
+      description: 'Show organizations, clubs, or affiliations that help employers understand your background.',
+    },
+    cocurricular: {
+      icon: '〽️',
+      color: '#a855f7',
+      description: 'Extracurricular and co-curricular activities show your well-rounded personality and leadership potential.',
+    },
+    references: {
+      icon: '🙋',
+      color: '#22c55e',
+      description: 'Professional references who can vouch for your skills, work ethic, and character.',
+    },
+  };
+
+  const visibleMoreSectionKeys = MORE_PROFILE_TAB_KEYS.filter((sectionKey) => {
+    const hasSavedItems = Array.isArray(formData[sectionKey]) && formData[sectionKey].length > 0;
+    return addedProfileSections.includes(sectionKey) || hasSavedItems;
+  });
+
+  const availableMoreSectionKeys = MORE_PROFILE_TAB_KEYS.filter((sectionKey) => !visibleMoreSectionKeys.includes(sectionKey));
+
+  const handleAddProfileSection = (sectionKey) => {
+    setAddedProfileSections((prev) => (prev.includes(sectionKey) ? prev : [...prev, sectionKey]));
+    setActiveTab(sectionKey);
+    setAddSectionsModalOpen(false);
+    setTimeout(() => {
+      document.getElementById(`profile-section-${sectionKey}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  };
+
   const uploadedRequiredCount = REQUIRED_DOC_TYPES.filter((key) => verificationDocs[key]?.url).length;
 
   if (loading) {
@@ -2748,6 +2814,52 @@ const MyProfile = () => {
         onVerifyCode={handleVerifyEmailUpdateCode}
         onResendCode={handleResendEmailUpdateCode}
       />
+
+      {addSectionsModalOpen ? (
+        <div className="fixed inset-0 z-[10005] bg-black/70 flex items-center justify-center px-4 py-8" role="dialog" aria-modal="true">
+          <div className="w-full max-w-[620px] max-h-[82vh] bg-white rounded-[10px] shadow-2xl overflow-hidden flex flex-col">
+            <div className="px-8 pt-7 pb-4 flex items-center justify-between">
+              <h2 className="text-[22px] font-semibold text-gray-900">Add More Sections</h2>
+              <button
+                type="button"
+                onClick={() => setAddSectionsModalOpen(false)}
+                className="text-2xl leading-none text-gray-500 hover:text-gray-800"
+                aria-label="Close add sections modal"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="px-8 pb-6 overflow-y-auto">
+              {(availableMoreSectionKeys.length ? availableMoreSectionKeys : MORE_PROFILE_TAB_KEYS).map((sectionKey) => {
+                const config = MORE_PROFILE_SECTIONS[sectionKey];
+                const meta = addSectionDescriptions[sectionKey] || {};
+                const alreadyAdded = visibleMoreSectionKeys.includes(sectionKey);
+
+                return (
+                  <div key={sectionKey} className="py-5 border-b border-gray-200 flex items-center gap-5">
+                    <div className="w-11 h-11 text-[34px] flex items-center justify-center shrink-0" style={{ color: meta.color || COLORS.primary }}>
+                      {meta.icon || '📌'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[18px] font-bold text-gray-900">{config.title}</div>
+                      <div className="text-[14px] leading-6 text-gray-500 mt-1">{meta.description}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleAddProfileSection(sectionKey)}
+                      disabled={alreadyAdded}
+                      className="w-[98px] h-11 rounded-[7px] bg-[#26a69a] text-white text-[15px] font-bold disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {alreadyAdded ? 'ADDED' : 'ADD'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className={`min-h-[100dvh] h-auto pt-2 bg-gray-50 overflow-x-hidden overflow-y-visible ${isApplyFlow ? 'pb-28 sm:pb-32' : 'pb-6'}`}>
         <div className="max-w-6xl mx-auto px-0 sm:px-6">
@@ -3515,7 +3627,30 @@ const MyProfile = () => {
               </div>
             )}
 
-            {MORE_PROFILE_TAB_KEYS.includes(activeTab) && (
+            {visibleMoreSectionKeys.length > 0 ? (
+              <div className="border-t border-[#d7dbe3] pt-2">
+                {visibleMoreSectionKeys.map((sectionKey) => (
+                  <div id={`profile-section-${sectionKey}`} key={sectionKey} className="border-b border-[#d7dbe3] last:border-b-0">
+                    <EditableProfileListSection
+                      sectionKey={sectionKey}
+                      config={MORE_PROFILE_SECTIONS[sectionKey]}
+                      items={formData[sectionKey]}
+                      drafts={drafts[sectionKey]}
+                      editing={editing[sectionKey]}
+                      saving={savingSection === sectionKey}
+                      onEdit={() => startEditingProfileList(sectionKey)}
+                      onCancel={() => cancelEdit(sectionKey)}
+                      onSave={() => saveSection(sectionKey)}
+                      onAddItem={() => addProfileListItem(sectionKey)}
+                      onRemoveItem={(index) => removeProfileListItem(sectionKey, index)}
+                      onChangeItem={(index, field, value) => updateProfileListItem(sectionKey, index, field, value)}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            {MORE_PROFILE_TAB_KEYS.includes(activeTab) && !visibleMoreSectionKeys.includes(activeTab) && (
               <div id={`panel-${activeTab}`} role="tabpanel">
                 <EditableProfileListSection
                   sectionKey={activeTab}
