@@ -2416,20 +2416,39 @@ const resumeEscapeHtml = (value = '') =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 
+const isMeaningfulResumeValue = (value) => {
+  const text = String(value ?? '').trim();
+  return Boolean(text) && !/^(not\s+provided|n\/?a)$/i.test(text);
+};
+
 const resumeText = (value = '', fallback = '') => {
   const text = String(value || '').trim();
-  return text || fallback;
+  return isMeaningfulResumeValue(text) ? text : fallback;
 };
 
 const resumeArray = (value = '') => {
   if (Array.isArray(value)) {
-    return value.map((item) => resumeText(item)).filter(Boolean);
+    return value
+      .map((item) => resumeText(item))
+      .filter(isMeaningfulResumeValue);
   }
 
-  return String(value || '')
-    .split(',')
-    .map((item) => resumeText(item))
-    .filter(Boolean);
+  if (typeof value === 'string') {
+    const clean = value.trim();
+    if (!isMeaningfulResumeValue(clean)) return [];
+
+    const parts = clean.includes('||')
+      ? clean.split('||')
+      : /\s[—-]\s(Basic|Novice|Intermediate|Advanced|Expert)$/i.test(clean)
+        ? [clean]
+        : clean.split(',');
+
+    return parts
+      .map((item) => resumeText(item))
+      .filter(isMeaningfulResumeValue);
+  }
+
+  return [];
 };
 
 const resumeMonthYear = (value) => {
@@ -2634,7 +2653,6 @@ const buildResumeHtmlForPdf = (user = {}) => {
 
   const technicalSkills = resumeArray(profile.technicalSkills);
   const softSkills = resumeArray(profile.softSkills);
-  const allSkills = [...technicalSkills, ...softSkills].filter(isMeaningfulResumeValue);
   const workExperiences = Array.isArray(profile.workExperiences) ? sortWorkExperiences(profile.workExperiences) : [];
   const educationEntries = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
 
@@ -2657,6 +2675,8 @@ const buildResumeHtmlForPdf = (user = {}) => {
           .join('')
       )
     : '';
+
+  const allSkills = [...technicalSkills, ...softSkills].filter(isMeaningfulResumeValue);
 
   const skillsHtml = allSkills.length
     ? renderResumeSection(
@@ -2747,7 +2767,7 @@ const buildResumeHtmlForPdf = (user = {}) => {
               ${photoHtml}
             </header>
             ${resumeText(profile.aboutMe) ? renderResumeSection('Objective', `<p class="objective-text">${resumeEscapeHtml(resumeText(profile.aboutMe))}</p>`) : ''}
-            ${renderResumeSection('Availability & Preferences', renderResumeRows(availabilityRows))}
+            ${renderResumeRows(availabilityRows) ? renderResumeSection('Availability & Preferences', renderResumeRows(availabilityRows)) : ''}
             ${workExperienceHtml}
             ${skillsHtml}
             ${educationHtml}
