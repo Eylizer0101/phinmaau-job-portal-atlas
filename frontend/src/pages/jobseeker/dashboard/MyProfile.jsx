@@ -146,13 +146,13 @@ const parseSkillWithProficiency = (value = '') => {
 };
 
 const formatSkillWithProficiency = (item = {}) => {
-  const skill = String(item.skill || '').trim();
+  const skill = String(item.skill || '').trim().replace(/[\s,]+$/, '');
   if (!skill) return '';
   const proficiency = PROFICIENCY_LEVEL_OPTIONS.includes(item.proficiency) ? item.proficiency : DEFAULT_PROFICIENCY_LEVEL;
   return `${skill} — ${proficiency}`;
 };
 
-const normalizeSkillRows = (items = []) => {
+const normalizeSkillRows = (items = [], keepEmpty = false) => {
   const source = Array.isArray(items) ? items : [];
   const rows = source
     .map((item) => {
@@ -165,7 +165,7 @@ const normalizeSkillRows = (items = []) => {
 
       return parseSkillWithProficiency(item);
     })
-    .filter((item) => item.skill);
+    .filter((item) => keepEmpty || item.skill);
 
   return rows.length ? rows : [{ skill: '', proficiency: DEFAULT_PROFICIENCY_LEVEL }];
 };
@@ -1834,7 +1834,7 @@ const ProfileEditModal = ({
       const skillRows = normalizeSkillRows(drafts.skillRows || [
         ...(drafts.technicalSkills || []),
         ...(drafts.softSkills || []),
-      ]);
+      ], true);
 
       return (
         <div className="space-y-5">
@@ -2976,7 +2976,7 @@ const MyProfile = () => {
         skillRows: normalizeSkillRows([
           ...(formData.technicalSkills || []),
           ...(formData.softSkills || []),
-        ]),
+        ], true),
       }));
       setEditModalSection(sectionKey);
       return;
@@ -3021,7 +3021,7 @@ const MyProfile = () => {
       const rows = normalizeSkillRows(prev.skillRows || [
         ...(prev.technicalSkills || []),
         ...(prev.softSkills || []),
-      ]);
+      ], true);
 
       return {
         ...prev,
@@ -3039,7 +3039,7 @@ const MyProfile = () => {
         ...normalizeSkillRows(prev.skillRows || [
           ...(prev.technicalSkills || []),
           ...(prev.softSkills || []),
-        ]),
+        ], true),
         { skill: '', proficiency: DEFAULT_PROFICIENCY_LEVEL },
       ],
     }));
@@ -3050,7 +3050,7 @@ const MyProfile = () => {
       const rows = normalizeSkillRows(prev.skillRows || [
         ...(prev.technicalSkills || []),
         ...(prev.softSkills || []),
-      ]).filter((_, itemIndex) => itemIndex !== index);
+      ], true).filter((_, itemIndex) => itemIndex !== index);
 
       return {
         ...prev,
@@ -3566,16 +3566,13 @@ const MyProfile = () => {
       const allSkills = [...(formData.technicalSkills || []), ...(formData.softSkills || [])]
         .map((item) => String(item || '').trim())
         .filter(Boolean);
-      return allSkills.length || formData.whatHaveYouDone ? (
+      return allSkills.length ? (
         <div className="px-0 pb-5 pt-2 font-serif text-[13px] leading-5 text-gray-900">
-          {allSkills.length ? (
-            <div className="space-y-1">
-              {allSkills.map((item, index) => (
-                <div key={`skill-display-${index}`}><b>{item}</b></div>
-              ))}
-            </div>
-          ) : null}
-          {formData.whatHaveYouDone ? <div className="mt-2">{formData.whatHaveYouDone}</div> : null}
+          <div className="space-y-1">
+            {allSkills.map((item, index) => (
+              <div key={`skill-display-${index}`}><b>{item}</b></div>
+            ))}
+          </div>
         </div>
       ) : renderEmptyLine('Enumerate your skills, competencies, and talents including proficiency levels.');
     }
