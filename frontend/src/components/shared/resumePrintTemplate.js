@@ -17,26 +17,11 @@ const toArray = (value) => {
   if (Array.isArray(value)) return value.map((item) => String(item || '').trim()).filter(Boolean);
   if (typeof value === 'string') {
     return value
-      .split(/\|\||[\n,•]+/g)
+      .split(',')
       .map((item) => item.trim())
       .filter(Boolean);
   }
   return [];
-};
-
-const joinMonthYear = (month, year) =>
-  [month, year].map((item) => String(item || '').trim()).filter(Boolean).join(' ');
-
-const getMonthYearRange = (item = {}) => {
-  if (item.date) return item.date;
-
-  const start = joinMonthYear(item.startMonth, item.startYear) || (item.startDate ? formatMonthYear(item.startDate) : '');
-  const end = item.isPresent
-    ? 'Present'
-    : joinMonthYear(item.endMonth, item.endYear || item.yearGraduated) || (item.endDate ? formatMonthYear(item.endDate) : '');
-
-  if (start && end) return `${start} - ${end}`;
-  return start || end || '';
 };
 
 const buildName = (formData = {}) =>
@@ -58,14 +43,24 @@ const formatMonthYear = (value) => {
   return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 };
 
-const getDateRange = (item = {}) => getMonthYearRange(item);
+const getDateRange = (item = {}) => {
+  if (item.date) return item.date;
 
-const getEducationDateRange = (entry = {}) => {
-  const start = joinMonthYear(entry.startMonth, entry.startYear);
-  const end = joinMonthYear(entry.endMonth, entry.endYear || entry.yearGraduated);
+  const start = item.startDate ? formatMonthYear(item.startDate) : '';
+  const end = item.isPresent ? 'Present' : item.endDate ? formatMonthYear(item.endDate) : '';
 
   if (start && end) return `${start} - ${end}`;
-  return end || start || getText(entry.endYear || entry.yearGraduated || entry.startYear);
+  if (start) return start;
+  if (end) return end;
+  return '';
+};
+
+const getEducationDateRange = (entry = {}) => {
+  const start = getText(entry.startYear);
+  const end = getText(entry.endYear || entry.yearGraduated);
+
+  if (start && end) return `${start} - ${end}`;
+  return end || start;
 };
 
 const getProfileImageUrl = (url = '') => {
@@ -576,30 +571,20 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
     !workExperiences.length
   );
 
+  const allSkills = [...technicalSkills, ...softSkills];
+
   const skillsHtml = sectionHtml(
     'Skills',
     `
       <div class="skills-grid">
-        <div>
-          ${
-            technicalSkills.length
-              ? technicalSkills
-                  .map((skill) => `<div class="skill-row"><span class="skill-label">${escapeHtml(skill)}</span></div>`)
-                  .join('')
-              : '<p class="empty-text">Not provided</p>'
-          }
-        </div>
-        <div>
-          ${
-            softSkills.length
-              ? softSkills
-                  .map((skill) => `<div class="skill-row"><span class="skill-label">${escapeHtml(skill)}</span></div>`)
-                  .join('')
-              : '<p class="empty-text">Not provided</p>'
-          }
-        </div>
+        ${
+          allSkills
+            .map((skill) => `<div class="skill-row"><span class="skill-label">${escapeHtml(skill)}</span></div>`)
+            .join('')
+        }
       </div>
-    `
+    `,
+    !allSkills.length
   );
 
   const educationHtml = sectionHtml(
@@ -609,8 +594,8 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
           .map((entry) =>
             datedItemHtml({
               title: getText(entry.level || entry.educationalAttainment || formData.educationalAttainment, 'Education'),
-              subtitle: getText(entry.school || entry.campus || formData.campus),
-              meta: getText(entry.description),
+              subtitle: getText(entry.campus || formData.campus),
+              meta: [entry.course || formData.course, entry.studyField || formData.studyField].filter(Boolean).join(' / '),
               date: getEducationDateRange(entry),
             })
           )
