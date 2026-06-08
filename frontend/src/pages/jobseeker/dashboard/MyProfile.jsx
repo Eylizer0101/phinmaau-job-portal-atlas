@@ -35,6 +35,12 @@ import {
   FaPlus,
   FaArrowLeft,
   FaCamera,
+  FaFolderOpen,
+  FaBookOpen,
+  FaAward,
+  FaUsers,
+  FaWaveSquare,
+  FaUserCheck,
 } from 'react-icons/fa';
 
 const COLORS = {
@@ -140,6 +146,15 @@ const MORE_PROFILE_SECTIONS = {
 
 const MORE_PROFILE_TAB_KEYS = Object.keys(MORE_PROFILE_SECTIONS);
 
+const MORE_SECTION_MODAL_STYLES = {
+  certifications: { icon: <FaGraduationCap />, color: '#f97316' },
+  projects: { icon: <FaFolderOpen />, color: '#3b82f6' },
+  seminars: { icon: <FaBookOpen />, color: '#06b6d4' },
+  awards: { icon: <FaAward />, color: '#eab308' },
+  affiliations: { icon: <FaUsers />, color: '#14b8a6' },
+  cocurricular: { icon: <FaWaveSquare />, color: '#a855f7' },
+  references: { icon: <FaUserCheck />, color: '#22c55e' },
+};
 
 const MORE_SECTION_DESCRIPTIONS = {
   certifications: 'There are jobs that require certain certifications or licensure. Being officially qualified is a plus.',
@@ -1361,34 +1376,34 @@ const AddSectionsModal = ({ open, addedSections = [], onAdd, onClose }) => {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[10005] bg-black/65 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true">
-      <div className="w-full max-w-[640px] bg-white rounded-[4px] shadow-2xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-5 flex items-center justify-between gap-3 border-b border-gray-100">
-          <h2 className="text-[22px] font-bold text-gray-900">Add More Sections</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-9 h-9 rounded-full text-gray-500 hover:bg-gray-100 text-2xl leading-none"
-            aria-label="Close add sections modal"
-          >
-            ×
-          </button>
-        </div>
+    <div className="fixed inset-0 z-[10005] bg-black/75 flex items-start justify-center px-4 py-20" role="dialog" aria-modal="true">
+      <div className="relative w-full max-w-[625px] max-h-[78vh] bg-white rounded-[6px] shadow-2xl overflow-hidden">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-5 top-4 z-10 text-gray-500 hover:text-gray-800 text-2xl leading-none"
+          aria-label="Close add sections modal"
+        >
+          ×
+        </button>
 
-        <div className="max-h-[70vh] overflow-y-auto px-6 py-2">
+        <div className="max-h-[78vh] overflow-y-auto px-8 pt-7 pb-4">
+          <h2 className="text-[24px] font-bold text-gray-900 mb-4">Add More Sections</h2>
+
           {MORE_PROFILE_TAB_KEYS.map((key) => {
             const config = MORE_PROFILE_SECTIONS[key];
             const alreadyAdded = addedSections.includes(key);
+            const style = MORE_SECTION_MODAL_STYLES[key] || { icon: <FaPlus />, color: '#27a69a' };
 
             return (
-              <div key={key} className="flex items-center gap-5 py-5 border-b border-gray-200 last:border-b-0">
-                <div className="w-11 h-11 rounded-xl bg-[#f0f7ff] text-[#0b8ee8] flex items-center justify-center shrink-0">
-                  <FaPlus className="text-lg" />
+              <div key={key} className="grid grid-cols-[48px_1fr_104px] items-center gap-5 py-5 border-b border-gray-200 last:border-b-0">
+                <div className="text-[38px] flex items-center justify-center shrink-0" style={{ color: style.color }}>
+                  {style.icon}
                 </div>
 
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0">
                   <div className="text-[17px] font-bold text-gray-900">{config.title}</div>
-                  <p className="text-sm leading-6 text-gray-500 mt-1">
+                  <p className="text-[14px] leading-6 text-gray-500 mt-1">
                     {MORE_SECTION_DESCRIPTIONS[key] || 'Add this section to complete your profile.'}
                   </p>
                 </div>
@@ -1397,7 +1412,7 @@ const AddSectionsModal = ({ open, addedSections = [], onAdd, onClose }) => {
                   type="button"
                   onClick={() => onAdd(key)}
                   disabled={alreadyAdded}
-                  className={`h-11 min-w-[92px] px-5 rounded-lg text-sm font-bold text-white ${alreadyAdded ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#27a69a] hover:bg-[#208d83]'}`}
+                  className={`h-11 rounded-[7px] text-[15px] font-bold text-white transition ${alreadyAdded ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#27a69a] hover:bg-[#208d83]'}`}
                 >
                   {alreadyAdded ? 'ADDED' : 'ADD'}
                 </button>
@@ -1407,6 +1422,51 @@ const AddSectionsModal = ({ open, addedSections = [], onAdd, onClose }) => {
         </div>
       </div>
     </div>
+  );
+};
+
+
+const ProfileTodoList = ({ completed = [] }) => {
+  const items = [
+    { key: 'basic', label: 'Complete Basic Info' },
+    { key: 'career', label: 'Availability and Preferences' },
+    { key: 'work', label: 'Work Experience' },
+    { key: 'skills', label: 'Skills' },
+    { key: 'education', label: 'Education' },
+    { key: 'certifications', label: 'Certifications' },
+    { key: 'projects', label: 'Projects' },
+    { key: 'seminars', label: 'Seminars and Trainings' },
+    { key: 'awards', label: 'Awards and Achievements' },
+    { key: 'affiliations', label: 'Affiliations' },
+    { key: 'cocurricular', label: 'Co-curricular Activities' },
+    { key: 'references', label: 'References' },
+  ];
+
+  const doneCount = items.filter((item) => completed.includes(item.key)).length;
+  const percent = Math.round((doneCount / items.length) * 100);
+
+  return (
+    <aside className="w-full rounded-[14px] border border-gray-200 bg-white px-5 py-5 shadow-sm">
+      <h3 className="text-[18px] font-bold text-gray-900 mb-4">To-Do List</h3>
+      <div className="text-center text-[#008f80] font-bold text-sm mb-2">{percent}% Done</div>
+      <div className="h-2 rounded-full bg-[#ecebea] overflow-hidden mb-4">
+        <div className="h-full bg-[#0f9f91] transition-all" style={{ width: `${percent}%` }} />
+      </div>
+      <div className="space-y-3">
+        {items.map((item) => {
+          const done = completed.includes(item.key);
+          return (
+            <div key={item.key} className="flex items-center gap-3 text-[15px] text-gray-900">
+              <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${done ? 'border-[#0f9f91] bg-[#0f9f91]' : 'border-gray-300 bg-white'}`}>
+                {done ? <FaCheckCircle className="text-white text-[10px]" /> : null}
+              </span>
+              <span className="flex-1 leading-5">{item.label}</span>
+              <FaInfoCircle className="text-gray-300 text-[15px] shrink-0" />
+            </div>
+          );
+        })}
+      </div>
+    </aside>
   );
 };
 
@@ -3089,57 +3149,91 @@ const MyProfile = () => {
 
             <div className="border-t border-[#d7dbe3]" />
 
-            <div className="relative z-50 w-full max-w-full px-4 sm:px-10 py-5">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <div className="relative z-50 w-full max-w-full px-4 sm:px-10 py-8">
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-10 items-start">
                 <div>
-                  <h2 className="text-[22px] font-bold text-gray-900">Profile</h2>
-                  <p className="text-sm text-gray-500 mt-1">Open each section below, edit your details, or add more sections.</p>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+                    <div>
+                      <h2 className="text-[22px] font-bold text-gray-900">Profile</h2>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={handlePreviewResume}
+                        className="h-10 px-4 rounded-md bg-white text-gray-500 text-sm font-semibold inline-flex items-center gap-2 hover:bg-gray-50"
+                      >
+                        <FaEye className="text-xs" />
+                        Preview
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleDownloadResume}
+                        className="h-10 px-4 rounded-md bg-[#26a69a] text-white text-sm font-bold inline-flex items-center gap-2 hover:bg-[#208d83]"
+                      >
+                        <FaDownload className="text-xs" />
+                        Download CV
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setAddSectionsModalOpen(true)}
+                        className="h-10 px-4 rounded-md border border-gray-200 bg-white text-gray-800 font-semibold inline-flex items-center justify-center gap-2 hover:bg-gray-50"
+                      >
+                        <FaPlus className="text-sm" />
+                        Add Sections
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="bg-white">
+                    {[
+                      { key: 'personal', label: 'Basic Information', actionLabel: 'EDIT' },
+                      { key: 'about', label: 'Objective', actionLabel: formData.aboutMe ? 'EDIT' : 'ADD' },
+                      { key: 'career', label: 'Availability & Preferences', actionLabel: 'ADD' },
+                      { key: 'work', label: 'Work Experience', actionLabel: workExperiences.length ? 'EDIT' : 'ADD' },
+                      { key: 'skills', label: 'Skills', actionLabel: 'ADD' },
+                      { key: 'education', label: 'Education', actionLabel: hasEducationEntries ? 'EDIT' : 'ADD' },
+                      { key: 'credentials', label: 'Credentials', actionLabel: '' },
+                      ...addedMoreSections.map((key) => ({ key, label: MORE_PROFILE_SECTIONS[key]?.title || key, actionLabel: (formData[key] || []).length ? 'EDIT' : 'ADD' })),
+                    ].map((section) => {
+                      const targetTab = section.key === 'about' ? 'about' : section.key === 'work' ? 'work' : section.key === 'skills' ? 'skills' : section.key;
+                      const isOpen = activeTab === targetTab;
+
+                      return (
+                        <button
+                          key={section.key}
+                          type="button"
+                          onClick={() => {
+                            if (section.key === 'about') setActiveTab('about');
+                            else if (section.key === 'work') setActiveTab('work');
+                            else if (section.key === 'skills') setActiveTab('skills');
+                            else setActiveTab(section.key);
+                          }}
+                          className="w-full min-h-[44px] px-1 border-b border-gray-200 flex items-center justify-between gap-4 text-left bg-white hover:bg-gray-50 transition"
+                        >
+                          <span className="inline-flex items-center gap-3 min-w-0">
+                            <span className="text-gray-500 text-[14px] leading-none">{isOpen ? '⌃' : '⌄'}</span>
+                            <span className="text-[15px] font-bold uppercase tracking-wide text-gray-900 truncate">{section.label}</span>
+                          </span>
+                          {section.actionLabel ? <span className="text-[#0b73ff] text-sm font-bold shrink-0">{section.actionLabel}</span> : null}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setAddSectionsModalOpen(true)}
-                  className="h-11 px-5 rounded-xl border border-gray-200 bg-white text-gray-800 font-bold inline-flex items-center justify-center gap-2 hover:bg-gray-50"
-                >
-                  <FaPlus className="text-sm" />
-                  Add Sections
-                </button>
-              </div>
-
-              <div className="rounded-[18px] border border-gray-200 bg-white overflow-hidden">
-                {[
-                  { key: 'personal', label: 'Basic Information', actionLabel: 'EDIT' },
-                  { key: 'about', label: 'Objective', actionLabel: formData.aboutMe ? 'EDIT' : 'ADD' },
-                  { key: 'career', label: 'Availability & Preferences', actionLabel: 'ADD' },
-                  { key: 'work', label: 'Work Experience', actionLabel: workExperiences.length ? 'EDIT' : 'ADD' },
-                  { key: 'skills', label: 'Skills', actionLabel: 'ADD' },
-                  { key: 'education', label: 'Education', actionLabel: hasEducationEntries ? 'EDIT' : 'ADD' },
-                  { key: 'credentials', label: 'Credentials', actionLabel: '' },
-                  ...addedMoreSections.map((key) => ({ key, label: MORE_PROFILE_SECTIONS[key]?.title || key, actionLabel: (formData[key] || []).length ? 'EDIT' : 'ADD' })),
-                ].map((section) => {
-                  const targetTab = section.key === 'about' ? 'about' : section.key === 'work' ? 'work' : section.key === 'skills' ? 'skills' : section.key;
-                  const isOpen = activeTab === targetTab;
-
-                  return (
-                    <button
-                      key={section.key}
-                      type="button"
-                      onClick={() => {
-                        if (section.key === 'about') setActiveTab('about');
-                        else if (section.key === 'work') setActiveTab('work');
-                        else if (section.key === 'skills') setActiveTab('skills');
-                        else setActiveTab(section.key);
-                      }}
-                      className={`w-full min-h-[50px] px-4 sm:px-6 border-b border-gray-200 last:border-b-0 flex items-center justify-between gap-4 text-left transition ${isOpen ? 'bg-[#f7faff]' : 'bg-white hover:bg-gray-50'}`}
-                    >
-                      <span className="inline-flex items-center gap-3 min-w-0">
-                        <span className="text-gray-500 text-xs">{isOpen ? '⌃' : '⌄'}</span>
-                        <span className="text-[15px] sm:text-[16px] font-bold uppercase tracking-wide text-gray-900 truncate">{section.label}</span>
-                      </span>
-                      {section.actionLabel ? <span className="text-[#0b73ff] text-sm font-bold shrink-0">{section.actionLabel}</span> : null}
-                    </button>
-                  );
-                })}
+                <ProfileTodoList
+                  completed={[
+                    formData.firstName && formData.lastName ? 'basic' : '',
+                    formData.preferredWorkMode || formData.employmentType ? 'career' : '',
+                    workExperiences.length > 0 ? 'work' : '',
+                    (formData.technicalSkills?.length || formData.softSkills?.length) ? 'skills' : '',
+                    hasEducationEntries ? 'education' : '',
+                    ...MORE_PROFILE_TAB_KEYS.filter((key) => Array.isArray(formData[key]) && formData[key].length > 0),
+                  ].filter(Boolean)}
+                />
               </div>
             </div>
 
