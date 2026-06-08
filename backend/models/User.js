@@ -181,13 +181,17 @@ const companyReviewSchema = new mongoose.Schema(
 const educationEntrySchema = new mongoose.Schema(
   {
     level: { type: String, default: '', trim: true },
+    educationalAttainment: { type: String, default: '', trim: true },
+    school: { type: String, default: '', trim: true },
     campus: { type: String, default: '', trim: true },
     course: { type: String, default: '', trim: true },
     studyField: { type: String, default: '', trim: true },
-    educationalAttainment: { type: String, default: '', trim: true },
+    startMonth: { type: String, default: '', trim: true },
     startYear: { type: String, default: '', trim: true },
+    endMonth: { type: String, default: '', trim: true },
     endYear: { type: String, default: '', trim: true },
     yearGraduated: { type: String, default: '', trim: true },
+    description: { type: String, default: '', trim: true },
   },
   { _id: false }
 );

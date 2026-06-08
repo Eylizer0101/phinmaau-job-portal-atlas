@@ -57,14 +57,27 @@ const COLORS = {
 const REQUIRED_DOC_TYPES = ['cv', 'tor', 'diploma', 'validId', 'sss', 'philhealth', 'pagibig', 'tin'];
 
 const EDUCATION_LEVEL_OPTIONS = [
-  'College',
-  'Senior High School',
   'High School',
-  'Junior High School',
-  'Elementary',
   'Vocational',
-  'Master’s Degree',
+  'Associate',
+  "Bachelor's Degree",
+  "Master's Degree",
   'Doctorate',
+];
+
+const MONTH_OPTIONS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 const EXTENSION_NAME_OPTIONS = ['Jr', 'Sr', 'II', 'III', 'IV', 'V'];
@@ -199,28 +212,33 @@ const normalizeSkillsFromProfile = (raw) => {
 
 const createEmptyEducationEntry = () => ({
   level: '',
-  campus: '',
-  course: '',
-  studyField: '',
   educationalAttainment: '',
+  school: '',
+  campus: '',
+  startMonth: '',
   startYear: '',
+  endMonth: '',
   endYear: '',
   yearGraduated: '',
+  description: '',
 });
 
 const normalizeEducationEntry = (entry = {}) => {
   const level = String(entry.level || entry.educationalAttainment || '').trim();
+  const school = String(entry.school || entry.campus || '').trim();
   const endYear = String(entry.endYear || entry.yearGraduated || '').trim();
 
   return {
     level,
-    campus: String(entry.campus || entry.school || '').trim(),
-    course: String(entry.course || '').trim(),
-    studyField: String(entry.studyField || '').trim(),
     educationalAttainment: String(entry.educationalAttainment || level || '').trim(),
+    school,
+    campus: school,
+    startMonth: String(entry.startMonth || '').trim(),
     startYear: String(entry.startYear || '').trim(),
+    endMonth: String(entry.endMonth || '').trim(),
     endYear,
     yearGraduated: String(entry.yearGraduated || endYear || '').trim(),
+    description: String(entry.description || '').trim(),
   };
 };
 
@@ -228,12 +246,14 @@ const hasEducationEntryValue = (entry = {}) => (
   Boolean(
     String(entry.level || '').trim() ||
     String(entry.educationalAttainment || '').trim() ||
+    String(entry.school || '').trim() ||
     String(entry.campus || '').trim() ||
-    String(entry.course || '').trim() ||
-    String(entry.studyField || '').trim() ||
+    String(entry.startMonth || '').trim() ||
     String(entry.startYear || '').trim() ||
+    String(entry.endMonth || '').trim() ||
     String(entry.endYear || '').trim() ||
-    String(entry.yearGraduated || '').trim()
+    String(entry.yearGraduated || '').trim() ||
+    String(entry.description || '').trim()
   )
 );
 
@@ -253,12 +273,13 @@ const buildEducationDraftEntries = (baseState = {}) => {
   const fallbackEntry = normalizeEducationEntry({
     level: baseState.eduLevel || baseState.educationalAttainment || '',
     educationalAttainment: baseState.eduEducationalAttainment || baseState.educationalAttainment || '',
-    campus: baseState.eduCampus || baseState.campus || '',
-    course: baseState.eduCourse || baseState.course || '',
-    studyField: baseState.eduStudyField || baseState.studyField || '',
+    school: baseState.eduSchool || baseState.eduCampus || baseState.campus || '',
+    startMonth: baseState.eduStartMonth || '',
     startYear: baseState.eduStartYear || '',
+    endMonth: baseState.eduEndMonth || '',
     endYear: baseState.eduEndYear || baseState.yearGraduated || '',
     yearGraduated: baseState.eduEndYear || baseState.yearGraduated || '',
+    description: baseState.eduDescription || '',
   });
 
   return hasEducationEntryValue(fallbackEntry) ? [fallbackEntry] : [createEmptyEducationEntry()];
@@ -271,12 +292,14 @@ const cleanEducationEntriesForSave = (entries = []) =>
       return {
         level: normalized.level || normalized.educationalAttainment,
         educationalAttainment: normalized.educationalAttainment || normalized.level,
-        campus: normalized.campus,
-        course: normalized.course,
-        studyField: normalized.studyField,
+        school: normalized.school,
+        campus: normalized.school,
+        startMonth: normalized.startMonth,
         startYear: normalized.startYear,
+        endMonth: normalized.endMonth,
         endYear: normalized.endYear,
         yearGraduated: normalized.endYear || normalized.yearGraduated,
+        description: normalized.description,
       };
     })
     .filter(hasEducationEntryValue);
@@ -2001,13 +2024,38 @@ const ProfileEditModal = ({
                 </button>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-5">
-                <Select label="Educational Attainment" value={entry.level || entry.educationalAttainment} onChange={(e) => onChangeEducationEntry(index, 'level', e.target.value)} options={EDUCATION_LEVEL_OPTIONS} placeholder="Select educational attainment" />
-                <Select label="Campus / School" value={entry.campus} onChange={(e) => onChangeEducationEntry(index, 'campus', e.target.value)} options={CAMPUS_OPTIONS} placeholder="Select campus / school" />
-                <Select label="Course" value={entry.course} onChange={(e) => onChangeEducationEntry(index, 'course', e.target.value)} options={MAJOR_COURSE_OPTIONS} placeholder="Select course" />
-                <Input label="Study Field" value={entry.studyField} onChange={(e) => onChangeEducationEntry(index, 'studyField', e.target.value)} placeholder="Study field" />
-                <Select label="From Year" value={entry.startYear} onChange={(e) => onChangeEducationEntry(index, 'startYear', e.target.value)} options={yearOptions} placeholder="Year" />
-                <Select label="To Year" value={entry.endYear || entry.yearGraduated} onChange={(e) => onChangeEducationEntry(index, 'endYear', e.target.value)} options={yearOptions} placeholder="Year" />
+              <div className="space-y-4">
+                <Select
+                  label="Educational Attainment *"
+                  value={entry.level || entry.educationalAttainment}
+                  onChange={(e) => onChangeEducationEntry(index, 'level', e.target.value)}
+                  options={EDUCATION_LEVEL_OPTIONS}
+                  placeholder="Select educational attainment"
+                />
+
+                <Input
+                  label="School / University *"
+                  value={entry.school || entry.campus}
+                  onChange={(e) => onChangeEducationEntry(index, 'school', e.target.value)}
+                  placeholder="Enter school / university"
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-[auto_130px_110px_auto_130px_110px] gap-3 md:items-end">
+                  <div className="pb-3 text-[15px] text-gray-600">From<span className="text-red-500">*</span></div>
+                  <Select label="Month" value={entry.startMonth} onChange={(e) => onChangeEducationEntry(index, 'startMonth', e.target.value)} options={MONTH_OPTIONS} placeholder="Month" />
+                  <Select label="Year" value={entry.startYear} onChange={(e) => onChangeEducationEntry(index, 'startYear', e.target.value)} options={yearOptions} placeholder="Year" />
+                  <div className="pb-3 text-[15px] text-gray-600">To</div>
+                  <Select label="Month" value={entry.endMonth} onChange={(e) => onChangeEducationEntry(index, 'endMonth', e.target.value)} options={MONTH_OPTIONS} placeholder="Month" />
+                  <Select label="Year" value={entry.endYear || entry.yearGraduated} onChange={(e) => onChangeEducationEntry(index, 'endYear', e.target.value)} options={yearOptions} placeholder="Year" />
+                </div>
+
+                <TextArea
+                  label="Description (optional)"
+                  rows={4}
+                  value={entry.description}
+                  onChange={(e) => onChangeEducationEntry(index, 'description', e.target.value)}
+                  placeholder="Add education details, honors, activities, or relevant notes."
+                />
               </div>
             </div>
           ))}
@@ -2248,12 +2296,13 @@ const MyProfile = () => {
 
     educationEntries: [],
     eduLevel: '',
-    eduCampus: '',
-    eduCourse: '',
-    eduStudyField: '',
+    eduSchool: '',
     eduEducationalAttainment: '',
+    eduStartMonth: '',
     eduStartYear: '',
+    eduEndMonth: '',
     eduEndYear: '',
+    eduDescription: '',
   });
 
   const [drafts, setDrafts] = useState(formData);
@@ -2370,8 +2419,13 @@ const MyProfile = () => {
   }, [formData]);
 
   const getEducationYearText = (entry) => {
-    const start = String(entry?.startYear || '').trim();
-    const end = String(entry?.endYear || entry?.yearGraduated || '').trim();
+    const startMonth = String(entry?.startMonth || '').trim();
+    const startYear = String(entry?.startYear || '').trim();
+    const endMonth = String(entry?.endMonth || '').trim();
+    const endYear = String(entry?.endYear || entry?.yearGraduated || '').trim();
+
+    const start = [startMonth, startYear].filter(Boolean).join(' ');
+    const end = [endMonth, endYear].filter(Boolean).join(' ');
 
     if (start && end) return `${start} - ${end}`;
     if (end) return end;
@@ -2383,12 +2437,13 @@ const MyProfile = () => {
     ...baseState,
     educationEntries: normalizeEducationEntries(baseState.educationEntries || [], false).filter(hasEducationEntryValue),
     eduLevel: '',
-    eduCampus: '',
-    eduCourse: '',
-    eduStudyField: '',
+    eduSchool: '',
     eduEducationalAttainment: '',
+    eduStartMonth: '',
     eduStartYear: '',
+    eduEndMonth: '',
     eduEndYear: '',
+    eduDescription: '',
   });
 
   const createEmptyWorkExperienceForm = () => ({
@@ -2694,12 +2749,13 @@ const MyProfile = () => {
 
           educationEntries: Array.isArray(profile.educationEntries) ? profile.educationEntries : [],
           eduLevel: '',
-          eduCampus: '',
-          eduCourse: '',
-          eduStudyField: '',
+          eduSchool: '',
           eduEducationalAttainment: '',
+          eduStartMonth: '',
           eduStartYear: '',
+          eduEndMonth: '',
           eduEndYear: '',
+          eduDescription: '',
         };
 
         syncDrafts(nextData);
@@ -2928,18 +2984,25 @@ const MyProfile = () => {
           return;
         }
 
-        const incompleteEntry = nextEducationEntries.find((entry) => !entry.campus || !entry.course);
+        const incompleteEntry = nextEducationEntries.find((entry) => !(entry.level || entry.educationalAttainment) || !entry.school);
         if (incompleteEntry) {
-          setError('Please complete the campus / school and course fields for each education entry.');
+          setError('Please complete the educational attainment and school / university fields for each education entry.');
           setSavingSection('');
           return;
         }
 
-        const invalidYearEntry = nextEducationEntries.find((entry) => (
-          entry.startYear && entry.endYear && Number(entry.startYear) > Number(entry.endYear)
-        ));
+        const monthNumber = (value) => MONTH_OPTIONS.indexOf(value) + 1;
+        const invalidYearEntry = nextEducationEntries.find((entry) => {
+          const startYear = Number(entry.startYear || 0);
+          const endYear = Number(entry.endYear || 0);
+          if (startYear && endYear && startYear > endYear) return true;
+          if (startYear && endYear && startYear === endYear && entry.startMonth && entry.endMonth) {
+            return monthNumber(entry.startMonth) > monthNumber(entry.endMonth);
+          }
+          return false;
+        });
         if (invalidYearEntry) {
-          setError('From year cannot be later than To year.');
+          setError('From date cannot be later than To date.');
           setSavingSection('');
           return;
         }
@@ -2949,11 +3012,10 @@ const MyProfile = () => {
         payload = {
           jobSeekerProfile: {
             educationEntries: nextEducationEntries,
-            campus: primaryEducation.campus || drafts.campus,
-            course: primaryEducation.course || drafts.course,
+            campus: primaryEducation.school || primaryEducation.campus || drafts.campus,
+            course: drafts.course,
             yearGraduated: primaryEducation.endYear || primaryEducation.yearGraduated || drafts.yearGraduated,
             educationalAttainment: primaryEducation.educationalAttainment || primaryEducation.level || drafts.educationalAttainment,
-            studyField: primaryEducation.studyField || drafts.studyField,
           },
         };
       }
@@ -3254,6 +3316,7 @@ const MyProfile = () => {
 
         const nextItem = { ...item, [field]: value };
         if (field === 'level') nextItem.educationalAttainment = value;
+        if (field === 'school') nextItem.campus = value;
         if (field === 'endYear') nextItem.yearGraduated = value;
         return nextItem;
       }),
@@ -3746,23 +3809,28 @@ const MyProfile = () => {
 
     if (sectionKey === 'education') {
       const items = hasEducationEntries ? educationEntries : [{
-        campus: formData.eduCampus || formData.campus,
-        course: formData.eduCourse || formData.course,
+        school: formData.eduSchool || formData.campus,
+        campus: formData.eduSchool || formData.campus,
+        level: formData.eduEducationalAttainment || formData.educationalAttainment,
+        educationalAttainment: formData.eduEducationalAttainment || formData.educationalAttainment,
+        startMonth: formData.eduStartMonth,
         startYear: formData.eduStartYear,
+        endMonth: formData.eduEndMonth,
         endYear: formData.eduEndYear || formData.yearGraduated,
-        studyField: formData.eduStudyField,
+        description: formData.eduDescription,
       }];
-      const hasAny = items.some((item) => item.campus || item.course || item.startYear || item.endYear || item.studyField);
+      const hasAny = items.some((item) => item.school || item.campus || item.level || item.educationalAttainment || item.startMonth || item.startYear || item.endMonth || item.endYear || item.description);
       if (!hasAny) return renderEmptyLine("You've declared that you don't have education. Click Add at the top right corner to add Educational Attainment.");
       return (
         <div className="px-0 pb-5 pt-2 space-y-3 font-serif text-[13px] leading-5 text-gray-900">
           {items.map((item, index) => (
             <div key={item._id || `education-${index}`} className="flex justify-between gap-4">
               <div>
-                <div className="font-bold">{item.campus || item.school || 'School Name'}</div>
-                <div className="italic">{item.course || item.studyField || 'Course / Program'}</div>
+                <div className="font-bold">{item.school || item.campus || 'School / University'}</div>
+                <div className="italic">{item.educationalAttainment || item.level || 'Educational Attainment'}</div>
+                {item.description ? <div className="mt-1 text-gray-700">{item.description}</div> : null}
               </div>
-              <div className="italic text-gray-700 shrink-0">{[item.startYear, item.endYear].filter(Boolean).join(' – ')}</div>
+              <div className="italic text-gray-700 shrink-0">{getEducationYearText(item)}</div>
             </div>
           ))}
         </div>
