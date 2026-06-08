@@ -3389,10 +3389,7 @@ const MyProfile = () => {
                             <button
                               type="button"
                               onClick={() => {
-                                if (section.key === 'about') setActiveTab('about');
-                                else if (section.key === 'work') setActiveTab('work');
-                                else if (section.key === 'skills') setActiveTab('skills');
-                                else setActiveTab(section.key);
+                                setActiveTab((prevTab) => (prevTab === targetTab ? '' : targetTab));
                               }}
                               className="flex-1 min-h-[44px] inline-flex items-center gap-3 min-w-0 text-left"
                             >
