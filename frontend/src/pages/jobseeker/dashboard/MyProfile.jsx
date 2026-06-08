@@ -140,6 +140,59 @@ const MORE_PROFILE_SECTIONS = {
 
 const MORE_PROFILE_TAB_KEYS = Object.keys(MORE_PROFILE_SECTIONS);
 
+const ADD_MORE_SECTION_ITEMS = [
+  {
+    key: 'certifications',
+    title: 'Certifications',
+    description: 'There are jobs that require certain certifications or licensure. Being officially qualified or skilled in a certain area is a plus.',
+    icon: <FaGraduationCap />,
+    iconClass: 'text-orange-500',
+  },
+  {
+    key: 'projects',
+    title: 'Projects',
+    description: 'Showcase your personal or professional projects that demonstrate your skills and initiative.',
+    icon: <FaFileAlt />,
+    iconClass: 'text-blue-500',
+  },
+  {
+    key: 'seminars',
+    title: 'Seminars and Trainings',
+    description: 'This section is another way of telling employers that you have certain skills and insights from other professionals.',
+    icon: <FaUniversity />,
+    iconClass: 'text-cyan-500',
+  },
+  {
+    key: 'awards',
+    title: 'Awards and Achievements',
+    description: 'Highlight recognitions, awards, and notable achievements that set you apart from other candidates.',
+    icon: <FaShieldAlt />,
+    iconClass: 'text-yellow-500',
+  },
+  {
+    key: 'affiliations',
+    title: 'Affiliations',
+    description: 'Share organizations, clubs, or groups that help employers understand the type of worker you might be.',
+    icon: <FaUser />,
+    iconClass: 'text-teal-500',
+  },
+  {
+    key: 'cocurricular',
+    title: 'Co-curricular Activities',
+    description: 'Extracurricular and co-curricular activities show your well-rounded personality and leadership potential.',
+    icon: <FaCheckCircle />,
+    iconClass: 'text-purple-500',
+  },
+  {
+    key: 'references',
+    title: 'References',
+    description: 'Professional references who can vouch for your skills, work ethic, and character.',
+    icon: <FaUser />,
+    iconClass: 'text-green-500',
+  },
+];
+
+
 const buildAddressString = (source = {}) => {
   const parts = [
     source.streetAddress,
@@ -1344,6 +1397,59 @@ const EmailUpdateModal = ({
   );
 };
 
+
+const AddMoreSectionsModal = ({ open, activeKeys = [], onAdd, onClose }) => {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[10005] bg-black/70 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true">
+      <div className="w-full max-w-[650px] bg-white rounded-[8px] shadow-2xl border border-gray-200 max-h-[82vh] overflow-hidden">
+        <div className="px-6 py-5 flex items-center justify-between border-b border-gray-100">
+          <h2 className="text-[24px] font-semibold text-gray-900">Add More Sections</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-9 h-9 rounded-full text-gray-500 hover:bg-gray-100 text-2xl leading-none"
+            aria-label="Close add sections"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="max-h-[68vh] overflow-y-auto px-8">
+          {ADD_MORE_SECTION_ITEMS.map((section) => {
+            const alreadyAdded = activeKeys.includes(section.key);
+
+            return (
+              <div key={section.key} className="grid grid-cols-[48px_1fr_104px] items-center gap-4 py-6 border-b border-gray-200 last:border-b-0">
+                <div className={`text-[34px] ${section.iconClass}`}>
+                  {section.icon}
+                </div>
+
+                <div>
+                  <div className="text-[18px] font-bold text-gray-900">{section.title}</div>
+                  <p className="mt-2 text-sm leading-6 text-gray-500">{section.description}</p>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={alreadyAdded}
+                  onClick={() => onAdd(section.key)}
+                  className={`h-12 rounded-[8px] text-white text-[15px] font-bold transition ${
+                    alreadyAdded ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#2aa79b] hover:bg-[#218b82]'
+                  }`}
+                >
+                  {alreadyAdded ? 'ADDED' : 'ADD'}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const MyProfile = () => {
   useEffect(() => {
     const previousHtmlOverflowY = document.documentElement.style.overflowY;
@@ -1429,6 +1535,8 @@ const MyProfile = () => {
   });
 
   const [activeTab, setActiveTab] = useState('personal');
+  const [addSectionsModalOpen, setAddSectionsModalOpen] = useState(false);
+  const [addedMoreSections, setAddedMoreSections] = useState([]);
 
   const [uploadingDocs, setUploadingDocs] = useState({});
   const [docErrors, setDocErrors] = useState({});
@@ -2749,6 +2857,17 @@ const MyProfile = () => {
         onResendCode={handleResendEmailUpdateCode}
       />
 
+      <AddMoreSectionsModal
+        open={addSectionsModalOpen}
+        activeKeys={addedMoreSections}
+        onClose={() => setAddSectionsModalOpen(false)}
+        onAdd={(sectionKey) => {
+          setAddedMoreSections((prev) => (prev.includes(sectionKey) ? prev : [...prev, sectionKey]));
+          setActiveTab(sectionKey);
+          setAddSectionsModalOpen(false);
+        }}
+      />
+
       <div className={`min-h-[100dvh] h-auto pt-2 bg-gray-50 overflow-x-hidden overflow-y-visible ${isApplyFlow ? 'pb-28 sm:pb-32' : 'pb-6'}`}>
         <div className="max-w-6xl mx-auto px-0 sm:px-6">
           {error ? <Alert type="error" title="Error" message={error} onClose={() => setError('')} /> : null}
@@ -2779,6 +2898,15 @@ const MyProfile = () => {
                 >
                   <FaDownload className="text-xs" />
                   Download CV
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAddSectionsModalOpen(true)}
+                  className="h-9 sm:h-10 px-3 sm:px-4 rounded-full bg-white text-gray-700 border border-gray-200 text-xs sm:text-sm font-semibold inline-flex items-center gap-2 hover:bg-gray-50"
+                >
+                  <FaPlus className="text-xs" />
+                  Add Sections
                 </button>
               </div>
             </div>
@@ -2862,7 +2990,7 @@ const MyProfile = () => {
             <div className="border-t border-[#d7dbe3]" />
 
             <div>
-              <SectionHeader title="About Me" editLabel="Edit about me" onEdit={() => setEditing((prev) => ({ ...prev, about: !prev.about }))} />
+              <SectionHeader title="Objective" editLabel="Edit Objective" onEdit={() => setEditing((prev) => ({ ...prev, about: !prev.about }))} />
               <div className="px-6 sm:px-10 pb-6">
                 {!editing.about ? (
                   <div className="rounded-[20px] border border-gray-200 bg-[#fcfcfd] p-5 sm:p-6">
@@ -2873,7 +3001,7 @@ const MyProfile = () => {
                 ) : (
                   <div className="space-y-4 rounded-[20px] border border-gray-200 bg-[#fcfcfd] p-5 sm:p-6">
                     <TextArea
-                      label="About Me"
+                      label="Objective"
                       rows={5}
                       value={drafts.aboutMe}
                       onChange={(e) => handleLocalChange('aboutMe', e.target.value)}
@@ -3034,6 +3162,25 @@ const MyProfile = () => {
                 <ProfileMoreDropdown activeTab={activeTab} onChange={setActiveTab} />
                 </div>
               </div>
+
+              {addedMoreSections.length > 0 ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {addedMoreSections.map((sectionKey) => (
+                    <button
+                      key={sectionKey}
+                      type="button"
+                      onClick={() => setActiveTab(sectionKey)}
+                      className={`rounded-full border px-4 py-2 text-sm font-semibold ${
+                        activeTab === sectionKey
+                          ? 'border-[#2aa79b] bg-[#e7f7f5] text-[#187c74]'
+                          : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {MORE_PROFILE_SECTIONS[sectionKey]?.title || sectionKey}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
 
             {activeTab === 'personal' && (
