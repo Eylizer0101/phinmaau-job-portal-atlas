@@ -140,57 +140,16 @@ const MORE_PROFILE_SECTIONS = {
 
 const MORE_PROFILE_TAB_KEYS = Object.keys(MORE_PROFILE_SECTIONS);
 
-const ADD_MORE_SECTION_ITEMS = [
-  {
-    key: 'certifications',
-    title: 'Certifications',
-    description: 'There are jobs that require certain certifications or licensure. Being officially qualified or skilled in a certain area is a plus.',
-    icon: <FaGraduationCap />,
-    iconClass: 'text-orange-500',
-  },
-  {
-    key: 'projects',
-    title: 'Projects',
-    description: 'Showcase your personal or professional projects that demonstrate your skills and initiative.',
-    icon: <FaFileAlt />,
-    iconClass: 'text-blue-500',
-  },
-  {
-    key: 'seminars',
-    title: 'Seminars and Trainings',
-    description: 'This section is another way of telling employers that you have certain skills and insights from other professionals.',
-    icon: <FaUniversity />,
-    iconClass: 'text-cyan-500',
-  },
-  {
-    key: 'awards',
-    title: 'Awards and Achievements',
-    description: 'Highlight recognitions, awards, and notable achievements that set you apart from other candidates.',
-    icon: <FaShieldAlt />,
-    iconClass: 'text-yellow-500',
-  },
-  {
-    key: 'affiliations',
-    title: 'Affiliations',
-    description: 'Share organizations, clubs, or groups that help employers understand the type of worker you might be.',
-    icon: <FaUser />,
-    iconClass: 'text-teal-500',
-  },
-  {
-    key: 'cocurricular',
-    title: 'Co-curricular Activities',
-    description: 'Extracurricular and co-curricular activities show your well-rounded personality and leadership potential.',
-    icon: <FaCheckCircle />,
-    iconClass: 'text-purple-500',
-  },
-  {
-    key: 'references',
-    title: 'References',
-    description: 'Professional references who can vouch for your skills, work ethic, and character.',
-    icon: <FaUser />,
-    iconClass: 'text-green-500',
-  },
-];
+
+const MORE_SECTION_DESCRIPTIONS = {
+  certifications: 'There are jobs that require certain certifications or licensure. Being officially qualified is a plus.',
+  projects: 'Showcase your personal or professional projects that demonstrate your skills and initiative.',
+  seminars: 'Tell employers that you have certain skills and insights from trainings or other professionals.',
+  awards: 'Highlight recognitions, awards, and achievements that set you apart from other candidates.',
+  affiliations: 'Share organizations, memberships, or affiliations that help employers understand your background.',
+  cocurricular: 'Add extracurricular and co-curricular activities that show leadership and personality.',
+  references: 'Add professional references who can vouch for your skills, work ethic, and character.',
+};
 
 
 const buildAddressString = (source = {}) => {
@@ -1398,46 +1357,47 @@ const EmailUpdateModal = ({
 };
 
 
-const AddMoreSectionsModal = ({ open, activeKeys = [], onAdd, onClose }) => {
+const AddSectionsModal = ({ open, addedSections = [], onAdd, onClose }) => {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[10005] bg-black/70 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true">
-      <div className="w-full max-w-[650px] bg-white rounded-[8px] shadow-2xl border border-gray-200 max-h-[82vh] overflow-hidden">
-        <div className="px-6 py-5 flex items-center justify-between border-b border-gray-100">
-          <h2 className="text-[24px] font-semibold text-gray-900">Add More Sections</h2>
+    <div className="fixed inset-0 z-[10005] bg-black/65 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true">
+      <div className="w-full max-w-[640px] bg-white rounded-[4px] shadow-2xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-5 flex items-center justify-between gap-3 border-b border-gray-100">
+          <h2 className="text-[22px] font-bold text-gray-900">Add More Sections</h2>
           <button
             type="button"
             onClick={onClose}
             className="w-9 h-9 rounded-full text-gray-500 hover:bg-gray-100 text-2xl leading-none"
-            aria-label="Close add sections"
+            aria-label="Close add sections modal"
           >
             ×
           </button>
         </div>
 
-        <div className="max-h-[68vh] overflow-y-auto px-8">
-          {ADD_MORE_SECTION_ITEMS.map((section) => {
-            const alreadyAdded = activeKeys.includes(section.key);
+        <div className="max-h-[70vh] overflow-y-auto px-6 py-2">
+          {MORE_PROFILE_TAB_KEYS.map((key) => {
+            const config = MORE_PROFILE_SECTIONS[key];
+            const alreadyAdded = addedSections.includes(key);
 
             return (
-              <div key={section.key} className="grid grid-cols-[48px_1fr_104px] items-center gap-4 py-6 border-b border-gray-200 last:border-b-0">
-                <div className={`text-[34px] ${section.iconClass}`}>
-                  {section.icon}
+              <div key={key} className="flex items-center gap-5 py-5 border-b border-gray-200 last:border-b-0">
+                <div className="w-11 h-11 rounded-xl bg-[#f0f7ff] text-[#0b8ee8] flex items-center justify-center shrink-0">
+                  <FaPlus className="text-lg" />
                 </div>
 
-                <div>
-                  <div className="text-[18px] font-bold text-gray-900">{section.title}</div>
-                  <p className="mt-2 text-sm leading-6 text-gray-500">{section.description}</p>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[17px] font-bold text-gray-900">{config.title}</div>
+                  <p className="text-sm leading-6 text-gray-500 mt-1">
+                    {MORE_SECTION_DESCRIPTIONS[key] || 'Add this section to complete your profile.'}
+                  </p>
                 </div>
 
                 <button
                   type="button"
+                  onClick={() => onAdd(key)}
                   disabled={alreadyAdded}
-                  onClick={() => onAdd(section.key)}
-                  className={`h-12 rounded-[8px] text-white text-[15px] font-bold transition ${
-                    alreadyAdded ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#2aa79b] hover:bg-[#218b82]'
-                  }`}
+                  className={`h-11 min-w-[92px] px-5 rounded-lg text-sm font-bold text-white ${alreadyAdded ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#27a69a] hover:bg-[#208d83]'}`}
                 >
                   {alreadyAdded ? 'ADDED' : 'ADD'}
                 </button>
@@ -2730,6 +2690,19 @@ const MyProfile = () => {
     });
   };
 
+
+  useEffect(() => {
+    const filledSections = MORE_PROFILE_TAB_KEYS.filter((key) => Array.isArray(formData[key]) && formData[key].length > 0);
+    if (filledSections.length === 0) return;
+    setAddedMoreSections((prev) => Array.from(new Set([...prev, ...filledSections])));
+  }, [formData]);
+
+  const handleAddMoreSection = (sectionKey) => {
+    setAddedMoreSections((prev) => (prev.includes(sectionKey) ? prev : [...prev, sectionKey]));
+    setActiveTab(sectionKey);
+    setAddSectionsModalOpen(false);
+  };
+
  const personalDisplayItems = [
   { label: 'Birthday', value: formData.birthday },
   { label: 'Civil Status', value: formData.civilStatus },
@@ -2857,15 +2830,12 @@ const MyProfile = () => {
         onResendCode={handleResendEmailUpdateCode}
       />
 
-      <AddMoreSectionsModal
+
+      <AddSectionsModal
         open={addSectionsModalOpen}
-        activeKeys={addedMoreSections}
+        addedSections={addedMoreSections}
+        onAdd={handleAddMoreSection}
         onClose={() => setAddSectionsModalOpen(false)}
-        onAdd={(sectionKey) => {
-          setAddedMoreSections((prev) => (prev.includes(sectionKey) ? prev : [...prev, sectionKey]));
-          setActiveTab(sectionKey);
-          setAddSectionsModalOpen(false);
-        }}
       />
 
       <div className={`min-h-[100dvh] h-auto pt-2 bg-gray-50 overflow-x-hidden overflow-y-visible ${isApplyFlow ? 'pb-28 sm:pb-32' : 'pb-6'}`}>
@@ -2898,15 +2868,6 @@ const MyProfile = () => {
                 >
                   <FaDownload className="text-xs" />
                   Download CV
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setAddSectionsModalOpen(true)}
-                  className="h-9 sm:h-10 px-3 sm:px-4 rounded-full bg-white text-gray-700 border border-gray-200 text-xs sm:text-sm font-semibold inline-flex items-center gap-2 hover:bg-gray-50"
-                >
-                  <FaPlus className="text-xs" />
-                  Add Sections
                 </button>
               </div>
             </div>
@@ -3128,59 +3089,58 @@ const MyProfile = () => {
 
             <div className="border-t border-[#d7dbe3]" />
 
-            <div className="relative z-50 w-full max-w-full px-4 sm:px-10 py-3 overflow-hidden">
-              <div className="w-full max-w-full overflow-x-auto overflow-y-hidden [-webkit-overflow-scrolling:touch] touch-pan-x">
-                <div className="flex min-w-max items-center gap-3 sm:gap-5 border-b border-gray-200 pb-px" role="tablist" aria-label="Profile sections">
-                <NavTab
-                  active={activeTab === 'personal'}
-                  icon={<FaUser />}
-                  label="Personal Info"
-                  panelId="panel-personal"
-                  onClick={() => setActiveTab('personal')}
-                />
-                <NavTab
-                  active={activeTab === 'career'}
-                  icon={<FaBriefcase />}
-                  label="Career Profile"
-                  panelId="panel-career"
-                  onClick={() => setActiveTab('career')}
-                />
-                <NavTab
-                  active={activeTab === 'credentials'}
-                  icon={<FaShieldAlt />}
-                  label="Credentials"
-                  panelId="panel-credentials"
-                  onClick={() => setActiveTab('credentials')}
-                />
-                <NavTab
-                  active={activeTab === 'education'}
-                  icon={<FaGraduationCap />}
-                  label="Education"
-                  panelId="panel-education"
-                  onClick={() => setActiveTab('education')}
-                />
-                <ProfileMoreDropdown activeTab={activeTab} onChange={setActiveTab} />
+            <div className="relative z-50 w-full max-w-full px-4 sm:px-10 py-5">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="text-[22px] font-bold text-gray-900">Profile</h2>
+                  <p className="text-sm text-gray-500 mt-1">Open each section below, edit your details, or add more sections.</p>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => setAddSectionsModalOpen(true)}
+                  className="h-11 px-5 rounded-xl border border-gray-200 bg-white text-gray-800 font-bold inline-flex items-center justify-center gap-2 hover:bg-gray-50"
+                >
+                  <FaPlus className="text-sm" />
+                  Add Sections
+                </button>
               </div>
 
-              {addedMoreSections.length > 0 ? (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {addedMoreSections.map((sectionKey) => (
+              <div className="rounded-[18px] border border-gray-200 bg-white overflow-hidden">
+                {[
+                  { key: 'personal', label: 'Basic Information', actionLabel: 'EDIT' },
+                  { key: 'about', label: 'Objective', actionLabel: formData.aboutMe ? 'EDIT' : 'ADD' },
+                  { key: 'career', label: 'Availability & Preferences', actionLabel: 'ADD' },
+                  { key: 'work', label: 'Work Experience', actionLabel: workExperiences.length ? 'EDIT' : 'ADD' },
+                  { key: 'skills', label: 'Skills', actionLabel: 'ADD' },
+                  { key: 'education', label: 'Education', actionLabel: hasEducationEntries ? 'EDIT' : 'ADD' },
+                  { key: 'credentials', label: 'Credentials', actionLabel: '' },
+                  ...addedMoreSections.map((key) => ({ key, label: MORE_PROFILE_SECTIONS[key]?.title || key, actionLabel: (formData[key] || []).length ? 'EDIT' : 'ADD' })),
+                ].map((section) => {
+                  const targetTab = section.key === 'about' ? 'about' : section.key === 'work' ? 'work' : section.key === 'skills' ? 'skills' : section.key;
+                  const isOpen = activeTab === targetTab;
+
+                  return (
                     <button
-                      key={sectionKey}
+                      key={section.key}
                       type="button"
-                      onClick={() => setActiveTab(sectionKey)}
-                      className={`rounded-full border px-4 py-2 text-sm font-semibold ${
-                        activeTab === sectionKey
-                          ? 'border-[#2aa79b] bg-[#e7f7f5] text-[#187c74]'
-                          : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-                      }`}
+                      onClick={() => {
+                        if (section.key === 'about') setActiveTab('about');
+                        else if (section.key === 'work') setActiveTab('work');
+                        else if (section.key === 'skills') setActiveTab('skills');
+                        else setActiveTab(section.key);
+                      }}
+                      className={`w-full min-h-[50px] px-4 sm:px-6 border-b border-gray-200 last:border-b-0 flex items-center justify-between gap-4 text-left transition ${isOpen ? 'bg-[#f7faff]' : 'bg-white hover:bg-gray-50'}`}
                     >
-                      {MORE_PROFILE_SECTIONS[sectionKey]?.title || sectionKey}
+                      <span className="inline-flex items-center gap-3 min-w-0">
+                        <span className="text-gray-500 text-xs">{isOpen ? '⌃' : '⌄'}</span>
+                        <span className="text-[15px] sm:text-[16px] font-bold uppercase tracking-wide text-gray-900 truncate">{section.label}</span>
+                      </span>
+                      {section.actionLabel ? <span className="text-[#0b73ff] text-sm font-bold shrink-0">{section.actionLabel}</span> : null}
                     </button>
-                  ))}
-                </div>
-              ) : null}
+                  );
+                })}
+              </div>
             </div>
 
             {activeTab === 'personal' && (
@@ -3662,7 +3622,7 @@ const MyProfile = () => {
               </div>
             )}
 
-            {MORE_PROFILE_TAB_KEYS.includes(activeTab) && (
+            {MORE_PROFILE_TAB_KEYS.includes(activeTab) && addedMoreSections.includes(activeTab) && (
               <div id={`panel-${activeTab}`} role="tabpanel">
                 <EditableProfileListSection
                   sectionKey={activeTab}
