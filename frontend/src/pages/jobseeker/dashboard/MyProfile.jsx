@@ -44,12 +44,12 @@ import {
 } from 'react-icons/fa';
 
 const COLORS = {
-  primary: '#2e66a6',
+  
   border: '#d8e2ee',
   textPrimary: '#000000',
   textSecondary: '#4b5563',
   muted: '#8a95a3',
-  bg: '#ffffff',
+
 };
 
 const REQUIRED_DOC_TYPES = ['cv', 'tor', 'diploma', 'validId', 'sss', 'philhealth', 'pagibig', 'tin'];
