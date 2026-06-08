@@ -635,15 +635,11 @@ const ApplicationDetails = () => {
 
                 <div>
                   <h3 className="text-lg font-semibold tracking-[-0.005em] text-slate-900">Skills</h3>
-                  <div className="mt-4 space-y-4">
-                    <div>
-                      <div className={UI.label}>Technical Skills</div>
-                      <div className="mt-2"><TagList items={profile.technicalSkills} emptyText="No technical skills added." /></div>
-                    </div>
-                    <div>
-                      <div className={UI.label}>Soft Skills</div>
-                      <div className="mt-2"><TagList items={profile.softSkills} emptyText="No soft skills added." /></div>
-                    </div>
+                  <div className="mt-4">
+                    <TagList
+                      items={[...parseList(profile.technicalSkills), ...parseList(profile.softSkills)]}
+                      emptyText="No skills added."
+                    />
                   </div>
                 </div>
               </section>
