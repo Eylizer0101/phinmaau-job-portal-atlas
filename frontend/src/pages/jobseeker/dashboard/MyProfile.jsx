@@ -309,6 +309,17 @@ const normalizeExtensionName = (value) => {
   return clean.toLowerCase() === 'none' ? '' : clean;
 };
 
+
+const getProfileImageUrl = (url = '') => {
+  const cleanUrl = String(url || '').trim();
+  if (!cleanUrl) return '';
+  if (/^https?:\/\//i.test(cleanUrl) || cleanUrl.startsWith('data:') || cleanUrl.startsWith('blob:')) return cleanUrl;
+
+  const apiBase = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
+  const serverBase = apiBase.replace(/\/api\/?$/, '');
+  return cleanUrl.startsWith('/') ? `${serverBase}${cleanUrl}` : `${serverBase}/${cleanUrl}`;
+};
+
 const MORE_PROFILE_SECTIONS = {
   certifications: {
     title: 'Certifications',
@@ -3679,6 +3690,7 @@ const MyProfile = () => {
         {message}
       </div>
     );
+    const profileImageUrl = getProfileImageUrl(userData?.profileImage || formData.profileImage || '');
 
     if (sectionKey === 'personal') {
       return (
@@ -3696,8 +3708,18 @@ const MyProfile = () => {
               </div>
             </div>
 
-            <div className="hidden sm:flex w-[92px] h-[92px] bg-[#1f2430] text-white items-center justify-center font-serif text-[28px] font-bold shrink-0">
-              {(formData.firstName?.[0] || 'U').toUpperCase()}{(formData.lastName?.[0] || '').toUpperCase()}
+            <div className="hidden sm:flex w-[92px] h-[92px] bg-[#1f2430] text-white items-center justify-center font-serif text-[28px] font-bold shrink-0 overflow-hidden">
+              {profileImageUrl ? (
+                <img
+                  src={profileImageUrl}
+                  alt={fullName || 'Profile photo'}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span>
+                  {(formData.firstName?.[0] || 'U').toUpperCase()}{(formData.lastName?.[0] || '').toUpperCase()}
+                </span>
+              )}
             </div>
           </div>
         </div>
