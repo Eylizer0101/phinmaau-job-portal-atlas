@@ -69,9 +69,21 @@ const EDUCATION_LEVEL_OPTIONS = [
 
 const EXTENSION_NAME_OPTIONS = ['Jr', 'Sr', 'II', 'III', 'IV', 'V'];
 
-const PREFERRED_WORK_MODE_OPTIONS = ['On-site', 'Remote', 'Hybrid'];
+const PREFERRED_WORK_MODE_OPTIONS = [
+  'On-site',
+  'Blended',
+  'Remote',
+  'Work from home',
+];
 
-const EMPLOYMENT_TYPE_OPTIONS = ['Full time', 'Part time', 'Contract', 'Internship', 'Freelance'];
+const EMPLOYMENT_TYPE_OPTIONS = [
+  'Full time',
+  'Part time',
+  'Contract',
+  'Internship',
+  'Freelance',
+  'Temporary',
+];
 
 const WILLING_TO_RELOCATE_OPTIONS = [
   'Yes — willing to relocate',
@@ -80,12 +92,11 @@ const WILLING_TO_RELOCATE_OPTIONS = [
 ];
 
 const HOW_SOON_CAN_START_OPTIONS = [
-  'Immediately',
+  'Ready to start',
   'Within a few days',
   'Within 1 week',
-  'Within 2 weeks',
-  'Within 1 month',
-  'More than 1 month',
+  'Within 2 week',
+  'Within a month',
 ];
 
 const PREFERRED_LANGUAGE_OPTIONS = [
@@ -94,14 +105,18 @@ const PREFERRED_LANGUAGE_OPTIONS = [
   'English and Filipino',
 ];
 
-const GENDER_OPTIONS = ['Male', 'Female', 'Prefer not to say', 'Other'];
+const GENDER_OPTIONS = [
+  'Male',
+  'Female',
+  'Prefer not to say',
+];
 
-const CIVIL_STATUS_OPTIONS = ['Single', 'Married', 'Widowed', 'Separated'];
-
-const mergeCurrentWithOptions = (currentValue, options = []) => {
-  const current = String(currentValue || '').trim();
-  return Array.from(new Set([current, ...options].filter(Boolean)));
-};
+const CIVIL_STATUS_OPTIONS = [
+  'Single',
+  'Married',
+  'Widowed',
+  'Separated',
+];
 
 const normalizeExtensionName = (value) => {
   const clean = String(value || '').trim();
@@ -1597,74 +1612,20 @@ const ProfileEditModal = ({
     if (sectionKey === 'career') {
       return (
         <div className="grid md:grid-cols-2 gap-5">
-          <Select
-            label="Preferred Work Mode"
-            value={drafts.preferredWorkMode}
-            onChange={(e) => onChange('preferredWorkMode', e.target.value)}
-            options={mergeCurrentWithOptions(drafts.preferredWorkMode, PREFERRED_WORK_MODE_OPTIONS)}
-            placeholder="Select preferred work mode"
-          />
-          <Select
-            label="Employment Type"
-            value={drafts.employmentType}
-            onChange={(e) => onChange('employmentType', e.target.value)}
-            options={mergeCurrentWithOptions(drafts.employmentType, EMPLOYMENT_TYPE_OPTIONS)}
-            placeholder="Select employment type"
-          />
-          <Select
-            label="Willing to Relocate"
-            value={drafts.willingToRelocate}
-            onChange={(e) => onChange('willingToRelocate', e.target.value)}
-            options={mergeCurrentWithOptions(drafts.willingToRelocate, WILLING_TO_RELOCATE_OPTIONS)}
-            placeholder="Select relocation preference"
-          />
-          <Select
-            label="How Soon Can Start"
-            value={drafts.howSoonCanYouStart}
-            onChange={(e) => onChange('howSoonCanYouStart', e.target.value)}
-            options={mergeCurrentWithOptions(drafts.howSoonCanYouStart, HOW_SOON_CAN_START_OPTIONS)}
-            placeholder="Select availability"
-          />
-          <Select
-            label="Preferred Language"
-            value={drafts.preferredLanguage}
-            onChange={(e) => onChange('preferredLanguage', e.target.value)}
-            options={mergeCurrentWithOptions(drafts.preferredLanguage, PREFERRED_LANGUAGE_OPTIONS)}
-            placeholder="Select preferred language"
-          />
-          <Select
-            label="Educational Attainment"
-            value={drafts.educationalAttainment}
-            onChange={(e) => onChange('educationalAttainment', e.target.value)}
-            options={mergeCurrentWithOptions(drafts.educationalAttainment, EDUCATIONAL_ATTAINMENT_OPTIONS)}
-            placeholder="Select educational attainment"
-          />
-          <Select
-            label="Study Field"
-            value={drafts.studyField}
-            onChange={(e) => onChange('studyField', e.target.value)}
-            options={mergeCurrentWithOptions(drafts.studyField, FIELD_OF_STUDY_OPTIONS)}
-            placeholder="Select study field"
-          />
+          <Select label="Preferred Work Mode" value={drafts.preferredWorkMode} onChange={(e) => onChange('preferredWorkMode', e.target.value)} options={PREFERRED_WORK_MODE_OPTIONS} placeholder="Select preferred work mode" />
+          <Select label="Employment Type" value={drafts.employmentType} onChange={(e) => onChange('employmentType', e.target.value)} options={EMPLOYMENT_TYPE_OPTIONS} placeholder="Select employment type" />
+          <Select label="Willing to Relocate" value={drafts.willingToRelocate} onChange={(e) => onChange('willingToRelocate', e.target.value)} options={WILLING_TO_RELOCATE_OPTIONS} placeholder="Select relocation preference" />
+          <Select label="How Soon Can Start" value={drafts.howSoonCanYouStart} onChange={(e) => onChange('howSoonCanYouStart', e.target.value)} options={HOW_SOON_CAN_START_OPTIONS} placeholder="Select availability" />
+          <Select label="Preferred Language" value={drafts.preferredLanguage} onChange={(e) => onChange('preferredLanguage', e.target.value)} options={PREFERRED_LANGUAGE_OPTIONS} placeholder="Select preferred language" />
+          <Select label="Educational Attainment" value={drafts.educationalAttainment} onChange={(e) => onChange('educationalAttainment', e.target.value)} options={EDUCATIONAL_ATTAINMENT_OPTIONS} placeholder="Select educational attainment" />
+          <Select label="Study Field" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} options={FIELD_OF_STUDY_OPTIONS} placeholder="Select study field" />
           <Input label="Minimum Salary" value={drafts.minimumSalary} onChange={(e) => onChange('minimumSalary', e.target.value)} placeholder="Minimum Salary" />
           <Input label="Maximum Salary" value={drafts.maximumSalary} onChange={(e) => onChange('maximumSalary', e.target.value)} placeholder="Maximum Salary" />
           <Input label="Height" value={drafts.height} onChange={(e) => onChange('height', e.target.value)} placeholder="Height" />
           <Input label="Weight" value={drafts.weight} onChange={(e) => onChange('weight', e.target.value)} placeholder="Weight" />
           <Input label="Nationality" value={drafts.nationality} onChange={(e) => onChange('nationality', e.target.value)} placeholder="Nationality" />
-          <Select
-            label="Gender"
-            value={drafts.gender}
-            onChange={(e) => onChange('gender', e.target.value)}
-            options={mergeCurrentWithOptions(drafts.gender, GENDER_OPTIONS)}
-            placeholder="Select gender"
-          />
-          <Select
-            label="Civil Status"
-            value={drafts.civilStatus}
-            onChange={(e) => onChange('civilStatus', e.target.value)}
-            options={mergeCurrentWithOptions(drafts.civilStatus, CIVIL_STATUS_OPTIONS)}
-            placeholder="Select civil status"
-          />
+          <Select label="Gender" value={drafts.gender} onChange={(e) => onChange('gender', e.target.value)} options={GENDER_OPTIONS} placeholder="Select gender" />
+          <Select label="Civil Status" value={drafts.civilStatus} onChange={(e) => onChange('civilStatus', e.target.value)} options={CIVIL_STATUS_OPTIONS} placeholder="Select civil status" />
           <Input label="Birthday" type="date" value={drafts.birthday} onChange={(e) => onChange('birthday', e.target.value)} />
         </div>
       );
