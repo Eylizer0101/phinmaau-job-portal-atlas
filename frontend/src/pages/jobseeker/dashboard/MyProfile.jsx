@@ -44,12 +44,12 @@ import {
 } from 'react-icons/fa';
 
 const COLORS = {
-  
+ 
   border: '#d8e2ee',
   textPrimary: '#000000',
   textSecondary: '#4b5563',
   muted: '#8a95a3',
-
+ 
 };
 
 const REQUIRED_DOC_TYPES = ['cv', 'tor', 'diploma', 'validId', 'sss', 'philhealth', 'pagibig', 'tin'];
@@ -3206,7 +3206,7 @@ const MyProfile = () => {
     return (
       <JobSeekerLayout>
         <div className="max-w-6xl mx-auto px-4 py-8">
-          <div className="animate-pulse rounded-[24px]  border border-gray-200 overflow-hidden">
+          <div className="animate-pulse rounded-[24px] bg-white border border-gray-200 overflow-hidden">
             <div className="h-40 bg-gray-200" />
             <div className="h-[900px] bg-gray-100" />
           </div>
@@ -3466,4 +3466,4 @@ const MyProfile = () => {
   );
 };
 
-export default MyProfile;
+export default MyProfile
