@@ -595,7 +595,7 @@ const CredentialItem = ({
     <div
       ref={wrapperRef}
       onMouseEnter={onOpen}
-      className={`relative rounded-[18px] border px-4 py-4 flex items-center justify-between gap-4 transition-colors ${
+      className={`relative rounded-[10px] border px-4 py-3 flex items-center justify-between gap-4 transition-colors ${
         uploaded
           ? 'border-[#d8e2ee] bg-[#f7faff]'
           : 'border-[#e6edf5] bg-white hover:bg-[#f7faff]'
@@ -614,7 +614,7 @@ const CredentialItem = ({
       />
 
       <div className="min-w-0 flex items-center gap-3">
-        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${uploaded ? 'bg-[#eaf2fb] text-[#2e66a6]' : 'bg-[#f7faff] text-black/40'}`}>
+        <div className={`w-7 h-7 rounded-md flex items-center justify-center ${uploaded ? 'bg-[#eaf2fb] text-[#2e66a6]' : 'bg-[#f7faff] text-black/40'}`}>
           {icon}
         </div>
         <div className="min-w-0">
@@ -1446,7 +1446,7 @@ const ProfileTodoList = ({ completed = [] }) => {
   const percent = Math.round((doneCount / items.length) * 100);
 
   return (
-    <aside className="w-full rounded-[14px] border border-gray-200 bg-white px-5 py-5 shadow-sm">
+    <aside className="w-full rounded-[14px] border border-gray-200 bg-white px-5 py-5 shadow-sm lg:sticky lg:top-24">
       <h3 className="text-[18px] font-bold text-gray-900 mb-4">To-Do List</h3>
       <div className="text-center text-[#008f80] font-bold text-sm mb-2">{percent}% Done</div>
       <div className="h-2 rounded-full bg-[#ecebea] overflow-hidden mb-4">
@@ -3006,16 +3006,201 @@ const MyProfile = () => {
 
   const documentConfig = [
     { type: 'cv', title: 'CV / Resume', icon: <FaFileAlt className="text-sm" /> },
-    { type: 'validId', title: 'Valid ID', icon: <FaShieldAlt className="text-sm" /> },
+    { type: 'sss', title: 'SSS', icon: <FaFileAlt className="text-sm" /> },
     { type: 'diploma', title: 'Diploma', icon: <FaFileAlt className="text-sm" /> },
     { type: 'tin', title: 'TIN', icon: <FaFileAlt className="text-sm" /> },
-    { type: 'sss', title: 'SSS', icon: <FaFileAlt className="text-sm" /> },
-    { type: 'tor', title: 'TOR (Transcript of Records)', icon: <FaFileAlt className="text-sm" /> },
+    { type: 'validId', title: 'Valid ID', icon: <FaShieldAlt className="text-sm" /> },
+    { type: 'tor', title: 'TOR', icon: <FaFileAlt className="text-sm" /> },
     { type: 'philhealth', title: 'PhilHealth', icon: <FaFileAlt className="text-sm" /> },
     { type: 'pagibig', title: 'Pag-IBIG', icon: <FaFileAlt className="text-sm" /> },
   ];
 
   const uploadedRequiredCount = REQUIRED_DOC_TYPES.filter((key) => verificationDocs[key]?.url).length;
+
+
+  const renderAccordionContent = (sectionKey) => {
+    const textOrEmpty = (value, empty = '') => (String(value || '').trim() ? value : empty);
+    const renderEmptyLine = (message) => (
+      <div className="px-0 pb-4 text-[14px] italic text-gray-500">
+        {message}
+      </div>
+    );
+
+    if (sectionKey === 'personal') {
+      return (
+        <div className="px-0 pb-8 pt-5 text-center">
+          <div className="flex items-start justify-center gap-8">
+            <div className="flex-1 min-w-0">
+              <h1 className="font-serif text-[26px] sm:text-[34px] leading-tight font-bold tracking-[0.22em] uppercase text-[#111827]">
+                {fullName || 'YOUR NAME'}
+              </h1>
+              <div className="mt-2 font-serif text-[13px] text-gray-900">
+                {[buildAddressString(formData), formData.email].filter(Boolean).join(' • ') || 'Complete your basic information to get started.'}
+              </div>
+              <div className="mt-2 font-serif italic text-[13px] text-gray-500">
+                {[formData.course, formData.yearGraduated ? `Class of ${formData.yearGraduated}` : ''].filter(Boolean).join(', ')}
+              </div>
+            </div>
+
+            <div className="hidden sm:flex w-[92px] h-[92px] bg-[#1f2430] text-white items-center justify-center font-serif text-[28px] font-bold shrink-0">
+              {(formData.firstName?.[0] || 'U').toUpperCase()}{(formData.lastName?.[0] || '').toUpperCase()}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (sectionKey === 'about') {
+      return formData.aboutMe ? (
+        <div className="px-0 pb-5 pt-2 font-serif text-[13px] leading-5 text-gray-900 text-justify">
+          {formData.aboutMe}
+        </div>
+      ) : renderEmptyLine('This is your chance to show who you are. Add information about yourself that is most relevant to employers.');
+    }
+
+    if (sectionKey === 'career') {
+      const salaryText = [formData.minimumSalary, formData.maximumSalary].filter(Boolean).join(' - ');
+      return (
+        <div className="px-0 pb-5 pt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-16 gap-y-1 font-serif text-[13px] leading-5 text-gray-900">
+          <div><b>Preferred Work Mode:</b> {textOrEmpty(formData.preferredWorkMode, 'Not provided')}</div>
+          <div><b>Salary:</b> {salaryText || 'Not provided'}</div>
+          <div><b>Employment Type:</b> {textOrEmpty(formData.employmentType, 'Not provided')}</div>
+          <div><b>Height:</b> {formatDisplayHeight(formData.height)}</div>
+          <div><b>Willing to Relocate:</b> {textOrEmpty(formData.willingToRelocate, 'Not provided')}</div>
+          <div><b>Weight:</b> {formatDisplayWeight(formData.weight)}</div>
+          <div><b>How Soon Can Start:</b> {textOrEmpty(formData.howSoonCanYouStart, 'Not provided')}</div>
+          <div><b>Nationality:</b> {textOrEmpty(formData.nationality, 'Not provided')}</div>
+          <div><b>Preferred Language:</b> {textOrEmpty(formData.preferredLanguage, 'Not provided')}</div>
+          <div><b>Gender:</b> {textOrEmpty(formData.gender, 'Not provided')}</div>
+          <div><b>Educational Attainment:</b> {textOrEmpty(formData.educationalAttainment, 'Not provided')}</div>
+          <div><b>Civil Status:</b> {textOrEmpty(formData.civilStatus, 'Not provided')}</div>
+          <div><b>Study Field:</b> {textOrEmpty(formData.studyField || formData.course, 'Not provided')}</div>
+          <div><b>Birthday:</b> {textOrEmpty(formData.birthday, 'Not provided')}</div>
+        </div>
+      );
+    }
+
+    if (sectionKey === 'work') {
+      if (workExperienceLoading) return <div className="pb-5"><Spinner size="small" /></div>;
+      if (!workExperiences.length) return renderEmptyLine("You've declared that you don't have work experience yet. Click Add to add work experience.");
+      return (
+        <div className="px-0 pb-5 pt-2 space-y-4 font-serif text-[13px] leading-5 text-gray-900">
+          {workExperiences.map((item, index) => {
+            const dateText = [item.startDate ? String(item.startDate).slice(0, 10) : '', item.isPresent ? 'Present' : item.endDate ? String(item.endDate).slice(0, 10) : ''].filter(Boolean).join(' – ');
+            const descriptionLines = String(item.description || '').split('\n').map((line) => line.trim()).filter(Boolean);
+            return (
+              <div key={item._id || item.id || `work-${index}`}>
+                <div className="flex justify-between gap-4">
+                  <div>
+                    <div className="font-bold">{item.companyName || 'Company Name'}</div>
+                    <div className="italic">{item.positionTitle || 'Position'}</div>
+                  </div>
+                  <div className="italic text-gray-700 shrink-0">{dateText}</div>
+                </div>
+                {descriptionLines.length ? (
+                  <ul className="list-disc pl-7 mt-2 space-y-1">
+                    {descriptionLines.map((line, lineIndex) => <li key={lineIndex}>{line}</li>)}
+                  </ul>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    if (sectionKey === 'skills') {
+      const allSkills = [...(formData.technicalSkills || []), ...(formData.softSkills || [])].filter(Boolean);
+      return allSkills.length || formData.whatHaveYouDone ? (
+        <div className="px-0 pb-5 pt-2 font-serif text-[13px] leading-5 text-gray-900">
+          {allSkills.length ? <div><b>{allSkills.join(', ')}</b></div> : null}
+          {formData.whatHaveYouDone ? <div className="mt-2">{formData.whatHaveYouDone}</div> : null}
+        </div>
+      ) : renderEmptyLine('Enumerate your skills, competencies, and talents including proficiency levels.');
+    }
+
+    if (sectionKey === 'education') {
+      const items = hasEducationEntries ? educationEntries : [{
+        campus: formData.eduCampus || formData.campus,
+        course: formData.eduCourse || formData.course,
+        startYear: formData.eduStartYear,
+        endYear: formData.eduEndYear || formData.yearGraduated,
+        studyField: formData.eduStudyField,
+      }];
+      const hasAny = items.some((item) => item.campus || item.course || item.startYear || item.endYear || item.studyField);
+      if (!hasAny) return renderEmptyLine("You've declared that you don't have education. Click Add at the top right corner to add Educational Attainment.");
+      return (
+        <div className="px-0 pb-5 pt-2 space-y-3 font-serif text-[13px] leading-5 text-gray-900">
+          {items.map((item, index) => (
+            <div key={item._id || `education-${index}`} className="flex justify-between gap-4">
+              <div>
+                <div className="font-bold">{item.campus || item.school || 'School Name'}</div>
+                <div className="italic">{item.course || item.studyField || 'Course / Program'}</div>
+              </div>
+              <div className="italic text-gray-700 shrink-0">{[item.startYear, item.endYear].filter(Boolean).join(' – ')}</div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (sectionKey === 'credentials') {
+      return (
+        <div className="px-0 pb-6 pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {documentConfig.map((doc) => {
+            const docData = verificationDocs[doc.type] || {};
+            return (
+              <CredentialItem
+                key={doc.type}
+                docType={doc.type}
+                title={doc.title}
+                uploaded={Boolean(docData.url)}
+                icon={doc.icon}
+                onUpload={(file) => handleCredentialUpload(doc.type, file)}
+                uploading={uploadingDocType === doc.type}
+                fileName={docData.filename}
+                fileUrl={docData.url}
+                popoverOpen={credentialPopover === doc.type}
+                onOpen={() => setCredentialPopover(doc.type)}
+                onClose={() => setCredentialPopover('')}
+              />
+            );
+          })}
+        </div>
+      );
+    }
+
+    if (MORE_PROFILE_TAB_KEYS.includes(sectionKey)) {
+      const config = MORE_PROFILE_SECTIONS[sectionKey];
+      const items = Array.isArray(formData[sectionKey]) ? formData[sectionKey] : [];
+      if (!items.length) return renderEmptyLine(config.emptyTitle || 'No data added yet.');
+      return (
+        <div className="px-0 pb-5 pt-2 space-y-3 font-serif text-[13px] leading-5 text-gray-900">
+          {items.map((item, index) => {
+            const dateText = formatProfileEntryDate(item);
+            const subLine = getProfileEntrySubLine(sectionKey, item);
+            return (
+              <div key={item._id || `${sectionKey}-${index}`}>
+                <div className="flex justify-between gap-4">
+                  <div>
+                    <div className="font-bold">{getProfileEntryTitle(sectionKey, item)}</div>
+                    {subLine ? <div className="italic">{subLine}</div> : null}
+                    {sectionKey === 'references' ? (
+                      <div className="mt-1 text-gray-700">{[item.phone, item.email].filter(Boolean).join(' • ')}</div>
+                    ) : null}
+                  </div>
+                  {dateText ? <div className="italic text-gray-700 shrink-0">{dateText}</div> : null}
+                </div>
+                {item.description ? <div className="mt-2">{item.description}</div> : null}
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    return null;
+  };
 
   if (loading) {
     return (
@@ -3135,8 +3320,8 @@ const MyProfile = () => {
         onChangeProfileItem={updateProfileListItem}
       />
 
-      <div className={`min-h-[100dvh] h-auto pt-2 bg-gray-50 overflow-x-hidden overflow-y-visible ${isApplyFlow ? 'pb-28 sm:pb-32' : 'pb-6'}`}>
-        <div className="max-w-6xl mx-auto px-0 sm:px-6">
+      <div className={`min-h-[100dvh] h-auto bg-[#f7f7f5] overflow-x-hidden overflow-y-visible ${isApplyFlow ? 'pb-28 sm:pb-32' : 'pb-6'}`}>
+        <div className="max-w-[1440px] mx-auto px-0 sm:px-4">
           {error ? <Alert type="error" title="Error" message={error} onClose={() => setError('')} /> : null}
 
           {isApplyFlow && applyJob ? (
@@ -3145,13 +3330,13 @@ const MyProfile = () => {
             </div>
           ) : null}
 
-          <div className="bg-white border border-[#d7dbe3] rounded-[18px] sm:rounded-[24px] overflow-visible shadow-sm">
-            <div className="relative z-50 w-full max-w-full px-4 sm:px-10 py-8">
-              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-10 items-start">
-                <div>
+          <div className="bg-white border-t border-[#e5e7eb] overflow-visible">
+            <div className="relative z-50 w-full max-w-full px-4 sm:px-8 lg:px-12 py-10">
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,780px)_300px] justify-center gap-24 items-start">
+                <div className="bg-white shadow-[0_4px_24px_rgba(0,0,0,0.08)] min-h-[760px] px-8 sm:px-14 py-10">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
                     <div>
-                      <h2 className="text-[22px] font-bold text-gray-900">Profile</h2>
+                      <h2 className="text-[22px] font-bold text-gray-900 sr-only">Profile</h2>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
@@ -3199,33 +3384,40 @@ const MyProfile = () => {
                       const isOpen = activeTab === targetTab;
 
                       return (
-                        <div
-                          key={section.key}
-                          className="w-full min-h-[44px] px-1 border-b border-gray-200 flex items-center justify-between gap-4 text-left bg-white hover:bg-gray-50 transition"
-                        >
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (section.key === 'about') setActiveTab('about');
-                              else if (section.key === 'work') setActiveTab('work');
-                              else if (section.key === 'skills') setActiveTab('skills');
-                              else setActiveTab(section.key);
-                            }}
-                            className="flex-1 min-h-[44px] inline-flex items-center gap-3 min-w-0 text-left"
-                          >
-                            <span className="text-gray-500 text-[14px] leading-none">{isOpen ? '⌃' : '⌄'}</span>
-                            <span className="text-[15px] font-bold uppercase tracking-wide text-gray-900 truncate">{section.label}</span>
-                          </button>
-
-                          {section.actionLabel ? (
+                        <div key={section.key} className="w-full bg-white">
+                          <div className="w-full min-h-[44px] px-1 border-b border-gray-200 flex items-center justify-between gap-4 text-left bg-white">
                             <button
                               type="button"
-                              onClick={() => openProfileEditModal(section.key)}
-                              className="h-9 px-2 text-[#0b73ff] text-sm font-bold shrink-0 hover:underline"
+                              onClick={() => {
+                                if (section.key === 'about') setActiveTab('about');
+                                else if (section.key === 'work') setActiveTab('work');
+                                else if (section.key === 'skills') setActiveTab('skills');
+                                else setActiveTab(section.key);
+                              }}
+                              className="flex-1 min-h-[44px] inline-flex items-center gap-3 min-w-0 text-left"
                             >
-                              {section.actionLabel}
+                              <span className="text-gray-500 text-[14px] leading-none">{isOpen ? '⌃' : '⌄'}</span>
+                              <span className="font-serif text-[16px] font-bold uppercase tracking-wide text-gray-900 truncate">{section.label}</span>
                             </button>
-                          ) : null}
+
+                            <div className="flex items-center gap-3 shrink-0">
+                              {section.key === 'skills' ? (
+                                <button type="button" className="hidden sm:inline-flex items-center gap-1 text-[#0b73ff] text-sm hover:underline">
+                                  <FaInfoCircle className="text-sm" /> Proficiency Level Description
+                                </button>
+                              ) : null}
+                              {section.actionLabel ? (
+                                <button
+                                  type="button"
+                                  onClick={() => openProfileEditModal(section.key)}
+                                  className="h-9 px-2 text-[#0b73ff] text-sm font-bold shrink-0 hover:underline"
+                                >
+                                  {section.actionLabel}
+                                </button>
+                              ) : null}
+                            </div>
+                          </div>
+                          {isOpen ? renderAccordionContent(section.key) : null}
                         </div>
                       );
                     })}
