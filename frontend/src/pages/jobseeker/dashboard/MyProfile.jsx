@@ -197,6 +197,90 @@ const normalizeSkillsFromProfile = (raw) => {
     .filter(Boolean);
 };
 
+const createEmptyEducationEntry = () => ({
+  level: '',
+  campus: '',
+  course: '',
+  studyField: '',
+  educationalAttainment: '',
+  startYear: '',
+  endYear: '',
+  yearGraduated: '',
+});
+
+const normalizeEducationEntry = (entry = {}) => {
+  const level = String(entry.level || entry.educationalAttainment || '').trim();
+  const endYear = String(entry.endYear || entry.yearGraduated || '').trim();
+
+  return {
+    level,
+    campus: String(entry.campus || entry.school || '').trim(),
+    course: String(entry.course || '').trim(),
+    studyField: String(entry.studyField || '').trim(),
+    educationalAttainment: String(entry.educationalAttainment || level || '').trim(),
+    startYear: String(entry.startYear || '').trim(),
+    endYear,
+    yearGraduated: String(entry.yearGraduated || endYear || '').trim(),
+  };
+};
+
+const hasEducationEntryValue = (entry = {}) => (
+  Boolean(
+    String(entry.level || '').trim() ||
+    String(entry.educationalAttainment || '').trim() ||
+    String(entry.campus || '').trim() ||
+    String(entry.course || '').trim() ||
+    String(entry.studyField || '').trim() ||
+    String(entry.startYear || '').trim() ||
+    String(entry.endYear || '').trim() ||
+    String(entry.yearGraduated || '').trim()
+  )
+);
+
+const normalizeEducationEntries = (entries = [], keepEmpty = false) => {
+  const rows = (Array.isArray(entries) ? entries : [])
+    .map(normalizeEducationEntry)
+    .filter((entry) => keepEmpty || hasEducationEntryValue(entry));
+
+  return rows.length ? rows : [createEmptyEducationEntry()];
+};
+
+const buildEducationDraftEntries = (baseState = {}) => {
+  const existingEntries = normalizeEducationEntries(baseState.educationEntries || [], false);
+  const hasExistingEntries = existingEntries.some(hasEducationEntryValue);
+  if (hasExistingEntries) return existingEntries;
+
+  const fallbackEntry = normalizeEducationEntry({
+    level: baseState.eduLevel || baseState.educationalAttainment || '',
+    educationalAttainment: baseState.eduEducationalAttainment || baseState.educationalAttainment || '',
+    campus: baseState.eduCampus || baseState.campus || '',
+    course: baseState.eduCourse || baseState.course || '',
+    studyField: baseState.eduStudyField || baseState.studyField || '',
+    startYear: baseState.eduStartYear || '',
+    endYear: baseState.eduEndYear || baseState.yearGraduated || '',
+    yearGraduated: baseState.eduEndYear || baseState.yearGraduated || '',
+  });
+
+  return hasEducationEntryValue(fallbackEntry) ? [fallbackEntry] : [createEmptyEducationEntry()];
+};
+
+const cleanEducationEntriesForSave = (entries = []) =>
+  normalizeEducationEntries(entries, true)
+    .map((entry) => {
+      const normalized = normalizeEducationEntry(entry);
+      return {
+        level: normalized.level || normalized.educationalAttainment,
+        educationalAttainment: normalized.educationalAttainment || normalized.level,
+        campus: normalized.campus,
+        course: normalized.course,
+        studyField: normalized.studyField,
+        startYear: normalized.startYear,
+        endYear: normalized.endYear,
+        yearGraduated: normalized.endYear || normalized.yearGraduated,
+      };
+    })
+    .filter(hasEducationEntryValue);
+
 const normalizeExtensionName = (value) => {
   const clean = String(value || '').trim();
   return clean.toLowerCase() === 'none' ? '' : clean;
@@ -1777,6 +1861,9 @@ const ProfileEditModal = ({
   onAddSkillRow,
   onRemoveSkillRow,
   onOpenSkillProficiencyDescription,
+  onAddEducationEntry,
+  onRemoveEducationEntry,
+  onChangeEducationEntry,
   onSave,
   onClose,
   onAddProfileItem,
@@ -1896,14 +1983,43 @@ const ProfileEditModal = ({
     }
 
     if (sectionKey === 'education') {
+      const educationRows = normalizeEducationEntries(drafts.educationEntries || [], true);
+
       return (
-        <div className="grid md:grid-cols-2 gap-5">
-          <Select label="Educational Attainment" value={drafts.eduLevel} onChange={(e) => onChange('eduLevel', e.target.value)} options={EDUCATION_LEVEL_OPTIONS} placeholder="Select educational attainment" />
-          <Select label="Campus / School" value={drafts.eduCampus} onChange={(e) => onChange('eduCampus', e.target.value)} options={CAMPUS_OPTIONS} placeholder="Select campus / school" />
-          <Select label="Course" value={drafts.eduCourse} onChange={(e) => onChange('eduCourse', e.target.value)} options={MAJOR_COURSE_OPTIONS} placeholder="Select course" />
-          <Input label="Study Field" value={drafts.eduStudyField} onChange={(e) => onChange('eduStudyField', e.target.value)} placeholder="Study field" />
-          <Select label="From Year" value={drafts.eduStartYear} onChange={(e) => onChange('eduStartYear', e.target.value)} options={yearOptions} placeholder="Year" />
-          <Select label="To Year" value={drafts.eduEndYear} onChange={(e) => onChange('eduEndYear', e.target.value)} options={yearOptions} placeholder="Year" />
+        <div className="space-y-5">
+          {educationRows.map((entry, index) => (
+            <div key={`education-entry-${index}`} className="rounded-[14px] border border-gray-200 bg-[#fcfcfd] p-4 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm font-bold text-gray-700">Education {index + 1}</div>
+                <button
+                  type="button"
+                  onClick={() => onRemoveEducationEntry(index)}
+                  className="h-9 px-3 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 inline-flex items-center gap-2 text-sm font-semibold"
+                >
+                  <FaTrash className="text-xs" />
+                  Remove
+                </button>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-5">
+                <Select label="Educational Attainment" value={entry.level || entry.educationalAttainment} onChange={(e) => onChangeEducationEntry(index, 'level', e.target.value)} options={EDUCATION_LEVEL_OPTIONS} placeholder="Select educational attainment" />
+                <Select label="Campus / School" value={entry.campus} onChange={(e) => onChangeEducationEntry(index, 'campus', e.target.value)} options={CAMPUS_OPTIONS} placeholder="Select campus / school" />
+                <Select label="Course" value={entry.course} onChange={(e) => onChangeEducationEntry(index, 'course', e.target.value)} options={MAJOR_COURSE_OPTIONS} placeholder="Select course" />
+                <Input label="Study Field" value={entry.studyField} onChange={(e) => onChangeEducationEntry(index, 'studyField', e.target.value)} placeholder="Study field" />
+                <Select label="From Year" value={entry.startYear} onChange={(e) => onChangeEducationEntry(index, 'startYear', e.target.value)} options={yearOptions} placeholder="Year" />
+                <Select label="To Year" value={entry.endYear || entry.yearGraduated} onChange={(e) => onChangeEducationEntry(index, 'endYear', e.target.value)} options={yearOptions} placeholder="Year" />
+              </div>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={onAddEducationEntry}
+            className="h-10 px-4 rounded-[6px] border border-gray-300 bg-white text-black font-medium hover:bg-gray-50 inline-flex items-center gap-2"
+          >
+            <FaPlus className="text-xs" />
+            Add Education
+          </button>
         </div>
       );
     }
@@ -2265,6 +2381,7 @@ const MyProfile = () => {
 
   const resetEducationDraftFields = (baseState) => ({
     ...baseState,
+    educationEntries: normalizeEducationEntries(baseState.educationEntries || [], false).filter(hasEducationEntryValue),
     eduLevel: '',
     eduCampus: '',
     eduCourse: '',
@@ -2803,39 +2920,40 @@ const MyProfile = () => {
       }
 
       if (sectionKey === 'education') {
-        if (
-          !drafts.eduLevel ||
-          !drafts.eduCampus ||
-          !drafts.eduCourse ||
-          !drafts.eduStartYear ||
-          !drafts.eduEndYear
-        ) {
-          setError('Please complete all education fields before saving.');
+        const nextEducationEntries = cleanEducationEntriesForSave(drafts.educationEntries || []);
+
+        if (!nextEducationEntries.length) {
+          setError('Please add at least one education entry before saving.');
           setSavingSection('');
           return;
         }
 
-        if (Number(drafts.eduStartYear) > Number(drafts.eduEndYear)) {
-          setError('Start year cannot be later than year graduated.');
+        const incompleteEntry = nextEducationEntries.find((entry) => !entry.campus || !entry.course);
+        if (incompleteEntry) {
+          setError('Please complete the campus / school and course fields for each education entry.');
           setSavingSection('');
           return;
         }
 
-        const nextEducationEntries = [
-          ...(Array.isArray(formData.educationEntries) ? formData.educationEntries : []),
-          {
-            level: drafts.eduLevel,
-            campus: drafts.eduCampus,
-            course: drafts.eduCourse,
-            startYear: drafts.eduStartYear,
-            endYear: drafts.eduEndYear,
-            yearGraduated: drafts.eduEndYear,
-          },
-        ];
+        const invalidYearEntry = nextEducationEntries.find((entry) => (
+          entry.startYear && entry.endYear && Number(entry.startYear) > Number(entry.endYear)
+        ));
+        if (invalidYearEntry) {
+          setError('From year cannot be later than To year.');
+          setSavingSection('');
+          return;
+        }
+
+        const primaryEducation = nextEducationEntries[0] || {};
 
         payload = {
           jobSeekerProfile: {
             educationEntries: nextEducationEntries,
+            campus: primaryEducation.campus || drafts.campus,
+            course: primaryEducation.course || drafts.course,
+            yearGraduated: primaryEducation.endYear || primaryEducation.yearGraduated || drafts.yearGraduated,
+            educationalAttainment: primaryEducation.educationalAttainment || primaryEducation.level || drafts.educationalAttainment,
+            studyField: primaryEducation.studyField || drafts.studyField,
           },
         };
       }
@@ -2868,20 +2986,23 @@ const MyProfile = () => {
 
       if (response.data?.success) {
         if (sectionKey === 'education') {
+          const updatedProfile = response.data.user?.jobSeekerProfile || {};
           const nextEducationEntries =
-            response.data.user?.jobSeekerProfile?.educationEntries ||
+            updatedProfile.educationEntries ||
             payload.jobSeekerProfile?.educationEntries ||
             [];
 
           const nextFormData = {
             ...formData,
             educationEntries: nextEducationEntries,
+            campus: updatedProfile.campus || payload.jobSeekerProfile?.campus || formData.campus,
+            course: updatedProfile.course || payload.jobSeekerProfile?.course || formData.course,
+            yearGraduated: updatedProfile.yearGraduated || payload.jobSeekerProfile?.yearGraduated || formData.yearGraduated,
+            educationalAttainment: updatedProfile.educationalAttainment || payload.jobSeekerProfile?.educationalAttainment || formData.educationalAttainment,
+            studyField: updatedProfile.studyField || payload.jobSeekerProfile?.studyField || formData.studyField,
           };
 
-          const nextDrafts = resetEducationDraftFields({
-            ...drafts,
-            educationEntries: nextEducationEntries,
-          });
+          const nextDrafts = resetEducationDraftFields(nextFormData);
 
           setFormData(nextFormData);
           setDrafts(nextDrafts);
@@ -2982,8 +3103,18 @@ const MyProfile = () => {
       return;
     }
 
+    if (sectionKey === 'education') {
+      setDrafts((prev) => ({
+        ...prev,
+        ...formData,
+        educationEntries: buildEducationDraftEntries(formData),
+      }));
+      setEditModalSection(sectionKey);
+      return;
+    }
+
     setDrafts((prev) => {
-      const next = sectionKey === 'education' ? resetEducationDraftFields(formData) : { ...formData };
+      const next = { ...formData };
 
       if (MORE_PROFILE_TAB_KEYS.includes(sectionKey)) {
         const currentItems = Array.isArray(formData[sectionKey]) ? formData[sectionKey] : [];
@@ -3090,6 +3221,42 @@ const MyProfile = () => {
       [sectionKey]: (Array.isArray(prev[sectionKey]) ? prev[sectionKey] : []).map((item, itemIndex) =>
         itemIndex === index ? { ...item, [field]: value } : item
       ),
+    }));
+  };
+
+  const addEducationEntry = () => {
+    setDrafts((prev) => ({
+      ...prev,
+      educationEntries: [
+        ...normalizeEducationEntries(prev.educationEntries || [], true),
+        createEmptyEducationEntry(),
+      ],
+    }));
+  };
+
+  const removeEducationEntry = (index) => {
+    setDrafts((prev) => {
+      const nextEntries = normalizeEducationEntries(prev.educationEntries || [], true)
+        .filter((_, itemIndex) => itemIndex !== index);
+
+      return {
+        ...prev,
+        educationEntries: nextEntries.length ? nextEntries : [createEmptyEducationEntry()],
+      };
+    });
+  };
+
+  const updateEducationEntry = (index, field, value) => {
+    setDrafts((prev) => ({
+      ...prev,
+      educationEntries: normalizeEducationEntries(prev.educationEntries || [], true).map((item, itemIndex) => {
+        if (itemIndex !== index) return item;
+
+        const nextItem = { ...item, [field]: value };
+        if (field === 'level') nextItem.educationalAttainment = value;
+        if (field === 'endYear') nextItem.yearGraduated = value;
+        return nextItem;
+      }),
     }));
   };
 
@@ -3787,6 +3954,9 @@ const MyProfile = () => {
         onAddSkillRow={addSkillRow}
         onRemoveSkillRow={removeSkillRow}
         onOpenSkillProficiencyDescription={() => setSkillProficiencyModalOpen(true)}
+        onAddEducationEntry={addEducationEntry}
+        onRemoveEducationEntry={removeEducationEntry}
+        onChangeEducationEntry={updateEducationEntry}
         onSave={saveProfileEditModal}
         onClose={closeProfileEditModal}
         onAddProfileItem={addProfileListItem}
@@ -3850,7 +4020,7 @@ const MyProfile = () => {
                       { key: 'career', label: 'Availability & Preferences', actionLabel: 'ADD' },
                       { key: 'work', label: 'Work Experience', actionLabel: workExperiences.length ? 'EDIT' : 'ADD' },
                       { key: 'skills', label: 'Skills', actionLabel: 'ADD' },
-                      { key: 'education', label: 'Education', actionLabel: hasEducationEntries ? 'EDIT' : 'ADD' },
+                      { key: 'education', label: 'Education', actionLabel: (hasEducationEntries || formData.campus || formData.course || formData.yearGraduated) ? 'EDIT' : 'ADD' },
                       { key: 'credentials', label: 'Credentials', actionLabel: '' },
                       ...addedMoreSections.map((key) => ({ key, label: MORE_PROFILE_SECTIONS[key]?.title || key, actionLabel: (formData[key] || []).length ? 'EDIT' : 'ADD' })),
                     ].map((section) => {
