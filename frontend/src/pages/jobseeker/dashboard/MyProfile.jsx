@@ -3332,7 +3332,7 @@ const MyProfile = () => {
 
           <div className="bg-white border-t border-[#e5e7eb] overflow-visible">
             <div className="relative z-50 w-full max-w-full px-4 sm:px-8 lg:px-12 py-10">
-              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,780px)_300px] justify-center gap-24 items-start">
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,780px)] justify-center gap-24 items-start">
                 <div className="bg-white shadow-[0_4px_24px_rgba(0,0,0,0.08)] min-h-[760px] px-8 sm:px-14 py-10">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
                     <div>
@@ -3389,10 +3389,7 @@ const MyProfile = () => {
                             <button
                               type="button"
                               onClick={() => {
-                                if (section.key === 'about') setActiveTab('about');
-                                else if (section.key === 'work') setActiveTab('work');
-                                else if (section.key === 'skills') setActiveTab('skills');
-                                else setActiveTab(section.key);
+                                setActiveTab((currentTab) => (currentTab === targetTab ? '' : targetTab));
                               }}
                               className="flex-1 min-h-[44px] inline-flex items-center gap-3 min-w-0 text-left"
                             >
@@ -3423,17 +3420,6 @@ const MyProfile = () => {
                     })}
                   </div>
                 </div>
-
-                <ProfileTodoList
-                  completed={[
-                    formData.firstName && formData.lastName ? 'basic' : '',
-                    formData.preferredWorkMode || formData.employmentType ? 'career' : '',
-                    workExperiences.length > 0 ? 'work' : '',
-                    (formData.technicalSkills?.length || formData.softSkills?.length) ? 'skills' : '',
-                    hasEducationEntries ? 'education' : '',
-                    ...MORE_PROFILE_TAB_KEYS.filter((key) => Array.isArray(formData[key]) && formData[key].length > 0),
-                  ].filter(Boolean)}
-                />
               </div>
             </div>
 
