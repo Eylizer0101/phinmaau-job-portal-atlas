@@ -1007,6 +1007,7 @@ const WorkExperienceModal = ({
   onChange,
   onClose,
   onSave,
+  onDelete,
   saving,
 }) => {
   if (!open) return null;
@@ -1093,23 +1094,38 @@ const WorkExperienceModal = ({
           />
         </div>
 
-        <div className="px-6 sm:px-8 py-5 border-t border-gray-200 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 h-11 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={saving}
-            className="px-5 h-11 rounded-xl text-white font-semibold disabled:opacity-70"
-            style={{ backgroundColor: COLORS.primary }}
-          >
-            {saving ? 'Saving...' : mode === 'edit' ? 'Save Changes' : 'Add Work Experience'}
-          </button>
+        <div className="px-6 sm:px-8 py-5 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          {mode === 'edit' && onDelete ? (
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={saving}
+              className="px-4 h-11 rounded-xl border border-red-200 text-red-600 font-semibold hover:bg-red-50 disabled:opacity-70"
+            >
+              Remove
+            </button>
+          ) : (
+            <div className="hidden sm:block" />
+          )}
+
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 h-11 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={saving}
+              className="px-5 h-11 rounded-xl text-white font-semibold disabled:opacity-70"
+              style={{ backgroundColor: COLORS.primary }}
+            >
+              {saving ? 'Saving...' : mode === 'edit' ? 'Save Changes' : 'Add Work Experience'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1618,7 +1634,7 @@ const ProfileEditModal = ({
           <Select label="How Soon Can Start" value={drafts.howSoonCanYouStart} onChange={(e) => onChange('howSoonCanYouStart', e.target.value)} options={HOW_SOON_CAN_START_OPTIONS} placeholder="Select availability" />
           <Select label="Preferred Language" value={drafts.preferredLanguage} onChange={(e) => onChange('preferredLanguage', e.target.value)} options={PREFERRED_LANGUAGE_OPTIONS} placeholder="Select preferred language" />
           <Select label="Educational Attainment" value={drafts.educationalAttainment} onChange={(e) => onChange('educationalAttainment', e.target.value)} options={EDUCATIONAL_ATTAINMENT_OPTIONS} placeholder="Select educational attainment" />
-          <Select label="Study Field" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} options={FIELD_OF_STUDY_OPTIONS} placeholder="Select study field" />
+          <Select label="Double Degree" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} options={FIELD_OF_STUDY_OPTIONS} placeholder="Select study field" />
           <Input label="Minimum Salary" value={drafts.minimumSalary} onChange={(e) => onChange('minimumSalary', e.target.value)} placeholder="Minimum Salary" />
           <Input label="Maximum Salary" value={drafts.maximumSalary} onChange={(e) => onChange('maximumSalary', e.target.value)} placeholder="Maximum Salary" />
           <Input label="Height" value={drafts.height} onChange={(e) => onChange('height', e.target.value)} placeholder="Height" />
@@ -2696,7 +2712,11 @@ const MyProfile = () => {
     }
 
     if (sectionKey === 'work') {
-      openAddWorkExperienceModal();
+      if (workExperiences.length > 0) {
+        openEditWorkExperienceModal(workExperiences[0]);
+      } else {
+        openAddWorkExperienceModal();
+      }
       return;
     }
 
@@ -3186,17 +3206,46 @@ const MyProfile = () => {
       if (!workExperiences.length) return renderEmptyLine("You've declared that you don't have work experience yet. Click Add to add work experience.");
       return (
         <div className="px-0 pb-5 pt-2 space-y-4 font-serif text-[13px] leading-5 text-gray-900">
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={openAddWorkExperienceModal}
+              className="inline-flex items-center gap-2 rounded-lg border border-[#d8e2ee] bg-white px-3 py-2 text-xs font-bold text-[#2e66a6] hover:bg-[#f7faff]"
+            >
+              <FaPlus className="text-[10px]" />
+              Add Work Experience
+            </button>
+          </div>
+
           {workExperiences.map((item, index) => {
             const dateText = [item.startDate ? String(item.startDate).slice(0, 10) : '', item.isPresent ? 'Present' : item.endDate ? String(item.endDate).slice(0, 10) : ''].filter(Boolean).join(' – ');
             const descriptionLines = String(item.description || '').split('\n').map((line) => line.trim()).filter(Boolean);
             return (
-              <div key={item._id || item.id || `work-${index}`}>
-                <div className="flex justify-between gap-4">
-                  <div>
+              <div key={item._id || item.id || `work-${index}`} className="rounded-xl border border-gray-200 bg-white px-4 py-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
                     <div className="font-bold">{item.companyName || 'Company Name'}</div>
                     <div className="italic">{item.positionTitle || 'Position'}</div>
                   </div>
-                  <div className="italic text-gray-700 shrink-0">{dateText}</div>
+                  <div className="flex flex-col items-start gap-2 sm:items-end shrink-0">
+                    <div className="italic text-gray-700">{dateText}</div>
+                    <div className="flex items-center gap-2 font-sans">
+                      <button
+                        type="button"
+                        onClick={() => openEditWorkExperienceModal(item)}
+                        className="rounded-lg border border-[#d8e2ee] bg-white px-3 py-1.5 text-xs font-bold text-[#2e66a6] hover:bg-[#f7faff]"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteWorkExperience(item)}
+                        className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 {descriptionLines.length ? (
                   <ul className="list-disc pl-7 mt-2 space-y-1">
@@ -3362,6 +3411,12 @@ const MyProfile = () => {
         onChange={handleWorkExperienceFormChange}
         onClose={closeWorkExperienceModal}
         onSave={handleSaveWorkExperience}
+        onDelete={() => {
+          const selectedWorkExperience = workExperiences.find((item) => (item?._id || item?.id) === editingWorkExperienceId);
+          if (selectedWorkExperience) {
+            handleDeleteWorkExperience(selectedWorkExperience);
+          }
+        }}
         saving={savingWorkExperience}
       />
 
