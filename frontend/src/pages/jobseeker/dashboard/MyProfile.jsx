@@ -962,7 +962,7 @@ const WorkExperienceModal = ({
 
   return (
     <div className="fixed inset-0 z-[10001] bg-black/35 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true">
-      <div className="w-full max-w-3xl  rounded-[24px] shadow-2xl border border-gray-100 overflow-hidden">
+      <div className="w-full max-w-3xl bg-white rounded-[24px] shadow-2xl border border-gray-100 overflow-hidden">
         <div className="px-6 sm:px-8 py-5 border-b border-gray-200 flex items-center justify-between gap-3">
           <div>
             <div className="text-[20px] font-bold text-gray-900">
@@ -3156,13 +3156,13 @@ const MyProfile = () => {
                 title={doc.title}
                 uploaded={Boolean(docData.url)}
                 icon={doc.icon}
-                onUpload={(file) => handleCredentialUpload(doc.type, file)}
-                uploading={uploadingDocType === doc.type}
+                onUpload={(file) => handleVerificationUpload(doc.type, file)}
+                uploading={Boolean(uploadingDocs[doc.type])}
                 fileName={docData.filename}
                 fileUrl={docData.url}
-                popoverOpen={credentialPopover === doc.type}
-                onOpen={() => setCredentialPopover(doc.type)}
-                onClose={() => setCredentialPopover('')}
+                popoverOpen={activeCredentialPopover === doc.type}
+                onOpen={() => setActiveCredentialPopover(doc.type)}
+                onClose={() => setActiveCredentialPopover('')}
               />
             );
           })}
@@ -3389,7 +3389,10 @@ const MyProfile = () => {
                             <button
                               type="button"
                               onClick={() => {
-                                setActiveTab((prevTab) => (prevTab === targetTab ? '' : targetTab));
+                                if (section.key === 'about') setActiveTab('about');
+                                else if (section.key === 'work') setActiveTab('work');
+                                else if (section.key === 'skills') setActiveTab('skills');
+                                else setActiveTab(section.key);
                               }}
                               className="flex-1 min-h-[44px] inline-flex items-center gap-3 min-w-0 text-left"
                             >
