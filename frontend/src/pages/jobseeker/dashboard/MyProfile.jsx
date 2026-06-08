@@ -4398,7 +4398,7 @@ const MyProfile = () => {
           ) : null}
 
           <div className="bg-transparent overflow-visible">
-            <div className="relative z-0 w-full max-w-full px-0 py-10">
+            <div className="relative z-0 w-full max-w-full px-0 pt-0 pb-10">
               <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1040px)] justify-center gap-10 items-start">
                 <div className="bg-white border border-[#d8e2ee] rounded-[18px] shadow-[0_8px_30px_rgba(46,102,166,0.10)] min-h-[760px] px-6 sm:px-10 lg:px-14 py-10">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
