@@ -1104,6 +1104,7 @@ const BasicInfoModal = ({
                 >
                   {profileImageUploading ? <Spinner size="small" /> : <FaCamera className="text-xs" />}
                 </button>
+
               </div>
             </div>
 
