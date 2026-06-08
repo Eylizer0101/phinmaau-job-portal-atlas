@@ -3320,8 +3320,8 @@ const MyProfile = () => {
         onChangeProfileItem={updateProfileListItem}
       />
 
-      <div className={`min-h-[100dvh] h-auto bg-[#f7f7f5] overflow-x-hidden overflow-y-visible ${isApplyFlow ? 'pb-28 sm:pb-32' : 'pb-6'}`}>
-        <div className="max-w-[1440px] mx-auto px-0 sm:px-4">
+      <div className={`min-h-[100dvh] h-auto bg-white overflow-x-hidden overflow-y-visible ${isApplyFlow ? 'pb-28 sm:pb-32' : 'pb-6'}`}>
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
           {error ? <Alert type="error" title="Error" message={error} onClose={() => setError('')} /> : null}
 
           {isApplyFlow && applyJob ? (
@@ -3330,10 +3330,10 @@ const MyProfile = () => {
             </div>
           ) : null}
 
-          <div className="bg-white border-t border-[#e5e7eb] overflow-visible">
-            <div className="relative z-50 w-full max-w-full px-4 sm:px-8 lg:px-12 py-10">
-              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,780px)] justify-center gap-24 items-start">
-                <div className="bg-white shadow-[0_4px_24px_rgba(0,0,0,0.08)] min-h-[760px] px-8 sm:px-14 py-10">
+          <div className="bg-white overflow-visible">
+            <div className="relative z-50 w-full max-w-full px-0 py-10">
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1040px)] justify-center gap-10 items-start">
+                <div className="bg-white border border-[#d8e2ee] rounded-[18px] shadow-[0_8px_30px_rgba(46,102,166,0.10)] min-h-[760px] px-6 sm:px-10 lg:px-14 py-10">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
                     <div>
                       <h2 className="text-[22px] font-bold text-gray-900 sr-only">Profile</h2>
@@ -3352,7 +3352,7 @@ const MyProfile = () => {
                       <button
                         type="button"
                         onClick={handleDownloadResume}
-                        className="h-10 px-4 rounded-md bg-[#26a69a] text-white text-sm font-bold inline-flex items-center gap-2 hover:bg-[#208d83]"
+                        className="h-10 px-4 rounded-md bg-[#2e66a6] text-white text-sm font-bold inline-flex items-center gap-2 hover:bg-[#255484]"
                       >
                         <FaDownload className="text-xs" />
                         Download CV
@@ -3361,7 +3361,7 @@ const MyProfile = () => {
                       <button
                         type="button"
                         onClick={() => setAddSectionsModalOpen(true)}
-                        className="h-10 px-4 rounded-md border border-gray-200 bg-white text-gray-800 font-semibold inline-flex items-center justify-center gap-2 hover:bg-gray-50"
+                        className="h-10 px-4 rounded-md border border-[#d8e2ee] bg-white text-black font-semibold inline-flex items-center justify-center gap-2 hover:bg-[#f7faff]"
                       >
                         <FaPlus className="text-sm" />
                         Add Sections
@@ -3399,7 +3399,7 @@ const MyProfile = () => {
 
                             <div className="flex items-center gap-3 shrink-0">
                               {section.key === 'skills' ? (
-                                <button type="button" className="hidden sm:inline-flex items-center gap-1 text-[#0b73ff] text-sm hover:underline">
+                                <button type="button" className="hidden sm:inline-flex items-center gap-1 text-[#2e66a6] text-sm hover:underline">
                                   <FaInfoCircle className="text-sm" /> Proficiency Level Description
                                 </button>
                               ) : null}
@@ -3407,7 +3407,7 @@ const MyProfile = () => {
                                 <button
                                   type="button"
                                   onClick={() => openProfileEditModal(section.key)}
-                                  className="h-9 px-2 text-[#0b73ff] text-sm font-bold shrink-0 hover:underline"
+                                  className="h-9 px-2 text-[#2e66a6] text-sm font-bold shrink-0 hover:underline"
                                 >
                                   {section.actionLabel}
                                 </button>
