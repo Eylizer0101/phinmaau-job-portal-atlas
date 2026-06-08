@@ -3156,13 +3156,13 @@ const MyProfile = () => {
                 title={doc.title}
                 uploaded={Boolean(docData.url)}
                 icon={doc.icon}
-                onUpload={(file) => handleCredentialUpload(doc.type, file)}
-                uploading={uploadingDocType === doc.type}
+                onUpload={(file) => handleVerificationUpload(doc.type, file)}
+                uploading={Boolean(uploadingDocs[doc.type])}
                 fileName={docData.filename}
                 fileUrl={docData.url}
-                popoverOpen={credentialPopover === doc.type}
-                onOpen={() => setCredentialPopover(doc.type)}
-                onClose={() => setCredentialPopover('')}
+                popoverOpen={activeCredentialPopover === doc.type}
+                onOpen={() => setActiveCredentialPopover(doc.type)}
+                onClose={() => setActiveCredentialPopover('')}
               />
             );
           })}
@@ -3389,7 +3389,10 @@ const MyProfile = () => {
                             <button
                               type="button"
                               onClick={() => {
-                                setActiveTab((prevTab) => (prevTab === targetTab ? '' : targetTab));
+                                if (section.key === 'about') setActiveTab('about');
+                                else if (section.key === 'work') setActiveTab('work');
+                                else if (section.key === 'skills') setActiveTab('skills');
+                                else setActiveTab(section.key);
                               }}
                               className="flex-1 min-h-[44px] inline-flex items-center gap-3 min-w-0 text-left"
                             >
