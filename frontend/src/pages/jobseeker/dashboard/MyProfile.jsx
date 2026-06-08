@@ -292,7 +292,7 @@ const SuccessPopup = ({ open, title, message, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black/25 flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-live="polite">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 text-center">
+      <div className="w-full max-w-sm  rounded-2xl shadow-2xl border border-gray-100 p-6 text-center">
         <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center mb-4" style={{ backgroundColor: '#e8f1ff' }}>
           <FaCheckCircle className="text-4xl" style={{ color: COLORS.primary }} />
         </div>
@@ -319,7 +319,7 @@ const ConfirmModal = ({
 
   return (
     <div className="fixed inset-0 z-[10000] bg-black/30 flex items-center justify-center px-4" role="dialog" aria-modal="true">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-100 p-6">
+      <div className="w-full max-w-md  rounded-2xl shadow-2xl border border-gray-100 p-6">
         <div className="text-lg font-bold text-gray-900">{title}</div>
         <div className="text-sm text-gray-600 mt-2">{message}</div>
 
@@ -360,7 +360,7 @@ const ResumePasswordModal = ({
 
   return (
     <div className="fixed inset-0 z-[10003] bg-black/35 flex items-center justify-center px-4 py-6" role="dialog" aria-modal="true">
-      <div className="w-full max-w-md bg-white rounded-[24px] shadow-2xl border border-gray-100 overflow-hidden">
+      <div className="w-full max-w-md rounded-[24px] shadow-2xl border border-gray-100 overflow-hidden">
         <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between gap-3">
           <div>
             <div className="text-[20px] font-bold text-gray-900">Enter Password</div>
@@ -829,7 +829,7 @@ const EditableProfileListSection = ({
 
       <div className="px-4 sm:px-10 pb-8">
         {!editing ? (
-          <div className="rounded-[20px] border border-gray-200 bg-[#fcfcfd] p-5 sm:p-6">
+          <div className="rounded-[20px] border border-gray-200  p-5 sm:p-6">
             {displayItems.length === 0 ? (
               <div className="rounded-[18px] border border-dashed border-gray-300 bg-white px-6 py-10 text-center">
                 <div className="text-[18px] font-bold text-gray-900">{config.emptyTitle}</div>
