@@ -2049,6 +2049,67 @@ exports.changeTemporaryPassword = async (req, res) => {
 };
 
 
+exports.downloadEmployerVerificationDoc = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const docType = String(req.params.docType || '').trim();
+    const disposition = String(req.query.disposition || 'inline').toLowerCase() === 'attachment' ? 'attachment' : 'inline';
+
+    if (req.user.role !== 'employer') {
+      return res.status(403).json({ success: false, message: 'Only employers can view verification documents' });
+    }
+
+    if (!Object.keys(EMPLOYER_DOC_LABELS).includes(docType)) {
+      return res.status(400).json({ success: false, message: 'Invalid document type.' });
+    }
+
+    const user = await User.findById(userId).select('employerProfile');
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const doc = user.employerProfile?.verificationDocs?.[docType] || {};
+    const rawUrl = String(doc.url || '').trim();
+
+    if (!rawUrl) {
+      return res.status(404).json({ success: false, message: 'Document not found.' });
+    }
+
+    const fallbackFileName = `${EMPLOYER_DOC_LABELS[docType] || docType}.pdf`;
+    const fileName = sanitizeDownloadFileName(doc.filename || fallbackFileName, fallbackFileName);
+    const sourceUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : makePublicUrl(req, rawUrl);
+    const candidates = buildCredentialDownloadCandidates({ rawUrl: sourceUrl, fileName, disposition });
+
+    let downloaded = null;
+    let lastError = null;
+
+    for (const candidate of candidates) {
+      try {
+        downloaded = await fetchUrlBuffer(candidate);
+        if (downloaded?.buffer?.length) break;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    if (!downloaded?.buffer?.length) {
+      console.error('Employer credential delivery failed:', lastError);
+      return res.status(502).json({ success: false, message: 'Unable to download credential file from storage.' });
+    }
+
+    const contentType = downloaded.contentType || doc.mimeType || getContentTypeFromFileName(fileName);
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Length', downloaded.buffer.length);
+    res.setHeader('Content-Disposition', `${disposition}; filename="${fileName.replace(/"/g, '')}"`);
+    res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+
+    return res.send(downloaded.buffer);
+  } catch (error) {
+    console.error('Error downloading employer verification document:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Error downloading verification document' });
+  }
+};
+
+
 // ---------------------------
 // JOBSEEKER SETTINGS: EMAIL / PHONE VERIFICATION
 // ---------------------------

@@ -376,7 +376,7 @@ const EmptyState = ({ icon, title, subtitle }) => {
   );
 };
 
-const CredentialRow = ({ item, uploading, inputRef, onUpload, editable, saving }) => {
+const CredentialRow = ({ item, uploading, inputRef, onUpload, onView, editable, saving }) => {
   const verification = item?.verification || { url: '', status: 'not_submitted' };
   const hasUploadedFile = Boolean(String(verification.url || '').trim());
 
@@ -397,7 +397,7 @@ const CredentialRow = ({ item, uploading, inputRef, onUpload, editable, saving }
         {hasUploadedFile ? (
           <button
             type="button"
-            onClick={() => window.open(verification.url, '_blank', 'noopener,noreferrer')}
+            onClick={() => onView?.(item.key)}
             className="text-[12px] font-medium text-[#2e66a6] hover:underline"
           >
             View
@@ -948,6 +948,36 @@ const CompanyProfile = () => {
     ]
   );
 
+  const viewVerificationDoc = useCallback(
+    async (docType) => {
+      clearMessages();
+
+      const previewWindow = window.open('', '_blank', 'noopener,noreferrer');
+      if (!previewWindow) {
+        setError('Please allow pop-ups to view this credential.');
+        return;
+      }
+
+      try {
+        const response = await api.get(`/auth/download-verification/${docType}?disposition=inline`, {
+          responseType: 'blob',
+        });
+
+        const blob = new Blob([response.data], {
+          type: response.headers?.['content-type'] || 'application/octet-stream',
+        });
+        const fileUrl = window.URL.createObjectURL(blob);
+        previewWindow.location.href = fileUrl;
+        window.setTimeout(() => window.URL.revokeObjectURL(fileUrl), 60000);
+      } catch (err) {
+        console.error('Credential view failed:', err);
+        previewWindow.close();
+        setError(err.response?.data?.message || 'Unable to view this credential. Please try again.');
+      }
+    },
+    [clearMessages]
+  );
+
   const uploadVerificationDoc = useCallback(
     async (docType, file) => {
       clearMessages();
@@ -1181,6 +1211,7 @@ const CompanyProfile = () => {
                             uploading={docUploading[doc.key]}
                             inputRef={docInputRefs}
                             onUpload={handleDocPick}
+                            onView={viewVerificationDoc}
                             editable={true}
                             saving={saving}
                           />

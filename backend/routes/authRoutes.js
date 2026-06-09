@@ -210,6 +210,14 @@ router.post(
 );
 
 
+
+router.get(
+  '/download-verification/:docType',
+  protect,
+  authorize('employer'),
+  authController.downloadEmployerVerificationDoc
+);
+
 // -------------------------------
 // JOBSEEKER SETTINGS EMAIL / MOBILE VERIFICATION
 // -------------------------------
