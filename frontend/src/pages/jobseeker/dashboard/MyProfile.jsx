@@ -573,9 +573,9 @@ const SuccessPopup = ({ open, title, message, onClose }) => {
 
 const ConfirmModal = ({
   open,
-  title = 'Confirm',
-  message = 'Are you sure?',
-  confirmText = 'Yes',
+  title = 'Are you sure you want to delete this?',
+  message = 'You will not be able to recover it.',
+  confirmText = 'Delete',
   cancelText = 'Cancel',
   tone = 'primary',
   onConfirm,
@@ -583,26 +583,34 @@ const ConfirmModal = ({
 }) => {
   if (!open) return null;
 
-  const confirmBg = tone === 'danger' ? '#ef4444' : COLORS.primary;
+  const confirmBg = tone === 'danger' ? COLORS.primary : COLORS.primary;
 
   return (
-    <div className="fixed inset-0 z-[10000] bg-black/30 flex items-center justify-center px-4" role="dialog" aria-modal="true">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-100 p-6">
-        <div className="text-lg font-bold text-gray-900">{title}</div>
-        <div className="text-sm text-gray-600 mt-2">{message}</div>
+    <div className="fixed inset-0 z-[10020] flex items-center justify-center bg-black/45 px-4" role="dialog" aria-modal="true">
+      <div className="w-full max-w-[420px] overflow-hidden rounded-[6px] bg-white shadow-[0_18px_55px_rgba(0,0,0,0.35)]">
+        <div className="flex items-start gap-4 px-6 py-6">
+          <div className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center">
+            <FaExclamationTriangle className="text-[42px] text-[#f4c21b]" />
+          </div>
 
-        <div className="flex justify-end gap-3 mt-6">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-[22px] font-medium leading-7 text-gray-800">{title}</h3>
+            <p className="mt-1 text-[15px] leading-6 text-gray-700">{message}</p>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 border-t border-gray-200 bg-white px-5 py-4">
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50"
+            className="h-11 min-w-[92px] rounded-[4px] border border-[#0b80ff] bg-white px-5 text-[16px] font-semibold text-[#0b80ff] transition hover:bg-blue-50"
           >
             {cancelText}
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="px-4 py-2 rounded-xl text-white font-semibold"
+            className="h-11 min-w-[92px] rounded-[4px] px-5 text-[16px] font-semibold text-white transition hover:opacity-90"
             style={{ backgroundColor: confirmBg }}
           >
             {confirmText}
@@ -2787,6 +2795,30 @@ const MyProfile = () => {
     onConfirmAction: null,
   });
 
+  const closeConfirmModal = () => {
+    setConfirmState({
+      open: false,
+      title: '',
+      message: '',
+      confirmText: 'Yes',
+      cancelText: 'Cancel',
+      tone: 'primary',
+      onConfirmAction: null,
+    });
+  };
+
+  const openDeleteConfirmation = ({ title = 'Are you sure you want to delete this?', message = 'You will not be able to recover it.', confirmText = 'Delete', onConfirm }) => {
+    setConfirmState({
+      open: true,
+      title,
+      message,
+      confirmText,
+      cancelText: 'Cancel',
+      tone: 'danger',
+      onConfirmAction: onConfirm,
+    });
+  };
+
   const [userData, setUserData] = useState(null);
   const [profileImageUploading, setProfileImageUploading] = useState(false);
   const profileImageInputRef = useRef(null);
@@ -3828,16 +3860,24 @@ const MyProfile = () => {
   };
 
   const removeSkillRow = (index) => {
-    setDrafts((prev) => {
-      const rows = normalizeSkillRows(prev.skillRows || [
-        ...(prev.technicalSkills || []),
-        ...(prev.softSkills || []),
-      ], true).filter((_, itemIndex) => itemIndex !== index);
+    openDeleteConfirmation({
+      title: 'Are you sure you want to delete this?',
+      message: 'You will not be able to recover it.',
+      confirmText: 'Delete',
+      onConfirm: () => {
+        setDrafts((prev) => {
+          const rows = normalizeSkillRows(prev.skillRows || [
+            ...(prev.technicalSkills || []),
+            ...(prev.softSkills || []),
+          ], true).filter((_, itemIndex) => itemIndex !== index);
 
-      return {
-        ...prev,
-        skillRows: rows.length ? rows : [{ skill: '', proficiency: DEFAULT_PROFICIENCY_LEVEL }],
-      };
+          return {
+            ...prev,
+            skillRows: rows.length ? rows : [{ skill: '', proficiency: DEFAULT_PROFICIENCY_LEVEL }],
+          };
+        });
+        closeConfirmModal();
+      },
     });
   };
 
@@ -3860,10 +3900,18 @@ const MyProfile = () => {
   };
 
   const removeProfileListItem = (sectionKey, index) => {
-    setDrafts((prev) => ({
-      ...prev,
-      [sectionKey]: (Array.isArray(prev[sectionKey]) ? prev[sectionKey] : []).filter((_, itemIndex) => itemIndex !== index),
-    }));
+    openDeleteConfirmation({
+      title: 'Are you sure you want to delete this?',
+      message: 'You will not be able to recover it.',
+      confirmText: 'Delete',
+      onConfirm: () => {
+        setDrafts((prev) => ({
+          ...prev,
+          [sectionKey]: (Array.isArray(prev[sectionKey]) ? prev[sectionKey] : []).filter((_, itemIndex) => itemIndex !== index),
+        }));
+        closeConfirmModal();
+      },
+    });
   };
 
   const updateProfileListItem = (sectionKey, index, field, value) => {
@@ -3886,14 +3934,22 @@ const MyProfile = () => {
   };
 
   const removeEducationEntry = (index) => {
-    setDrafts((prev) => {
-      const nextEntries = normalizeEducationEntries(prev.educationEntries || [], true)
-        .filter((_, itemIndex) => itemIndex !== index);
+    openDeleteConfirmation({
+      title: 'Are you sure you want to delete this?',
+      message: 'You will not be able to recover it.',
+      confirmText: 'Delete',
+      onConfirm: () => {
+        setDrafts((prev) => {
+          const nextEntries = normalizeEducationEntries(prev.educationEntries || [], true)
+            .filter((_, itemIndex) => itemIndex !== index);
 
-      return {
-        ...prev,
-        educationEntries: nextEntries.length ? nextEntries : [createEmptyEducationEntry()],
-      };
+          return {
+            ...prev,
+            educationEntries: nextEntries.length ? nextEntries : [createEmptyEducationEntry()],
+          };
+        });
+        closeConfirmModal();
+      },
     });
   };
 
@@ -4185,14 +4241,11 @@ const MyProfile = () => {
     const workId = item?._id || item?.id;
     if (!workId) return;
 
-    setConfirmState({
-      open: true,
-      title: 'Delete Work Experience',
-      message: 'Are you sure you want to delete this work experience entry?',
+    openDeleteConfirmation({
+      title: 'Are you sure you want to delete this?',
+      message: 'You will not be able to recover it.',
       confirmText: 'Delete',
-      cancelText: 'Cancel',
-      tone: 'danger',
-      onConfirmAction: async () => {
+      onConfirm: async () => {
         try {
           const token = localStorage.getItem('token');
           await axios.delete(`${API_BASE}/auth/work-experiences/${workId}`, {
@@ -4260,14 +4313,11 @@ const MyProfile = () => {
     const sectionTitle = MORE_PROFILE_SECTIONS[sectionKey]?.title || 'Section';
     setMoreSectionMenuOpen('');
 
-    setConfirmState({
-      open: true,
-      title: `Delete ${sectionTitle}?`,
-      message: `This will remove all saved data under ${sectionTitle}. This action will also update your database.`,
-      confirmText: 'Delete Section',
-      cancelText: 'Cancel',
-      tone: 'danger',
-      onConfirmAction: async () => {
+    openDeleteConfirmation({
+      title: `Delete ${sectionTitle} section?`,
+      message: 'You will not be able to recover it.',
+      confirmText: 'Delete',
+      onConfirm: async () => {
         try {
           setSavingSection(sectionKey);
           setError('');
@@ -4631,17 +4681,7 @@ const MyProfile = () => {
         confirmText={confirmState.confirmText}
         cancelText={confirmState.cancelText}
         tone={confirmState.tone}
-        onCancel={() =>
-          setConfirmState({
-            open: false,
-            title: '',
-            message: '',
-            confirmText: 'Yes',
-            cancelText: 'Cancel',
-            tone: 'primary',
-            onConfirmAction: null,
-          })
-        }
+        onCancel={closeConfirmModal}
         onConfirm={() => confirmState.onConfirmAction?.()}
       />
 
