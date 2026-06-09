@@ -2674,8 +2674,13 @@ const resumeDateRange = (item = {}) => {
 };
 
 const resumeEducationDateRange = (entry = {}) => {
-  const start = resumeText(entry.startYear);
-  const end = resumeText(entry.endYear || entry.yearGraduated);
+  const startMonth = resumeText(entry.startMonth);
+  const startYear = resumeText(entry.startYear);
+  const endMonth = resumeText(entry.endMonth);
+  const endYear = resumeText(entry.endYear || entry.yearGraduated);
+
+  const start = [startMonth, startYear].filter(Boolean).join(' ');
+  const end = [endMonth, endYear].filter(Boolean).join(' ');
 
   if (start && end) return `${start} - ${end}`;
   return end || start;
@@ -2900,9 +2905,9 @@ const buildResumeHtmlForPdf = (user = {}) => {
       ? educationEntries
           .map((entry) =>
             renderResumeDatedItem({
-              title: resumeText(entry.level || entry.educationalAttainment || profile.educationalAttainment, 'Education'),
-              subtitle: resumeText(entry.campus || profile.campus),
-              meta: [entry.course || profile.course, entry.studyField || profile.studyField].filter(Boolean).join(' / '),
+              title: resumeText(entry.level || entry.educationalAttainment, 'Education'),
+              subtitle: resumeText(entry.school || entry.campus),
+              meta: '',
               date: resumeEducationDateRange(entry),
             })
           )
@@ -2910,7 +2915,7 @@ const buildResumeHtmlForPdf = (user = {}) => {
       : renderResumeDatedItem({
           title: resumeText(profile.educationalAttainment, 'Education'),
           subtitle: resumeText(profile.campus),
-          meta: resumeText(profile.course),
+          meta: [profile.course, profile.studyField].filter(isMeaningfulResumeValue).join(' / '),
           date: resumeText(profile.yearGraduated),
         })
   );

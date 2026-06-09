@@ -75,8 +75,13 @@ const getDateRange = (item = {}) => {
 };
 
 const getEducationDateRange = (entry = {}) => {
-  const start = getText(entry.startYear);
-  const end = getText(entry.endYear || entry.yearGraduated);
+  const startMonth = getText(entry.startMonth);
+  const startYear = getText(entry.startYear);
+  const endMonth = getText(entry.endMonth);
+  const endYear = getText(entry.endYear || entry.yearGraduated);
+
+  const start = [startMonth, startYear].filter(Boolean).join(' ');
+  const end = [endMonth, endYear].filter(Boolean).join(' ');
 
   if (start && end) return `${start} - ${end}`;
   return end || start;
@@ -612,9 +617,9 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
       ? educationEntries
           .map((entry) =>
             datedItemHtml({
-              title: getText(entry.level || entry.educationalAttainment || formData.educationalAttainment, 'Education'),
-              subtitle: getText(entry.campus || formData.campus),
-              meta: [entry.course || formData.course, entry.studyField || formData.studyField].filter(Boolean).join(' / '),
+              title: getText(entry.level || entry.educationalAttainment, 'Education'),
+              subtitle: getText(entry.school || entry.campus),
+              meta: '',
               date: getEducationDateRange(entry),
             })
           )
@@ -622,7 +627,7 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
       : datedItemHtml({
           title: getText(formData.educationalAttainment, 'Education'),
           subtitle: getText(formData.campus),
-          meta: getText(formData.course),
+          meta: [formData.course, formData.studyField].filter(isMeaningfulResumeValue).join(' / '),
           date: getText(formData.yearGraduated),
         })
   );
