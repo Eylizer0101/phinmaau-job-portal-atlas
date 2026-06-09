@@ -357,6 +357,7 @@ const MORE_PROFILE_SECTIONS = {
       { key: 'title', label: 'Title', placeholder: 'e.g. Leadership training' },
       { key: 'organization', label: 'Organizer', placeholder: 'Who is the Organizer?' },
       { key: 'date', label: 'Date', placeholder: 'Month Year — Month Year' },
+      { key: 'description', label: 'Description (optional)', type: 'textarea', placeholder: '' },
     ],
   },
   awards: {
@@ -1191,6 +1192,8 @@ const SmallSelect = ({ value, onChange, options = [], placeholder = 'Select', di
 
 const DatePickerRow = ({ value, onChange, mode = 'range', allowPresent = false, allowSingleDate = false, singleDateLabel = 'Single Date', yearOptions = PROFILE_YEAR_OPTIONS }) => {
   const parts = splitDateLabel(value);
+  const [singleDateChecked, setSingleDateChecked] = useState(() => Boolean(allowSingleDate && parts.isSingleDate));
+  const singleDateActive = Boolean(allowSingleDate && singleDateChecked);
 
   const updateSingle = (key, nextValue) => {
     const next = { month: parts.fromMonth, year: parts.fromYear, [key]: nextValue };
@@ -1199,6 +1202,21 @@ const DatePickerRow = ({ value, onChange, mode = 'range', allowPresent = false, 
 
   const updateRange = (patch) => {
     onChange(composeRangeDateLabel({ ...parts, ...patch }));
+  };
+
+  const handleFromChange = (patch) => {
+    if (singleDateActive) {
+      const next = { month: parts.fromMonth, year: parts.fromYear, ...patch };
+      onChange(composeSingleDateLabel(next));
+      return;
+    }
+
+    updateRange(patch);
+  };
+
+  const handleToChange = (patch) => {
+    setSingleDateChecked(false);
+    updateRange(patch);
   };
 
   if (mode === 'single') {
@@ -1214,23 +1232,23 @@ const DatePickerRow = ({ value, onChange, mode = 'range', allowPresent = false, 
     <>
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-[16px] text-gray-600">From<RequiredMark /></span>
-        <SmallSelect value={parts.fromMonth} onChange={(e) => updateRange({ fromMonth: e.target.value })} options={MONTH_OPTIONS} placeholder="Month" />
-        <SmallSelect value={parts.fromYear} onChange={(e) => updateRange({ fromYear: e.target.value })} options={yearOptions} placeholder="Year" />
+        <SmallSelect value={parts.fromMonth} onChange={(e) => handleFromChange({ fromMonth: e.target.value })} options={MONTH_OPTIONS} placeholder="Month" />
+        <SmallSelect value={parts.fromYear} onChange={(e) => handleFromChange({ fromYear: e.target.value })} options={yearOptions} placeholder="Year" />
 
         <span className="ml-1 text-[16px] text-gray-600">To<RequiredMark /></span>
         <SmallSelect
-          value={parts.toMonth}
-          onChange={(e) => updateRange({ toMonth: e.target.value })}
+          value={singleDateActive ? '' : parts.toMonth}
+          onChange={(e) => handleToChange({ toMonth: e.target.value })}
           options={MONTH_OPTIONS}
           placeholder="Month"
-          disabled={parts.isPresent}
+          disabled={parts.isPresent || singleDateActive}
         />
         <SmallSelect
-          value={parts.toYear}
-          onChange={(e) => updateRange({ toYear: e.target.value })}
+          value={singleDateActive ? '' : parts.toYear}
+          onChange={(e) => handleToChange({ toYear: e.target.value })}
           options={yearOptions}
           placeholder="Year"
-          disabled={parts.isPresent}
+          disabled={parts.isPresent || singleDateActive}
         />
       </div>
 
@@ -1239,7 +1257,10 @@ const DatePickerRow = ({ value, onChange, mode = 'range', allowPresent = false, 
           <input
             type="checkbox"
             checked={parts.isPresent}
-            onChange={(e) => updateRange({ isPresent: e.target.checked, toMonth: '', toYear: '' })}
+            onChange={(e) => {
+              setSingleDateChecked(false);
+              updateRange({ isPresent: e.target.checked, toMonth: '', toYear: '' });
+            }}
             className="w-4 h-4 rounded border-gray-300 accent-[#2e66a6]"
           />
           Present
@@ -1250,12 +1271,11 @@ const DatePickerRow = ({ value, onChange, mode = 'range', allowPresent = false, 
         <label className="mt-3 inline-flex items-center gap-2 text-[16px] text-gray-900">
           <input
             type="checkbox"
-            checked={parts.isSingleDate}
+            checked={singleDateActive}
             onChange={(e) => {
+              setSingleDateChecked(e.target.checked);
               if (e.target.checked) {
                 onChange(composeSingleDateLabel({ month: parts.fromMonth, year: parts.fromYear }));
-              } else {
-                onChange(composeRangeDateLabel({ ...parts, toMonth: '', toYear: '' }));
               }
             }}
             className="w-4 h-4 rounded border-gray-300 accent-[#2e66a6]"
@@ -1315,7 +1335,7 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
           <FormLabel required>Role</FormLabel>
           <PlainInput value={item.role} onChange={(e) => change('role', e.target.value)} placeholder="Role on the Project" />
         </div>
-        <DatePickerRow value={item.date} onChange={(value) => change('date', value)} allowPresent />
+        <DatePickerRow value={item.date} onChange={(value) => change('date', value)} allowPresent yearOptions={CERTIFICATION_YEAR_OPTIONS} />
         <div>
           <FormLabel>Description (optional)</FormLabel>
           <RichDescriptionToolbar />
@@ -1341,7 +1361,17 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
           <FormLabel required>Organizer</FormLabel>
           <PlainInput value={item.organization} onChange={(e) => change('organization', e.target.value)} placeholder="Who is the Organizer?" />
         </div>
-        <DatePickerRow value={item.date} onChange={(value) => change('date', value)} allowSingleDate singleDateLabel="Single Date" />
+        <DatePickerRow value={item.date} onChange={(value) => change('date', value)} allowSingleDate singleDateLabel="Single Date" yearOptions={CERTIFICATION_YEAR_OPTIONS} />
+        <div>
+          <FormLabel>Description (optional)</FormLabel>
+          <RichDescriptionToolbar />
+          <textarea
+            rows={5}
+            value={item.description || ''}
+            onChange={(e) => change('description', e.target.value)}
+            className="w-full px-3 py-3 border border-gray-300 rounded-b-[5px] bg-white text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6] resize-y"
+          />
+        </div>
       </>
     );
   }
