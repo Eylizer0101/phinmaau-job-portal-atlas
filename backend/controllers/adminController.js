@@ -124,12 +124,25 @@ const addMonths = (date, months) => {
 };
 
 const normalizeDashboardText = (value) => {
-  const text = String(value || '').trim();
-  const lower = text.toLowerCase().replace(/\s+/g, ' ');
+  return String(value || '').trim();
+};
 
-  if (['au main', 'aui main', 'a.u. main', 'arau llo main'].includes(lower)) return 'AU Main';
-  if (['au south', 'aui south', 'a.u. south'].includes(lower)) return 'AU South';
-  if (['au san jose', 'aui san jose', 'a.u. san jose', 'au san_jose'].includes(lower)) return 'AU San Jose';
+const normalizeDashboardCampus = (value) => {
+  const text = String(value || '').trim();
+  if (!text) return '';
+
+  const compact = text
+    .toLowerCase()
+    .replace(/phinma/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!compact) return '';
+
+  if (compact.includes('san jose') || compact.includes('sanjose')) return 'AU San Jose';
+  if (compact.includes('south')) return 'AU South';
+  if (compact.includes('main')) return 'AU Main';
 
   return text;
 };
@@ -199,8 +212,8 @@ const buildMonthBuckets = (start, end) => {
 const getJobseekerCampus = (user) => {
   const profile = user?.jobSeekerProfile || {};
   return (
-    normalizeDashboardText(profile.campus) ||
-    normalizeDashboardText(Array.isArray(profile.educationEntries) && profile.educationEntries.find((entry) => entry?.campus)?.campus) ||
+    normalizeDashboardCampus(profile.campus) ||
+    normalizeDashboardCampus(Array.isArray(profile.educationEntries) && profile.educationEntries.find((entry) => entry?.campus)?.campus) ||
     'Unspecified'
   );
 };
@@ -216,7 +229,7 @@ const applyDateMatch = (field, range) => {
 exports.getAdminDashboardAnalytics = async (req, res) => {
   try {
     const dateFilter = normalizeDashboardText(req.query.date || 'all');
-    const campusFilter = normalizeDashboardText(req.query.campus || 'all');
+    const campusFilter = req.query.campus && String(req.query.campus).toLowerCase() !== 'all' ? normalizeDashboardCampus(req.query.campus) : 'all';
     const applicationStatusFilter = normalizeDashboardText(req.query.applicationStatus || 'all').toLowerCase();
     const employmentTypeFilter = normalizeDashboardText(req.query.employmentType || 'all');
     const workModeFilter = normalizeDashboardText(req.query.workMode || 'all');
@@ -241,10 +254,7 @@ exports.getAdminDashboardAnalytics = async (req, res) => {
       return status === 'pending';
     }).length;
 
-    const campusOptions = [...new Set([
-      ...DASHBOARD_CAMPUSES,
-      ...jobseekers.map(getJobseekerCampus),
-    ].map(normalizeDashboardText).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const campusOptions = DASHBOARD_CAMPUSES;
 
     const employmentTypeOptions = [...new Set(jobs.map((job) => job.jobType).filter(Boolean))].sort((a, b) => a.localeCompare(b));
     const workModeOptions = [...new Set(jobs.map((job) => job.workMode).filter(Boolean))].sort((a, b) => a.localeCompare(b));
@@ -257,7 +267,10 @@ exports.getAdminDashboardAnalytics = async (req, res) => {
       return true;
     };
 
-    const campusMatches = (campus) => campusFilter.toLowerCase() === 'all' || String(campus || '').toLowerCase() === campusFilter.toLowerCase();
+    const campusMatches = (campus) => {
+      const normalizedCampus = normalizeDashboardCampus(campus);
+      return campusFilter.toLowerCase() === 'all' || normalizedCampus.toLowerCase() === campusFilter.toLowerCase();
+    };
     const jobMatches = (job) => {
       if (!job) return false;
       if (!inRange(job.createdAt)) return false;
@@ -290,7 +303,7 @@ exports.getAdminDashboardAnalytics = async (req, res) => {
 
       items.forEach((item) => {
         const key = getMonthKey(dateGetter(item));
-        const campus = normalizeDashboardText(campusGetter(item));
+        const campus = normalizeDashboardCampus(campusGetter(item));
         if (!map[key]) return;
         if (!map[key][campus]) map[key][campus] = 0;
         map[key][campus] += 1;
@@ -310,7 +323,7 @@ exports.getAdminDashboardAnalytics = async (req, res) => {
       (item) => item.createdAt,
       (item) => {
         const employer = item.employer || {};
-        return normalizeDashboardText(employer?.employerProfile?.campus) || normalizeDashboardText(item.campus) || 'Unspecified';
+        return normalizeDashboardCampus(employer?.employerProfile?.campus) || normalizeDashboardCampus(item.campus) || 'Unspecified';
       }
     );
 
@@ -326,8 +339,8 @@ exports.getAdminDashboardAnalytics = async (req, res) => {
       campusOptions.forEach((campus) => {
         const monthCampusApps = filteredApplications.filter((app) => {
           const appMonth = getMonthKey(app.appliedAt || app.createdAt);
-          const seekerCampus = getJobseekerCampus(app.jobseeker || {});
-          return appMonth === key && String(seekerCampus || '').toLowerCase() === String(campus || '').toLowerCase();
+          const seekerCampus = normalizeDashboardCampus(getJobseekerCampus(app.jobseeker || {}));
+          return appMonth === key && seekerCampus.toLowerCase() === String(campus || '').toLowerCase();
         });
 
         const hiredCount = monthCampusApps.filter((app) => String(app.status || '').toLowerCase() === 'hired').length;

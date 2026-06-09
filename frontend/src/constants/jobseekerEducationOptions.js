@@ -50,7 +50,7 @@ export const MAJOR_COURSE_OPTIONS = [
     "BA English Language",
 ];
 export const CAMPUS_OPTIONS = [
-  'Phinma Au Main',
-  'Phinma Au South',
-  'Phinma Au San Jose',
+  'AU Main',
+  'AU South',
+  'AU San Jose',
 ];

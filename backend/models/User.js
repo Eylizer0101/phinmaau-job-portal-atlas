@@ -2,6 +2,26 @@
 const mongoose = require('mongoose');
 const crypto = require('crypto');
 
+const normalizeCampusValue = (value) => {
+  const text = String(value || '').trim();
+  if (!text) return '';
+
+  const compact = text
+    .toLowerCase()
+    .replace(/phinma/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!compact) return '';
+
+  if (compact.includes('san jose') || compact.includes('sanjose')) return 'AU San Jose';
+  if (compact.includes('south')) return 'AU South';
+  if (compact.includes('main')) return 'AU Main';
+
+  return text;
+};
+
 // ---------------------------
 // Shared document schema
 // ---------------------------
@@ -183,7 +203,7 @@ const educationEntrySchema = new mongoose.Schema(
     level: { type: String, default: '', trim: true },
     educationalAttainment: { type: String, default: '', trim: true },
     school: { type: String, default: '', trim: true },
-    campus: { type: String, default: '', trim: true },
+    campus: { type: String, default: '', trim: true, set: normalizeCampusValue },
     course: { type: String, default: '', trim: true },
     studyField: { type: String, default: '', trim: true },
     startMonth: { type: String, default: '', trim: true },
@@ -335,7 +355,7 @@ const userSchema = new mongoose.Schema(
     // ---------------------------
     jobSeekerProfile: {
       course: { type: String, default: '', trim: true },
-      campus: { type: String, default: '', trim: true },
+      campus: { type: String, default: '', trim: true, set: normalizeCampusValue },
       yearGraduated: { type: String, default: '', trim: true },
       preferredWorkMode: { type: String, default: '', trim: true },
       technicalSkills: { type: String, default: '', trim: true },

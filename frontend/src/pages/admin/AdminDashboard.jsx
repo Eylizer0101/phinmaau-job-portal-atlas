@@ -72,6 +72,8 @@ const defaultDashboard = {
 const DUMMY_RECORD_COUNT = 6000;
 const DUMMY_START_YEAR = 1950;
 
+const ADMIN_DASHBOARD_CAMPUSES = ["AU Main", "AU South", "AU San Jose"];
+
 const dummyCampuses = ["AU Main", "AU South", "AU San Jose"];
 const dummyEmploymentTypes = ["Full-time", "Part-time", "Contractual", "Internship", "Project-based"];
 const dummyWorkModes = ["On-site", "Hybrid", "Remote", "Work From Home"];
@@ -393,11 +395,20 @@ const buildChartsWorkbook = ({ dashboard, filters, campusKeys }) => {
 
 const normalizeCampusLabel = (value) => {
   const text = String(value || "").trim();
-  const lower = text.toLowerCase().replace(/\s+/g, " ");
+  if (!text) return "";
 
-  if (["au main", "aui main", "a.u. main", "arau llo main"].includes(lower)) return "AU Main";
-  if (["au south", "aui south", "a.u. south"].includes(lower)) return "AU South";
-  if (["au san jose", "aui san jose", "a.u. san jose", "au san_jose"].includes(lower)) return "AU San Jose";
+  const compact = text
+    .toLowerCase()
+    .replace(/phinma/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!compact) return "";
+
+  if (compact.includes("san jose") || compact.includes("sanjose")) return "AU San Jose";
+  if (compact.includes("south")) return "AU South";
+  if (compact.includes("main")) return "AU Main";
 
   return text;
 };
@@ -426,8 +437,9 @@ const mergeCampusSeries = (series = []) => {
 };
 
 const uniqueCampuses = (campuses = []) => {
-  const normalized = campuses.map(normalizeCampusLabel).filter(Boolean);
-  return [...new Set(normalized)];
+  const normalized = campuses.map(normalizeCampusLabel).filter((campus) => ADMIN_DASHBOARD_CAMPUSES.includes(campus));
+  const merged = [...new Set([...ADMIN_DASHBOARD_CAMPUSES, ...normalized])];
+  return ADMIN_DASHBOARD_CAMPUSES.filter((campus) => merged.includes(campus));
 };
 
 const campusColors = ["#063b69", "#0f9f6e", "#d89000", "#6366f1", "#ef4444", "#64748b"];
@@ -565,6 +577,7 @@ const sortMonthlySeries = (series = []) => {
 
 const normalizeMonthlyChartSeries = (series = [], keys = []) => {
   const mergedByMonth = new Map();
+  const normalizedKeys = uniqueCampuses(keys);
 
   (series || []).forEach((item) => {
     const monthLabel = String(item?.label || "").slice(0, 3);
@@ -577,8 +590,17 @@ const normalizeMonthlyChartSeries = (series = [], keys = []) => {
     }
 
     const row = mergedByMonth.get(label);
-    keys.forEach((key) => {
-      row[key] = Number(row[key] || 0) + Number(item?.[key] || 0);
+    normalizedKeys.forEach((key) => {
+      row[key] = Number(row[key] || 0);
+    });
+
+    Object.entries(item || {}).forEach(([key, value]) => {
+      if (key === "label") return;
+
+      const campus = normalizeCampusLabel(key);
+      if (!normalizedKeys.includes(campus)) return;
+
+      row[campus] = Number(row[campus] || 0) + Number(value || 0);
     });
   });
 
@@ -1612,8 +1634,18 @@ const AdminDashboard = () => {
       const response = await api.get("/admin/dashboard", { params: filters });
       const payload = response.data || defaultDashboard;
       const campuses = uniqueCampuses(payload?.filters?.options?.campuses || []);
+      const payloadCharts = payload?.charts || defaultDashboard.charts;
+      const normalizedCharts = {
+        ...payloadCharts,
+        applicationTrends: mergeCampusSeries(payloadCharts.applicationTrends || []),
+        jobPostingTrends: mergeCampusSeries(payloadCharts.jobPostingTrends || []),
+        registrationTrends: mergeCampusSeries(payloadCharts.registrationTrends || []),
+        hireRateByCampus: mergeCampusSeries(payloadCharts.hireRateByCampus || []),
+      };
+
       setDashboard({
         ...payload,
+        charts: normalizedCharts,
         filters: {
           ...(payload.filters || {}),
           options: {
@@ -1666,9 +1698,12 @@ const AdminDashboard = () => {
   const filterOptions = activeDashboard?.filters?.options || defaultDashboard.filters.options;
 
   const campusKeys = useMemo(() => {
-    const campuses = filterOptions.campuses || [];
-    if (filters.campus !== "all") return campuses.filter((campus) => campus === filters.campus);
-    return campuses.slice(0, 4);
+    const campuses = uniqueCampuses(filterOptions.campuses || []);
+    if (filters.campus !== "all") {
+      const selectedCampus = normalizeCampusLabel(filters.campus);
+      return campuses.filter((campus) => campus === selectedCampus);
+    }
+    return campuses;
   }, [filterOptions.campuses, filters.campus]);
 
   const updateFilter = (key, value) => setFilters((prev) => ({ ...prev, [key]: value }));
