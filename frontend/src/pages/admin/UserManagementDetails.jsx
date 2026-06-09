@@ -71,6 +71,8 @@ const TABS = [
   { key: "applications", label: "Application History", icon: "history" },
 ];
 
+const APPLICATIONS_PER_PAGE = 6;
+
 const UserManagementDetails = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
@@ -83,6 +85,7 @@ const UserManagementDetails = () => {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("personal");
   const [activeEmployerTab, setActiveEmployerTab] = useState("about");
+  const [applicationPage, setApplicationPage] = useState(1);
   const [brokenAvatar, setBrokenAvatar] = useState(false);
 
   const apiHost = useMemo(() => {
@@ -159,6 +162,17 @@ const UserManagementDetails = () => {
   useEffect(() => {
     setBrokenAvatar(false);
   }, [userId, user?.profileImage]);
+
+  useEffect(() => {
+    setApplicationPage(1);
+  }, [userId, applications.length]);
+
+  const totalApplicationPages = Math.max(1, Math.ceil(applications.length / APPLICATIONS_PER_PAGE));
+
+  const paginatedApplications = useMemo(() => {
+    const startIndex = (applicationPage - 1) * APPLICATIONS_PER_PAGE;
+    return applications.slice(startIndex, startIndex + APPLICATIONS_PER_PAGE);
+  }, [applications, applicationPage]);
 
   const profile = user?.jobSeekerProfile || {};
   const docs = profile.verificationDocs || {};
@@ -383,7 +397,7 @@ const UserManagementDetails = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
-              {applications.map((app) => {
+              {paginatedApplications.map((app) => {
                 const job = app.job || {};
                 const employerProfile = app.employer?.employerProfile || {};
                 return (
@@ -431,6 +445,47 @@ const UserManagementDetails = () => {
               })}
             </tbody>
           </table>
+          {applications.length > APPLICATIONS_PER_PAGE && (
+            <div className="flex flex-col gap-3 border-t border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs font-medium text-slate-500">
+                Showing {(applicationPage - 1) * APPLICATIONS_PER_PAGE + 1} to {Math.min(applicationPage * APPLICATIONS_PER_PAGE, applications.length)} of {applications.length} applications
+              </p>
+
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setApplicationPage((page) => Math.max(page - 1, 1))}
+                  disabled={applicationPage === 1}
+                  className={cn(
+                    "rounded-lg border px-3 py-1.5 text-xs font-bold transition",
+                    applicationPage === 1
+                      ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  )}
+                >
+                  Previous
+                </button>
+
+                <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700">
+                  Page {applicationPage} of {totalApplicationPages}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setApplicationPage((page) => Math.min(page + 1, totalApplicationPages))}
+                  disabled={applicationPage === totalApplicationPages}
+                  className={cn(
+                    "rounded-lg border px-3 py-1.5 text-xs font-bold transition",
+                    applicationPage === totalApplicationPages
+                      ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  )}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ) : <EmptyState text="Wala pang application history." />}
     </section>
