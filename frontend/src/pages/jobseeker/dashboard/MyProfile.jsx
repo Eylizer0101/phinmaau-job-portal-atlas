@@ -1149,6 +1149,64 @@ const composeRangeDateLabel = ({ fromMonth = '', fromYear = '', toMonth = '', to
   return fromText || toText;
 };
 
+const getYearNumber = (year) => {
+  const number = Number(year);
+  return Number.isFinite(number) ? number : null;
+};
+
+const getMonthIndex = (month) => MONTH_OPTIONS.findIndex((item) => item === month);
+
+const getValidEndYearOptions = (yearOptions = [], startYear = '') => {
+  const startYearNumber = getYearNumber(startYear);
+  if (!startYearNumber) return yearOptions;
+
+  return yearOptions.filter((year) => {
+    const yearNumber = getYearNumber(year);
+    return !yearNumber || yearNumber >= startYearNumber;
+  });
+};
+
+const getValidEndMonthOptions = (startMonth = '', startYear = '', endYear = '') => {
+  if (!startMonth || !startYear || !endYear || String(startYear) !== String(endYear)) {
+    return MONTH_OPTIONS;
+  }
+
+  const startMonthIndex = getMonthIndex(startMonth);
+  if (startMonthIndex < 0) return MONTH_OPTIONS;
+
+  return MONTH_OPTIONS.filter((month) => getMonthIndex(month) >= startMonthIndex);
+};
+
+const normalizeRangeDateParts = (parts = {}) => {
+  const nextParts = { ...parts };
+
+  if (nextParts.isPresent) {
+    nextParts.toMonth = '';
+    nextParts.toYear = '';
+    return nextParts;
+  }
+
+  const fromYearNumber = getYearNumber(nextParts.fromYear);
+  const toYearNumber = getYearNumber(nextParts.toYear);
+
+  if (fromYearNumber && toYearNumber && toYearNumber < fromYearNumber) {
+    nextParts.toYear = '';
+    nextParts.toMonth = '';
+    return nextParts;
+  }
+
+  if (nextParts.fromYear && nextParts.toYear && String(nextParts.fromYear) === String(nextParts.toYear)) {
+    const fromMonthIndex = getMonthIndex(nextParts.fromMonth);
+    const toMonthIndex = getMonthIndex(nextParts.toMonth);
+
+    if (fromMonthIndex >= 0 && toMonthIndex >= 0 && toMonthIndex < fromMonthIndex) {
+      nextParts.toMonth = '';
+    }
+  }
+
+  return nextParts;
+};
+
 const RequiredMark = () => <span className="text-red-500"> *</span>;
 
 const FormLabel = ({ children, required = false }) => (
@@ -1215,13 +1273,16 @@ const DatePickerRow = ({
   };
 
   const updateRange = (patch) => {
-    const nextParts = { ...parts, ...patch };
+    const nextParts = normalizeRangeDateParts({ ...parts, ...patch });
     if (allowSingleDate && isSingleDateMode) {
       onChange(composeSingleDateLabel({ month: nextParts.fromMonth, year: nextParts.fromYear }));
       return;
     }
     onChange(composeRangeDateLabel(nextParts));
   };
+
+  const endYearOptions = getValidEndYearOptions(yearOptions, parts.fromYear);
+  const endMonthOptions = getValidEndMonthOptions(parts.fromMonth, parts.fromYear, parts.toYear);
 
   if (mode === 'single') {
     return (
@@ -1243,14 +1304,14 @@ const DatePickerRow = ({
         <SmallSelect
           value={parts.toMonth}
           onChange={(e) => updateRange({ toMonth: e.target.value })}
-          options={MONTH_OPTIONS}
+          options={endMonthOptions}
           placeholder="Month"
           disabled={parts.isPresent || isSingleDateMode}
         />
         <SmallSelect
           value={parts.toYear}
           onChange={(e) => updateRange({ toYear: e.target.value })}
-          options={yearOptions}
+          options={endYearOptions}
           placeholder="Year"
           disabled={parts.isPresent || isSingleDateMode}
         />
@@ -2467,14 +2528,43 @@ const ProfileEditModal = ({
                   placeholder="Enter school / university"
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-[auto_130px_110px_auto_130px_110px] gap-3 md:items-end">
-                  <div className="pb-3 text-[15px] text-gray-600">From<span className="text-red-500">*</span></div>
-                  <Select label="Month" value={entry.startMonth} onChange={(e) => onChangeEducationEntry(index, 'startMonth', e.target.value)} options={MONTH_OPTIONS} placeholder="Month" />
-                  <Select label="Year" value={entry.startYear} onChange={(e) => onChangeEducationEntry(index, 'startYear', e.target.value)} options={yearOptions} placeholder="Year" />
-                  <div className="pb-3 text-[15px] text-gray-600">To</div>
-                  <Select label="Month" value={entry.endMonth} onChange={(e) => onChangeEducationEntry(index, 'endMonth', e.target.value)} options={MONTH_OPTIONS} placeholder="Month" />
-                  <Select label="Year" value={entry.endYear || entry.yearGraduated} onChange={(e) => onChangeEducationEntry(index, 'endYear', e.target.value)} options={yearOptions} placeholder="Year" />
-                </div>
+                {(() => {
+                  const endYearValue = entry.endYear || entry.yearGraduated;
+                  const endYearOptions = getValidEndYearOptions(yearOptions, entry.startYear);
+                  const endMonthOptions = getValidEndMonthOptions(entry.startMonth, entry.startYear, endYearValue);
+
+                  return (
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="text-[16px] text-gray-600">From<span className="text-red-500">*</span></span>
+                      <SmallSelect
+                        value={entry.startMonth}
+                        onChange={(e) => onChangeEducationEntry(index, 'startMonth', e.target.value)}
+                        options={MONTH_OPTIONS}
+                        placeholder="Month"
+                      />
+                      <SmallSelect
+                        value={entry.startYear}
+                        onChange={(e) => onChangeEducationEntry(index, 'startYear', e.target.value)}
+                        options={yearOptions}
+                        placeholder="Year"
+                      />
+
+                      <span className="text-[16px] text-gray-600">To</span>
+                      <SmallSelect
+                        value={entry.endMonth}
+                        onChange={(e) => onChangeEducationEntry(index, 'endMonth', e.target.value)}
+                        options={endMonthOptions}
+                        placeholder="Month"
+                      />
+                      <SmallSelect
+                        value={endYearValue}
+                        onChange={(e) => onChangeEducationEntry(index, 'endYear', e.target.value)}
+                        options={endYearOptions}
+                        placeholder="Year"
+                      />
+                    </div>
+                  );
+                })()}
 
                 <TextArea
                   label="Description (optional)"
@@ -3817,6 +3907,22 @@ const MyProfile = () => {
         if (field === 'level') nextItem.educationalAttainment = value;
         if (field === 'school') nextItem.campus = value;
         if (field === 'endYear') nextItem.yearGraduated = value;
+
+        if (['startMonth', 'startYear', 'endMonth', 'endYear'].includes(field)) {
+          const normalizedDate = normalizeRangeDateParts({
+            fromMonth: nextItem.startMonth,
+            fromYear: nextItem.startYear,
+            toMonth: nextItem.endMonth,
+            toYear: nextItem.endYear || nextItem.yearGraduated,
+          });
+
+          nextItem.startMonth = normalizedDate.fromMonth;
+          nextItem.startYear = normalizedDate.fromYear;
+          nextItem.endMonth = normalizedDate.toMonth;
+          nextItem.endYear = normalizedDate.toYear;
+          nextItem.yearGraduated = normalizedDate.toYear;
+        }
+
         return nextItem;
       }),
     }));
