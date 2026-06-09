@@ -4150,7 +4150,7 @@ const MyProfile = () => {
                 {fullName || 'YOUR NAME'}
               </h1>
               <div className="mt-2 font-serif text-[13px] text-gray-900">
-                {[buildAddressString(formData), formData.email].filter(Boolean).join(' • ') || 'Complete your basic information to get started.'}
+                {[buildAddressString(formData), formData.email, formData.phoneNumber].filter(Boolean).join(' • ') || 'Complete your basic information to get started.'}
               </div>
               <div className="mt-2 font-serif italic text-[13px] text-gray-500">
                 {[formData.course, formData.yearGraduated ? `Class of ${formData.yearGraduated}` : ''].filter(Boolean).join(', ')}
