@@ -628,8 +628,8 @@ const ResumePasswordModal = ({
             <div className="text-[20px] font-bold text-gray-900">Enter Password</div>
             <div className="text-sm text-gray-500 mt-1">
               {mode === 'preview'
-                ? 'Please enter your account password before previewing your CV.'
-                : 'Please enter your account password before downloading your CV.'}
+                ? 'For your security, Please enter your account password before previewing your CV.'
+                : 'For your security, please enter your password to download your CV/Resume as PDF.'}
             </div>
           </div>
 
