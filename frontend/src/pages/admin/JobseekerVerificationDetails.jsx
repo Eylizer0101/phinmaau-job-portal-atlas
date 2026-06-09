@@ -791,10 +791,6 @@ const JobseekerVerificationDetails = () => {
                   </div>
 
                   <div className="grid grid-cols-1 gap-4">
-                    <InfoCard icon={<SvgIcon name="document" className="w-4 h-4" />} label="Current Address" value={profile.address} />
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4">
                     <InfoCard
                       icon={<SvgIcon name="document" className="w-4 h-4" />}
                       label="Technical & Soft Skills"
@@ -802,8 +798,7 @@ const JobseekerVerificationDetails = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <InfoCard label="What Have You Done?" value={profile.whatHaveYouDone} />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <InfoCard label="Preferred Work Mode" value={profile.preferredWorkMode} />
                     <InfoCard label="How Soon Can You Start" value={profile.howSoonCanYouStart} />
                   </div>
