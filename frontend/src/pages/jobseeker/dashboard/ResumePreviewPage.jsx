@@ -693,6 +693,7 @@ const ResumePreviewPage = () => {
                     subtitle={getText(entry.school || entry.campus)}
                     meta=""
                     date={getEducationDateRange(entry)}
+                    description={entry.description}
                   />
                 ))
               ) : (
@@ -701,6 +702,7 @@ const ResumePreviewPage = () => {
                   subtitle={getText(formData.campus)}
                   meta={[formData.course, formData.studyField].filter(isMeaningfulResumeValue).join(' / ')}
                   date={getText(formData.yearGraduated)}
+                  description={formData.eduDescription || formData.description}
                 />
               )}
             </Section>

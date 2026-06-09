@@ -2909,6 +2909,7 @@ const buildResumeHtmlForPdf = (user = {}) => {
               subtitle: resumeText(entry.school || entry.campus),
               meta: '',
               date: resumeEducationDateRange(entry),
+              description: entry.description,
             })
           )
           .join('')
@@ -2917,6 +2918,7 @@ const buildResumeHtmlForPdf = (user = {}) => {
           subtitle: resumeText(profile.campus),
           meta: [profile.course, profile.studyField].filter(isMeaningfulResumeValue).join(' / '),
           date: resumeText(profile.yearGraduated),
+          description: profile.eduDescription || profile.description,
         })
   );
 

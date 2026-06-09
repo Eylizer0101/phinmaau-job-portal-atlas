@@ -621,6 +621,7 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
               subtitle: getText(entry.school || entry.campus),
               meta: '',
               date: getEducationDateRange(entry),
+              description: entry.description,
             })
           )
           .join('')
@@ -629,6 +630,7 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
           subtitle: getText(formData.campus),
           meta: [formData.course, formData.studyField].filter(isMeaningfulResumeValue).join(' / '),
           date: getText(formData.yearGraduated),
+          description: formData.eduDescription || formData.description,
         })
   );
 
