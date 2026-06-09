@@ -6,7 +6,6 @@ import ProfileMoreDropdown from '../../../components/jobseeker/ProfileMoreDropdo
 import {
   MAJOR_COURSE_OPTIONS,
   CAMPUS_OPTIONS,
-  normalizeCampusValue,
   EDUCATIONAL_ATTAINMENT_OPTIONS,
   FIELD_OF_STUDY_OPTIONS,
 } from '../../../constants/jobseekerEducationOptions';
@@ -3218,8 +3217,6 @@ const MyProfile = () => {
   };
 
   const handleBasicInfoChange = (field, value) => {
-    const nextValue = field === 'campus' ? normalizeCampusValue(value) : value;
-
     setDrafts((prev) => {
       if (field === 'region') {
         return {
@@ -3240,7 +3237,7 @@ const MyProfile = () => {
 
       return {
         ...prev,
-        [field]: nextValue,
+        [field]: value,
       };
     });
   };
@@ -3314,7 +3311,7 @@ const MyProfile = () => {
           weight: profile.weight || '',
           preferredLanguage: profile.preferredLanguage || '',
 
-          campus: normalizeCampusValue(profile.campus || ''),
+          campus: profile.campus || '',
           course: profile.course || '',
           yearGraduated: profile.yearGraduated || '',
           preferredWorkMode: profile.preferredWorkMode || '',
@@ -3514,7 +3511,7 @@ const MyProfile = () => {
           jobSeekerProfile: {
             phoneNumber: drafts.phoneNumber,
             address: buildAddressString(drafts),
-            campus: normalizeCampusValue(drafts.campus),
+            campus: drafts.campus,
             course: drafts.course,
             yearGraduated: drafts.yearGraduated,
           },
@@ -3604,7 +3601,7 @@ const MyProfile = () => {
         payload = {
           jobSeekerProfile: {
             educationEntries: nextEducationEntries,
-            campus: normalizeCampusValue(drafts.campus || formData.campus),
+            campus: primaryEducation.school || primaryEducation.campus || drafts.campus,
             course: drafts.course,
             yearGraduated: primaryEducation.endYear || primaryEducation.yearGraduated || drafts.yearGraduated,
             educationalAttainment: primaryEducation.educationalAttainment || primaryEducation.level || drafts.educationalAttainment,
@@ -3649,7 +3646,7 @@ const MyProfile = () => {
           const nextFormData = {
             ...formData,
             educationEntries: nextEducationEntries,
-            campus: normalizeCampusValue(updatedProfile.campus || payload.jobSeekerProfile?.campus || formData.campus),
+            campus: updatedProfile.campus || payload.jobSeekerProfile?.campus || formData.campus,
             course: updatedProfile.course || payload.jobSeekerProfile?.course || formData.course,
             yearGraduated: updatedProfile.yearGraduated || payload.jobSeekerProfile?.yearGraduated || formData.yearGraduated,
             educationalAttainment: updatedProfile.educationalAttainment || payload.jobSeekerProfile?.educationalAttainment || formData.educationalAttainment,
@@ -3691,12 +3688,6 @@ const MyProfile = () => {
           setFormData((prev) => ({
             ...prev,
             ...drafts,
-            campus: normalizeCampusValue(drafts.campus),
-            address: combinedAddress,
-          }));
-          setDrafts((prev) => ({
-            ...prev,
-            campus: normalizeCampusValue(drafts.campus),
             address: combinedAddress,
           }));
         } else {
@@ -4082,7 +4073,7 @@ const MyProfile = () => {
 
       return {
         ...prev,
-        [field]: nextValue,
+        [field]: value,
       };
     });
   };

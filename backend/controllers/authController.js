@@ -77,24 +77,6 @@ const normalizeExtensionName = (value) => {
   return clean.toLowerCase() === 'none' ? '' : clean;
 };
 
-const normalizeCampusValue = (value) => {
-  const text = String(value || '').trim();
-  const normalized = text
-    .toLowerCase()
-    .replace(/phinma/g, '')
-    .replace(/a\.?u\.?/g, 'au')
-    .replace(/[._-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  if (!normalized) return '';
-  if (normalized.includes('main')) return 'AU Main';
-  if (normalized.includes('south')) return 'AU South';
-  if (normalized.includes('san jose') || normalized.includes('sanjose')) return 'AU San Jose';
-
-  return text;
-};
-
 const sendBrevoSms = async ({ to, message }) => {
   const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey || apiKey === 'your_brevo_api_key_here') {
@@ -742,7 +724,7 @@ exports.register = async (req, res) => {
 
       jobSeekerProfile: {
         course: String(course || '').trim(),
-        campus: normalizeCampusValue(campus),
+        campus: String(campus || '').trim(),
         yearGraduated: String(yearGraduated || '').trim(),
         preferredWorkMode: String(preferredWorkMode || '').trim(),
         technicalSkills: String(technicalSkills || '').trim(),
@@ -1216,10 +1198,6 @@ exports.updateProfile = async (req, res) => {
         ...(existingProfile.toObject?.() || existingProfile),
         ...updateData.jobSeekerProfile,
       };
-
-      if (Object.prototype.hasOwnProperty.call(updateData.jobSeekerProfile, 'campus')) {
-        updateData.jobSeekerProfile.campus = normalizeCampusValue(updateData.jobSeekerProfile.campus);
-      }
 
       if (!updateData.jobSeekerProfile.salaryCurrency) {
         updateData.jobSeekerProfile.salaryCurrency = existingProfile.salaryCurrency || 'PHP';
@@ -2380,10 +2358,6 @@ exports.updateUserProfile = async (req, res) => {
 
     if (Object.prototype.hasOwnProperty.call(updateData, 'extensionName')) {
       updateData.extensionName = normalizeExtensionName(updateData.extensionName);
-    }
-
-    if (updateData.jobSeekerProfile && Object.prototype.hasOwnProperty.call(updateData.jobSeekerProfile, 'campus')) {
-      updateData.jobSeekerProfile.campus = normalizeCampusValue(updateData.jobSeekerProfile.campus);
     }
 
     const updatedUser = await User.findByIdAndUpdate(userId, { $set: updateData }, { new: true, runValidators: true }).select('-password');
