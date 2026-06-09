@@ -1420,7 +1420,7 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
           <FormLabel required>Role</FormLabel>
           <PlainInput value={item.role} onChange={(e) => change('role', e.target.value)} placeholder="Role on the Organization" />
         </div>
-        <DatePickerRow value={item.date} onChange={(value) => change('date', value)} allowPresent />
+        <DatePickerRow value={item.date} onChange={(value) => change('date', value)} allowPresent yearOptions={CERTIFICATION_YEAR_OPTIONS} />
         <div>
           <FormLabel>Description (optional)</FormLabel>
           <PlainTextArea value={item.description} onChange={(e) => change('description', e.target.value)} />
@@ -2567,6 +2567,16 @@ const ProfileEditModal = ({
                             mode="single"
                             value={item[field.key]}
                             onChange={(value) => onChangeProfileItem(sectionKey, index, field.key, value)}
+                            yearOptions={CERTIFICATION_YEAR_OPTIONS}
+                          />
+                        </div>
+                      ) : (sectionKey === 'affiliations' || sectionKey === 'cocurricular') && field.key === 'date' ? (
+                        <div>
+                          <label className="block text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">{field.label}</label>
+                          <DatePickerRow
+                            value={item[field.key]}
+                            onChange={(value) => onChangeProfileItem(sectionKey, index, field.key, value)}
+                            allowPresent
                             yearOptions={CERTIFICATION_YEAR_OPTIONS}
                           />
                         </div>
