@@ -4218,7 +4218,7 @@ const MyProfile = () => {
           <div><b>Gender:</b> {textOrEmpty(formData.gender, 'Not provided')}</div>
           <div><b>Educational Attainment:</b> {textOrEmpty(formData.educationalAttainment, 'Not provided')}</div>
           <div><b>Civil Status:</b> {textOrEmpty(formData.civilStatus, 'Not provided')}</div>
-          <div><b>Study Field:</b> {textOrEmpty(formData.studyField || formData.course, 'Not provided')}</div>
+          <div><b>Double Degree:</b> {textOrEmpty(formData.studyField || formData.course, 'Not provided')}</div>
           <div><b>Birthday:</b> {textOrEmpty(formData.birthday, 'Not provided')}</div>
         </div>
       );
