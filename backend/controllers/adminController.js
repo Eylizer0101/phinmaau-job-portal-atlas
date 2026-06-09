@@ -127,52 +127,111 @@ const toSafeDownloadName = (name = 'document') =>
     .replace(/\s+/g, ' ')
     .trim() || 'document';
 
-const buildCloudinaryDeliveryUrl = (doc = {}, disposition = 'inline') => {
+const getCloudinaryAssetParts = (doc = {}) => {
   const originalUrl = String(doc?.url || '').trim();
-  if (!originalUrl || !isCloudinaryUrl(originalUrl) || !isCloudinaryConfiguredForDelivery()) return originalUrl;
+  if (!originalUrl || !isCloudinaryUrl(originalUrl) || !isCloudinaryConfiguredForDelivery()) return null;
 
   try {
     const parsed = new URL(originalUrl);
     const parts = parsed.pathname.split('/').filter(Boolean);
     const uploadIndex = parts.findIndex((part) => part === 'upload');
 
-    if (uploadIndex < 2) return originalUrl;
+    if (uploadIndex < 1) return null;
 
-    const resourceType = parts[uploadIndex - 1] || doc.resource_type || 'image';
-    const deliveryType = parts[uploadIndex - 0] ? (parts[uploadIndex - 0] && parts[uploadIndex - 1] ? parts[uploadIndex - 0] : 'upload') : 'upload';
+    const resourceTypeFromUrl = parts[uploadIndex - 1] || '';
+    const resourceType = ['image', 'raw', 'video'].includes(resourceTypeFromUrl)
+      ? resourceTypeFromUrl
+      : String(doc?.resource_type || 'image').trim() || 'image';
+
     const versionIndex = parts.findIndex((part, index) => index > uploadIndex && /^v\d+$/.test(part));
     const publicParts = parts.slice(versionIndex >= 0 ? versionIndex + 1 : uploadIndex + 1);
     const version = versionIndex >= 0 ? Number(parts[versionIndex].slice(1)) : undefined;
     const publicPathWithFormat = decodeURIComponent(publicParts.join('/'));
 
-    if (!publicPathWithFormat) return originalUrl;
+    if (!publicPathWithFormat) return null;
 
     const lastSegment = publicPathWithFormat.split('/').pop() || '';
     const extensionMatch = lastSegment.match(/\.([a-zA-Z0-9]+)$/);
-    const format = extensionMatch ? extensionMatch[1] : '';
+    const format = String(doc?.format || (extensionMatch ? extensionMatch[1] : '') || '').toLowerCase();
     const publicIdFromUrl = format
       ? publicPathWithFormat.slice(0, -(format.length + 1))
       : publicPathWithFormat;
 
-    const storedPublicId = String(doc?.filename || doc?.public_id || '').trim();
+    const storedPublicId = String(doc?.public_id || doc?.filename || '').trim();
     const publicId = storedPublicId && !storedPublicId.includes('.') ? storedPublicId : publicIdFromUrl;
 
-    const options = {
-      resource_type: resourceType,
-      type: 'upload',
-      secure: true,
-      sign_url: true,
+    return {
+      originalUrl,
+      resourceType,
+      version,
+      publicId,
+      format,
     };
-
-    if (version) options.version = version;
-    if (format && resourceType !== 'raw') options.format = format;
-    if (disposition === 'attachment') options.flags = 'attachment';
-
-    return cloudinary.url(publicId, options);
   } catch (error) {
-    console.error('Error building Cloudinary delivery URL:', error);
-    return originalUrl;
+    console.error('Error parsing Cloudinary document URL:', error);
+    return null;
   }
+};
+
+const addUniqueUrl = (urls, url) => {
+  if (url && !urls.includes(url)) urls.push(url);
+};
+
+const buildCloudinaryDeliveryUrls = (doc = {}, disposition = 'inline') => {
+  const originalUrl = String(doc?.url || '').trim();
+  if (!originalUrl) return [];
+
+  const asset = getCloudinaryAssetParts(doc);
+  if (!asset) return [originalUrl];
+
+  const urls = [];
+  const attachment = disposition === 'attachment';
+  const expiresAt = Math.floor(Date.now() / 1000) + 10 * 60;
+
+  const resourceTypesToTry = [asset.resourceType];
+  if (asset.format === 'pdf') {
+    if (!resourceTypesToTry.includes('raw')) resourceTypesToTry.push('raw');
+    if (!resourceTypesToTry.includes('image')) resourceTypesToTry.push('image');
+  }
+
+  resourceTypesToTry.forEach((resourceType) => {
+    try {
+      const signedOptions = {
+        resource_type: resourceType,
+        type: 'upload',
+        secure: true,
+        sign_url: true,
+      };
+
+      if (asset.version) signedOptions.version = asset.version;
+      if (asset.format && resourceType !== 'raw') signedOptions.format = asset.format;
+      if (attachment) signedOptions.flags = 'attachment';
+
+      addUniqueUrl(urls, cloudinary.url(asset.publicId, signedOptions));
+    } catch (error) {
+      console.error('Error creating signed Cloudinary URL:', error);
+    }
+
+    try {
+      const privateDownloadUrl = cloudinary.utils.private_download_url(
+        asset.publicId,
+        asset.format || undefined,
+        {
+          resource_type: resourceType,
+          type: 'upload',
+          expires_at: expiresAt,
+          attachment,
+        }
+      );
+
+      addUniqueUrl(urls, privateDownloadUrl);
+    } catch (error) {
+      console.error('Error creating private Cloudinary download URL:', error);
+    }
+  });
+
+  addUniqueUrl(urls, originalUrl);
+  return urls;
 };
 
 const getVerificationDocFromUser = (user, docType) => {
@@ -213,13 +272,33 @@ const streamVerificationDocument = async (req, res, userRole) => {
     }
 
     const disposition = String(req.query.disposition || 'inline').toLowerCase() === 'attachment' ? 'attachment' : 'inline';
-    const deliveryUrl = buildCloudinaryDeliveryUrl(doc, disposition);
+    const deliveryUrls = buildCloudinaryDeliveryUrls(doc, disposition);
 
-    const fileResponse = await fetch(deliveryUrl);
+    let fileResponse = null;
+    let lastStatus = 500;
 
-    if (!fileResponse.ok) {
-      console.error('Document delivery failed:', fileResponse.status, deliveryUrl);
-      return res.status(fileResponse.status).json({
+    for (const deliveryUrl of deliveryUrls) {
+      try {
+        const response = await fetch(deliveryUrl, {
+          headers: {
+            'User-Agent': 'AGAPAY-admin-document-delivery/1.0',
+          },
+        });
+
+        if (response.ok) {
+          fileResponse = response;
+          break;
+        }
+
+        lastStatus = response.status;
+        console.error('Document delivery failed:', response.status, deliveryUrl);
+      } catch (fetchError) {
+        console.error('Document delivery request error:', fetchError?.message || fetchError, deliveryUrl);
+      }
+    }
+
+    if (!fileResponse) {
+      return res.status(lastStatus || 500).json({
         success: false,
         message: 'Unable to access document file. Please check Cloudinary PDF/raw delivery settings or re-upload the document.',
       });
