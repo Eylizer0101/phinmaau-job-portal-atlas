@@ -50,7 +50,25 @@ export const MAJOR_COURSE_OPTIONS = [
     "BA English Language",
 ];
 export const CAMPUS_OPTIONS = [
-  'Phinma Au Main',
-  'Phinma Au South',
-  'Phinma Au San Jose',
+  'AU Main',
+  'AU South',
+  'AU San Jose',
 ];
+
+export const normalizeCampusValue = (value = '') => {
+  const text = String(value || '').trim();
+  const normalized = text
+    .toLowerCase()
+    .replace(/phinma/g, '')
+    .replace(/a\.?u\.?/g, 'au')
+    .replace(/[._-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!normalized) return '';
+  if (normalized.includes('main')) return 'AU Main';
+  if (normalized.includes('south')) return 'AU South';
+  if (normalized.includes('san jose') || normalized.includes('sanjose')) return 'AU San Jose';
+
+  return text;
+};

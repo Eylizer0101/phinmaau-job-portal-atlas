@@ -393,11 +393,18 @@ const buildChartsWorkbook = ({ dashboard, filters, campusKeys }) => {
 
 const normalizeCampusLabel = (value) => {
   const text = String(value || "").trim();
-  const lower = text.toLowerCase().replace(/\s+/g, " ");
+  const lower = text
+    .toLowerCase()
+    .replace(/phinma/g, "")
+    .replace(/a\.?u\.?/g, "au")
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
-  if (["au main", "aui main", "a.u. main", "arau llo main"].includes(lower)) return "AU Main";
-  if (["au south", "aui south", "a.u. south"].includes(lower)) return "AU South";
-  if (["au san jose", "aui san jose", "a.u. san jose", "au san_jose"].includes(lower)) return "AU San Jose";
+  if (!lower) return "";
+  if (lower.includes("main")) return "AU Main";
+  if (lower.includes("south")) return "AU South";
+  if (lower.includes("san jose") || lower.includes("sanjose")) return "AU San Jose";
 
   return text;
 };
@@ -423,6 +430,41 @@ const mergeCampusSeries = (series = []) => {
   });
 
   return sortMonthlySeries(Array.from(mergedByMonth.values()));
+};
+
+const normalizeDashboardCampusPayload = (payload = defaultDashboard) => {
+  const charts = payload?.charts || defaultDashboard.charts;
+  const options = payload?.filters?.options || defaultDashboard.filters.options;
+
+  const normalizedCampusSeries = {
+    applicationTrends: mergeCampusSeries(charts.applicationTrends || []),
+    jobPostingTrends: mergeCampusSeries(charts.jobPostingTrends || []),
+    registrationTrends: mergeCampusSeries(charts.registrationTrends || []),
+    hireRateByCampus: mergeCampusSeries(charts.hireRateByCampus || []),
+  };
+
+  const campusesFromOptions = uniqueCampuses(options.campuses || []);
+  const campusesFromCharts = uniqueCampuses(
+    Object.values(normalizedCampusSeries)
+      .flat()
+      .flatMap((row) => Object.keys(row || {}).filter((key) => key !== "label"))
+  );
+  const campuses = [...new Set([...campusesFromOptions, ...campusesFromCharts])];
+
+  return {
+    ...payload,
+    filters: {
+      ...(payload.filters || {}),
+      options: {
+        ...options,
+        campuses,
+      },
+    },
+    charts: {
+      ...charts,
+      ...normalizedCampusSeries,
+    },
+  };
 };
 
 const uniqueCampuses = (campuses = []) => {
@@ -1610,18 +1652,8 @@ const AdminDashboard = () => {
       setLoading(true);
       setError("");
       const response = await api.get("/admin/dashboard", { params: filters });
-      const payload = response.data || defaultDashboard;
-      const campuses = uniqueCampuses(payload?.filters?.options?.campuses || []);
-      setDashboard({
-        ...payload,
-        filters: {
-          ...(payload.filters || {}),
-          options: {
-            ...(payload?.filters?.options || {}),
-            campuses,
-          },
-        },
-      });
+      const payload = normalizeDashboardCampusPayload(response.data || defaultDashboard);
+      setDashboard(payload);
     } catch (err) {
       console.error("Admin dashboard error:", err);
       setError(err?.response?.data?.message || "Unable to load dashboard data.");
