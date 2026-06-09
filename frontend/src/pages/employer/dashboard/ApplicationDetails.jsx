@@ -619,7 +619,7 @@ const ApplicationDetails = () => {
               <section className="space-y-7">
                 <div>
                   <h3 className="text-lg font-semibold tracking-[-0.005em] text-slate-900">Objective</h3>
-                  <p className="mt-3 text-sm leading-7 text-gray-600">{display(profile.aboutMe, 'No about me added yet.')}</p>
+                  <p className="mt-3 text-sm leading-7 text-gray-600">{display(profile.aboutMe, 'No objective added yet.')}</p>
                 </div>
 
                 <div>

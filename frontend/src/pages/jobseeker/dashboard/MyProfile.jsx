@@ -4600,7 +4600,23 @@ const MyProfile = () => {
                               }}
                               className="flex-1 min-h-[44px] inline-flex items-center gap-3 min-w-0 text-left"
                             >
-                              <span className="text-gray-500 text-[14px] leading-none">{isOpen ? '⌃' : '⌄'}</span>
+                              <span className="w-5 h-5 inline-flex items-center justify-center text-gray-500 shrink-0">
+                                <svg
+                                  className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                                  viewBox="0 0 20 20"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  aria-hidden="true"
+                                >
+                                  <path
+                                    d="M5 7.5L10 12.5L15 7.5"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
+                              </span>
                               <span className="font-serif text-[16px] font-bold uppercase tracking-wide text-gray-900 truncate">{section.label}</span>
                             </button>
 
