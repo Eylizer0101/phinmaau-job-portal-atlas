@@ -410,13 +410,22 @@ const MORE_SECTION_MODAL_STYLES = {
 };
 
 const MORE_SECTION_DESCRIPTIONS = {
-  certifications: 'There are jobs that require certain certifications or licensure. Being officially qualified is a plus.',
-  projects: 'Showcase your personal or professional projects that demonstrate your skills and initiative.',
-  seminars: 'Tell employers that you have certain skills and insights from trainings or other professionals.',
-  awards: 'Highlight recognitions, awards, and achievements that set you apart from other candidates.',
-  affiliations: 'Share organizations, memberships, or affiliations that help employers understand your background.',
-  cocurricular: 'Add extracurricular and co-curricular activities that show leadership and personality.',
-  references: 'Add professional references who can vouch for your skills, work ethic, and character.',
+  certifications: "There are jobs that require certain certifications. For those that don't, being officially qualified or skilled in a certain area is a plus. Don’t forget to include dates. Click Add at the top right corner to add Certifications.",
+  projects: "Projects include anything from portfolios, blogs, and websites to organizing events and building a robot. Showing work that you've already accomplished lets employers visualize your place in their company. Click Add at the top right corner to add Projects.",
+  seminars: 'This section is another way of telling employers that you have certain skills and insights from other professionals. Attending these events also says that you are a proactive learner. Click Add at the top right corner to add Seminars and Trainings.',
+  awards: "Assess the industry you are looking to enter and include related or noteworthy awards and recognition you've received in the past. Click Add at the top right corner to add Awards and Achievements.",
+  affiliations: 'Whether or not you have work experience, building your resume with co-curricular activities outside of work will help employers understand the type of worker you might be. Click Add at the top right corner to add Affiliations.',
+  cocurricular: 'Whether or not you have work experience, building your resume with co-curricular activities outside of work will help employers understand the type of worker you might be. Click Add at the top right corner to add Co-curricular Activities.',
+  references: 'Reference previous employers & co-workers who know you and your work ethic so your future employer can contact them about you. Click Add at the top right corner to add References.',
+};
+
+const EMPTY_SECTION_MESSAGES = {
+  about: 'This is your chance to show who you are. If an employer is skimming, you want to include skills, competencies, and information about yourself that are most relevant to the job. Click Add at the top right corner to add Summary.',
+  career: 'Set your work preferences and availability.',
+  work: "You've declared that you don't have work experience. Click Add at the top right corner to add Work History.",
+  skills: 'Enumerate your skills, competencies, and talents relevant to the position and industry you are applying to. Indicate proficiency levels (Basic, Novice, Intermediate, Advanced, Expert) for each skill. Click Add at the top right corner to add Skills.',
+  education: "You've declared that you don't have education. Click Add at the top right corner to add Educational Attainment.",
+  ...MORE_SECTION_DESCRIPTIONS,
 };
 
 
@@ -4171,11 +4180,30 @@ const MyProfile = () => {
         <div className="px-0 pb-5 pt-2 font-serif text-[13px] leading-5 text-gray-900 text-justify">
           {formData.aboutMe}
         </div>
-      ) : renderEmptyLine('This is your chance to show who you are. Add information about yourself that is most relevant to employers.');
+      ) : renderEmptyLine(EMPTY_SECTION_MESSAGES.about);
     }
 
     if (sectionKey === 'career') {
       const salaryText = [formData.minimumSalary, formData.maximumSalary].filter(Boolean).join(' - ');
+      const hasCareerData = [
+        formData.preferredWorkMode,
+        formData.employmentType,
+        salaryText,
+        formData.height,
+        formData.willingToRelocate,
+        formData.weight,
+        formData.howSoonCanYouStart,
+        formData.nationality,
+        formData.preferredLanguage,
+        formData.gender,
+        formData.educationalAttainment,
+        formData.civilStatus,
+        formData.studyField || formData.course,
+        formData.birthday,
+      ].some((value) => String(value || '').trim());
+
+      if (!hasCareerData) return renderEmptyLine(EMPTY_SECTION_MESSAGES.career);
+
       return (
         <div className="px-0 pb-5 pt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-16 gap-y-1 font-serif text-[13px] leading-5 text-gray-900">
           <div><b>Preferred Work Mode:</b> {textOrEmpty(formData.preferredWorkMode, 'Not provided')}</div>
@@ -4198,7 +4226,7 @@ const MyProfile = () => {
 
     if (sectionKey === 'work') {
       if (workExperienceLoading) return <div className="pb-5"><Spinner size="small" /></div>;
-      if (!workExperiences.length) return renderEmptyLine("You've declared that you don't have work experience yet. Click Add to add work experience.");
+      if (!workExperiences.length) return renderEmptyLine(EMPTY_SECTION_MESSAGES.work);
       return (
         <div className="px-0 pb-5 pt-2 space-y-4 font-serif text-[13px] leading-5 text-gray-900">
           <div className="flex justify-end">
@@ -4266,7 +4294,7 @@ const MyProfile = () => {
             ))}
           </div>
         </div>
-      ) : renderEmptyLine('Enumerate your skills, competencies, and talents including proficiency levels.');
+      ) : renderEmptyLine(EMPTY_SECTION_MESSAGES.skills);
     }
 
     if (sectionKey === 'education') {
@@ -4282,7 +4310,7 @@ const MyProfile = () => {
         description: formData.eduDescription,
       }];
       const hasAny = items.some((item) => item.school || item.campus || item.level || item.educationalAttainment || item.startMonth || item.startYear || item.endMonth || item.endYear || item.description);
-      if (!hasAny) return renderEmptyLine("You've declared that you don't have education. Click Add at the top right corner to add Educational Attainment.");
+      if (!hasAny) return renderEmptyLine(EMPTY_SECTION_MESSAGES.education);
       return (
         <div className="px-0 pb-5 pt-2 space-y-3 font-serif text-[13px] leading-5 text-gray-900">
           {items.map((item, index) => (
@@ -4328,7 +4356,7 @@ const MyProfile = () => {
     if (MORE_PROFILE_TAB_KEYS.includes(sectionKey)) {
       const config = MORE_PROFILE_SECTIONS[sectionKey];
       const items = Array.isArray(formData[sectionKey]) ? formData[sectionKey] : [];
-      if (!items.length) return renderEmptyLine(config.emptyTitle || 'No data added yet.');
+      if (!items.length) return renderEmptyLine(EMPTY_SECTION_MESSAGES[sectionKey] || config.emptyTitle || 'No data added yet.');
       return (
         <div className="px-0 pb-5 pt-2 space-y-3 font-serif text-[13px] leading-5 text-gray-900">
           {items.map((item, index) => {
