@@ -2560,6 +2560,16 @@ const ProfileEditModal = ({
                             onSingleDateCheckedChange={(checked) => onChangeProfileItem(sectionKey, index, 'isSingleDate', checked)}
                           />
                         </div>
+                      ) : sectionKey === 'awards' && field.key === 'date' ? (
+                        <div>
+                          <label className="block text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">{field.label}</label>
+                          <DatePickerRow
+                            mode="single"
+                            value={item[field.key]}
+                            onChange={(value) => onChangeProfileItem(sectionKey, index, field.key, value)}
+                            yearOptions={CERTIFICATION_YEAR_OPTIONS}
+                          />
+                        </div>
                       ) : field.type === 'textarea' ? (
                         <TextArea
                           label={field.label}
