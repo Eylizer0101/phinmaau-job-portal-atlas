@@ -357,6 +357,7 @@ const MORE_PROFILE_SECTIONS = {
       { key: 'title', label: 'Title', placeholder: 'e.g. Leadership training' },
       { key: 'organization', label: 'Organizer', placeholder: 'Who is the Organizer?' },
       { key: 'date', label: 'Date', placeholder: 'Month Year — Month Year' },
+      { key: 'description', label: 'Description (optional)', type: 'textarea', placeholder: '' },
     ],
   },
   awards: {
@@ -1180,7 +1181,11 @@ const SmallSelect = ({ value, onChange, options = [], placeholder = 'Select', di
     value={value || ''}
     onChange={onChange}
     disabled={disabled}
-    className="h-11 min-w-[108px] px-3 border border-gray-300 rounded-[5px] bg-white text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
+    className={`h-11 min-w-[108px] px-3 border border-gray-300 rounded-[5px] outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6] ${
+      disabled
+        ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-70'
+        : 'bg-white text-gray-900'
+    }`}
   >
     <option value="">{placeholder}</option>
     {options.map((option) => (
@@ -1203,8 +1208,13 @@ const DatePickerRow = ({ value, onChange, mode = 'range', allowPresent = false, 
   const updateRange = (patch) => {
     const nextParts = { ...parts, ...patch };
 
-    if (isSingleDateActive) {
+    if (isSingleDateActive || nextParts.isSingleDate) {
       onChange(composeSingleDateLabel({ month: nextParts.fromMonth, year: nextParts.fromYear }));
+      return;
+    }
+
+    if (nextParts.isPresent) {
+      onChange(composeRangeDateLabel({ ...nextParts, toMonth: '', toYear: '' }));
       return;
     }
 
@@ -1267,6 +1277,14 @@ const DatePickerRow = ({ value, onChange, mode = 'range', allowPresent = false, 
 
               if (checked) {
                 onChange(composeSingleDateLabel({ month: parts.fromMonth, year: parts.fromYear }));
+              } else {
+                onChange(composeRangeDateLabel({
+                  fromMonth: parts.fromMonth,
+                  fromYear: parts.fromYear,
+                  toMonth: parts.toMonth,
+                  toYear: parts.toYear,
+                  isPresent: false,
+                }));
               }
             }}
             className="w-4 h-4 rounded border-gray-300 accent-[#2e66a6]"
@@ -1353,6 +1371,10 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
           <PlainInput value={item.organization} onChange={(e) => change('organization', e.target.value)} placeholder="Who is the Organizer?" />
         </div>
         <DatePickerRow value={item.date} onChange={(value) => change('date', value)} allowSingleDate singleDateLabel="Single Date" yearOptions={CERTIFICATION_YEAR_OPTIONS} />
+        <div>
+          <FormLabel>Description (optional)</FormLabel>
+          <PlainTextArea value={item.description} onChange={(e) => change('description', e.target.value)} />
+        </div>
       </>
     );
   }
