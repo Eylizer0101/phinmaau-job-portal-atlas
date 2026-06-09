@@ -2617,7 +2617,7 @@ exports.getAdminArchive = async (req, res) => {
       tab === 'applications' || tab === 'all'
         ? Application.find(applicationQuery)
             .populate('job')
-            .populate('jobseeker', 'email firstName middleName lastName fullName jobSeekerProfile')
+            .populate('jobseeker', 'email firstName middleName lastName fullName profileImage avatar photoUrl image jobSeekerProfile')
             .populate('employer', 'email firstName lastName fullName companyName employerProfile')
             .sort({ updatedAt: -1 })
             .limit(500)
@@ -2732,7 +2732,7 @@ exports.getAdminArchiveDetails = async (req, res) => {
     } else if (type === 'applications') {
       item = await Application.findById(id)
         .populate('job')
-        .populate('jobseeker', 'email firstName middleName lastName fullName jobSeekerProfile')
+        .populate('jobseeker', 'email firstName middleName lastName fullName profileImage avatar photoUrl image jobSeekerProfile')
         .populate('employer', 'email firstName lastName fullName companyName employerProfile')
         .lean();
 

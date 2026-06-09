@@ -382,23 +382,54 @@ const JobseekerVerificationDetails = () => {
     }
   };
 
-  const handleDownloadFile = async (url, fallbackName = "document") => {
-    const fileUrl = buildFileUrl(url);
-    if (!fileUrl) return;
+  const getDownloadFileName = (contentDisposition, fallbackName = "document") => {
+    const disposition = String(contentDisposition || "");
+    const utfMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+    const normalMatch = disposition.match(/filename="?([^";]+)"?/i);
 
     try {
-      const response = await fetch(fileUrl, { credentials: "include" });
+      if (utfMatch?.[1]) return decodeURIComponent(utfMatch[1]);
+      if (normalMatch?.[1]) return normalMatch[1];
+    } catch {
+      return fallbackName;
+    }
 
-      if (!response.ok) {
-        throw new Error("Download failed");
-      }
+    return fallbackName;
+  };
 
-      const blob = await response.blob();
+  const fetchDocumentBlob = async (docType, disposition = "inline") => {
+    const response = await api.get(`/admin/jobseekers/verification/${id}/docs/${docType}`, {
+      params: { disposition },
+      responseType: "blob",
+    });
+
+    const contentType = response.headers?.["content-type"] || "application/octet-stream";
+    const fileName = getDownloadFileName(response.headers?.["content-disposition"], docType);
+    const blob = new Blob([response.data], { type: contentType });
+
+    return { blob, fileName };
+  };
+
+  const handleViewFile = async (docType) => {
+    try {
+      const { blob } = await fetchDocumentBlob(docType, "inline");
+      const blobUrl = window.URL.createObjectURL(blob);
+      window.open(blobUrl, "_blank", "noopener,noreferrer");
+      window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
+    } catch (viewError) {
+      console.error("Error viewing file:", viewError);
+      alert(viewError.response?.data?.message || "Unable to open this credential. Please try again.");
+    }
+  };
+
+  const handleDownloadFile = async (docType, fallbackName = "document") => {
+    try {
+      const { blob, fileName } = await fetchDocumentBlob(docType, "attachment");
       const blobUrl = window.URL.createObjectURL(blob);
       const downloadLink = document.createElement("a");
 
       downloadLink.href = blobUrl;
-      downloadLink.download = getFileNameFromUrl(url, fallbackName);
+      downloadLink.download = fileName || fallbackName;
       document.body.appendChild(downloadLink);
       downloadLink.click();
       downloadLink.remove();
@@ -406,14 +437,7 @@ const JobseekerVerificationDetails = () => {
       window.URL.revokeObjectURL(blobUrl);
     } catch (downloadError) {
       console.error("Error downloading file:", downloadError);
-
-      const fallbackLink = document.createElement("a");
-      fallbackLink.href = fileUrl;
-      fallbackLink.download = getFileNameFromUrl(url, fallbackName);
-      fallbackLink.rel = "noopener noreferrer";
-      document.body.appendChild(fallbackLink);
-      fallbackLink.click();
-      fallbackLink.remove();
+      alert(downloadError.response?.data?.message || "Unable to download this credential. Please try again.");
     }
   };
 
@@ -767,6 +791,10 @@ const JobseekerVerificationDetails = () => {
                   </div>
 
                   <div className="grid grid-cols-1 gap-4">
+                    <InfoCard icon={<SvgIcon name="document" className="w-4 h-4" />} label="Current Address" value={profile.address} />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4">
                     <InfoCard
                       icon={<SvgIcon name="document" className="w-4 h-4" />}
                       label="Technical & Soft Skills"
@@ -774,7 +802,8 @@ const JobseekerVerificationDetails = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <InfoCard label="What Have You Done?" value={profile.whatHaveYouDone} />
                     <InfoCard label="Preferred Work Mode" value={profile.preferredWorkMode} />
                     <InfoCard label="How Soon Can You Start" value={profile.howSoonCanYouStart} />
                   </div>
@@ -817,10 +846,9 @@ const JobseekerVerificationDetails = () => {
 
                         {hasFile ? (
                           <div className="flex shrink-0 items-center gap-2">
-                            <a
-                              href={buildFileUrl(doc.url)}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <button
+                              type="button"
+                              onClick={() => handleViewFile(docType.key)}
                               className={cn(
                                 "inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#E2E8F0] bg-white text-black transition hover:border-[#2e66a6]/30 hover:bg-[#2e66a6]/[0.06]",
                                 UI.ring
@@ -829,11 +857,11 @@ const JobseekerVerificationDetails = () => {
                               title={`View ${docType.label}`}
                             >
                               <SvgIcon name="eye" className="w-4 h-4" />
-                            </a>
+                            </button>
 
                             <button
                               type="button"
-                              onClick={() => handleDownloadFile(doc.url, docType.label)}
+                              onClick={() => handleDownloadFile(docType.key, docType.label)}
                               className={cn(
                                 "inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#E2E8F0] bg-white text-black transition hover:border-[#2e66a6]/30 hover:bg-[#2e66a6]/[0.06]",
                                 UI.ring
