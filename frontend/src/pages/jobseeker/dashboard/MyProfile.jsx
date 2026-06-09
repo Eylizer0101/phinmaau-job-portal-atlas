@@ -1181,7 +1181,9 @@ const SmallSelect = ({ value, onChange, options = [], placeholder = 'Select', di
     value={value || ''}
     onChange={onChange}
     disabled={disabled}
-    className="h-11 min-w-[108px] px-3 border border-gray-300 rounded-[5px] bg-white text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
+    className={`h-11 min-w-[108px] px-3 border border-gray-300 rounded-[5px] outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6] ${
+      disabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-900'
+    }`}
   >
     <option value="">{placeholder}</option>
     {options.map((option) => (
@@ -1316,7 +1318,12 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
           <FormLabel required>Role</FormLabel>
           <PlainInput value={item.role} onChange={(e) => change('role', e.target.value)} placeholder="Role on the Project" />
         </div>
-        <DatePickerRow value={item.date} onChange={(value) => change('date', value)} allowPresent />
+        <DatePickerRow
+          value={item.date}
+          onChange={(value) => change('date', value)}
+          allowPresent
+          yearOptions={CERTIFICATION_YEAR_OPTIONS}
+        />
         <div>
           <FormLabel>Description (optional)</FormLabel>
           <RichDescriptionToolbar />
