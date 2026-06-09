@@ -85,6 +85,11 @@ const PROFILE_YEAR_OPTIONS = Array.from(
   (_, index) => String(new Date().getFullYear() + 5 - index)
 );
 
+const CERTIFICATION_YEAR_OPTIONS = Array.from(
+  { length: new Date().getFullYear() - 1950 + 1 },
+  (_, index) => String(new Date().getFullYear() - index)
+);
+
 const EXTENSION_NAME_OPTIONS = ['Jr', 'Sr', 'II', 'III', 'IV', 'V'];
 
 const PREFERRED_WORK_MODE_OPTIONS = [
@@ -1184,7 +1189,7 @@ const SmallSelect = ({ value, onChange, options = [], placeholder = 'Select', di
   </select>
 );
 
-const DatePickerRow = ({ value, onChange, mode = 'range', allowPresent = false, allowSingleDate = false, singleDateLabel = 'Single Date' }) => {
+const DatePickerRow = ({ value, onChange, mode = 'range', allowPresent = false, allowSingleDate = false, singleDateLabel = 'Single Date', yearOptions = PROFILE_YEAR_OPTIONS }) => {
   const parts = splitDateLabel(value);
 
   const updateSingle = (key, nextValue) => {
@@ -1200,7 +1205,7 @@ const DatePickerRow = ({ value, onChange, mode = 'range', allowPresent = false, 
     return (
       <div className="flex flex-wrap items-center gap-2">
         <SmallSelect value={parts.fromMonth} onChange={(e) => updateSingle('month', e.target.value)} options={MONTH_OPTIONS} placeholder="Month" />
-        <SmallSelect value={parts.fromYear} onChange={(e) => updateSingle('year', e.target.value)} options={PROFILE_YEAR_OPTIONS} placeholder="Year" />
+        <SmallSelect value={parts.fromYear} onChange={(e) => updateSingle('year', e.target.value)} options={yearOptions} placeholder="Year" />
       </div>
     );
   }
@@ -1210,7 +1215,7 @@ const DatePickerRow = ({ value, onChange, mode = 'range', allowPresent = false, 
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-[16px] text-gray-600">From<RequiredMark /></span>
         <SmallSelect value={parts.fromMonth} onChange={(e) => updateRange({ fromMonth: e.target.value })} options={MONTH_OPTIONS} placeholder="Month" />
-        <SmallSelect value={parts.fromYear} onChange={(e) => updateRange({ fromYear: e.target.value })} options={PROFILE_YEAR_OPTIONS} placeholder="Year" />
+        <SmallSelect value={parts.fromYear} onChange={(e) => updateRange({ fromYear: e.target.value })} options={yearOptions} placeholder="Year" />
 
         <span className="ml-1 text-[16px] text-gray-600">To<RequiredMark /></span>
         <SmallSelect
@@ -1223,7 +1228,7 @@ const DatePickerRow = ({ value, onChange, mode = 'range', allowPresent = false, 
         <SmallSelect
           value={parts.toYear}
           onChange={(e) => updateRange({ toYear: e.target.value })}
-          options={PROFILE_YEAR_OPTIONS}
+          options={yearOptions}
           placeholder="Year"
           disabled={parts.isPresent}
         />
@@ -1293,7 +1298,7 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
         </div>
         <div>
           <FormLabel required>Issuance Date</FormLabel>
-          <DatePickerRow mode="single" value={item.date} onChange={(value) => change('date', value)} />
+          <DatePickerRow mode="single" value={item.date} onChange={(value) => change('date', value)} yearOptions={CERTIFICATION_YEAR_OPTIONS} />
         </div>
       </>
     );
@@ -2478,6 +2483,16 @@ const ProfileEditModal = ({
                   <div key={field.key} className={field.type === 'textarea' ? 'md:col-span-2' : ''}>
                     {field.type === 'textarea' ? (
                       <TextArea label={field.label} rows={3} value={item[field.key]} onChange={(e) => onChangeProfileItem(sectionKey, index, field.key, e.target.value)} placeholder={field.placeholder} />
+                    ) : sectionKey === 'certifications' && field.key === 'date' ? (
+                      <div>
+                        <label className="block text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">{field.label}</label>
+                        <DatePickerRow
+                          mode="single"
+                          value={item[field.key]}
+                          onChange={(value) => onChangeProfileItem(sectionKey, index, field.key, value)}
+                          yearOptions={CERTIFICATION_YEAR_OPTIONS}
+                        />
+                      </div>
                     ) : (
                       <Input label={field.label} value={item[field.key]} onChange={(e) => onChangeProfileItem(sectionKey, index, field.key, e.target.value)} placeholder={field.placeholder} />
                     )}
