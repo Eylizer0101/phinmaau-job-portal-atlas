@@ -490,6 +490,13 @@ const CompanyProfile = () => {
     remarks: '',
   });
 
+  const [credentialPreview, setCredentialPreview] = useState({
+    isOpen: false,
+    url: '',
+    title: '',
+    fileName: '',
+  });
+
   const [docUploading, setDocUploading] = useState({
     secRegistration: false,
     birRegistration: false,
@@ -654,6 +661,12 @@ const CompanyProfile = () => {
       });
     };
   }, [galleryPreviews, previewCover, previewLogo]);
+
+  useEffect(() => {
+    return () => {
+      if (credentialPreview.url) window.URL.revokeObjectURL(credentialPreview.url);
+    };
+  }, [credentialPreview.url]);
 
   useEffect(() => {
     if (location.hash) {
@@ -948,17 +961,19 @@ const CompanyProfile = () => {
     ]
   );
 
+  const closeCredentialPreview = useCallback(() => {
+    setCredentialPreview((prev) => {
+      if (prev.url) window.URL.revokeObjectURL(prev.url);
+      return { isOpen: false, url: '', title: '', fileName: '' };
+    });
+  }, []);
+
   const viewVerificationDoc = useCallback(
     async (docType) => {
       clearMessages();
 
-      const previewWindow = window.open('', '_blank', 'noopener,noreferrer');
-      if (!previewWindow) {
-        setError('Please allow pop-ups to view this credential.');
-        return;
-      }
-
       try {
+        const docLabel = DOC_TYPES.find((doc) => doc.key === docType)?.label || 'Credential';
         const response = await api.get(`/auth/download-verification/${docType}?disposition=inline`, {
           responseType: 'blob',
         });
@@ -967,11 +982,18 @@ const CompanyProfile = () => {
           type: response.headers?.['content-type'] || 'application/octet-stream',
         });
         const fileUrl = window.URL.createObjectURL(blob);
-        previewWindow.location.href = fileUrl;
-        window.setTimeout(() => window.URL.revokeObjectURL(fileUrl), 60000);
+
+        setCredentialPreview((prev) => {
+          if (prev.url) window.URL.revokeObjectURL(prev.url);
+          return {
+            isOpen: true,
+            url: fileUrl,
+            title: docLabel,
+            fileName: `${docLabel.replace(/[\/:*?"<>|]+/g, '-')} - credential`,
+          };
+        });
       } catch (err) {
         console.error('Credential view failed:', err);
-        previewWindow.close();
         setError(err.response?.data?.message || 'Unable to view this credential. Please try again.');
       }
     },
@@ -1311,6 +1333,42 @@ const CompanyProfile = () => {
             </div>
           </div>
         </div>
+
+
+        {credentialPreview.isOpen && credentialPreview.url ? (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 px-4 py-6">
+            <div className="flex h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+              <div className="flex items-center justify-between gap-3 border-b border-[#d1d5db] px-5 py-4">
+                <div className="min-w-0">
+                  <h3 className="truncate text-base font-semibold text-[#111827]">{credentialPreview.title}</h3>
+                  <p className="text-xs text-[#6b7280]">Credential preview</p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <a
+                    href={credentialPreview.url}
+                    download={credentialPreview.fileName || 'credential'}
+                    className="inline-flex h-9 items-center justify-center rounded-lg border border-[#d1d5db] bg-white px-3 text-xs font-semibold text-[#374151] hover:bg-[#f9fafb]"
+                  >
+                    Download
+                  </a>
+                  <button
+                    type="button"
+                    onClick={closeCredentialPreview}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#d1d5db] bg-white text-[#374151] hover:bg-[#f9fafb]"
+                    aria-label="Close credential preview"
+                  >
+                    <CloseIcon className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              <iframe
+                src={credentialPreview.url}
+                title={credentialPreview.title || 'Credential preview'}
+                className="h-full w-full flex-1 bg-white"
+              />
+            </div>
+          </div>
+        ) : null}
 
         {isEditOpen && (
           <div className="fixed inset-0 z-[70]">
