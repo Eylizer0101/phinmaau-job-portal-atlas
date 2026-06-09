@@ -663,9 +663,6 @@ exports.register = async (req, res) => {
       !campus ||
       !yearGraduated ||
       !preferredWorkMode ||
-      !technicalSkills ||
-      !softSkills ||
-      !whatHaveYouDone ||
       !howSoonCanYouStart
     ) {
       return res.status(400).json({ message: 'Please complete Career Profile fields' });

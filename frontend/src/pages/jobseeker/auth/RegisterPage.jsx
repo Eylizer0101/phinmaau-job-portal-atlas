@@ -6,116 +6,6 @@ import axios from 'axios';
 // ✅ Use existing dropdown options (course dropdown)
 import { MAJOR_COURSE_OPTIONS } from '../../../constants/jobseekerEducationOptions';
 
-// ✅ NEW: skills lists
-import { TECHNICAL_SKILLS } from '../../../constants/technicalSkills';
-import { SOFT_SKILLS } from '../../../constants/softSkills';
-
-// ✅ FIX: Move SkillChipsBox OUTSIDE RegisterPage to prevent remount/unfocus on every keystroke
-const SkillChipsBox = ({
-  type,
-  label,
-  query,
-  setQuery,
-  suggestions,
-  show,
-  setShow,
-  errorKey,
-  formData,
-  formErrors,
-  loading,
-  labelBase,
-  fieldClass,
-  describedBy,
-  errorText,
-  onPickSuggestion,
-  addSkill,
-  removeSkill,
-}) => (
-  <div className="space-y-2">
-    <label className={labelBase}>{label}</label>
-
-    <div className="relative">
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setShow(true);
-            }}
-            onFocus={() => setShow(true)}
-            onBlur={() => {
-              // delay hide para ma-click yung suggestion
-              setTimeout(() => setShow(false), 120);
-            }}
-            className={fieldClass(!!formErrors?.[errorKey])}
-            disabled={loading}
-            placeholder="Search Skills"
-            aria-invalid={!!formErrors?.[errorKey]}
-            aria-describedby={describedBy(formErrors?.[errorKey] ? `${errorKey}-error` : null)}
-          />
-
-          {show && suggestions?.length > 0 && (
-            <div className="absolute z-20 mt-1 w-full rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
-              <div className="max-h-44 overflow-auto py-1">
-                {suggestions.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => onPickSuggestion(type, s)}
-                    className="w-full text-left px-3 py-2 text-sm text-gray-800 hover:bg-gray-50"
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <button
-          type="button"
-          onClick={() => addSkill(type)}
-          disabled={loading}
-          className="h-11 px-4 rounded-xl text-sm font-semibold text-white bg-[#2e66a6] hover:bg-[#245387]
-            focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20 disabled:opacity-50"
-        >
-          Add
-        </button>
-      </div>
-
-      {errorText(`${errorKey}-error`, formErrors?.[errorKey])}
-    </div>
-
-    {/* Chips */}
-    <div className="rounded-xl border border-gray-200 bg-white p-3 min-h-[72px]">
-      <div className="flex flex-wrap gap-2">
-        {(type === 'technical' ? formData.technicalSkills : formData.softSkills).map((s) => (
-          <span
-            key={s}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-gray-200 text-xs font-semibold text-gray-700 bg-gray-50"
-          >
-            {s}
-            <button
-              type="button"
-              onClick={() => removeSkill(type, s)}
-              disabled={loading}
-              className="w-5 h-5 rounded-full flex items-center justify-center hover:bg-gray-200 text-gray-700
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20 disabled:opacity-50"
-              aria-label={`Remove ${s}`}
-              title="Remove"
-            >
-              ×
-            </button>
-          </span>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
 const RegisterPage = () => {
   const navigate = useNavigate();
 
@@ -125,10 +15,6 @@ const RegisterPage = () => {
   // ✅ 3 steps na lang (Step 4 removed; replaced with modal confirmations)
   const [currentStep, setCurrentStep] = useState(1);
 
-  // ✅ Career Profile sub-step
-  // 0 = main fields layout, 1 = skills subsection
-  const [careerProfileSubStep, setCareerProfileSubStep] = useState(0);
-
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState('');
   const [formErrors, setFormErrors] = useState({});
@@ -137,12 +23,6 @@ const RegisterPage = () => {
   // ✅ NEW: Modal states
   const [showConfirmModal, setShowConfirmModal] = useState(false); // "READY TO GO?"
   const [showSuccessModal, setShowSuccessModal] = useState(false); // "Thank you for signing up!"
-
-  // ✅ NEW: Skills UI states
-  const [techSkillQuery, setTechSkillQuery] = useState('');
-  const [softSkillQuery, setSoftSkillQuery] = useState('');
-  const [showTechSuggestions, setShowTechSuggestions] = useState(false);
-  const [showSoftSuggestions, setShowSoftSuggestions] = useState(false);
 
   const [formData, setFormData] = useState({
     // Step 1: Basic Information
@@ -159,11 +39,6 @@ const RegisterPage = () => {
     yearGraduated: '',
     preferredWorkMode: '',
 
-    // ✅ UPDATED: now arrays for chips
-    technicalSkills: [],
-    softSkills: [],
-
-    whatHaveYouDone: '',
     howSoonCanYouStart: '',
 
     // Step 3: Credentials Upload
@@ -297,92 +172,6 @@ const RegisterPage = () => {
     if (e.key >= '0' && e.key <= '9') e.preventDefault();
   };
 
-  // ---------- Skills helpers ----------
-  const normalize = (v) => String(v || '').trim();
-
-  const addSkill = (type) => {
-    if (loading) return;
-
-    if (type === 'technical') {
-      const raw = normalize(techSkillQuery);
-      if (!raw) return;
-
-      setFormData((prev) => {
-        const exists = prev.technicalSkills.some((s) => s.toLowerCase() === raw.toLowerCase());
-        if (exists) return prev;
-        return { ...prev, technicalSkills: [...prev.technicalSkills, raw] };
-      });
-
-      setTechSkillQuery('');
-      setShowTechSuggestions(false);
-      clearError('technicalSkills');
-      setServerError('');
-      return;
-    }
-
-    if (type === 'soft') {
-      const raw = normalize(softSkillQuery);
-      if (!raw) return;
-
-      setFormData((prev) => {
-        const exists = prev.softSkills.some((s) => s.toLowerCase() === raw.toLowerCase());
-        if (exists) return prev;
-        return { ...prev, softSkills: [...prev.softSkills, raw] };
-      });
-
-      setSoftSkillQuery('');
-      setShowSoftSuggestions(false);
-      clearError('softSkills');
-      setServerError('');
-    }
-  };
-
-  const removeSkill = (type, skill) => {
-    if (loading) return;
-
-    if (type === 'technical') {
-      setFormData((prev) => ({
-        ...prev,
-        technicalSkills: prev.technicalSkills.filter((s) => s !== skill),
-      }));
-      return;
-    }
-
-    if (type === 'soft') {
-      setFormData((prev) => ({
-        ...prev,
-        softSkills: prev.softSkills.filter((s) => s !== skill),
-      }));
-    }
-  };
-
-  const onPickSuggestion = (type, value) => {
-    if (loading) return;
-
-    if (type === 'technical') {
-      setTechSkillQuery(value);
-      setShowTechSuggestions(false);
-      return;
-    }
-
-    if (type === 'soft') {
-      setSoftSkillQuery(value);
-      setShowSoftSuggestions(false);
-    }
-  };
-
-  const techSuggestions = useMemo(() => {
-    const q = normalize(techSkillQuery).toLowerCase();
-    if (!q) return TECHNICAL_SKILLS.slice(0, 6);
-    return TECHNICAL_SKILLS.filter((s) => s.toLowerCase().includes(q)).slice(0, 8);
-  }, [techSkillQuery]);
-
-  const softSuggestions = useMemo(() => {
-    const q = normalize(softSkillQuery).toLowerCase();
-    if (!q) return SOFT_SKILLS.slice(0, 6);
-    return SOFT_SKILLS.filter((s) => s.toLowerCase().includes(q)).slice(0, 8);
-  }, [softSkillQuery]);
-
   // -------- Validations per step --------
   // ✅ Step 1 is now Basic Information
   const validateStep1 = () => {
@@ -424,34 +213,15 @@ const RegisterPage = () => {
     if (!String(formData.course || '').trim()) errors.course = 'Course is required';
     if (!String(formData.yearGraduated || '').trim()) errors.yearGraduated = 'Year Graduated is required';
     if (!String(formData.preferredWorkMode || '').trim()) errors.preferredWorkMode = 'Preferred Work Mode is required';
-    if (!String(formData.whatHaveYouDone || '').trim()) errors.whatHaveYouDone = 'This field is required';
     if (!String(formData.howSoonCanYouStart || '').trim()) errors.howSoonCanYouStart = 'This field is required';
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  const validateCareerAdditional = () => {
-    const errors = {};
 
-    if (!Array.isArray(formData.softSkills) || formData.softSkills.length === 0) {
-      errors.softSkills = 'Soft Skills is required';
-    }
-
-    if (!Array.isArray(formData.technicalSkills) || formData.technicalSkills.length === 0) {
-      errors.technicalSkills = 'Technical Skills & Experties is required';
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  // ✅ Step 2 is now Career Profile (combined for overall submit)
-  const validateStep2 = () => {
-    const ok1 = validateCareerMain();
-    const ok2 = validateCareerAdditional();
-    return ok1 && ok2;
-  };
+  // ✅ Step 2 is now Career Profile
+  const validateStep2 = () => validateCareerMain();
 
   // ✅ UPDATED: Step 3 validation
   // Required lang: CV, Diploma, Valid ID
@@ -501,17 +271,8 @@ const RegisterPage = () => {
         return;
       }
 
-      const okMain = validateCareerMain();
-      if (!okMain) {
+      if (!validateCareerMain()) {
         setCurrentStep(2);
-        setCareerProfileSubStep(0);
-        return;
-      }
-
-      const okAdd = validateCareerAdditional();
-      if (!okAdd) {
-        setCurrentStep(2);
-        setCareerProfileSubStep(1);
         return;
       }
 
@@ -530,11 +291,6 @@ const RegisterPage = () => {
       fd.append('yearGraduated', String(formData.yearGraduated).trim());
       fd.append('preferredWorkMode', String(formData.preferredWorkMode).trim());
 
-      // ✅ UPDATED: arrays -> string
-      fd.append('technicalSkills', (formData.technicalSkills || []).join(', ').trim());
-      fd.append('softSkills', (formData.softSkills || []).join(', ').trim());
-
-      fd.append('whatHaveYouDone', String(formData.whatHaveYouDone).trim());
       fd.append('howSoonCanYouStart', String(formData.howSoonCanYouStart).trim());
 
       // Step 2: Basic Info
@@ -647,7 +403,7 @@ const RegisterPage = () => {
 
   const STEP_FIELDS = {
     1: ['firstName', 'middleName', 'lastName', 'extensionName', 'email', 'phoneNumber'],
-    2: ['course', 'campus', 'yearGraduated', 'preferredWorkMode', 'technicalSkills', 'softSkills', 'whatHaveYouDone', 'howSoonCanYouStart'],
+    2: ['course', 'campus', 'yearGraduated', 'preferredWorkMode', 'howSoonCanYouStart'],
     3: ['cvFile', 'diplomaFile', 'validIdFile', 'torFile', 'sssFile', 'philhealthFile', 'pagibigFile', 'tinFile'],
   };
 
@@ -940,9 +696,7 @@ const RegisterPage = () => {
       case 2:
         return (
           <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
-            {/* MAIN CAREER PROFILE SECTION */}
-            {careerProfileSubStep === 0 && (
-              <div className="space-y-4">
+            <div className="space-y-4">
                 {/* Campus */}
                 <div className="space-y-1 md:col-span-2">
                   <label className={labelBase} htmlFor="campus">
@@ -1070,38 +824,6 @@ const RegisterPage = () => {
                   </div>
                 </div>
 
-                {/* What have you done */}
-                <div className="space-y-1 md:col-span-2">
-                  <label className={labelBase} htmlFor="whatHaveYouDone">
-                    What have you done?
-                  </label>
-                  <div className="relative">
-                    <div className={iconWrap}>
-                      <IconCap />
-                    </div>
-                    <select
-                      id="whatHaveYouDone"
-                      name="whatHaveYouDone"
-                      value={formData.whatHaveYouDone}
-                      onChange={handleChange}
-                      className={`${selectClass(!!formErrors.whatHaveYouDone)} pl-10`}
-                      disabled={loading}
-                      aria-invalid={!!formErrors.whatHaveYouDone}
-                      aria-describedby={formErrors.whatHaveYouDone ? 'whatHaveYouDone-error' : undefined}
-                    >
-                      <option value="" disabled>
-                        Select option
-                      </option>
-                      <option value="Internships / OJT">Internships / OJT</option>
-                      <option value="Freelance projects">Freelance projects</option>
-                      <option value="Academic projects">Academic projects</option>
-                      <option value="Volunteer work's">Volunteer work's</option>
-                      <option value="I have done something that is not listed here">I have done something that is not listed here</option>
-                    </select>
-                  </div>
-                  {errorText('whatHaveYouDone-error', formErrors.whatHaveYouDone)}
-                </div>
-
                 {/* How soon */}
                 <div className="space-y-1 md:col-span-2">
                   <label className={labelBase} htmlFor="howSoonCanYouStart">
@@ -1134,58 +856,7 @@ const RegisterPage = () => {
                   {errorText('howSoonCanYouStart-error', formErrors.howSoonCanYouStart)}
                 </div>
               </div>
-            )}
 
-            {/* SKILLS SUB SECTION */}
-            {careerProfileSubStep === 1 && (
-              <div className="space-y-4">
-                <div>
-                  <SkillChipsBox
-                    type="soft"
-                    label="Soft Skills"
-                    query={softSkillQuery}
-                    setQuery={setSoftSkillQuery}
-                    suggestions={softSuggestions}
-                    show={showSoftSuggestions}
-                    setShow={setShowSoftSuggestions}
-                    errorKey="softSkills"
-                    formData={formData}
-                    formErrors={formErrors}
-                    loading={loading}
-                    labelBase={labelBase}
-                    fieldClass={fieldClass}
-                    describedBy={describedBy}
-                    errorText={errorText}
-                    onPickSuggestion={onPickSuggestion}
-                    addSkill={addSkill}
-                    removeSkill={removeSkill}
-                  />
-                </div>
-
-                <div>
-                  <SkillChipsBox
-                    type="technical"
-                    label="Technical Skills & Experties"
-                    query={techSkillQuery}
-                    setQuery={setTechSkillQuery}
-                    suggestions={techSuggestions}
-                    show={showTechSuggestions}
-                    setShow={setShowTechSuggestions}
-                    errorKey="technicalSkills"
-                    formData={formData}
-                    formErrors={formErrors}
-                    loading={loading}
-                    labelBase={labelBase}
-                    fieldClass={fieldClass}
-                    describedBy={describedBy}
-                    errorText={errorText}
-                    onPickSuggestion={onPickSuggestion}
-                    addSkill={addSkill}
-                    removeSkill={removeSkill}
-                  />
-                </div>
-              </div>
-            )}
           </div>
         );
 
@@ -1254,18 +925,12 @@ const RegisterPage = () => {
     if (currentStep === 1) {
       if (validateStep1()) {
         setCurrentStep(2);
-        setCareerProfileSubStep(0);
       }
       return;
     }
 
     if (currentStep === 2) {
-      if (careerProfileSubStep === 0) {
-        if (validateCareerMain()) setCareerProfileSubStep(1);
-        return;
-      }
-
-      if (validateCareerAdditional()) {
+      if (validateCareerMain()) {
         setCurrentStep(3);
       }
       return;
@@ -1554,19 +1219,12 @@ const RegisterPage = () => {
                     {/* ACTIONS (Step 1-3 buttons only) */}
                     <div className="flex items-center justify-center pt-2">
                       <div className="flex items-center gap-3">
-                        {(currentStep > 1 || (currentStep === 2 && careerProfileSubStep === 1)) && (
+                        {currentStep > 1 && (
                           <button
                             type="button"
                             onClick={() => {
                               if (loading) return;
-
-                              if (currentStep === 2 && careerProfileSubStep === 1) {
-                                setCareerProfileSubStep(0);
-                                return;
-                              }
-
                               setCurrentStep((s) => Math.max(s - 1, 1));
-                              if (currentStep - 1 === 2) setCareerProfileSubStep(0);
                             }}
                             disabled={loading}
                             className="h-11 px-8 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-800 hover:bg-gray-50
