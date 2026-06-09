@@ -406,13 +406,13 @@ const MORE_PROFILE_SECTIONS = {
 const MORE_PROFILE_TAB_KEYS = Object.keys(MORE_PROFILE_SECTIONS);
 
 const MORE_SECTION_MODAL_STYLES = {
-  certifications: { icon: <FaGraduationCap />, color: COLORS.primary },
-  projects: { icon: <FaFolderOpen />, color: COLORS.primary },
-  seminars: { icon: <FaBookOpen />, color: COLORS.primary },
-  awards: { icon: <FaAward />, color: COLORS.primary },
-  affiliations: { icon: <FaUsers />, color: COLORS.primary },
-  cocurricular: { icon: <FaWaveSquare />, color: COLORS.primary },
-  references: { icon: <FaUserCheck />, color: COLORS.primary },
+  certifications: { icon: <FaGraduationCap />, color: '#f97316', bgColor: '#fff1e6', accentColor: COLORS.primary },
+  projects: { icon: <FaFolderOpen />, color: '#22c55e', bgColor: '#eafaf0', accentColor: COLORS.primary },
+  seminars: { icon: <FaBookOpen />, color: '#8b5cf6', bgColor: '#f2edff', accentColor: COLORS.primary },
+  awards: { icon: <FaAward />, color: '#f59e0b', bgColor: '#fff7df', accentColor: COLORS.primary },
+  affiliations: { icon: <FaUsers />, color: '#14b8a6', bgColor: '#e6fffb', accentColor: COLORS.primary },
+  cocurricular: { icon: <FaWaveSquare />, color: '#ef4444', bgColor: '#fff0f0', accentColor: COLORS.primary },
+  references: { icon: <FaUserCheck />, color: '#0ea5e9', bgColor: '#eaf6ff', accentColor: COLORS.primary },
 };
 
 const MORE_SECTION_DESCRIPTIONS = {
@@ -2168,7 +2168,7 @@ const EmailUpdateModal = ({
 };
 
 
-const AddSectionsModal = ({ open, addedSections = [], onAdd, onClose }) => {
+const AddSectionsModal = ({ open, addedSections = [], onAdd, onRemove, onClose }) => {
   if (!open) return null;
 
   return (
@@ -2189,12 +2189,21 @@ const AddSectionsModal = ({ open, addedSections = [], onAdd, onClose }) => {
           {MORE_PROFILE_TAB_KEYS.map((key) => {
             const config = MORE_PROFILE_SECTIONS[key];
             const alreadyAdded = addedSections.includes(key);
-            const style = MORE_SECTION_MODAL_STYLES[key] || { icon: <FaPlus />, color: '#2e66a6' };
+            const style = MORE_SECTION_MODAL_STYLES[key] || { icon: <FaPlus />, color: '#2e66a6', bgColor: '#eaf2fb', accentColor: COLORS.primary };
 
             return (
-              <div key={key} className="grid grid-cols-[48px_1fr_104px] items-center gap-5 py-5 border-b border-gray-200 last:border-b-0">
-                <div className="text-[38px] flex items-center justify-center shrink-0" style={{ color: style.color }}>
-                  {style.icon}
+              <div key={key} className="grid grid-cols-[62px_1fr_132px] items-center gap-5 py-5 border-b border-gray-200 last:border-b-0">
+                <div className="relative flex h-[52px] w-[52px] items-center justify-center shrink-0 rounded-[14px]" style={{ backgroundColor: style.bgColor || '#eaf2fb' }}>
+                  <span className="text-[30px] flex items-center justify-center" style={{ color: style.color || COLORS.primary }}>
+                    {style.icon}
+                  </span>
+                  <span
+                    className="absolute -right-1 -bottom-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white text-[11px] text-white shadow-sm"
+                    style={{ backgroundColor: style.accentColor || COLORS.primary }}
+                    aria-hidden="true"
+                  >
+                    +
+                  </span>
                 </div>
 
                 <div className="min-w-0">
@@ -2206,11 +2215,10 @@ const AddSectionsModal = ({ open, addedSections = [], onAdd, onClose }) => {
 
                 <button
                   type="button"
-                  onClick={() => onAdd(key)}
-                  disabled={alreadyAdded}
-                  className={`h-11 rounded-[7px] text-[15px] font-bold text-white transition ${alreadyAdded ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#2e66a6] hover:bg-[#2e66a6]/90'}`}
+                  onClick={() => (alreadyAdded ? onRemove?.(key) : onAdd(key))}
+                  className={`h-11 rounded-[4px] text-[15px] font-bold transition ${alreadyAdded ? 'border border-red-300 bg-white text-red-500 hover:bg-red-50' : 'bg-[#2e66a6] text-white hover:bg-[#2e66a6]/90'}`}
                 >
-                  {alreadyAdded ? 'ADDED' : 'ADD'}
+                  {alreadyAdded ? 'REMOVE' : 'ADD'}
                 </button>
               </div>
             );
@@ -4753,6 +4761,7 @@ const MyProfile = () => {
         open={addSectionsModalOpen}
         addedSections={addedMoreSections}
         onAdd={handleAddMoreSection}
+        onRemove={handleDeleteMoreSection}
         onClose={() => setAddSectionsModalOpen(false)}
       />
 
