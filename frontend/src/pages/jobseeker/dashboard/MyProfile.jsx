@@ -1192,8 +1192,22 @@ const SmallSelect = ({ value, onChange, options = [], placeholder = 'Select', di
   </select>
 );
 
-const DatePickerRow = ({ value, onChange, mode = 'range', allowPresent = false, allowSingleDate = false, singleDateLabel = 'Single Date', yearOptions = PROFILE_YEAR_OPTIONS }) => {
+const DatePickerRow = ({
+  value,
+  onChange,
+  mode = 'range',
+  allowPresent = false,
+  allowSingleDate = false,
+  singleDateLabel = 'Single Date',
+  yearOptions = PROFILE_YEAR_OPTIONS,
+  singleDateChecked,
+  onSingleDateCheckedChange,
+}) => {
   const parts = splitDateLabel(value);
+  const hasDateValue = Boolean(parts.fromMonth || parts.fromYear || parts.toMonth || parts.toYear);
+  const isSingleDateMode = allowSingleDate
+    ? (typeof singleDateChecked === 'boolean' ? singleDateChecked : Boolean(parts.isSingleDate && hasDateValue))
+    : false;
 
   const updateSingle = (key, nextValue) => {
     const next = { month: parts.fromMonth, year: parts.fromYear, [key]: nextValue };
@@ -1201,7 +1215,12 @@ const DatePickerRow = ({ value, onChange, mode = 'range', allowPresent = false, 
   };
 
   const updateRange = (patch) => {
-    onChange(composeRangeDateLabel({ ...parts, ...patch }));
+    const nextParts = { ...parts, ...patch };
+    if (allowSingleDate && isSingleDateMode) {
+      onChange(composeSingleDateLabel({ month: nextParts.fromMonth, year: nextParts.fromYear }));
+      return;
+    }
+    onChange(composeRangeDateLabel(nextParts));
   };
 
   if (mode === 'single') {
@@ -1226,14 +1245,14 @@ const DatePickerRow = ({ value, onChange, mode = 'range', allowPresent = false, 
           onChange={(e) => updateRange({ toMonth: e.target.value })}
           options={MONTH_OPTIONS}
           placeholder="Month"
-          disabled={parts.isPresent || (allowSingleDate && parts.isSingleDate)}
+          disabled={parts.isPresent || isSingleDateMode}
         />
         <SmallSelect
           value={parts.toYear}
           onChange={(e) => updateRange({ toYear: e.target.value })}
           options={yearOptions}
           placeholder="Year"
-          disabled={parts.isPresent || (allowSingleDate && parts.isSingleDate)}
+          disabled={parts.isPresent || isSingleDateMode}
         />
       </div>
 
@@ -1253,9 +1272,11 @@ const DatePickerRow = ({ value, onChange, mode = 'range', allowPresent = false, 
         <label className="mt-3 inline-flex items-center gap-2 text-[16px] text-gray-900">
           <input
             type="checkbox"
-            checked={parts.isSingleDate}
+            checked={isSingleDateMode}
             onChange={(e) => {
-              if (e.target.checked) {
+              const checked = e.target.checked;
+              onSingleDateCheckedChange?.(checked);
+              if (checked) {
                 onChange(composeSingleDateLabel({ month: parts.fromMonth, year: parts.fromYear }));
               } else {
                 onChange(composeRangeDateLabel({ ...parts, toMonth: '', toYear: '' }));
@@ -1349,7 +1370,18 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
           <FormLabel required>Organizer</FormLabel>
           <PlainInput value={item.organization} onChange={(e) => change('organization', e.target.value)} placeholder="Who is the Organizer?" />
         </div>
-        <DatePickerRow value={item.date} onChange={(value) => change('date', value)} allowSingleDate singleDateLabel="Single Date" />
+        <DatePickerRow
+          value={item.date}
+          onChange={(value) => {
+            if (typeof item.isSingleDate !== 'boolean') change('isSingleDate', false);
+            change('date', value);
+          }}
+          allowSingleDate
+          singleDateLabel="Single Date"
+          yearOptions={CERTIFICATION_YEAR_OPTIONS}
+          singleDateChecked={Boolean(item.isSingleDate)}
+          onSingleDateCheckedChange={(checked) => change('isSingleDate', checked)}
+        />
       </>
     );
   }
@@ -2517,10 +2549,15 @@ const ProfileEditModal = ({
                           <label className="block text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">{field.label}</label>
                           <DatePickerRow
                             value={item[field.key]}
-                            onChange={(value) => onChangeProfileItem(sectionKey, index, field.key, value)}
+                            onChange={(value) => {
+                              if (typeof item.isSingleDate !== 'boolean') onChangeProfileItem(sectionKey, index, 'isSingleDate', false);
+                              onChangeProfileItem(sectionKey, index, field.key, value);
+                            }}
                             allowSingleDate
                             singleDateLabel="Single Date"
                             yearOptions={CERTIFICATION_YEAR_OPTIONS}
+                            singleDateChecked={Boolean(item.isSingleDate)}
+                            onSingleDateCheckedChange={(checked) => onChangeProfileItem(sectionKey, index, 'isSingleDate', checked)}
                           />
                         </div>
                       ) : field.type === 'textarea' ? (
