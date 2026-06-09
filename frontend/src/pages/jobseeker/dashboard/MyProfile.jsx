@@ -357,7 +357,6 @@ const MORE_PROFILE_SECTIONS = {
       { key: 'title', label: 'Title', placeholder: 'e.g. Leadership training' },
       { key: 'organization', label: 'Organizer', placeholder: 'Who is the Organizer?' },
       { key: 'date', label: 'Date', placeholder: 'Month Year — Month Year' },
-      { key: 'description', label: 'Description (optional)', type: 'textarea', placeholder: '' },
     ],
   },
   awards: {
@@ -1192,6 +1191,9 @@ const SmallSelect = ({ value, onChange, options = [], placeholder = 'Select', di
 
 const DatePickerRow = ({ value, onChange, mode = 'range', allowPresent = false, allowSingleDate = false, singleDateLabel = 'Single Date', yearOptions = PROFILE_YEAR_OPTIONS }) => {
   const parts = splitDateLabel(value);
+  const [singleDateChecked, setSingleDateChecked] = useState(() => Boolean(allowSingleDate && parts.isSingleDate));
+  const isSingleDateActive = Boolean(allowSingleDate && singleDateChecked);
+  const disableEndDate = Boolean(parts.isPresent || isSingleDateActive);
 
   const updateSingle = (key, nextValue) => {
     const next = { month: parts.fromMonth, year: parts.fromYear, [key]: nextValue };
@@ -1199,7 +1201,14 @@ const DatePickerRow = ({ value, onChange, mode = 'range', allowPresent = false, 
   };
 
   const updateRange = (patch) => {
-    onChange(composeRangeDateLabel({ ...parts, ...patch }));
+    const nextParts = { ...parts, ...patch };
+
+    if (isSingleDateActive) {
+      onChange(composeSingleDateLabel({ month: nextParts.fromMonth, year: nextParts.fromYear }));
+      return;
+    }
+
+    onChange(composeRangeDateLabel(nextParts));
   };
 
   if (mode === 'single') {
@@ -1218,20 +1227,20 @@ const DatePickerRow = ({ value, onChange, mode = 'range', allowPresent = false, 
         <SmallSelect value={parts.fromMonth} onChange={(e) => updateRange({ fromMonth: e.target.value })} options={MONTH_OPTIONS} placeholder="Month" />
         <SmallSelect value={parts.fromYear} onChange={(e) => updateRange({ fromYear: e.target.value })} options={yearOptions} placeholder="Year" />
 
-        <span className="ml-1 text-[16px] text-gray-600">To<RequiredMark /></span>
+        <span className={`ml-1 text-[16px] ${disableEndDate ? 'text-gray-400' : 'text-gray-600'}`}>To<RequiredMark /></span>
         <SmallSelect
-          value={parts.toMonth}
+          value={disableEndDate ? '' : parts.toMonth}
           onChange={(e) => updateRange({ toMonth: e.target.value })}
           options={MONTH_OPTIONS}
           placeholder="Month"
-          disabled={parts.isPresent || (allowSingleDate && parts.isSingleDate)}
+          disabled={disableEndDate}
         />
         <SmallSelect
-          value={parts.toYear}
+          value={disableEndDate ? '' : parts.toYear}
           onChange={(e) => updateRange({ toYear: e.target.value })}
           options={yearOptions}
           placeholder="Year"
-          disabled={parts.isPresent || (allowSingleDate && parts.isSingleDate)}
+          disabled={disableEndDate}
         />
       </div>
 
@@ -1251,12 +1260,13 @@ const DatePickerRow = ({ value, onChange, mode = 'range', allowPresent = false, 
         <label className="mt-3 inline-flex items-center gap-2 text-[16px] text-gray-900">
           <input
             type="checkbox"
-            checked={parts.isSingleDate}
+            checked={isSingleDateActive}
             onChange={(e) => {
-              if (e.target.checked) {
+              const checked = e.target.checked;
+              setSingleDateChecked(checked);
+
+              if (checked) {
                 onChange(composeSingleDateLabel({ month: parts.fromMonth, year: parts.fromYear }));
-              } else {
-                onChange(composeRangeDateLabel({ ...parts, toMonth: '', toYear: '' }));
               }
             }}
             className="w-4 h-4 rounded border-gray-300 accent-[#2e66a6]"
@@ -1316,7 +1326,7 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
           <FormLabel required>Role</FormLabel>
           <PlainInput value={item.role} onChange={(e) => change('role', e.target.value)} placeholder="Role on the Project" />
         </div>
-        <DatePickerRow value={item.date} onChange={(value) => change('date', value)} allowPresent />
+        <DatePickerRow value={item.date} onChange={(value) => change('date', value)} allowPresent yearOptions={CERTIFICATION_YEAR_OPTIONS} />
         <div>
           <FormLabel>Description (optional)</FormLabel>
           <RichDescriptionToolbar />
@@ -1342,7 +1352,7 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
           <FormLabel required>Organizer</FormLabel>
           <PlainInput value={item.organization} onChange={(e) => change('organization', e.target.value)} placeholder="Who is the Organizer?" />
         </div>
-        <DatePickerRow value={item.date} onChange={(value) => change('date', value)} allowSingleDate singleDateLabel="Single Date" />
+        <DatePickerRow value={item.date} onChange={(value) => change('date', value)} allowSingleDate singleDateLabel="Single Date" yearOptions={CERTIFICATION_YEAR_OPTIONS} />
       </>
     );
   }
@@ -2480,61 +2490,25 @@ const ProfileEditModal = ({
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
-                {fields.map((field) => {
-                  const isWideField = field.type === 'textarea' || field.key === 'date';
-
-                  return (
-                    <div key={field.key} className={isWideField ? 'md:col-span-2' : ''}>
-                      {sectionKey === 'certifications' && field.key === 'date' ? (
-                        <div>
-                          <label className="block text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">{field.label}</label>
-                          <DatePickerRow
-                            mode="single"
-                            value={item[field.key]}
-                            onChange={(value) => onChangeProfileItem(sectionKey, index, field.key, value)}
-                            yearOptions={CERTIFICATION_YEAR_OPTIONS}
-                          />
-                        </div>
-                      ) : sectionKey === 'projects' && field.key === 'date' ? (
-                        <div>
-                          <label className="block text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">{field.label}</label>
-                          <DatePickerRow
-                            value={item[field.key]}
-                            onChange={(value) => onChangeProfileItem(sectionKey, index, field.key, value)}
-                            allowPresent
-                            yearOptions={CERTIFICATION_YEAR_OPTIONS}
-                          />
-                        </div>
-                      ) : sectionKey === 'seminars' && field.key === 'date' ? (
-                        <div>
-                          <label className="block text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">{field.label}</label>
-                          <DatePickerRow
-                            value={item[field.key]}
-                            onChange={(value) => onChangeProfileItem(sectionKey, index, field.key, value)}
-                            allowSingleDate
-                            singleDateLabel="Single Date"
-                            yearOptions={CERTIFICATION_YEAR_OPTIONS}
-                          />
-                        </div>
-                      ) : field.type === 'textarea' ? (
-                        <TextArea
-                          label={field.label}
-                          rows={5}
+                {fields.map((field) => (
+                  <div key={field.key} className={field.type === 'textarea' ? 'md:col-span-2' : ''}>
+                    {field.type === 'textarea' ? (
+                      <TextArea label={field.label} rows={3} value={item[field.key]} onChange={(e) => onChangeProfileItem(sectionKey, index, field.key, e.target.value)} placeholder={field.placeholder} />
+                    ) : sectionKey === 'certifications' && field.key === 'date' ? (
+                      <div>
+                        <label className="block text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">{field.label}</label>
+                        <DatePickerRow
+                          mode="single"
                           value={item[field.key]}
-                          onChange={(e) => onChangeProfileItem(sectionKey, index, field.key, e.target.value)}
-                          placeholder={field.placeholder}
+                          onChange={(value) => onChangeProfileItem(sectionKey, index, field.key, value)}
+                          yearOptions={CERTIFICATION_YEAR_OPTIONS}
                         />
-                      ) : (
-                        <Input
-                          label={field.label}
-                          value={item[field.key]}
-                          onChange={(e) => onChangeProfileItem(sectionKey, index, field.key, e.target.value)}
-                          placeholder={field.placeholder}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
+                      </div>
+                    ) : (
+                      <Input label={field.label} value={item[field.key]} onChange={(e) => onChangeProfileItem(sectionKey, index, field.key, e.target.value)} placeholder={field.placeholder} />
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           ))}
