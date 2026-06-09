@@ -99,6 +99,66 @@ const UserManagementDetails = () => {
     return `${apiHost}${url.startsWith("/") ? url : `/${url}`}`;
   };
 
+
+  const getDownloadFileName = (contentDisposition, fallbackName = "document") => {
+    const disposition = String(contentDisposition || "");
+    const utfMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+    const normalMatch = disposition.match(/filename="?([^";]+)"?/i);
+
+    try {
+      if (utfMatch?.[1]) return decodeURIComponent(utfMatch[1]);
+      if (normalMatch?.[1]) return normalMatch[1];
+    } catch {
+      return fallbackName;
+    }
+
+    return fallbackName;
+  };
+
+  const fetchCredentialBlob = async (docType, disposition = "inline") => {
+    const response = await api.get(`/admin/users/${userId}/documents/${docType}`, {
+      params: { disposition },
+      responseType: "blob",
+    });
+
+    const contentType = response.headers?.["content-type"] || "application/octet-stream";
+    const fileName = getDownloadFileName(response.headers?.["content-disposition"], docType);
+    const blob = new Blob([response.data], { type: contentType });
+
+    return { blob, fileName };
+  };
+
+  const handleViewCredential = async (docType) => {
+    try {
+      const { blob } = await fetchCredentialBlob(docType, "inline");
+      const blobUrl = window.URL.createObjectURL(blob);
+      window.open(blobUrl, "_blank", "noopener,noreferrer");
+      window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
+    } catch (err) {
+      console.error("Error viewing credential:", err);
+      alert(err.response?.data?.message || "Unable to open this credential. Please try again.");
+    }
+  };
+
+  const handleDownloadCredential = async (docType, fallbackName = "document") => {
+    try {
+      const { blob, fileName } = await fetchCredentialBlob(docType, "attachment");
+      const blobUrl = window.URL.createObjectURL(blob);
+      const downloadLink = document.createElement("a");
+
+      downloadLink.href = blobUrl;
+      downloadLink.download = fileName || fallbackName;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      downloadLink.remove();
+
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error("Error downloading credential:", err);
+      alert(err.response?.data?.message || "Unable to download this credential. Please try again.");
+    }
+  };
+
   const normalizeUrl = (url) => {
     const value = String(url || "").trim();
     if (!value) return "";
@@ -345,8 +405,8 @@ const UserManagementDetails = () => {
                 </div>
                 {url ? (
                   <div className="flex items-center gap-1">
-                    <a href={url} target="_blank" rel="noreferrer" className="rounded-lg p-1.5 text-slate-600 hover:bg-white hover:text-blue-700" title="View"><Icon name="eye" /></a>
-                    <a href={url} download className="rounded-lg p-1.5 text-slate-600 hover:bg-white hover:text-blue-700" title="Download"><Icon name="download" /></a>
+                    <button type="button" onClick={() => handleViewCredential(key)} className="rounded-lg p-1.5 text-slate-600 hover:bg-white hover:text-blue-700" title="View"><Icon name="eye" /></button>
+                    <button type="button" onClick={() => handleDownloadCredential(key, DOC_LABELS[key])} className="rounded-lg p-1.5 text-slate-600 hover:bg-white hover:text-blue-700" title="Download"><Icon name="download" /></button>
                   </div>
                 ) : <span className="text-xs font-medium text-slate-400">No file</span>}
               </div>
@@ -565,8 +625,8 @@ const UserManagementDetails = () => {
                 </div>
                 {url ? (
                   <div className="flex items-center gap-1">
-                    <a href={url} target="_blank" rel="noreferrer" className="rounded-lg p-1.5 text-slate-600 hover:bg-white hover:text-blue-700" title="View"><Icon name="eye" /></a>
-                    <a href={url} download className="rounded-lg p-1.5 text-slate-600 hover:bg-white hover:text-blue-700" title="Download"><Icon name="download" /></a>
+                    <button type="button" onClick={() => handleViewCredential(key)} className="rounded-lg p-1.5 text-slate-600 hover:bg-white hover:text-blue-700" title="View"><Icon name="eye" /></button>
+                    <button type="button" onClick={() => handleDownloadCredential(key, EMPLOYER_DOC_LABELS[key])} className="rounded-lg p-1.5 text-slate-600 hover:bg-white hover:text-blue-700" title="Download"><Icon name="download" /></button>
                   </div>
                 ) : <span className="text-xs font-semibold text-slate-400">No file</span>}
               </div>

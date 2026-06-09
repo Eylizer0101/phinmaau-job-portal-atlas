@@ -4,6 +4,7 @@ const Job = require('../models/Job');
 const Application = require('../models/Application');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const { v2: cloudinary } = require('cloudinary');
 const { sendCredentialsEmail, sendResubmitDocumentEmail, sendVerificationRejectedEmail } = require('../config/mailer');
 
 // ==========================
@@ -90,6 +91,159 @@ const EMPLOYER_DOC_LABELS = {
   dtiRegistration: 'DTI Registration',
   cityPermit: 'City/Municipality Permit',
   businessPermit: 'Business Permit',
+};
+
+// ==========================
+// ✅ HELPERS: secure document delivery for Cloudinary credentials
+// ==========================
+const isCloudinaryConfiguredForDelivery = () =>
+  Boolean(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
+
+if (isCloudinaryConfiguredForDelivery()) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true,
+  });
+}
+
+const isCloudinaryUrl = (url = '') => /^https?:\/\/res\.cloudinary\.com\//i.test(String(url || ''));
+
+const getFileNameFromDocumentUrl = (url = '', fallback = 'document') => {
+  try {
+    const cleanPath = new URL(url).pathname.split('?')[0];
+    const lastPart = decodeURIComponent(cleanPath.split('/').filter(Boolean).pop() || '');
+    return lastPart || fallback;
+  } catch {
+    const lastPart = String(url || '').split('?')[0].split('/').filter(Boolean).pop();
+    return lastPart || fallback;
+  }
+};
+
+const toSafeDownloadName = (name = 'document') =>
+  String(name || 'document')
+    .replace(/[\\/:*?"<>|]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim() || 'document';
+
+const buildCloudinaryDeliveryUrl = (doc = {}, disposition = 'inline') => {
+  const originalUrl = String(doc?.url || '').trim();
+  if (!originalUrl || !isCloudinaryUrl(originalUrl) || !isCloudinaryConfiguredForDelivery()) return originalUrl;
+
+  try {
+    const parsed = new URL(originalUrl);
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    const uploadIndex = parts.findIndex((part) => part === 'upload');
+
+    if (uploadIndex < 2) return originalUrl;
+
+    const resourceType = parts[uploadIndex - 1] || doc.resource_type || 'image';
+    const deliveryType = parts[uploadIndex - 0] ? (parts[uploadIndex - 0] && parts[uploadIndex - 1] ? parts[uploadIndex - 0] : 'upload') : 'upload';
+    const versionIndex = parts.findIndex((part, index) => index > uploadIndex && /^v\d+$/.test(part));
+    const publicParts = parts.slice(versionIndex >= 0 ? versionIndex + 1 : uploadIndex + 1);
+    const version = versionIndex >= 0 ? Number(parts[versionIndex].slice(1)) : undefined;
+    const publicPathWithFormat = decodeURIComponent(publicParts.join('/'));
+
+    if (!publicPathWithFormat) return originalUrl;
+
+    const lastSegment = publicPathWithFormat.split('/').pop() || '';
+    const extensionMatch = lastSegment.match(/\.([a-zA-Z0-9]+)$/);
+    const format = extensionMatch ? extensionMatch[1] : '';
+    const publicIdFromUrl = format
+      ? publicPathWithFormat.slice(0, -(format.length + 1))
+      : publicPathWithFormat;
+
+    const storedPublicId = String(doc?.filename || doc?.public_id || '').trim();
+    const publicId = storedPublicId && !storedPublicId.includes('.') ? storedPublicId : publicIdFromUrl;
+
+    const options = {
+      resource_type: resourceType,
+      type: 'upload',
+      secure: true,
+      sign_url: true,
+    };
+
+    if (version) options.version = version;
+    if (format && resourceType !== 'raw') options.format = format;
+    if (disposition === 'attachment') options.flags = 'attachment';
+
+    return cloudinary.url(publicId, options);
+  } catch (error) {
+    console.error('Error building Cloudinary delivery URL:', error);
+    return originalUrl;
+  }
+};
+
+const getVerificationDocFromUser = (user, docType) => {
+  const cleanDocType = String(docType || '').trim();
+
+  if (user?.role === 'jobseeker') {
+    if (!JOBSEEKER_DOC_TYPES.includes(cleanDocType)) return null;
+    return user?.jobSeekerProfile?.verificationDocs?.[cleanDocType] || null;
+  }
+
+  if (user?.role === 'employer') {
+    if (!EMPLOYER_DOC_TYPES.includes(cleanDocType)) return null;
+    return user?.employerProfile?.verificationDocs?.[cleanDocType] || null;
+  }
+
+  return null;
+};
+
+const streamVerificationDocument = async (req, res, userRole) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+
+    if (!user || (userRole && user.role !== userRole)) {
+      return res.status(404).json({
+        success: false,
+        message: userRole === 'employer' ? 'Employer not found' : userRole === 'jobseeker' ? 'Jobseeker not found' : 'User not found',
+      });
+    }
+
+    const docType = String(req.params.docType || '').trim();
+    const doc = getVerificationDocFromUser(user, docType);
+
+    if (!doc || !doc.url) {
+      return res.status(404).json({
+        success: false,
+        message: 'Document not found',
+      });
+    }
+
+    const disposition = String(req.query.disposition || 'inline').toLowerCase() === 'attachment' ? 'attachment' : 'inline';
+    const deliveryUrl = buildCloudinaryDeliveryUrl(doc, disposition);
+
+    const fileResponse = await fetch(deliveryUrl);
+
+    if (!fileResponse.ok) {
+      console.error('Document delivery failed:', fileResponse.status, deliveryUrl);
+      return res.status(fileResponse.status).json({
+        success: false,
+        message: 'Unable to access document file. Please check Cloudinary PDF/raw delivery settings or re-upload the document.',
+      });
+    }
+
+    const arrayBuffer = await fileResponse.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const contentType = fileResponse.headers.get('content-type') || doc.mimeType || 'application/octet-stream';
+    const fallbackName = `${docType}-${user._id}`;
+    const filename = toSafeDownloadName(getFileNameFromDocumentUrl(doc.url, fallbackName));
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Length', buffer.length);
+    res.setHeader('Content-Disposition', `${disposition}; filename="${filename}"`);
+    res.setHeader('Cache-Control', 'private, max-age=300');
+
+    return res.send(buffer);
+  } catch (error) {
+    console.error('Error streaming verification document:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error downloading document',
+    });
+  }
 };
 
 
@@ -2084,6 +2238,11 @@ exports.getJobseekerVerificationDocUrls = async (req, res) => {
     });
   }
 };
+
+exports.downloadUserVerificationDocument = async (req, res) => streamVerificationDocument(req, res, null);
+exports.downloadJobseekerVerificationDocument = async (req, res) => streamVerificationDocument(req, res, 'jobseeker');
+exports.downloadEmployerVerificationDocument = async (req, res) => streamVerificationDocument(req, res, 'employer');
+
 // ==========================
 // ✅ ADMIN JOB OFFERS
 // ==========================

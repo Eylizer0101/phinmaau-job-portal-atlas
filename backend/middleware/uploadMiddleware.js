@@ -187,6 +187,7 @@ const jobLocationImageStorage = createCloudinaryStorage({
 });
 
 const alumniVerificationStorage = createCloudinaryStorage({
+  resourceType: 'raw',
   folderResolver: (req) => {
     const docType = req.params.docType || 'tor';
     if (!ALLOWED_ALUMNI_DOC_TYPES.includes(docType)) throw new Error('Invalid document type');
@@ -199,6 +200,7 @@ const alumniVerificationStorage = createCloudinaryStorage({
 });
 
 const alumniResubmitStorage = createCloudinaryStorage({
+  resourceType: 'raw',
   folderResolver: (req) => {
     const docType = String(req.body?.docType || '').trim();
     const config = getResubmitDocConfig(docType);
@@ -214,6 +216,7 @@ const alumniResubmitStorage = createCloudinaryStorage({
 });
 
 const registerDocsStorage = createCloudinaryStorage({
+  resourceType: 'raw',
   folderResolver: (req, file) => {
     const allowedFields = ['cv', 'diploma', 'validId', 'tor', 'sss', 'philhealth', 'pagibig', 'tin'];
     const field = String(file.fieldname || '').trim();
@@ -227,6 +230,7 @@ const registerDocsStorage = createCloudinaryStorage({
 });
 
 const employerVerificationStorage = createCloudinaryStorage({
+  resourceType: 'raw',
   folderResolver: (req) => {
     const docType = req.params.docType || 'secRegistration';
     const folder = EMPLOYER_DOC_FOLDER_MAP[docType] || 'sec';
@@ -239,6 +243,7 @@ const employerVerificationStorage = createCloudinaryStorage({
 });
 
 const employerRegisterDocsStorage = createCloudinaryStorage({
+  resourceType: 'raw',
   folderResolver: (req, file) => {
     const allowedFields = ['secRegistration', 'birRegistration', 'dtiRegistration', 'cityPermit', 'businessPermit', 'companyLogo'];
     const field = String(file.fieldname || '').trim();

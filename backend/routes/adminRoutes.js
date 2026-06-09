@@ -22,6 +22,7 @@ router.patch('/archive/:type/:id/restore', adminController.restoreAdminArchiveIt
 // User management routes
 router.get('/users', adminController.getAllUsers);
 router.get('/users/:id', adminController.getUserById);
+router.get('/users/:id/documents/:docType', adminController.downloadUserVerificationDocument);
 router.put('/users/:id/status', adminController.updateUserStatus);
 router.put('/users/:id/quick-action', adminController.quickAction);
 router.delete('/users/:id', adminController.deleteUser);
@@ -33,6 +34,7 @@ router.get('/employers/verification/:id', adminController.getEmployerVerificatio
 router.put('/employers/verification/:id/status', adminController.updateEmployerVerificationStatus);
 router.put('/employers/verification/:id/hold', adminController.holdEmployerVerification);
 router.get('/employers/verification/:id/docs', adminController.getEmployerVerificationDocUrls);
+router.get('/employers/verification/:id/docs/:docType', adminController.downloadEmployerVerificationDocument);
 
 // ✅ JOBSEEKER VERIFICATION ROUTES
 router.get('/jobseekers/verification', adminController.getJobseekersForVerification);
@@ -40,5 +42,6 @@ router.get('/jobseekers/verification/:id', adminController.getJobseekerVerificat
 router.put('/jobseekers/verification/:id/status', adminController.updateJobseekerVerificationStatus);
 router.put('/jobseekers/verification/:id/hold', adminController.holdJobseekerVerification);
 router.get('/jobseekers/verification/:id/docs', adminController.getJobseekerVerificationDocUrls);
+router.get('/jobseekers/verification/:id/docs/:docType', adminController.downloadJobseekerVerificationDocument);
 
 module.exports = router;

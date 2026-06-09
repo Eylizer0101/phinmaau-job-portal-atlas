@@ -717,29 +717,54 @@ const EmployerVerificationDetails = () => {
     }
   };
 
-  const openDoc = (rawUrl) => {
-    const url = toPublicUrl(rawUrl || "");
-    if (!url) return;
-    window.open(url, "_blank", "noopener,noreferrer");
-  };
-
-  const downloadDoc = async (rawUrl) => {
-    const url = toPublicUrl(rawUrl || "");
-    if (!url) return;
+  const getDownloadFileName = (contentDisposition, fallbackName = "document") => {
+    const disposition = String(contentDisposition || "");
+    const utfMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+    const normalMatch = disposition.match(/filename="?([^";]+)"?/i);
 
     try {
-      const response = await fetch(url, { credentials: "include" });
+      if (utfMatch?.[1]) return decodeURIComponent(utfMatch[1]);
+      if (normalMatch?.[1]) return normalMatch[1];
+    } catch {
+      return fallbackName;
+    }
 
-      if (!response.ok) {
-        throw new Error("Download failed");
-      }
+    return fallbackName;
+  };
 
-      const blob = await response.blob();
+  const fetchDocumentBlob = async (docType, disposition = "inline") => {
+    const response = await api.get(`/admin/employers/verification/${employerId}/docs/${docType}`, {
+      params: { disposition },
+      responseType: "blob",
+    });
+
+    const contentType = response.headers?.["content-type"] || "application/octet-stream";
+    const fileName = getDownloadFileName(response.headers?.["content-disposition"], docType);
+    const blob = new Blob([response.data], { type: contentType });
+
+    return { blob, fileName };
+  };
+
+  const openDoc = async (docType) => {
+    try {
+      const { blob } = await fetchDocumentBlob(docType, "inline");
+      const blobUrl = window.URL.createObjectURL(blob);
+      window.open(blobUrl, "_blank", "noopener,noreferrer");
+      window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
+    } catch (viewError) {
+      console.error("Error viewing file:", viewError);
+      setError(viewError.response?.data?.message || "Unable to open this credential. Please try again.");
+    }
+  };
+
+  const downloadDoc = async (docType, fallbackName = "document") => {
+    try {
+      const { blob, fileName } = await fetchDocumentBlob(docType, "attachment");
       const blobUrl = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
 
       a.href = blobUrl;
-      a.download = getFileName(url);
+      a.download = fileName || fallbackName;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -747,14 +772,7 @@ const EmployerVerificationDetails = () => {
       window.URL.revokeObjectURL(blobUrl);
     } catch (downloadError) {
       console.error("Error downloading file:", downloadError);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = getFileName(url);
-      a.rel = "noopener noreferrer";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+      setError(downloadError.response?.data?.message || "Unable to download this credential. Please try again.");
     }
   };
 
@@ -966,8 +984,8 @@ const EmployerVerificationDetails = () => {
                     disabled={action !== null}
                     isVerified={isVerified}
                     docStatus={docData.status || "not_submitted"}
-                    onView={() => openDoc(rawUrl)}
-                    onDownload={() => downloadDoc(rawUrl)}
+                    onView={() => openDoc(d.key)}
+                    onDownload={() => downloadDoc(d.key, d.label)}
                   />
                 );
               })}
