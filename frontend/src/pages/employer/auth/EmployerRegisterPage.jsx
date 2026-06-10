@@ -835,111 +835,100 @@ const EmployerRegisterPage = () => {
                     />
                   </div>
 
-                  <div
-                    className="
-                      relative z-10
-                      min-h-[620px]
-                      rounded-2xl
-                      overflow-hidden
-                      text-white
-                      bg-gradient-to-br
-                      from-[#061f55]
-                      via-[#1e4ba0]
-                      to-[#2f73bd]
-                      shadow-[0_12px_36px_rgba(15,54,110,0.28)]
-                    "
+                  <section
+                    className="relative z-10 w-full overflow-hidden rounded-[28px] bg-gradient-to-br from-[#061f55] via-[#1e4ba0] to-[#2f73bd] text-white shadow-[0_12px_36px_rgba(15,54,110,0.28)]"
+                    aria-label="How it Works carousel"
                   >
-                    <div className="pointer-events-none absolute -left-10 top-28 h-40 w-40 rounded-[2rem] bg-white/10 rotate-[-12deg]" />
-                    <div className="pointer-events-none absolute left-20 top-40 h-48 w-72 rounded-[2rem] bg-white/10 rotate-[4deg]" />
-                    <div className="pointer-events-none absolute left-28 top-48 h-52 w-80 rounded-[2rem] bg-white/10 rotate-[-6deg]" />
+                    <div className="pointer-events-none absolute -left-12 top-40 h-44 w-44 rounded-[2rem] bg-white/10 rotate-[-12deg]" />
+                    <div className="pointer-events-none absolute left-16 top-36 h-48 w-72 rounded-[2rem] bg-white/10 rotate-[4deg]" />
+                    <div className="pointer-events-none absolute left-24 top-44 h-52 w-80 rounded-[2rem] bg-white/10 rotate-[-6deg]" />
+                    <div className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
 
-                    <div className="relative z-10 flex h-full min-h-[620px] flex-col px-8 py-8">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <h3 className="text-3xl font-extrabold text-white leading-tight">
-                            How it Works
-                          </h3>
-                          <p className="mt-3 max-w-[320px] text-base leading-relaxed text-white/90">
-                            Follow these simple steps to create your employer account and get started.
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-3 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => goToHowItWorksSlide(currentHowItWorksSlide - 1)}
-                            className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-white shadow-lg ring-1 ring-white/20 backdrop-blur-sm transition hover:bg-white/30 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
-                            aria-label="Previous how it works step"
-                          >
-                            <svg className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                              <path
-                                fillRule="evenodd"
-                                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => goToHowItWorksSlide(currentHowItWorksSlide + 1)}
-                            className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#123f86] shadow-lg ring-1 ring-white/40 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
-                            aria-label="Next how it works step"
-                          >
-                            <svg className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                              <path
-                                fillRule="evenodd"
-                                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </button>
-                        </div>
+                    <div className="relative z-10 px-6 py-6 sm:px-7 lg:px-7">
+                      <div className="text-center">
+                        <h3 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">
+                          How it Works
+                        </h3>
+                        <p className="mx-auto mt-3 max-w-[340px] text-sm sm:text-base leading-relaxed text-white/90">
+                          Follow these simple steps to create your employer account and get started.
+                        </p>
                       </div>
 
-                      <div className="relative mt-14 flex-1 overflow-hidden rounded-[2rem]">
-                        <div
-                          className="flex h-full transition-transform duration-500 ease-in-out"
-                          style={{ transform: `translateX(-${currentHowItWorksSlide * 100}%)` }}
+                      <div className="relative mt-8">
+                        <button
+                          type="button"
+                          onClick={() => goToHowItWorksSlide(currentHowItWorksSlide - 1)}
+                          className="absolute left-0 sm:-left-5 top-1/2 z-30 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-white shadow-lg ring-1 ring-white/20 backdrop-blur-sm transition hover:-translate-y-1/2 hover:scale-105 hover:bg-white/30 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
+                          aria-label="Previous how it works step"
                         >
-                          {howItWorksSlides.map((slide) => (
-                            <div key={slide.id} className="flex w-full shrink-0 items-center justify-center px-3">
-                              <div className="w-full rounded-[28px] bg-white px-8 py-8 text-center text-[#0f2d5f] shadow-[0_18px_45px_rgba(5,27,65,0.28)]">
-                                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#2e7df5] to-[#10439a] text-5xl font-extrabold text-white shadow-xl">
-                                  {slide.id}
-                                </div>
+                          <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path
+                              fillRule="evenodd"
+                              d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </button>
 
-                                <h4 className="mt-6 text-2xl font-extrabold leading-tight">
-                                  {slide.title}
-                                </h4>
+                        <button
+                          type="button"
+                          onClick={() => goToHowItWorksSlide(currentHowItWorksSlide + 1)}
+                          className="absolute right-0 sm:-right-5 top-1/2 z-30 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#123f86] shadow-lg ring-1 ring-white/40 transition hover:-translate-y-1/2 hover:scale-105 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
+                          aria-label="Next how it works step"
+                        >
+                          <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path
+                              fillRule="evenodd"
+                              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </button>
 
-                                <p className="mx-auto mt-5 max-w-[390px] text-base font-semibold leading-relaxed text-[#132b52]">
-                                  {slide.description}
-                                </p>
-
-                                {slide.checklist ? (
-                                  <div className="mx-auto mt-5 max-w-[390px] space-y-2 text-left">
-                                    {slide.checklist.map((item) => (
-                                      <div key={item} className="flex items-start gap-3 text-base font-semibold text-[#132b52]">
-                                        <span className="mt-0.5 text-[#1f67b7]">✓</span>
-                                        <span>{item}</span>
-                                      </div>
-                                    ))}
+                        <div className="overflow-hidden rounded-3xl px-7 sm:px-8">
+                          <div
+                            className="flex transition-transform duration-500 ease-in-out"
+                            style={{ transform: `translateX(-${currentHowItWorksSlide * 100}%)` }}
+                          >
+                            {howItWorksSlides.map((slide) => (
+                              <div key={slide.id} className="w-full shrink-0 px-1">
+                                <div className="h-[345px] overflow-hidden rounded-[28px] bg-white px-6 py-5 text-center text-[#0f2d5f] shadow-[0_18px_45px_rgba(5,27,65,0.28)] ring-1 ring-white/70 flex flex-col items-center justify-center">
+                                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#2e7df5] to-[#10439a] text-4xl font-extrabold text-white shadow-xl">
+                                    {slide.id}
                                   </div>
-                                ) : null}
 
-                                {slide.footer ? (
-                                  <p className="mx-auto mt-5 max-w-[390px] text-base font-semibold leading-relaxed text-[#132b52]">
-                                    {slide.footer}
+                                  <h4 className="mt-5 text-xl font-extrabold leading-tight text-[#0f2d5f]">
+                                    {slide.title}
+                                  </h4>
+
+                                  <p className="mx-auto mt-4 max-w-[360px] text-sm sm:text-[15px] font-semibold leading-relaxed text-[#132b52]">
+                                    {slide.description}
                                   </p>
-                                ) : null}
+
+                                  {slide.checklist ? (
+                                    <div className="mx-auto mt-4 max-w-[360px] space-y-2 text-left">
+                                      {slide.checklist.map((item) => (
+                                        <div key={item} className="flex items-start gap-3 text-sm sm:text-[15px] font-semibold text-[#132b52]">
+                                          <span className="mt-0.5 text-[#1f67b7]">✓</span>
+                                          <span>{item}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : null}
+
+                                  {slide.footer ? (
+                                    <p className="mx-auto mt-4 max-w-[360px] text-sm sm:text-[15px] font-semibold leading-relaxed text-[#132b52]">
+                                      {slide.footer}
+                                    </p>
+                                  ) : null}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
                       </div>
 
-                      <div className="mt-8">
+                      <div className="mt-6">
                         <div className="flex items-center justify-center gap-3" aria-label="How it Works slide indicators">
                           {howItWorksSlides.map((slide, index) => (
                             <button
@@ -947,7 +936,7 @@ const EmployerRegisterPage = () => {
                               type="button"
                               onClick={() => goToHowItWorksSlide(index)}
                               className={`h-1.5 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25 ${
-                                currentHowItWorksSlide === index ? 'w-20 bg-white' : 'w-16 bg-white/45 hover:bg-white/70'
+                                currentHowItWorksSlide === index ? 'w-16 bg-white' : 'w-12 bg-white/45 hover:bg-white/70'
                               }`}
                               aria-label={`Go to how it works step ${slide.id}`}
                               aria-current={currentHowItWorksSlide === index ? 'step' : undefined}
@@ -955,12 +944,12 @@ const EmployerRegisterPage = () => {
                           ))}
                         </div>
 
-                        <p className="mt-4 text-center text-lg font-extrabold text-white">
+                        <p className="mt-4 text-center text-base font-extrabold text-white">
                           {activeHowItWorksSlide.id} of {totalHowItWorksSlides}
                         </p>
                       </div>
                     </div>
-                  </div>
+                  </section>
                 </div>
               </div>
             </div>
