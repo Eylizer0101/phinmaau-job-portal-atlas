@@ -176,10 +176,10 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
 
     return (
       <div
-        className="relative w-full overflow-hidden border border-gray-200 bg-white shadow-[0_22px_70px_rgba(15,23,42,0.12)] flex max-h-[calc(100dvh-2rem)] flex-col"
+        className="relative w-full overflow-hidden border border-gray-200 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.12)] flex flex-col"
         style={{
-          maxWidth: "980px",
-          borderRadius: "26px",
+          maxWidth: "860px",
+          borderRadius: "22px",
         }}
       >
         {/* soft background accents */}
@@ -190,7 +190,7 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
         </div>
 
         {/* top buttons */}
-        <div className="relative z-10 flex items-start justify-between px-4 pt-4 sm:px-7 sm:pt-7 shrink-0">
+        <div className="relative z-10 flex items-start justify-between px-4 pt-4 sm:px-6 sm:pt-5 shrink-0">
           <button
             ref={topButtonRef}
             type="button"
@@ -198,7 +198,7 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
               setAgreePrivacy(false);
               setStep("role");
             }}
-            className="h-11 w-11 rounded-full border border-slate-200 bg-white/90 text-[#0f2442] shadow-sm hover:bg-slate-50 flex items-center justify-center transition
+            className="h-10 w-10 rounded-full border border-slate-200 bg-white/90 text-[#0f2442] shadow-sm hover:bg-slate-50 flex items-center justify-center transition
                        focus:outline-none focus:ring-2 focus:ring-offset-2"
             style={{ "--tw-ring-color": BLUE.ring }}
             aria-label="Go back"
@@ -216,7 +216,7 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
           <button
             type="button"
             onClick={() => navigate("/")}
-            className="h-11 w-11 rounded-full border border-slate-200 bg-white/90 text-[#0f2442] shadow-sm hover:bg-slate-50 flex items-center justify-center transition
+            className="h-10 w-10 rounded-full border border-slate-200 bg-white/90 text-[#0f2442] shadow-sm hover:bg-slate-50 flex items-center justify-center transition
                        focus:outline-none focus:ring-2 focus:ring-offset-2"
             style={{ "--tw-ring-color": BLUE.ring }}
             aria-label="Close dialog"
@@ -228,22 +228,22 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
           </button>
         </div>
 
-        <div className="relative z-10 overflow-y-auto px-5 pb-6 sm:px-10 sm:pb-9 lg:px-14">
+        <div className="relative z-10 px-5 pb-5 sm:px-9 sm:pb-7 lg:px-12">
           {/* icon */}
-          <div className="-mt-2 flex justify-center sm:-mt-4">
-            <div className="relative flex h-24 w-24 items-center justify-center sm:h-28 sm:w-28" aria-hidden="true">
+          <div className="-mt-3 flex justify-center sm:-mt-5">
+            <div className="relative flex h-20 w-20 items-center justify-center sm:h-24 sm:w-24" aria-hidden="true">
               <div className="absolute inset-0 rounded-full bg-[#1e4ba0]/[0.06]" />
               <div className="absolute inset-2 rounded-full border border-[#1e4ba0]/15" />
               <div className="absolute left-2 top-5 h-1.5 w-1.5 rounded-full bg-[#2e66ff]" />
               <div className="absolute right-3 top-9 h-1.5 w-1.5 rounded-full bg-[#2e66ff]" />
               <div className="absolute right-7 bottom-2 h-1.5 w-1.5 rounded-full bg-[#2e66ff]/70" />
-              <img src="/images/lock.png" alt="Lock" className="relative h-20 w-20 object-contain sm:h-24 sm:w-24" draggable="false" />
+              <img src="/images/lock.png" alt="Lock" className="relative h-16 w-16 object-contain sm:h-20 sm:w-20" draggable="false" />
             </div>
           </div>
 
           {/* title */}
           <h2
-            className="mt-1 text-center font-extrabold text-[#071b3a] text-[28px] sm:text-[38px] lg:text-[42px] leading-tight"
+            className="mt-0 text-center font-extrabold text-[#071b3a] text-[24px] sm:text-[32px] lg:text-[36px] leading-tight"
             style={{
               letterSpacing: "0.08em",
             }}
@@ -251,7 +251,7 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
             PRIVACY NOTICE
           </h2>
 
-          <div className="mx-auto mt-4 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
+          <div className="mx-auto mt-3 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
             <span className="h-px w-12 bg-gradient-to-r from-transparent to-[#1e4ba0]" />
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z" />
@@ -261,14 +261,14 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
           </div>
 
           {/* privacy text box - no side icons */}
-          <div className="mt-5 sm:mt-6 mx-auto max-w-[820px] rounded-[20px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 py-5 shadow-[0_10px_35px_rgba(30,75,160,0.08)] sm:px-8 sm:py-7">
-            <p className="text-center text-[13px] sm:text-[15px] text-[#0f2442] leading-6 sm:leading-7 whitespace-pre-line">
+          <div className="mt-4 sm:mt-5 mx-auto max-w-[760px] rounded-[18px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 py-4 shadow-[0_10px_30px_rgba(30,75,160,0.08)] sm:px-7 sm:py-5">
+            <p className="text-center text-[12px] sm:text-[14px] text-[#0f2442] leading-5 sm:leading-6 whitespace-pre-line">
               {privacyNoticeText}
             </p>
           </div>
 
           {/* checkbox row */}
-          <div className="mt-5 sm:mt-6 mx-auto max-w-[820px]">
+          <div className="mt-4 sm:mt-5 mx-auto max-w-[760px]">
             <label className="flex items-start gap-3 cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -284,18 +284,18 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
           </div>
 
           {/* proceed button */}
-          <div className="mt-6 sm:mt-8 flex justify-center pb-1">
+          <div className="mt-4 sm:mt-5 flex justify-center pb-0">
             <button
               type="button"
               onClick={proceedFromPrivacy}
               disabled={disabled}
-              className="h-12 rounded-xl text-base font-bold text-white transition shadow-[0_12px_26px_rgba(30,75,160,0.25)]
+              className="h-11 rounded-xl text-sm sm:text-base font-bold text-white transition shadow-[0_10px_22px_rgba(30,75,160,0.25)]
                          focus:outline-none focus:ring-2 focus:ring-offset-2 inline-flex items-center justify-center gap-4"
               style={{
                 backgroundColor: disabled ? "#93a6c9" : BLUE.primary,
                 cursor: disabled ? "not-allowed" : "pointer",
                 "--tw-ring-color": BLUE.ring,
-                minWidth: "240px",
+                minWidth: "220px",
                 borderRadius: "12px",
               }}
               onMouseEnter={(e) => {
@@ -323,7 +323,7 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
   };
 
   return (
-  <div className="relative min-h-[100dvh] overflow-y-auto px-4 pt-4 pb-4 sm:pt-24 bg-slate-50">
+  <div className="relative min-h-[100dvh] overflow-hidden px-3 py-3 sm:px-4 sm:py-6 bg-slate-50">
 
     {/* SOFT GLOW LIGHT */}
     <div className="pointer-events-none absolute inset-0 z-0">
@@ -347,7 +347,7 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
 
  
     {/* CONTENT */}
-    <div className="relative z-10 mx-auto flex min-h-[calc(100dvh-2rem)] items-center justify-center sm:min-h-[calc(100dvh-7rem)]">
+    <div className="relative z-10 mx-auto flex min-h-[calc(100dvh-1.5rem)] items-center justify-center sm:min-h-[calc(100dvh-3rem)]">
       {step === "role" ? <RolePage /> : <PrivacyPage />}
     </div>
 
