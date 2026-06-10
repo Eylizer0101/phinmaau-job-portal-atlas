@@ -653,6 +653,7 @@ const JobDetails = () => {
   const isJobActive = useCallback(() => {
     if (!job) return false;
     if (!job.isActive || !job.isPublished) return false;
+    if (String(job.status || '').toLowerCase() === 'filled') return false;
     if (job.applicationDeadline && new Date(job.applicationDeadline) < new Date()) return false;
     return true;
   }, [job]);
@@ -935,7 +936,7 @@ const JobDetails = () => {
       }
 
       if (!isJobActive()) {
-        setToastWithAutoClear('error', 'This job is no longer accepting applications.');
+        setToastWithAutoClear('error', String(job?.status || '').toLowerCase() === 'filled' ? 'The vacancy is already full.' : 'This job is no longer accepting applications.');
         return;
       }
 
@@ -965,6 +966,8 @@ const JobDetails = () => {
     ? 'Already Applied'
     : jobActive
     ? 'Apply Now'
+    : String(job?.status || '').toLowerCase() === 'filled'
+    ? 'Vacancy Full'
     : 'Application Closed';
 
   const primaryCtaClassName = hasApplied
@@ -976,7 +979,7 @@ const JobDetails = () => {
   const applyHelperText = hasApplied
     ? ''
     : !jobActive
-    ? 'This job is no longer accepting applications'
+    ? (String(job?.status || '').toLowerCase() === 'filled' ? 'The vacancy is already full.' : 'This job is no longer accepting applications')
     : '';
 
   if (loading) {

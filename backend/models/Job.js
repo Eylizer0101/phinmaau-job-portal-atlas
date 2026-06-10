@@ -18,7 +18,7 @@ const normalizeSalaryAmount = (value) => {
 const jobSchema = new mongoose.Schema({
     status: {
         type: String,
-        enum: ['draft', 'published'],
+        enum: ['draft', 'published', 'filled', 'closed'],
         default: 'published'
     },
 
@@ -190,6 +190,15 @@ const jobSchema = new mongoose.Schema({
     applicationCount: {
         type: Number,
         default: 0
+    },
+    filledAt: {
+        type: Date,
+        default: null
+    },
+    filledReason: {
+        type: String,
+        default: '',
+        trim: true
     }
 }, {
     timestamps: true

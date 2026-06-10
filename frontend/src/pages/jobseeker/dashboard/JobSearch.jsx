@@ -607,6 +607,7 @@ const JobSearch = () => {
         if (!job) return false;
         if (job.isPublished === false) return false;
         if (job.isActive === false) return false;
+        if (String(job.status || '').toLowerCase() === 'filled') return false;
 
         if (!job.applicationDeadline) return true;
         const d = new Date(job.applicationDeadline);
@@ -873,8 +874,8 @@ const JobSearch = () => {
         return;
       }
 
-      if (!job.isActive || !job.isPublished) {
-        alert('This job is no longer accepting applications');
+      if (!job.isActive || !job.isPublished || String(job.status || '').toLowerCase() === 'filled') {
+        alert(String(job.status || '').toLowerCase() === 'filled' ? 'The vacancy is already full.' : 'This job is no longer accepting applications');
         return;
       }
 
@@ -1259,6 +1260,8 @@ const JobSearch = () => {
                     const tagWFH = wmLabel === 'Work from Home';
                     const isSaved = savedJobIds.includes(jobId);
                     const hasApplied = appliedJobIds.includes(jobId);
+                  const isFilled = String(job.status || '').toLowerCase() === 'filled';
+                  const isJobClosed = job.isActive === false || job.isPublished === false || isFilled;
 
                     return (
                       <div
@@ -1468,29 +1471,29 @@ const JobSearch = () => {
                           <div className="flex flex-col items-end">
                             <button
                               onClick={() => handleApplyClick(job)}
-                              disabled={hasApplied}
+                              disabled={hasApplied || isJobClosed}
                               className={primaryBtn}
                               style={{
-                                backgroundColor: hasApplied ? '#dbeafe' : COLORS.primary,
-                                color: hasApplied ? '#1d4ed8' : '#ffffff',
-                                border: hasApplied ? '1px solid #bfdbfe' : '1px solid transparent'
+                                backgroundColor: hasApplied ? '#dbeafe' : isJobClosed ? '#e5e7eb' : COLORS.primary,
+                                color: hasApplied ? '#1d4ed8' : isJobClosed ? '#6b7280' : '#ffffff',
+                                border: hasApplied ? '1px solid #bfdbfe' : isJobClosed ? '1px solid #d1d5db' : '1px solid transparent'
                               }}
                               onMouseEnter={(e) => {
-                                if (!hasApplied) e.currentTarget.style.backgroundColor = COLORS.primaryHover;
+                                if (!hasApplied && !isJobClosed) e.currentTarget.style.backgroundColor = COLORS.primaryHover;
                               }}
                               onMouseLeave={(e) => {
-                                if (!hasApplied) e.currentTarget.style.backgroundColor = COLORS.primary;
+                                if (!hasApplied && !isJobClosed) e.currentTarget.style.backgroundColor = COLORS.primary;
                               }}
                               onMouseDown={(e) => {
-                                if (!hasApplied) e.currentTarget.style.backgroundColor = COLORS.primaryActive;
+                                if (!hasApplied && !isJobClosed) e.currentTarget.style.backgroundColor = COLORS.primaryActive;
                               }}
                               onMouseUp={(e) => {
-                                if (!hasApplied) e.currentTarget.style.backgroundColor = COLORS.primaryHover;
+                                if (!hasApplied && !isJobClosed) e.currentTarget.style.backgroundColor = COLORS.primaryHover;
                               }}
-                              aria-disabled={hasApplied}
-                              title={hasApplied ? 'You already applied for this job' : 'Apply now'}
+                              aria-disabled={hasApplied || isJobClosed}
+                              title={hasApplied ? 'You already applied for this job' : isFilled ? 'The vacancy is already full' : isJobClosed ? 'This job is no longer accepting applications' : 'Apply now'}
                             >
-                              {hasApplied ? 'Already Applied' : 'Apply Now'}
+                              {hasApplied ? 'Already Applied' : isFilled ? 'Vacancy Full' : isJobClosed ? 'Closed' : 'Apply Now'}
                             </button>
 
                           

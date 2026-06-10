@@ -859,13 +859,24 @@ exports.updateJobStatus = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to update job status' });
     }
 
-    job.isActive = req.body.isActive;
+    const shouldActivate = Boolean(req.body.isActive);
+
+    job.isActive = shouldActivate;
+
+    if (shouldActivate) {
+      job.status = 'published';
+      job.isPublished = true;
+      job.filledAt = null;
+      job.filledReason = '';
+    } else if (String(job.status || '').toLowerCase() !== 'filled') {
+      job.status = 'closed';
+    }
 
     await job.save();
 
     res.status(200).json({
       success: true,
-      message: `Job ${req.body.isActive ? 'activated' : 'closed'} successfully`,
+      message: `Job ${shouldActivate ? 'activated' : 'closed'} successfully`,
       job
     });
   } catch (error) {

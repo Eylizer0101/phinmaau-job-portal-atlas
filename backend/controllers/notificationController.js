@@ -417,7 +417,8 @@ exports.createApplicationStatusNotification = async (application, oldStatus, new
         const statusMessages = {
             'for interview': 'Your application has been moved to For Interview!',
             'hired': 'Congratulations! You have been hired!',
-            'declined': 'Your application has been declined.'
+            'declined': 'Your application has been declined.',
+            'vacancy full': 'The vacancy is already full.'
         };
 
         const message = statusMessages[newStatus] || `Your application status changed to ${newStatus}`;
@@ -442,6 +443,37 @@ exports.createApplicationStatusNotification = async (application, oldStatus, new
         return notification;
     } catch (error) {
         console.error('Error creating application status notification:', error);
+    }
+};
+
+
+
+exports.createVacancyFullNotification = async (application, job) => {
+    try {
+        if (!application?.jobseeker) return null;
+
+        const notification = new Notification({
+            user: application.jobseeker,
+            type: 'application_update',
+            title: 'Vacancy Full',
+            message: `The vacancy is already full for "${job?.title || application.job?.title || 'the job'}" at ${job?.companyName || application.job?.companyName || 'the company'}.`,
+            relatedId: application._id,
+            relatedModel: 'Application',
+            link: `/jobseeker/my-applications`,
+            metadata: {
+                applicationId: application._id,
+                jobId: job?._id || application.job,
+                oldStatus: 'pending',
+                newStatus: 'vacancy full',
+                reason: 'vacancy_full'
+            }
+        });
+
+        await notification.save();
+        return notification;
+    } catch (error) {
+        console.error('Error creating vacancy full notification:', error);
+        return null;
     }
 };
 

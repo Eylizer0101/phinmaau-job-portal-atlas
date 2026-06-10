@@ -502,6 +502,8 @@ const getStatusPill = (status) => {
       return 'bg-green-50 text-green-800 border border-green-200';
     case 'declined':
       return 'bg-red-50 text-red-800 border border-red-200';
+    case 'vacancy full':
+      return 'bg-orange-50 text-orange-800 border border-orange-200';
     default:
       return 'bg-gray-100 text-gray-800 border border-gray-200';
   }
@@ -760,7 +762,8 @@ const Applicants = () => {
     const forInterview = allApplications.filter((a) => a.status === 'for interview').length;
     const hired = allApplications.filter((a) => a.status === 'hired').length;
     const declined = allApplications.filter((a) => a.status === 'declined').length;
-    return { total, pending, forInterview, hired, declined };
+    const vacancyFull = allApplications.filter((a) => a.status === 'vacancy full').length;
+    return { total, pending, forInterview, hired, declined, vacancyFull };
   }, [allApplications]);
 
   const jobOptions = useMemo(() => {
@@ -927,7 +930,7 @@ const Applicants = () => {
             app._id === applicationId
               ? {
                   ...app,
-                  status: newStatus,
+                  status: res.data.application?.status || newStatus,
                   reviewedAt: res.data.application?.reviewedAt || new Date(),
                   declineReason: res.data.application?.declineReason || app.declineReason || '',
                   declineComment: res.data.application?.declineComment || '',
@@ -937,7 +940,11 @@ const Applicants = () => {
           )
         );
 
-        if (newStatus === 'for interview') {
+        if (res.data?.vacancy?.isFull) {
+          await fetchApplications();
+          await fetchJobs();
+          setSuccess(`Applicant marked as Hired. The job post is now Filled because the vacancy is already full.`);
+        } else if (newStatus === 'for interview') {
           setSuccess(` Applicant moved to For Interview! Messaging is now enabled.`);
         } else if (newStatus === 'hired') {
           setSuccess(` Applicant marked as Hired! Messaging remains enabled.`);
@@ -986,6 +993,7 @@ const Applicants = () => {
       { key: 'for interview', label: 'For Interview', count: summary.forInterview },
       { key: 'hired', label: 'Hired', count: summary.hired },
       { key: 'declined', label: 'Declined', count: summary.declined },
+      { key: 'vacancy full', label: 'Vacancy Full', count: summary.vacancyFull },
     ],
     [summary]
   );

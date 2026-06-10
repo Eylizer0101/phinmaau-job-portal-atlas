@@ -112,7 +112,7 @@ const applicationSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'for interview', 'hired', 'declined', 'withdrawn', 'cancelled'],
+        enum: ['pending', 'for interview', 'hired', 'declined', 'withdrawn', 'cancelled', 'vacancy full'],
         default: 'pending'
     },
     lastActiveStatus: {

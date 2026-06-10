@@ -7,8 +7,8 @@ const Message = require('../models/Message');
 const notificationController = require('./notificationController');
 
 const ACTIVE_APPLICATION_STATUSES = ['pending', 'for interview', 'hired'];
-const INACTIVE_APPLICATION_STATUSES = ['declined', 'withdrawn', 'cancelled'];
-const VALID_APPLICATION_STATUSES = ['pending', 'for interview', 'hired', 'declined', 'withdrawn', 'cancelled'];
+const INACTIVE_APPLICATION_STATUSES = ['declined', 'withdrawn', 'cancelled', 'vacancy full'];
+const VALID_APPLICATION_STATUSES = ['pending', 'for interview', 'hired', 'declined', 'withdrawn', 'cancelled', 'vacancy full'];
 const VALID_DECLINE_REASONS = [
   'Did not meet minimum qualifications',
   'Insufficient relevant experience',
@@ -318,6 +318,88 @@ const buildDeclinedQuery = (employerId, jobId, isArchived) => {
 };
 
 // ✅ NEW HELPER: counts for declined tabs
+
+const normalizeJobStatus = (status) => String(status || '').toLowerCase().trim();
+
+const isJobVacancyFull = async (job) => {
+  if (!job) return true;
+
+  if (normalizeJobStatus(job.status) === 'filled') return true;
+
+  const vacancyLimit = Number(job.vacancies || 0);
+  if (!Number.isFinite(vacancyLimit) || vacancyLimit < 1) return false;
+
+  const hiredCount = await Application.countDocuments({
+    job: job._id,
+    status: 'hired'
+  });
+
+  return hiredCount >= vacancyLimit;
+};
+
+const closeJobWhenVacancyIsFull = async (jobId) => {
+  const job = await Job.findById(jobId);
+  if (!job) return { isFull: false, hiredCount: 0, vacancyLimit: 0, affectedPendingCount: 0 };
+
+  const vacancyLimit = Number(job.vacancies || 0);
+  if (!Number.isFinite(vacancyLimit) || vacancyLimit < 1) {
+    return { isFull: false, hiredCount: 0, vacancyLimit: 0, affectedPendingCount: 0, job };
+  }
+
+  const hiredCount = await Application.countDocuments({
+    job: job._id,
+    status: 'hired'
+  });
+
+  if (hiredCount < vacancyLimit) {
+    return { isFull: false, hiredCount, vacancyLimit, affectedPendingCount: 0, job };
+  }
+
+  const pendingApplications = await Application.find({
+    job: job._id,
+    status: 'pending'
+  }).select('_id job jobseeker employer status lastActiveStatus');
+
+  if (pendingApplications.length) {
+    await Application.updateMany(
+      { _id: { $in: pendingApplications.map((app) => app._id) } },
+      {
+        $set: {
+          status: 'vacancy full',
+          reviewedAt: new Date(),
+          notes: 'The vacancy is already full.',
+          isDeclinedArchived: false,
+          declinedArchivedAt: null,
+          declinedFrom: '',
+          declineReason: '',
+          declineComment: ''
+        }
+      }
+    );
+
+    await Promise.allSettled(
+      pendingApplications.map((app) =>
+        notificationController.createVacancyFullNotification(app, job)
+      )
+    );
+  }
+
+  job.status = 'filled';
+  job.isActive = false;
+  job.isPublished = true;
+  job.filledAt = job.filledAt || new Date();
+  job.filledReason = 'Vacancy is already full';
+  await job.save();
+
+  return {
+    isFull: true,
+    hiredCount,
+    vacancyLimit,
+    affectedPendingCount: pendingApplications.length,
+    job
+  };
+};
+
 const getDeclinedCounts = async (employerId, jobId) => {
   const base = {
     employer: employerId,
@@ -402,8 +484,17 @@ exports.applyForJob = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Job not found' });
     }
 
+    if (normalizeJobStatus(job.status) === 'filled') {
+      return res.status(400).json({ success: false, message: 'The vacancy is already full.' });
+    }
+
     if (!job.isActive || !job.isPublished) {
       return res.status(400).json({ success: false, message: 'This job is no longer accepting applications' });
+    }
+
+    if (await isJobVacancyFull(job)) {
+      await closeJobWhenVacancyIsFull(job._id);
+      return res.status(400).json({ success: false, message: 'The vacancy is already full.' });
     }
 
     if (job.applicationDeadline && new Date(job.applicationDeadline) < new Date()) {
@@ -684,7 +775,7 @@ exports.reactivateMyApplication = async (req, res) => {
     const application = await Application.findById(applicationId)
       .populate({
         path: 'job',
-        select: 'title companyName location jobType salaryMin salaryMax applicationDeadline companyLogo isActive isPublished'
+        select: 'title companyName location jobType salaryMin salaryMax applicationDeadline companyLogo isActive isPublished status vacancies'
       })
       .populate({
         path: 'jobseeker',
@@ -715,6 +806,28 @@ exports.reactivateMyApplication = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Only inactive applications can be reactivated'
+      });
+    }
+
+    if (!application.job || normalizeJobStatus(application.job.status) === 'filled') {
+      return res.status(400).json({
+        success: false,
+        message: 'The vacancy is already full.'
+      });
+    }
+
+    if (!application.job.isActive || !application.job.isPublished) {
+      return res.status(400).json({
+        success: false,
+        message: 'This job is no longer accepting applications'
+      });
+    }
+
+    if (await isJobVacancyFull(application.job)) {
+      await closeJobWhenVacancyIsFull(application.job._id);
+      return res.status(400).json({
+        success: false,
+        message: 'The vacancy is already full.'
       });
     }
 
@@ -1700,6 +1813,25 @@ exports.updateApplicationStatus = async (req, res) => {
 
     if (notes) application.notes = notes;
 
+    if (nextStatus === 'hired' && oldStatus !== 'hired') {
+      const vacancyLimit = Number(application.job?.vacancies || 0);
+      if (Number.isFinite(vacancyLimit) && vacancyLimit > 0) {
+        const currentHiredCount = await Application.countDocuments({
+          job: application.job._id,
+          status: 'hired',
+          _id: { $ne: application._id }
+        });
+
+        if (currentHiredCount >= vacancyLimit || normalizeJobStatus(application.job?.status) === 'filled') {
+          await closeJobWhenVacancyIsFull(application.job._id);
+          return res.status(400).json({
+            success: false,
+            message: 'The vacancy is already full.'
+          });
+        }
+      }
+    }
+
     await application.save();
 
     if (oldStatus !== nextStatus) {
@@ -1710,10 +1842,25 @@ exports.updateApplicationStatus = async (req, res) => {
       );
     }
 
+    let vacancyResult = null;
+    if (nextStatus === 'hired') {
+      vacancyResult = await closeJobWhenVacancyIsFull(application.job._id);
+    }
+
+    const responseApplication = await Application.findById(application._id).populate('job');
+
     res.status(200).json({
       success: true,
-      message: `Application updated to ${nextStatus} successfully`,
-      application
+      message: vacancyResult?.isFull
+        ? `Application updated to ${nextStatus} successfully. The job post is now filled because the vacancy is already full.`
+        : `Application updated to ${nextStatus} successfully`,
+      application: responseApplication || application,
+      vacancy: vacancyResult ? {
+        isFull: vacancyResult.isFull,
+        hiredCount: vacancyResult.hiredCount,
+        vacancyLimit: vacancyResult.vacancyLimit,
+        affectedPendingCount: vacancyResult.affectedPendingCount
+      } : undefined
     });
 
   } catch (error) {

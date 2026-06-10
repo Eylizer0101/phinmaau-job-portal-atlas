@@ -253,6 +253,7 @@ const ManageJobs = () => {
   };
 
   const getDerivedStatus = (job) => {
+    if (String(job?.status || '').toLowerCase() === 'filled') return 'filled';
     if (job.isPublished === false) return 'draft';
     if (job.isActive && isExpired(job.applicationDeadline)) return 'expired';
     return job.isActive ? 'open' : 'closed';
@@ -263,6 +264,7 @@ const ManageJobs = () => {
     if (s === 'draft') return 'border border-gray-200 bg-gray-100 text-gray-700';
     if (s === 'open') return 'border border-blue-200 bg-blue-50 text-[#2e66a6]';
     if (s === 'expired') return 'border border-amber-200 bg-amber-50 text-amber-700';
+    if (s === 'filled') return 'border border-orange-200 bg-orange-50 text-orange-700';
     return 'border border-gray-300 bg-gray-50 text-gray-700';
   };
 
@@ -271,6 +273,7 @@ const ManageJobs = () => {
     if (s === 'draft') return 'Draft';
     if (s === 'open') return 'Open';
     if (s === 'expired') return 'Expired';
+    if (s === 'filled') return 'Filled';
     return 'Closed';
   };
 
@@ -651,6 +654,7 @@ const ManageJobs = () => {
                   <option value="all">Status</option>
                   <option value="open">Open</option>
                   <option value="closed">Closed</option>
+                  <option value="filled">Filled</option>
                   <option value="expired">Expired</option>
                   <option value="draft">Draft</option>
                 </select>

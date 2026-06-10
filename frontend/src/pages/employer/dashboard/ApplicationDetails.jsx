@@ -210,6 +210,7 @@ const statusMeta = (statusRaw) => {
   if (s === 'for interview') return { label: 'For Interview', cls: 'bg-[#eef5fc] text-[#2e66a6] border-[#b9d0e8]' };
   if (s === 'hired') return { label: 'Hired', cls: 'bg-green-50 text-green-700 border-green-200' };
   if (s === 'declined') return { label: 'Declined', cls: 'bg-red-50 text-red-700 border-red-200' };
+  if (s === 'vacancy full') return { label: 'Vacancy Full', cls: 'bg-orange-50 text-orange-700 border-orange-200' };
   return { label: s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Pending', cls: 'bg-gray-50 text-gray-700 border-gray-200' };
 };
 
@@ -394,13 +395,13 @@ const ApplicationDetails = () => {
       if (response.data.success) {
         setApplication((prev) => ({
           ...prev,
-          status: newStatus,
+          status: response.data.application?.status || newStatus,
           reviewedAt: response.data.application?.reviewedAt || new Date().toISOString(),
           declineReason: response.data.application?.declineReason || '',
           declineComment: response.data.application?.declineComment || '',
           declinedFrom: response.data.application?.declinedFrom || '',
         }));
-        setToast(setSuccess, newStatus === 'for interview' ? 'Status updated: For Interview' : newStatus === 'hired' ? 'Status updated: Hired' : 'Application marked as Declined with feedback saved.');
+        setToast(setSuccess, response.data?.vacancy?.isFull ? 'Status updated: Hired. The job post is now Filled because the vacancy is already full.' : newStatus === 'for interview' ? 'Status updated: For Interview' : newStatus === 'hired' ? 'Status updated: Hired' : 'Application marked as Declined with feedback saved.');
       }
     } catch (err) {
       console.error('Error updating status:', err);

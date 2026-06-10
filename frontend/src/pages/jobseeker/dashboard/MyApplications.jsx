@@ -44,7 +44,7 @@ const UI = {
 };
 
 const ACTIVE_STATUSES = ['pending', 'for interview', 'hired'];
-const INACTIVE_STATUSES = ['declined', 'withdrawn', 'cancelled'];
+const INACTIVE_STATUSES = ['declined', 'withdrawn', 'cancelled', 'vacancy full'];
 const REACTIVATABLE_STATUSES = ['withdrawn', 'cancelled'];
 
 const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
@@ -385,7 +385,7 @@ const MyApplications = () => {
 
     return {
       tab: tabParam === 'inactive' ? 'inactive' : 'active',
-      status: ['all', 'pending', 'for interview', 'hired', 'declined'].includes(statusParam)
+      status: ['all', 'pending', 'for interview', 'hired', 'declined', 'vacancy full'].includes(statusParam)
         ? statusParam
         : 'all',
     };
@@ -450,6 +450,8 @@ const MyApplications = () => {
         return 'Hired';
       case 'declined':
         return 'Declined';
+      case 'vacancy full':
+        return 'Vacancy Full';
       case 'withdrawn':
         return 'You withdrawn this application';
       case 'cancelled':
@@ -483,6 +485,8 @@ const MyApplications = () => {
         return 'bg-gray-100 text-gray-700 border-gray-200';
       case 'declined':
         return 'bg-black/5 text-black/80 border-black/20';
+      case 'vacancy full':
+        return 'bg-orange-50 text-orange-700 border-orange-200';
       case 'pending':
       default:
         return 'bg-black/5 text-black/80 border-black/20';
@@ -599,6 +603,7 @@ const MyApplications = () => {
       forInterview: activeApps.filter((app) => (app.status || '').toLowerCase() === 'for interview').length,
       hired: activeApps.filter((app) => (app.status || '').toLowerCase() === 'hired').length,
       declined: inactiveApps.filter((app) => (app.status || '').toLowerCase() === 'declined').length,
+      vacancyFull: inactiveApps.filter((app) => (app.status || '').toLowerCase() === 'vacancy full').length,
     };
   }, [applications]);
 
@@ -608,6 +613,7 @@ const MyApplications = () => {
       { key: 'for interview', label: 'For Interview', count: counts.forInterview, icon: 'star' },
       { key: 'hired', label: 'Hired', count: counts.hired, icon: 'checkCircle' },
       { key: 'declined', label: 'Declined', count: counts.declined, icon: 'timesCircle' },
+    { key: 'vacancy full', label: 'Vacancy Full', count: counts.vacancyFull, icon: 'timesCircle' },
     ],
     [counts]
   );
@@ -615,6 +621,10 @@ const MyApplications = () => {
   const filteredApplications = useMemo(() => {
     if (statusFilter === 'declined') {
       return applications.filter((app) => (app.status || '').toLowerCase() === 'declined');
+    }
+
+    if (statusFilter === 'vacancy full') {
+      return applications.filter((app) => (app.status || '').toLowerCase() === 'vacancy full');
     }
 
     if (mainTab === 'inactive') {
@@ -635,6 +645,7 @@ const MyApplications = () => {
 
   const filterLabel = useMemo(() => {
     if (statusFilter === 'declined') return 'Declined Applications';
+    if (statusFilter === 'vacancy full') return 'Vacancy Full Applications';
     if (mainTab === 'inactive') return 'Withdrawn / Cancelled Applications';
     if (statusFilter === 'pending') return 'Pending Applications';
     if (statusFilter === 'for interview') return 'For Interview Applications';
