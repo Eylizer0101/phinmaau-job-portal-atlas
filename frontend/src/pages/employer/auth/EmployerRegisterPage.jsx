@@ -426,8 +426,8 @@ const EmployerRegisterPage = () => {
   }, [serverError]);
 
   const Stepper = () => (
-    <div className="mt-3">
-      <div className="flex items-center justify-between">
+    <div className="mt-3 sm:mt-4">
+      <div className="grid grid-cols-3 items-start">
         {steps.map((s, idx) => {
           const isActive = s.id === step;
           const isDone = s.id < step;
@@ -440,7 +440,7 @@ const EmployerRegisterPage = () => {
             idx === steps.length - 1 ? 'bg-transparent' : s.id < step ? 'bg-[#2e66a6]' : 'bg-gray-200';
 
           const circleBase =
-            'w-9 h-9 rounded-full flex items-center justify-center text-sm font-extrabold transition ' +
+            'w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-extrabold transition ' +
             'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20';
 
           const circleClass = isDone
@@ -452,7 +452,7 @@ const EmployerRegisterPage = () => {
           const labelClass = isActive ? 'text-[#2e66a6]' : 'text-gray-500';
 
           return (
-            <div key={s.id} className="flex-1">
+            <div key={s.id} className="min-w-0">
               <div className="flex items-center">
                 <div className={`h-px flex-1 ${leftLine}`} />
                 <button
@@ -482,7 +482,7 @@ const EmployerRegisterPage = () => {
                 <div className={`h-px flex-1 ${rightLine}`} />
               </div>
 
-              <p className={`mt-2 text-[11px] font-semibold text-center ${labelClass}`}>{s.label}</p>
+              <p className={`mt-1.5 sm:mt-2 min-h-[30px] sm:min-h-0 px-1 text-[10px] sm:text-[11px] font-semibold leading-tight text-center ${labelClass}`}>{s.label}</p>
             </div>
           );
         })}
