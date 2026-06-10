@@ -1064,10 +1064,7 @@ const RegisterPage = () => {
       <div className="relative z-10 px-3 py-4 sm:px-7 sm:py-6 lg:px-7">
         <div className="text-center">
           <h3 className="text-xl sm:text-3xl font-extrabold text-white leading-tight">How it Works</h3>
-          <p className="mx-auto mt-2 max-w-[290px] text-[11px] sm:text-base text-white/90 leading-relaxed">
-            Follow these simple steps to complete your registration
-            <br className="hidden sm:block" /> and get started.
-          </p>
+          <div className="mt-8 sm:mt-9" aria-hidden="true" />
         </div>
 
         <div className="mt-4 sm:mt-5 flex items-center justify-center px-1 sm:px-2" aria-label="How it Works step progress">
@@ -1133,7 +1130,7 @@ const RegisterPage = () => {
             >
               {howItWorksSlides.map((slide) => (
                 <div key={slide.id} className="w-full shrink-0 px-1">
-                  <div className="h-[300px] sm:h-[335px] lg:h-[345px] overflow-hidden rounded-3xl bg-white px-5 sm:px-7 py-4 sm:py-5 text-center text-[#10233f] shadow-[0_12px_35px_rgba(8,34,88,0.18)] ring-1 ring-white/70 flex flex-col items-center justify-center">
+                  <div className="h-[315px] sm:h-[335px] lg:h-[345px] overflow-hidden rounded-3xl bg-white px-5 sm:px-7 py-4 sm:py-5 text-center text-[#10233f] shadow-[0_12px_35px_rgba(8,34,88,0.18)] ring-1 ring-white/70 flex flex-col items-center justify-center">
                     <div className="mb-2 sm:mb-3 flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-[#edf5ff] ring-4 sm:ring-6 ring-[#f4f8fd]">
                       {renderHowItWorksIcon(slide.icon)}
                     </div>
