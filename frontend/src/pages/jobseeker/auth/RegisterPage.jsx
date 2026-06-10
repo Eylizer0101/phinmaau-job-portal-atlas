@@ -1011,7 +1011,7 @@ const RegisterPage = () => {
   const renderHowItWorksIcon = (icon) => {
     if (icon === 'profile') {
       return (
-        <svg className="w-8 h-8 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <svg className="w-7 h-7 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 21a7 7 0 0114 0" />
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11h4v4h-4zM18 10v6" />
@@ -1021,7 +1021,7 @@ const RegisterPage = () => {
 
     if (icon === 'documents') {
       return (
-        <svg className="w-8 h-8 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <svg className="w-7 h-7 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z" />
         </svg>
       );
@@ -1029,7 +1029,7 @@ const RegisterPage = () => {
 
     if (icon === 'review') {
       return (
-        <svg className="w-8 h-8 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <svg className="w-7 h-7 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 11l3 3L22 4" />
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
         </svg>
@@ -1038,7 +1038,7 @@ const RegisterPage = () => {
 
     if (icon === 'approval') {
       return (
-        <svg className="w-8 h-8 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <svg className="w-7 h-7 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3" />
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 22a10 10 0 100-20 10 10 0 000 20z" />
         </svg>
@@ -1046,7 +1046,7 @@ const RegisterPage = () => {
     }
 
     return (
-      <svg className="w-8 h-8 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <svg className="w-7 h-7 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0z" />
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
       </svg>
@@ -1061,16 +1061,16 @@ const RegisterPage = () => {
       <div className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
       <div className="pointer-events-none absolute -left-16 bottom-20 h-36 w-36 rounded-full bg-[#52b2db]/30 blur-3xl" />
 
-      <div className="relative z-10 px-6 py-7 sm:px-8 sm:py-8 lg:px-8">
+      <div className="relative z-10 px-6 py-5 sm:px-7 sm:py-6 lg:px-7">
         <div className="text-center">
           <h3 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">How it Works</h3>
-          <p className="mt-3 text-sm sm:text-base text-white/90 leading-relaxed">
+          <p className="mt-2 text-sm sm:text-base text-white/90 leading-relaxed">
             Follow these simple steps to complete your registration
             <br className="hidden sm:block" /> and get started.
           </p>
         </div>
 
-        <div className="mt-7 flex items-center justify-center px-2" aria-label="How it Works step progress">
+        <div className="mt-5 flex items-center justify-center px-2" aria-label="How it Works step progress">
           {howItWorksSlides.map((slide, index) => {
             const isActive = index === currentHowItWorksSlide;
             return (
@@ -1095,7 +1095,7 @@ const RegisterPage = () => {
           })}
         </div>
 
-        <div className="relative mt-8">
+        <div className="relative mt-5">
           <button
             type="button"
             onClick={() => goToHowItWorksSlide(currentHowItWorksSlide - 1)}
@@ -1133,21 +1133,21 @@ const RegisterPage = () => {
             >
               {howItWorksSlides.map((slide) => (
                 <div key={slide.id} className="w-full shrink-0 px-1">
-                  <div className="min-h-[285px] sm:min-h-[275px] lg:min-h-[310px] rounded-3xl bg-white px-8 py-7 text-center text-[#10233f] shadow-[0_12px_35px_rgba(8,34,88,0.18)] ring-1 ring-white/70 flex flex-col items-center justify-center">
-                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#edf5ff] ring-8 ring-[#f4f8fd]">
+                  <div className="min-h-[235px] sm:min-h-[230px] lg:min-h-[245px] rounded-3xl bg-white px-7 py-5 text-center text-[#10233f] shadow-[0_12px_35px_rgba(8,34,88,0.18)] ring-1 ring-white/70 flex flex-col items-center justify-center">
+                    <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#edf5ff] ring-6 ring-[#f4f8fd]">
                       {renderHowItWorksIcon(slide.icon)}
                     </div>
 
-                    <h4 className="text-lg sm:text-xl font-extrabold leading-snug text-[#0f2442]">{slide.title}</h4>
+                    <h4 className="text-base sm:text-lg font-extrabold leading-snug text-[#0f2442]">{slide.title}</h4>
 
-                    <div className="mt-4 space-y-1 text-sm sm:text-[15px] font-medium leading-relaxed text-[#31415a]">
+                    <div className="mt-3 space-y-0.5 text-sm sm:text-[14px] font-medium leading-relaxed text-[#31415a]">
                       {slide.description.map((line) => (
                         <p key={`${slide.id}-${line}`}>{line}</p>
                       ))}
                     </div>
 
                     {slide.checklist ? (
-                      <div className="mt-4 w-full max-w-[360px] space-y-3 text-left">
+                      <div className="mt-3 w-full max-w-[360px] space-y-2 text-left">
                         {slide.checklist.map((item) => (
                           <div key={item} className="flex items-start gap-3 text-sm sm:text-[15px] font-semibold text-[#173253]">
                             <span className="mt-0.5 text-[#1f67b7]">✓</span>
@@ -1157,7 +1157,7 @@ const RegisterPage = () => {
                       </div>
                     ) : null}
 
-                    {slide.footer ? <p className="mt-5 text-sm sm:text-[15px] font-semibold leading-relaxed text-[#173253]">{slide.footer}</p> : null}
+                    {slide.footer ? <p className="mt-3 text-sm sm:text-[14px] font-semibold leading-relaxed text-[#173253]">{slide.footer}</p> : null}
                   </div>
                 </div>
               ))}
@@ -1165,7 +1165,7 @@ const RegisterPage = () => {
           </div>
         </div>
 
-        <div className="mt-6 flex items-center justify-center gap-3" aria-label="How it Works slide indicators">
+        <div className="mt-4 flex items-center justify-center gap-3" aria-label="How it Works slide indicators">
           {howItWorksSlides.map((slide, index) => (
             <button
               key={slide.id}
