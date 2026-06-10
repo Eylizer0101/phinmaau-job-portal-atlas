@@ -793,10 +793,10 @@ const EmployerRegisterPage = () => {
       <ReadyToGoModal />
       <ThankYouModal />
 
-      <div className="w-full max-w-7xl">
+      <div className="w-full max-w-[1340px]">
         <div className="bg-white rounded-2xl shadow-xl ring-1 ring-black/5 overflow-hidden min-h-[90vh]">
           <div className="flex flex-col lg:flex-row">
-            <div className="relative lg:w-5/12 p-8 lg:p-12 bg-white flex items-center justify-center">
+            <div className="relative lg:w-5/12 p-6 pt-14 lg:p-10 bg-white flex items-center justify-center">
               <button
                 type="button"
                 onClick={handleBack}
@@ -815,7 +815,7 @@ const EmployerRegisterPage = () => {
               </button>
 
               <div className="h-full flex flex-col justify-center">
-                <div className="mt-2 w-full max-w-[520px] mx-auto relative">
+                <div className="mt-2 w-full max-w-[500px] mx-auto relative">
                   <div className="pointer-events-none absolute inset-0 z-0">
                     <div
                       className="
@@ -844,14 +844,14 @@ const EmployerRegisterPage = () => {
                     <div className="pointer-events-none absolute left-24 top-44 h-52 w-80 rounded-[2rem] bg-white/10 rotate-[-6deg]" />
                     <div className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
 
-                    <div className="relative z-10 px-6 py-6 sm:px-7 lg:px-7">
+                    <div className="relative z-10 px-5 py-5 sm:px-6 sm:py-5 lg:px-6">
                       <div className="text-center">
                         <h3 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">
                           How it Works
                         </h3>
                       </div>
 
-                      <div className="relative mt-14 sm:mt-16">
+                      <div className="relative mt-9 sm:mt-10">
                         <button
                           type="button"
                           onClick={() => goToHowItWorksSlide(currentHowItWorksSlide - 1)}
@@ -889,16 +889,16 @@ const EmployerRegisterPage = () => {
                           >
                             {howItWorksSlides.map((slide) => (
                               <div key={slide.id} className="w-full shrink-0 px-0">
-                                <div className="h-[355px] overflow-hidden rounded-[28px] bg-white px-6 py-5 text-center text-[#0f2d5f] shadow-[0_18px_45px_rgba(5,27,65,0.28)] ring-1 ring-white/70 flex flex-col items-center justify-center">
-                                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#2e7df5] to-[#10439a] text-3xl font-extrabold text-white shadow-xl">
+                                <div className="h-[315px] overflow-hidden rounded-[28px] bg-white px-6 py-4 text-center text-[#0f2d5f] shadow-[0_18px_45px_rgba(5,27,65,0.28)] ring-1 ring-white/70 flex flex-col items-center justify-center">
+                                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#2e7df5] to-[#10439a] text-2xl font-extrabold text-white shadow-xl">
                                     {slide.id}
                                   </div>
 
-                                  <h4 className="mt-5 text-xl font-extrabold leading-tight text-[#0f2d5f]">
+                                  <h4 className="mt-4 text-lg sm:text-xl font-extrabold leading-tight text-[#0f2d5f]">
                                     {slide.title}
                                   </h4>
 
-                                  <p className="mx-auto mt-4 max-w-[360px] text-sm sm:text-[15px] font-semibold leading-relaxed text-[#132b52]">
+                                  <p className="mx-auto mt-3 max-w-[360px] text-sm sm:text-[15px] font-semibold leading-relaxed text-[#132b52]">
                                     {slide.description}
                                   </p>
 
@@ -914,7 +914,7 @@ const EmployerRegisterPage = () => {
                                   ) : null}
 
                                   {slide.footer ? (
-                                    <p className="mx-auto mt-4 max-w-[360px] text-sm sm:text-[15px] font-semibold leading-relaxed text-[#132b52]">
+                                    <p className="mx-auto mt-3 max-w-[360px] text-sm sm:text-[15px] font-semibold leading-relaxed text-[#132b52]">
                                       {slide.footer}
                                     </p>
                                   ) : null}
@@ -925,7 +925,7 @@ const EmployerRegisterPage = () => {
                         </div>
                       </div>
 
-                      <div className="mt-6">
+                      <div className="mt-4">
                         <div className="flex items-center justify-center gap-3" aria-label="How it Works slide indicators">
                           {howItWorksSlides.map((slide, index) => (
                             <button
@@ -941,7 +941,7 @@ const EmployerRegisterPage = () => {
                           ))}
                         </div>
 
-                        <p className="mt-4 text-center text-base font-extrabold text-white">
+                        <p className="mt-3 text-center text-base font-extrabold text-white">
                           {activeHowItWorksSlide.id} of {totalHowItWorksSlides}
                         </p>
                       </div>
@@ -955,8 +955,8 @@ const EmployerRegisterPage = () => {
               <div className="w-px h-[85%] bg-gradient-to-b from-transparent via-gray-200 to-transparent" />
             </div>
 
-            <div className="lg:w-7/12 p-8 lg:p-10 bg-white">
-              <div className="mx-auto w-full max-w-2xl">
+            <div className="lg:w-7/12 p-8 lg:p-10 bg-white flex flex-col justify-center">
+              <div className="mx-auto w-full max-w-[760px]">
                 <div className="text-center">
                   <h2 className="text-3xl font-bold text-gray-600 tracking-tight">Create Employer Account</h2>
                 </div>
