@@ -1326,7 +1326,7 @@ const RegisterPage = () => {
         <div className="bg-white rounded-2xl shadow-xl ring-1 ring-black/5 overflow-hidden min-h-[90vh]">
           <div className="flex flex-col lg:flex-row">
             {/* LEFT BRAND PANEL */}
-            <div className="relative lg:w-[46%] p-6 lg:p-8 bg-white flex items-center justify-center">
+            <div className="relative lg:w-[42%] p-6 lg:p-8 bg-white flex items-center justify-center">
               <button
                 type="button"
                 onClick={() => {
@@ -1348,7 +1348,7 @@ const RegisterPage = () => {
               </button>
 
               <div className="h-full flex flex-col justify-center">
-                <div className="mt-2 w-full max-w-[590px] mx-auto relative">
+                <div className="mt-2 w-full max-w-[520px] mx-auto relative">
                   <div className="pointer-events-none absolute inset-0 z-0">
                     <div
                       className="
@@ -1381,7 +1381,7 @@ const RegisterPage = () => {
             </div>
 
             {/* RIGHT FORM PANEL */}
-            <div className="lg:w-[54%] p-8 lg:p-10 bg-white flex flex-col justify-center">
+            <div className="lg:w-[58%] p-8 lg:p-10 bg-white flex flex-col justify-center">
               <div className="mx-auto w-full max-w-2xl">
                 <div className="text-center">
                   <h2 className="text-3xl font-bold text-gray-600 tracking-tight">Let's set up your profile!</h2>
