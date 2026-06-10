@@ -588,7 +588,13 @@ const JobSearch = () => {
       if (safeSalaryRange.maxSalary) params.append('maxSalary', safeSalaryRange.maxSalary);
       if (filters.experienceLevel) params.append('experienceLevel', filters.experienceLevel);
 
-      const response = await api.get(`/jobs?${params.toString()}`);
+      let response;
+      try {
+        response = await api.get(`/jobs/recommended?${params.toString()}`);
+      } catch (recommendedError) {
+        console.error('Error fetching recommended jobs, falling back to all jobs:', recommendedError);
+        response = await api.get(`/jobs?${params.toString()}`);
+      }
 
       let jobsData = [];
 
@@ -736,6 +742,12 @@ const JobSearch = () => {
       sorted.sort((a, b) => getExpiryComparable(a) - getExpiryComparable(b));
     } else if (sortBy === 'newest') {
       sorted.sort((a, b) => getFreshnessComparable(b) - getFreshnessComparable(a));
+    } else {
+      sorted.sort((a, b) => {
+        const matchDiff = Number(b?.matchScore || 0) - Number(a?.matchScore || 0);
+        if (matchDiff !== 0) return matchDiff;
+        return getFreshnessComparable(b) - getFreshnessComparable(a);
+      });
     }
 
     return sorted;
@@ -1415,6 +1427,12 @@ const JobSearch = () => {
                         </div>
 
                         <div className="mt-4 flex flex-nowrap items-center gap-2 overflow-hidden">
+                          {job.isRecommended && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-green-50 text-green-700 border border-green-200">
+                              Recommended
+                            </span>
+                          )}
+
                           {experienceBadgeLabel && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-blue-50 text-[#2e66a6] border border-blue-200">
                               {experienceBadgeLabel}

@@ -11,6 +11,7 @@ const {
   restoreJob,
   permanentlyDeleteJob,
   getEmployerJobs,
+  getRecommendedJobs,
   updateJobStatus,
   saveJob,
   removeSavedJob,
@@ -23,6 +24,9 @@ router.get('/', getAllJobs);
 
 // ✅ FIX: put this BEFORE "/:id" or else it becomes id="employer"
 router.get('/employer/my-jobs', protect, authorize('employer'), getEmployerJobs);
+
+// ✅ JOBSEEKER RECOMMENDED JOB ROUTE
+router.get('/recommended', protect, authorize('jobseeker'), getRecommendedJobs);
 
 // ✅ SAVED JOB ROUTES
 router.get('/saved', protect, authorize('jobseeker'), getSavedJobs);

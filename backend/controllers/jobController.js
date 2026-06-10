@@ -2,6 +2,173 @@ const Job = require('../models/Job');
 const User = require('../models/User');
 const notificationController = require('./notificationController');
 
+
+const escapeRegExp = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const tokenizeProfileValue = (value) => {
+  if (!value) return [];
+
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => tokenizeProfileValue(item));
+  }
+
+  if (typeof value === 'object') {
+    return Object.values(value).flatMap((item) => tokenizeProfileValue(item));
+  }
+
+  return String(value || '')
+    .split(/\|\||,|\n|;/g)
+    .map((item) => String(item || '').replace(/\s[—-]\s(?:Basic|Novice|Intermediate|Advanced|Expert)$/i, '').trim())
+    .filter(Boolean);
+};
+
+const normalizeKeyword = (value) => String(value || '')
+  .toLowerCase()
+  .replace(/[^a-z0-9+#.\s-]/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+const COURSE_KEYWORD_MAP = [
+  {
+    test: ['information technology', 'computer science', 'computer engineering', 'it', 'ict'],
+    keywords: ['information technology', 'it staff', 'technical support', 'programmer', 'software developer', 'web developer', 'frontend', 'backend', 'database', 'systems', 'network', 'computer', 'developer', 'coding', 'web development']
+  },
+  {
+    test: ['business administration', 'business management', 'management'],
+    keywords: ['business', 'management', 'administrative', 'office staff', 'operations', 'business development', 'supervisor']
+  },
+  {
+    test: ['accountancy', 'accounting', 'financial management', 'finance'],
+    keywords: ['accounting', 'accountant', 'finance', 'bookkeeper', 'audit', 'payroll', 'billing', 'financial']
+  },
+  {
+    test: ['hospitality', 'tourism', 'hotel restaurant', 'hrm'],
+    keywords: ['hospitality', 'hotel', 'restaurant', 'tourism', 'front desk', 'food service', 'service crew', 'cashier']
+  },
+  {
+    test: ['education', 'teacher', 'teaching'],
+    keywords: ['teacher', 'teaching', 'education', 'instructor', 'tutor', 'academic']
+  },
+  {
+    test: ['nursing', 'medical', 'healthcare', 'health care'],
+    keywords: ['nurse', 'medical', 'healthcare', 'clinic', 'patient', 'caregiver', 'health']
+  },
+  {
+    test: ['criminology'],
+    keywords: ['security', 'safety', 'investigator', 'loss prevention', 'criminology']
+  }
+];
+
+const buildJobseekerMatchKeywords = (user = {}) => {
+  const profile = user?.jobSeekerProfile || {};
+  const rawKeywords = [];
+
+  rawKeywords.push(profile.course, profile.studyField, profile.educationalAttainment, profile.employmentType, profile.preferredWorkMode);
+  rawKeywords.push(...tokenizeProfileValue(profile.technicalSkills));
+  rawKeywords.push(...tokenizeProfileValue(profile.softSkills));
+  rawKeywords.push(...tokenizeProfileValue(profile.whatHaveYouDone));
+  rawKeywords.push(...tokenizeProfileValue(profile.aboutMe));
+
+  (profile.workExperiences || []).forEach((item) => {
+    rawKeywords.push(item?.positionTitle, item?.description, item?.companyName);
+  });
+
+  ['certifications', 'projects', 'seminars', 'awards', 'affiliations', 'cocurricular'].forEach((key) => {
+    (profile[key] || []).forEach((item) => {
+      rawKeywords.push(item?.title, item?.role, item?.organization, item?.issuer, item?.description);
+    });
+  });
+
+  const normalizedBase = rawKeywords
+    .flatMap((item) => tokenizeProfileValue(item))
+    .map(normalizeKeyword)
+    .filter((item) => item.length >= 3 || ['c#', 'c++'].includes(item));
+
+  const expanded = [...normalizedBase];
+  const baseText = normalizedBase.join(' ');
+
+  COURSE_KEYWORD_MAP.forEach((group) => {
+    if (group.test.some((term) => baseText.includes(term))) {
+      expanded.push(...group.keywords.map(normalizeKeyword));
+    }
+  });
+
+  return [...new Set(expanded)].filter(Boolean);
+};
+
+const getJobSearchFields = (job = {}) => {
+  const skills = Array.isArray(job.skillsRequired) ? job.skillsRequired.join(' ') : String(job.skillsRequired || '');
+  const title = normalizeKeyword(job.title);
+  const category = normalizeKeyword(job.category);
+  const skillText = normalizeKeyword(skills);
+  const combined = normalizeKeyword([
+    job.title,
+    job.companyName,
+    job.category,
+    skills,
+    job.description,
+    job.requirements,
+    job.jobType,
+    job.workMode,
+    job.experienceLevel,
+    job.educationLevel,
+    job.location
+  ].filter(Boolean).join(' '));
+
+  return { title, category, skillText, combined };
+};
+
+const calculateJobMatchForUser = (job = {}, user = {}) => {
+  const keywords = buildJobseekerMatchKeywords(user);
+  if (!keywords.length) {
+    return { score: 0, matchedKeywords: [] };
+  }
+
+  const fields = getJobSearchFields(job);
+  let score = 0;
+  const matched = [];
+
+  keywords.forEach((keyword) => {
+    if (!keyword || (keyword.length < 3 && !['c#', 'c++'].includes(keyword))) return;
+
+    let keywordScore = 0;
+    if (fields.skillText.includes(keyword)) keywordScore += 6;
+    if (fields.title.includes(keyword)) keywordScore += 5;
+    if (fields.category.includes(keyword)) keywordScore += 4;
+    if (fields.combined.includes(keyword)) keywordScore += 2;
+
+    if (!keywordScore && keyword.includes(' ')) {
+      const parts = keyword.split(' ').filter((part) => part.length >= 3);
+      const partialHits = parts.filter((part) => fields.combined.includes(part)).length;
+      if (partialHits >= Math.min(2, parts.length)) keywordScore += partialHits;
+    }
+
+    if (keywordScore > 0) {
+      score += keywordScore;
+      matched.push(keyword);
+    }
+  });
+
+  return {
+    score,
+    matchedKeywords: [...new Set(matched)].slice(0, 10)
+  };
+};
+
+const attachRecommendationData = (jobs = [], user = null) => {
+  return (jobs || []).map((job) => {
+    const jobObj = typeof job.toObject === 'function' ? job.toObject() : { ...job };
+    const match = user ? calculateJobMatchForUser(jobObj, user) : { score: 0, matchedKeywords: [] };
+
+    return {
+      ...jobObj,
+      matchScore: match.score,
+      matchedKeywords: match.matchedKeywords,
+      isRecommended: match.score > 0
+    };
+  });
+};
+
 const normalizeSkills = (skillsRequired) => {
   if (!skillsRequired) return [];
   if (Array.isArray(skillsRequired)) {
@@ -284,45 +451,26 @@ const sendJobMatchNotifications = async (job) => {
   try {
     console.log(`Starting job match notifications for job: ${job.title}`);
 
-    if (!job.skillsRequired || job.skillsRequired.length === 0) {
-      console.log('No skills required for this job, skipping notifications');
-      return;
-    }
-
     const jobseekers = await User.find({
       role: 'jobseeker',
-      isActive: true,
-      'jobSeekerProfile.skills': { $exists: true, $ne: [] }
-    }).select('_id jobSeekerProfile.skills');
+      isActive: true
+    }).select('_id jobSeekerProfile');
 
-    console.log(`Found ${jobseekers.length} active jobseekers with skills`);
+    console.log(`Found ${jobseekers.length} active jobseekers for matching`);
 
     let notificationCount = 0;
-    const jobSkills = job.skillsRequired.map(skill => skill.toLowerCase().trim());
 
     for (const jobseeker of jobseekers) {
-      const jobseekerSkills = jobseeker.jobSeekerProfile?.skills || [];
+      const match = calculateJobMatchForUser(job, jobseeker);
 
-      if (jobseekerSkills.length === 0) continue;
+      if (match.score <= 0) continue;
 
-      const jobseekerSkillsLower = jobseekerSkills.map(skill => skill.toLowerCase().trim());
-
-      const hasMatch = jobseekerSkillsLower.some(jobseekerSkill => {
-        return jobSkills.some(jobSkill => {
-          return jobseekerSkill === jobSkill ||
-            jobseekerSkill.includes(jobSkill) ||
-            jobSkill.includes(jobseekerSkill);
-        });
-      });
-
-      if (hasMatch) {
-        try {
-          await notificationController.createJobMatchNotification(jobseeker._id, job);
-          notificationCount++;
-          console.log(`Notification sent to jobseeker: ${jobseeker._id}`);
-        } catch (notifError) {
-          console.error(`Error sending notification to ${jobseeker._id}:`, notifError);
-        }
+      try {
+        await notificationController.createJobMatchNotification(jobseeker._id, job, match);
+        notificationCount++;
+        console.log(`Notification sent to jobseeker: ${jobseeker._id}`);
+      } catch (notifError) {
+        console.error(`Error sending notification to ${jobseeker._id}:`, notifError);
       }
     }
 
@@ -465,6 +613,147 @@ exports.getAllJobs = async (req, res) => {
     });
   }
 };
+
+
+exports.getRecommendedJobs = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('jobSeekerProfile role isActive');
+
+    if (!user || user.role !== 'jobseeker') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only jobseekers can access recommended jobs'
+      });
+    }
+
+    let query = {
+      isPublished: true,
+      isActive: true,
+      status: 'published',
+      $or: [
+        { isArchived: false },
+        { isArchived: { $exists: false } }
+      ]
+    };
+
+    if (req.query.search) {
+      query.$and = query.$and || [];
+      query.$and.push({
+        $or: [
+          { title: { $regex: req.query.search, $options: 'i' } },
+          { description: { $regex: req.query.search, $options: 'i' } },
+          { companyName: { $regex: req.query.search, $options: 'i' } },
+          { skillsRequired: { $regex: req.query.search, $options: 'i' } }
+        ]
+      });
+    }
+
+    if (req.query.title) {
+      query.title = { $regex: `^${escapeRegExp(req.query.title)}$`, $options: 'i' };
+    }
+
+    if (req.query.company) {
+      query.companyName = { $regex: `^${escapeRegExp(req.query.company)}$`, $options: 'i' };
+    }
+
+    if (req.query.jobType) query.jobType = req.query.jobType;
+    if (req.query.educationLevel) query.educationLevel = req.query.educationLevel;
+    if (req.query.industry) query.category = normalizeCategory(req.query.industry);
+    else if (req.query.category) query.category = normalizeCategory(req.query.category);
+    if (req.query.workMode) query.workMode = req.query.workMode;
+    if (req.query.location) query.location = { $regex: req.query.location, $options: 'i' };
+    if (req.query.experienceLevel) query.experienceLevel = req.query.experienceLevel;
+
+    const wantFreshGraduate = parseBool(req.query.freshGraduate);
+    const wantNoExperience = parseBool(req.query.noExperience);
+
+    if (wantFreshGraduate || wantNoExperience) {
+      const orConditions = [];
+      if (wantFreshGraduate) orConditions.push({ openToFreshGraduates: true });
+      if (wantNoExperience) orConditions.push({ experienceLevel: 'No experience required' });
+      query.$and = query.$and || [];
+      query.$and.push({ $or: orConditions });
+    }
+
+    const hasMin = req.query.minSalary !== undefined && req.query.minSalary !== '';
+    const hasMax = req.query.maxSalary !== undefined && req.query.maxSalary !== '';
+
+    if (hasMin || hasMax) {
+      let min = hasMin ? Number(req.query.minSalary) : null;
+      let max = hasMax ? Number(req.query.maxSalary) : null;
+
+      if (min !== null && max !== null && !Number.isNaN(min) && !Number.isNaN(max) && min > max) {
+        const temp = min;
+        min = max;
+        max = temp;
+      }
+
+      query.$and = query.$and || [];
+
+      if (min !== null && !Number.isNaN(min)) {
+        query.$and.push({
+          $or: [
+            { salaryMax: { $gte: min } },
+            { salaryMax: { $exists: false } },
+            { salaryMax: null }
+          ]
+        });
+      }
+
+      if (max !== null && !Number.isNaN(max)) {
+        query.$and.push({
+          $or: [
+            { salaryMin: { $lte: max } },
+            { salaryMin: { $exists: false } },
+            { salaryMin: null }
+          ]
+        });
+      }
+    }
+
+    const jobs = await Job.find(query)
+      .populate({
+        path: 'employer',
+        select: 'fullName email employerProfile.companyLogo employerProfile.companyAddress employerProfile.country employerProfile.regionCity employerProfile.companyWebsiteUrl'
+      })
+      .sort({ createdAt: -1 });
+
+    const transformedJobs = attachRecommendationData(jobs, user).map((jobObj) => {
+      if (!jobObj.companyLogo && jobObj.employer?.employerProfile?.companyLogo) {
+        jobObj.companyLogo = jobObj.employer.employerProfile.companyLogo;
+      }
+      if (!jobObj.companyLogo) jobObj.companyLogo = '';
+
+      const loc = String(jobObj.location || '').trim();
+      if (!loc || loc === 'Not specified') {
+        const employerProfile = jobObj.employer?.employerProfile;
+        jobObj.location = buildCompanyLocation(employerProfile);
+      }
+
+      return jobObj;
+    }).sort((a, b) => {
+      const scoreDiff = Number(b.matchScore || 0) - Number(a.matchScore || 0);
+      if (scoreDiff !== 0) return scoreDiff;
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    });
+
+    res.status(200).json({
+      success: true,
+      count: transformedJobs.length,
+      jobs: transformedJobs,
+      recommendationContext: {
+        hasProfileKeywords: buildJobseekerMatchKeywords(user).length > 0
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching recommended jobs:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching recommended jobs'
+    });
+  }
+};
+
 
 exports.getJobById = async (req, res) => {
   try {

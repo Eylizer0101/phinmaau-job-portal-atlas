@@ -284,7 +284,13 @@ const JobSeekerDashboard = () => {
     try {
       setJobOffersLoading(true);
 
-      const jobsRes = await api.get('/jobs');
+      let jobsRes;
+      try {
+        jobsRes = await api.get('/jobs/recommended');
+      } catch (recommendedError) {
+        console.error('Error fetching recommended job offers, falling back to all jobs:', recommendedError);
+        jobsRes = await api.get('/jobs');
+      }
       const jobs = normalizeJobsResponse(jobsRes);
 
       const now = new Date();
@@ -1742,6 +1748,12 @@ const JobSeekerDashboard = () => {
                         </div>
 
                         <div className="mt-4 flex flex-wrap items-center gap-2">
+                          {job.isRecommended && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-green-50 text-green-700 border border-green-200">
+                              Recommended
+                            </span>
+                          )}
+
                           {tags.length > 0
                             ? tags.map((tag, index) => (
                                 <span

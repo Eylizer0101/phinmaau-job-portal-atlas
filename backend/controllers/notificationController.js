@@ -4,6 +4,104 @@ const Job = require('../models/Job');
 const Application = require('../models/Application');
 const Message = require('../models/Message');
 
+
+const tokenizeNotificationProfileValue = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value.flatMap((item) => tokenizeNotificationProfileValue(item));
+    if (typeof value === 'object') return Object.values(value).flatMap((item) => tokenizeNotificationProfileValue(item));
+
+    return String(value || '')
+        .split(/\|\||,|\n|;/g)
+        .map((item) => String(item || '').replace(/\s[—-]\s(?:Basic|Novice|Intermediate|Advanced|Expert)$/i, '').trim())
+        .filter(Boolean);
+};
+
+const normalizeNotificationKeyword = (value) => String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9+#.\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const buildNotificationJobseekerKeywords = (user = {}) => {
+    const profile = user?.jobSeekerProfile || {};
+    const rawKeywords = [];
+
+    rawKeywords.push(profile.course, profile.studyField, profile.educationalAttainment, profile.employmentType, profile.preferredWorkMode);
+    rawKeywords.push(...tokenizeNotificationProfileValue(profile.technicalSkills));
+    rawKeywords.push(...tokenizeNotificationProfileValue(profile.softSkills));
+    rawKeywords.push(...tokenizeNotificationProfileValue(profile.whatHaveYouDone));
+    rawKeywords.push(...tokenizeNotificationProfileValue(profile.aboutMe));
+
+    (profile.workExperiences || []).forEach((item) => {
+        rawKeywords.push(item?.positionTitle, item?.description, item?.companyName);
+    });
+
+    ['certifications', 'projects', 'seminars', 'awards', 'affiliations', 'cocurricular'].forEach((key) => {
+        (profile[key] || []).forEach((item) => {
+            rawKeywords.push(item?.title, item?.role, item?.organization, item?.issuer, item?.description);
+        });
+    });
+
+    const normalizedBase = rawKeywords
+        .flatMap((item) => tokenizeNotificationProfileValue(item))
+        .map(normalizeNotificationKeyword)
+        .filter((item) => item.length >= 3 || ['c#', 'c++'].includes(item));
+
+    const expanded = [...normalizedBase];
+    const baseText = normalizedBase.join(' ');
+
+    const courseGroups = [
+        {
+            test: ['information technology', 'computer science', 'computer engineering', 'it', 'ict'],
+            keywords: ['information technology', 'it staff', 'technical support', 'programmer', 'software developer', 'web developer', 'frontend', 'backend', 'database', 'systems', 'network', 'computer', 'developer', 'coding', 'web development']
+        },
+        {
+            test: ['business administration', 'business management', 'management'],
+            keywords: ['business', 'management', 'administrative', 'office staff', 'operations', 'business development', 'supervisor']
+        },
+        {
+            test: ['accountancy', 'accounting', 'financial management', 'finance'],
+            keywords: ['accounting', 'accountant', 'finance', 'bookkeeper', 'audit', 'payroll', 'billing', 'financial']
+        },
+        {
+            test: ['hospitality', 'tourism', 'hotel restaurant', 'hrm'],
+            keywords: ['hospitality', 'hotel', 'restaurant', 'tourism', 'front desk', 'food service', 'service crew', 'cashier']
+        }
+    ];
+
+    courseGroups.forEach((group) => {
+        if (group.test.some((term) => baseText.includes(term))) {
+            expanded.push(...group.keywords.map(normalizeNotificationKeyword));
+        }
+    });
+
+    return [...new Set(expanded)].filter(Boolean);
+};
+
+const calculateNotificationJobMatch = (job = {}, user = {}) => {
+    const keywords = buildNotificationJobseekerKeywords(user);
+    const jobText = normalizeNotificationKeyword([
+        job.title,
+        job.companyName,
+        job.category,
+        Array.isArray(job.skillsRequired) ? job.skillsRequired.join(' ') : job.skillsRequired,
+        job.description,
+        job.requirements,
+        job.jobType,
+        job.workMode,
+        job.experienceLevel,
+        job.educationLevel,
+        job.location
+    ].filter(Boolean).join(' '));
+
+    const matchedKeywords = keywords.filter((keyword) => jobText.includes(keyword)).slice(0, 10);
+
+    return {
+        score: matchedKeywords.length,
+        matchedKeywords
+    };
+};
+
 // Get all notifications for user
 exports.getNotifications = async (req, res) => {
     try {
@@ -337,30 +435,17 @@ exports.createEmployerNewApplicationNotification = async (employerId, applicatio
   }
 };
 
-// Create job match notification (IMPROVED MATCHING LOGIC)
-exports.createJobMatchNotification = async (jobseekerId, job) => {
+// Create job match notification (profile-based matching logic)
+exports.createJobMatchNotification = async (jobseekerId, job, precomputedMatch = null) => {
   try {
-    const user = await User.findById(jobseekerId);
-    if (!user || !user.jobSeekerProfile || !user.jobSeekerProfile.skills) return;
+    const user = await User.findById(jobseekerId).select('jobSeekerProfile');
+    if (!user || !user.jobSeekerProfile) return;
 
-    const jobseekerSkills = user.jobSeekerProfile.skills.map(skill => skill.toLowerCase().trim());
-    const jobSkills = (job.skillsRequired || []).map(skill => skill.toLowerCase().trim());
+    const match = precomputedMatch || calculateNotificationJobMatch(job, user);
+    const matchingKeywords = Array.isArray(match?.matchedKeywords) ? match.matchedKeywords : [];
 
-    const matchingSkills = [];
-
-    for (const jobseekerSkill of jobseekerSkills) {
-      for (const jobSkill of jobSkills) {
-        if (jobseekerSkill === jobSkill ||
-            jobseekerSkill.includes(jobSkill) ||
-            jobSkill.includes(jobseekerSkill)) {
-          matchingSkills.push(jobseekerSkill);
-          break;
-        }
-      }
-    }
-
-    if (matchingSkills.length === 0) {
-      console.log(`No skill match for jobseeker ${jobseekerId} and job ${job.title}`);
+    if (!Number(match?.score || 0) || matchingKeywords.length === 0) {
+      console.log(`No profile match for jobseeker ${jobseekerId} and job ${job.title}`);
       return;
     }
 
@@ -376,20 +461,16 @@ exports.createJobMatchNotification = async (jobseekerId, job) => {
       return;
     }
 
-    let message;
-    if (matchingSkills.length > 2) {
-      message = `A new job "${job.title}" at ${job.companyName} matches ${matchingSkills.length} of your skills.`;
-    } else if (matchingSkills.length > 1) {
-      message = `A new job "${job.title}" at ${job.companyName} matches your skills: ${matchingSkills.join(', ')}.`;
-    } else {
-      message = `A new job "${job.title}" at ${job.companyName} matches your skill: ${matchingSkills[0]}.`;
-    }
+    const displayMatches = matchingKeywords.slice(0, 3);
+    const message = displayMatches.length > 0
+      ? `New job opportunity matched your skills: ${job.title}. Matched with: ${displayMatches.join(', ')}.`
+      : `New job opportunity matched your skills: ${job.title}.`;
 
     const notification = new Notification({
       user: jobseekerId,
       type: 'job_match',
       title: 'New Job Match!',
-      message: message,
+      message,
       relatedId: job._id,
       relatedModel: 'Job',
       link: `/jobseeker/job-details/${job._id}`,
@@ -397,8 +478,9 @@ exports.createJobMatchNotification = async (jobseekerId, job) => {
         jobId: job._id,
         companyName: job.companyName,
         jobTitle: job.title,
-        matchingSkills: matchingSkills,
-        matchCount: matchingSkills.length
+        matchingSkills: matchingKeywords,
+        matchCount: matchingKeywords.length,
+        matchScore: Number(match?.score || 0)
       }
     });
 
