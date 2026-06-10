@@ -882,7 +882,10 @@ const EmployerRegisterPage = () => {
                           </svg>
                         </button>
 
-                        <div className="mx-7 sm:mx-10 overflow-hidden rounded-[20px] sm:rounded-[28px]">
+                        <div className="pointer-events-none absolute left-[21%] right-[6%] top-[-22px] z-0 h-[175px] sm:h-[315px] rounded-[20px] sm:rounded-[28px] bg-white/14 rotate-[3deg]" />
+                        <div className="pointer-events-none absolute left-[12%] right-[10%] top-[-4px] z-0 h-[175px] sm:h-[315px] rounded-[20px] sm:rounded-[28px] bg-white/10 -rotate-[5deg]" />
+
+                        <div className="relative z-10 mx-7 sm:mx-10 overflow-hidden rounded-[20px] sm:rounded-[28px]">
                           <div
                             className="flex transition-transform duration-500 ease-in-out"
                             style={{ transform: `translateX(-${currentHowItWorksSlide * 100}%)` }}
