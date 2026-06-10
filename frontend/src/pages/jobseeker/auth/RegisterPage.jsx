@@ -1133,7 +1133,7 @@ const RegisterPage = () => {
             >
               {howItWorksSlides.map((slide) => (
                 <div key={slide.id} className="w-full shrink-0 px-1">
-                  <div className="min-h-[285px] sm:min-h-[275px] lg:min-h-[310px] rounded-3xl bg-white px-6 py-7 text-center text-[#10233f] shadow-[0_12px_35px_rgba(8,34,88,0.18)] ring-1 ring-white/70 flex flex-col items-center justify-center">
+                  <div className="min-h-[285px] sm:min-h-[275px] lg:min-h-[310px] rounded-3xl bg-white px-8 py-7 text-center text-[#10233f] shadow-[0_12px_35px_rgba(8,34,88,0.18)] ring-1 ring-white/70 flex flex-col items-center justify-center">
                     <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#edf5ff] ring-8 ring-[#f4f8fd]">
                       {renderHowItWorksIcon(slide.icon)}
                     </div>
@@ -1178,20 +1178,6 @@ const RegisterPage = () => {
               aria-current={currentHowItWorksSlide === index ? 'step' : undefined}
             />
           ))}
-        </div>
-      </div>
-
-      <div className="relative z-10 border-t border-[#dce8f6] bg-white px-6 py-5 text-[#25415f] sm:px-8">
-        <div className="flex items-center justify-center gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#edf5ff] text-[#1f67b7]">
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.674M12 3a6 6 0 00-3 11.196V16h6v-1.804A6 6 0 0012 3z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 21h6" />
-            </svg>
-          </div>
-          <p className="text-sm leading-relaxed">
-            Each step is important. Take your time to provide accurate information and complete your profile with confidence.
-          </p>
         </div>
       </div>
     </section>
@@ -1340,7 +1326,7 @@ const RegisterPage = () => {
         <div className="bg-white rounded-2xl shadow-xl ring-1 ring-black/5 overflow-hidden min-h-[90vh]">
           <div className="flex flex-col lg:flex-row">
             {/* LEFT BRAND PANEL */}
-            <div className="relative lg:w-5/12 p-8 lg:p-12 bg-white flex items-center justify-center">
+            <div className="relative lg:w-[46%] p-6 lg:p-8 bg-white flex items-center justify-center">
               <button
                 type="button"
                 onClick={() => {
@@ -1362,7 +1348,7 @@ const RegisterPage = () => {
               </button>
 
               <div className="h-full flex flex-col justify-center">
-                <div className="mt-2 w-full max-w-[520px] mx-auto relative">
+                <div className="mt-2 w-full max-w-[590px] mx-auto relative">
                   <div className="pointer-events-none absolute inset-0 z-0">
                     <div
                       className="
@@ -1395,7 +1381,7 @@ const RegisterPage = () => {
             </div>
 
             {/* RIGHT FORM PANEL */}
-            <div className="lg:w-7/12 p-8 lg:p-10 bg-white flex flex-col justify-center">
+            <div className="lg:w-[54%] p-8 lg:p-10 bg-white flex flex-col justify-center">
               <div className="mx-auto w-full max-w-2xl">
                 <div className="text-center">
                   <h2 className="text-3xl font-bold text-gray-600 tracking-tight">Let's set up your profile!</h2>
