@@ -1427,11 +1427,6 @@ const JobSearch = () => {
                         </div>
 
                         <div className="mt-4 flex flex-nowrap items-center gap-2 overflow-hidden">
-                          {job.isRecommended && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-green-50 text-green-700 border border-green-200">
-                              Recommended
-                            </span>
-                          )}
 
                           {experienceBadgeLabel && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-blue-50 text-[#2e66a6] border border-blue-200">
