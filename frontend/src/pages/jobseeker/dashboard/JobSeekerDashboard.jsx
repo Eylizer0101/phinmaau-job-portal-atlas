@@ -530,6 +530,95 @@ const JobSeekerDashboard = () => {
     }
   };
 
+  const normalizeApplicationStatus = (status) => {
+    return String(status || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ');
+  };
+
+  const isFilledJob = (job) => {
+    const jobStatus = normalizeApplicationStatus(job?.status || job?.jobStatus || job?.postingStatus);
+    const closeReason = normalizeApplicationStatus(job?.closeReason || job?.closureReason || job?.closedReason);
+
+    return Boolean(
+      jobStatus === 'filled' ||
+        jobStatus === 'vacancy full' ||
+        jobStatus === 'full' ||
+        closeReason === 'vacancy full' ||
+        closeReason === 'filled' ||
+        job?.isFilled === true ||
+        job?.filled === true
+    );
+  };
+
+  const getApplicationJobId = (application = {}) => {
+    const job = application?.job || {};
+    return String(
+      job?._id ||
+        job?.id ||
+        application?.jobId ||
+        application?.job?._id ||
+        application?.job?.id ||
+        ''
+    ).trim();
+  };
+
+  const hasVacancyFullNotification = (application = {}) => {
+    const jobTitle = String(application?.job?.title || '').trim().toLowerCase();
+    const companyName = String(
+      application?.job?.companyName ||
+        application?.employer?.employerProfile?.companyName ||
+        ''
+    ).trim().toLowerCase();
+    const jobId = getApplicationJobId(application);
+    const applicationId = String(application?._id || application?.id || '').trim();
+
+    return (notifications || []).some((notification) => {
+      const title = String(notification?.title || '').trim().toLowerCase();
+      const message = String(notification?.message || '').trim().toLowerCase();
+      const metadataJobId = String(notification?.metadata?.jobId || '').trim();
+      const metadataApplicationId = String(notification?.metadata?.applicationId || '').trim();
+      const relatedId = String(notification?.relatedId || '').trim();
+
+      const isVacancyFullNotice =
+        title.includes('vacancy full') ||
+        message.includes('vacancy is already full') ||
+        message.includes('vacancy full');
+
+      if (!isVacancyFullNotice) return false;
+      if (applicationId && (metadataApplicationId === applicationId || relatedId === applicationId)) return true;
+      if (jobId && (metadataJobId === jobId || relatedId === jobId)) return true;
+      if (jobTitle && message.includes(jobTitle)) return true;
+      if (jobTitle && companyName && message.includes(jobTitle) && message.includes(companyName)) return true;
+
+      return false;
+    });
+  };
+
+  const getEffectiveApplicationStatus = (application = {}) => {
+    const normalizedStatus = normalizeApplicationStatus(application?.status);
+
+    if (
+      normalizedStatus === 'vacancy full' ||
+      normalizedStatus === 'vacancy filled' ||
+      normalizedStatus === 'position filled' ||
+      normalizedStatus === 'filled'
+    ) {
+      return 'vacancy full';
+    }
+
+    if (
+      normalizedStatus === 'pending' &&
+      (isFilledJob(application?.job) || hasVacancyFullNotification(application))
+    ) {
+      return 'vacancy full';
+    }
+
+    return normalizedStatus || 'pending';
+  };
+
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
@@ -544,19 +633,19 @@ const JobSeekerDashboard = () => {
         setApplications(allApplications);
 
         const pending = allApplications.filter(
-          (app) => String(app.status || '').toLowerCase() === 'pending'
+          (app) => getEffectiveApplicationStatus(app) === 'pending'
         ).length;
 
         const forInterview = allApplications.filter(
-          (app) => String(app.status || '').toLowerCase() === 'for interview'
+          (app) => getEffectiveApplicationStatus(app) === 'for interview'
         ).length;
 
         const hired = allApplications.filter(
-          (app) => String(app.status || '').toLowerCase() === 'hired'
+          (app) => getEffectiveApplicationStatus(app) === 'hired'
         ).length;
 
         const declined = allApplications.filter(
-          (app) => String(app.status || '').toLowerCase() === 'declined'
+          (app) => getEffectiveApplicationStatus(app) === 'declined'
         ).length;
 
         setStats({
@@ -676,7 +765,7 @@ const JobSeekerDashboard = () => {
   };
 
   const getStatusConfig = (status) => {
-    const normalized = String(status || '').toLowerCase();
+    const normalized = normalizeApplicationStatus(status);
 
     const configs = {
       pending: {
@@ -699,6 +788,13 @@ const JobSeekerDashboard = () => {
         bg: 'bg-green-50',
         text: 'text-green-800',
         border: 'border-green-200',
+      },
+      'vacancy full': {
+        icon: faTimesCircle,
+        label: 'Vacancy Full',
+        bg: 'bg-orange-50',
+        text: 'text-orange-800',
+        border: 'border-orange-200',
       },
       declined: {
         icon: faTimesCircle,
@@ -1347,7 +1443,8 @@ const JobSeekerDashboard = () => {
               {applications.length > 0 ? (
                 <div className="divide-y divide-gray-50">
                   {applications.slice(0, 2).map((app) => {
-                    const status = getStatusConfig(app.status);
+                    const effectiveStatus = getEffectiveApplicationStatus(app);
+                    const status = getStatusConfig(effectiveStatus);
                     const logoUrl = getCompanyLogo(app);
                     const companyName = app.job?.companyName || app.employer?.employerProfile?.companyName || 'Company';
                     const companyInitials = getCompanyInitials(companyName);
@@ -1433,7 +1530,7 @@ const JobSeekerDashboard = () => {
                                 <span>Applied {formatDate(app.appliedAt)}</span>
                               </div>
 
-                              {String(app.status || '').toLowerCase() === 'for interview' && app.interviewDate && (
+                              {getEffectiveApplicationStatus(app) === 'for interview' && app.interviewDate && (
                                 <div className="flex items-center gap-2 text-[#2D9CDB] font-medium">
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path
