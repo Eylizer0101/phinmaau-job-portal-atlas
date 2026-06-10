@@ -346,7 +346,7 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
 
  
     {/* CONTENT */}
-    <div className="relative z-10 mx-auto flex min-h-[calc(100dvh-2rem)] items-start justify-center sm:min-h-[calc(100dvh-7rem)] sm:items-center">
+    <div className="relative z-10 mx-auto flex min-h-[calc(100dvh-2rem)] items-center justify-center sm:min-h-[calc(100dvh-7rem)]">
       {step === "role" ? <RolePage /> : <PrivacyPage />}
     </div>
 
