@@ -390,7 +390,8 @@ const EmployerRegisterPage = () => {
 
   const fieldClass = (hasError) => `${inputBase} ${hasError ? 'border-red-400 focus:border-red-600 ' : ''}`;
 
-  const iconWrap = 'absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none';
+  const iconWrap = 'absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10';
+  const selectWithLeftIconClass = (hasError) => `${fieldClass(hasError)} pl-12 pr-10 sm:pl-10`;
 
   const helperText = (id, text) => (
     <p id={id} className="text-[11px] text-gray-500 mt-1">
@@ -1086,7 +1087,7 @@ const EmployerRegisterPage = () => {
                                 onChange={handleRegionChange}
                                 onFocus={() => setFieldFocus('regionCity', true)}
                                 onBlur={() => setFieldFocus('regionCity', false)}
-                                className={`${fieldClass(!!fieldErrors.regionCity)} pl-10`}
+                                className={selectWithLeftIconClass(!!fieldErrors.regionCity)}
                                 disabled={loading}
                                 aria-invalid={!!fieldErrors.regionCity}
                                 aria-describedby={describedBy(
@@ -1120,7 +1121,7 @@ const EmployerRegisterPage = () => {
                                 onChange={handleCityChange}
                                 onFocus={() => setFieldFocus('regionCity', true)}
                                 onBlur={() => setFieldFocus('regionCity', false)}
-                                className={`${fieldClass(!!fieldErrors.regionCity)} pl-10`}
+                                className={selectWithLeftIconClass(!!fieldErrors.regionCity)}
                                 disabled={loading || !selectedRegion}
                               >
                                 <option value="">{selectedRegion ? 'Select City/Province' : 'Select Region first'}</option>
