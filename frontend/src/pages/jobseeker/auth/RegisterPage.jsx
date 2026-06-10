@@ -947,44 +947,48 @@ const RegisterPage = () => {
   const howItWorksSlides = [
     {
       id: 1,
-      lines: [
-        'Provide your essential details',
+      title: 'Provide your essential details',
+      description: [
         'based on your selected role. Make sure that all information',
         'must be accurate and complete.This ensures employers can',
         'properly identify and contact you regarding job openings,',
         'important updates, and career opportunities.',
       ],
+      icon: 'details',
     },
     {
       id: 2,
-      lines: [
-        'Tell us about your academic',
-        'background and career goals .Your',
-        'career profile serves as your professional introduction',
+      title: 'Tell us about your academic background and career goals.',
+      description: [
+        'Your career profile serves as your professional introduction',
         'to potential employers. A well-prepared',
         'profile increases your chances of standing out and connecting',
         'with the right employer.',
       ],
+      icon: 'profile',
     },
     {
       id: 3,
-      lines: ['Submit the necessary documents This helps', 'validate your qualifications and strengthens your profile.'],
+      title: 'Submit the necessary documents',
+      description: ['This helps validate your qualifications and strengthens your profile.'],
+      icon: 'documents',
     },
     {
       id: 4,
-      lines: [
-        'Before submitting, double-check your details.',
-        'Ask yourself:',
-        '✓ Is everything correct?',
-        '✓ Are all required documents uploaded?',
-        '✓ Are my information and credentials accurate?',
-        'Once you’re confident everything is complete, submit your registration.',
+      title: 'Account Review',
+      description: ['Before submitting, double-check your details.', 'Ask yourself:'],
+      checklist: [
+        'Is everything correct?',
+        'Are all required documents uploaded?',
+        'Are my information and credentials accurate?',
       ],
+      footer: 'Once you’re confident everything is complete, submit your registration.',
+      icon: 'review',
     },
     {
       id: 5,
-      lines: [
-        'AGAPAY team carefully reviews all',
+      title: 'AGAPAY team carefully reviews all',
+      description: [
         'submitted information to ensure authenticity, accuracy, and',
         'credibility. This process typically',
         'takes 24 to 48 hours. Once approved, you',
@@ -992,6 +996,7 @@ const RegisterPage = () => {
         'eye on your inbox if we need any additional information,',
         'our team will contact you directly.',
       ],
+      icon: 'approval',
     },
   ];
 
@@ -1003,92 +1008,193 @@ const RegisterPage = () => {
 
   const activeHowItWorksSlide = howItWorksSlides[currentHowItWorksSlide];
 
-  const HowItWorksCarousel = () => (
-    <div className="w-full" aria-label="How it Works carousel">
-      <div className="mb-5 flex items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => goToHowItWorksSlide(currentHowItWorksSlide - 1)}
-          className="w-9 h-9 flex items-center justify-center rounded-full border border-white/50 bg-white/10 text-white hover:bg-white/20 transition
-            focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25"
-          aria-label="Previous how it works step"
-        >
-          <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path
-              fillRule="evenodd"
-              d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </button>
+  const renderHowItWorksIcon = (icon) => {
+    if (icon === 'profile') {
+      return (
+        <svg className="w-8 h-8 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 21a7 7 0 0114 0" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11h4v4h-4zM18 10v6" />
+        </svg>
+      );
+    }
 
+    if (icon === 'documents') {
+      return (
+        <svg className="w-8 h-8 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z" />
+        </svg>
+      );
+    }
+
+    if (icon === 'review') {
+      return (
+        <svg className="w-8 h-8 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 11l3 3L22 4" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+        </svg>
+      );
+    }
+
+    if (icon === 'approval') {
+      return (
+        <svg className="w-8 h-8 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 22a10 10 0 100-20 10 10 0 000 20z" />
+        </svg>
+      );
+    }
+
+    return (
+      <svg className="w-8 h-8 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
+    );
+  };
+
+  const HowItWorksCarousel = () => (
+    <section
+      className="relative w-full overflow-hidden rounded-[28px] bg-gradient-to-br from-[#092762] via-[#1f5ea4] to-[#56b5dc] text-white shadow-[0_12px_28px_rgba(20,74,129,0.28)]"
+      aria-label="How it Works carousel"
+    >
+      <div className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+      <div className="pointer-events-none absolute -left-16 bottom-20 h-36 w-36 rounded-full bg-[#52b2db]/30 blur-3xl" />
+
+      <div className="relative z-10 px-6 py-7 sm:px-8 sm:py-8 lg:px-8">
         <div className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">Step</p>
-          <p className="text-sm font-bold text-white">
-            {activeHowItWorksSlide.id} of {totalHowItWorksSlides}
+          <h3 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">How it Works</h3>
+          <p className="mt-3 text-sm sm:text-base text-white/90 leading-relaxed">
+            Follow these simple steps to complete your registration
+            <br className="hidden sm:block" /> and get started.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => goToHowItWorksSlide(currentHowItWorksSlide + 1)}
-          className="w-9 h-9 flex items-center justify-center rounded-full border border-white/50 bg-white/10 text-white hover:bg-white/20 transition
-            focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25"
-          aria-label="Next how it works step"
-        >
-          <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path
-              fillRule="evenodd"
-              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </button>
-      </div>
-
-      <div className="overflow-hidden rounded-2xl">
-        <div
-          className="flex transition-transform duration-500 ease-in-out"
-          style={{ transform: `translateX(-${currentHowItWorksSlide * 100}%)` }}
-        >
-          {howItWorksSlides.map((slide) => (
-            <div key={slide.id} className="w-full shrink-0 px-0.5">
-              <div className="min-h-[250px] sm:min-h-[230px] lg:min-h-[270px] flex flex-col items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm px-5 py-6 text-center ring-1 ring-white/15">
-                <div className="mb-5 w-11 h-11 flex items-center justify-center rounded-full border-2 border-white text-white font-extrabold text-base shadow-sm">
+        <div className="mt-7 flex items-center justify-center px-2" aria-label="How it Works step progress">
+          {howItWorksSlides.map((slide, index) => {
+            const isActive = index === currentHowItWorksSlide;
+            return (
+              <React.Fragment key={slide.id}>
+                <button
+                  type="button"
+                  onClick={() => goToHowItWorksSlide(index)}
+                  className={`flex h-10 w-10 items-center justify-center rounded-full border text-sm font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25 ${
+                    isActive
+                      ? 'scale-110 border-white bg-white text-[#1f5ea4] shadow-lg'
+                      : 'border-white/55 bg-white/5 text-white hover:bg-white/15'
+                  }`}
+                  aria-label={`Go to how it works step ${slide.id}`}
+                  aria-current={isActive ? 'step' : undefined}
+                >
                   {slide.id}
-                </div>
+                </button>
 
-                <div className="space-y-1.5">
-                  {slide.lines.map((line, index) => (
-                    <p
-                      key={`${slide.id}-${line}`}
-                      className={`${index === 0 ? 'text-base sm:text-lg font-extrabold text-white' : 'text-sm sm:text-[15px] font-semibold text-white/90'} leading-snug`}
-                    >
-                      {line}
-                    </p>
-                  ))}
+                {index !== howItWorksSlides.length - 1 && <div className="h-px flex-1 max-w-[64px] bg-white/45" aria-hidden="true" />}
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        <div className="relative mt-8">
+          <button
+            type="button"
+            onClick={() => goToHowItWorksSlide(currentHowItWorksSlide - 1)}
+            className="absolute -left-5 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#225d9f] shadow-lg ring-1 ring-black/5 transition hover:-translate-y-1/2 hover:scale-105 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/35 sm:-left-6"
+            aria-label="Previous how it works step"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path
+                fillRule="evenodd"
+                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => goToHowItWorksSlide(currentHowItWorksSlide + 1)}
+            className="absolute -right-5 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#225d9f] shadow-lg ring-1 ring-black/5 transition hover:-translate-y-1/2 hover:scale-105 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/35 sm:-right-6"
+            aria-label="Next how it works step"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path
+                fillRule="evenodd"
+                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+
+          <div className="overflow-hidden rounded-3xl">
+            <div
+              className="flex transition-transform duration-500 ease-in-out"
+              style={{ transform: `translateX(-${currentHowItWorksSlide * 100}%)` }}
+            >
+              {howItWorksSlides.map((slide) => (
+                <div key={slide.id} className="w-full shrink-0 px-1">
+                  <div className="min-h-[285px] sm:min-h-[275px] lg:min-h-[310px] rounded-3xl bg-white px-6 py-7 text-center text-[#10233f] shadow-[0_12px_35px_rgba(8,34,88,0.18)] ring-1 ring-white/70 flex flex-col items-center justify-center">
+                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#edf5ff] ring-8 ring-[#f4f8fd]">
+                      {renderHowItWorksIcon(slide.icon)}
+                    </div>
+
+                    <h4 className="text-lg sm:text-xl font-extrabold leading-snug text-[#0f2442]">{slide.title}</h4>
+
+                    <div className="mt-4 space-y-1 text-sm sm:text-[15px] font-medium leading-relaxed text-[#31415a]">
+                      {slide.description.map((line) => (
+                        <p key={`${slide.id}-${line}`}>{line}</p>
+                      ))}
+                    </div>
+
+                    {slide.checklist ? (
+                      <div className="mt-4 w-full max-w-[360px] space-y-3 text-left">
+                        {slide.checklist.map((item) => (
+                          <div key={item} className="flex items-start gap-3 text-sm sm:text-[15px] font-semibold text-[#173253]">
+                            <span className="mt-0.5 text-[#1f67b7]">✓</span>
+                            <span>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    {slide.footer ? <p className="mt-5 text-sm sm:text-[15px] font-semibold leading-relaxed text-[#173253]">{slide.footer}</p> : null}
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
+          </div>
+        </div>
+
+        <div className="mt-6 flex items-center justify-center gap-3" aria-label="How it Works slide indicators">
+          {howItWorksSlides.map((slide, index) => (
+            <button
+              key={slide.id}
+              type="button"
+              onClick={() => goToHowItWorksSlide(index)}
+              className={`h-2.5 w-2.5 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25 ${
+                currentHowItWorksSlide === index ? 'bg-white' : 'bg-white/40 hover:bg-white/70'
+              }`}
+              aria-label={`Go to how it works step ${slide.id}`}
+              aria-current={currentHowItWorksSlide === index ? 'step' : undefined}
+            />
           ))}
         </div>
       </div>
 
-      <div className="mt-5 flex items-center justify-center gap-2" aria-label="How it Works slide indicators">
-        {howItWorksSlides.map((slide, index) => (
-          <button
-            key={slide.id}
-            type="button"
-            onClick={() => goToHowItWorksSlide(index)}
-            className={`h-2.5 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25 ${
-              currentHowItWorksSlide === index ? 'w-8 bg-white' : 'w-2.5 bg-white/45 hover:bg-white/70'
-            }`}
-            aria-label={`Go to how it works step ${slide.id}`}
-            aria-current={currentHowItWorksSlide === index ? 'step' : undefined}
-          />
-        ))}
+      <div className="relative z-10 border-t border-[#dce8f6] bg-white px-6 py-5 text-[#25415f] sm:px-8">
+        <div className="flex items-center justify-center gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#edf5ff] text-[#1f67b7]">
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.674M12 3a6 6 0 00-3 11.196V16h6v-1.804A6 6 0 0012 3z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 21h6" />
+            </svg>
+          </div>
+          <p className="text-sm leading-relaxed">
+            Each step is important. Take your time to provide accurate information and complete your profile with confidence.
+          </p>
+        </div>
       </div>
-    </div>
+    </section>
   );
 
   // ✅ Simple modal wrapper
@@ -1256,7 +1362,7 @@ const RegisterPage = () => {
               </button>
 
               <div className="h-full flex flex-col justify-center">
-                <div className="mt-2 w-full max-w-[420px] mx-auto relative">
+                <div className="mt-2 w-full max-w-[520px] mx-auto relative">
                   <div className="pointer-events-none absolute inset-0 z-0">
                     <div
                       className="
@@ -1276,22 +1382,7 @@ const RegisterPage = () => {
                     />
                   </div>
 
-                  <div
-                    className="
-      relative z-10
-      p-6
-      rounded-2xl
-      overflow-hidden
-      text-white
-      bg-gradient-to-br
-      from-[#072258]
-      via-[#2d63a0]
-      to-[#52b2db]
-      shadow-[0_8px_24px_rgba(0,0,0,0.18)]
-    "
-                  >
-                    <h3 className="text-xl font-extrabold text-white text-center mb-6 leading-snug">How it Works</h3>
-
+                  <div className="relative z-10">
                     <HowItWorksCarousel />
                   </div>
                 </div>
