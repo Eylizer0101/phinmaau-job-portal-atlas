@@ -849,12 +849,9 @@ const EmployerRegisterPage = () => {
                         <h3 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">
                           How it Works
                         </h3>
-                        <p className="mx-auto mt-3 max-w-[340px] text-sm sm:text-base leading-relaxed text-white/90">
-                          Follow these simple steps to create your employer account and get started.
-                        </p>
                       </div>
 
-                      <div className="relative mt-8">
+                      <div className="relative mt-14 sm:mt-16">
                         <button
                           type="button"
                           onClick={() => goToHowItWorksSlide(currentHowItWorksSlide - 1)}
@@ -885,15 +882,15 @@ const EmployerRegisterPage = () => {
                           </svg>
                         </button>
 
-                        <div className="overflow-hidden rounded-3xl px-7 sm:px-8">
+                        <div className="mx-8 sm:mx-10 overflow-hidden rounded-[28px]">
                           <div
                             className="flex transition-transform duration-500 ease-in-out"
                             style={{ transform: `translateX(-${currentHowItWorksSlide * 100}%)` }}
                           >
                             {howItWorksSlides.map((slide) => (
-                              <div key={slide.id} className="w-full shrink-0 px-1">
-                                <div className="h-[345px] overflow-hidden rounded-[28px] bg-white px-6 py-5 text-center text-[#0f2d5f] shadow-[0_18px_45px_rgba(5,27,65,0.28)] ring-1 ring-white/70 flex flex-col items-center justify-center">
-                                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#2e7df5] to-[#10439a] text-4xl font-extrabold text-white shadow-xl">
+                              <div key={slide.id} className="w-full shrink-0 px-0">
+                                <div className="h-[355px] overflow-hidden rounded-[28px] bg-white px-6 py-5 text-center text-[#0f2d5f] shadow-[0_18px_45px_rgba(5,27,65,0.28)] ring-1 ring-white/70 flex flex-col items-center justify-center">
+                                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#2e7df5] to-[#10439a] text-3xl font-extrabold text-white shadow-xl">
                                     {slide.id}
                                   </div>
 
