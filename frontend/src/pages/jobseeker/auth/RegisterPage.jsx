@@ -1123,7 +1123,10 @@ const RegisterPage = () => {
             </svg>
           </button>
 
-          <div className="overflow-hidden rounded-3xl">
+          <div className="pointer-events-none absolute left-9 right-5 top-5 z-0 h-[315px] rounded-3xl bg-white/14 shadow-[0_10px_28px_rgba(8,34,88,0.12)] ring-1 ring-white/15 rotate-[3deg] sm:left-16 sm:right-8 sm:top-7 sm:h-[335px] lg:h-[345px]" />
+          <div className="pointer-events-none absolute left-5 right-9 top-9 z-0 h-[315px] rounded-3xl bg-white/10 shadow-[0_10px_28px_rgba(8,34,88,0.10)] ring-1 ring-white/10 rotate-[-5deg] sm:left-10 sm:right-16 sm:top-12 sm:h-[335px] lg:h-[345px]" />
+
+          <div className="relative z-10 overflow-hidden rounded-3xl">
             <div
               className="flex transition-transform duration-500 ease-in-out"
               style={{ transform: `translateX(-${currentHowItWorksSlide * 100}%)` }}
