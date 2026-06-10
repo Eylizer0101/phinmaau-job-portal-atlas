@@ -332,9 +332,9 @@ const MainLandingPage = () => {
 
       <main>
         {/* HERO */}
-        <section className="px-4 pt-16 md:pt-20 pb-10">
-          <div className="max-w-6xl mx-auto">
-            <div className="mt-8 text-center">
+        <section className="px-4 pt-16 md:pt-20 pb-10 min-h-[calc(100dvh-4rem)] md:min-h-0 flex items-center md:block">
+          <div className="max-w-6xl mx-auto w-full">
+            <div className="mt-0 md:mt-8 text-center">
               <div className="flex justify-center">
                 <img
                   src="/images/agapaymo.png"
