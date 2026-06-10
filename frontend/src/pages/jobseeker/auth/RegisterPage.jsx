@@ -14,6 +14,7 @@ const RegisterPage = () => {
 
   // ✅ 3 steps na lang (Step 4 removed; replaced with modal confirmations)
   const [currentStep, setCurrentStep] = useState(1);
+  const [currentHowItWorksSlide, setCurrentHowItWorksSlide] = useState(0);
 
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState('');
@@ -941,6 +942,155 @@ const RegisterPage = () => {
     }
   };
 
+
+  // ---------- How it Works Carousel ----------
+  const howItWorksSlides = [
+    {
+      id: 1,
+      lines: [
+        'Provide your essential details',
+        'based on your selected role. Make sure that all information',
+        'must be accurate and complete.This ensures employers can',
+        'properly identify and contact you regarding job openings,',
+        'important updates, and career opportunities.',
+      ],
+    },
+    {
+      id: 2,
+      lines: [
+        'Tell us about your academic',
+        'background and career goals .Your',
+        'career profile serves as your professional introduction',
+        'to potential employers. A well-prepared',
+        'profile increases your chances of standing out and connecting',
+        'with the right employer.',
+      ],
+    },
+    {
+      id: 3,
+      lines: ['Submit the necessary documents This helps', 'validate your qualifications and strengthens your profile.'],
+    },
+    {
+      id: 4,
+      lines: [
+        'Before submitting, double-check your details.',
+        'Ask yourself:',
+        '✓ Is everything correct?',
+        '✓ Are all required documents uploaded?',
+        '✓ Are my information and credentials accurate?',
+        'Once you’re confident everything is complete, submit your registration.',
+      ],
+    },
+    {
+      id: 5,
+      lines: [
+        'AGAPAY team carefully reviews all',
+        'submitted information to ensure authenticity, accuracy, and',
+        'credibility. This process typically',
+        'takes 24 to 48 hours. Once approved, you',
+        'will receive confirmation email with your login details. Keep an',
+        'eye on your inbox if we need any additional information,',
+        'our team will contact you directly.',
+      ],
+    },
+  ];
+
+  const totalHowItWorksSlides = howItWorksSlides.length;
+
+  const goToHowItWorksSlide = (index) => {
+    setCurrentHowItWorksSlide((index + totalHowItWorksSlides) % totalHowItWorksSlides);
+  };
+
+  const activeHowItWorksSlide = howItWorksSlides[currentHowItWorksSlide];
+
+  const HowItWorksCarousel = () => (
+    <div className="w-full" aria-label="How it Works carousel">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => goToHowItWorksSlide(currentHowItWorksSlide - 1)}
+          className="w-9 h-9 flex items-center justify-center rounded-full border border-white/50 bg-white/10 text-white hover:bg-white/20 transition
+            focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25"
+          aria-label="Previous how it works step"
+        >
+          <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path
+              fillRule="evenodd"
+              d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </button>
+
+        <div className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">Step</p>
+          <p className="text-sm font-bold text-white">
+            {activeHowItWorksSlide.id} of {totalHowItWorksSlides}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => goToHowItWorksSlide(currentHowItWorksSlide + 1)}
+          className="w-9 h-9 flex items-center justify-center rounded-full border border-white/50 bg-white/10 text-white hover:bg-white/20 transition
+            focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25"
+          aria-label="Next how it works step"
+        >
+          <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path
+              fillRule="evenodd"
+              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <div className="overflow-hidden rounded-2xl">
+        <div
+          className="flex transition-transform duration-500 ease-in-out"
+          style={{ transform: `translateX(-${currentHowItWorksSlide * 100}%)` }}
+        >
+          {howItWorksSlides.map((slide) => (
+            <div key={slide.id} className="w-full shrink-0 px-0.5">
+              <div className="min-h-[250px] sm:min-h-[230px] lg:min-h-[270px] flex flex-col items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm px-5 py-6 text-center ring-1 ring-white/15">
+                <div className="mb-5 w-11 h-11 flex items-center justify-center rounded-full border-2 border-white text-white font-extrabold text-base shadow-sm">
+                  {slide.id}
+                </div>
+
+                <div className="space-y-1.5">
+                  {slide.lines.map((line, index) => (
+                    <p
+                      key={`${slide.id}-${line}`}
+                      className={`${index === 0 ? 'text-base sm:text-lg font-extrabold text-white' : 'text-sm sm:text-[15px] font-semibold text-white/90'} leading-snug`}
+                    >
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-5 flex items-center justify-center gap-2" aria-label="How it Works slide indicators">
+        {howItWorksSlides.map((slide, index) => (
+          <button
+            key={slide.id}
+            type="button"
+            onClick={() => goToHowItWorksSlide(index)}
+            className={`h-2.5 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25 ${
+              currentHowItWorksSlide === index ? 'w-8 bg-white' : 'w-2.5 bg-white/45 hover:bg-white/70'
+            }`}
+            aria-label={`Go to how it works step ${slide.id}`}
+            aria-current={currentHowItWorksSlide === index ? 'step' : undefined}
+          />
+        ))}
+      </div>
+    </div>
+  );
+
   // ✅ Simple modal wrapper
   const ModalShell = ({ children, onClose }) => (
     <div
@@ -1142,55 +1292,7 @@ const RegisterPage = () => {
                   >
                     <h3 className="text-xl font-extrabold text-white text-center mb-6 leading-snug">How it Works</h3>
 
-                    <div className="space-y-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-white text-white font-bold text-sm shrink-0">
-                          1
-                        </div>
-                        <div className="flex-1 rounded-xl bg-white/10 backdrop-blur-sm px-4 py-3">
-                          <p className="text-base font-bold leading-snug">Provide Your Details</p>
-                          <p className="text-sm text-white/80 mt-1.5 leading-relaxed">
-                            Enter accurate and complete information based on your selected role so employers can properly identify and
-                            contact you.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-white text-white font-bold text-sm shrink-0">
-                          2
-                        </div>
-                        <div className="flex-1 rounded-xl bg-white/10 backdrop-blur-sm px-4 py-3">
-                          <p className="text-base font-bold leading-snug">Build Your Profile</p>
-                          <p className="text-sm text-white/80 mt-1.5 leading-relaxed">Share your academic background and career goals.</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-white text-white font-bold text-sm shrink-0">
-                          3
-                        </div>
-                        <div className="flex-1 rounded-xl bg-white/10 backdrop-blur-sm px-4 py-3">
-                          <p className="text-base font-bold leading-snug">Submit Documents</p>
-                          <p className="text-sm text-white/80 mt-1.5 leading-relaxed">
-                            Submit the required documents to validate your qualifications and strengthen your profile.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-white text-white font-bold text-sm shrink-0">
-                          4
-                        </div>
-                        <div className="flex-1 rounded-xl bg-white/10 backdrop-blur-sm px-4 py-3">
-                          <p className="text-base font-bold leading-snug">Account Review</p>
-                          <p className="text-sm text-white/80 mt-1.5 leading-relaxed">
-                            The AGAPAY team reviews your submission within 24–48 hours. Once approved, your login details will be sent via
-                            email.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                    <HowItWorksCarousel />
                   </div>
                 </div>
               </div>
