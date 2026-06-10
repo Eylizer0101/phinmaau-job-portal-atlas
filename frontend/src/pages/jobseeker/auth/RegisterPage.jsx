@@ -1133,7 +1133,7 @@ const RegisterPage = () => {
             >
               {howItWorksSlides.map((slide) => (
                 <div key={slide.id} className="w-full shrink-0 px-1">
-                  <div className="h-[315px] sm:h-[305px] lg:h-[315px] overflow-y-auto rounded-3xl bg-white px-7 py-5 text-center text-[#10233f] shadow-[0_12px_35px_rgba(8,34,88,0.18)] ring-1 ring-white/70 flex flex-col items-center justify-center">
+                  <div className="h-[345px] sm:h-[335px] lg:h-[345px] overflow-hidden rounded-3xl bg-white px-7 py-5 text-center text-[#10233f] shadow-[0_12px_35px_rgba(8,34,88,0.18)] ring-1 ring-white/70 flex flex-col items-center justify-center">
                     <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#edf5ff] ring-6 ring-[#f4f8fd]">
                       {renderHowItWorksIcon(slide.icon)}
                     </div>
@@ -1322,7 +1322,7 @@ const RegisterPage = () => {
       <ConfirmModal />
       <SuccessModal />
 
-      <div className="w-full max-w-7xl">
+      <div className="w-full max-w-[1340px]">
         <div className="bg-white rounded-2xl shadow-xl ring-1 ring-black/5 overflow-hidden min-h-[90vh]">
           <div className="flex flex-col lg:flex-row">
             {/* LEFT BRAND PANEL */}
@@ -1348,7 +1348,7 @@ const RegisterPage = () => {
               </button>
 
               <div className="h-full flex flex-col justify-center">
-                <div className="mt-2 w-full max-w-[520px] mx-auto relative">
+                <div className="mt-8 lg:mt-10 w-full max-w-[520px] mx-auto relative">
                   <div className="pointer-events-none absolute inset-0 z-0">
                     <div
                       className="
