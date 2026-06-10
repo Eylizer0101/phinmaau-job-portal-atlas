@@ -1133,7 +1133,7 @@ const RegisterPage = () => {
             >
               {howItWorksSlides.map((slide) => (
                 <div key={slide.id} className="w-full shrink-0 px-1">
-                  <div className="min-h-[235px] sm:min-h-[230px] lg:min-h-[245px] rounded-3xl bg-white px-7 py-5 text-center text-[#10233f] shadow-[0_12px_35px_rgba(8,34,88,0.18)] ring-1 ring-white/70 flex flex-col items-center justify-center">
+                  <div className="h-[315px] sm:h-[305px] lg:h-[315px] overflow-y-auto rounded-3xl bg-white px-7 py-5 text-center text-[#10233f] shadow-[0_12px_35px_rgba(8,34,88,0.18)] ring-1 ring-white/70 flex flex-col items-center justify-center">
                     <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#edf5ff] ring-6 ring-[#f4f8fd]">
                       {renderHowItWorksIcon(slide.icon)}
                     </div>
