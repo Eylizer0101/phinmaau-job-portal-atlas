@@ -1064,7 +1064,10 @@ const RegisterPage = () => {
       <div className="relative z-10 px-6 py-5 sm:px-7 sm:py-6 lg:px-7">
         <div className="text-center">
           <h3 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">How it Works</h3>
-        
+          <p className="mt-2 text-sm sm:text-base text-white/90 leading-relaxed">
+            Follow these simple steps to complete your registration
+            <br className="hidden sm:block" /> and get started.
+          </p>
         </div>
 
         <div className="mt-5 flex items-center justify-center px-2" aria-label="How it Works step progress">
