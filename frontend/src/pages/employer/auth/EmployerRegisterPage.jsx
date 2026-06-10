@@ -391,7 +391,7 @@ const EmployerRegisterPage = () => {
   const fieldClass = (hasError) => `${inputBase} ${hasError ? 'border-red-400 focus:border-red-600 ' : ''}`;
 
   const iconWrap = 'absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10';
-  const selectWithLeftIconClass = (hasError) => `${fieldClass(hasError)} pl-12 pr-10 sm:pl-10`;
+  const selectWithLeftIconClass = (hasError) => `${fieldClass(hasError)} pl-3 pr-10 sm:pl-10`;
 
   const helperText = (id, text) => (
     <p id={id} className="text-[11px] text-gray-500 mt-1">
@@ -1077,7 +1077,7 @@ const EmployerRegisterPage = () => {
                               Region
                             </label>
                             <div className="relative">
-                              <div className={iconWrap}>
+                              <div className="hidden sm:flex absolute inset-y-0 left-0 pl-3 items-center pointer-events-none z-10">
                                 <IconLocation />
                               </div>
                               <select
@@ -1111,7 +1111,7 @@ const EmployerRegisterPage = () => {
                               City/Province
                             </label>
                             <div className="relative">
-                              <div className={iconWrap}>
+                              <div className="hidden sm:flex absolute inset-y-0 left-0 pl-3 items-center pointer-events-none z-10">
                                 <IconLocation />
                               </div>
                               <select
