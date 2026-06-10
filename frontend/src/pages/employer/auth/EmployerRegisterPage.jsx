@@ -17,6 +17,7 @@ const EmployerRegisterPage = () => {
   // 2 = Basic Info
   // 3 = Documents
   const [step, setStep] = useState(1);
+  const [currentHowItWorksSlide, setCurrentHowItWorksSlide] = useState(0);
 
   const [formData, setFormData] = useState({
     // Primary user information (Basic Info)
@@ -684,6 +685,52 @@ const EmployerRegisterPage = () => {
     );
   };
 
+
+  const howItWorksSlides = [
+    {
+      id: 1,
+      title: 'Provide your official company details',
+      description:
+        'Make sure all information is accurate, complete, and legitimate. This ensures that graduates can identify your company properly and trust the opportunities you post on the platform.',
+    },
+    {
+      id: 2,
+      title: 'Provide Primary Contact Information',
+      description:
+        'This allows our team and potential applicants to communicate with the right representative regarding job postings, updates, and application matters.',
+    },
+    {
+      id: 3,
+      title: 'Submit the necessary company documents',
+      description:
+        'This helps verify the legitimacy of your organization and maintains a secure and professional environment for both employers and graduates.',
+    },
+    {
+      id: 4,
+      title: 'Account Review',
+      description: 'Before submitting, carefully review all provided information.',
+      checklist: [
+        'Is the company information correct and updated?',
+        'Is the primary contact person accurate?',
+        'Are all required documents uploaded?',
+      ],
+      footer: 'Once everything is complete and verified, submit your registration.',
+    },
+    {
+      id: 5,
+      title: 'AGAPAY team carefully reviews all',
+      description:
+        'submitted information to ensure authenticity, accuracy, and credibility. This process typically takes 24 to 48 hours. Once approved, you will receive a confirmation email containing your login details. Please keep an eye on your inbox if we need any additional information, our team will contact you directly.',
+    },
+  ];
+
+  const totalHowItWorksSlides = howItWorksSlides.length;
+  const activeHowItWorksSlide = howItWorksSlides[currentHowItWorksSlide];
+
+  const goToHowItWorksSlide = (index) => {
+    setCurrentHowItWorksSlide((index + totalHowItWorksSlides) % totalHowItWorksSlides);
+  };
+
   const ThankYouModal = () => {
     if (!showThanksModal) return null;
 
@@ -768,7 +815,7 @@ const EmployerRegisterPage = () => {
               </button>
 
               <div className="h-full flex flex-col justify-center">
-                <div className="mt-2 w-full max-w-[420px] mx-auto relative">
+                <div className="mt-2 w-full max-w-[520px] mx-auto relative">
                   <div className="pointer-events-none absolute inset-0 z-0">
                     <div
                       className="
@@ -791,68 +838,126 @@ const EmployerRegisterPage = () => {
                   <div
                     className="
                       relative z-10
-                      p-6
+                      min-h-[620px]
                       rounded-2xl
                       overflow-hidden
                       text-white
                       bg-gradient-to-br
-                      from-[#072258]
-                      via-[#2d63a0]
-                      to-[#52b2db]
-                      shadow-[0_8px_24px_rgba(0,0,0,0.18)]
+                      from-[#061f55]
+                      via-[#1e4ba0]
+                      to-[#2f73bd]
+                      shadow-[0_12px_36px_rgba(15,54,110,0.28)]
                     "
                   >
-                    <h3 className="text-xl font-extrabold text-white text-center mb-6 leading-snug">
-                      How it Works
-                    </h3>
+                    <div className="pointer-events-none absolute -left-10 top-28 h-40 w-40 rounded-[2rem] bg-white/10 rotate-[-12deg]" />
+                    <div className="pointer-events-none absolute left-20 top-40 h-48 w-72 rounded-[2rem] bg-white/10 rotate-[4deg]" />
+                    <div className="pointer-events-none absolute left-28 top-48 h-52 w-80 rounded-[2rem] bg-white/10 rotate-[-6deg]" />
 
-                    <div className="space-y-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-white text-white font-bold text-sm shrink-0">
-                          1
-                        </div>
-                        <div className="flex-1 rounded-xl bg-white/10 backdrop-blur-sm px-4 py-3">
-                          <p className="text-base font-bold leading-snug">Provide Company Details</p>
-                          <p className="text-sm text-white/80 mt-1.5 leading-relaxed">
-                            Enter accurate and complete company information to ensure proper identification and trust.
+                    <div className="relative z-10 flex h-full min-h-[620px] flex-col px-8 py-8">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <h3 className="text-3xl font-extrabold text-white leading-tight">
+                            How it Works
+                          </h3>
+                          <p className="mt-3 max-w-[320px] text-base leading-relaxed text-white/90">
+                            Follow these simple steps to create your employer account and get started.
                           </p>
+                        </div>
+
+                        <div className="flex items-center gap-3 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => goToHowItWorksSlide(currentHowItWorksSlide - 1)}
+                            className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-white shadow-lg ring-1 ring-white/20 backdrop-blur-sm transition hover:bg-white/30 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
+                            aria-label="Previous how it works step"
+                          >
+                            <svg className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                              <path
+                                fillRule="evenodd"
+                                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => goToHowItWorksSlide(currentHowItWorksSlide + 1)}
+                            className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#123f86] shadow-lg ring-1 ring-white/40 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
+                            aria-label="Next how it works step"
+                          >
+                            <svg className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                              <path
+                                fillRule="evenodd"
+                                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </button>
                         </div>
                       </div>
 
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-white text-white font-bold text-sm shrink-0">
-                          2
-                        </div>
-                        <div className="flex-1 rounded-xl bg-white/10 backdrop-blur-sm px-4 py-3">
-                          <p className="text-base font-bold leading-snug">Add Contact Information</p>
-                          <p className="text-sm text-white/80 mt-1.5 leading-relaxed">
-                            Provide primary contact details for communication regarding job postings and updates.
-                          </p>
+                      <div className="relative mt-14 flex-1 overflow-hidden rounded-[2rem]">
+                        <div
+                          className="flex h-full transition-transform duration-500 ease-in-out"
+                          style={{ transform: `translateX(-${currentHowItWorksSlide * 100}%)` }}
+                        >
+                          {howItWorksSlides.map((slide) => (
+                            <div key={slide.id} className="flex w-full shrink-0 items-center justify-center px-3">
+                              <div className="w-full rounded-[28px] bg-white px-8 py-8 text-center text-[#0f2d5f] shadow-[0_18px_45px_rgba(5,27,65,0.28)]">
+                                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#2e7df5] to-[#10439a] text-5xl font-extrabold text-white shadow-xl">
+                                  {slide.id}
+                                </div>
+
+                                <h4 className="mt-6 text-2xl font-extrabold leading-tight">
+                                  {slide.title}
+                                </h4>
+
+                                <p className="mx-auto mt-5 max-w-[390px] text-base font-semibold leading-relaxed text-[#132b52]">
+                                  {slide.description}
+                                </p>
+
+                                {slide.checklist ? (
+                                  <div className="mx-auto mt-5 max-w-[390px] space-y-2 text-left">
+                                    {slide.checklist.map((item) => (
+                                      <div key={item} className="flex items-start gap-3 text-base font-semibold text-[#132b52]">
+                                        <span className="mt-0.5 text-[#1f67b7]">✓</span>
+                                        <span>{item}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : null}
+
+                                {slide.footer ? (
+                                  <p className="mx-auto mt-5 max-w-[390px] text-base font-semibold leading-relaxed text-[#132b52]">
+                                    {slide.footer}
+                                  </p>
+                                ) : null}
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
 
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-white text-white font-bold text-sm shrink-0">
-                          3
+                      <div className="mt-8">
+                        <div className="flex items-center justify-center gap-3" aria-label="How it Works slide indicators">
+                          {howItWorksSlides.map((slide, index) => (
+                            <button
+                              key={slide.id}
+                              type="button"
+                              onClick={() => goToHowItWorksSlide(index)}
+                              className={`h-1.5 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25 ${
+                                currentHowItWorksSlide === index ? 'w-20 bg-white' : 'w-16 bg-white/45 hover:bg-white/70'
+                              }`}
+                              aria-label={`Go to how it works step ${slide.id}`}
+                              aria-current={currentHowItWorksSlide === index ? 'step' : undefined}
+                            />
+                          ))}
                         </div>
-                        <div className="flex-1 rounded-xl bg-white/10 backdrop-blur-sm px-4 py-3">
-                          <p className="text-base font-bold leading-snug">Submit Company Documents</p>
-                          <p className="text-sm text-white/80 mt-1.5 leading-relaxed">
-                            Upload required documents to verify legitimacy and maintain a secure environment.
-                          </p>
-                        </div>
-                      </div>
 
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-white text-white font-bold text-sm shrink-0">
-                          4
-                        </div>
-                        <div className="flex-1 rounded-xl bg-white/10 backdrop-blur-sm px-4 py-3">
-                          <p className="text-base font-bold leading-snug">Verification & Approval</p>
-                          <p className="text-sm text-white/80 mt-1.5 leading-relaxed">
-                            The AGAPAY team reviews your submission within 24–48 hours. Approved accounts receive confirmation via email.
-                          </p>
-                        </div>
+                        <p className="mt-4 text-center text-lg font-extrabold text-white">
+                          {activeHowItWorksSlide.id} of {totalHowItWorksSlides}
+                        </p>
                       </div>
                     </div>
                   </div>
