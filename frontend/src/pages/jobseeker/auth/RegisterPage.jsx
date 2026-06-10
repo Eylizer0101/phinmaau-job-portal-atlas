@@ -1055,16 +1055,16 @@ const RegisterPage = () => {
 
   const HowItWorksCarousel = () => (
     <section
-      className="relative w-full overflow-hidden rounded-[28px] bg-gradient-to-br from-[#092762] via-[#1f5ea4] to-[#56b5dc] text-white shadow-[0_12px_28px_rgba(20,74,129,0.28)]"
+      className="relative w-full overflow-hidden rounded-[24px] sm:rounded-[28px] bg-gradient-to-br from-[#092762] via-[#1f5ea4] to-[#56b5dc] text-white shadow-[0_12px_28px_rgba(20,74,129,0.28)]"
       aria-label="How it Works carousel"
     >
       <div className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
       <div className="pointer-events-none absolute -left-16 bottom-20 h-36 w-36 rounded-full bg-[#52b2db]/30 blur-3xl" />
 
-      <div className="relative z-10 px-4 py-5 sm:px-7 sm:py-6 lg:px-7">
+      <div className="relative z-10 px-3 py-4 sm:px-7 sm:py-6 lg:px-7">
         <div className="text-center">
           <h3 className="text-xl sm:text-3xl font-extrabold text-white leading-tight">How it Works</h3>
-          <p className="mt-2 text-xs sm:text-base text-white/90 leading-relaxed">
+          <p className="mx-auto mt-2 max-w-[290px] text-[11px] sm:text-base text-white/90 leading-relaxed">
             Follow these simple steps to complete your registration
             <br className="hidden sm:block" /> and get started.
           </p>
@@ -1089,7 +1089,7 @@ const RegisterPage = () => {
                   {slide.id}
                 </button>
 
-                {index !== howItWorksSlides.length - 1 && <div className="h-px flex-1 max-w-[42px] sm:max-w-[64px] bg-white/45" aria-hidden="true" />}
+                {index !== howItWorksSlides.length - 1 && <div className="h-px flex-1 max-w-[48px] sm:max-w-[64px] bg-white/45" aria-hidden="true" />}
               </React.Fragment>
             );
           })}
@@ -1099,10 +1099,10 @@ const RegisterPage = () => {
           <button
             type="button"
             onClick={() => goToHowItWorksSlide(currentHowItWorksSlide - 1)}
-            className="absolute -left-3 sm:-left-6 top-1/2 z-20 flex h-10 w-10 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#225d9f] shadow-lg ring-1 ring-black/5 transition hover:-translate-y-1/2 hover:scale-105 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/35"
+            className="absolute left-1 sm:-left-6 top-1/2 z-20 flex h-9 w-9 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#225d9f] shadow-lg ring-1 ring-black/5 transition hover:-translate-y-1/2 hover:scale-105 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/35"
             aria-label="Previous how it works step"
           >
-            <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path
                 fillRule="evenodd"
                 d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
@@ -1114,10 +1114,10 @@ const RegisterPage = () => {
           <button
             type="button"
             onClick={() => goToHowItWorksSlide(currentHowItWorksSlide + 1)}
-            className="absolute -right-3 sm:-right-6 top-1/2 z-20 flex h-10 w-10 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#225d9f] shadow-lg ring-1 ring-black/5 transition hover:-translate-y-1/2 hover:scale-105 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/35"
+            className="absolute right-1 sm:-right-6 top-1/2 z-20 flex h-9 w-9 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#225d9f] shadow-lg ring-1 ring-black/5 transition hover:-translate-y-1/2 hover:scale-105 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/35"
             aria-label="Next how it works step"
           >
-            <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path
                 fillRule="evenodd"
                 d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
@@ -1132,24 +1132,24 @@ const RegisterPage = () => {
               style={{ transform: `translateX(-${currentHowItWorksSlide * 100}%)` }}
             >
               {howItWorksSlides.map((slide) => (
-                <div key={slide.id} className="w-full shrink-0 px-0.5 sm:px-1">
-                  <div className="h-[335px] sm:h-[345px] lg:h-[345px] overflow-hidden rounded-3xl bg-white px-4 sm:px-7 py-5 text-center text-[#10233f] shadow-[0_12px_35px_rgba(8,34,88,0.18)] ring-1 ring-white/70 flex flex-col items-center justify-center">
-                    <div className="mb-3 flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-[#edf5ff] ring-6 ring-[#f4f8fd]">
+                <div key={slide.id} className="w-full shrink-0 px-1">
+                  <div className="h-[300px] sm:h-[335px] lg:h-[345px] overflow-hidden rounded-3xl bg-white px-5 sm:px-7 py-4 sm:py-5 text-center text-[#10233f] shadow-[0_12px_35px_rgba(8,34,88,0.18)] ring-1 ring-white/70 flex flex-col items-center justify-center">
+                    <div className="mb-2 sm:mb-3 flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-[#edf5ff] ring-4 sm:ring-6 ring-[#f4f8fd]">
                       {renderHowItWorksIcon(slide.icon)}
                     </div>
 
-                    <h4 className="text-sm sm:text-lg font-extrabold leading-snug text-[#0f2442]">{slide.title}</h4>
+                    <h4 className="text-sm sm:text-lg font-extrabold leading-snug text-[#0f2442] break-words">{slide.title}</h4>
 
-                    <div className="mt-3 space-y-0.5 text-xs sm:text-[14px] font-medium leading-relaxed text-[#31415a]">
+                    <div className="mt-2 sm:mt-3 space-y-0.5 text-[11px] sm:text-[14px] font-medium leading-relaxed text-[#31415a] break-words">
                       {slide.description.map((line) => (
                         <p key={`${slide.id}-${line}`}>{line}</p>
                       ))}
                     </div>
 
                     {slide.checklist ? (
-                      <div className="mt-3 w-full max-w-[390px] space-y-2 text-left">
+                      <div className="mt-2 sm:mt-3 w-full max-w-[360px] space-y-1.5 sm:space-y-2 text-left">
                         {slide.checklist.map((item) => (
-                          <div key={item} className="flex items-start gap-2 sm:gap-3 text-xs sm:text-[15px] font-semibold text-[#173253]">
+                          <div key={item} className="flex items-start gap-2 sm:gap-3 text-[11px] sm:text-[15px] font-semibold text-[#173253] break-words">
                             <span className="mt-0.5 text-[#1f67b7]">✓</span>
                             <span>{item}</span>
                           </div>
@@ -1157,7 +1157,7 @@ const RegisterPage = () => {
                       </div>
                     ) : null}
 
-                    {slide.footer ? <p className="mt-3 text-xs sm:text-[14px] font-semibold leading-relaxed text-[#173253]">{slide.footer}</p> : null}
+                    {slide.footer ? <p className="mt-2 sm:mt-3 text-[11px] sm:text-[14px] font-semibold leading-relaxed text-[#173253] break-words">{slide.footer}</p> : null}
                   </div>
                 </div>
               ))}
@@ -1165,7 +1165,7 @@ const RegisterPage = () => {
           </div>
         </div>
 
-        <div className="mt-3 sm:mt-4 flex items-center justify-center gap-3" aria-label="How it Works slide indicators">
+        <div className="mt-3 sm:mt-4 flex items-center justify-center gap-2 sm:gap-3" aria-label="How it Works slide indicators">
           {howItWorksSlides.map((slide, index) => (
             <button
               key={slide.id}
@@ -1317,23 +1317,23 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-[#2e66a6]/10 flex items-center justify-center p-3 sm:p-4">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-[#2e66a6]/10 flex items-center justify-center p-2 sm:p-4">
       {/* ✅ Modals */}
       <ConfirmModal />
       <SuccessModal />
 
       <div className="w-full max-w-[1340px]">
-        <div className="bg-white rounded-2xl shadow-xl ring-1 ring-black/5 overflow-hidden lg:min-h-[90vh]">
+        <div className="bg-white rounded-2xl shadow-xl ring-1 ring-black/5 overflow-hidden min-h-[90vh]">
           <div className="flex flex-col lg:flex-row">
             {/* LEFT BRAND PANEL */}
-            <div className="relative lg:w-[43%] p-4 sm:p-6 lg:p-8 bg-white flex items-center justify-center">
+            <div className="relative lg:w-[42%] p-4 pt-14 sm:p-6 sm:pt-16 lg:p-8 bg-white flex items-center justify-center">
               <button
                 type="button"
                 onClick={() => {
                   if (window.history.length > 1) navigate(-1);
                   else navigate('/');
                 }}
-                className="absolute left-5 top-5 z-50 w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 bg-white hover:bg-gray-50 transition
+                className="absolute left-4 top-4 sm:left-6 sm:top-6 z-50 w-9 h-9 flex items-center justify-center rounded-full border border-gray-200 bg-white hover:bg-gray-50 transition
     focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20"
                 aria-label="Go back"
                 title="Go back"
@@ -1347,8 +1347,8 @@ const RegisterPage = () => {
                 </svg>
               </button>
 
-              <div className="h-full flex flex-col justify-center">
-                <div className="mt-14 sm:mt-12 lg:mt-10 w-full max-w-[560px] mx-auto relative">
+              <div className="h-full w-full flex flex-col justify-center">
+                <div className="w-full max-w-[520px] mx-auto relative lg:mt-10">
                   <div className="pointer-events-none absolute inset-0 z-0">
                     <div
                       className="
@@ -1381,10 +1381,10 @@ const RegisterPage = () => {
             </div>
 
             {/* RIGHT FORM PANEL */}
-            <div className="lg:w-[57%] p-5 sm:p-8 lg:p-10 bg-white flex flex-col justify-center">
+            <div className="lg:w-[58%] p-4 sm:p-8 lg:p-10 bg-white flex flex-col justify-center">
               <div className="mx-auto w-full max-w-2xl">
                 <div className="text-center">
-                  <h2 className="text-3xl font-bold text-gray-600 tracking-tight">Let's set up your profile!</h2>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-600 tracking-tight">Let's set up your profile!</h2>
                 </div>
 
                 <Stepper />
