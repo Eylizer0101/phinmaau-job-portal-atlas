@@ -780,62 +780,110 @@ const Input = ({ label, value, onChange, placeholder = '', disabled = false, typ
   );
 };
 
-const applyTextAreaValue = (onChange, value) => {
-  onChange?.({ target: { value } });
+const escapeRichText = (value = '') =>
+  String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+const normalizeRichTextValue = (value = '') => {
+  const clean = String(value || '');
+  if (!clean) return '';
+  if (/<\/?[a-z][\s\S]*>/i.test(clean)) return clean;
+  return escapeRichText(clean).replace(/\n/g, '<br>');
 };
 
-const insertBulletAtCursor = (textarea, value = '', onChange) => {
-  const start = textarea?.selectionStart ?? String(value || '').length;
-  const end = textarea?.selectionEnd ?? start;
-  const cleanValue = String(value || '');
-  const lineStart = cleanValue.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
-  const prefix = cleanValue.slice(lineStart, start);
-  const bulletText = prefix.trim() ? '\n• ' : '• ';
-  const nextValue = `${cleanValue.slice(0, start)}${bulletText}${cleanValue.slice(end)}`;
+const sanitizeRichText = (value = '') => {
+  const clean = String(value || '');
+  if (!clean) return '';
 
-  applyTextAreaValue(onChange, nextValue);
-
-  window.requestAnimationFrame(() => {
-    const nextCursor = start + bulletText.length;
-    textarea?.focus();
-    textarea?.setSelectionRange(nextCursor, nextCursor);
-  });
-};
-
-const handleBulletTextAreaKeyDown = (event, value = '', onChange) => {
-  if (event.key !== 'Enter') return;
-
-  const textarea = event.currentTarget;
-  const cleanValue = String(value || '');
-  const start = textarea.selectionStart ?? cleanValue.length;
-  const end = textarea.selectionEnd ?? start;
-  const lineStart = cleanValue.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
-  const currentLine = cleanValue.slice(lineStart, start);
-  const bulletMatch = currentLine.match(/^(\s*)(•|[-*])\s+(.*)$/);
-  const numberMatch = currentLine.match(/^(\s*)(\d+)[.)]\s+(.*)$/);
-
-  if (!bulletMatch && !numberMatch) return;
-
-  event.preventDefault();
-
-  let continuation = '';
-  if (bulletMatch) {
-    continuation = bulletMatch[3].trim() ? `\n${bulletMatch[1]}• ` : '\n';
-  } else if (numberMatch) {
-    continuation = numberMatch[3].trim()
-      ? `\n${numberMatch[1]}${Number(numberMatch[2]) + 1}. `
-      : '\n';
+  if (typeof window === 'undefined' || typeof window.DOMParser === 'undefined') {
+    return clean;
   }
 
-  const nextValue = `${cleanValue.slice(0, start)}${continuation}${cleanValue.slice(end)}`;
-  applyTextAreaValue(onChange, nextValue);
+  const allowedTags = new Set([
+    'B',
+    'STRONG',
+    'I',
+    'EM',
+    'U',
+    'P',
+    'DIV',
+    'BR',
+    'UL',
+    'OL',
+    'LI',
+    'H1',
+    'H2',
+  ]);
 
-  window.requestAnimationFrame(() => {
-    const nextCursor = start + continuation.length;
-    textarea.focus();
-    textarea.setSelectionRange(nextCursor, nextCursor);
-  });
+  const parser = new window.DOMParser();
+  const doc = parser.parseFromString(`<div>${clean}</div>`, 'text/html');
+  const wrapper = doc.body.firstElementChild;
+  if (!wrapper) return '';
+
+  const cleanNode = (node) => {
+    Array.from(node.childNodes).forEach((child) => {
+      if (child.nodeType === window.Node.ELEMENT_NODE) {
+        if (!allowedTags.has(child.tagName)) {
+          child.replaceWith(...Array.from(child.childNodes));
+          return;
+        }
+
+        Array.from(child.attributes).forEach((attribute) => {
+          child.removeAttribute(attribute.name);
+        });
+
+        cleanNode(child);
+      }
+    });
+  };
+
+  cleanNode(wrapper);
+  return wrapper.innerHTML;
 };
+
+const RichTextDisplay = ({ value, className = '' }) => {
+  const html = sanitizeRichText(normalizeRichTextValue(value));
+
+  if (!html) return null;
+
+  return (
+    <div
+      className={[
+        'rich-profile-text',
+        '[&_h1]:text-2xl [&_h1]:font-bold [&_h1]:leading-tight',
+        '[&_h2]:text-xl [&_h2]:font-bold [&_h2]:leading-tight',
+        '[&_p]:my-1 [&_div]:my-1',
+        '[&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-1',
+        '[&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-1',
+        '[&_li]:my-0.5',
+        className,
+      ].join(' ')}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+};
+
+const RichTextToolbarButton = ({ title, children, onMouseDown, className = '' }) => (
+  <button
+    type="button"
+    title={title}
+    aria-label={title}
+    onMouseDown={(event) => {
+      event.preventDefault();
+      onMouseDown?.();
+    }}
+    className={[
+      'flex h-8 min-w-8 items-center justify-center rounded px-2',
+      'text-[15px] font-semibold text-gray-700 transition hover:bg-gray-100',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30',
+      className,
+    ].join(' ')}
+  >
+    {children}
+  </button>
+);
 
 const BulletTextArea = ({
   value,
@@ -845,33 +893,111 @@ const BulletTextArea = ({
   className = '',
   showToolbar = true,
 }) => {
-  const textareaRef = useRef(null);
+  const editorRef = useRef(null);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const nextHtml = normalizeRichTextValue(value);
+    if (document.activeElement !== editor && editor.innerHTML !== nextHtml) {
+      editor.innerHTML = nextHtml;
+    }
+  }, [value]);
+
+  const emitChange = () => {
+    const nextValue = editorRef.current?.innerHTML || '';
+    onChange?.({ target: { value: nextValue } });
+  };
+
+  const runCommand = (command, commandValue = null) => {
+    editorRef.current?.focus();
+    document.execCommand(command, false, commandValue);
+    emitChange();
+  };
+
+  const formatHeading = (tagName) => {
+    editorRef.current?.focus();
+    document.execCommand('formatBlock', false, tagName);
+    emitChange();
+  };
+
+  const minHeight = Math.max(112, Number(rows || 5) * 24);
 
   return (
-    <div>
+    <div className="w-full">
       {showToolbar ? (
-        <div className="h-11 border border-b-0 border-gray-300 rounded-t-[5px] bg-white flex items-center gap-3 px-4">
-          <button
-            type="button"
-            onClick={() => insertBulletAtCursor(textareaRef.current, value, onChange)}
-            className="h-8 px-3 rounded border border-gray-200 text-sm font-bold text-gray-700 hover:bg-gray-50"
-            title="Insert bullet list"
-          >
-            • Bullets
-          </button>
-          <span className="text-xs text-gray-400">Press Enter to continue the bullet automatically.</span>
+        <div className="flex min-h-12 flex-wrap items-center gap-1 border border-b-0 border-gray-300 rounded-t-[5px] bg-white px-3 py-1.5">
+          <RichTextToolbarButton title="Bold" onMouseDown={() => runCommand('bold')} className="font-extrabold">
+            B
+          </RichTextToolbarButton>
+
+          <RichTextToolbarButton title="Italic" onMouseDown={() => runCommand('italic')} className="italic">
+            I
+          </RichTextToolbarButton>
+
+          <RichTextToolbarButton title="Underline" onMouseDown={() => runCommand('underline')} className="underline">
+            U
+          </RichTextToolbarButton>
+
+          <span className="mx-1 h-7 border-l border-gray-300" aria-hidden="true" />
+
+          <RichTextToolbarButton title="Numbered list" onMouseDown={() => runCommand('insertOrderedList')}>
+            <span className="text-[17px]">⅓</span>
+          </RichTextToolbarButton>
+
+          <RichTextToolbarButton title="Bullet list" onMouseDown={() => runCommand('insertUnorderedList')}>
+            <span className="text-[18px] leading-none">☷</span>
+          </RichTextToolbarButton>
+
+          <RichTextToolbarButton title="Align left" onMouseDown={() => runCommand('justifyLeft')}>
+            <span className="text-[18px]">≡</span>
+          </RichTextToolbarButton>
+
+          <RichTextToolbarButton title="Indent" onMouseDown={() => runCommand('indent')}>
+            <span className="text-[18px]">⇥</span>
+          </RichTextToolbarButton>
+
+          <span className="mx-1 h-7 border-l border-gray-300" aria-hidden="true" />
+
+          <RichTextToolbarButton title="Heading 1" onMouseDown={() => formatHeading('H1')}>
+            H₁
+          </RichTextToolbarButton>
+
+          <RichTextToolbarButton title="Heading 2" onMouseDown={() => formatHeading('H2')}>
+            H₂
+          </RichTextToolbarButton>
         </div>
       ) : null}
 
-      <textarea
-        ref={textareaRef}
-        rows={rows}
-        value={value || ''}
-        onChange={onChange}
-        onKeyDown={(event) => handleBulletTextAreaKeyDown(event, value, onChange)}
-        placeholder={placeholder}
-        className={className}
-      />
+      <div className="relative">
+        {!value ? (
+          <div className="pointer-events-none absolute left-4 top-3 text-gray-400">
+            {placeholder}
+          </div>
+        ) : null}
+
+        <div
+          ref={editorRef}
+          contentEditable
+          suppressContentEditableWarning
+          role="textbox"
+          aria-multiline="true"
+          onInput={emitChange}
+          onBlur={emitChange}
+          className={[
+            'w-full overflow-y-auto px-4 py-3 text-gray-900 outline-none',
+            'border border-gray-300 bg-white',
+            'focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]',
+            '[&_h1]:text-2xl [&_h1]:font-bold',
+            '[&_h2]:text-xl [&_h2]:font-bold',
+            '[&_ul]:list-disc [&_ul]:pl-6',
+            '[&_ol]:list-decimal [&_ol]:pl-6',
+            className,
+          ].join(' ')}
+          style={{ minHeight }}
+        />
+      </div>
     </div>
   );
 };
@@ -885,7 +1011,7 @@ const TextArea = ({ label, value, onChange, placeholder = '', rows = 4 }) => {
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="w-full px-4 py-3 rounded-b-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6] resize-none"
+        className="rounded-b-xl resize-none"
       />
     </div>
   );
@@ -1553,7 +1679,7 @@ const PlainTextArea = ({ value, onChange, placeholder = '' }) => (
     value={value}
     onChange={onChange}
     placeholder={placeholder}
-    className="w-full px-3 py-3 border border-gray-300 rounded-b-[5px] bg-white text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6] resize-y"
+    className="rounded-b-[5px]"
   />
 );
 
@@ -1735,7 +1861,7 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
             rows={5}
             value={item.description}
             onChange={(e) => change('description', e.target.value)}
-            className="w-full px-3 py-3 border border-gray-300 rounded-b-[5px] bg-white text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6] resize-y"
+            className="rounded-b-[5px]"
           />
         </div>
       </>
@@ -1920,7 +2046,7 @@ const EditableProfileListSection = ({
                       </div>
 
                       {item.description ? (
-                        <div className="text-sm leading-6 text-gray-600 mt-3 whitespace-pre-line">{item.description}</div>
+                        <RichTextDisplay value={item.description} className="text-sm leading-6 text-gray-600 mt-3" />
                       ) : null}
                     </div>
                   );
@@ -5526,9 +5652,10 @@ const MyProfile = () => {
 
     if (sectionKey === 'about') {
       return formData.aboutMe ? (
-        <div className="px-0 pb-5 pt-2 font-serif text-[13px] leading-5 text-gray-900 text-justify whitespace-pre-line">
-          {formData.aboutMe}
-        </div>
+        <RichTextDisplay
+          value={formData.aboutMe}
+          className="px-0 pb-5 pt-2 font-serif text-[13px] leading-5 text-gray-900 text-justify"
+        />
       ) : renderEmptyLine(EMPTY_SECTION_MESSAGES.about);
     }
 
@@ -5594,10 +5721,6 @@ const MyProfile = () => {
               ? 'Present'
               : formatWorkExperienceMonthYear(item.endDate);
             const dateText = [startDateText, endDateText].filter(Boolean).join(' – ');
-            const descriptionLines = String(item.description || '')
-              .split('\n')
-              .map((line) => line.trim())
-              .filter(Boolean);
 
             return (
               <div
@@ -5641,12 +5764,8 @@ const MyProfile = () => {
                   </div>
                 </div>
 
-                {descriptionLines.length ? (
-                  <ul className="mt-2 list-disc space-y-1 pl-7">
-                    {descriptionLines.map((line, lineIndex) => (
-                      <li key={lineIndex}>{line}</li>
-                    ))}
-                  </ul>
+                {item.description ? (
+                  <RichTextDisplay value={item.description} className="mt-2" />
                 ) : null}
               </div>
             );
@@ -5705,7 +5824,7 @@ const MyProfile = () => {
               <div className="min-w-0">
                 <div className="font-bold">{item.school || item.campus || 'School / University'}</div>
                 <div className="italic">{item.educationalAttainment || item.level || 'Educational Attainment'}</div>
-                {item.description ? <div className="mt-1 text-gray-700">{item.description}</div> : null}
+                {item.description ? <RichTextDisplay value={item.description} className="mt-1 text-gray-700" /> : null}
               </div>
 
               <div className="flex shrink-0 items-center gap-1 sm:justify-end">
@@ -5826,7 +5945,7 @@ const MyProfile = () => {
                   </div>
                 </div>
 
-                {item.description ? <div className="mt-2">{item.description}</div> : null}
+                {item.description ? <RichTextDisplay value={item.description} className="mt-2" /> : null}
               </div>
             );
           })}
