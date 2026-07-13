@@ -1345,10 +1345,7 @@ const JobSearch = () => {
 
                           <div className="min-w-0 flex-1">
                             <div className="flex items-start justify-between gap-2">
-                              <h3
-                                className="min-w-0 truncate whitespace-nowrap text-lg font-bold leading-snug text-gray-800"
-                                title={String(job.title || 'Job Title').replaceAll('"', '')}
-                              >
+                              <h3 className="min-w-0 truncate whitespace-nowrap text-lg font-bold text-gray-800 leading-snug">
                                 {String(job.title || 'Job Title').replaceAll('"', '')}
                               </h3>
                             </div>

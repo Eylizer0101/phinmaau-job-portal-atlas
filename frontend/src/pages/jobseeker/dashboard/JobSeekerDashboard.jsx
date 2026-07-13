@@ -1669,7 +1669,7 @@ const JobSeekerDashboard = () => {
                           </div>
 
                           <div className="min-w-0 flex-1">
-                            <h3 className="min-w-0 truncate whitespace-nowrap text-lg font-bold leading-snug text-black">
+                            <h3 className="min-w-0 truncate whitespace-nowrap text-lg font-bold text-black leading-snug">
                               {String(job.title || 'Job Title').replaceAll('"', '')}
                             </h3>
 

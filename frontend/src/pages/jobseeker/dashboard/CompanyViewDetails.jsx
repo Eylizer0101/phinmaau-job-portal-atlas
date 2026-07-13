@@ -1543,7 +1543,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
                         />
 
                         <div className="min-w-0 flex-1">
-                          <h3 className="min-w-0 truncate whitespace-nowrap text-lg font-bold leading-snug text-gray-800">
+                          <h3 className="min-w-0 truncate whitespace-nowrap text-lg font-bold text-gray-800 leading-snug">
                             {String(job.title || "Job Title").replaceAll('"', "")}
                           </h3>
 
