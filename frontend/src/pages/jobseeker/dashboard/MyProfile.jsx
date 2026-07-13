@@ -2825,7 +2825,7 @@ const TodoProgressCard = ({ percentage = 0, credentialItems = [], profileItems =
         <div className="mb-1 flex items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-bold uppercase tracking-wide text-black">Additional Sections</h3>
-            <p className="mt-1 text-xs leading-5 text-gray-500">Kahit isa ang may saved na laman, makukuha ang buong 13%.</p>
+            <p className="mt-1 text-xs leading-5 text-gray-500">Complete any one of the sections below to earn the full 13%.</p>
           </div>
           <span className="shrink-0 text-xs font-bold text-[#2e66a6]">13%</span>
         </div>
@@ -4979,7 +4979,7 @@ const MyProfile = () => {
       />
 
       <div className={`min-h-[100dvh] h-auto bg-transparent overflow-x-hidden overflow-y-visible ${isApplyFlow ? 'pb-28 sm:pb-32' : 'pb-6'}`}>
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8">
           {error ? <Alert type="error" title="Error" message={error} onClose={() => setError('')} /> : null}
 
           {isApplyFlow && applyJob ? (
@@ -4990,7 +4990,7 @@ const MyProfile = () => {
 
           <div className="bg-transparent overflow-visible">
             <div className="relative z-0 w-full max-w-full px-0 pt-0 pb-10">
-              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,820px)_minmax(280px,340px)] justify-center gap-8 items-start">
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(340px,380px)] gap-8 items-start">
                 <div className="bg-white border border-[#d8e2ee] rounded-[18px] shadow-[0_8px_30px_rgba(46,102,166,0.10)] min-h-[760px] px-6 sm:px-10 lg:px-12 py-10">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
                     <div>
