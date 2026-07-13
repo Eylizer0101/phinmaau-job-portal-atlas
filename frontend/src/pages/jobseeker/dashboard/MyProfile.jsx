@@ -2825,7 +2825,7 @@ const TodoProgressCard = ({ percentage = 0, credentialItems = [], profileItems =
         <div className="mb-1 flex items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-bold uppercase tracking-wide text-black">Additional Sections</h3>
-            <p className="mt-1 text-xs leading-5 text-gray-500">Complete any one of the sections below to earn the full 13% .</p>
+            <p className="mt-1 text-xs leading-5 text-gray-500">Complete one section for 13%.</p>
           </div>
           <span className="shrink-0 text-xs font-bold text-[#2e66a6]">13%</span>
         </div>
@@ -4753,9 +4753,9 @@ const MyProfile = () => {
         .filter(Boolean);
       return allSkills.length ? (
         <div className="px-0 pb-5 pt-2 font-serif text-[13px] leading-5 text-gray-900">
-          <div className="space-y-1">
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-1">
             {allSkills.map((item, index) => (
-              <div key={`skill-display-${index}`}><b>{item}</b></div>
+              <div key={`skill-display-${index}`} className="whitespace-nowrap"><b>{item}</b></div>
             ))}
           </div>
         </div>
