@@ -1131,11 +1131,42 @@ const formatDisplayWeight = (weight) => {
   return `${weightText} kg`;
 };
 
+const SHORT_MONTH_NAMES = {
+  January: 'Jan',
+  February: 'Feb',
+  March: 'Mar',
+  April: 'Apr',
+  May: 'May',
+  June: 'Jun',
+  July: 'Jul',
+  August: 'Aug',
+  September: 'Sep',
+  October: 'Oct',
+  November: 'Nov',
+  December: 'Dec',
+};
+
+const formatShortProfileDate = (value = '') => {
+  const clean = String(value || '').trim();
+  if (!clean) return '';
+
+  return clean
+    .replace(
+      /\b(January|February|March|April|May|June|July|August|September|October|November|December)\b/g,
+      (month) => SHORT_MONTH_NAMES[month] || month
+    )
+    .replace(/\s+(?:-|–|—|to)\s+/gi, ' – ')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 const formatProfileEntryDate = (item = {}) => {
-  if (item.date) return item.date;
-  if (item.startDate && item.endDate) return `${item.startDate} — ${item.endDate}`;
-  if (item.startDate) return item.startDate;
-  if (item.endDate) return item.endDate;
+  if (item.date) return formatShortProfileDate(item.date);
+  if (item.startDate && item.endDate) {
+    return `${formatShortProfileDate(item.startDate)} – ${formatShortProfileDate(item.endDate)}`;
+  }
+  if (item.startDate) return formatShortProfileDate(item.startDate);
+  if (item.endDate) return formatShortProfileDate(item.endDate);
   return '';
 };
 
@@ -3605,10 +3636,14 @@ const MyProfile = () => {
     const endMonth = String(entry?.endMonth || '').trim();
     const endYear = String(entry?.endYear || entry?.yearGraduated || '').trim();
 
-    const start = [startMonth, startYear].filter(Boolean).join(' ');
-    const end = [endMonth, endYear].filter(Boolean).join(' ');
+    const start = formatShortProfileDate(
+      [startMonth, startYear].filter(Boolean).join(' ')
+    );
+    const end = formatShortProfileDate(
+      [endMonth, endYear].filter(Boolean).join(' ')
+    );
 
-    if (start && end) return `${start} - ${end}`;
+    if (start && end) return `${start} – ${end}`;
     if (end) return end;
     if (start) return start;
     return 'Year not specified';
