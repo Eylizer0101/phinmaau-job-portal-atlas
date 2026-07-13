@@ -382,29 +382,13 @@ const MainLandingPage = () => {
                 </button>
               </div>
 
-              <div className="mt-12 flex justify-center">
-                <button
-                  type="button"
-                  onClick={() =>
-                    document
-                      .getElementById("campuses-section")
-                      ?.scrollIntoView({ behavior: "smooth", block: "start" })
-                  }
-                  aria-label="Scroll down to the next section"
-                  className={[
-                    "flex h-12 w-12 items-center justify-center rounded-full",
-                    "border border-slate-300 bg-white text-slate-700 shadow-sm",
-                    "transition hover:border-[#2e66a6] hover:text-[#2e66a6] hover:shadow-md",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2",
-                    "animate-bounce",
-                  ].join(" ")}
-                >
+              <div className="mt-10 flex justify-center" aria-hidden="true">
+                <div className="flex h-10 w-10 items-center justify-center text-slate-700 animate-bounce">
                   <svg
-                    className="h-6 w-6"
+                    className="h-7 w-7"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    aria-hidden="true"
                   >
                     <path
                       d="M6 9l6 6 6-6"
@@ -413,14 +397,14 @@ const MainLandingPage = () => {
                       strokeLinejoin="round"
                     />
                   </svg>
-                </button>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
         {/* OUR CAMPUSES */}
-        <section id="campuses-section" className="px-4 pb-16 md:pb-20 mt-44">
+        <section id="campuses-section" className="px-4 pb-16 md:pb-20 mt-24 md:mt-28">
           <div className="max-w-[1400px] mx-auto">
             <div className="mb-8 md:mb-10">
               <h2 className="text-3xl md:text-4xl font-semibold text-slate-700"></h2>
