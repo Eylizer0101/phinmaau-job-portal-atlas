@@ -4355,11 +4355,7 @@ const MyProfile = () => {
     }
 
     if (sectionKey === 'work') {
-      if (workExperiences.length > 0) {
-        openEditWorkExperienceModal(workExperiences[0]);
-      } else {
-        openAddWorkExperienceModal();
-      }
+      openAddWorkExperienceModal();
       return;
     }
 
@@ -5108,22 +5104,11 @@ const MyProfile = () => {
       if (!workExperiences.length) return renderEmptyLine(EMPTY_SECTION_MESSAGES.work);
       return (
         <div className="px-0 pb-5 pt-2 space-y-4 font-serif text-[13px] leading-5 text-gray-900">
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={openAddWorkExperienceModal}
-              className="inline-flex items-center gap-2 rounded-lg border border-[#d8e2ee] bg-white px-3 py-2 text-xs font-bold text-[#2e66a6] hover:bg-[#f7faff]"
-            >
-              <FaPlus className="text-[10px]" />
-              Add Work Experience
-            </button>
-          </div>
-
           {workExperiences.map((item, index) => {
             const dateText = [item.startDate ? String(item.startDate).slice(0, 10) : '', item.isPresent ? 'Present' : item.endDate ? String(item.endDate).slice(0, 10) : ''].filter(Boolean).join(' – ');
             const descriptionLines = String(item.description || '').split('\n').map((line) => line.trim()).filter(Boolean);
             return (
-              <div key={item._id || item.id || `work-${index}`} className="rounded-xl border border-gray-200 bg-white px-4 py-4">
+              <div key={item._id || item.id || `work-${index}`} className="group rounded-xl border border-gray-200 bg-white px-4 py-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <div className="font-bold">{item.companyName || 'Company Name'}</div>
@@ -5131,7 +5116,7 @@ const MyProfile = () => {
                   </div>
                   <div className="flex flex-col items-start gap-2 sm:items-end shrink-0">
                     <div className="italic text-gray-700">{dateText}</div>
-                    <div className="flex items-center gap-2 font-sans">
+                    <div className="flex items-center gap-2 font-sans opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                       <button
                         type="button"
                         onClick={() => openEditWorkExperienceModal(item)}
@@ -5167,9 +5152,14 @@ const MyProfile = () => {
         .filter(Boolean);
       return allSkills.length ? (
         <div className="px-0 pb-5 pt-2 font-serif text-[13px] leading-5 text-gray-900">
-          <div className="flex flex-wrap items-center gap-x-8 gap-y-1">
+          <div className="flex flex-wrap items-center gap-2">
             {allSkills.map((item, index) => (
-              <div key={`skill-display-${index}`} className="whitespace-nowrap"><b>{item}</b></div>
+              <span
+                key={`skill-display-${index}`}
+                className="inline-flex items-center whitespace-nowrap rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1 text-[12px] font-medium text-gray-700"
+              >
+                {item}
+              </span>
             ))}
           </div>
         </div>
@@ -5447,9 +5437,36 @@ const MyProfile = () => {
                     {[
                       { key: 'personal', label: 'Basic Information', actionLabel: 'EDIT' },
                       { key: 'about', label: 'Objective', actionLabel: formData.aboutMe ? 'EDIT' : 'ADD' },
-                      { key: 'career', label: 'Availability & Preferences', actionLabel: 'ADD' },
-                      { key: 'work', label: 'Work Experience', actionLabel: workExperiences.length ? 'EDIT' : 'ADD' },
-                      { key: 'skills', label: 'Skills', actionLabel: 'ADD' },
+                      {
+                        key: 'career',
+                        label: 'Availability & Preferences',
+                        actionLabel: [
+                          formData.preferredWorkMode,
+                          formData.employmentType,
+                          formData.minimumSalary,
+                          formData.maximumSalary,
+                          formData.height,
+                          formData.willingToRelocate,
+                          formData.weight,
+                          formData.howSoonCanYouStart,
+                          formData.nationality,
+                          formData.preferredLanguage,
+                          formData.gender,
+                          formData.educationalAttainment,
+                          formData.civilStatus,
+                          formData.studyField,
+                          formData.birthday,
+                        ].some((value) => String(value || '').trim()) ? 'EDIT' : 'ADD',
+                      },
+                      { key: 'work', label: 'Work Experience', actionLabel: 'ADD' },
+                      {
+                        key: 'skills',
+                        label: 'Skills',
+                        actionLabel: [
+                          ...normalizeSkillsFromProfile(formData.technicalSkills),
+                          ...normalizeSkillsFromProfile(formData.softSkills),
+                        ].length ? 'EDIT' : 'ADD',
+                      },
                       { key: 'education', label: 'Education', actionLabel: (hasEducationEntries || formData.campus || formData.course || formData.yearGraduated) ? 'EDIT' : 'ADD' },
                       { key: 'credentials', label: 'Credentials', actionLabel: '' },
                       ...FIXED_PROFILE_SECTION_KEYS.map((key) => ({
