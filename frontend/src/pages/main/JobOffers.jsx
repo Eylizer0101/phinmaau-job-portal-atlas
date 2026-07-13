@@ -1173,15 +1173,6 @@ const JobOffers = () => {
               </div>
             ) : errorMsg ? (
               <div className="bg-white border border-[#D7E2EE] rounded-[24px] p-8 text-center shadow-[0_8px_24px_rgba(0,0,0,0.05)]">
-                {job.isUrgent ? (
-                              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#171717] pr-4 text-xs font-bold text-white shadow-sm">
-                                <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white">
-                                  <img src="/images/fire.png" alt="" className="h-8 w-8 object-contain" />
-                                </span>
-                                Urgently Needed
-                              </div>
-                            ) : null}
-
                             <h3 className="text-lg font-bold text-black">Something went wrong</h3>
                 <p className="mt-2 text-sm text-black/65">{errorMsg}</p>
                 <button
@@ -1257,6 +1248,15 @@ const JobOffers = () => {
                           </div>
 
                           <div className="min-w-0 flex-1">
+                            {job.isUrgent ? (
+                              <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[#171717] pr-3 text-xs font-bold text-white shadow-sm">
+                                <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-white">
+                                  <img src="/images/fire.png" alt="" className="h-7 w-7 object-contain" />
+                                </span>
+                                Urgently Needed
+                              </div>
+                            ) : null}
+
                             <h3 className="text-[17px] md:text-lg font-bold text-black leading-snug line-clamp-2 min-h-[48px] group-hover:text-[#2e66a6] transition">
                               {String(job.title || "Job Title").replaceAll('"', "")}
                             </h3>

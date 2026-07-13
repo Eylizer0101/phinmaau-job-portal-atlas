@@ -1235,15 +1235,6 @@ const JobSearch = () => {
                 renderSkeleton()
               ) : filteredJobs.length === 0 ? (
                 <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center shadow-sm">
-                  {job.isUrgent ? (
-                              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#171717] pr-4 text-xs font-bold text-white shadow-sm">
-                                <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white">
-                                  <img src="/images/fire.png" alt="" className="h-8 w-8 object-contain" />
-                                </span>
-                                Urgently Needed
-                              </div>
-                            ) : null}
-
                             <h3 className="text-lg font-bold text-gray-800">No results found</h3>
                   <p className="mt-2 text-sm text-gray-600">Try adjusting your filters or search terms.</p>
 
@@ -1347,6 +1338,15 @@ const JobSearch = () => {
                           </div>
 
                           <div className="min-w-0 flex-1">
+                            {job.isUrgent ? (
+                              <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[#171717] pr-3 text-xs font-bold text-white shadow-sm">
+                                <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-white">
+                                  <img src="/images/fire.png" alt="" className="h-7 w-7 object-contain" />
+                                </span>
+                                Urgently Needed
+                              </div>
+                            ) : null}
+
                             <div className="flex items-start justify-between gap-2">
                               <h3 className="text-lg font-bold text-gray-800 leading-snug line-clamp-2">
                                 {String(job.title || 'Job Title').replaceAll('"', '')}
