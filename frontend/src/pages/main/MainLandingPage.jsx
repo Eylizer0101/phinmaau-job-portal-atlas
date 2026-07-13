@@ -381,6 +381,40 @@ const MainLandingPage = () => {
                   </span>
                 </button>
               </div>
+
+              <div className="mt-12 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() =>
+                    document
+                      .getElementById("campuses-section")
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                  }
+                  aria-label="Scroll down to the next section"
+                  className={[
+                    "flex h-12 w-12 items-center justify-center rounded-full",
+                    "border border-slate-300 bg-white text-slate-700 shadow-sm",
+                    "transition hover:border-[#2e66a6] hover:text-[#2e66a6] hover:shadow-md",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2",
+                    "animate-bounce",
+                  ].join(" ")}
+                >
+                  <svg
+                    className="h-6 w-6"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M6 9l6 6 6-6"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </section>
