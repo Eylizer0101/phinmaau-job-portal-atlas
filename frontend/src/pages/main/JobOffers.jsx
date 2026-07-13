@@ -1230,6 +1230,15 @@ const JobOffers = () => {
                       className="group rounded-[22px] p-5 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(46,102,166,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[372px]"
                       style={{ border: `1px solid ${COLORS.border}` }}
                     >
+                        {job.isUrgent ? (
+                          <div className="mb-4 inline-flex w-fit items-center gap-3 rounded-full bg-[#171717] pr-5 text-sm font-bold text-white shadow-sm">
+                            <span className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white">
+                              <img src="/images/fire.png" alt="" className="h-11 w-11 object-contain" />
+                            </span>
+                            Urgently Needed
+                          </div>
+                        ) : null}
+
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-4 min-w-0 flex-1">
                           <div className="w-12 h-12 rounded-[14px] overflow-hidden flex-shrink-0 border border-[#D7E2EE] bg-white shadow-sm">
@@ -1248,15 +1257,6 @@ const JobOffers = () => {
                           </div>
 
                           <div className="min-w-0 flex-1">
-                            {job.isUrgent ? (
-                              <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[#171717] pr-3 text-xs font-bold text-white shadow-sm">
-                                <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-white">
-                                  <img src="/images/fire.png" alt="" className="h-7 w-7 object-contain" />
-                                </span>
-                                Urgently Needed
-                              </div>
-                            ) : null}
-
                             <h3 className="text-[17px] md:text-lg font-bold text-black leading-snug line-clamp-2 min-h-[48px] group-hover:text-[#2e66a6] transition">
                               {String(job.title || "Job Title").replaceAll('"', "")}
                             </h3>

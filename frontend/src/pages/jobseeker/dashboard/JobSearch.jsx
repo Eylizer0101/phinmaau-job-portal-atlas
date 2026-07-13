@@ -1282,6 +1282,15 @@ const JobSearch = () => {
                         className="rounded-2xl p-7 bg-white shadow-sm hover:shadow-md transition flex flex-col min-h-[375px] relative"
                         style={{ border: `1px solid ${COLORS.border}` }}
                       >
+                        {job.isUrgent ? (
+                          <div className="mb-4 inline-flex w-fit items-center gap-3 rounded-full bg-[#171717] pr-5 text-sm font-bold text-white shadow-sm">
+                            <span className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white">
+                              <img src="/images/fire.png" alt="" className="h-11 w-11 object-contain" />
+                            </span>
+                            Urgently Needed
+                          </div>
+                        ) : null}
+
                         <button
                           type="button"
                           onClick={() => handleSaveJob(job)}
@@ -1338,15 +1347,6 @@ const JobSearch = () => {
                           </div>
 
                           <div className="min-w-0 flex-1">
-                            {job.isUrgent ? (
-                              <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[#171717] pr-3 text-xs font-bold text-white shadow-sm">
-                                <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-white">
-                                  <img src="/images/fire.png" alt="" className="h-7 w-7 object-contain" />
-                                </span>
-                                Urgently Needed
-                              </div>
-                            ) : null}
-
                             <div className="flex items-start justify-between gap-2">
                               <h3 className="text-lg font-bold text-gray-800 leading-snug line-clamp-2">
                                 {String(job.title || 'Job Title').replaceAll('"', '')}
