@@ -151,17 +151,6 @@ const PROFICIENCY_LEVEL_OPTIONS = [
 
 const DEFAULT_PROFICIENCY_LEVEL = 'Basic';
 
-const SKILL_LEVEL_STYLES = {
-  Basic: 'border-slate-200 bg-slate-50 text-slate-600',
-  Novice: 'border-sky-200 bg-sky-50 text-sky-700',
-  Intermediate: 'border-amber-200 bg-amber-50 text-amber-700',
-  Advanced: 'border-violet-200 bg-violet-50 text-violet-700',
-  Expert: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-};
-
-const getSkillLevelStyle = (level = '') =>
-  SKILL_LEVEL_STYLES[level] || SKILL_LEVEL_STYLES.Basic;
-
 const parseSkillWithProficiency = (value = '') => {
   const clean = String(value || '').trim();
   if (!clean) return { skill: '', proficiency: DEFAULT_PROFICIENCY_LEVEL };
@@ -2536,11 +2525,11 @@ const ProfileEditModal = ({
     if (sectionKey === 'about') {
       return (
         <TextArea
-          label="Write a short paragraph (3-5 sentences) about yourself"
+          label="Objective"
           rows={8}
           value={drafts.aboutMe}
           onChange={(e) => onChange('aboutMe', e.target.value)}
-          placeholder="Insert text here..."
+          placeholder="Write a short paragraph (3-5 sentences) about yourself"
         />
       );
     }
@@ -5286,8 +5275,8 @@ const MyProfile = () => {
               ) : null}
               <div className="mt-2 font-serif italic text-[13px] text-gray-500">
                 {[
-                  formData.campus,
                   formData.course,
+                  formData.campus,
                   formData.yearGraduated ? `Class of ${formData.yearGraduated}` : '',
                 ].filter(Boolean).join(', ')}
               </div>
@@ -5439,23 +5428,14 @@ const MyProfile = () => {
       return allSkills.length ? (
         <div className="px-0 pb-5 pt-2 font-serif text-[13px] leading-5 text-gray-900">
           <div className="flex flex-wrap items-center gap-2">
-            {allSkills.map((item, index) => {
-              const parsedSkill = parseSkillWithProficiency(item);
-
-              return (
-                <span
-                  key={`skill-display-${index}`}
-                  className="inline-flex items-center overflow-hidden whitespace-nowrap rounded-full border border-[#d8e2ee] bg-white text-[12px] font-medium text-gray-700"
-                >
-                  <span className="px-3 py-1">{parsedSkill.skill}</span>
-                  <span
-                    className={`border-l px-2.5 py-1 font-semibold ${getSkillLevelStyle(parsedSkill.proficiency)}`}
-                  >
-                    {parsedSkill.proficiency}
-                  </span>
-                </span>
-              );
-            })}
+            {allSkills.map((item, index) => (
+              <span
+                key={`skill-display-${index}`}
+                className="inline-flex items-center whitespace-nowrap rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1 text-[12px] font-medium text-gray-700"
+              >
+                {item}
+              </span>
+            ))}
           </div>
         </div>
       ) : renderEmptyLine(EMPTY_SECTION_MESSAGES.skills);
@@ -5564,18 +5544,9 @@ const MyProfile = () => {
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <div className="font-bold">{getProfileEntryTitle(sectionKey, item)}</div>
-
+                    {subLine ? <div className="italic">{subLine}</div> : null}
                     {sectionKey === 'references' ? (
-                      <div className="mt-0.5 space-y-0 text-gray-700">
-                        {item.position ? <div className="italic">{item.position}</div> : null}
-                        {item.company ? <div>{item.company}</div> : null}
-                        {item.phone ? <div>{item.phone}</div> : null}
-                        {item.email ? (
-                          <div className="break-all text-[#2e66a6]">{item.email}</div>
-                        ) : null}
-                      </div>
-                    ) : subLine ? (
-                      <div className="italic">{subLine}</div>
+                      <div className="mt-1 text-gray-700">{[item.phone, item.email].filter(Boolean).join(' • ')}</div>
                     ) : null}
                   </div>
 
