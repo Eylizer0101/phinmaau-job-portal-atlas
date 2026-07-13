@@ -1283,9 +1283,9 @@ const JobSearch = () => {
                         style={{ border: `1px solid ${COLORS.border}` }}
                       >
                         {job.isUrgent ? (
-                          <div className="mb-4 inline-flex w-fit items-center gap-3 rounded-full bg-[#171717] pr-5 text-sm font-bold text-white shadow-sm">
-                            <span className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white">
-                              <img src="/images/fire.png" alt="" className="h-11 w-11 object-contain" />
+                          <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full bg-[#171717] pr-4 text-sm font-bold leading-none text-white shadow-sm">
+                            <span className="flex h-9 w-12 items-center justify-center overflow-visible">
+                              <img src="/images/fire.png" alt="" className="h-14 w-14 max-w-none object-contain" />
                             </span>
                             Urgently Needed
                           </div>
