@@ -5028,7 +5028,11 @@ const MyProfile = () => {
                 </div>
               ) : null}
               <div className="mt-2 font-serif italic text-[13px] text-gray-500">
-                {[formData.course, formData.yearGraduated ? `Class of ${formData.yearGraduated}` : ''].filter(Boolean).join(', ')}
+                {[
+                  formData.course,
+                  formData.campus,
+                  formData.yearGraduated ? `Class of ${formData.yearGraduated}` : '',
+                ].filter(Boolean).join(', ')}
               </div>
             </div>
 
