@@ -200,6 +200,29 @@ const serializeSkillRows = (rows = []) =>
     .join(' || ');
 
 const normalizeSkillsFromProfile = (raw) => {
+  if (Array.isArray(raw)) {
+    return raw
+      .flatMap((item) => {
+        if (item && typeof item === 'object') {
+          const formatted = formatSkillWithProficiency(item);
+          return formatted ? [formatted] : [];
+        }
+
+        const cleanItem = String(item || '').trim();
+        if (!cleanItem) return [];
+
+        if (cleanItem.includes('||')) {
+          return cleanItem
+            .split('||')
+            .map((value) => value.trim())
+            .filter(Boolean);
+        }
+
+        return [cleanItem];
+      })
+      .filter(Boolean);
+  }
+
   const clean = String(raw || '').trim();
   if (!clean) return [];
 
