@@ -3390,16 +3390,16 @@ const MyProfile = () => {
         ...normalizeSkillsFromProfile(formData.softSkills),
       ].filter(Boolean).length,
       certifications: Array.isArray(formData.certifications)
-        ? formData.certifications.filter(hasMeaningfulEntry).length
+        ? formData.certifications.filter(hasMeaningfulObjectValue).length
         : 0,
       projects: Array.isArray(formData.projects)
-        ? formData.projects.filter(hasMeaningfulEntry).length
+        ? formData.projects.filter(hasMeaningfulObjectValue).length
         : 0,
       seminars: Array.isArray(formData.seminars)
-        ? formData.seminars.filter(hasMeaningfulEntry).length
+        ? formData.seminars.filter(hasMeaningfulObjectValue).length
         : 0,
       awards: Array.isArray(formData.awards)
-        ? formData.awards.filter(hasMeaningfulEntry).length
+        ? formData.awards.filter(hasMeaningfulObjectValue).length
         : 0,
       work: Array.isArray(workExperiences) ? workExperiences.length : 0,
     };
