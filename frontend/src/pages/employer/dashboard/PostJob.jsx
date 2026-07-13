@@ -1435,7 +1435,7 @@ const PostJob = () => {
 
                       <Field
                         id="skillsRequired"
-                        label="Required Skills"
+                       
                         error={fieldErrors.skillsRequired}
                       >
                         <div
@@ -1468,9 +1468,7 @@ const PostJob = () => {
                         </div>
                       </Field>
 
-                      <p className="-mt-3 text-xs leading-5 text-gray-500">
-                        Press Enter, comma, or Add to include a skill. Maximum of 10 skills.
-                      </p>
+                    
 
                       {skills.length > 0 && (
                         <div className="flex flex-wrap gap-2">
