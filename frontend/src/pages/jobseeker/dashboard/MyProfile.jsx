@@ -2825,7 +2825,7 @@ const TodoProgressCard = ({ percentage = 0, credentialItems = [], profileItems =
         <div className="mb-1 flex items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-bold uppercase tracking-wide text-black">Additional Sections</h3>
-            <p className="mt-1 text-xs leading-5 text-gray-500">Complete any one of the sections below to earn the full</p>
+            <p className="mt-1 text-xs leading-5 text-gray-500">Complete any one of the sections below to earn the full 13% .</p>
           </div>
           <span className="shrink-0 text-xs font-bold text-[#2e66a6]">13%</span>
         </div>
