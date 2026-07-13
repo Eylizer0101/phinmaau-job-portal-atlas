@@ -648,6 +648,7 @@ const ConfirmModal = ({
 const ResumePasswordModal = ({
   open,
   mode = 'download',
+  resourceTitle = 'CV/Resume',
   password,
   error,
   verifying,
@@ -665,8 +666,12 @@ const ResumePasswordModal = ({
             <div className="text-[20px] font-bold text-gray-900">Enter Password</div>
             <div className="text-sm text-gray-500 mt-1">
               {mode === 'preview'
-                ? 'For your security, Please enter your account password before previewing your CV.'
-                : 'For your security, please enter your password to download your CV/Resume as PDF.'}
+                ? 'For your security, please enter your account password before previewing your CV.'
+                : mode === 'credential-preview'
+                  ? `For your security, please enter your account password before viewing your ${resourceTitle}.`
+                  : mode === 'credential-download'
+                    ? `For your security, please enter your account password before downloading your ${resourceTitle}.`
+                    : 'For your security, please enter your password to download your CV/Resume as PDF.'}
             </div>
           </div>
 
@@ -707,8 +712,20 @@ const ResumePasswordModal = ({
               className="px-5 h-11 rounded-xl text-white font-semibold disabled:opacity-70 inline-flex items-center gap-2"
               style={{ backgroundColor: COLORS.primary }}
             >
-              {verifying ? <Spinner size="small" /> : mode === 'preview' ? <FaEye className="text-xs" /> : <FaDownload className="text-xs" />}
-              {verifying ? 'Verifying...' : mode === 'preview' ? 'Continue Preview' : 'Continue Download'}
+              {verifying ? (
+                <Spinner size="small" />
+              ) : mode === 'preview' || mode === 'credential-preview' ? (
+                <FaEye className="text-xs" />
+              ) : (
+                <FaDownload className="text-xs" />
+              )}
+              {verifying
+                ? 'Verifying...'
+                : mode === 'preview'
+                  ? 'Continue Preview'
+                  : mode === 'credential-preview'
+                    ? 'Continue View'
+                    : 'Continue Download'}
             </button>
           </div>
         </form>
@@ -842,6 +859,7 @@ const CredentialItem = ({
   popoverOpen,
   onOpen,
   onClose,
+  onProtectedAction,
 }) => {
   const inputRef = useRef(null);
   const wrapperRef = useRef(null);
@@ -1004,7 +1022,12 @@ const CredentialItem = ({
                 {fileUrl ? (
                   <button
                     type="button"
-                    onClick={handleViewFile}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onClose?.();
+                      onProtectedAction?.('credential-preview', title, () => handleViewFile(e));
+                    }}
                     className="h-8 px-3 rounded-md border border-[#d8e2ee] bg-white text-[#2e66a6] text-xs font-semibold inline-flex items-center justify-center gap-2 hover:bg-[#f7faff]"
                   >
                     <FaEye className="text-[10px]" />
@@ -1015,7 +1038,12 @@ const CredentialItem = ({
                 {fileUrl ? (
                   <button
                     type="button"
-                    onClick={handleDownloadFile}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onClose?.();
+                      onProtectedAction?.('credential-download', title, () => handleDownloadFile(e));
+                    }}
                     className="h-8 px-3 rounded-md border border-[#d8e2ee] bg-white text-[#2e66a6] text-xs font-semibold inline-flex items-center justify-center gap-2 hover:bg-[#f7faff]"
                   >
                     <FaDownload className="text-[10px]" />
@@ -3079,6 +3107,8 @@ const MyProfile = () => {
   const [downloadPasswordError, setDownloadPasswordError] = useState('');
   const [downloadPasswordVerifying, setDownloadPasswordVerifying] = useState(false);
   const [resumePasswordAction, setResumePasswordAction] = useState('download');
+  const [passwordResourceTitle, setPasswordResourceTitle] = useState('CV/Resume');
+  const pendingCredentialActionRef = useRef(null);
 
   const [confirmState, setConfirmState] = useState({
     open: false,
@@ -3685,11 +3715,23 @@ const MyProfile = () => {
     setDownloadPasswordModalOpen(true);
   };
 
+  const requestCredentialPassword = (action, resourceTitle, executeAction) => {
+    setError('');
+    setDownloadPasswordError('');
+    setDownloadPassword('');
+    setResumePasswordAction(action);
+    setPasswordResourceTitle(resourceTitle || 'credential');
+    pendingCredentialActionRef.current = executeAction;
+    setDownloadPasswordModalOpen(true);
+  };
+
   const closeDownloadPasswordModal = () => {
     if (downloadPasswordVerifying) return;
     setDownloadPasswordModalOpen(false);
     setDownloadPassword('');
     setDownloadPasswordError('');
+    setPasswordResourceTitle('CV/Resume');
+    pendingCredentialActionRef.current = null;
   };
 
   const handleDownloadPasswordSubmit = async (e) => {
@@ -3720,6 +3762,20 @@ const MyProfile = () => {
       if (verifyResponse.data?.success) {
         setDownloadPasswordModalOpen(false);
         setDownloadPassword('');
+
+        if (
+          resumePasswordAction === 'credential-preview' ||
+          resumePasswordAction === 'credential-download'
+        ) {
+          const executeCredentialAction = pendingCredentialActionRef.current;
+          pendingCredentialActionRef.current = null;
+          setPasswordResourceTitle('CV/Resume');
+
+          if (executeCredentialAction) {
+            await executeCredentialAction();
+          }
+          return;
+        }
 
         if (resumePasswordAction === 'preview') {
           openResumePreview();
@@ -5155,6 +5211,7 @@ const MyProfile = () => {
                 popoverOpen={activeCredentialPopover === doc.type}
                 onOpen={() => setActiveCredentialPopover(doc.type)}
                 onClose={() => setActiveCredentialPopover('')}
+                onProtectedAction={requestCredentialPassword}
               />
             );
           })}
@@ -5225,6 +5282,7 @@ const MyProfile = () => {
       <ResumePasswordModal
         open={downloadPasswordModalOpen}
         mode={resumePasswordAction}
+        resourceTitle={passwordResourceTitle}
         password={downloadPassword}
         error={downloadPasswordError}
         verifying={downloadPasswordVerifying}
