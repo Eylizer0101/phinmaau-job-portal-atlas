@@ -833,10 +833,7 @@ const BookmarkCard = ({ job, selected, onClick, onRemove, removing }) => {
     >
       <button type="button" onClick={onClick} className={`w-full text-left p-4 pr-14 ${UI.ring}`} aria-pressed={selected}>
         {job.isUrgent ? (
-          <div className="mb-3 inline-flex w-fit items-center gap-2 rounded-full bg-[#171717] pr-3 text-xs font-bold leading-none text-white shadow-sm">
-            <span className="flex h-8 w-10 items-center justify-center overflow-visible">
-              <img src="/images/fire.png" alt="" className="h-12 w-12 max-w-none object-contain" />
-            </span>
+          <div className="mb-3 inline-flex w-fit items-center rounded-full bg-[#171717] px-3 py-2.5 text-xs font-bold leading-none text-white shadow-sm">
             Urgently Needed
           </div>
         ) : null}
@@ -845,7 +842,12 @@ const BookmarkCard = ({ job, selected, onClick, onRemove, removing }) => {
           <CompanyLogo src={job.companyLogo} name={job.companyName} />
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="text-[15px] font-semibold text-[#000000] leading-5 line-clamp-2">{job.title}</h3>
+              <h3
+               className="min-w-0 truncate whitespace-nowrap text-[15px] font-semibold leading-5 text-[#000000]"
+               title={job.title}
+             >
+               {job.title}
+             </h3>
             </div>
 
             <p className="text-xs text-black/70 mt-1 line-clamp-1">{job.companyName}</p>
@@ -892,7 +894,7 @@ const SavedCompanyCard = ({ company, selected, onClick, onRemove, removing }) =>
         <div className="flex items-start gap-3 min-w-0">
           <CompanyLogo src={company.companyLogo} name={company.companyName} />
           <div className="min-w-0 flex-1">
-            <h3 className="text-[15px] font-semibold text-[#000000] leading-5 line-clamp-2">{company.companyName}</h3>
+            <h3 className="min-w-0 truncate whitespace-nowrap text-[15px] font-semibold leading-5 text-[#000000]">{company.companyName}</h3>
 
             <p className="text-xs text-black/70 mt-1 line-clamp-1">{company.industry || 'Industry not specified'}</p>
             <p className="text-xs text-black/55 mt-1 line-clamp-1">{formatLocationDisplay(company.companyAddress || company.location)}</p>
@@ -994,10 +996,7 @@ const CompanyJobMiniCard = ({ job, onViewDetails, onApply, onSave, saving, isSav
   return (
     <div className="rounded-2xl p-7 bg-white shadow-sm hover:shadow-md transition flex flex-col min-h-[375px] relative border border-[#E5E7EB]">
       {job.isUrgent ? (
-        <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full bg-[#171717] pr-4 text-sm font-bold leading-none text-white shadow-sm">
-          <span className="flex h-9 w-12 items-center justify-center overflow-visible">
-            <img src="/images/fire.png" alt="" className="h-14 w-14 max-w-none object-contain" />
-          </span>
+        <div className="mb-4 inline-flex w-fit items-center rounded-full bg-[#171717] px-4 py-3 text-sm font-bold leading-none text-white shadow-sm">
           Urgently Needed
         </div>
       ) : null}
@@ -1026,7 +1025,7 @@ const CompanyJobMiniCard = ({ job, onViewDetails, onApply, onSave, saving, isSav
       <div className="flex items-start gap-4 pr-12">
         <CompanyLogo src={job.companyLogo} name={job.companyName} />
         <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-bold text-gray-800 leading-snug line-clamp-2">
+          <h3 className="min-w-0 truncate whitespace-nowrap text-lg font-bold leading-snug text-gray-800">
             {String(job.title || 'Job Title').replaceAll('"', '')}
           </h3>
 

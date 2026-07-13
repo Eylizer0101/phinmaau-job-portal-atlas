@@ -1505,10 +1505,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
                       className="rounded-2xl p-7 bg-white shadow-sm hover:shadow-md transition flex flex-col min-h-[375px] relative border border-[#E5E7EB]"
                     >
                       {job.isUrgent ? (
-                        <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full bg-[#171717] pr-4 text-sm font-bold leading-none text-white shadow-sm">
-                          <span className="flex h-9 w-12 items-center justify-center overflow-visible">
-                            <img src="/images/fire.png" alt="" className="h-14 w-14 max-w-none object-contain" />
-                          </span>
+                        <div className="mb-4 inline-flex w-fit items-center rounded-full bg-[#171717] px-4 py-3 text-sm font-bold leading-none text-white shadow-sm">
                           Urgently Needed
                         </div>
                       ) : null}
@@ -1546,7 +1543,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
                         />
 
                         <div className="min-w-0 flex-1">
-                          <h3 className="text-lg font-bold text-gray-800 leading-snug line-clamp-2">
+                          <h3 className="min-w-0 truncate whitespace-nowrap text-lg font-bold leading-snug text-gray-800">
                             {String(job.title || "Job Title").replaceAll('"', "")}
                           </h3>
 
