@@ -5900,10 +5900,57 @@ const MyProfile = () => {
       const items = Array.isArray(formData[sectionKey]) ? formData[sectionKey] : [];
       if (!items.length) return renderEmptyLine(EMPTY_SECTION_MESSAGES[sectionKey] || config.emptyTitle || 'No data added yet.');
       return (
-        <div className="px-0 pb-5 pt-2 space-y-3 font-serif text-[13px] leading-5 text-gray-900">
+        <div
+          className={
+            sectionKey === 'references'
+              ? 'grid grid-cols-1 gap-x-6 gap-y-5 px-0 pb-5 pt-2 font-serif text-[13px] leading-5 text-gray-900 sm:grid-cols-2 lg:grid-cols-3'
+              : 'px-0 pb-5 pt-2 space-y-3 font-serif text-[13px] leading-5 text-gray-900'
+          }
+        >
           {items.map((item, index) => {
             const dateText = formatProfileEntryDate(item);
             const subLine = getProfileEntrySubLine(sectionKey, item);
+
+            if (sectionKey === 'references') {
+              return (
+                <div
+                  key={item._id || `${sectionKey}-${index}`}
+                  className="group relative min-w-0 py-1 pr-12"
+                >
+                  <div className="font-bold">{getProfileEntryTitle(sectionKey, item)}</div>
+
+                  <div className="mt-0.5 space-y-0.5 text-gray-800">
+                    {item.position ? <div>{item.position}</div> : null}
+                    {item.company ? <div>{item.company}</div> : null}
+                    {item.phone ? <div>{item.phone}</div> : null}
+                    {item.email ? <div className="break-all text-[#2e66a6]">{item.email}</div> : null}
+                  </div>
+
+                  <div className="absolute right-0 top-0 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+                    <button
+                      type="button"
+                      onClick={() => openProfileEditModal(sectionKey, index)}
+                      className="inline-flex h-6 w-6 items-center justify-center text-[#2e66a6] transition hover:text-[#1f4f86]"
+                      aria-label={`Edit ${getProfileEntryTitle(sectionKey, item)}`}
+                      title="Edit"
+                    >
+                      <FaPen className="text-[11px]" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteProfileEntry(sectionKey, index)}
+                      className="inline-flex h-6 w-6 items-center justify-center text-red-500 transition hover:text-red-600"
+                      aria-label={`Remove ${getProfileEntryTitle(sectionKey, item)}`}
+                      title="Remove"
+                    >
+                      <FaTrash className="text-[11px]" />
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div
                 key={item._id || `${sectionKey}-${index}`}
@@ -5912,16 +5959,7 @@ const MyProfile = () => {
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <div className="font-bold">{getProfileEntryTitle(sectionKey, item)}</div>
-                    {sectionKey === 'references' ? (
-                      <div className="mt-0.5 space-y-0.5 text-gray-800">
-                        {item.position ? <div>{item.position}</div> : null}
-                        {item.company ? <div>{item.company}</div> : null}
-                        {item.phone ? <div>{item.phone}</div> : null}
-                        {item.email ? <div className="break-all text-[#2e66a6]">{item.email}</div> : null}
-                      </div>
-                    ) : subLine ? (
-                      <div className="italic">{subLine}</div>
-                    ) : null}
+                    {subLine ? <div className="italic">{subLine}</div> : null}
                   </div>
 
                   <div className="flex shrink-0 items-center gap-1 sm:justify-end">
