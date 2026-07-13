@@ -963,9 +963,6 @@ const JobOfferDetails = () => {
                     <div className="min-w-0 flex-1">
                       {job?.isUrgent ? (
                   <div className="mb-3 inline-flex items-center rounded-full bg-[#171717] px-4 text-xs font-bold text-white shadow-sm">
-                    <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white">
-                      <img src="/images/fire.png" alt="" className="h-8 w-8 object-contain" />
-                    </span>
                     Urgently Needed
                   </div>
                 ) : null}
