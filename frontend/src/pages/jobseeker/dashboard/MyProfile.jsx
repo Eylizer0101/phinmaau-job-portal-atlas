@@ -2764,76 +2764,241 @@ const hasMeaningfulListContent = (items = []) =>
     return Boolean(String(item || '').trim());
   });
 
-const TodoProgressCard = ({ percentage = 0, credentialItems = [], profileItems = [], additionalItems = [] }) => {
-  const renderItem = (item) => (
-    <div key={item.key} className="flex items-center justify-between gap-3 py-2">
-      <div className="flex min-w-0 items-center gap-3">
-        <span
-          className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] ${
-            item.completed
-              ? 'border-[#2e66a6] bg-[#2e66a6] text-white'
-              : 'border-gray-300 bg-white text-transparent'
-          }`}
-          aria-hidden="true"
-        >
-          ✓
-        </span>
-        <span className={`truncate text-sm ${item.completed ? 'font-medium text-black' : 'text-gray-500'}`}>
-          {item.label}
-        </span>
-      </div>
-      <span className="shrink-0 text-xs font-semibold text-gray-400">{item.weight ? `${item.weight}%` : ''}</span>
-    </div>
-  );
+const JobSeekerLevelCard = ({
+  currentRank = 'First Time Job Seeker',
+  nextTier = 'Intermediate',
+  percentage = 0,
+  suggestions = [],
+}) => {
+  const safePercentage = Math.min(100, Math.max(0, Number(percentage) || 0));
 
   return (
-    <aside className="w-full rounded-[18px] border border-[#d8e2ee] bg-white p-5 shadow-[0_8px_30px_rgba(46,102,166,0.10)] lg:sticky lg:top-24">
-      <h2 className="text-xl font-bold text-black">To-Do List</h2>
+    <section className="w-full rounded-[18px] border border-[#d8e2ee] bg-white p-5 shadow-[0_8px_30px_rgba(46,102,166,0.10)]">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-500">
+            Job Seeker Level
+          </p>
+          <h2 className="mt-2 text-[22px] font-bold leading-7 text-black">
+            {currentRank}
+          </h2>
+        </div>
 
-      <div className="mt-5 text-center text-sm font-bold text-[#2e66a6]">{percentage}% Done</div>
+        <div
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#edf4fb] text-[25px]"
+          aria-hidden="true"
+        >
+          🏆
+        </div>
+      </div>
+
+      <div className="mt-6 flex items-center justify-between gap-3">
+        <p className="min-w-0 text-sm text-gray-500">
+          Next Tier: <span className="font-semibold text-black">{nextTier}</span>
+        </p>
+        <span className="shrink-0 text-sm font-bold text-[#2e66a6]">
+          {safePercentage}%
+        </span>
+      </div>
+
       <div
         className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-gray-200"
         role="progressbar"
         aria-valuemin="0"
         aria-valuemax="100"
-        aria-valuenow={percentage}
+        aria-valuenow={safePercentage}
+        aria-label="Job seeker level progress"
+      >
+        <div
+          className="h-full rounded-full bg-[#2e66a6] transition-all duration-500"
+          style={{ width: `${safePercentage}%` }}
+        />
+      </div>
+
+      <div className="mt-5 rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-3">
+        <div className="flex items-start gap-3">
+          <span
+            className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[#2e66a6] text-[11px] font-bold text-[#2e66a6]"
+            aria-hidden="true"
+          >
+            i
+          </span>
+
+          <div className="min-w-0 text-sm leading-5 text-gray-600">
+            {nextTier === 'Completed' ? (
+              <p>You reached the highest job seeker level.</p>
+            ) : suggestions.length > 1 ? (
+              <>
+                <p className="font-medium text-gray-700">To reach {nextTier}:</p>
+                <ul className="mt-1 space-y-1">
+                  {suggestions.map((suggestion) => (
+                    <li key={suggestion}>• {suggestion}</li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p>{suggestions[0] || `Keep improving your profile to reach ${nextTier}.`}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const TodoProgressCard = ({
+  percentage = 0,
+  credentialItems = [],
+  profileItems = [],
+  additionalItems = [],
+}) => {
+  const profileByKey = Object.fromEntries(profileItems.map((item) => [item.key, item]));
+  const credentialsComplete =
+    credentialItems.length > 0 && credentialItems.every((item) => item.completed);
+  const additionalComplete = additionalItems.some((item) => item.completed);
+
+  const items = [
+    {
+      key: 'basic',
+      label: 'Complete Basic Info',
+      completed: Boolean(profileByKey.basic?.completed),
+      info: 'Basic Information — 2%',
+    },
+    {
+      key: 'objective',
+      label: 'Add Career Objectives',
+      completed: Boolean(profileByKey.objective?.completed),
+      info: 'Career Objectives — 1%',
+    },
+    {
+      key: 'availability',
+      label: 'Complete Availability and Preferences',
+      completed: Boolean(profileByKey.availability?.completed),
+      info: 'Availability and Preferences — 2%',
+    },
+    {
+      key: 'work',
+      label: 'Add Work Experiences',
+      completed: Boolean(profileByKey.work?.completed),
+      info: 'Work Experience — 15%',
+    },
+    {
+      key: 'skills',
+      label: 'Add Skills',
+      completed: Boolean(profileByKey.skills?.completed),
+      info: 'Skills — 10%',
+    },
+    {
+      key: 'education',
+      label: 'Add Education',
+      completed: Boolean(profileByKey.education?.completed),
+      info: 'Education — 3%',
+    },
+    {
+      key: 'credentials',
+      label: 'Complete Credentials',
+      completed: credentialsComplete,
+      info: 'Credentials total — 45%',
+    },
+    {
+      key: 'certifications',
+      label: 'Add Certifications',
+      completed: Boolean(profileByKey.certifications?.completed),
+      info: 'Certifications — 5%',
+    },
+    {
+      key: 'projects',
+      label: 'Add Projects',
+      completed: Boolean(profileByKey.projects?.completed),
+      info: 'Projects — 4%',
+    },
+    {
+      key: 'additional',
+      label: 'Add More Sections',
+      completed: additionalComplete,
+      info: 'Complete any one additional section — 13%',
+    },
+  ];
+
+  const safePercentage = Math.min(100, Math.max(0, Number(percentage) || 0));
+
+  return (
+    <section className="w-full rounded-[18px] border border-[#d8e2ee] bg-white p-5 shadow-[0_8px_30px_rgba(46,102,166,0.10)]">
+      <h2 className="text-[20px] font-bold text-black">To-Do List</h2>
+
+      <div className="mt-5 text-center text-[16px] font-bold text-[#2e66a6]">
+        {safePercentage}% Done
+      </div>
+
+      <div
+        className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-gray-200"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow={safePercentage}
         aria-label="Profile completion progress"
       >
         <div
           className="h-full rounded-full bg-[#2e66a6] transition-all duration-500"
-          style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
+          style={{ width: `${safePercentage}%` }}
         />
       </div>
 
-      <div className="mt-5 border-t border-[#d8e2ee] pt-4">
-        <div className="mb-1 flex items-center justify-between gap-3">
-          <h3 className="text-sm font-bold uppercase tracking-wide text-black">Credentials</h3>
-          <span className="text-xs font-bold text-[#2e66a6]">45%</span>
-        </div>
-        {credentialItems.map(renderItem)}
-      </div>
+      <div className="mt-5 space-y-2">
+        {items.map((item) => (
+          <div key={item.key} className="flex min-h-[38px] items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <span
+                className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[12px] font-bold ${
+                  item.completed
+                    ? 'border-[#2e66a6] bg-[#2e66a6] text-white'
+                    : 'border-gray-300 bg-white text-transparent'
+                }`}
+                aria-hidden="true"
+              >
+                ✓
+              </span>
 
-      <div className="mt-4 border-t border-[#d8e2ee] pt-4">
-        <div className="mb-1 flex items-center justify-between gap-3">
-          <h3 className="text-sm font-bold uppercase tracking-wide text-black">Resume Profile</h3>
-          <span className="text-xs font-bold text-[#2e66a6]">55%</span>
-        </div>
-        {profileItems.map(renderItem)}
-      </div>
+              <span
+                className={`text-[14px] leading-5 ${
+                  item.completed ? 'font-medium text-black' : 'text-gray-600'
+                }`}
+              >
+                {item.label}
+              </span>
+            </div>
 
-      <div className="mt-4 border-t border-[#d8e2ee] pt-4">
-        <div className="mb-1 flex items-center justify-between gap-3">
-          <div>
-            <h3 className="text-sm font-bold uppercase tracking-wide text-black">Additional Sections</h3>
-            <p className="mt-1 text-xs leading-5 text-gray-500">Complete one section for 13%.</p>
+            <span
+              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-gray-300 text-[11px] font-semibold text-gray-400"
+              title={item.info}
+              aria-label={item.info}
+            >
+              i
+            </span>
           </div>
-          <span className="shrink-0 text-xs font-bold text-[#2e66a6]">13%</span>
-        </div>
-        {additionalItems.map(renderItem)}
+        ))}
       </div>
-    </aside>
+    </section>
   );
 };
+
+const ProfileRightPanel = ({ jobSeekerLevel, todoProgress }) => (
+  <aside className="w-full space-y-6 lg:sticky lg:top-24">
+    <JobSeekerLevelCard
+      currentRank={jobSeekerLevel.currentRank}
+      nextTier={jobSeekerLevel.nextTier}
+      percentage={jobSeekerLevel.percentage}
+      suggestions={jobSeekerLevel.suggestions}
+    />
+
+    <TodoProgressCard
+      percentage={todoProgress.percentage}
+      credentialItems={todoProgress.credentialItems}
+      profileItems={todoProgress.profileItems}
+      additionalItems={todoProgress.additionalItems}
+    />
+  </aside>
+);
 
 const MyProfile = () => {
   useEffect(() => {
@@ -3217,6 +3382,148 @@ const MyProfile = () => {
       additionalItems,
     };
   }, [formData, hasEducationEntries, verificationDocs, workExperiences]);
+
+  const jobSeekerLevel = useMemo(() => {
+    const counts = {
+      skills: [
+        ...normalizeSkillsFromProfile(formData.technicalSkills),
+        ...normalizeSkillsFromProfile(formData.softSkills),
+      ].filter(Boolean).length,
+      certifications: Array.isArray(formData.certifications)
+        ? formData.certifications.filter(hasMeaningfulEntry).length
+        : 0,
+      projects: Array.isArray(formData.projects)
+        ? formData.projects.filter(hasMeaningfulEntry).length
+        : 0,
+      seminars: Array.isArray(formData.seminars)
+        ? formData.seminars.filter(hasMeaningfulEntry).length
+        : 0,
+      awards: Array.isArray(formData.awards)
+        ? formData.awards.filter(hasMeaningfulEntry).length
+        : 0,
+      work: Array.isArray(workExperiences) ? workExperiences.length : 0,
+    };
+
+    const tiers = [
+      {
+        name: 'First Time Job Seeker',
+        requirements: {
+          skills: 0,
+          certifications: 0,
+          projects: 0,
+          seminars: 0,
+          awards: 0,
+          work: 0,
+        },
+      },
+      {
+        name: 'Intermediate',
+        requirements: {
+          skills: 5,
+          certifications: 1,
+          projects: 1,
+          seminars: 1,
+          awards: 1,
+          work: 0,
+        },
+      },
+      {
+        name: 'Expert',
+        requirements: {
+          skills: 9,
+          certifications: 2,
+          projects: 2,
+          seminars: 2,
+          awards: 2,
+          work: 1,
+        },
+      },
+      {
+        name: 'Pro',
+        requirements: {
+          skills: 13,
+          certifications: 5,
+          projects: 5,
+          seminars: 5,
+          awards: 5,
+          work: 2,
+        },
+      },
+      {
+        name: 'Legend',
+        requirements: {
+          skills: 17,
+          certifications: 7,
+          projects: 7,
+          seminars: 7,
+          awards: 7,
+          work: 3,
+        },
+      },
+    ];
+
+    const meetsRequirements = (requirements) =>
+      Object.entries(requirements).every(([key, required]) => counts[key] >= required);
+
+    let currentTierIndex = 0;
+    tiers.forEach((tier, index) => {
+      if (meetsRequirements(tier.requirements)) currentTierIndex = index;
+    });
+
+    const currentTier = tiers[currentTierIndex];
+    const nextTier = tiers[currentTierIndex + 1];
+
+    if (!nextTier) {
+      return {
+        currentRank: currentTier.name,
+        nextTier: 'Completed',
+        percentage: 100,
+        suggestions: [],
+      };
+    }
+
+    const requirementEntries = Object.entries(nextTier.requirements).filter(([, required]) => required > 0);
+    const ratios = requirementEntries.map(([key, required]) =>
+      Math.min(1, counts[key] / required)
+    );
+    const percentage = ratios.length
+      ? Math.round((ratios.reduce((total, ratio) => total + ratio, 0) / ratios.length) * 100)
+      : 0;
+
+    const labelMap = {
+      skills: ['skill', 'skills'],
+      certifications: ['certification', 'certifications'],
+      projects: ['project', 'projects'],
+      seminars: ['seminar or training', 'seminars or trainings'],
+      awards: ['award or achievement', 'awards or achievements'],
+      work: ['work experience', 'work experiences'],
+    };
+
+    const suggestions = requirementEntries
+      .map(([key, required]) => {
+        const remaining = Math.max(0, required - counts[key]);
+        if (!remaining) return '';
+        const [singular, plural] = labelMap[key];
+        return `Add ${remaining} more ${remaining === 1 ? singular : plural} to reach ${nextTier.name}.`;
+      })
+      .filter(Boolean);
+
+    return {
+      currentRank: currentTier.name,
+      nextTier: nextTier.name,
+      percentage,
+      suggestions,
+    };
+  }, [
+    formData.technicalSkills,
+    formData.softSkills,
+    formData.certifications,
+    formData.projects,
+    formData.seminars,
+    formData.awards,
+    workExperiences,
+  ]);
+
 
   const regionOptions = useMemo(() => PH_REGIONS, []);
   const provinceOptions = useMemo(() => {
@@ -5145,11 +5452,9 @@ const MyProfile = () => {
                   </div>
                 </div>
 
-                <TodoProgressCard
-                  percentage={todoProgress.percentage}
-                  credentialItems={todoProgress.credentialItems}
-                  profileItems={todoProgress.profileItems}
-                  additionalItems={todoProgress.additionalItems}
+                <ProfileRightPanel
+                  jobSeekerLevel={jobSeekerLevel}
+                  todoProgress={todoProgress}
                 />
               </div>
             </div>
