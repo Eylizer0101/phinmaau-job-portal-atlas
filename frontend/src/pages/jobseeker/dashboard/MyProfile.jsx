@@ -2745,6 +2745,96 @@ const ProfileEditModal = ({
   );
 };
 
+
+const hasMeaningfulObjectValue = (item = {}) =>
+  Boolean(
+    item &&
+    typeof item === 'object' &&
+    Object.entries(item).some(([key, value]) => {
+      if (['_id', 'id', 'createdAt', 'updatedAt', '__v'].includes(key)) return false;
+      if (Array.isArray(value)) return value.length > 0;
+      if (value && typeof value === 'object') return hasMeaningfulObjectValue(value);
+      return Boolean(String(value ?? '').trim());
+    })
+  );
+
+const hasMeaningfulListContent = (items = []) =>
+  Array.isArray(items) && items.some((item) => {
+    if (item && typeof item === 'object') return hasMeaningfulObjectValue(item);
+    return Boolean(String(item || '').trim());
+  });
+
+const TodoProgressCard = ({ percentage = 0, credentialItems = [], profileItems = [], additionalItems = [] }) => {
+  const renderItem = (item) => (
+    <div key={item.key} className="flex items-center justify-between gap-3 py-2">
+      <div className="flex min-w-0 items-center gap-3">
+        <span
+          className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] ${
+            item.completed
+              ? 'border-[#2e66a6] bg-[#2e66a6] text-white'
+              : 'border-gray-300 bg-white text-transparent'
+          }`}
+          aria-hidden="true"
+        >
+          ✓
+        </span>
+        <span className={`truncate text-sm ${item.completed ? 'font-medium text-black' : 'text-gray-500'}`}>
+          {item.label}
+        </span>
+      </div>
+      <span className="shrink-0 text-xs font-semibold text-gray-400">{item.weight ? `${item.weight}%` : ''}</span>
+    </div>
+  );
+
+  return (
+    <aside className="w-full rounded-[18px] border border-[#d8e2ee] bg-white p-5 shadow-[0_8px_30px_rgba(46,102,166,0.10)] lg:sticky lg:top-24">
+      <h2 className="text-xl font-bold text-black">To-Do List</h2>
+
+      <div className="mt-5 text-center text-sm font-bold text-[#2e66a6]">{percentage}% Done</div>
+      <div
+        className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-gray-200"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow={percentage}
+        aria-label="Profile completion progress"
+      >
+        <div
+          className="h-full rounded-full bg-[#2e66a6] transition-all duration-500"
+          style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
+        />
+      </div>
+
+      <div className="mt-5 border-t border-[#d8e2ee] pt-4">
+        <div className="mb-1 flex items-center justify-between gap-3">
+          <h3 className="text-sm font-bold uppercase tracking-wide text-black">Credentials</h3>
+          <span className="text-xs font-bold text-[#2e66a6]">45%</span>
+        </div>
+        {credentialItems.map(renderItem)}
+      </div>
+
+      <div className="mt-4 border-t border-[#d8e2ee] pt-4">
+        <div className="mb-1 flex items-center justify-between gap-3">
+          <h3 className="text-sm font-bold uppercase tracking-wide text-black">Resume Profile</h3>
+          <span className="text-xs font-bold text-[#2e66a6]">55%</span>
+        </div>
+        {profileItems.map(renderItem)}
+      </div>
+
+      <div className="mt-4 border-t border-[#d8e2ee] pt-4">
+        <div className="mb-1 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-wide text-black">Additional Sections</h3>
+            <p className="mt-1 text-xs leading-5 text-gray-500">Kahit isa ang may saved na laman, makukuha ang buong 13%.</p>
+          </div>
+          <span className="shrink-0 text-xs font-bold text-[#2e66a6]">13%</span>
+        </div>
+        {additionalItems.map(renderItem)}
+      </div>
+    </aside>
+  );
+};
+
 const MyProfile = () => {
   useEffect(() => {
     const previousHtmlOverflowY = document.documentElement.style.overflowY;
@@ -3032,6 +3122,101 @@ const MyProfile = () => {
   }, [formData.educationEntries]);
 
   const hasEducationEntries = educationEntries.length > 0;
+
+  const todoProgress = useMemo(() => {
+    const credentialWeights = {
+      validId: 8,
+      cv: 12,
+      diploma: 8,
+      tor: 5,
+      sss: 3,
+      philhealth: 3,
+      pagibig: 3,
+      tin: 3,
+    };
+
+    const credentialLabels = {
+      validId: 'Valid ID',
+      cv: 'Resume',
+      diploma: 'Diploma',
+      tor: 'TOR',
+      sss: 'SSS',
+      philhealth: 'PhilHealth',
+      pagibig: 'Pag-IBIG',
+      tin: 'TIN',
+    };
+
+    const credentialItems = Object.keys(credentialWeights).map((key) => ({
+      key,
+      label: credentialLabels[key],
+      weight: credentialWeights[key],
+      completed: Boolean(String(verificationDocs?.[key]?.url || '').trim()),
+    }));
+
+    const basicInformationComplete = Boolean(
+      String(formData.firstName || '').trim() &&
+      String(formData.lastName || '').trim() &&
+      String(formData.email || '').trim() &&
+      String(formData.phoneNumber || '').trim() &&
+      String(formData.address || buildAddressString(formData) || '').trim()
+    );
+
+    const availabilityComplete = Boolean(
+      String(formData.preferredWorkMode || '').trim() ||
+      String(formData.howSoonCanYouStart || '').trim() ||
+      String(formData.employmentType || '').trim() ||
+      String(formData.willingToRelocate || '').trim()
+    );
+
+    const skillsComplete = Boolean(
+      normalizeSkillsFromProfile(formData.technicalSkills).length ||
+      normalizeSkillsFromProfile(formData.softSkills).length ||
+      normalizeSkillRows(formData.skillRows || []).some((item) => String(item.skill || '').trim())
+    );
+
+    const educationComplete = Boolean(
+      hasEducationEntries ||
+      String(formData.campus || '').trim() ||
+      String(formData.course || '').trim() ||
+      String(formData.yearGraduated || '').trim()
+    );
+
+    const profileItems = [
+      { key: 'basic', label: 'Basic Information', weight: 2, completed: basicInformationComplete },
+      { key: 'objective', label: 'Career Objectives', weight: 1, completed: Boolean(String(formData.aboutMe || '').trim()) },
+      { key: 'availability', label: 'Availability & Preferences', weight: 2, completed: availabilityComplete },
+      { key: 'work', label: 'Work Experience', weight: 15, completed: workExperiences.length > 0 },
+      { key: 'skills', label: 'Skills', weight: 10, completed: skillsComplete },
+      { key: 'education', label: 'Education', weight: 3, completed: educationComplete },
+      { key: 'certifications', label: 'Certifications', weight: 5, completed: hasMeaningfulListContent(formData.certifications) },
+      { key: 'projects', label: 'Projects', weight: 4, completed: hasMeaningfulListContent(formData.projects) },
+    ];
+
+    const additionalItems = [
+      { key: 'seminars', label: 'Seminars and Trainings', completed: hasMeaningfulListContent(formData.seminars) },
+      { key: 'awards', label: 'Awards and Achievements', completed: hasMeaningfulListContent(formData.awards) },
+      { key: 'affiliations', label: 'Affiliations', completed: hasMeaningfulListContent(formData.affiliations) },
+      { key: 'cocurricular', label: 'Co-Curricular Activities', completed: hasMeaningfulListContent(formData.cocurricular) },
+      { key: 'references', label: 'References', completed: hasMeaningfulListContent(formData.references) },
+    ];
+
+    const credentialsProgress = credentialItems.reduce(
+      (total, item) => total + (item.completed ? item.weight : 0),
+      0
+    );
+    const resumeProfileProgress = profileItems.reduce(
+      (total, item) => total + (item.completed ? item.weight : 0),
+      0
+    );
+    const additionalProgress = additionalItems.some((item) => item.completed) ? 13 : 0;
+
+    return {
+      percentage: Math.min(100, credentialsProgress + resumeProfileProgress + additionalProgress),
+      credentialItems,
+      profileItems,
+      additionalItems,
+    };
+  }, [formData, hasEducationEntries, verificationDocs, workExperiences]);
 
   const regionOptions = useMemo(() => PH_REGIONS, []);
   const provinceOptions = useMemo(() => {
@@ -4805,8 +4990,8 @@ const MyProfile = () => {
 
           <div className="bg-transparent overflow-visible">
             <div className="relative z-0 w-full max-w-full px-0 pt-0 pb-10">
-              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1040px)] justify-center gap-10 items-start">
-                <div className="bg-white border border-[#d8e2ee] rounded-[18px] shadow-[0_8px_30px_rgba(46,102,166,0.10)] min-h-[760px] px-6 sm:px-10 lg:px-14 py-10">
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,820px)_minmax(280px,340px)] justify-center gap-8 items-start">
+                <div className="bg-white border border-[#d8e2ee] rounded-[18px] shadow-[0_8px_30px_rgba(46,102,166,0.10)] min-h-[760px] px-6 sm:px-10 lg:px-12 py-10">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
                     <div>
                       <h2 className="text-[22px] font-bold text-gray-900 sr-only">Profile</h2>
@@ -4959,6 +5144,13 @@ const MyProfile = () => {
                     })}
                   </div>
                 </div>
+
+                <TodoProgressCard
+                  percentage={todoProgress.percentage}
+                  credentialItems={todoProgress.credentialItems}
+                  profileItems={todoProgress.profileItems}
+                  additionalItems={todoProgress.additionalItems}
+                />
               </div>
             </div>
 
