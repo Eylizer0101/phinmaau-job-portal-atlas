@@ -68,6 +68,186 @@ const Field = ({ id, label, required, hint, error, children }) => {
 };
 
 
+
+const normalizeRichTextValue = (value = '') => {
+  const clean = String(value || '');
+  if (!clean) return '';
+  if (/<\/?[a-z][\s\S]*>/i.test(clean)) return clean;
+
+  return clean
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>');
+};
+
+const getRichTextPlainText = (value = '') => {
+  const clean = String(value || '');
+  if (!clean) return '';
+
+  if (typeof window === 'undefined' || typeof window.DOMParser === 'undefined') {
+    return clean.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  const parser = new window.DOMParser();
+  const doc = parser.parseFromString(clean, 'text/html');
+  return String(doc.body.textContent || '')
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+const RichTextToolbarButton = ({ title, children, onMouseDown, className = '' }) => (
+  <button
+    type="button"
+    title={title}
+    aria-label={title}
+    onMouseDown={(event) => {
+      event.preventDefault();
+      onMouseDown?.();
+    }}
+    className={[
+      'flex h-8 min-w-8 items-center justify-center rounded px-2',
+      'text-[15px] font-semibold text-gray-700 transition hover:bg-gray-100',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30',
+      className,
+    ].join(' ')}
+  >
+    {children}
+  </button>
+);
+
+const RichTextEditor = ({
+  id,
+  name,
+  value,
+  onChange,
+  onBlur,
+  placeholder = '',
+  rows = 6,
+  error = false,
+}) => {
+  const editorRef = useRef(null);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const nextHtml = normalizeRichTextValue(value);
+    if (document.activeElement !== editor && editor.innerHTML !== nextHtml) {
+      editor.innerHTML = nextHtml;
+    }
+  }, [value]);
+
+  const emitChange = () => {
+    const nextValue = editorRef.current?.innerHTML || '';
+    onChange?.({
+      target: {
+        id,
+        name,
+        type: 'text',
+        value: nextValue,
+      },
+    });
+  };
+
+  const runCommand = (command, commandValue = null) => {
+    editorRef.current?.focus();
+    document.execCommand(command, false, commandValue);
+    emitChange();
+  };
+
+  const formatHeading = (tagName) => {
+    editorRef.current?.focus();
+    document.execCommand('formatBlock', false, tagName);
+    emitChange();
+  };
+
+  const minHeight = Math.max(140, Number(rows || 6) * 24);
+  const empty = !getRichTextPlainText(value);
+
+  return (
+    <div>
+      <div className={`flex min-h-12 flex-wrap items-center gap-1 rounded-t-xl border border-b-0 bg-white px-3 py-1.5 ${
+        error ? 'border-red-300' : 'border-gray-300'
+      }`}>
+        <RichTextToolbarButton title="Bold" onMouseDown={() => runCommand('bold')} className="font-extrabold">
+          B
+        </RichTextToolbarButton>
+
+        <RichTextToolbarButton title="Italic" onMouseDown={() => runCommand('italic')} className="italic">
+          I
+        </RichTextToolbarButton>
+
+        <RichTextToolbarButton title="Underline" onMouseDown={() => runCommand('underline')} className="underline">
+          U
+        </RichTextToolbarButton>
+
+        <span className="mx-1 h-7 border-l border-gray-300" aria-hidden="true" />
+
+        <RichTextToolbarButton title="Numbered list" onMouseDown={() => runCommand('insertOrderedList')}>
+          <span className="text-[17px]">⅓</span>
+        </RichTextToolbarButton>
+
+        <RichTextToolbarButton title="Bullet list" onMouseDown={() => runCommand('insertUnorderedList')}>
+          <span className="text-[18px] leading-none">☷</span>
+        </RichTextToolbarButton>
+
+        <RichTextToolbarButton title="Align left" onMouseDown={() => runCommand('justifyLeft')}>
+          <span className="text-[18px]">≡</span>
+        </RichTextToolbarButton>
+
+        <RichTextToolbarButton title="Indent" onMouseDown={() => runCommand('indent')}>
+          <span className="text-[18px]">⇥</span>
+        </RichTextToolbarButton>
+
+        <span className="mx-1 h-7 border-l border-gray-300" aria-hidden="true" />
+
+        <RichTextToolbarButton title="Heading 1" onMouseDown={() => formatHeading('H1')}>
+          H₁
+        </RichTextToolbarButton>
+
+        <RichTextToolbarButton title="Heading 2" onMouseDown={() => formatHeading('H2')}>
+          H₂
+        </RichTextToolbarButton>
+      </div>
+
+      <div className="relative">
+        {empty ? (
+          <div className="pointer-events-none absolute left-4 top-3 text-gray-400">
+            {placeholder}
+          </div>
+        ) : null}
+
+        <div
+          ref={editorRef}
+          id={id}
+          contentEditable
+          suppressContentEditableWarning
+          role="textbox"
+          aria-multiline="true"
+          aria-invalid={error}
+          onInput={emitChange}
+          onBlur={() => {
+            emitChange();
+            onBlur?.();
+          }}
+          className={[
+            'w-full overflow-y-auto rounded-b-xl border bg-white px-4 py-3 text-gray-900 outline-none',
+            'focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:border-[#2e66a6]',
+            '[&_h1]:text-2xl [&_h1]:font-bold',
+            '[&_h2]:text-xl [&_h2]:font-bold',
+            '[&_ul]:list-disc [&_ul]:pl-6',
+            '[&_ol]:list-decimal [&_ol]:pl-6',
+            error ? 'border-red-300' : 'border-gray-300',
+          ].join(' ')}
+          style={{ minHeight }}
+        />
+      </div>
+    </div>
+  );
+};
+
 const DEFAULT_MAP_CENTER = { lat: 14.5995, lng: 120.9842 };
 
 const toCoordinate = (value) => {
@@ -572,8 +752,8 @@ const PostJob = () => {
   const requiredOk = useMemo(() => {
     return (
       formData.title.trim() &&
-      formData.description.trim().length >= 80 &&
-      formData.requirements.trim().length >= 40 &&
+      getRichTextPlainText(formData.description).length >= 80 &&
+      getRichTextPlainText(formData.requirements).length >= 40 &&
       formData.location.trim() &&
       isDeadlineValid &&
       salaryValid &&
@@ -588,17 +768,20 @@ const PostJob = () => {
       errors.title = 'Job title is required.';
     }
 
-    if ((touched.description || submitted) && formData.description.trim().length > 0 && formData.description.trim().length < 80) {
+    const descriptionText = getRichTextPlainText(formData.description);
+    const requirementsText = getRichTextPlainText(formData.requirements);
+
+    if ((touched.description || submitted) && descriptionText.length > 0 && descriptionText.length < 80) {
       errors.description = 'Job description must be at least 80 characters.';
     }
-    if ((touched.description || submitted) && submitted && !formData.description.trim()) {
+    if ((touched.description || submitted) && submitted && !descriptionText) {
       errors.description = 'Job description is required.';
     }
 
-    if ((touched.requirements || submitted) && formData.requirements.trim().length > 0 && formData.requirements.trim().length < 40) {
+    if ((touched.requirements || submitted) && requirementsText.length > 0 && requirementsText.length < 40) {
       errors.requirements = 'Requirements must be at least 40 characters.';
     }
-    if ((touched.requirements || submitted) && submitted && !formData.requirements.trim()) {
+    if ((touched.requirements || submitted) && submitted && !requirementsText) {
       errors.requirements = 'Job requirements are required.';
     }
 
@@ -636,10 +819,12 @@ const PostJob = () => {
 
   const validateForPublish = () => {
     if (!formData.title.trim()) return 'Job title is required';
-    if (!formData.description.trim()) return 'Job description is required';
-    if (formData.description.trim().length < 80) return 'Job description must be at least 80 characters';
-    if (!formData.requirements.trim()) return 'Job requirements are required';
-    if (formData.requirements.trim().length < 40) return 'Requirements must be at least 40 characters';
+    const descriptionText = getRichTextPlainText(formData.description);
+    const requirementsText = getRichTextPlainText(formData.requirements);
+    if (!descriptionText) return 'Job description is required';
+    if (descriptionText.length < 80) return 'Job description must be at least 80 characters';
+    if (!requirementsText) return 'Job requirements are required';
+    if (requirementsText.length < 40) return 'Requirements must be at least 40 characters';
     if (!formData.location.trim()) return 'Location (City) is required';
     if (!formData.applicationDeadline) return 'Application deadline is required';
     if (!isDeadlineValid) return 'Application deadline must be in the future';
@@ -784,8 +969,8 @@ const PostJob = () => {
     }
   };
 
-  const descLen = formData.description.trim().length;
-  const reqLen = formData.requirements.trim().length;
+  const descLen = getRichTextPlainText(formData.description).length;
+  const reqLen = getRichTextPlainText(formData.requirements).length;
 
   const showDescCounterRed = (touched.description || submitted) && descLen > 0 && descLen < 80;
   const showReqCounterRed = (touched.requirements || submitted) && reqLen > 0 && reqLen < 40;
@@ -892,7 +1077,7 @@ const PostJob = () => {
                             <span>
                               <span className="block text-sm font-semibold text-gray-900">Urgently Needed</span>
                               <span className="block text-xs leading-5 text-gray-500">
-                                Show an Urgently Needed badge with the fire icon on job cards.
+                                Show an Urgently Needed badge on job cards.
                               </span>
                             </span>
                           </label>
@@ -1121,19 +1306,15 @@ const PostJob = () => {
                         error={fieldErrors.description}
                       >
                         <div>
-                          <textarea
+                          <RichTextEditor
                             id="description"
                             name="description"
                             value={formData.description}
                             onChange={handleChange}
                             onBlur={() => markTouched('description')}
                             rows={7}
-                            aria-invalid={!!fieldErrors.description}
-                            className={`w-full rounded-xl border px-4 py-3 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:border-[#2e66a6] ${
-                              fieldErrors.description ? 'border-red-300' : 'border-gray-300'
-                            }`}
+                            error={Boolean(fieldErrors.description)}
                             placeholder="Describe the role, responsibilities, and what a typical day looks like..."
-                            required
                           />
                           <div className="flex justify-end">
                            
@@ -1147,19 +1328,15 @@ const PostJob = () => {
                         error={fieldErrors.requirements}
                       >
                         <div>
-                          <textarea
+                          <RichTextEditor
                             id="requirements"
                             name="requirements"
                             value={formData.requirements}
                             onChange={handleChange}
                             onBlur={() => markTouched('requirements')}
                             rows={6}
-                            aria-invalid={!!fieldErrors.requirements}
-                            className={`w-full rounded-xl border px-4 py-3 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:border-[#2e66a6] ${
-                              fieldErrors.requirements ? 'border-red-300' : 'border-gray-300'
-                            }`}
+                            error={Boolean(fieldErrors.requirements)}
                             placeholder="List the qualifications, certifications or requirements..."
-                            required
                           />
                           <div className="flex justify-end">
                            
