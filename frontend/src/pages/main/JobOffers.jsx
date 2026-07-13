@@ -1231,10 +1231,7 @@ const JobOffers = () => {
                       style={{ border: `1px solid ${COLORS.border}` }}
                     >
                         {job.isUrgent ? (
-                          <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full bg-[#171717] pr-4 text-sm font-bold leading-none text-white shadow-sm">
-                            <span className="flex h-9 w-12 items-center justify-center overflow-visible">
-                              <img src="/images/fire.png" alt="" className="h-14 w-14 max-w-none object-contain" />
-                            </span>
+                          <div className="mb-4 inline-flex w-fit items-center rounded-full bg-[#171717] px-4 py-3 text-sm font-bold leading-none text-white shadow-sm">
                             Urgently Needed
                           </div>
                         ) : null}
@@ -1257,7 +1254,7 @@ const JobOffers = () => {
                           </div>
 
                           <div className="min-w-0 flex-1">
-                            <h3 className="text-[17px] md:text-lg font-bold text-black leading-snug line-clamp-2 min-h-[48px] group-hover:text-[#2e66a6] transition">
+                            <h3 className="min-w-0 truncate whitespace-nowrap text-[17px] md:text-lg font-bold text-black leading-snug group-hover:text-[#2e66a6] transition">
                               {String(job.title || "Job Title").replaceAll('"', "")}
                             </h3>
 
