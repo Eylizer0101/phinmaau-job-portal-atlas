@@ -651,6 +651,8 @@ const PostJob = () => {
     locationLongitude: '',
   });
 
+  const [skillInput, setSkillInput] = useState('');
+
   const [locationImageFile, setLocationImageFile] = useState(null);
   const [locationImagePreview, setLocationImagePreview] = useState('');
 
@@ -680,6 +682,87 @@ const PostJob = () => {
 
     setError('');
     setSuccess('');
+  };
+
+  const addRequiredSkill = useCallback((rawSkill) => {
+    const cleanSkill = String(rawSkill || '').trim().replace(/^,+|,+$/g, '');
+    if (!cleanSkill) return;
+
+    const currentSkills = (formData.skillsRequired || '')
+      .split(',')
+      .map((skill) => skill.trim())
+      .filter(Boolean);
+
+    const isDuplicate = currentSkills.some(
+      (skill) => skill.toLowerCase() === cleanSkill.toLowerCase()
+    );
+
+    if (isDuplicate) {
+      setSkillInput('');
+      return;
+    }
+
+    if (currentSkills.length >= 10) {
+      markTouched('skillsRequired');
+      return;
+    }
+
+    const nextSkills = [...currentSkills, cleanSkill];
+
+    setFormData((prev) => ({
+      ...prev,
+      skillsRequired: nextSkills.join(', '),
+    }));
+    setSkillInput('');
+    markTouched('skillsRequired');
+    setError('');
+    setSuccess('');
+  }, [formData.skillsRequired, markTouched]);
+
+  const removeRequiredSkill = useCallback((skillIndex) => {
+    const currentSkills = (formData.skillsRequired || '')
+      .split(',')
+      .map((skill) => skill.trim())
+      .filter(Boolean);
+
+    const nextSkills = currentSkills.filter((_, index) => index !== skillIndex);
+
+    setFormData((prev) => ({
+      ...prev,
+      skillsRequired: nextSkills.join(', '),
+    }));
+    markTouched('skillsRequired');
+    setError('');
+    setSuccess('');
+  }, [formData.skillsRequired, markTouched]);
+
+  const handleSkillInputChange = (event) => {
+    const nextValue = event.target.value;
+
+    if (nextValue.includes(',')) {
+      const parts = nextValue.split(',');
+      const completedSkills = parts.slice(0, -1);
+      const remainingText = parts[parts.length - 1] || '';
+
+      completedSkills.forEach((skill) => addRequiredSkill(skill));
+      setSkillInput(remainingText);
+      return;
+    }
+
+    setSkillInput(nextValue);
+  };
+
+  const handleSkillInputKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      addRequiredSkill(skillInput);
+      return;
+    }
+
+    if (event.key === 'Backspace' && !skillInput && skills.length > 0) {
+      event.preventDefault();
+      removeRequiredSkill(skills.length - 1);
+    }
   };
 
   const handlePerkToggle = (perk) => {
@@ -1355,28 +1438,57 @@ const PostJob = () => {
                         label="Required Skills"
                         error={fieldErrors.skillsRequired}
                       >
-                        <input
-                          id="skillsRequired"
-                          name="skillsRequired"
-                          value={formData.skillsRequired}
-                          onChange={handleChange}
-                          onBlur={() => markTouched('skillsRequired')}
-                          aria-invalid={!!fieldErrors.skillsRequired}
-                          className={`w-full rounded-xl border px-4 py-3 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:border-[#2e66a6] ${
-                            fieldErrors.skillsRequired ? 'border-red-300' : 'border-gray-300'
+                        <div
+                          className={`flex min-h-[50px] items-center rounded-xl border bg-white transition focus-within:ring-2 ${
+                            fieldErrors.skillsRequired
+                              ? 'border-red-300 focus-within:border-red-600 focus-within:ring-red-600'
+                              : 'border-gray-300 focus-within:border-[#2e66a6] focus-within:ring-[#2e66a6]'
                           }`}
-                          placeholder="Type a skill and separate by comma (e.g., React, Communication, Excel)"
-                        />
+                        >
+                          <input
+                            id="skillsRequired"
+                            value={skillInput}
+                            onChange={handleSkillInputChange}
+                            onKeyDown={handleSkillInputKeyDown}
+                            onBlur={() => markTouched('skillsRequired')}
+                            className="min-w-0 flex-1 bg-transparent px-4 py-3 text-gray-900 outline-none disabled:cursor-not-allowed"
+                            placeholder={skills.length >= 10 ? 'Maximum of 10 skills reached' : 'Type a skill'}
+                            disabled={skills.length >= 10}
+                            autoComplete="off"
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => addRequiredSkill(skillInput)}
+                            disabled={!skillInput.trim() || skills.length >= 10}
+                            className="mr-2 h-9 shrink-0 rounded-lg bg-[#2e66a6] px-4 text-sm font-semibold text-white transition hover:bg-[#24558d] disabled:cursor-not-allowed disabled:opacity-45"
+                          >
+                            Add
+                          </button>
+                        </div>
                       </Field>
+
+                      <p className="-mt-3 text-xs leading-5 text-gray-500">
+                        Press Enter, comma, or Add to include a skill. Maximum of 10 skills.
+                      </p>
 
                       {skills.length > 0 && (
                         <div className="flex flex-wrap gap-2">
-                          {skills.map((s, idx) => (
+                          {skills.map((skill, index) => (
                             <span
-                              key={`${s}-${idx}`}
-                              className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-800"
+                              key={`${skill}-${index}`}
+                              className="group inline-flex items-center gap-1 rounded-full border border-[#cdddf0] bg-[#eef5fc] py-1 pl-3 pr-1 text-xs font-semibold text-[#24558d]"
                             >
-                              {s}
+                              <span>{skill}</span>
+                              <button
+                                type="button"
+                                onClick={() => removeRequiredSkill(index)}
+                                aria-label={`Remove ${skill}`}
+                                title={`Remove ${skill}`}
+                                className="inline-flex h-5 w-5 items-center justify-center rounded-full text-sm leading-none text-[#24558d] opacity-0 transition hover:bg-[#d9e9f8] hover:text-red-600 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
+                              >
+                                ×
+                              </button>
                             </span>
                           ))}
                         </div>
