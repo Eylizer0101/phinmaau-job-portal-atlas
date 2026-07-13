@@ -1139,6 +1139,14 @@ const ManageJobs = () => {
                   </svg>
                 </div>
 
+                {job?.isUrgent ? (
+                  <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#171717] pr-4 text-xs font-bold text-white shadow-sm">
+                    <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white">
+                      <img src="/images/fire.png" alt="" className="h-8 w-8 object-contain" />
+                    </span>
+                    Urgently Needed
+                  </div>
+                ) : null}
                 <h2 id="job-success-title" className="text-xl font-bold text-gray-900">
                   {success.title}
                 </h2>

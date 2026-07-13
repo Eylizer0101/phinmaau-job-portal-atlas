@@ -554,7 +554,8 @@ const JobOffers = () => {
     return jobsData || [];
   };
 
-  const formatSalary = (min, max) => {
+  const formatSalary = (min, max, hideSalary = false) => {
+  if (hideSalary) return 'Salary Undisclosed';
     if (!min && !max) return "Salary not specified";
 
     const minNum = min ? Number(min) : null;
@@ -1172,7 +1173,16 @@ const JobOffers = () => {
               </div>
             ) : errorMsg ? (
               <div className="bg-white border border-[#D7E2EE] rounded-[24px] p-8 text-center shadow-[0_8px_24px_rgba(0,0,0,0.05)]">
-                <h3 className="text-lg font-bold text-black">Something went wrong</h3>
+                {job.isUrgent ? (
+                              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#171717] pr-4 text-xs font-bold text-white shadow-sm">
+                                <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white">
+                                  <img src="/images/fire.png" alt="" className="h-8 w-8 object-contain" />
+                                </span>
+                                Urgently Needed
+                              </div>
+                            ) : null}
+
+                            <h3 className="text-lg font-bold text-black">Something went wrong</h3>
                 <p className="mt-2 text-sm text-black/65">{errorMsg}</p>
                 <button
                   className="mt-5 px-4 py-2 rounded-xl text-sm font-semibold border border-[#AFC6DD] text-black/75 hover:bg-[#F7FAFD]
@@ -1327,7 +1337,7 @@ const JobOffers = () => {
                           <span className="w-4 h-4 text-black/65 flex items-center justify-center font-extrabold text-[14px] leading-none">
                             ₱
                           </span>
-                          <span className="truncate">{formatSalary(job.salaryMin, job.salaryMax)}</span>
+                          <span className="truncate">{formatSalary(job.salaryMin, job.salaryMax, job.hideSalary)}</span>
                         </div>
 
                         <div className="mt-2 flex items-center gap-2 text-sm text-black/75">

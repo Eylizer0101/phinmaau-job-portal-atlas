@@ -524,6 +524,8 @@ const EditJob = () => {
     jobType: 'Full-time',
     salaryMin: '',
     salaryMax: '',
+    hideSalary: false,
+    isUrgent: false,
     workMode: 'On-site',
     applicationDeadline: '',
     vacancies: '1',
@@ -863,6 +865,8 @@ const EditJob = () => {
     payload.append('jobType', formData.jobType);
     payload.append('salaryMin', formData.salaryMin === '' ? '' : String(Number(formData.salaryMin)));
     payload.append('salaryMax', formData.salaryMax === '' ? '' : String(Number(formData.salaryMax)));
+    payload.append('hideSalary', String(Boolean(formData.hideSalary)));
+    payload.append('isUrgent', String(Boolean(formData.isUrgent)));
     payload.append('workMode', formData.workMode);
     payload.append('applicationDeadline', formData.applicationDeadline || '');
     payload.append('vacancies', formData.vacancies ? String(Number(formData.vacancies)) : '1');
@@ -1408,6 +1412,21 @@ const EditJob = () => {
                               disabled={isBusy}
                             />
                           </Field>
+                          <label className="mt-4 flex items-start gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(formData.isUrgent)}
+                              onChange={(e) => setFormData((prev) => ({ ...prev, isUrgent: e.target.checked }))}
+                              className="mt-1 h-4 w-4 accent-orange-500"
+                            />
+                            <span>
+                              <span className="block text-sm font-semibold text-gray-900">Urgently Needed</span>
+                              <span className="block text-xs leading-5 text-gray-500">
+                                Show an Urgently Needed badge with the fire icon on job cards.
+                              </span>
+                            </span>
+                          </label>
+
                         </div>
 
                         <Field id="jobType" label="Employment Type">
@@ -1524,6 +1543,23 @@ const EditJob = () => {
 
                       {fieldErrors.salary && <p className="text-sm font-medium text-red-600">{fieldErrors.salary}</p>}
                     </section>
+
+                    
+                      <label className="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(formData.hideSalary)}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, hideSalary: e.target.checked }))}
+                          className="mt-1 h-4 w-4 accent-[#2e66a6]"
+                        />
+                        <span>
+                          <span className="block text-sm font-semibold text-gray-900">Hide salary from jobseekers</span>
+                          <span className="block text-xs leading-5 text-gray-500">
+                            Job cards will show “Salary Undisclosed” instead of the salary range.
+                          </span>
+                        </span>
+                      </label>
+
 
                     <div className="border-t border-gray-100" />
 

@@ -649,7 +649,8 @@ const JobOfferDetails = () => {
     setShowGuestApplyModal(false);
   }, []);
 
-  const formatSalary = useCallback((min, max) => {
+  const formatSalary = useCallback((min, max, hideSalary = false) => {
+    if (hideSalary) return 'Salary Undisclosed';
     const hasMin = typeof min === 'number';
     const hasMax = typeof max === 'number';
     if (!hasMin && !hasMax) return 'Salary not specified';
@@ -960,7 +961,15 @@ const JobOfferDetails = () => {
                     <CompanyLogo src={job.companyLogo} name={job.companyName} />
 
                     <div className="min-w-0 flex-1">
-                      <h1
+                      {job?.isUrgent ? (
+                  <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#171717] pr-4 text-xs font-bold text-white shadow-sm">
+                    <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white">
+                      <img src="/images/fire.png" alt="" className="h-8 w-8 object-contain" />
+                    </span>
+                    Urgently Needed
+                  </div>
+                ) : null}
+                <h1
                         className={`${UI.h1} overflow-hidden text-ellipsis sm:truncate`}
                         style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2 }}
                         title={job.title}
@@ -1070,7 +1079,7 @@ const JobOfferDetails = () => {
                       <TopMetricCard
                         icon="money"
                         title="Salary"
-                        value={formatSalary(job.salaryMin, job.salaryMax)}
+                        value={formatSalary(job.salaryMin, job.salaryMax, job.hideSalary)}
                         isPeso
                       />
                       <TopMetricCard

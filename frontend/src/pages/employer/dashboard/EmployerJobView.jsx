@@ -420,7 +420,8 @@ const EmployerJobView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const formatSalary = useCallback((min, max) => {
+  const formatSalary = useCallback((min, max, hideSalary = false) => {
+    if (hideSalary) return 'Salary Undisclosed';
     const hasMin = typeof min === 'number';
     const hasMax = typeof max === 'number';
     if (!hasMin && !hasMax) return 'Salary not specified';
@@ -610,7 +611,15 @@ const EmployerJobView = () => {
                   <CompanyLogo src={job.companyLogo} name={job.companyName} />
 
                   <div className="min-w-0 flex-1">
-                    <h1 className="text-[28px] font-bold leading-tight text-[#111827] sm:text-[32px]" title={job.title}>
+                    {job?.isUrgent ? (
+                  <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#171717] pr-4 text-xs font-bold text-white shadow-sm">
+                    <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white">
+                      <img src="/images/fire.png" alt="" className="h-8 w-8 object-contain" />
+                    </span>
+                    Urgently Needed
+                  </div>
+                ) : null}
+                <h1 className="text-[28px] font-bold leading-tight text-[#111827] sm:text-[32px]" title={job.title}>
                       {job.title}
                     </h1>
 
@@ -663,7 +672,7 @@ const EmployerJobView = () => {
           </div>
 
           <div className="mb-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <TopMetricCard icon="money" title="Salary" value={formatSalary(job.salaryMin, job.salaryMax)} isPeso />
+            <TopMetricCard icon="money" title="Salary" value={formatSalary(job.salaryMin, job.salaryMax, job.hideSalary)} isPeso />
             <TopMetricCard icon="clock" title="Experience" value={job.experienceLevel || 'No experience required'} />
             <TopMetricCard
               icon="graduation"

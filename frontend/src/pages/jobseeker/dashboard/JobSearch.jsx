@@ -791,7 +791,8 @@ const JobSearch = () => {
     setOpenDropdown(null);
   };
 
-  const formatSalary = (min, max) => {
+  const formatSalary = (min, max, hideSalary = false) => {
+  if (hideSalary) return 'Salary Undisclosed';
     if (!min && !max) return 'Salary not specified';
 
     const minNum = min ? Number(min) : null;
@@ -1234,7 +1235,16 @@ const JobSearch = () => {
                 renderSkeleton()
               ) : filteredJobs.length === 0 ? (
                 <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center shadow-sm">
-                  <h3 className="text-lg font-bold text-gray-800">No results found</h3>
+                  {job.isUrgent ? (
+                              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#171717] pr-4 text-xs font-bold text-white shadow-sm">
+                                <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white">
+                                  <img src="/images/fire.png" alt="" className="h-8 w-8 object-contain" />
+                                </span>
+                                Urgently Needed
+                              </div>
+                            ) : null}
+
+                            <h3 className="text-lg font-bold text-gray-800">No results found</h3>
                   <p className="mt-2 text-sm text-gray-600">Try adjusting your filters or search terms.</p>
 
                   <div className="mt-5 flex items-center justify-center gap-3">
@@ -1386,7 +1396,7 @@ const JobSearch = () => {
                             <span className="w-4 h-4 text-gray-600 flex flex-shrink-0 items-center justify-center font-extrabold text-[14px] leading-none">
                               ₱
                             </span>
-                            <span className="min-w-0 flex-1 truncate">{formatSalary(job.salaryMin, job.salaryMax)}</span>
+                            <span className="min-w-0 flex-1 truncate">{formatSalary(job.salaryMin, job.salaryMax, job.hideSalary)}</span>
                           </div>
 
                           <div className="mt-2 flex items-center gap-2 text-sm text-gray-700">

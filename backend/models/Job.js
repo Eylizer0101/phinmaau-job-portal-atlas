@@ -74,6 +74,14 @@ const jobSchema = new mongoose.Schema({
         min: 0,
         set: normalizeSalaryAmount
     },
+    hideSalary: {
+        type: Boolean,
+        default: false
+    },
+    isUrgent: {
+        type: Boolean,
+        default: false
+    },
     location: {
         type: String,
         required: function () { return this.isPublished === true; }

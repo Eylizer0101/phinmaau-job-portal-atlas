@@ -276,6 +276,8 @@ exports.createJob = async (req, res) => {
       jobType,
       salaryMin,
       salaryMax,
+      hideSalary,
+      isUrgent,
       workMode,
       applicationDeadline,
       vacancies,
@@ -405,6 +407,8 @@ exports.createJob = async (req, res) => {
       otherBenefits: String(otherBenefits || '').trim(),
       willingToRelocate: relocateValue,
       locationImage: locationImagePath,
+      hideSalary: parseBool(hideSalary),
+      isUrgent: parseBool(isUrgent),
     };
 
     applyIfDefined(jobData, 'title', title);
@@ -1023,6 +1027,11 @@ exports.updateJob = async (req, res) => {
 
       if (key === 'openToFreshGraduates') {
         job.openToFreshGraduates = parseBool(req.body.openToFreshGraduates);
+        return;
+      }
+
+      if (key === 'hideSalary' || key === 'isUrgent') {
+        job[key] = parseBool(req.body[key]);
         return;
       }
 
