@@ -765,16 +765,112 @@ const Input = ({ label, value, onChange, placeholder = '', disabled = false, typ
   );
 };
 
+const applyTextAreaValue = (onChange, value) => {
+  onChange?.({ target: { value } });
+};
+
+const insertBulletAtCursor = (textarea, value = '', onChange) => {
+  const start = textarea?.selectionStart ?? String(value || '').length;
+  const end = textarea?.selectionEnd ?? start;
+  const cleanValue = String(value || '');
+  const lineStart = cleanValue.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
+  const prefix = cleanValue.slice(lineStart, start);
+  const bulletText = prefix.trim() ? '\n• ' : '• ';
+  const nextValue = `${cleanValue.slice(0, start)}${bulletText}${cleanValue.slice(end)}`;
+
+  applyTextAreaValue(onChange, nextValue);
+
+  window.requestAnimationFrame(() => {
+    const nextCursor = start + bulletText.length;
+    textarea?.focus();
+    textarea?.setSelectionRange(nextCursor, nextCursor);
+  });
+};
+
+const handleBulletTextAreaKeyDown = (event, value = '', onChange) => {
+  if (event.key !== 'Enter') return;
+
+  const textarea = event.currentTarget;
+  const cleanValue = String(value || '');
+  const start = textarea.selectionStart ?? cleanValue.length;
+  const end = textarea.selectionEnd ?? start;
+  const lineStart = cleanValue.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
+  const currentLine = cleanValue.slice(lineStart, start);
+  const bulletMatch = currentLine.match(/^(\s*)(•|[-*])\s+(.*)$/);
+  const numberMatch = currentLine.match(/^(\s*)(\d+)[.)]\s+(.*)$/);
+
+  if (!bulletMatch && !numberMatch) return;
+
+  event.preventDefault();
+
+  let continuation = '';
+  if (bulletMatch) {
+    continuation = bulletMatch[3].trim() ? `\n${bulletMatch[1]}• ` : '\n';
+  } else if (numberMatch) {
+    continuation = numberMatch[3].trim()
+      ? `\n${numberMatch[1]}${Number(numberMatch[2]) + 1}. `
+      : '\n';
+  }
+
+  const nextValue = `${cleanValue.slice(0, start)}${continuation}${cleanValue.slice(end)}`;
+  applyTextAreaValue(onChange, nextValue);
+
+  window.requestAnimationFrame(() => {
+    const nextCursor = start + continuation.length;
+    textarea.focus();
+    textarea.setSelectionRange(nextCursor, nextCursor);
+  });
+};
+
+const BulletTextArea = ({
+  value,
+  onChange,
+  placeholder = '',
+  rows = 5,
+  className = '',
+  showToolbar = true,
+}) => {
+  const textareaRef = useRef(null);
+
+  return (
+    <div>
+      {showToolbar ? (
+        <div className="h-11 border border-b-0 border-gray-300 rounded-t-[5px] bg-white flex items-center gap-3 px-4">
+          <button
+            type="button"
+            onClick={() => insertBulletAtCursor(textareaRef.current, value, onChange)}
+            className="h-8 px-3 rounded border border-gray-200 text-sm font-bold text-gray-700 hover:bg-gray-50"
+            title="Insert bullet list"
+          >
+            • Bullets
+          </button>
+          <span className="text-xs text-gray-400">Press Enter to continue the bullet automatically.</span>
+        </div>
+      ) : null}
+
+      <textarea
+        ref={textareaRef}
+        rows={rows}
+        value={value || ''}
+        onChange={onChange}
+        onKeyDown={(event) => handleBulletTextAreaKeyDown(event, value, onChange)}
+        placeholder={placeholder}
+        className={className}
+      />
+    </div>
+  );
+};
+
 const TextArea = ({ label, value, onChange, placeholder = '', rows = 4 }) => {
   return (
     <div>
       <label className="block text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">{label}</label>
-      <textarea
+      <BulletTextArea
         rows={rows}
-        value={value || ''}
+        value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6] resize-none"
+        className="w-full px-4 py-3 rounded-b-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6] resize-none"
       />
     </div>
   );
@@ -1349,12 +1445,12 @@ const PlainInput = ({ value, onChange, placeholder = '' }) => (
 );
 
 const PlainTextArea = ({ value, onChange, placeholder = '' }) => (
-  <textarea
+  <BulletTextArea
     rows={5}
-    value={value || ''}
+    value={value}
     onChange={onChange}
     placeholder={placeholder}
-    className="w-full px-3 py-3 border border-gray-300 rounded-[5px] bg-white text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6] resize-y"
+    className="w-full px-3 py-3 border border-gray-300 rounded-b-[5px] bg-white text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6] resize-y"
   />
 );
 
@@ -1532,10 +1628,9 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
         />
         <div>
           <FormLabel>Description (optional)</FormLabel>
-          <RichDescriptionToolbar />
-          <textarea
+          <BulletTextArea
             rows={5}
-            value={item.description || ''}
+            value={item.description}
             onChange={(e) => change('description', e.target.value)}
             className="w-full px-3 py-3 border border-gray-300 rounded-b-[5px] bg-white text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6] resize-y"
           />
@@ -1722,7 +1817,7 @@ const EditableProfileListSection = ({
                       </div>
 
                       {item.description ? (
-                        <div className="text-sm leading-6 text-gray-600 mt-3">{item.description}</div>
+                        <div className="text-sm leading-6 text-gray-600 mt-3 whitespace-pre-line">{item.description}</div>
                       ) : null}
                     </div>
                   );
@@ -5301,7 +5396,7 @@ const MyProfile = () => {
               </div>
             </div>
 
-            <div className="hidden sm:flex w-[92px] h-[92px] bg-[#1f2430] text-white items-center justify-center font-serif text-[28px] font-bold shrink-0 overflow-hidden">
+            <div className="hidden sm:flex w-[124px] h-[124px] bg-[#1f2430] text-white items-center justify-center font-serif text-[32px] font-bold shrink-0 overflow-hidden">
               {profileImageUrl ? (
                 <img
                   src={profileImageUrl}
@@ -5321,7 +5416,7 @@ const MyProfile = () => {
 
     if (sectionKey === 'about') {
       return formData.aboutMe ? (
-        <div className="px-0 pb-5 pt-2 font-serif text-[13px] leading-5 text-gray-900 text-justify">
+        <div className="px-0 pb-5 pt-2 font-serif text-[13px] leading-5 text-gray-900 text-justify whitespace-pre-line">
           {formData.aboutMe}
         </div>
       ) : renderEmptyLine(EMPTY_SECTION_MESSAGES.about);
