@@ -128,6 +128,15 @@ const PREFERRED_LANGUAGE_OPTIONS = [
   'English and Filipino',
 ];
 
+const EXPERIENCE_OPTIONS = [
+  'No experience',
+  'Less than 1 year',
+  '1-2 years',
+  '2-3 years',
+  '3-5 years',
+  '5+ years',
+];
+
 const GENDER_OPTIONS = [
   'Male',
   'Female',
@@ -2880,7 +2889,7 @@ const ProfileEditModal = ({
           <Select label="Employment Type" value={drafts.employmentType} onChange={(e) => onChange('employmentType', e.target.value)} options={EMPLOYMENT_TYPE_OPTIONS} placeholder="Select employment type" />
           <Select label="Willing to Relocate" value={drafts.willingToRelocate} onChange={(e) => onChange('willingToRelocate', e.target.value)} options={WILLING_TO_RELOCATE_OPTIONS} placeholder="Select relocation preference" />
           <Select label="How Soon Can Start" value={drafts.howSoonCanYouStart} onChange={(e) => onChange('howSoonCanYouStart', e.target.value)} options={HOW_SOON_CAN_START_OPTIONS} placeholder="Select availability" />
-          <Input label="Experience" value={drafts.experience} onChange={(e) => onChange('experience', e.target.value)} placeholder="e.g. 2 years, Internship, Fresh graduate" />
+          <Select label="Experience" value={drafts.experience} onChange={(e) => onChange('experience', e.target.value)} options={EXPERIENCE_OPTIONS} placeholder="Select experience" />
           <Select label="Preferred Language" value={drafts.preferredLanguage} onChange={(e) => onChange('preferredLanguage', e.target.value)} options={PREFERRED_LANGUAGE_OPTIONS} placeholder="Select preferred language" />
           <Select label="Educational Attainment" value={drafts.educationalAttainment} onChange={(e) => onChange('educationalAttainment', e.target.value)} options={EDUCATIONAL_ATTAINMENT_OPTIONS} placeholder="Select educational attainment" />
           <Select label="Double Degree" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} options={FIELD_OF_STUDY_OPTIONS} placeholder="Select study field" />
