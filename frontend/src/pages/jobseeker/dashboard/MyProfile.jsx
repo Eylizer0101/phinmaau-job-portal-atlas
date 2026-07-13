@@ -4914,14 +4914,14 @@ const MyProfile = () => {
   ];
 
   const documentConfig = [
-    { type: 'cv', title: 'CV / Resume', icon: <FaFileAlt className="text-sm" /> },
-    { type: 'sss', title: 'SSS', icon: <FaFileAlt className="text-sm" /> },
-    { type: 'diploma', title: 'Diploma', icon: <FaFileAlt className="text-sm" /> },
-    { type: 'tin', title: 'TIN', icon: <FaFileAlt className="text-sm" /> },
     { type: 'validId', title: 'Valid ID', icon: <FaShieldAlt className="text-sm" /> },
-    { type: 'tor', title: 'TOR', icon: <FaFileAlt className="text-sm" /> },
+    { type: 'sss', title: 'SSS', icon: <FaFileAlt className="text-sm" /> },
+    { type: 'cv', title: 'Resume', icon: <FaFileAlt className="text-sm" /> },
     { type: 'philhealth', title: 'PhilHealth', icon: <FaFileAlt className="text-sm" /> },
+    { type: 'diploma', title: 'Diploma', icon: <FaFileAlt className="text-sm" /> },
     { type: 'pagibig', title: 'Pag-IBIG', icon: <FaFileAlt className="text-sm" /> },
+    { type: 'tor', title: 'TOR', icon: <FaFileAlt className="text-sm" /> },
+    { type: 'tin', title: 'TIN', icon: <FaFileAlt className="text-sm" /> },
   ];
 
   const uploadedRequiredCount = REQUIRED_DOC_TYPES.filter((key) => verificationDocs[key]?.url).length;
@@ -5412,6 +5412,11 @@ const MyProfile = () => {
                             </button>
 
                             <div className="relative flex items-center gap-3 shrink-0">
+                              {section.key === 'credentials' ? (
+                                <span className="inline-flex items-center rounded-full bg-[#eaf2fb] px-3 py-1 text-xs font-bold text-[#2e66a6]">
+                                  {uploadedRequiredCount}/{REQUIRED_DOC_TYPES.length}
+                                </span>
+                              ) : null}
                               {section.key === 'skills' ? (
                                 <button
                                   type="button"
