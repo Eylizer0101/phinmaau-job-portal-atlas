@@ -1283,7 +1283,7 @@ const JobSearch = () => {
                         style={{ border: `1px solid ${COLORS.border}` }}
                       >
                         {job.isUrgent ? (
-                          <div className="mb-4 inline-flex w-fit items-center rounded-full bg-[#171717] px-4 py-3 text-sm font-bold leading-none text-white shadow-sm">
+                          <div className="mb-4 inline-flex w-fit items-center rounded-full bg-[#171717] px-3 py-1 text-xs font-bold leading-none text-white shadow-sm">
                             Urgently Needed
                           </div>
                         ) : null}
