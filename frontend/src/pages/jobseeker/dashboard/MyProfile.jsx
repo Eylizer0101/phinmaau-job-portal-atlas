@@ -5114,22 +5114,28 @@ const MyProfile = () => {
                     <div className="font-bold">{item.companyName || 'Company Name'}</div>
                     <div className="italic">{item.positionTitle || 'Position'}</div>
                   </div>
-                  <div className="flex flex-col items-start gap-2 sm:items-end shrink-0">
+                  <div className="flex shrink-0 items-center gap-2 sm:justify-end">
                     <div className="italic text-gray-700">{dateText}</div>
-                    <div className="flex items-center gap-2 font-sans opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+
+                    <div className="flex items-center gap-1 font-sans opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                       <button
                         type="button"
                         onClick={() => openEditWorkExperienceModal(item)}
-                        className="rounded-lg border border-[#d8e2ee] bg-white px-3 py-1.5 text-xs font-bold text-[#2e66a6] hover:bg-[#f7faff]"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[#2e66a6] transition hover:bg-[#edf4fb]"
+                        aria-label={`Edit ${item.companyName || 'work experience'}`}
+                        title="Edit"
                       >
-                        Edit
+                        <FaPen className="text-[12px]" />
                       </button>
+
                       <button
                         type="button"
                         onClick={() => handleDeleteWorkExperience(item)}
-                        className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-red-500 transition hover:bg-red-50 hover:text-red-600"
+                        aria-label={`Remove ${item.companyName || 'work experience'}`}
+                        title="Remove"
                       >
-                        Remove
+                        <FaTrash className="text-[12px]" />
                       </button>
                     </div>
                   </div>
