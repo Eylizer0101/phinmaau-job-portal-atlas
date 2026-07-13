@@ -383,7 +383,7 @@ const MainLandingPage = () => {
               </div>
 
               <div className="mt-10 flex justify-center" aria-hidden="true">
-                <div className="flex h-10 w-10 items-center justify-center text-slate-700 animate-bounce">
+                <div className="flex h-10 w-10 items-center justify-center text-slate-700">
                   <svg
                     className="h-7 w-7"
                     viewBox="0 0 24 24"
