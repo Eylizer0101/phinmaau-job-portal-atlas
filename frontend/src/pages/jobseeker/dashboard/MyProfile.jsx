@@ -427,6 +427,10 @@ const MORE_PROFILE_SECTIONS = {
 };
 
 const MORE_PROFILE_TAB_KEYS = Object.keys(MORE_PROFILE_SECTIONS);
+const FIXED_PROFILE_SECTION_KEYS = ['certifications', 'projects'];
+const ADDABLE_MORE_SECTION_KEYS = MORE_PROFILE_TAB_KEYS.filter(
+  (key) => !FIXED_PROFILE_SECTION_KEYS.includes(key)
+);
 
 const MORE_SECTION_MODAL_STYLES = {
   certifications: { icon: <FaGraduationCap />, color: '#f97316', bgColor: '#fff1e6', accentColor: COLORS.primary },
@@ -2237,7 +2241,7 @@ const AddSectionsModal = ({ open, addedSections = [], onAdd, onRemove, onClose }
         <div className="max-h-[78vh] overflow-y-auto px-8 pt-7 pb-4">
           <h2 className="text-[24px] font-bold text-gray-900 mb-4">Add More Sections</h2>
 
-          {MORE_PROFILE_TAB_KEYS.map((key) => {
+          {ADDABLE_MORE_SECTION_KEYS.map((key) => {
             const config = MORE_PROFILE_SECTIONS[key];
             const alreadyAdded = addedSections.includes(key);
             const style = MORE_SECTION_MODAL_STYLES[key] || { icon: <FaPlus />, color: '#2e66a6', bgColor: '#eaf2fb', accentColor: COLORS.primary };
@@ -3174,7 +3178,7 @@ const MyProfile = () => {
   const [editModalSection, setEditModalSection] = useState('');
   const [addSectionsModalOpen, setAddSectionsModalOpen] = useState(false);
   const [skillProficiencyModalOpen, setSkillProficiencyModalOpen] = useState(false);
-  const [addedMoreSections, setAddedMoreSections] = useState([]);
+  const [addedMoreSections, setAddedMoreSections] = useState(FIXED_PROFILE_SECTION_KEYS);
   const [moreSectionMenuOpen, setMoreSectionMenuOpen] = useState('');
 
   const [uploadingDocs, setUploadingDocs] = useState({});
@@ -4873,9 +4877,13 @@ const MyProfile = () => {
 
 
   useEffect(() => {
-    const filledSections = MORE_PROFILE_TAB_KEYS.filter((key) => Array.isArray(formData[key]) && formData[key].length > 0);
-    if (filledSections.length === 0) return;
-    setAddedMoreSections((prev) => Array.from(new Set([...prev, ...filledSections])));
+    const filledSections = MORE_PROFILE_TAB_KEYS.filter(
+      (key) => Array.isArray(formData[key]) && formData[key].length > 0
+    );
+
+    setAddedMoreSections((prev) =>
+      Array.from(new Set([...FIXED_PROFILE_SECTION_KEYS, ...prev, ...filledSections]))
+    );
   }, [formData]);
 
   const handleAddMoreSection = (sectionKey) => {
@@ -4898,6 +4906,8 @@ const MyProfile = () => {
   }, [moreSectionMenuOpen]);
 
   const handleDeleteMoreSection = (sectionKey) => {
+    if (FIXED_PROFILE_SECTION_KEYS.includes(sectionKey)) return;
+
     const sectionTitle = MORE_PROFILE_SECTIONS[sectionKey]?.title || 'Section';
     setMoreSectionMenuOpen('');
 
@@ -5438,11 +5448,24 @@ const MyProfile = () => {
                       { key: 'skills', label: 'Skills', actionLabel: 'ADD' },
                       { key: 'education', label: 'Education', actionLabel: (hasEducationEntries || formData.campus || formData.course || formData.yearGraduated) ? 'EDIT' : 'ADD' },
                       { key: 'credentials', label: 'Credentials', actionLabel: '' },
-                      ...addedMoreSections.map((key) => ({ key, label: MORE_PROFILE_SECTIONS[key]?.title || key, actionLabel: (formData[key] || []).length ? 'EDIT' : 'ADD' })),
+                      ...FIXED_PROFILE_SECTION_KEYS.map((key) => ({
+                        key,
+                        label: MORE_PROFILE_SECTIONS[key]?.title || key,
+                        actionLabel: (formData[key] || []).length ? 'EDIT' : 'ADD',
+                      })),
+                      ...addedMoreSections
+                        .filter((key) => !FIXED_PROFILE_SECTION_KEYS.includes(key))
+                        .map((key) => ({
+                          key,
+                          label: MORE_PROFILE_SECTIONS[key]?.title || key,
+                          actionLabel: (formData[key] || []).length ? 'EDIT' : 'ADD',
+                        })),
                     ].map((section) => {
                       const targetTab = section.key === 'about' ? 'about' : section.key === 'work' ? 'work' : section.key === 'skills' ? 'skills' : section.key;
                       const isOpen = openTabs.includes(targetTab);
                       const isMoreProfileSection = MORE_PROFILE_TAB_KEYS.includes(section.key);
+                      const canDeleteMoreProfileSection =
+                        isMoreProfileSection && !FIXED_PROFILE_SECTION_KEYS.includes(section.key);
 
                       return (
                         <div key={section.key} className="w-full bg-white">
@@ -5498,7 +5521,7 @@ const MyProfile = () => {
                                   {section.actionLabel}
                                 </button>
                               ) : null}
-                              {isMoreProfileSection ? (
+                              {canDeleteMoreProfileSection ? (
                                 <div
                                   className="relative"
                                   onMouseDown={(event) => event.stopPropagation()}
