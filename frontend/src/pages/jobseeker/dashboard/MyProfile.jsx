@@ -2876,8 +2876,9 @@ const TodoProgressCard = ({
   additionalItems = [],
 }) => {
   const profileByKey = Object.fromEntries(profileItems.map((item) => [item.key, item]));
+  const uploadedCredentialCount = credentialItems.filter((item) => item.completed).length;
   const credentialsComplete =
-    credentialItems.length > 0 && credentialItems.every((item) => item.completed);
+    credentialItems.length > 0 && uploadedCredentialCount === credentialItems.length;
   const additionalComplete = additionalItems.some((item) => item.completed);
 
   const items = [
@@ -2991,13 +2992,21 @@ const TodoProgressCard = ({
               </span>
             </div>
 
-            <span
-              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-gray-300 text-[11px] font-semibold text-gray-400"
-              title={item.info}
-              aria-label={item.info}
-            >
-              i
-            </span>
+            <div className="flex shrink-0 items-center gap-2">
+              {item.key === 'credentials' ? (
+                <span className="text-xs font-bold text-[#2e66a6]">
+                  {uploadedCredentialCount}/{credentialItems.length || REQUIRED_DOC_TYPES.length}
+                </span>
+              ) : null}
+
+              <span
+                className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-gray-300 text-[11px] font-semibold text-gray-400"
+                title={item.info}
+                aria-label={item.info}
+              >
+                i
+              </span>
+            </div>
           </div>
         ))}
       </div>
@@ -5412,11 +5421,6 @@ const MyProfile = () => {
                             </button>
 
                             <div className="relative flex items-center gap-3 shrink-0">
-                              {section.key === 'credentials' ? (
-                                <span className="inline-flex items-center rounded-full bg-[#eaf2fb] px-3 py-1 text-xs font-bold text-[#2e66a6]">
-                                  {uploadedRequiredCount}/{REQUIRED_DOC_TYPES.length}
-                                </span>
-                              ) : null}
                               {section.key === 'skills' ? (
                                 <button
                                   type="button"
