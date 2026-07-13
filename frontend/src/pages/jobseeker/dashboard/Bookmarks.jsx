@@ -832,6 +832,15 @@ const BookmarkCard = ({ job, selected, onClick, onRemove, removing }) => {
       }`}
     >
       <button type="button" onClick={onClick} className={`w-full text-left p-4 pr-14 ${UI.ring}`} aria-pressed={selected}>
+        {job.isUrgent ? (
+          <div className="mb-3 inline-flex w-fit items-center gap-2 rounded-full bg-[#171717] pr-3 text-xs font-bold leading-none text-white shadow-sm">
+            <span className="flex h-8 w-10 items-center justify-center overflow-visible">
+              <img src="/images/fire.png" alt="" className="h-12 w-12 max-w-none object-contain" />
+            </span>
+            Urgently Needed
+          </div>
+        ) : null}
+
         <div className="flex items-start gap-3 min-w-0">
           <CompanyLogo src={job.companyLogo} name={job.companyName} />
           <div className="min-w-0 flex-1">
@@ -984,6 +993,15 @@ const CompanyJobMiniCard = ({ job, onViewDetails, onApply, onSave, saving, isSav
 
   return (
     <div className="rounded-2xl p-7 bg-white shadow-sm hover:shadow-md transition flex flex-col min-h-[375px] relative border border-[#E5E7EB]">
+      {job.isUrgent ? (
+        <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full bg-[#171717] pr-4 text-sm font-bold leading-none text-white shadow-sm">
+          <span className="flex h-9 w-12 items-center justify-center overflow-visible">
+            <img src="/images/fire.png" alt="" className="h-14 w-14 max-w-none object-contain" />
+          </span>
+          Urgently Needed
+        </div>
+      ) : null}
+
       <button
         type="button"
         onClick={() => onSave(job)}

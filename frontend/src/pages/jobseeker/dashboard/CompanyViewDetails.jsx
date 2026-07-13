@@ -1504,6 +1504,15 @@ The company also values transparency, teamwork, and continuous improvement, crea
                       key={jobId}
                       className="rounded-2xl p-7 bg-white shadow-sm hover:shadow-md transition flex flex-col min-h-[375px] relative border border-[#E5E7EB]"
                     >
+                      {job.isUrgent ? (
+                        <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full bg-[#171717] pr-4 text-sm font-bold leading-none text-white shadow-sm">
+                          <span className="flex h-9 w-12 items-center justify-center overflow-visible">
+                            <img src="/images/fire.png" alt="" className="h-14 w-14 max-w-none object-contain" />
+                          </span>
+                          Urgently Needed
+                        </div>
+                      ) : null}
+
                       <button
                         type="button"
                         onClick={() => handleSaveJob(job)}
