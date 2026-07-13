@@ -2481,6 +2481,15 @@ const EmployerDashboard = () => {
                         style={{ border: '1px solid #E5E7EB' }}
                         aria-label={`View job details for ${String(job?.title || 'Job Title').replaceAll('"', '')}`}
                       >
+                        {job?.isUrgent ? (
+                          <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full bg-[#171717] pr-4 text-sm font-bold leading-none text-white shadow-sm">
+                            <span className="flex h-9 w-12 items-center justify-center overflow-visible">
+                              <img src="/images/fire.png" alt="" className="h-14 w-14 max-w-none object-contain" />
+                            </span>
+                            Urgently Needed
+                          </div>
+                        ) : null}
+
                         <div className="flex items-start gap-4">
                           <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border border-gray-200 bg-white">
                             {job?.companyLogo ? (
