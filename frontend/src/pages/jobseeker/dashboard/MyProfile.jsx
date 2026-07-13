@@ -4979,7 +4979,7 @@ const MyProfile = () => {
       />
 
       <div className={`min-h-[100dvh] h-auto bg-transparent overflow-x-hidden overflow-y-visible ${isApplyFlow ? 'pb-28 sm:pb-32' : 'pb-6'}`}>
-        <div className="max-w-[1520px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1420px] mx-auto px-4 sm:px-6 lg:px-8">
           {error ? <Alert type="error" title="Error" message={error} onClose={() => setError('')} /> : null}
 
           {isApplyFlow && applyJob ? (
