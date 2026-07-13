@@ -2452,6 +2452,7 @@ const ProfileTodoList = ({ completed = [] }) => {
 const ProfileEditModal = ({
   open,
   sectionKey,
+  entryMode = 'edit',
   drafts,
   saving,
   error,
@@ -2481,7 +2482,13 @@ const ProfileEditModal = ({
   };
 
   const moreConfig = MORE_PROFILE_SECTIONS[sectionKey];
-  const title = moreConfig?.title ? `Edit ${moreConfig.title}` : titleMap[sectionKey] || 'Edit Section';
+  const isEntrySection = sectionKey === 'education' || Boolean(moreConfig);
+  const actionWord = isEntrySection && entryMode === 'add' ? 'Add' : 'Edit';
+  const title = moreConfig?.title
+    ? `${actionWord} ${moreConfig.title}`
+    : sectionKey === 'education'
+      ? `${actionWord} Education`
+      : titleMap[sectionKey] || 'Edit Section';
 
   const renderContent = () => {
     if (sectionKey === 'about') {
@@ -2589,19 +2596,7 @@ const ProfileEditModal = ({
       return (
         <div className="space-y-5">
           {educationRows.map((entry, index) => (
-            <div key={`education-entry-${index}`} className="rounded-[14px] border border-gray-200 bg-[#fcfcfd] p-4 space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-sm font-bold text-gray-700">Education {index + 1}</div>
-                <button
-                  type="button"
-                  onClick={() => onRemoveEducationEntry(index)}
-                  className="h-9 px-3 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 inline-flex items-center gap-2 text-sm font-semibold"
-                >
-                  <FaTrash className="text-xs" />
-                  Remove
-                </button>
-              </div>
-
+            <div key={`education-entry-${index}`} className="space-y-4">
               <div className="space-y-4">
                 <Select
                   label="Educational Attainment *"
@@ -2667,14 +2662,6 @@ const ProfileEditModal = ({
             </div>
           ))}
 
-          <button
-            type="button"
-            onClick={onAddEducationEntry}
-            className="h-10 px-4 rounded-[6px] border border-gray-300 bg-white text-black font-medium hover:bg-gray-50 inline-flex items-center gap-2"
-          >
-            <FaPlus className="text-xs" />
-            Add Education
-          </button>
         </div>
       );
     }
@@ -2686,18 +2673,7 @@ const ProfileEditModal = ({
       return (
         <div className="space-y-5">
           {items.map((item, index) => (
-            <div key={`${sectionKey}-${index}`} className="rounded-[14px] border border-gray-200 bg-gray-50 p-4 space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-sm font-bold text-gray-700">Entry {index + 1}</div>
-                <button
-                  type="button"
-                  onClick={() => onRemoveProfileItem(sectionKey, index)}
-                  className="h-9 px-3 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 text-sm font-semibold"
-                >
-                  Remove
-                </button>
-              </div>
-
+            <div key={`${sectionKey}-${index}`} className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 {fields.map((field) => {
                   const isWideField = field.type === 'textarea' || field.key === 'date';
@@ -2783,13 +2759,6 @@ const ProfileEditModal = ({
             </div>
           ))}
 
-          <button
-            type="button"
-            onClick={() => onAddProfileItem(sectionKey)}
-            className="h-11 px-5 rounded-lg text-white font-semibold inline-flex items-center gap-2 bg-[#2e66a6]"
-          >
-            <FaPlus className="text-xs" /> Add Entry
-          </button>
         </div>
       );
     }
@@ -3195,6 +3164,12 @@ const MyProfile = () => {
 
   const [openTabs, setOpenTabs] = useState(['personal']);
   const [editModalSection, setEditModalSection] = useState('');
+  const [profileEntryModalContext, setProfileEntryModalContext] = useState({
+    sectionKey: '',
+    mode: 'edit',
+    index: -1,
+    originalItems: [],
+  });
   const [addSectionsModalOpen, setAddSectionsModalOpen] = useState(false);
   const [skillProficiencyModalOpen, setSkillProficiencyModalOpen] = useState(false);
   const [addedMoreSections, setAddedMoreSections] = useState(FIXED_PROFILE_SECTION_KEYS);
@@ -4128,7 +4103,9 @@ const MyProfile = () => {
     }
   };
 
-  const saveSection = async (sectionKey) => {
+  const saveSection = async (sectionKey, draftOverride = null) => {
+    const activeDrafts = draftOverride || drafts;
+
     try {
       setSavingSection(sectionKey);
       setError('');
@@ -4140,23 +4117,23 @@ const MyProfile = () => {
       if (sectionKey === 'about') {
         payload = {
           jobSeekerProfile: {
-            aboutMe: drafts.aboutMe,
+            aboutMe: activeDrafts.aboutMe,
           },
         };
       }
 
       if (sectionKey === 'basic') {
         payload = {
-          firstName: drafts.firstName,
-          middleName: drafts.middleName,
-          lastName: drafts.lastName,
-          extensionName: normalizeExtensionName(drafts.extensionName),
+          firstName: activeDrafts.firstName,
+          middleName: activeDrafts.middleName,
+          lastName: activeDrafts.lastName,
+          extensionName: normalizeExtensionName(activeDrafts.extensionName),
           jobSeekerProfile: {
-            phoneNumber: drafts.phoneNumber,
-            address: buildAddressString(drafts),
-            campus: drafts.campus,
-            course: drafts.course,
-            yearGraduated: drafts.yearGraduated,
+            phoneNumber: activeDrafts.phoneNumber,
+            address: buildAddressString(activeDrafts),
+            campus: activeDrafts.campus,
+            course: activeDrafts.course,
+            yearGraduated: activeDrafts.yearGraduated,
           },
         };
       }
@@ -4164,8 +4141,8 @@ const MyProfile = () => {
       if (sectionKey === 'salary') {
         payload = {
           jobSeekerProfile: {
-            minimumSalary: drafts.minimumSalary,
-            maximumSalary: drafts.maximumSalary,
+            minimumSalary: activeDrafts.minimumSalary,
+            maximumSalary: activeDrafts.maximumSalary,
           },
         };
       }
@@ -4173,42 +4150,42 @@ const MyProfile = () => {
       if (sectionKey === 'personal') {
         payload = {
           jobSeekerProfile: {
-            birthday: drafts.birthday,
-            gender: drafts.gender,
-            nationality: drafts.nationality,
-            civilStatus: drafts.civilStatus,
-            height: drafts.height,
-            weight: drafts.weight,
-            preferredLanguage: drafts.preferredLanguage,
+            birthday: activeDrafts.birthday,
+            gender: activeDrafts.gender,
+            nationality: activeDrafts.nationality,
+            civilStatus: activeDrafts.civilStatus,
+            height: activeDrafts.height,
+            weight: activeDrafts.weight,
+            preferredLanguage: activeDrafts.preferredLanguage,
           },
         };
       }
 
       if (sectionKey === 'career') {
-        const savedSkillRows = normalizeSkillRows(drafts.skillRows || [
-          ...(drafts.technicalSkills || []),
-          ...(drafts.softSkills || []),
+        const savedSkillRows = normalizeSkillRows(activeDrafts.skillRows || [
+          ...(activeDrafts.technicalSkills || []),
+          ...(activeDrafts.softSkills || []),
         ]).filter((item) => String(item.skill || '').trim());
 
         payload = {
           jobSeekerProfile: {
-            preferredWorkMode: drafts.preferredWorkMode,
+            preferredWorkMode: activeDrafts.preferredWorkMode,
             technicalSkills: serializeSkillRows(savedSkillRows),
             softSkills: '',
-            whatHaveYouDone: drafts.whatHaveYouDone,
-            howSoonCanYouStart: drafts.howSoonCanYouStart,
-            employmentType: drafts.employmentType,
-            educationalAttainment: drafts.educationalAttainment,
-            willingToRelocate: drafts.willingToRelocate,
-            studyField: drafts.studyField,
-            minimumSalary: drafts.minimumSalary,
-            maximumSalary: drafts.maximumSalary,
+            whatHaveYouDone: activeDrafts.whatHaveYouDone,
+            howSoonCanYouStart: activeDrafts.howSoonCanYouStart,
+            employmentType: activeDrafts.employmentType,
+            educationalAttainment: activeDrafts.educationalAttainment,
+            willingToRelocate: activeDrafts.willingToRelocate,
+            studyField: activeDrafts.studyField,
+            minimumSalary: activeDrafts.minimumSalary,
+            maximumSalary: activeDrafts.maximumSalary,
           },
         };
       }
 
       if (sectionKey === 'education') {
-        const nextEducationEntries = cleanEducationEntriesForSave(drafts.educationEntries || []);
+        const nextEducationEntries = cleanEducationEntriesForSave(activeDrafts.educationEntries || []);
 
         if (!nextEducationEntries.length) {
           setError('Please add at least one education entry before saving.');
@@ -4244,17 +4221,17 @@ const MyProfile = () => {
         payload = {
           jobSeekerProfile: {
             educationEntries: nextEducationEntries,
-            campus: primaryEducation.school || primaryEducation.campus || drafts.campus,
-            course: drafts.course,
-            yearGraduated: primaryEducation.endYear || primaryEducation.yearGraduated || drafts.yearGraduated,
-            educationalAttainment: primaryEducation.educationalAttainment || primaryEducation.level || drafts.educationalAttainment,
+            campus: primaryEducation.school || primaryEducation.campus || activeDrafts.campus,
+            course: activeDrafts.course,
+            yearGraduated: primaryEducation.endYear || primaryEducation.yearGraduated || activeDrafts.yearGraduated,
+            educationalAttainment: primaryEducation.educationalAttainment || primaryEducation.level || activeDrafts.educationalAttainment,
           },
         };
       }
 
       if (MORE_PROFILE_TAB_KEYS.includes(sectionKey)) {
         const allowedFields = (MORE_PROFILE_SECTIONS[sectionKey]?.fields || []).map((field) => field.key);
-        const nextItems = (Array.isArray(drafts[sectionKey]) ? drafts[sectionKey] : [])
+        const nextItems = (Array.isArray(activeDrafts[sectionKey]) ? activeDrafts[sectionKey] : [])
           .map((item) => {
             const cleaned = {};
             allowedFields.forEach((fieldKey) => {
@@ -4314,27 +4291,27 @@ const MyProfile = () => {
 
           setFormData((prev) => ({
             ...prev,
-            ...drafts,
+            ...activeDrafts,
             technicalSkills: nextTechnicalSkills,
             softSkills: [],
             skillRows: nextSkillRows,
           }));
           setDrafts((prev) => ({
             ...prev,
-            ...drafts,
+            ...activeDrafts,
             technicalSkills: nextTechnicalSkills,
             softSkills: [],
             skillRows: nextSkillRows,
           }));
         } else if (sectionKey === 'basic') {
-          const combinedAddress = buildAddressString(drafts);
+          const combinedAddress = buildAddressString(activeDrafts);
           setFormData((prev) => ({
             ...prev,
-            ...drafts,
+            ...activeDrafts,
             address: combinedAddress,
           }));
         } else {
-          setFormData((prev) => ({ ...prev, ...drafts }));
+          setFormData((prev) => ({ ...prev, ...activeDrafts }));
         }
 
         setEditing((prev) => ({ ...prev, [sectionKey]: false }));
@@ -4366,8 +4343,9 @@ const MyProfile = () => {
   };
 
 
-  const openProfileEditModal = (sectionKey) => {
+  const openProfileEditModal = (sectionKey, itemIndex = null) => {
     if (sectionKey === 'personal') {
+      setProfileEntryModalContext({ sectionKey: '', mode: 'edit', index: -1, originalItems: [] });
       setDrafts(formData);
       setEditing((prev) => ({ ...prev, basic: true }));
       return;
@@ -4381,6 +4359,7 @@ const MyProfile = () => {
     if (sectionKey === 'credentials') return;
 
     if (sectionKey === 'skills') {
+      setProfileEntryModalContext({ sectionKey: '', mode: 'edit', index: -1, originalItems: [] });
       setDrafts((prev) => ({
         ...prev,
         ...formData,
@@ -4394,26 +4373,51 @@ const MyProfile = () => {
     }
 
     if (sectionKey === 'education') {
+      const currentItems = cleanEducationEntriesForSave(buildEducationDraftEntries(formData));
+      const isEditingEntry = Number.isInteger(itemIndex) && itemIndex >= 0;
+      const selectedItem = isEditingEntry
+        ? currentItems[itemIndex] || createEmptyEducationEntry()
+        : createEmptyEducationEntry();
+
+      setProfileEntryModalContext({
+        sectionKey,
+        mode: isEditingEntry ? 'edit' : 'add',
+        index: isEditingEntry ? itemIndex : -1,
+        originalItems: currentItems,
+      });
       setDrafts((prev) => ({
         ...prev,
         ...formData,
-        educationEntries: buildEducationDraftEntries(formData),
+        educationEntries: [normalizeEducationEntry(selectedItem)],
       }));
       setEditModalSection(sectionKey);
       return;
     }
 
-    setDrafts((prev) => {
-      const next = { ...formData };
+    if (MORE_PROFILE_TAB_KEYS.includes(sectionKey)) {
+      const currentItems = Array.isArray(formData[sectionKey]) ? formData[sectionKey] : [];
+      const isEditingEntry = Number.isInteger(itemIndex) && itemIndex >= 0;
+      const selectedItem = isEditingEntry
+        ? currentItems[itemIndex] || createEmptyProfileEntry(sectionKey)
+        : createEmptyProfileEntry(sectionKey);
 
-      if (MORE_PROFILE_TAB_KEYS.includes(sectionKey)) {
-        const currentItems = Array.isArray(formData[sectionKey]) ? formData[sectionKey] : [];
-        next[sectionKey] = currentItems.length > 0 ? currentItems : [createEmptyProfileEntry(sectionKey)];
-      }
+      setProfileEntryModalContext({
+        sectionKey,
+        mode: isEditingEntry ? 'edit' : 'add',
+        index: isEditingEntry ? itemIndex : -1,
+        originalItems: currentItems,
+      });
+      setDrafts((prev) => ({
+        ...prev,
+        ...formData,
+        [sectionKey]: [{ ...selectedItem }],
+      }));
+      setEditModalSection(sectionKey);
+      return;
+    }
 
-      return next;
-    });
-
+    setProfileEntryModalContext({ sectionKey: '', mode: 'edit', index: -1, originalItems: [] });
+    setDrafts(formData);
     setEditModalSection(sectionKey);
   };
 
@@ -4421,12 +4425,204 @@ const MyProfile = () => {
     setDrafts(formData);
     setError('');
     setEditModalSection('');
+    setProfileEntryModalContext({ sectionKey: '', mode: 'edit', index: -1, originalItems: [] });
   };
 
   const saveProfileEditModal = async () => {
     if (!editModalSection) return;
+
+    if (
+      profileEntryModalContext.sectionKey === editModalSection &&
+      (editModalSection === 'education' || MORE_PROFILE_TAB_KEYS.includes(editModalSection))
+    ) {
+      const originalItems = Array.isArray(profileEntryModalContext.originalItems)
+        ? profileEntryModalContext.originalItems
+        : [];
+      const isEditMode =
+        profileEntryModalContext.mode === 'edit' &&
+        profileEntryModalContext.index >= 0;
+
+      if (editModalSection === 'education') {
+        const selectedEntry = normalizeEducationEntries(drafts.educationEntries || [], true)[0];
+
+        if (!selectedEntry || !hasEducationEntryValue(selectedEntry)) {
+          setError('Please complete the education entry before saving.');
+          return;
+        }
+
+        const nextItems = [...originalItems];
+        if (isEditMode) {
+          nextItems[profileEntryModalContext.index] = selectedEntry;
+        } else {
+          nextItems.push(selectedEntry);
+        }
+
+        const mergedDrafts = {
+          ...drafts,
+          educationEntries: nextItems,
+        };
+
+        await saveSection('education', mergedDrafts);
+      } else {
+        const selectedEntry = Array.isArray(drafts[editModalSection])
+          ? drafts[editModalSection][0]
+          : null;
+
+        if (!selectedEntry || !hasMeaningfulObjectValue(selectedEntry)) {
+          setError('Please add information before saving.');
+          return;
+        }
+
+        const nextItems = [...originalItems];
+        if (isEditMode) {
+          nextItems[profileEntryModalContext.index] = selectedEntry;
+        } else {
+          nextItems.push(selectedEntry);
+        }
+
+        const mergedDrafts = {
+          ...drafts,
+          [editModalSection]: nextItems,
+        };
+
+        await saveSection(editModalSection, mergedDrafts);
+      }
+
+      setEditModalSection('');
+      setProfileEntryModalContext({ sectionKey: '', mode: 'edit', index: -1, originalItems: [] });
+      return;
+    }
+
     await saveSection(editModalSection === 'skills' ? 'career' : editModalSection);
     setEditModalSection('');
+  };
+
+  const handleDeleteEducationEntryFromProfile = (index) => {
+    const currentItems = cleanEducationEntriesForSave(buildEducationDraftEntries(formData));
+    const selectedItem = currentItems[index];
+    if (!selectedItem) return;
+
+    openDeleteConfirmation({
+      title: 'Delete this education entry?',
+      message: 'You will not be able to recover it.',
+      confirmText: 'Delete',
+      onConfirm: async () => {
+        try {
+          setSavingSection('education');
+          setError('');
+
+          const nextItems = currentItems.filter((_, itemIndex) => itemIndex !== index);
+          const primaryEducation = nextItems[0] || {};
+          const token = localStorage.getItem('token');
+          const payload = {
+            jobSeekerProfile: {
+              educationEntries: nextItems,
+              campus: primaryEducation.school || primaryEducation.campus || '',
+              yearGraduated: primaryEducation.endYear || primaryEducation.yearGraduated || '',
+              educationalAttainment:
+                primaryEducation.educationalAttainment || primaryEducation.level || '',
+            },
+          };
+
+          const response = await axios.put(`${API_BASE}/auth/update-profile`, payload, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (response.data?.success) {
+            const updatedProfile = response.data.user?.jobSeekerProfile || {};
+            const nextFormData = {
+              ...formData,
+              educationEntries:
+                updatedProfile.educationEntries ||
+                payload.jobSeekerProfile.educationEntries,
+              campus:
+                updatedProfile.campus ??
+                payload.jobSeekerProfile.campus,
+              yearGraduated:
+                updatedProfile.yearGraduated ??
+                payload.jobSeekerProfile.yearGraduated,
+              educationalAttainment:
+                updatedProfile.educationalAttainment ??
+                payload.jobSeekerProfile.educationalAttainment,
+            };
+
+            setFormData(nextFormData);
+            setDrafts(resetEducationDraftFields(nextFormData));
+
+            if (response.data.user) {
+              setUserData(response.data.user);
+              localStorage.setItem('user', JSON.stringify(response.data.user));
+            }
+
+            showSuccess('Deleted Successfully', 'The education entry was removed.');
+          }
+        } catch (err) {
+          console.error(err);
+          setError(err.response?.data?.message || 'Failed to delete the education entry.');
+        } finally {
+          setSavingSection('');
+          closeConfirmModal();
+        }
+      },
+    });
+  };
+
+  const handleDeleteProfileEntry = (sectionKey, index) => {
+    const currentItems = Array.isArray(formData[sectionKey]) ? formData[sectionKey] : [];
+    const selectedItem = currentItems[index];
+    if (!selectedItem) return;
+
+    openDeleteConfirmation({
+      title: `Delete this ${MORE_PROFILE_SECTIONS[sectionKey]?.title || 'entry'}?`,
+      message: 'You will not be able to recover it.',
+      confirmText: 'Delete',
+      onConfirm: async () => {
+        try {
+          setSavingSection(sectionKey);
+          setError('');
+
+          const nextItems = currentItems.filter((_, itemIndex) => itemIndex !== index);
+          const token = localStorage.getItem('token');
+          const payload = {
+            jobSeekerProfile: {
+              [sectionKey]: nextItems,
+            },
+          };
+
+          const response = await axios.put(`${API_BASE}/auth/update-profile`, payload, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (response.data?.success) {
+            const savedItems =
+              response.data.user?.jobSeekerProfile?.[sectionKey] ||
+              payload.jobSeekerProfile[sectionKey];
+
+            setFormData((prev) => ({ ...prev, [sectionKey]: savedItems }));
+            setDrafts((prev) => ({ ...prev, [sectionKey]: savedItems }));
+
+            if (response.data.user) {
+              setUserData(response.data.user);
+              localStorage.setItem('user', JSON.stringify(response.data.user));
+            }
+
+            showSuccess('Deleted Successfully', 'The profile entry was removed.');
+          }
+        } catch (err) {
+          console.error(err);
+          setError(err.response?.data?.message || 'Failed to delete the profile entry.');
+        } finally {
+          setSavingSection('');
+          closeConfirmModal();
+        }
+      },
+    });
   };
 
   const handleArrayTextChange = (field, rawValue) => {
@@ -5227,13 +5423,42 @@ const MyProfile = () => {
       return (
         <div className="px-0 pb-5 pt-2 space-y-3 font-serif text-[13px] leading-5 text-gray-900">
           {items.map((item, index) => (
-            <div key={item._id || `education-${index}`} className="flex justify-between gap-4">
-              <div>
+            <div
+              key={item._id || `education-${index}`}
+              className="group flex flex-col gap-2 py-1 sm:flex-row sm:items-start sm:justify-between"
+            >
+              <div className="min-w-0">
                 <div className="font-bold">{item.school || item.campus || 'School / University'}</div>
                 <div className="italic">{item.educationalAttainment || item.level || 'Educational Attainment'}</div>
                 {item.description ? <div className="mt-1 text-gray-700">{item.description}</div> : null}
               </div>
-              <div className="italic text-gray-700 shrink-0">{getEducationYearText(item)}</div>
+
+              <div className="flex shrink-0 items-center gap-1 sm:justify-end">
+                <div className="mr-1 whitespace-nowrap italic text-gray-700">
+                  {getEducationYearText(item)}
+                </div>
+
+                <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+                  <button
+                    type="button"
+                    onClick={() => openProfileEditModal('education', index)}
+                    className="inline-flex h-6 w-6 items-center justify-center text-[#2e66a6] transition hover:text-[#1f4f86]"
+                    aria-label="Edit education entry"
+                    title="Edit"
+                  >
+                    <FaPen className="text-[11px]" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteEducationEntryFromProfile(index)}
+                    className="inline-flex h-6 w-6 items-center justify-center text-red-500 transition hover:text-red-600"
+                    aria-label="Remove education entry"
+                    title="Remove"
+                  >
+                    <FaTrash className="text-[11px]" />
+                  </button>
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -5277,17 +5502,49 @@ const MyProfile = () => {
             const dateText = formatProfileEntryDate(item);
             const subLine = getProfileEntrySubLine(sectionKey, item);
             return (
-              <div key={item._id || `${sectionKey}-${index}`}>
-                <div className="flex justify-between gap-4">
-                  <div>
+              <div
+                key={item._id || `${sectionKey}-${index}`}
+                className="group py-1"
+              >
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
                     <div className="font-bold">{getProfileEntryTitle(sectionKey, item)}</div>
                     {subLine ? <div className="italic">{subLine}</div> : null}
                     {sectionKey === 'references' ? (
                       <div className="mt-1 text-gray-700">{[item.phone, item.email].filter(Boolean).join(' • ')}</div>
                     ) : null}
                   </div>
-                  {dateText ? <div className="italic text-gray-700 shrink-0">{dateText}</div> : null}
+
+                  <div className="flex shrink-0 items-center gap-1 sm:justify-end">
+                    {dateText ? (
+                      <div className="mr-1 whitespace-nowrap italic text-gray-700">
+                        {dateText}
+                      </div>
+                    ) : null}
+
+                    <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+                      <button
+                        type="button"
+                        onClick={() => openProfileEditModal(sectionKey, index)}
+                        className="inline-flex h-6 w-6 items-center justify-center text-[#2e66a6] transition hover:text-[#1f4f86]"
+                        aria-label={`Edit ${getProfileEntryTitle(sectionKey, item)}`}
+                        title="Edit"
+                      >
+                        <FaPen className="text-[11px]" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteProfileEntry(sectionKey, index)}
+                        className="inline-flex h-6 w-6 items-center justify-center text-red-500 transition hover:text-red-600"
+                        aria-label={`Remove ${getProfileEntryTitle(sectionKey, item)}`}
+                        title="Remove"
+                      >
+                        <FaTrash className="text-[11px]" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
+
                 {item.description ? <div className="mt-2">{item.description}</div> : null}
               </div>
             );
@@ -5408,6 +5665,7 @@ const MyProfile = () => {
       <ProfileEditModal
         open={Boolean(editModalSection)}
         sectionKey={editModalSection}
+        entryMode={profileEntryModalContext.mode}
         drafts={drafts}
         saving={savingSection === editModalSection || (editModalSection === 'skills' && savingSection === 'career')}
         error={error}
@@ -5511,19 +5769,19 @@ const MyProfile = () => {
                           ...normalizeSkillsFromProfile(formData.softSkills),
                         ].length ? 'EDIT' : 'ADD',
                       },
-                      { key: 'education', label: 'Education', actionLabel: (hasEducationEntries || formData.campus || formData.course || formData.yearGraduated) ? 'EDIT' : 'ADD' },
+                      { key: 'education', label: 'Education', actionLabel: 'ADD' },
                       { key: 'credentials', label: 'Credentials', actionLabel: '' },
                       ...FIXED_PROFILE_SECTION_KEYS.map((key) => ({
                         key,
                         label: MORE_PROFILE_SECTIONS[key]?.title || key,
-                        actionLabel: (formData[key] || []).length ? 'EDIT' : 'ADD',
+                        actionLabel: 'ADD',
                       })),
                       ...addedMoreSections
                         .filter((key) => !FIXED_PROFILE_SECTION_KEYS.includes(key))
                         .map((key) => ({
                           key,
                           label: MORE_PROFILE_SECTIONS[key]?.title || key,
-                          actionLabel: (formData[key] || []).length ? 'EDIT' : 'ADD',
+                          actionLabel: 'ADD',
                         })),
                     ].map((section) => {
                       const targetTab = section.key === 'about' ? 'about' : section.key === 'work' ? 'work' : section.key === 'skills' ? 'skills' : section.key;
