@@ -141,6 +141,21 @@ const CIVIL_STATUS_OPTIONS = [
   'Separated',
 ];
 
+const SALARY_PRIVACY_OPTIONS = [
+  {
+    value: 'limited',
+    label: 'Limited',
+    description: 'Only companies you applied to can see your salary.',
+    icon: '▦',
+  },
+  {
+    value: 'only_me',
+    label: 'Only Me',
+    description: 'Only you can see your salary information.',
+    icon: '🔒',
+  },
+];
+
 const PROFICIENCY_LEVEL_OPTIONS = [
   'Basic',
   'Novice',
@@ -893,6 +908,94 @@ const Select = ({ label, value, onChange, options = [], placeholder = 'Select op
           </option>
         ))}
       </select>
+    </div>
+  );
+};
+
+const SalaryPrivacySelect = ({ value = 'only_me', onChange }) => {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef(null);
+  const selected = SALARY_PRIVACY_OPTIONS.find((option) => option.value === value)
+    || SALARY_PRIVACY_OPTIONS[1];
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const handleOutsideClick = (event) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [open]);
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <label className="block text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">
+        Salary Privacy
+      </label>
+
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        className="w-full min-h-12 px-4 rounded-xl border border-gray-200 bg-white text-left outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6] flex items-center justify-between gap-3"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className="flex min-w-0 items-center gap-3">
+          <span className="text-lg leading-none" aria-hidden="true">{selected.icon}</span>
+          <span className="min-w-0">
+            <span className="block text-[15px] font-semibold text-gray-900">{selected.label}</span>
+            <span className="block truncate text-xs text-gray-500">{selected.description}</span>
+          </span>
+        </span>
+        <span className={`text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true">⌄</span>
+      </button>
+
+      {open ? (
+        <div
+          role="listbox"
+          className="absolute z-[10040] mt-2 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl"
+        >
+          {SALARY_PRIVACY_OPTIONS.map((option) => {
+            const active = option.value === selected.value;
+
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="option"
+                aria-selected={active}
+                onClick={() => {
+                  onChange?.(option.value);
+                  setOpen(false);
+                }}
+                className={`w-full px-4 py-3 text-left flex items-start gap-3 transition ${
+                  active ? 'bg-blue-50' : 'bg-white hover:bg-gray-50'
+                }`}
+              >
+                <span className="mt-0.5 text-lg leading-none" aria-hidden="true">{option.icon}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-semibold text-gray-900">{option.label}</span>
+                  <span className="mt-0.5 block text-xs leading-5 text-gray-500">{option.description}</span>
+                </span>
+                {active ? <span className="mt-1 font-bold text-[#2e66a6]" aria-hidden="true">✓</span> : null}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 };
@@ -2657,6 +2760,7 @@ const ProfileEditModal = ({
           <Select label="Double Degree" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} options={FIELD_OF_STUDY_OPTIONS} placeholder="Select study field" />
           <Input label="Minimum Salary" value={drafts.minimumSalary} onChange={(e) => onChange('minimumSalary', e.target.value)} placeholder="Minimum Salary" />
           <Input label="Maximum Salary" value={drafts.maximumSalary} onChange={(e) => onChange('maximumSalary', e.target.value)} placeholder="Maximum Salary" />
+          <SalaryPrivacySelect value={drafts.salaryPrivacy} onChange={(value) => onChange('salaryPrivacy', value)} />
           <Input label="Height" value={drafts.height} onChange={(e) => onChange('height', e.target.value)} placeholder="Height" />
           <Input label="Weight" value={drafts.weight} onChange={(e) => onChange('weight', e.target.value)} placeholder="Weight" />
           <Input label="Nationality" value={drafts.nationality} onChange={(e) => onChange('nationality', e.target.value)} placeholder="Nationality" />
@@ -3343,6 +3447,7 @@ const MyProfile = () => {
     aboutMe: '',
     minimumSalary: '',
     maximumSalary: '',
+    salaryPrivacy: 'only_me',
 
     address: '',
     region: '',
@@ -4061,6 +4166,9 @@ const MyProfile = () => {
           aboutMe: profile.aboutMe || '',
           minimumSalary: profile.minimumSalary || '',
           maximumSalary: profile.maximumSalary || '',
+          salaryPrivacy: ['limited', 'only_me'].includes(profile.salaryPrivacy)
+            ? profile.salaryPrivacy
+            : 'only_me',
 
           address: profile.address || '',
           region: parsedAddress.region || '',
@@ -4291,6 +4399,7 @@ const MyProfile = () => {
           jobSeekerProfile: {
             minimumSalary: activeDrafts.minimumSalary,
             maximumSalary: activeDrafts.maximumSalary,
+            salaryPrivacy: activeDrafts.salaryPrivacy || 'only_me',
           },
         };
       }
@@ -4329,6 +4438,7 @@ const MyProfile = () => {
             experience: activeDrafts.experience,
             minimumSalary: activeDrafts.minimumSalary,
             maximumSalary: activeDrafts.maximumSalary,
+            salaryPrivacy: activeDrafts.salaryPrivacy || 'only_me',
           },
         };
       }

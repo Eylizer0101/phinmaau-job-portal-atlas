@@ -369,6 +369,12 @@ const userSchema = new mongoose.Schema(
       minimumSalary: { type: String, default: '', trim: true },
       maximumSalary: { type: String, default: '', trim: true },
       salaryCurrency: { type: String, default: 'PHP', trim: true },
+      salaryPrivacy: {
+        type: String,
+        enum: ['limited', 'only_me'],
+        default: 'only_me',
+        trim: true,
+      },
 
       address: { type: String, default: '', trim: true },
       birthday: { type: String, default: '', trim: true },

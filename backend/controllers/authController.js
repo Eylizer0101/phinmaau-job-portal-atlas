@@ -1202,6 +1202,15 @@ exports.updateProfile = async (req, res) => {
       if (!updateData.jobSeekerProfile.salaryCurrency) {
         updateData.jobSeekerProfile.salaryCurrency = existingProfile.salaryCurrency || 'PHP';
       }
+
+      if (Object.prototype.hasOwnProperty.call(updateData.jobSeekerProfile, 'salaryPrivacy')) {
+        const requestedPrivacy = String(updateData.jobSeekerProfile.salaryPrivacy || '').trim();
+        updateData.jobSeekerProfile.salaryPrivacy = ['limited', 'only_me'].includes(requestedPrivacy)
+          ? requestedPrivacy
+          : 'only_me';
+      } else {
+        updateData.jobSeekerProfile.salaryPrivacy = existingProfile.salaryPrivacy || 'only_me';
+      }
     }
 
     const updatedUser = await User.findByIdAndUpdate(userId, { $set: updateData }, { new: true, runValidators: true }).select('-password');
@@ -1234,6 +1243,7 @@ exports.getSalaryExpectation = async (req, res) => {
         minSalary: profile.minimumSalary || '',
         maxSalary: profile.maximumSalary || '',
         currency: profile.salaryCurrency || 'PHP',
+        privacy: profile.salaryPrivacy || 'only_me',
       },
     });
   } catch (error) {
@@ -1248,12 +1258,16 @@ exports.updateSalaryExpectation = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Only job seekers can update salary expectation.' });
     }
 
-    const { minSalary, maxSalary, currency } = req.body;
+    const { minSalary, maxSalary, currency, privacy } = req.body;
+    const normalizedPrivacy = ['limited', 'only_me'].includes(String(privacy || '').trim())
+      ? String(privacy).trim()
+      : 'only_me';
 
     const payload = {
       'jobSeekerProfile.minimumSalary': minSalary !== undefined && minSalary !== null ? String(minSalary).trim() : '',
       'jobSeekerProfile.maximumSalary': maxSalary !== undefined && maxSalary !== null ? String(maxSalary).trim() : '',
       'jobSeekerProfile.salaryCurrency': currency ? String(currency).trim() : 'PHP',
+      'jobSeekerProfile.salaryPrivacy': normalizedPrivacy,
     };
 
     const updatedUser = await User.findByIdAndUpdate(
@@ -1270,6 +1284,7 @@ exports.updateSalaryExpectation = async (req, res) => {
         minSalary: updatedUser?.jobSeekerProfile?.minimumSalary || '',
         maxSalary: updatedUser?.jobSeekerProfile?.maximumSalary || '',
         currency: updatedUser?.jobSeekerProfile?.salaryCurrency || 'PHP',
+        privacy: updatedUser?.jobSeekerProfile?.salaryPrivacy || 'only_me',
       },
       user: updatedUser,
     });
