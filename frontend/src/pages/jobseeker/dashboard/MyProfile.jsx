@@ -1139,6 +1139,25 @@ const formatProfileEntryDate = (item = {}) => {
   return '';
 };
 
+const formatWorkExperienceMonthYear = (value = '') => {
+  const clean = String(value || '').trim();
+  if (!clean) return '';
+
+  const match = clean.match(/^(\d{4})-(\d{2})/);
+  if (!match) return clean;
+
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+
+  if (!Number.isInteger(year) || monthIndex < 0 || monthIndex > 11) return clean;
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(year, monthIndex, 1)));
+};
+
 const getProfileEntryTitle = (sectionKey, item = {}) => {
   if (sectionKey === 'references') return item.name || 'Unnamed Reference';
   if (sectionKey === 'affiliations' || sectionKey === 'cocurricular') return item.organization || item.title || 'Untitled';
@@ -5105,44 +5124,63 @@ const MyProfile = () => {
       return (
         <div className="px-0 pb-5 pt-2 space-y-4 font-serif text-[13px] leading-5 text-gray-900">
           {workExperiences.map((item, index) => {
-            const dateText = [item.startDate ? String(item.startDate).slice(0, 10) : '', item.isPresent ? 'Present' : item.endDate ? String(item.endDate).slice(0, 10) : ''].filter(Boolean).join(' – ');
-            const descriptionLines = String(item.description || '').split('\n').map((line) => line.trim()).filter(Boolean);
+            const startDateText = formatWorkExperienceMonthYear(item.startDate);
+            const endDateText = item.isPresent
+              ? 'Present'
+              : formatWorkExperienceMonthYear(item.endDate);
+            const dateText = [startDateText, endDateText].filter(Boolean).join(' – ');
+            const descriptionLines = String(item.description || '')
+              .split('\n')
+              .map((line) => line.trim())
+              .filter(Boolean);
+
             return (
-              <div key={item._id || item.id || `work-${index}`} className="group rounded-xl border border-gray-200 bg-white px-4 py-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div
+                key={item._id || item.id || `work-${index}`}
+                className="group py-2 first:pt-0 last:pb-0"
+              >
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <div className="font-bold">{item.companyName || 'Company Name'}</div>
                     <div className="italic">{item.positionTitle || 'Position'}</div>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2 sm:justify-end">
-                    <div className="italic text-gray-700">{dateText}</div>
+
+                  <div className="flex shrink-0 items-center gap-1 sm:justify-end">
+                    {dateText ? (
+                      <div className="mr-1 whitespace-nowrap italic text-gray-700">
+                        {dateText}
+                      </div>
+                    ) : null}
 
                     <div className="flex items-center gap-1 font-sans opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                       <button
                         type="button"
                         onClick={() => openEditWorkExperienceModal(item)}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[#2e66a6] transition hover:bg-[#edf4fb]"
+                        className="inline-flex h-6 w-6 items-center justify-center text-[#2e66a6] transition hover:text-[#1f4f86]"
                         aria-label={`Edit ${item.companyName || 'work experience'}`}
                         title="Edit"
                       >
-                        <FaPen className="text-[12px]" />
+                        <FaPen className="text-[11px]" />
                       </button>
 
                       <button
                         type="button"
                         onClick={() => handleDeleteWorkExperience(item)}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-red-500 transition hover:bg-red-50 hover:text-red-600"
+                        className="inline-flex h-6 w-6 items-center justify-center text-red-500 transition hover:text-red-600"
                         aria-label={`Remove ${item.companyName || 'work experience'}`}
                         title="Remove"
                       >
-                        <FaTrash className="text-[12px]" />
+                        <FaTrash className="text-[11px]" />
                       </button>
                     </div>
                   </div>
                 </div>
+
                 {descriptionLines.length ? (
-                  <ul className="list-disc pl-7 mt-2 space-y-1">
-                    {descriptionLines.map((line, lineIndex) => <li key={lineIndex}>{line}</li>)}
+                  <ul className="mt-2 list-disc space-y-1 pl-7">
+                    {descriptionLines.map((line, lineIndex) => (
+                      <li key={lineIndex}>{line}</li>
+                    ))}
                   </ul>
                 ) : null}
               </div>
