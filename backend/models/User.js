@@ -383,6 +383,7 @@ const userSchema = new mongoose.Schema(
       educationalAttainment: { type: String, default: '', trim: true },
       willingToRelocate: { type: String, default: '', trim: true },
       studyField: { type: String, default: '', trim: true },
+      experience: { type: String, default: '', trim: true },
 
       educationEntries: { type: [educationEntrySchema], default: [] },
       workExperiences: { type: [workExperienceSchema], default: [] },

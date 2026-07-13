@@ -2556,6 +2556,7 @@ const ProfileEditModal = ({
           <Select label="Employment Type" value={drafts.employmentType} onChange={(e) => onChange('employmentType', e.target.value)} options={EMPLOYMENT_TYPE_OPTIONS} placeholder="Select employment type" />
           <Select label="Willing to Relocate" value={drafts.willingToRelocate} onChange={(e) => onChange('willingToRelocate', e.target.value)} options={WILLING_TO_RELOCATE_OPTIONS} placeholder="Select relocation preference" />
           <Select label="How Soon Can Start" value={drafts.howSoonCanYouStart} onChange={(e) => onChange('howSoonCanYouStart', e.target.value)} options={HOW_SOON_CAN_START_OPTIONS} placeholder="Select availability" />
+          <Input label="Experience" value={drafts.experience} onChange={(e) => onChange('experience', e.target.value)} placeholder="e.g. 2 years, Internship, Fresh graduate" />
           <Select label="Preferred Language" value={drafts.preferredLanguage} onChange={(e) => onChange('preferredLanguage', e.target.value)} options={PREFERRED_LANGUAGE_OPTIONS} placeholder="Select preferred language" />
           <Select label="Educational Attainment" value={drafts.educationalAttainment} onChange={(e) => onChange('educationalAttainment', e.target.value)} options={EDUCATIONAL_ATTAINMENT_OPTIONS} placeholder="Select educational attainment" />
           <Select label="Double Degree" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} options={FIELD_OF_STUDY_OPTIONS} placeholder="Select study field" />
@@ -3275,6 +3276,7 @@ const MyProfile = () => {
     educationalAttainment: '',
     willingToRelocate: '',
     studyField: '',
+    experience: '',
 
     certifications: [],
     projects: [],
@@ -3995,6 +3997,7 @@ const MyProfile = () => {
           educationalAttainment: profile.educationalAttainment || '',
           willingToRelocate: profile.willingToRelocate || '',
           studyField: profile.studyField || profile.course || '',
+          experience: profile.experience || '',
 
           certifications: normalizeProfileList(profile.certifications),
           projects: normalizeProfileList(profile.projects),
@@ -4228,6 +4231,7 @@ const MyProfile = () => {
             educationalAttainment: activeDrafts.educationalAttainment,
             willingToRelocate: activeDrafts.willingToRelocate,
             studyField: activeDrafts.studyField,
+            experience: activeDrafts.experience,
             minimumSalary: activeDrafts.minimumSalary,
             maximumSalary: activeDrafts.maximumSalary,
           },
@@ -5333,6 +5337,7 @@ const MyProfile = () => {
         formData.willingToRelocate,
         formData.weight,
         formData.howSoonCanYouStart,
+        formData.experience,
         formData.nationality,
         formData.preferredLanguage,
         formData.gender,
@@ -5345,21 +5350,30 @@ const MyProfile = () => {
       if (!hasCareerData) return renderEmptyLine(EMPTY_SECTION_MESSAGES.career);
 
       return (
-        <div className="px-0 pb-5 pt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-16 gap-y-1 font-serif text-[13px] leading-5 text-gray-900">
-          <div><b>Preferred Work Mode:</b> {textOrEmpty(formData.preferredWorkMode, 'Not provided')}</div>
-          <div><b>Salary:</b> {salaryText || 'Not provided'}</div>
-          <div><b>Employment Type:</b> {textOrEmpty(formData.employmentType, 'Not provided')}</div>
-          <div><b>Height:</b> {formatDisplayHeight(formData.height)}</div>
-          <div><b>Willing to Relocate:</b> {textOrEmpty(formData.willingToRelocate, 'Not provided')}</div>
-          <div><b>Weight:</b> {formatDisplayWeight(formData.weight)}</div>
-          <div><b>How Soon Can Start:</b> {textOrEmpty(formData.howSoonCanYouStart, 'Not provided')}</div>
-          <div><b>Nationality:</b> {textOrEmpty(formData.nationality, 'Not provided')}</div>
-          <div><b>Preferred Language:</b> {textOrEmpty(formData.preferredLanguage, 'Not provided')}</div>
-          <div><b>Gender:</b> {textOrEmpty(formData.gender, 'Not provided')}</div>
-          <div><b>Educational Attainment:</b> {textOrEmpty(formData.educationalAttainment, 'Not provided')}</div>
-          <div><b>Civil Status:</b> {textOrEmpty(formData.civilStatus, 'Not provided')}</div>
-          <div><b>Double Degree:</b> {textOrEmpty(formData.studyField || formData.course, 'Not provided')}</div>
-          <div><b>Birthday:</b> {textOrEmpty(formData.birthday, 'Not provided')}</div>
+        <div className="px-0 pb-5 pt-2 grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-4 font-serif text-[13px] leading-5 text-gray-900">
+          <div className="space-y-1">
+            <div><b>Preferred Work Mode:</b> {textOrEmpty(formData.preferredWorkMode, 'Not provided')}</div>
+            <div><b>Employment Type:</b> {textOrEmpty(formData.employmentType, 'Not provided')}</div>
+            <div><b>Willing to Relocate:</b> {textOrEmpty(formData.willingToRelocate, 'Not provided')}</div>
+            <div><b>How Soon Can Start:</b> {textOrEmpty(formData.howSoonCanYouStart, 'Not provided')}</div>
+            <div><b>Experience:</b> {textOrEmpty(formData.experience, 'Not provided')}</div>
+          </div>
+
+          <div className="space-y-1">
+            <div><b>Preferred Language:</b> {textOrEmpty(formData.preferredLanguage, 'Not provided')}</div>
+            <div><b>Educational Attainment:</b> {textOrEmpty(formData.educationalAttainment, 'Not provided')}</div>
+            <div><b>Double Degree:</b> {textOrEmpty(formData.studyField || formData.course, 'Not provided')}</div>
+            <div><b>Salary:</b> {salaryText || 'Not provided'}</div>
+            <div><b>Nationality:</b> {textOrEmpty(formData.nationality, 'Not provided')}</div>
+          </div>
+
+          <div className="space-y-1">
+            <div><b>Height:</b> {formatDisplayHeight(formData.height)}</div>
+            <div><b>Weight:</b> {formatDisplayWeight(formData.weight)}</div>
+            <div><b>Gender:</b> {textOrEmpty(formData.gender, 'Not provided')}</div>
+            <div><b>Civil Status:</b> {textOrEmpty(formData.civilStatus, 'Not provided')}</div>
+            <div><b>Birthday:</b> {textOrEmpty(formData.birthday, 'Not provided')}</div>
+          </div>
         </div>
       );
     }
@@ -5813,6 +5827,7 @@ const MyProfile = () => {
                           formData.willingToRelocate,
                           formData.weight,
                           formData.howSoonCanYouStart,
+                          formData.experience,
                           formData.nationality,
                           formData.preferredLanguage,
                           formData.gender,
