@@ -142,6 +142,17 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           />
         </svg>
       );
+    case 'bookmarkFilled':
+      return (
+        <svg className={className} fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.75}
+            d="M17 21l-5-3-5 3V5a2 2 0 012-2h6a2 2 0 012 2v16z"
+          />
+        </svg>
+      );
     case 'xmark':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -881,13 +892,13 @@ const BookmarkCard = ({ job, selected, onClick, onRemove, removing }) => {
         disabled={removing}
         aria-label={`Remove ${job.title} from bookmarks`}
         className={`absolute top-4 right-4 ${UI.btnBase} h-9 w-9 p-0 ${
-          selected ? 'text-[#2e66a6] bg-[#FFFFFF] border border-[#2e66a6]/20' : 'text-black/55 hover:text-[#000000] hover:bg-[#FFFFFF]'
+          'text-[#2e66a6] bg-[#FFFFFF] border border-[#2e66a6]/20 hover:bg-[#f7faff]'
         } ${UI.ring}`}
       >
         {removing ? (
           <span className="inline-block w-4 h-4 rounded-full border-2 border-black/20 border-t-black/70 animate-spin motion-reduce:animate-none" />
         ) : (
-          <SvgIcon name="bookmark" className="w-4 h-4" />
+          <SvgIcon name="bookmarkFilled" className="w-4 h-4 text-[#2e66a6]" />
         )}
       </button>
     </div>
@@ -2159,7 +2170,7 @@ const Bookmarks = () => {
                                 {selectedJob.vacancies ? (
                                   <span className={UI.chip}>
                                     <SvgIcon name="users" className="w-3.5 h-3.5" />
-                                    {formatCountLabel(selectedJob.vacancies, 'Vacancy')}
+                                    {`${selectedJob.vacancies} Vacancy`}
                                   </span>
                                 ) : null}
                               </div>
@@ -2195,14 +2206,16 @@ const Bookmarks = () => {
                                 type="button"
                                 onClick={() => handleRemoveSavedJob(selectedJob._id)}
                                 disabled={removingId === selectedJob._id}
-                                className={`${UI.btnBase} ${UI.btnSm} ${UI.btnSecondary} ${UI.ring} w-full`}
+                                aria-label={`Remove ${selectedJob.title} from saved jobs`}
+                                title="Saved — click to remove"
+                                className={`${UI.btnBase} ${UI.btnSm} ${UI.btnSecondary} ${UI.ring} w-full text-[#2e66a6]`}
                               >
                                 {removingId === selectedJob._id ? (
-                                  <span className="inline-block w-4 h-4 rounded-full border-2 border-black/20 border-t-black/70 animate-spin motion-reduce:animate-none" />
+                                  <span className="inline-block w-4 h-4 rounded-full border-2 border-[#2e66a6]/25 border-t-[#2e66a6] animate-spin motion-reduce:animate-none" />
                                 ) : (
-                                  <SvgIcon name="bookmark" className="w-4 h-4" />
+                                  <SvgIcon name="bookmarkFilled" className="w-4 h-4 text-[#2e66a6]" />
                                 )}
-                                Remove
+                                Saved
                               </button>
 
                               <button
