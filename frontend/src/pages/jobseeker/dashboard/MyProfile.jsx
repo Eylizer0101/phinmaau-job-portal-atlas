@@ -109,8 +109,8 @@ const EMPLOYMENT_TYPE_OPTIONS = [
 ];
 
 const WILLING_TO_RELOCATE_OPTIONS = [
-  'Yes — willing to relocate',
-  'No — not willing to relocate',
+  'Yes',
+  'No',
   'Open to discuss',
 ];
 
@@ -5153,7 +5153,11 @@ const MyProfile = () => {
   const updateEducationEntry = (index, field, value) => {
     setDrafts((prev) => ({
       ...prev,
-      educationEntries: normalizeEducationEntries(prev.educationEntries || [], true).map((item, itemIndex) => {
+      educationEntries: (
+        Array.isArray(prev.educationEntries) && prev.educationEntries.length
+          ? prev.educationEntries
+          : [createEmptyEducationEntry()]
+      ).map((item, itemIndex) => {
         if (itemIndex !== index) return item;
 
         const nextItem = { ...item, [field]: value };
