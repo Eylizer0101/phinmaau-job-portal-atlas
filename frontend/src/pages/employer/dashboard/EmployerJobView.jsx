@@ -503,9 +503,8 @@ const EmployerJobView = () => {
     if (!dateString) return 'N/A';
     const d = new Date(dateString);
     if (Number.isNaN(d.getTime())) return 'N/A';
-    return d.toLocaleDateString('en-PH', {
-      year: 'numeric',
-      month: 'short',
+    return d.toLocaleDateString('en-US', {
+      month: 'long',
       day: 'numeric',
     });
   }, []);
@@ -719,9 +718,13 @@ const EmployerJobView = () => {
     )}
                     </div>
 
-                    <div className="mt-3 space-y-1 text-xs text-[#6b7280]">
-                      <p>{formatPostedRelative(job.createdAt)}</p>
-                      {job.applicationDeadline && <p>Application deadline is on {formatFullDate(job.applicationDeadline)}</p>}
+                    <div className="mt-3 text-xs text-[#6b7280]">
+                      <p>
+                        {formatPostedRelative(job.createdAt)}
+                        {job.applicationDeadline
+                          ? ` and deadline of application is on ${formatFullDate(job.applicationDeadline)}`
+                          : ''}
+                      </p>
                     </div>
                   </div>
                 </div>
