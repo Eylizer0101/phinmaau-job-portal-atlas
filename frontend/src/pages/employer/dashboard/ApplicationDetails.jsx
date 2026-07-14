@@ -265,6 +265,237 @@ const calculateJobSeekerLevel = ({
   };
 };
 
+
+const stripHtml = (value = '') =>
+  String(value || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const normalizeMatchText = (value = '') =>
+  stripHtml(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9+#.\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const normalizeSkillName = (value = '') =>
+  normalizeMatchText(value)
+    .replace(/\s[—-]\s(?:basic|novice|intermediate|advanced|expert)$/i, '')
+    .trim();
+
+const getRequiredExperienceYears = (value = '') => {
+  const normalized = normalizeMatchText(value);
+  if (!normalized || normalized.includes('no experience')) return 0;
+  const match = normalized.match(/(\d+)/);
+  return match ? Number(match[1]) : 0;
+};
+
+const getApplicantExperienceYears = (workExperiences = [], profileExperience = '') => {
+  const dateBasedYears = (Array.isArray(workExperiences) ? workExperiences : []).reduce(
+    (total, item) => {
+      const start = new Date(item?.startDate);
+      const end = item?.isPresent ? new Date() : new Date(item?.endDate);
+
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
+        return total;
+      }
+
+      return total + (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
+    },
+    0
+  );
+
+  if (dateBasedYears > 0) return dateBasedYears;
+
+  const normalized = normalizeMatchText(profileExperience);
+  if (!normalized || normalized.includes('no experience')) return 0;
+  if (normalized.includes('less than 1')) return 0.5;
+
+  const rangeMatch = normalized.match(/(\d+)\s*[-–]\s*(\d+)/);
+  if (rangeMatch) return Number(rangeMatch[2]);
+
+  const numberMatch = normalized.match(/(\d+)/);
+  return numberMatch ? Number(numberMatch[1]) : 0;
+};
+
+const getEducationRank = (value = '') => {
+  const normalized = normalizeMatchText(value);
+  if (!normalized) return 0;
+  if (normalized.includes('doctor')) return 5;
+  if (normalized.includes('master')) return 4;
+  if (
+    normalized.includes('bachelor') ||
+    normalized.includes('college') ||
+    normalized.includes('degree graduate')
+  ) return 3;
+  if (normalized.includes('associate') || normalized.includes('vocational')) return 2;
+  if (normalized.includes('high school')) return 1;
+  return 0;
+};
+
+const getMatchLabel = (score) => {
+  if (score >= 90) return 'Highly Matched';
+  if (score >= 75) return 'Strong Match';
+  if (score >= 50) return 'Good Match';
+  return 'Low Match';
+};
+
+const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work = [], education = [] }) => {
+  const applicantSkills = skills
+    .map((item) => normalizeSkillName(item?.skill || item))
+    .filter(Boolean);
+
+  const requiredSkills = (Array.isArray(job?.skillsRequired)
+    ? job.skillsRequired
+    : String(job?.skillsRequired || '').split(',')
+  )
+    .map(normalizeSkillName)
+    .filter(Boolean);
+
+  const matchedSkills = requiredSkills.filter((requiredSkill) =>
+    applicantSkills.some(
+      (applicantSkill) =>
+        applicantSkill === requiredSkill ||
+        applicantSkill.includes(requiredSkill) ||
+        requiredSkill.includes(applicantSkill)
+    )
+  );
+
+  const skillRatio = requiredSkills.length
+    ? matchedSkills.length / requiredSkills.length
+    : applicantSkills.length
+      ? 0.75
+      : 0;
+
+  const latestEducation = Array.isArray(education) && education.length
+    ? education[education.length - 1]
+    : {};
+
+  const applicantEducation =
+    latestEducation.educationalAttainment ||
+    latestEducation.level ||
+    profile.educationalAttainment ||
+    profile.course ||
+    '';
+
+  const requiredEducation = job.educationLevel || job.educationalRequirements || '';
+  const applicantEducationRank = getEducationRank(applicantEducation);
+  const requiredEducationRank = getEducationRank(requiredEducation);
+  const educationRatio = requiredEducationRank
+    ? Math.min(1, applicantEducationRank / requiredEducationRank)
+    : applicantEducationRank
+      ? 0.75
+      : 0;
+
+  const applicantYears = getApplicantExperienceYears(
+    work,
+    profile.experience || profile.whatHaveYouDone
+  );
+  const requiredYears = getRequiredExperienceYears(job.experienceLevel);
+  const experienceRatio = requiredYears
+    ? Math.min(1, applicantYears / requiredYears)
+    : job.openToFreshGraduates || applicantYears >= 0
+      ? 1
+      : 0;
+
+  const applicantCourseText = normalizeMatchText(
+    [
+      profile.course,
+      profile.studyField,
+      profile.educationalAttainment,
+      latestEducation.course,
+      latestEducation.studyField,
+      latestEducation.educationalAttainment,
+      latestEducation.level,
+    ]
+      .filter(Boolean)
+      .join(' ')
+  );
+
+  const jobContextText = normalizeMatchText(
+    [
+      job.title,
+      job.category,
+      job.description,
+      job.requirements,
+      job.qualification,
+      job.educationalRequirements,
+    ]
+      .filter(Boolean)
+      .join(' ')
+  );
+
+  const courseWords = applicantCourseText
+    .split(' ')
+    .filter((word) => word.length >= 4);
+
+  const courseHits = courseWords.filter((word) => jobContextText.includes(word));
+  const courseRatio = courseWords.length
+    ? Math.min(1, courseHits.length / Math.min(courseWords.length, 4))
+    : 0;
+
+  const score = Math.round(
+    skillRatio * 45 +
+    educationRatio * 20 +
+    experienceRatio * 20 +
+    courseRatio * 15
+  );
+
+  return {
+    score: Math.max(0, Math.min(100, score)),
+    label: getMatchLabel(score),
+    skillsLabel: getMatchLabel(Math.round(skillRatio * 100)),
+    matchedSkillsCount: matchedSkills.length,
+    requiredSkillsCount: requiredSkills.length,
+    educationDisplay:
+      applicantEducation ||
+      profile.course ||
+      'Not provided',
+    experienceDisplay:
+      applicantYears >= 1
+        ? `${Number.isInteger(applicantYears) ? Math.round(applicantYears) : applicantYears.toFixed(1)} year${applicantYears >= 2 ? 's' : ''}`
+        : applicantYears > 0
+          ? 'Less than 1 year'
+          : profile.experience || profile.whatHaveYouDone || 'No experience',
+    hasEducation: Boolean(applicantEducation),
+    hasExperience: Boolean(applicantYears > 0 || profile.experience || profile.whatHaveYouDone),
+    hasSkills: Boolean(applicantSkills.length),
+  };
+};
+
+const MatchRing = ({ score }) => {
+  const radius = 30;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (Math.max(0, Math.min(100, score)) / 100) * circumference;
+
+  return (
+    <svg className="h-[78px] w-[78px] -rotate-90" viewBox="0 0 72 72" aria-hidden="true">
+      <circle
+        cx="36"
+        cy="36"
+        r={radius}
+        fill="none"
+        stroke="#e7efe9"
+        strokeWidth="7"
+      />
+      <circle
+        cx="36"
+        cy="36"
+        r={radius}
+        fill="none"
+        stroke="#159447"
+        strokeWidth="7"
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+      />
+    </svg>
+  );
+};
+
 const Section = ({ title, children, defaultOpen = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
@@ -430,6 +661,13 @@ const ApplicationDetails = () => {
     awards: profile.awards || [],
     workExperiences: work,
   });
+  const matchSummary = calculateApplicationMatch({
+    job: application.job || {},
+    profile,
+    skills,
+    work,
+    education,
+  });
   const salary = [profile.minimumSalary, profile.maximumSalary].filter(Boolean).join(' - ');
   const activities = Array.isArray(application.activityHistory) && application.activityHistory.length
     ? [...application.activityHistory].sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt))
@@ -515,7 +753,98 @@ const ApplicationDetails = () => {
           </div> : <div className="border-t border-[#d8e2ee] px-6 py-8 sm:px-10"><div className="relative ml-3 border-l-2 border-gray-200 pl-8">{activities.map((item, index) => { const dt = formatDateTime(item.occurredAt || item.createdAt); return <div key={item._id || `${item.type}-${index}`} className="relative pb-10 last:pb-0"><div className="absolute -left-[43px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-4 border-white bg-[#2e66a6] shadow"><SvgIcon name={item.type === 'message' ? 'message' : item.type === 'submitted' ? 'resume' : 'activity'} className="h-3 w-3 text-white" /></div><h3 className="text-lg font-semibold text-gray-900">{item.title || 'Application updated'}</h3><p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">{item.description || 'The application record was updated.'}</p><div className="mt-2 text-xs font-bold tracking-wide text-gray-500">{dt.date}{dt.time ? ` · ${dt.time}` : ''}</div></div>; })}</div></div>}
         </main>
 
-        <aside className="space-y-5"><div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5"><h2 className="text-lg font-bold">Application Summary</h2><div className="mt-5 space-y-4 text-sm"><div className="border-b pb-4"><div className="text-gray-500">Status</div><div className="mt-1 text-lg font-bold capitalize text-[#174b91]">{currentStatus}</div></div><div><div className="text-gray-500">Education</div><div className="mt-1 font-semibold">{profile.educationalAttainment || profile.course || 'Not provided'}</div></div><div><div className="text-gray-500">Experience</div><div className="mt-1 font-semibold">{profile.experience || profile.whatHaveYouDone || 'Not provided'}</div></div><div><div className="text-gray-500">Skills</div><div className="mt-1 font-semibold">{skills.length ? `${skills.length} listed skills` : 'Not provided'}</div></div></div></div>
+        <aside className="space-y-5"><div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5 sm:p-6">
+            <h2 className="text-[18px] font-bold text-gray-900">Application Summary</h2>
+
+            <div className="mt-5 border-b border-gray-200 pb-5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-1.5 text-[13px] text-gray-700">
+                    <span>Match Score</span>
+                    <span
+                      className="flex h-4 w-4 items-center justify-center rounded-full border border-gray-400 text-[10px] text-gray-500"
+                      title="Computed from skills, experience, education, course, and job requirements."
+                    >
+                      i
+                    </span>
+                  </div>
+
+                  <div className="mt-2 text-[30px] font-semibold leading-none text-[#159447]">
+                    {matchSummary.score}%
+                  </div>
+                  <div className="mt-2 text-[12px] font-medium text-[#159447]">
+                    {matchSummary.label}
+                  </div>
+                </div>
+
+                <div className="relative flex h-[78px] w-[78px] items-center justify-center">
+                  <MatchRing score={matchSummary.score} />
+                </div>
+              </div>
+            </div>
+
+            <div className="divide-y divide-gray-200">
+              <div className="flex items-start justify-between gap-4 py-4">
+                <div className="min-w-0">
+                  <div className="text-[13px] font-semibold text-gray-800">Education</div>
+                  <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-gray-500">
+                    {matchSummary.educationDisplay}
+                  </div>
+                </div>
+                <div
+                  className={cn(
+                    'mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
+                    matchSummary.hasEducation
+                      ? 'border-[#159447] text-[#159447]'
+                      : 'border-gray-300 text-gray-300'
+                  )}
+                >
+                  <SvgIcon name="check" className="h-3 w-3" />
+                </div>
+              </div>
+
+              <div className="flex items-start justify-between gap-4 py-4">
+                <div className="min-w-0">
+                  <div className="text-[13px] font-semibold text-gray-800">Experience</div>
+                  <div className="mt-1 text-[12px] leading-5 text-gray-500">
+                    {matchSummary.experienceDisplay}
+                  </div>
+                </div>
+                <div
+                  className={cn(
+                    'mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
+                    matchSummary.hasExperience
+                      ? 'border-[#159447] text-[#159447]'
+                      : 'border-gray-300 text-gray-300'
+                  )}
+                >
+                  <SvgIcon name="check" className="h-3 w-3" />
+                </div>
+              </div>
+
+              <div className="flex items-start justify-between gap-4 py-4">
+                <div className="min-w-0">
+                  <div className="text-[13px] font-semibold text-gray-800">Skills Match</div>
+                  <div className="mt-1 text-[12px] leading-5 text-gray-500">
+                    {matchSummary.skillsLabel}
+                    {matchSummary.requiredSkillsCount > 0
+                      ? ` · ${matchSummary.matchedSkillsCount}/${matchSummary.requiredSkillsCount} matched`
+                      : ''}
+                  </div>
+                </div>
+                <div
+                  className={cn(
+                    'mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
+                    matchSummary.hasSkills
+                      ? 'border-[#159447] text-[#159447]'
+                      : 'border-gray-300 text-gray-300'
+                  )}
+                >
+                  <SvgIcon name="check" className="h-3 w-3" />
+                </div>
+              </div>
+            </div>
+          </div>
           <div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5"><h2 className="text-lg font-bold">Employer Actions</h2><div className="mt-5 space-y-3">{currentStatus === 'pending' ? <button onClick={() => updateStatus('for interview')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{statusUpdating ? <Spinner /> : <SvgIcon name="calendar" />} Move to Interview</button> : null}{currentStatus === 'for interview' ? <button onClick={() => updateStatus('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{statusUpdating ? <Spinner /> : <SvgIcon name="check" />} Hired</button> : null}<button onClick={() => setMessageOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91]"><SvgIcon name="message" /> Send Message</button>{['pending', 'for interview'].includes(currentStatus) ? <button onClick={() => setDeclineOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400 px-4 py-3 text-sm font-semibold text-red-600"><SvgIcon name="x" /> Decline Application</button> : null}</div></div></aside>
       </div>
       <DeclineReasonModal open={declineOpen} applicantName={name} reasons={declineReasons} selectedReason={declineReason} comment={declineComment} onReasonChange={setDeclineReason} onCommentChange={setDeclineComment} onClose={() => { setDeclineOpen(false); setDeclineReason(''); setDeclineComment(''); }} onConfirm={async () => { const from = currentStatus === 'for interview' ? 'forInterview' : 'applicants'; setDeclineOpen(false); await updateStatus('declined', { declineReason, declineComment, declinedFrom: from }); }} submitting={statusUpdating} />
