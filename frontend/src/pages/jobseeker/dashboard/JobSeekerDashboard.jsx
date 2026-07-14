@@ -381,6 +381,39 @@ const JobSeekerDashboard = () => {
     return String(value || '').trim();
   };
 
+  const normalizeEmploymentTypeLabel = (value) => {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+
+    const normalized = raw.toLowerCase().replace(/[_\s]+/g, '-');
+
+    if (normalized === 'full-time' || normalized === 'fulltime') return 'Full-Time';
+    if (normalized === 'part-time' || normalized === 'parttime') return 'Part-Time';
+    if (normalized === 'contractual') return 'Contractual';
+    if (normalized === 'permanent') return 'Permanent';
+    if (normalized === 'internship') return 'Internship';
+    if (normalized === 'freelance') return 'Freelance';
+    if (normalized === 'temporary') return 'Temporary';
+
+    return raw;
+  };
+
+  const getRecentApplicationJobSummary = (job = {}) => {
+    const parts = [];
+
+    if (job?.salaryMin || job?.salaryMax) {
+      parts.push(formatSalary(job.salaryMin, job.salaryMax));
+    }
+
+    const workMode = normalizeWorkModeLabel(job?.workMode);
+    const employmentType = normalizeEmploymentTypeLabel(job?.jobType);
+
+    if (workMode) parts.push(workMode);
+    if (employmentType) parts.push(employmentType);
+
+    return parts.join(' | ');
+  };
+
   const isCompanyVerified = (job) => {
     return Boolean(job?.companyVerified ?? job?.isCompanyVerified ?? job?.isVerified ?? job?.verified);
   };
@@ -684,6 +717,7 @@ const JobSeekerDashboard = () => {
           location: 'Manila, NCR, Philippines',
           salaryMin: 60000,
           salaryMax: 80000,
+          workMode: 'Remote',
           jobType: 'Full-time',
           companyLogo: '/uploads/logos/techcorp.png',
         },
@@ -704,6 +738,7 @@ const JobSeekerDashboard = () => {
           location: 'Cebu, Philippines',
           salaryMin: 70000,
           salaryMax: 90000,
+          workMode: 'Blended',
           jobType: 'Full-time',
           companyLogo: '/uploads/logos/datasys.png',
         },
@@ -725,6 +760,7 @@ const JobSeekerDashboard = () => {
           location: 'Cebu City',
           salaryMin: 40000,
           salaryMax: 50000,
+          workMode: 'On-site',
           jobType: 'Contractual',
           companyLogo: '/uploads/logos/bdo.png',
         },
@@ -745,6 +781,7 @@ const JobSeekerDashboard = () => {
           location: 'Manila',
           salaryMin: 30000,
           salaryMax: 35000,
+          workMode: 'Work from Home',
           jobType: 'Permanent',
           companyLogo: '/uploads/logos/sample.png',
         },
@@ -1514,10 +1551,10 @@ const JobSeekerDashboard = () => {
                                 </div>
                               )}
 
-                              {(app.job?.salaryMin || app.job?.salaryMax) && (
-                                <div className="flex items-center gap-2">
-                                  <span className="font-semibold text-[#2e66a6] leading-none ml-1">
-                                    {formatSalary(app.job.salaryMin, app.job.salaryMax)}
+                              {getRecentApplicationJobSummary(app.job) && (
+                                <div className="flex min-w-0 items-center gap-2">
+                                  <span className="ml-1 block min-w-0 truncate font-semibold leading-none text-[#2e66a6]">
+                                    {getRecentApplicationJobSummary(app.job)}
                                   </span>
                                 </div>
                               )}

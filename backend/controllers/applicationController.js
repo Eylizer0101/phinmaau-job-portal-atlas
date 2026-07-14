@@ -603,7 +603,7 @@ exports.getJobseekerApplications = async (req, res) => {
     const applications = await Application.find({ jobseeker: req.user._id })
       .populate({
         path: 'job',
-        select: 'title companyName location jobType salaryMin salaryMax applicationDeadline companyLogo'
+        select: 'title companyName location jobType workMode salaryMin salaryMax applicationDeadline companyLogo'
       })
       .populate({
         path: 'jobseeker',
@@ -654,7 +654,7 @@ exports.getMyApplications = async (req, res) => {
     const applications = await Application.find({ jobseeker: req.user._id })
       .populate({
         path: 'job',
-        select: 'title companyName location jobType salaryMin salaryMax applicationDeadline companyLogo'
+        select: 'title companyName location jobType workMode salaryMin salaryMax applicationDeadline companyLogo'
       })
       .populate({
         path: 'jobseeker',
