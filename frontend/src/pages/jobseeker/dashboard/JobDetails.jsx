@@ -669,6 +669,18 @@ const JobDetails = () => {
     return `Posted ${years} year${years > 1 ? 's' : ''} ago`;
   }, []);
 
+  const formatApplicationDeadline = useCallback((dateString) => {
+    if (!dateString) return '';
+
+    const deadline = new Date(dateString);
+    if (Number.isNaN(deadline.getTime())) return '';
+
+    return deadline.toLocaleDateString('en-PH', {
+      month: 'long',
+      day: 'numeric',
+    });
+  }, []);
+
   const isJobActive = useCallback(() => {
     if (!job) return false;
     if (!job.isActive || !job.isPublished) return false;
@@ -1201,7 +1213,18 @@ const JobDetails = () => {
                     </button>
                   </div>
 
-                  <div className="mt-2 flex justify-end">
+                  <div className="mt-2 flex flex-col items-end gap-1">
+                    {job.applicationDeadline ? (
+                      <div className="inline-flex items-center gap-2 px-4 text-sm font-medium text-black/80">
+                        <span className="text-[#2e66a6]">
+                          <SvgIcon name="calendar" className="h-4 w-4" />
+                        </span>
+                        <span>
+                          Deadline of Application is on {formatApplicationDeadline(job.applicationDeadline)}
+                        </span>
+                      </div>
+                    ) : null}
+
                     <div className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm text-black/80">
                       <span className="text-black/80">
                         <SvgIcon name="clock" className="w-4 h-4" />
