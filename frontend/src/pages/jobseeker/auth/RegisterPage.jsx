@@ -810,7 +810,7 @@ const RegisterPage = () => {
                   {/* Profile Photo */}
                   <div className="space-y-1">
                     <label className={labelBase} htmlFor="profileImageFile">
-                      Graduation Photo
+                      Graduation Photo <span className="text-gray-400 font-semibold">(optional)</span>
                     </label>
                     <input
                       ref={fileRefs.profileImageFile}
