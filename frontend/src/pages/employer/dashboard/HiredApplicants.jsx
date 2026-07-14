@@ -598,7 +598,7 @@ const selectBase =
 
                           <td className="px-6 py-4">
                             <Link
-                              to={`/employer/application/${app._id}`}
+                              to={`/employer/application/${app._id}?from=hired`}
                               className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                               aria-label={`View details of ${name}`}
                             >
@@ -656,7 +656,7 @@ const selectBase =
 
                       <div className="mt-3">
                         <Link
-                          to={`/employer/application/${app._id}`}
+                          to={`/employer/application/${app._id}?from=hired`}
                           className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                         >
                           <Icon name="eye" className="h-5 w-5" />

@@ -777,7 +777,7 @@ const DeclinedApplicants = () => {
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-2">
                                 <Link
-                                  to={`/employer/application/${app._id}`}
+                                  to={`/employer/application/${app._id}?from=declined`}
                                   className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                                   aria-label={`View application of ${name}`}
                                 >
@@ -862,7 +862,7 @@ const DeclinedApplicants = () => {
 
                         <div className="mt-3 flex flex-wrap gap-2">
                           <Link
-                            to={`/employer/application/${app._id}`}
+                            to={`/employer/application/${app._id}?from=declined`}
                             className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                           >
                             <Icon name="eye" className="h-5 w-5" />

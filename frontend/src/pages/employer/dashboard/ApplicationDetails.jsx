@@ -1,6 +1,6 @@
 // src/pages/employer/dashboard/ApplicationDetails.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import { normalizeUserToResumeData } from '../../../components/shared/resumePrintTemplate';
@@ -727,6 +727,7 @@ const MessagePopup = ({ open, onClose, applicant, application }) => {
 const ApplicationDetails = () => {
   const navigate = useNavigate();
   const { applicationId } = useParams();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [application, setApplication] = useState(null);
   const [error, setError] = useState('');
@@ -752,8 +753,24 @@ const ApplicationDetails = () => {
     finally { setStatusUpdating(false); }
   };
 
+
+  const backDestination = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const source = params.get('from');
+    const sourceJobId = params.get('jobId');
+
+    if (source === 'for-interview') return '/employer/for-interview';
+    if (source === 'hired') return '/employer/hired';
+    if (source === 'declined') return '/employer/declined';
+    if (source === 'job-applicants' && sourceJobId) {
+      return `/employer/job/${sourceJobId}/applicants`;
+    }
+
+    return '/employer/applicants';
+  }, [location.search]);
+
   if (loading) return <EmployerLayout><div className="mx-auto max-w-7xl px-4 py-10"><div className="flex justify-center rounded-2xl border bg-white py-16 text-[#2e66a6]"><Spinner /></div></div></EmployerLayout>;
-  if (!application) return <EmployerLayout><div className="mx-auto max-w-7xl px-4 py-10"><div className="rounded-2xl border bg-white p-10 text-center"><p>{error || 'Application not found.'}</p><Link to="/employer/applicants" className="mt-5 inline-block text-[#2e66a6]">Back to Applicants</Link></div></div></EmployerLayout>;
+  if (!application) return <EmployerLayout><div className="mx-auto max-w-7xl px-4 py-10"><div className="rounded-2xl border bg-white p-10 text-center"><p>{error || 'Application not found.'}</p><Link to={backDestination} className="mt-5 inline-block text-[#2e66a6]">Back to Applicants</Link></div></div></EmployerLayout>;
 
   const user = application.jobseeker || {};
   const profile = user.jobSeekerProfile || {};
@@ -798,7 +815,7 @@ const ApplicationDetails = () => {
       'resumePreviewData',
       JSON.stringify({
         ...resumeData,
-        returnTo: `/employer/application/${applicationId}`,
+        returnTo: `/employer/application/${applicationId}${location.search || ''}`,
         viewerMode: 'employer',
       })
     );
@@ -808,7 +825,7 @@ const ApplicationDetails = () => {
 
   return <EmployerLayout>
     <div className="mx-auto max-w-7xl px-1 py-8">
-      <Link to="/employer/applicants" className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-[#174b91]"><SvgIcon name="back" className="h-4 w-4" /> Back to Applicants</Link>
+      <Link to={backDestination} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-[#174b91]"><SvgIcon name="back" className="h-4 w-4" /> Back to Applicants</Link>
       {error ? <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}{success ? <div className="mb-4 rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-700">{success}</div> : null}
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_330px]">
         <main className="overflow-hidden rounded-[20px] border border-[#d8e2ee] bg-white">

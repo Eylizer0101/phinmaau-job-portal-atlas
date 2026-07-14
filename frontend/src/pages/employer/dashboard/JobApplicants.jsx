@@ -330,7 +330,7 @@ const JobApplicants = () => {
                         </div>
                         <button
                           type="button"
-                          onClick={() => navigate(`/employer/application/${application._id}`)}
+                          onClick={() => navigate(`/employer/application/${application._id}?from=job-applicants&jobId=${encodeURIComponent(jobId)}`)}
                           className="inline-flex items-center justify-center gap-2 rounded-full bg-[#2e66a6] px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[#25578f]"
                         >
                           View profile

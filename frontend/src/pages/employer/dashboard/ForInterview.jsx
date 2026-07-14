@@ -968,7 +968,7 @@ const ActionMenu = ({ app, name, rowBusy, onHire, onDecline, openMenuId, setOpen
   return (
     <div ref={wrapperRef} className="relative flex items-center justify-center gap-2">
       <Link
-        to={`/employer/application/${app._id}`}
+        to={`/employer/application/${app._id}?from=for-interview`}
         className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
         aria-label={`View application of ${name}`}
       >
@@ -1747,7 +1747,7 @@ const selectBase =
 
                         <div className="mt-3 flex items-center justify-between">
                           <Link
-                            to={`/employer/application/${app._id}`}
+                            to={`/employer/application/${app._id}?from=for-interview`}
                             className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                           >
                             <Icon name="eye" className="h-5 w-5" />
