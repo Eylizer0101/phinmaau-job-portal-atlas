@@ -1706,7 +1706,7 @@ const EditJob = () => {
                             <span>
                               <span className="block text-sm font-semibold text-gray-900">Urgently Needed</span>
                               <span className="block text-xs leading-5 text-gray-500">
-                                Show an Urgently Needed badge on job cards.
+                               Highlight this job posting to let applicants know the position requires immediate attention.
                               </span>
                             </span>
                           </label>
@@ -1842,7 +1842,7 @@ const EditJob = () => {
                         <span>
                           <span className="block text-sm font-semibold text-gray-900">Hide salary from jobseekers</span>
                           <span className="block text-xs leading-5 text-gray-500">
-                            Job cards will show “Salary Undisclosed” instead of the salary range.
+                           Choose not to display the salary range on your job posting. Applicants will see "Salary not specified" instead.
                           </span>
                         </span>
                       </label>
