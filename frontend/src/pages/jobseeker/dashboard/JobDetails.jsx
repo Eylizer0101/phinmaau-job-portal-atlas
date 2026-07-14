@@ -22,6 +22,87 @@ import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
  */
 
 
+
+const sanitizeRichTextHtml = (value = '') => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  if (typeof window === 'undefined' || typeof window.DOMParser === 'undefined') {
+    return raw
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\r?\n/g, '<br>');
+  }
+
+  const containsHtml = /<\/?[a-z][\s\S]*>/i.test(raw);
+  const source = containsHtml
+    ? raw
+    : raw
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\r?\n/g, '<br>');
+
+  const parser = new window.DOMParser();
+  const doc = parser.parseFromString(source, 'text/html');
+
+  doc
+    .querySelectorAll(
+      'script, style, iframe, object, embed, form, input, button, textarea, select, option, link, meta, base'
+    )
+    .forEach((node) => node.remove());
+
+  doc.body.querySelectorAll('*').forEach((element) => {
+    [...element.attributes].forEach((attribute) => {
+      const name = attribute.name.toLowerCase();
+      const valueText = String(attribute.value || '').trim().toLowerCase();
+
+      if (
+        name.startsWith('on') ||
+        name === 'style' ||
+        name === 'srcdoc' ||
+        ((name === 'href' || name === 'src') &&
+          (valueText.startsWith('javascript:') || valueText.startsWith('data:text/html')))
+      ) {
+        element.removeAttribute(attribute.name);
+      }
+    });
+
+    if (element.tagName === 'A') {
+      element.setAttribute('target', '_blank');
+      element.setAttribute('rel', 'noopener noreferrer');
+    }
+  });
+
+  return doc.body.innerHTML;
+};
+
+const RichTextContent = ({ value, fallback }) => {
+  const sanitizedHtml = useMemo(
+    () => sanitizeRichTextHtml(value || fallback || ''),
+    [value, fallback]
+  );
+
+  return (
+    <div
+      className={[
+        'break-words',
+        '[&_p]:my-2 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0',
+        '[&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-6',
+        '[&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-6',
+        '[&_li]:my-1',
+        '[&_h1]:my-3 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:leading-tight',
+        '[&_h2]:my-3 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:leading-tight',
+        '[&_strong]:font-bold [&_b]:font-bold',
+        '[&_em]:italic [&_i]:italic [&_u]:underline',
+        '[&_a]:text-[#2e66a6] [&_a]:underline',
+      ].join(' ')}
+      dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+    />
+  );
+};
+
 const getRelocationDisplayLabel = (value) => {
   const normalized = String(value || '').trim().toLowerCase();
 
@@ -1249,8 +1330,8 @@ const JobDetails = () => {
                           </div>
                         </div>
 
-                        <div className="mt-4 text-sm sm:text-base text-black/70 leading-relaxed whitespace-pre-wrap">
-                          {job.description || 'No description provided.'}
+                        <div className="mt-4 text-sm sm:text-base text-black/70 leading-relaxed">
+                          <RichTextContent value={job.description} fallback="No description provided." />
                         </div>
                       </section>
 
@@ -1264,8 +1345,8 @@ const JobDetails = () => {
                           </div>
                         </div>
 
-                        <div className="mt-4 text-sm sm:text-base text-black/70 leading-relaxed whitespace-pre-wrap">
-                          {job.requirements || 'No requirements provided.'}
+                        <div className="mt-4 text-sm sm:text-base text-black/70 leading-relaxed">
+                          <RichTextContent value={job.requirements} fallback="No requirements provided." />
                         </div>
                       </section>
                     </div>
