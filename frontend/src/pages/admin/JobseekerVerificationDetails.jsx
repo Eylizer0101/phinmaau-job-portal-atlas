@@ -331,14 +331,14 @@ const formatSkills = (technicalSkills, softSkills) => {
 };
 
 const documentTypes = [
-  { key: "cv", label: "CV / Resume", icon: "document" },
   { key: "validId", label: "Valid ID", icon: "document" },
-  { key: "tin", label: "TIN", icon: "document" },
-  { key: "tor", label: "TOR (Transcript of Records)", icon: "document" },
+  { key: "cv", label: "Resume", icon: "document" },
   { key: "diploma", label: "Diploma", icon: "document" },
+  { key: "tor", label: "TOR", icon: "document" },
   { key: "sss", label: "SSS", icon: "document" },
   { key: "philhealth", label: "PhilHealth", icon: "document" },
   { key: "pagibig", label: "Pag-IBIG", icon: "document" },
+  { key: "tin", label: "TIN", icon: "document" },
 ];
 
 // ======================= MAIN PAGE =======================
