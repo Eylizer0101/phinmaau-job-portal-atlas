@@ -3,20 +3,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
-import { normalizeUserToResumeData, openResumePrintWindow } from '../../../components/shared/resumePrintTemplate';
 
 const API_HOST = process.env.REACT_APP_API_URL
   ? process.env.REACT_APP_API_URL.replace(/\/api\/?$/, '')
   : 'https://phinmaau-job-portal-atlas.onrender.com';
-
-const UI = {
-  page: 'mx-auto max-w-7xl px-1 py-8',
-  card: 'rounded-[24px] border border-gray-200 bg-white ',
-  softCard: 'rounded-2xl border border-gray-200 bg-[#f8fafc]',
-  label: 'text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500',
-  value: 'mt-1.5 text-[15px] font-medium text-slate-800 break-words',
-  ring: 'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2',
-};
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
@@ -38,682 +28,246 @@ const APPLICANTS_DECLINE_REASONS = [
   'Does not meet screening criteria',
 ];
 
-const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
-  const common = { className, fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' };
-
-  switch (name) {
-    case 'back':
-      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>;
-    case 'calendar':
-      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3M5 11h14M6 5h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2z" /></svg>;
-    case 'briefcase':
-      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10 6V5a2 2 0 012-2h0a2 2 0 012 2v1m-9 0h10a2 2 0 012 2v10a2 2 0 01-2 2H7a2 2 0 01-2-2V8a2 2 0 012-2z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 12h14" /></svg>;
-    case 'mail':
-      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6h16v12H4z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 7l8 6 8-6" /></svg>;
-    case 'phone':
-      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 5.5C3 4.7 3.7 4 4.5 4H7l1.2 4-1.8 1.2a13 13 0 006.4 6.4L14 13.8l4 1.2v2.5c0 .8-.7 1.5-1.5 1.5A13.5 13.5 0 013 5.5z" /></svg>;
-    case 'location':
-      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 21s7-5.1 7-11a7 7 0 10-14 0c0 5.9 7 11 7 11z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 10.5h.01" /></svg>;
-    case 'user':
-      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM5 21a7 7 0 0114 0" /></svg>;
-    case 'school':
-      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 4L3 9l9 5 9-5-9-5z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 11v5c2 2 12 2 14 0v-5" /></svg>;
-    case 'award':
-      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 15a6 6 0 100-12 6 6 0 000 12z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 14l-1 7 4-2 4 2-1-7" /></svg>;
-    case 'folder':
-      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 7a2 2 0 012-2h5l2 2h7a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>;
-    case 'globe':
-      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 21a9 9 0 100-18 9 9 0 000 18z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12h18M12 3c2.2 2.4 3.3 5.4 3.3 9S14.2 18.6 12 21c-2.2-2.4-3.3-5.4-3.3-9S9.8 5.4 12 3z" /></svg>;
-    case 'check':
-      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>;
-    case 'x':
-      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>;
-    case 'download':
-      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 3v12m0 0l4-4m-4 4l-4-4M5 21h14" /></svg>;
-    default:
-      return <span className={className} />;
-  }
+const PROFICIENCY_STYLES = {
+  Basic: 'border-slate-200 bg-slate-100 text-slate-600',
+  Novice: 'border-sky-200 bg-sky-50 text-sky-700',
+  Intermediate: 'border-amber-200 bg-amber-50 text-amber-700',
+  Advanced: 'border-violet-200 bg-violet-50 text-violet-700',
+  Expert: 'border-emerald-200 bg-emerald-50 text-emerald-700',
 };
 
-const Spinner = ({ className = 'w-4 h-4' }) => (
-  <svg className={`${className} animate-spin`} viewBox="0 0 24 24" aria-hidden="true">
-    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z" />
-  </svg>
-);
+const SvgIcon = ({ name, className = 'h-5 w-5' }) => {
+  const common = { className, fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' };
+  const paths = {
+    back: 'M15 19l-7-7 7-7', calendar: 'M8 7V3m8 4V3M5 11h14M6 5h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2z',
+    check: 'M5 13l4 4L19 7', x: 'M6 18L18 6M6 6l12 12', mail: 'M4 6h16v12H4z M4 7l8 6 8-6',
+    message: 'M8 10h8m-8 4h5m7-2a8 8 0 01-8 8 8.7 8.7 0 01-3.7-.8L4 20l.8-4.3A8 8 0 1120 12z',
+    resume: 'M7 3h7l4 4v14H7z M14 3v5h5 M10 13h5m-5 4h5', activity: 'M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z',
+    send: 'M3 11l18-8-8 18-2-7-8-3z M11 14l4-4', user: 'M16 7a4 4 0 11-8 0 4 4 0 018 0z M5 21a7 7 0 0114 0',
+  };
+  return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.9} d={paths[name] || paths.user} /></svg>;
+};
 
-const Alert = ({ type = 'error', children, onClose }) => (
-  <div className={cn('rounded-xl border px-4 py-3 text-sm font-medium', type === 'success' ? 'border-[#b9d0e8] bg-[#eef5fc] text-[#17436f]' : 'border-red-200 bg-red-50 text-red-900')}>
-    <div className="flex items-start justify-between gap-3">
-      <div>{children}</div>
-      {onClose ? <button type="button" onClick={onClose} className="font-bold">×</button> : null}
+const Spinner = () => <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-r-transparent" />;
+
+const formatDate = (value, options = {}) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value || '');
+  return date.toLocaleDateString('en-PH', options.year ? options : { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+const formatDateTime = (value) => {
+  if (!value) return { date: '', time: '' };
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return { date: '', time: '' };
+  return {
+    date: date.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase(),
+    time: date.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }),
+  };
+};
+
+const monthYear = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value || '');
+  return date.toLocaleDateString('en-PH', { month: 'short', year: 'numeric' });
+};
+
+const entryDate = (item = {}) => {
+  if (item.date) return item.date;
+  const start = [item.startMonth, item.startYear].filter(Boolean).join(' ') || monthYear(item.startDate);
+  const end = item.isPresent ? 'Present' : ([item.endMonth, item.endYear || item.yearGraduated].filter(Boolean).join(' ') || monthYear(item.endDate));
+  return [start, end].filter(Boolean).join(' – ');
+};
+
+const parseSkills = (value) => {
+  const raw = Array.isArray(value) ? value : String(value || '').split(/\|\||,|\n/);
+  return raw.map((item) => {
+    if (item && typeof item === 'object') return { skill: item.skill || item.name || '', proficiency: item.proficiency || 'Basic' };
+    const clean = String(item || '').trim();
+    const match = clean.match(/^(.*?)\s+[—-]\s+(Basic|Novice|Intermediate|Advanced|Expert)$/i);
+    return match ? { skill: match[1].trim(), proficiency: match[2][0].toUpperCase() + match[2].slice(1).toLowerCase() } : { skill: clean, proficiency: 'Basic' };
+  }).filter((item) => item.skill);
+};
+
+const richText = (value) => {
+  const text = String(value || '').trim();
+  if (!text) return null;
+  const lines = text.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+  return <div className="space-y-1">{lines.map((line, index) => <p key={`${line}-${index}`}>{line}</p>)}</div>;
+};
+
+const Section = ({ title, children }) => (
+  <section className="border-b border-[#d8e2ee] last:border-b-0">
+    <div className="flex min-h-[54px] items-center gap-3 py-3">
+      <span className="text-[13px] text-gray-500">⌃</span>
+      <h3 className="font-serif text-[17px] font-bold uppercase tracking-[0.01em] text-[#111827] sm:text-[19px]">{title}</h3>
     </div>
-  </div>
+    {children}
+  </section>
 );
 
-const DeclineReasonModal = ({ open, applicantName, selectedReason, comment, reasons = APPLICANTS_DECLINE_REASONS, onReasonChange, onCommentChange, onClose, onConfirm, isSubmitting = false }) => {
-  const closeButtonRef = useRef(null);
-  useEffect(() => {
-    if (!open) return undefined;
-    const t = setTimeout(() => closeButtonRef.current?.focus(), 0);
-    const onKeyDown = (e) => e.key === 'Escape' && !isSubmitting && onClose?.();
-    window.addEventListener('keydown', onKeyDown);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      clearTimeout(t);
-      window.removeEventListener('keydown', onKeyDown);
-      document.body.style.overflow = '';
-    };
-  }, [open, onClose, isSubmitting]);
+const EmptyLine = ({ children }) => <div className="pb-5 pt-1 font-serif text-[13px] italic text-gray-500">{children}</div>;
 
+const ProfileEntries = ({ items = [], type }) => {
+  if (!items.length) return <EmptyLine>No information added yet.</EmptyLine>;
+  if (type === 'references') {
+    return <div className="grid grid-cols-1 gap-x-6 gap-y-5 pb-5 pt-2 font-serif text-[13px] leading-5 text-gray-900 sm:grid-cols-2 lg:grid-cols-3">
+      {items.map((item, index) => <div key={item._id || index} className="min-w-0 py-1">
+        <div className="font-bold">{item.name || item.title || 'Reference'}</div>
+        {item.position ? <div>{item.position}</div> : null}{item.company ? <div>{item.company}</div> : null}
+        {item.phone ? <div>{item.phone}</div> : null}{item.email ? <div className="break-all text-[#2e66a6]">{item.email}</div> : null}
+      </div>)}
+    </div>;
+  }
+  return <div className="space-y-3 pb-5 pt-2 font-serif text-[13px] leading-5 text-gray-900">
+    {items.map((item, index) => {
+      const title = item.title || item.name || item.organization || 'Untitled';
+      const sub = item.issuer || item.role || item.organization || item.company || '';
+      return <div key={item._id || index} className="py-1">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0"><div className="font-bold">{title}</div>{sub ? <div className="italic">{sub}</div> : null}</div>
+          {entryDate(item) ? <div className="shrink-0 whitespace-nowrap italic text-gray-700">{entryDate(item)}</div> : null}
+        </div>
+        {item.description ? <div className="mt-2">{richText(item.description)}</div> : null}
+      </div>;
+    })}
+  </div>;
+};
+
+const DeclineReasonModal = ({ open, applicantName, reasons, selectedReason, comment, onReasonChange, onCommentChange, onClose, onConfirm, submitting }) => {
+  if (!open) return null;
+  return <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4">
+    <div className="w-full max-w-4xl rounded-[26px] bg-white shadow-2xl">
+      <div className="flex items-start justify-between border-b p-6"><div><h2 className="text-2xl font-semibold">Decline application</h2><p className="mt-2 text-sm text-gray-500">Choose a reason for {applicantName}.</p></div><button onClick={onClose}><SvgIcon name="x" /></button></div>
+      <div className="p-6"><div className="grid gap-3 md:grid-cols-3">{reasons.map((reason) => <button key={reason} onClick={() => onReasonChange(reason)} className={cn('rounded-2xl border p-4 text-sm', selectedReason === reason ? 'border-[#2e66a6] bg-[#eef5fc]' : 'border-gray-200')}>{reason}</button>)}</div><textarea value={comment} onChange={(e) => onCommentChange(e.target.value)} rows={4} className="mt-5 w-full rounded-xl border p-3" placeholder="Additional comment..." /></div>
+      <div className="flex justify-end gap-3 border-t p-5"><button onClick={onClose} className="rounded-xl border px-5 py-2">Cancel</button><button disabled={!selectedReason || submitting} onClick={onConfirm} className="rounded-xl bg-red-600 px-5 py-2 font-semibold text-white disabled:opacity-50">{submitting ? 'Declining...' : 'Decline Application'}</button></div>
+    </div>
+  </div>;
+};
+
+const MessagePopup = ({ open, onClose, applicant, application }) => {
+  const [messages, setMessages] = useState([]);
+  const [text, setText] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
+  const bottomRef = useRef(null);
+  const currentUser = useMemo(() => { try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; } }, []);
+  const applicantId = applicant?._id;
+  const employerId = currentUser?._id || application?.employer?._id || application?.employer;
+  const conversationId = applicantId && employerId ? [String(applicantId), String(employerId)].sort().join('_') : '';
+  const token = localStorage.getItem('token');
+
+  const load = useCallback(async () => {
+    if (!open || !conversationId) return;
+    try { setLoading(true); setError(''); const res = await axios.get(`${API_HOST}/api/messages/conversation/${conversationId}`, { headers: { Authorization: `Bearer ${token}` } }); setMessages(res.data?.data || []); await axios.put(`${API_HOST}/api/messages/mark-read/${conversationId}`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(() => {}); }
+    catch (err) { setError(err.response?.data?.message || 'Failed to load messages.'); }
+    finally { setLoading(false); }
+  }, [open, conversationId, token]);
+
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 py-6">
-      <div className="absolute inset-0 bg-black/50" onClick={() => !isSubmitting && onClose?.()} aria-hidden="true" />
-      <div role="dialog" aria-modal="true" className="relative w-full max-w-4xl overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-[0_24px_80px_rgba(0,0,0,.22)]">
-        <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-5 sm:px-8">
-          <div>
-            <h2 className="text-2xl font-semibold text-slate-800">Do you want to decline this application?</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
-              Please choose one of the following reasons or leave an additional comment so the applicant receives feedback.
-              {applicantName ? ` Applicant: ${applicantName}.` : ''}
-            </p>
-          </div>
-          <button ref={closeButtonRef} type="button" onClick={onClose} disabled={isSubmitting} className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200" aria-label="Close decline modal">
-            <SvgIcon name="x" className="h-5 w-5" />
-          </button>
-        </div>
+  const send = async () => {
+    const content = text.trim(); if (!content || sending) return;
+    try { setSending(true); setError(''); const res = await axios.post(`${API_HOST}/api/messages/send`, { receiverId: applicantId, content, jobId: application?.job?._id, applicationId: application?._id }, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }); setText(''); if (res.data?.data) setMessages((prev) => [...prev, res.data.data]); else await load(); }
+    catch (err) { setError(err.response?.data?.message || 'Failed to send message.'); }
+    finally { setSending(false); }
+  };
 
-        <div className="px-6 py-6 sm:px-8">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            {reasons.map((reason) => (
-              <button
-                key={reason}
-                type="button"
-                onClick={() => onReasonChange(reason)}
-                disabled={isSubmitting}
-                className={cn(
-                  'min-h-[78px] rounded-2xl border px-4 py-4 text-center text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60',
-                  selectedReason === reason ? 'border-[#9db9df] bg-[#f4f8fd] text-gray-900 shadow-sm' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
-                )}
-              >
-                {reason}
-              </button>
-            ))}
-          </div>
-
-          <textarea
-            value={comment}
-            onChange={(e) => onCommentChange(e.target.value)}
-            disabled={isSubmitting}
-            rows={5}
-            placeholder="Leave a comment for the applicant..."
-            className="mt-6 w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60"
-          />
-
-          {!selectedReason ? <div className="mt-3 text-sm font-medium text-red-600">Please select a decline reason before continuing.</div> : null}
-        </div>
-
-        <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-5 sm:px-8">
-          <button type="button" onClick={onClose} disabled={isSubmitting} className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Cancel</button>
-          <button type="button" onClick={onConfirm} disabled={!selectedReason || isSubmitting} className="min-w-[170px] rounded-xl border border-red-600 bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:border-red-300 disabled:bg-red-300">
-            {isSubmitting ? 'Declining...' : 'Decline Application'}
-          </button>
-        </div>
-      </div>
+  return <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/45 p-4">
+    <div className="flex h-[78vh] w-full max-w-2xl flex-col overflow-hidden rounded-[24px] bg-white shadow-2xl">
+      <div className="flex items-center justify-between border-b px-5 py-4"><div><h2 className="font-semibold text-gray-900">Messages</h2><p className="text-sm text-gray-500">{applicant?.fullName || [applicant?.firstName, applicant?.lastName].filter(Boolean).join(' ')}</p></div><button onClick={onClose} className="rounded-full p-2 hover:bg-gray-100"><SvgIcon name="x" /></button></div>
+      <div className="flex-1 overflow-y-auto bg-gray-50 p-5">{loading ? <div className="flex justify-center py-10 text-[#2e66a6]"><Spinner /></div> : messages.length ? <div className="space-y-3">{messages.map((msg) => { const mine = String(msg.sender?._id || msg.sender) === String(employerId); return <div key={msg._id || `${msg.createdAt}-${msg.content}`} className={cn('flex', mine ? 'justify-end' : 'justify-start')}><div className={cn('max-w-[78%] rounded-2xl px-4 py-3 text-sm', mine ? 'rounded-br-md bg-[#2e66a6] text-white' : 'rounded-bl-md border bg-white text-gray-900')}><p>{msg.content}</p><div className={cn('mt-1 text-[10px]', mine ? 'text-blue-100' : 'text-gray-400')}>{formatDateTime(msg.createdAt).time}</div></div></div>; })}<div ref={bottomRef} /></div> : <div className="py-16 text-center text-sm text-gray-500">No messages yet. Start the conversation with this applicant.</div>}{error ? <div className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}</div>
+      <div className="border-t p-4"><div className="flex gap-2"><textarea value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} rows={2} placeholder="Type a message..." className="flex-1 resize-none rounded-xl border px-3 py-2 text-sm focus:border-[#2e66a6] focus:outline-none" /><button onClick={send} disabled={!text.trim() || sending} className="flex h-11 w-11 items-center justify-center self-end rounded-xl bg-[#2e66a6] text-white disabled:opacity-50">{sending ? <Spinner /> : <SvgIcon name="send" />}</button></div></div>
     </div>
-  );
-};
-
-const formatDate = (dateValue, withTime = false) => {
-  if (!dateValue) return '—';
-  const d = new Date(dateValue);
-  if (Number.isNaN(d.getTime())) return '—';
-  const options = withTime
-    ? { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }
-    : { year: 'numeric', month: 'long', day: 'numeric' };
-  return d.toLocaleDateString('en-PH', options);
-};
-
-const joinMonthYear = (month, year) =>
-  [month, year].map((item) => String(item || '').trim()).filter(Boolean).join(' ');
-
-const formatYearRange = (item = {}) => {
-  if (item.date) return item.date;
-
-  const start = joinMonthYear(item.startMonth, item.startYear) || item.startYear || item.startDate || '';
-  const end = item.isPresent
-    ? 'Present'
-    : joinMonthYear(item.endMonth, item.endYear || item.yearGraduated) || item.endYear || item.endDate || item.yearGraduated || '';
-
-  if (start && end) return `${start} - ${end}`;
-  return start || end || '';
-};
-
-const parseList = (value) => {
-  if (Array.isArray(value)) return value.map((x) => String(x || '').trim()).filter(Boolean);
-  return String(value || '')
-    .split(/\|\||[\n,•]+/g)
-    .map((x) => x.trim())
-    .filter(Boolean);
-};
-
-const display = (value, fallback = 'Not provided') => {
-  const v = String(value || '').trim();
-  return v || fallback;
-};
-
-const statusMeta = (statusRaw) => {
-  const s = String(statusRaw || 'pending').toLowerCase();
-  if (s === 'pending') return { label: 'Pending', cls: 'bg-amber-50 text-amber-800 border-amber-200' };
-  if (s === 'for interview') return { label: 'For Interview', cls: 'bg-[#eef5fc] text-[#2e66a6] border-[#b9d0e8]' };
-  if (s === 'hired') return { label: 'Hired', cls: 'bg-green-50 text-green-700 border-green-200' };
-  if (s === 'declined') return { label: 'Declined', cls: 'bg-red-50 text-red-700 border-red-200' };
-  if (s === 'vacancy full') return { label: 'Vacancy Full', cls: 'bg-orange-50 text-orange-700 border-orange-200' };
-  return { label: s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Pending', cls: 'bg-gray-50 text-gray-700 border-gray-200' };
-};
-
-const InfoCard = ({ icon, label, value }) => (
-  <div className="rounded-2xl border border-gray-200 bg-[#f8fafc] px-4 py-4 sm:px-5">
-    <div className="flex items-center gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eef5fc] text-[#2e66a6]">
-        <SvgIcon name={icon} className="h-4 w-4" />
-      </div>
-      <div className="min-w-0">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.13em] text-slate-500">{label}</div>
-        <div className="truncate text-sm font-medium text-slate-800" title={String(value)}>{value}</div>
-      </div>
-    </div>
-  </div>
-);
-
-const DetailField = ({ label, value }) => (
-  <div className="rounded-2xl border border-gray-200 bg-[#f8fafc] px-4 py-4 sm:px-5">
-    <div className={UI.label}>{label}</div>
-    <div className={UI.value}>{display(value, '—')}</div>
-  </div>
-);
-
-const TagList = ({ items, emptyText = 'No data added yet' }) => {
-  const list = parseList(items);
-  if (!list.length) return <p className="text-sm font-medium text-gray-400">{emptyText}</p>;
-  return (
-    <div className="flex flex-wrap gap-2">
-      {list.map((item, index) => (
-        <span key={`${item}-${index}`} className="rounded-md border border-[#d7e6f5] bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#2e66a6]">
-          {item}
-        </span>
-      ))}
-    </div>
-  );
-};
-
-const EmptyState = ({ text = 'No data added yet.' }) => (
-  <div className="rounded-xl border border-dashed border-gray-200 bg-white px-5 py-8 text-center text-sm font-medium text-gray-400">{text}</div>
-);
-
-const TimelineItem = ({ icon, title, subtitle, date, children, color = 'blue' }) => (
-  <div className="rounded-2xl border border-gray-200 bg-[#f8fafc] px-4 py-4 sm:px-5">
-    <div className="flex items-start gap-4">
-      <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', color === 'yellow' ? 'bg-yellow-50 text-yellow-600' : color === 'green' ? 'bg-green-50 text-green-600' : 'bg-[#eef5fc] text-[#2e66a6]')}>
-        <SvgIcon name={icon} className="h-5 w-5" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h4 className="text-sm font-semibold text-slate-800">{title}</h4>
-            {subtitle ? <p className="mt-1 text-xs font-medium text-gray-500">{subtitle}</p> : null}
-          </div>
-          {date ? <span className="shrink-0 text-xs font-semibold text-gray-500">{date}</span> : null}
-        </div>
-        {children ? <div className="mt-3 text-sm leading-6 text-gray-600">{children}</div> : null}
-      </div>
-    </div>
-  </div>
-);
-
-const MoreEntryList = ({ items = [], type = 'default', emptyText }) => {
-  const list = Array.isArray(items) ? items : [];
-  if (!list.length) return <EmptyState text={emptyText} />;
-
-  return (
-    <div className="space-y-3">
-      {list.map((item, index) => {
-        const title = item.title || item.organization || item.name || 'Untitled';
-        const subtitle = type === 'references'
-          ? [item.position, item.company].filter(Boolean).join(' · ')
-          : item.issuer || item.organization || item.role || '';
-        const date = item.date || formatYearRange(item);
-
-        return (
-          <TimelineItem key={item._id || `${title}-${index}`} icon={type === 'project' ? 'folder' : type === 'certification' ? 'check' : 'award'} title={title} subtitle={subtitle} date={date} color={type === 'certification' ? 'green' : 'yellow'}>
-            {item.description ? <p>{item.description}</p> : null}
-            {type === 'references' ? (
-              <div className="space-y-1">
-                {item.phone ? <p>{item.phone}</p> : null}
-                {item.email ? <p className="break-all text-[#2e66a6]">{item.email}</p> : null}
-              </div>
-            ) : null}
-          </TimelineItem>
-        );
-      })}
-    </div>
-  );
+  </div>;
 };
 
 const ApplicationDetails = () => {
   const navigate = useNavigate();
   const { applicationId } = useParams();
-
-  const [avatarBroken, setAvatarBroken] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [application, setApplication] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [application, setApplication] = useState(null);
+  const [activeTab, setActiveTab] = useState('resume');
   const [statusUpdating, setStatusUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState('personal');
-  const [isDeclineModalOpen, setIsDeclineModalOpen] = useState(false);
+  const [declineOpen, setDeclineOpen] = useState(false);
   const [declineReason, setDeclineReason] = useState('');
   const [declineComment, setDeclineComment] = useState('');
+  const [messageOpen, setMessageOpen] = useState(false);
+  const [avatarBroken, setAvatarBroken] = useState(false);
 
-  const tabs = useMemo(
-    () => [
-      { key: 'personal', label: 'Personal Information', icon: 'user' },
-      { key: 'overview', label: 'Overview', icon: 'globe' },
-      { key: 'experience', label: 'Experience', icon: 'briefcase' },
-      { key: 'achievements', label: 'Achievements', icon: 'award' },
-      { key: 'preferences', label: 'Preferences', icon: 'check' },
-    ],
-    []
-  );
-
-  const getAssetUrl = useCallback((url) => {
-    if (!url) return '';
-    if (String(url).startsWith('http')) return url;
-    return `${API_HOST}${url}`;
-  }, []);
-
-  const setToast = useCallback((setter, msg) => {
-    setter(msg);
-    window.setTimeout(() => setter(''), 3000);
-  }, []);
-
-  const fetchApplicationDetails = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError('');
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_HOST}/api/applications/${applicationId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.data.success) {
-        setApplication(response.data.application);
-        setAvatarBroken(false);
-      } else {
-        setError('Application not found');
-      }
-    } catch (err) {
-      console.error('Error fetching application details:', err);
-      if (err.response?.status === 401) {
-        localStorage.removeItem('token');
-        navigate('/employer/login');
-      } else if (err.response?.status === 403) {
-        setError('You are not authorized to view this application');
-      } else if (err.response?.status === 404) {
-        setError('Application not found');
-      } else {
-        setError('Failed to load application details');
-      }
-    } finally {
-      setLoading(false);
-    }
+  const fetchDetails = useCallback(async () => {
+    try { setLoading(true); setError(''); const res = await axios.get(`${API_HOST}/api/applications/${applicationId}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }); setApplication(res.data?.application || null); }
+    catch (err) { if (err.response?.status === 401) { localStorage.removeItem('token'); navigate('/employer/login'); } else setError(err.response?.data?.message || 'Failed to load application details.'); }
+    finally { setLoading(false); }
   }, [applicationId, navigate]);
+  useEffect(() => { fetchDetails(); }, [fetchDetails]);
 
-  useEffect(() => {
-    fetchApplicationDetails();
-  }, [fetchApplicationDetails]);
-
-  const resetDeclineModal = useCallback(() => {
-    setIsDeclineModalOpen(false);
-    setDeclineReason('');
-    setDeclineComment('');
-  }, []);
-
-  const handleStatusUpdate = async (newStatus, extraPayload = {}) => {
-    try {
-      setStatusUpdating(true);
-      setError('');
-      const token = localStorage.getItem('token');
-      const response = await axios.put(
-        `${API_HOST}/api/applications/${applicationId}/status`,
-        { status: newStatus, ...extraPayload },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (response.data.success) {
-        setApplication((prev) => ({
-          ...prev,
-          status: response.data.application?.status || newStatus,
-          reviewedAt: response.data.application?.reviewedAt || new Date().toISOString(),
-          declineReason: response.data.application?.declineReason || '',
-          declineComment: response.data.application?.declineComment || '',
-          declinedFrom: response.data.application?.declinedFrom || '',
-        }));
-        setToast(setSuccess, response.data?.vacancy?.isFull ? 'Status updated: Hired. The job post is now Filled because the vacancy is already full.' : newStatus === 'for interview' ? 'Status updated: For Interview' : newStatus === 'hired' ? 'Status updated: Hired' : 'Application marked as Declined with feedback saved.');
-      }
-    } catch (err) {
-      console.error('Error updating status:', err);
-      setToast(setError, err.response?.data?.message || 'Failed to update application status');
-    } finally {
-      setStatusUpdating(false);
-    }
+  const updateStatus = async (status, extra = {}) => {
+    try { setStatusUpdating(true); setError(''); const res = await axios.put(`${API_HOST}/api/applications/${applicationId}/status`, { status, ...extra }, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }); setApplication((prev) => ({ ...prev, ...(res.data?.application || {}), jobseeker: prev.jobseeker, employer: prev.employer })); setSuccess(res.data?.message || 'Application status updated.'); setTimeout(() => setSuccess(''), 3000); }
+    catch (err) { setError(err.response?.data?.message || 'Failed to update application status.'); }
+    finally { setStatusUpdating(false); }
   };
 
-  const handleConfirmDecline = async () => {
-    const reason = declineReason.trim();
-    if (!reason) {
-      setToast(setError, 'Please select a decline reason before declining the application.');
-      return;
-    }
+  if (loading) return <EmployerLayout><div className="mx-auto max-w-7xl px-4 py-10"><div className="flex justify-center rounded-2xl border bg-white py-16 text-[#2e66a6]"><Spinner /></div></div></EmployerLayout>;
+  if (!application) return <EmployerLayout><div className="mx-auto max-w-7xl px-4 py-10"><div className="rounded-2xl border bg-white p-10 text-center"><p>{error || 'Application not found.'}</p><Link to="/employer/applicants" className="mt-5 inline-block text-[#2e66a6]">Back to Applicants</Link></div></div></EmployerLayout>;
 
-    const declinedFrom = String(application?.status || '').toLowerCase() === 'for interview' ? 'forInterview' : 'applicants';
-    resetDeclineModal();
-    await handleStatusUpdate('declined', {
-      declineReason: reason,
-      declineComment: declineComment.trim(),
-      declinedFrom,
-    });
-  };
-
-  if (loading) {
-    return (
-      <EmployerLayout>
-        <div className={UI.page}>
-          <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center shadow-sm">
-            <Spinner className="mx-auto h-10 w-10 text-[#2e66a6]" />
-            <p className="mt-3 text-sm text-gray-600">Loading application details...</p>
-          </div>
-        </div>
-      </EmployerLayout>
-    );
-  }
-
-  if (error && !application) {
-    return (
-      <EmployerLayout>
-        <div className={UI.page}>
-          <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-800">Error</h3>
-            <p className="mt-2 text-sm text-gray-600">{error}</p>
-            <Link to="/employer/applicants" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#2e66a6] px-5 py-3 shadow-sm hover:bg-[#25578e] text-sm font-semibold text-white">
-              <SvgIcon name="back" /> Back to Applicants
-            </Link>
-          </div>
-        </div>
-      </EmployerLayout>
-    );
-  }
-
-  const jobseeker = application?.jobseeker || {};
-  const profile = jobseeker?.jobSeekerProfile || {};
-  const status = statusMeta(application?.status);
-  const currentStatus = String(application?.status || 'pending').toLowerCase();
+  const user = application.jobseeker || {};
+  const profile = user.jobSeekerProfile || {};
+  const name = user.fullName || [user.firstName, user.middleName, user.lastName, user.extensionName].filter(Boolean).join(' ') || 'Applicant';
+  const currentStatus = String(application.status || 'pending').toLowerCase();
+  const image = user.profileImage ? (String(user.profileImage).startsWith('http') ? user.profileImage : `${API_HOST}${user.profileImage}`) : '';
+  const education = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
+  const work = Array.isArray(profile.workExperiences) ? profile.workExperiences : [];
+  const skills = [...parseSkills(profile.technicalSkills), ...parseSkills(profile.softSkills)];
+  const salary = [profile.minimumSalary, profile.maximumSalary].filter(Boolean).join(' - ');
+  const activities = Array.isArray(application.activityHistory) && application.activityHistory.length
+    ? [...application.activityHistory].sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt))
+    : [
+        application.reviewedAt ? { type: 'reviewed', title: 'Application reviewed', description: 'The employer reviewed this application.', occurredAt: application.reviewedAt } : null,
+        { type: 'submitted', title: 'Application received', description: `${name} applied for ${application.job?.title || 'this position'}.`, occurredAt: application.appliedAt || application.createdAt },
+      ].filter(Boolean);
   const declineReasons = currentStatus === 'for interview' ? FOR_INTERVIEW_DECLINE_REASONS : APPLICANTS_DECLINE_REASONS;
-  const applicantName = display(jobseeker.fullName || [jobseeker.firstName, jobseeker.middleName, jobseeker.lastName, jobseeker.extensionName].filter(Boolean).join(' '), 'Applicant');
-  const applicantEmail = display(jobseeker.email, 'No email');
-  const initials = (applicantName.trim()[0] || 'A').toUpperCase();
-  const profileImage = jobseeker.profileImage ? getAssetUrl(jobseeker.profileImage) : '';
-  const classOfText = profile.yearGraduated ? `CLASS OF ${profile.yearGraduated}` : 'YEAR NOT SET';
-  const address = display(profile.address, 'Address not provided');
-  const resumeUrlRaw = application?.appliedResume?.url || profile?.verificationDocs?.cv?.url || profile?.resumeUrl || '';
-  const resumeFileName = application?.appliedResume?.filename || profile?.verificationDocs?.cv?.filename || 'Resume';
-  const resumeUrl = resumeUrlRaw ? getAssetUrl(resumeUrlRaw) : '';
 
-  const educationEntries = Array.isArray(profile.educationEntries) && profile.educationEntries.length
-    ? profile.educationEntries
-    : [{ level: profile.educationalAttainment || 'Education', school: profile.campus, campus: profile.campus, endYear: profile.yearGraduated }].filter((item) => item.school || item.campus || item.endYear);
-
-  const downloadResume = async () => {
-    const resumeData = normalizeUserToResumeData({
-      userData: jobseeker,
-      profile,
-      workExperiences: profile.workExperiences || [],
-    });
-
-    const downloaded = await openResumePrintWindow(resumeData);
-
-    if (!downloaded) {
-      setToast(setError, 'Failed to download applicant CV. Please check your internet connection and try again.');
-    }
-  };
-
-  return (
-    <EmployerLayout>
-      <div className={UI.page}>
-        <div className="overflow-hidden border border-gray-200 bg-white sm:rounded-[24px]">
-          <div className="border-b border-gray-200 bg-white px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="min-w-0">
-                <Link to="/employer/applicants" className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 hover:text-[#2e66a6]">
-                  <SvgIcon name="back" className="h-3.5 w-3.5" /> Applying for
-                </Link>
-                <h1 className="mt-4 text-[24px] font-semibold leading-tight tracking-[-0.01em] text-slate-900 sm:mt-5 sm:text-[32px]">{display(application?.job?.title, 'Job Position')}</h1>
-                <div className="mt-3 flex flex-col items-start gap-1.5 text-sm font-medium text-gray-600">
-                  <span className="inline-flex items-center gap-1.5"><SvgIcon name="briefcase" className="h-3.5 w-3.5" />{display(application?.job?.companyName, 'Company')}</span>
-                  <span className="inline-flex items-center gap-1.5"><SvgIcon name="location" className="h-3.5 w-3.5" />{display(application?.job?.location, 'Location not specified')}</span>
-                  {application?.job?._id ? (
-                    <Link
-                      to={`/employer/manage-jobs/${application.job._id}/view`}
-                      state={{
-                        from: 'applicationDetails',
-                        backPath: `/employer/application/${applicationId}`,
-                        backLabel: 'Application Details',
-                      }}
-                      className="inline-flex items-center gap-1.5 text-[#2e66a6] hover:underline"
-                    >
-                      <SvgIcon name="folder" className="h-3.5 w-3.5" />
-                      View Job Description
-                    </Link>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center lg:justify-end">
-                <div className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-[#f8fafc] px-3 py-2 text-sm font-semibold text-gray-700 sm:justify-start">
-                  <SvgIcon name="calendar" className="h-3.5 w-3.5" /> Applied {formatDate(application?.appliedAt)}
-                </div>
-                {currentStatus === 'pending' ? (
-                  <button type="button" onClick={() => handleStatusUpdate('for interview')} disabled={statusUpdating} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white shadow-none hover:bg-[#25578e] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
-                    {statusUpdating ? <Spinner /> : <SvgIcon name="calendar" />} Move to Interview
-                  </button>
-                ) : null}
-
-                {currentStatus === 'for interview' ? (
-                  <button type="button" onClick={() => handleStatusUpdate('hired')} disabled={statusUpdating} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white shadow-none hover:bg-[#25578e] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
-                    {statusUpdating ? <Spinner /> : <SvgIcon name="check" />} Hired
-                  </button>
-                ) : null}
-
-                {['pending', 'for interview'].includes(currentStatus) ? (
-                  <button type="button" onClick={() => setIsDeclineModalOpen(true)} disabled={statusUpdating} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 text-sm font-semibold text-white shadow-none hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
-                    <SvgIcon name="x" /> Declined
-                  </button>
-                ) : null}
-              </div>
+  return <EmployerLayout>
+    <div className="mx-auto max-w-[1380px] px-3 py-7 sm:px-5">
+      <Link to="/employer/applicants" className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-[#174b91]"><SvgIcon name="back" className="h-4 w-4" /> Back to Applicants</Link>
+      {error ? <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}{success ? <div className="mb-4 rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-700">{success}</div> : null}
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_330px]">
+        <main className="overflow-hidden rounded-[20px] border border-[#d8e2ee] bg-white">
+          <div className="flex flex-col gap-5 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 items-center gap-5">
+              <div className="h-[108px] w-[108px] shrink-0 overflow-hidden rounded-full bg-[#eef5fc]">{image && !avatarBroken ? <img src={image} alt={name} onError={() => setAvatarBroken(true)} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-[#2e66a6]">{name[0]}</div>}</div>
+              <div className="min-w-0"><div className="flex flex-wrap items-center gap-3"><h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">{name}</h1><span className="rounded-md bg-green-50 px-2 py-1 text-xs font-semibold text-green-700">{currentStatus}</span></div><p className="mt-2 text-sm text-gray-500">Applied for <span className="font-semibold text-[#174b91]">{application.job?.title || 'Job Position'}</span></p><p className="mt-2 flex items-center gap-2 text-sm text-gray-500"><SvgIcon name="calendar" className="h-4 w-4" /> Applied on {formatDate(application.appliedAt || application.createdAt)}</p></div>
             </div>
+            <div className="rounded-xl border border-[#d8e2ee] px-5 py-3 text-center"><div className="text-[11px] text-gray-500">JOBSEEKER LEVEL</div><div className="mt-1 text-lg font-bold text-[#174b91]">{profile.jobseekerLevel || profile.level || 'Applicant'}</div></div>
           </div>
+          <div className="flex border-t border-[#d8e2ee] px-5 sm:px-7"><button onClick={() => setActiveTab('resume')} className={cn('relative flex h-14 items-center gap-2 px-3 text-sm font-semibold', activeTab === 'resume' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="resume" className="h-4 w-4" /> Resume<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'resume' ? 'bg-[#174b91]' : '')} /></button><button onClick={() => setActiveTab('activity')} className={cn('relative flex h-14 items-center gap-2 px-5 text-sm font-semibold', activeTab === 'activity' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="activity" className="h-4 w-4" /> Activity<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'activity' ? 'bg-[#174b91]' : '')} /></button></div>
 
-          <div className="bg-[#f8fafc] px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
-            {error ? <div className="mb-4"><Alert type="error" onClose={() => setError('')}>{error}</Alert></div> : null}
-            {success ? <div className="mb-4"><Alert type="success" onClose={() => setSuccess('')}>{success}</Alert></div> : null}
+          {activeTab === 'resume' ? <div className="border-t border-[#d8e2ee] px-6 pb-8 pt-4 sm:px-10 lg:px-12">
+            <Section title="Basic Information"><div className="pb-8 pt-5 text-center"><div className="flex items-start justify-center gap-8"><div className="min-w-0 flex-1"><h2 className="font-serif text-[26px] font-bold uppercase leading-tight tracking-[0.22em] text-[#111827] sm:text-[34px]">{name}</h2><div className="mt-2 font-serif text-[13px]">{profile.address || 'Address not provided'}</div><div className="mt-1 font-serif text-[13px]">{[user.email, profile.phoneNumber].filter(Boolean).join(' • ')}</div><div className="mt-2 font-serif text-[13px] italic text-gray-500">{[profile.campus, profile.course, profile.yearGraduated ? `Class of ${profile.yearGraduated}` : ''].filter(Boolean).join(', ')}</div></div><div className="hidden h-[124px] w-[124px] shrink-0 overflow-hidden bg-[#1f2430] sm:block">{image && !avatarBroken ? <img src={image} alt={name} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-white">{name[0]}</div>}</div></div></div></Section>
+            <Section title="Objective">{profile.aboutMe ? <div className="pb-5 pt-2 text-justify font-serif text-[13px] leading-5 text-gray-900">{richText(profile.aboutMe)}</div> : <EmptyLine>No objective added yet.</EmptyLine>}</Section>
+            <Section title="Availability & Preferences"><div className="grid grid-cols-1 gap-x-12 gap-y-4 pb-5 pt-2 font-serif text-[13px] leading-5 md:grid-cols-3"><div className="space-y-1"><div><b>Preferred Work Mode:</b> {profile.preferredWorkMode || 'Not provided'}</div><div><b>Employment Type:</b> {profile.employmentType || 'Not provided'}</div><div><b>Willing to Relocate:</b> {profile.willingToRelocate || 'Not provided'}</div><div><b>How Soon Can Start:</b> {profile.howSoonCanYouStart || 'Not provided'}</div><div><b>Experience:</b> {profile.experience || profile.whatHaveYouDone || 'Not provided'}</div></div><div className="space-y-1"><div><b>Preferred Language:</b> {profile.preferredLanguage || 'Not provided'}</div><div><b>Educational Attainment:</b> {profile.educationalAttainment || 'Not provided'}</div><div><b>Double Degree:</b> {profile.studyField || profile.course || 'Not provided'}</div><div><b>Salary:</b> {salary || 'Not provided'}</div><div><b>Nationality:</b> {profile.nationality || 'Not provided'}</div></div><div className="space-y-1"><div><b>Height:</b> {profile.height || 'Not provided'}</div><div><b>Weight:</b> {profile.weight || 'Not provided'}</div><div><b>Gender:</b> {profile.gender || 'Not provided'}</div><div><b>Civil Status:</b> {profile.civilStatus || 'Not provided'}</div><div><b>Birthday:</b> {profile.birthday || 'Not provided'}</div></div></div></Section>
+            <Section title="Work Experience">{work.length ? <div className="space-y-4 pb-5 pt-2 font-serif text-[13px] leading-5">{work.map((item, index) => <div key={item._id || index} className="py-1"><div className="flex flex-col justify-between gap-1 sm:flex-row"><div><div className="font-bold">{item.companyName || 'Company Name'}</div><div className="italic">{item.positionTitle || 'Position'}</div></div><div className="whitespace-nowrap italic text-gray-700">{entryDate(item)}</div></div>{item.description ? <div className="mt-2">{richText(item.description)}</div> : null}</div>)}</div> : <EmptyLine>No work experience added yet.</EmptyLine>}</Section>
+            <Section title="Skills">{skills.length ? <div className="flex flex-wrap gap-2 pb-5 pt-2 font-serif text-[13px]">{skills.map((item, index) => <span key={`${item.skill}-${index}`} className="inline-flex overflow-hidden whitespace-nowrap rounded-full border border-[#d8e2ee]"><span className="px-3 py-1">{item.skill}</span><span className={cn('border-l px-2.5 py-1 font-semibold', PROFICIENCY_STYLES[item.proficiency] || PROFICIENCY_STYLES.Basic)}>{item.proficiency}</span></span>)}</div> : <EmptyLine>No skills added yet.</EmptyLine>}</Section>
+            <Section title="Education">{education.length ? <div className="space-y-3 pb-5 pt-2 font-serif text-[13px] leading-5">{education.map((item, index) => <div key={item._id || index} className="flex flex-col justify-between gap-1 py-1 sm:flex-row"><div><div className="font-bold">{item.school || item.campus || 'School / University'}</div><div className="italic">{item.educationalAttainment || item.level || 'Educational Attainment'}</div>{item.description ? <div className="mt-1">{richText(item.description)}</div> : null}</div><div className="whitespace-nowrap italic text-gray-700">{entryDate(item)}</div></div>)}</div> : <EmptyLine>No education added yet.</EmptyLine>}</Section>
+            <Section title="Certifications"><ProfileEntries items={profile.certifications || []} /></Section><Section title="Projects"><ProfileEntries items={profile.projects || []} /></Section><Section title="Seminars and Trainings"><ProfileEntries items={profile.seminars || []} /></Section><Section title="Awards and Achievements"><ProfileEntries items={profile.awards || []} /></Section><Section title="Affiliations"><ProfileEntries items={profile.affiliations || []} /></Section><Section title="Co-Curricular Activities"><ProfileEntries items={profile.cocurricular || []} /></Section><Section title="References"><ProfileEntries items={profile.references || []} type="references" /></Section>
+          </div> : <div className="border-t border-[#d8e2ee] px-6 py-8 sm:px-10"><div className="relative ml-3 border-l-2 border-gray-200 pl-8">{activities.map((item, index) => { const dt = formatDateTime(item.occurredAt || item.createdAt); return <div key={item._id || `${item.type}-${index}`} className="relative pb-10 last:pb-0"><div className="absolute -left-[43px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-4 border-white bg-[#2e66a6] shadow"><SvgIcon name={item.type === 'message' ? 'message' : item.type === 'submitted' ? 'resume' : 'activity'} className="h-3 w-3 text-white" /></div><h3 className="text-lg font-semibold text-gray-900">{item.title || 'Application updated'}</h3><p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">{item.description || 'The application record was updated.'}</p><div className="mt-2 text-xs font-bold tracking-wide text-gray-500">{dt.date}{dt.time ? ` · ${dt.time}` : ''}</div></div>; })}</div></div>}
+        </main>
 
-            <div className="flex flex-col gap-5 rounded-[20px] border border-gray-200 bg-white p-4 shadow-none sm:p-5 md:flex-row md:items-center md:justify-between">
-              <div className="flex min-w-0 flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
-                <div className="h-[88px] w-[88px] shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-[#eef5fc] shadow-none sm:h-[96px] sm:w-[96px]">
-                  {profileImage && !avatarBroken ? (
-                    <img src={profileImage} alt={applicantName} className="h-full w-full object-cover" onError={() => setAvatarBroken(true)} />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-3xl font-semibold text-[#2e66a6]">{initials}</div>
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start sm:gap-3">
-                    <h2 className="max-w-full break-words text-[20px] font-semibold leading-tight tracking-[-0.01em] text-slate-900 sm:text-[25px]" title={applicantName}>{applicantName}</h2>
-                    <span className="rounded-md bg-[#eef5fc] px-2.5 py-1 text-[10px] font-semibold uppercase text-[#2e66a6]">{classOfText}</span>
-                    <span className={cn('rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase', status.cls)}>{status.label}</span>
-                  </div>
-                  <div className="mt-3 flex flex-col items-center gap-1.5 text-xs font-medium text-gray-600 sm:items-start sm:text-sm md:flex-row md:flex-wrap md:gap-x-5 md:gap-y-2">
-                    <span className="inline-flex items-center gap-1.5"><SvgIcon name="school" className="h-3.5 w-3.5" />{display(profile.course, 'Course not provided')}</span>
-                    <span className="inline-flex items-center gap-1.5"><SvgIcon name="mail" className="h-3.5 w-3.5" />{applicantEmail}</span>
-                    <span className="inline-flex items-center gap-1.5"><SvgIcon name="phone" className="h-3.5 w-3.5" />{display(profile.phoneNumber, 'No phone')}</span>
-                    <span className="inline-flex items-center gap-1.5"><SvgIcon name="location" className="h-3.5 w-3.5" />{address}</span>
-                  </div>
-                </div>
-              </div>
-
-              <button type="button" onClick={downloadResume} disabled={!resumeUrl} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-5 text-sm font-semibold text-slate-800 shadow-none hover:border-[#2e66a6] hover:bg-[#eef5fc] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto">
-                <SvgIcon name="download" /> {resumeUrl ? 'Download CV' : 'No CV'}
-              </button>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-200 bg-white px-4 sm:px-6 lg:px-8">
-            <div className="-mx-4 flex gap-4 overflow-x-auto px-4 sm:mx-0 sm:gap-6 sm:px-0" role="tablist" aria-label="Applicant profile sections">
-              {tabs.map((tab) => {
-                const active = activeTab === tab.key;
-                return (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => setActiveTab(tab.key)}
-                    className={cn('relative inline-flex h-14 shrink-0 items-center gap-2 px-1 text-xs font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 sm:text-sm', active ? 'text-[#2e66a6]' : 'text-gray-500 hover:text-gray-700')}
-                  >
-                    <SvgIcon name={tab.icon} className="h-3.5 w-3.5" />
-                    {tab.label}
-                    <span className={cn('absolute bottom-0 left-0 right-0 h-[3px] rounded-full', active ? 'bg-[#2e66a6]' : 'bg-transparent')} />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="border-t border-gray-200 bg-white px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-            {activeTab === 'personal' ? (
-              <section className="space-y-5">
-                <h3 className="text-lg font-semibold tracking-[-0.005em] text-slate-900">Personal Information</h3>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <DetailField label="Birthday" value={profile.birthday ? formatDate(profile.birthday) : ''} />
-                  <DetailField label="Civil Status" value={profile.civilStatus} />
-                  <DetailField label="Height" value={profile.height} />
-                  <DetailField label="Weight" value={profile.weight} />
-                  <DetailField label="Nationality" value={profile.nationality} />
-                  <DetailField label="Gender" value={profile.gender} />
-                </div>
-              </section>
-            ) : null}
-
-            {activeTab === 'overview' ? (
-              <section className="space-y-7">
-                <div>
-                  <h3 className="text-lg font-semibold tracking-[-0.005em] text-slate-900">Objective</h3>
-                  <p className="mt-3 text-sm leading-7 text-gray-600">{display(profile.aboutMe, 'No objective added yet.')}</p>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold tracking-[-0.005em] text-slate-900">Educational Background</h3>
-                  <div className="mt-4 space-y-3">
-                    {educationEntries.length ? educationEntries.map((edu, index) => (
-                      <TimelineItem key={`${edu.level || edu.school || edu.campus}-${index}`} icon="school" title={display(edu.level || edu.educationalAttainment, 'Education')} subtitle={display(edu.school || edu.campus, '')} date={formatYearRange(edu)}>
-                        {edu.description ? <p>{edu.description}</p> : null}
-                      </TimelineItem>
-                    )) : <EmptyState text="No educational background added yet." />}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold tracking-[-0.005em] text-slate-900">Skills</h3>
-                  <div className="mt-4">
-                    <TagList
-                      items={[...parseList(profile.technicalSkills), ...parseList(profile.softSkills)]}
-                      emptyText="No skills added."
-                    />
-                  </div>
-                </div>
-              </section>
-            ) : null}
-
-            {activeTab === 'experience' ? (
-              <section className="space-y-7">
-                <div>
-                  <h3 className="text-lg font-semibold tracking-[-0.005em] text-slate-900">Work Experience</h3>
-                  <div className="mt-4 space-y-3">
-                    {Array.isArray(profile.workExperiences) && profile.workExperiences.length ? profile.workExperiences.map((exp, index) => (
-                      <TimelineItem key={exp._id || `${exp.companyName}-${index}`} icon="briefcase" title={display(exp.positionTitle, 'Work Experience')} subtitle={display(exp.companyName, '')} date={exp.isPresent ? `${formatDate(exp.startDate)} - Present` : `${formatDate(exp.startDate)} - ${formatDate(exp.endDate)}`}>
-                        {exp.description ? <p>{exp.description}</p> : null}
-                      </TimelineItem>
-                    )) : <EmptyState text="No work experience added yet." />}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold tracking-[-0.005em] text-slate-900">Projects</h3>
-                  <div className="mt-4"><MoreEntryList items={profile.projects} type="project" emptyText="No projects added yet." /></div>
-                </div>
-              </section>
-            ) : null}
-
-            {activeTab === 'achievements' ? (
-              <section className="space-y-7">
-                <div>
-                  <h3 className="text-lg font-semibold tracking-[-0.005em] text-slate-900">Awards &amp; Achievements</h3>
-                  <div className="mt-4"><MoreEntryList items={profile.awards} type="award" emptyText="No awards and achievements added yet." /></div>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold tracking-[-0.005em] text-slate-900">Seminars &amp; Certifications</h3>
-                  <div className="mt-4 space-y-3">
-                    <MoreEntryList items={profile.certifications} type="certification" emptyText="No certifications added yet." />
-                    <MoreEntryList items={profile.seminars} type="certification" emptyText="No seminars added yet." />
-                  </div>
-                </div>
-              </section>
-            ) : null}
-
-            {activeTab === 'preferences' ? (
-              <section className="space-y-5">
-                <h3 className="text-lg font-semibold tracking-[-0.005em] text-slate-900">Availability &amp; Preferences</h3>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <InfoCard icon="globe" label="Preferred Language" value={display(profile.preferredLanguage)} />
-                  <InfoCard icon="briefcase" label="Experience" value={display(profile.whatHaveYouDone)} />
-                  <InfoCard icon="folder" label="Preferred Work Mode" value={display(profile.preferredWorkMode)} />
-                  <InfoCard icon="briefcase" label="Employment Type" value={display(profile.employmentType)} />
-                  <InfoCard icon="school" label="Educational Attainment" value={display(profile.educationalAttainment)} />
-                  <InfoCard icon="location" label="Willing to Relocate" value={display(profile.willingToRelocate)} />
-                  <InfoCard icon="calendar" label="How Soon Can You Start" value={display(profile.howSoonCanYouStart)} />
-                </div>
-              </section>
-            ) : null}
-          </div>
-        </div>
-
-        <DeclineReasonModal
-          open={isDeclineModalOpen}
-          applicantName={applicantName}
-          reasons={declineReasons}
-          selectedReason={declineReason}
-          comment={declineComment}
-          onReasonChange={setDeclineReason}
-          onCommentChange={setDeclineComment}
-          onClose={resetDeclineModal}
-          onConfirm={handleConfirmDecline}
-          isSubmitting={statusUpdating}
-        />
+        <aside className="space-y-5"><div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5"><h2 className="text-lg font-bold">Application Summary</h2><div className="mt-5 space-y-4 text-sm"><div className="border-b pb-4"><div className="text-gray-500">Status</div><div className="mt-1 text-lg font-bold capitalize text-[#174b91]">{currentStatus}</div></div><div><div className="text-gray-500">Education</div><div className="mt-1 font-semibold">{profile.educationalAttainment || profile.course || 'Not provided'}</div></div><div><div className="text-gray-500">Experience</div><div className="mt-1 font-semibold">{profile.experience || profile.whatHaveYouDone || 'Not provided'}</div></div><div><div className="text-gray-500">Skills</div><div className="mt-1 font-semibold">{skills.length ? `${skills.length} listed skills` : 'Not provided'}</div></div></div></div>
+          <div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5"><h2 className="text-lg font-bold">Employer Actions</h2><div className="mt-5 space-y-3">{currentStatus === 'pending' ? <button onClick={() => updateStatus('for interview')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{statusUpdating ? <Spinner /> : <SvgIcon name="calendar" />} Move to Interview</button> : null}{currentStatus === 'for interview' ? <button onClick={() => updateStatus('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{statusUpdating ? <Spinner /> : <SvgIcon name="check" />} Hired</button> : null}<button onClick={() => setMessageOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91]"><SvgIcon name="message" /> Send Message</button>{['pending', 'for interview'].includes(currentStatus) ? <button onClick={() => setDeclineOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400 px-4 py-3 text-sm font-semibold text-red-600"><SvgIcon name="x" /> Decline Application</button> : null}</div></div></aside>
       </div>
-    </EmployerLayout>
-  );
+      <DeclineReasonModal open={declineOpen} applicantName={name} reasons={declineReasons} selectedReason={declineReason} comment={declineComment} onReasonChange={setDeclineReason} onCommentChange={setDeclineComment} onClose={() => { setDeclineOpen(false); setDeclineReason(''); setDeclineComment(''); }} onConfirm={async () => { const from = currentStatus === 'for interview' ? 'forInterview' : 'applicants'; setDeclineOpen(false); await updateStatus('declined', { declineReason, declineComment, declinedFrom: from }); }} submitting={statusUpdating} />
+      <MessagePopup open={messageOpen} onClose={() => setMessageOpen(false)} applicant={user} application={application} />
+    </div>
+  </EmployerLayout>;
 };
 
 export default ApplicationDetails;

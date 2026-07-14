@@ -534,7 +534,16 @@ exports.applyForJob = async (req, res) => {
         mimeType: profileCv.mimeType || '',
         fileSize: Number(profileCv.fileSize || 0),
         uploadedAt: profileCv.uploadedAt || new Date(),
-      }
+      },
+      activityHistory: [{
+        type: 'submitted',
+        title: 'Application received',
+        description: `${buildUserDisplayName(jobseeker, 'Applicant')} applied for ${job.title || 'this position'}.`,
+        fromStatus: '',
+        toStatus: 'pending',
+        occurredAt: new Date(),
+        performedBy: req.user._id
+      }]
     });
 
     await application.save();
@@ -1813,6 +1822,45 @@ exports.updateApplicationStatus = async (req, res) => {
 
     if (notes) application.notes = notes;
 
+    if (oldStatus !== nextStatus) {
+      const statusLabels = {
+        pending: 'Pending',
+        'for interview': 'For Interview',
+        hired: 'Hired',
+        declined: 'Declined',
+        withdrawn: 'Withdrawn',
+        cancelled: 'Cancelled',
+        'vacancy full': 'Vacancy Full'
+      };
+      const activityType = nextStatus === 'for interview'
+        ? 'interview'
+        : nextStatus === 'hired'
+          ? 'hired'
+          : nextStatus === 'declined'
+            ? 'declined'
+            : 'status_changed';
+      const title = nextStatus === 'for interview'
+        ? 'Moved to interview'
+        : nextStatus === 'hired'
+          ? 'Applicant hired'
+          : nextStatus === 'declined'
+            ? 'Application declined'
+            : 'Application status updated';
+      const description = nextStatus === 'declined'
+        ? [declineReason, declineComment].filter(Boolean).join(' — ')
+        : `Status changed from ${statusLabels[oldStatus] || oldStatus} to ${statusLabels[nextStatus] || nextStatus}.`;
+
+      application.activityHistory.push({
+        type: activityType,
+        title,
+        description,
+        fromStatus: oldStatus,
+        toStatus: nextStatus,
+        occurredAt: new Date(),
+        performedBy: req.user._id
+      });
+    }
+
     if (nextStatus === 'hired' && oldStatus !== 'hired') {
       const vacancyLimit = Number(application.job?.vacancies || 0);
       if (Number.isFinite(vacancyLimit) && vacancyLimit > 0) {
@@ -1991,8 +2039,19 @@ exports.getApplicationDetails = async (req, res) => {
 
       // ✅ NEW: mark application as viewed when employer opens details
       if (!application.isViewedByEmployer) {
+        const viewedAt = new Date();
         application.isViewedByEmployer = true;
-        application.viewedAt = new Date();
+        application.viewedAt = viewedAt;
+        application.reviewedAt = application.reviewedAt || viewedAt;
+        application.activityHistory.push({
+          type: 'reviewed',
+          title: 'Application reviewed',
+          description: 'The employer opened and reviewed the applicant profile and resume.',
+          fromStatus: application.status || '',
+          toStatus: application.status || '',
+          occurredAt: viewedAt,
+          performedBy: req.user._id
+        });
         await application.save();
       }
     }

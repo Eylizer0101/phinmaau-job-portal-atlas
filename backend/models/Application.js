@@ -94,6 +94,25 @@ const appliedResumeSchema = new mongoose.Schema(
   { _id: false }
 );
 
+
+const applicationActivitySchema = new mongoose.Schema(
+  {
+    type: {
+      type: String,
+      enum: ['submitted', 'reviewed', 'status_changed', 'interview', 'hired', 'declined', 'hold', 'message', 'other'],
+      default: 'other',
+      trim: true,
+    },
+    title: { type: String, default: '', trim: true },
+    description: { type: String, default: '', trim: true },
+    fromStatus: { type: String, default: '', trim: true },
+    toStatus: { type: String, default: '', trim: true },
+    occurredAt: { type: Date, default: Date.now },
+    performedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  },
+  { _id: true }
+);
+
 const applicationSchema = new mongoose.Schema({
     job: {
         type: mongoose.Schema.Types.ObjectId,
@@ -179,6 +198,12 @@ const applicationSchema = new mongoose.Schema({
     interviewSchedule: {
         type: interviewScheduleSchema,
         default: () => ({})
+    },
+
+    // Read-only employer activity timeline
+    activityHistory: {
+        type: [applicationActivitySchema],
+        default: []
     }
 }, {
     timestamps: true
