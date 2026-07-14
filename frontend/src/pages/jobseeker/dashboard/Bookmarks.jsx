@@ -60,7 +60,7 @@ const UI = {
   btnSecondary: 'bg-[#FFFFFF] text-[#000000] border border-black/20 hover:bg-black/5',
   btnGhost: 'bg-transparent text-black/70 hover:bg-black/5',
   chip:
-    'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border border-black/10 bg-[#FFFFFF] text-black/80',
+    'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-[#FFFFFF] text-black/80',
   alertBase: 'rounded-2xl border p-4 shadow-sm',
   alertError: 'bg-black/5 border-black/15 text-[#000000]',
   alertSuccess: 'bg-[#2e66a6]/10 border-[#2e66a6]/20 text-[#000000]',
