@@ -43,8 +43,8 @@ const UI = {
   spinner: 'animate-spin motion-reduce:animate-none',
 };
 
-const ACTIVE_STATUSES = ['pending', 'for interview', 'hired'];
-const INACTIVE_STATUSES = ['declined', 'withdrawn', 'cancelled', 'vacancy full'];
+const ACTIVE_STATUSES = ['pending', 'for interview', 'hired', 'vacancy full'];
+const INACTIVE_STATUSES = ['declined', 'withdrawn', 'cancelled'];
 const REACTIVATABLE_STATUSES = ['withdrawn', 'cancelled'];
 
 const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
@@ -385,9 +385,11 @@ const MyApplications = () => {
 
     return {
       tab: tabParam === 'inactive' ? 'inactive' : 'active',
-      status: ['all', 'pending', 'for interview', 'hired', 'declined', 'vacancy full'].includes(statusParam)
-        ? statusParam
-        : 'all',
+      status: statusParam === 'vacancy full'
+        ? 'pending'
+        : ['all', 'pending', 'for interview', 'hired', 'declined'].includes(statusParam)
+          ? statusParam
+          : 'all',
     };
   }, [location.search]);
 
@@ -598,11 +600,10 @@ const MyApplications = () => {
     return {
       active: activeApps.length,
       inactive: inactiveApps.length,
-      pending: activeApps.filter((app) => (app.status || '').toLowerCase() === 'pending').length,
+      pending: activeApps.filter((app) => ['pending', 'vacancy full'].includes((app.status || '').toLowerCase())).length,
       forInterview: activeApps.filter((app) => (app.status || '').toLowerCase() === 'for interview').length,
       hired: activeApps.filter((app) => (app.status || '').toLowerCase() === 'hired').length,
       declined: inactiveApps.filter((app) => (app.status || '').toLowerCase() === 'declined').length,
-      vacancyFull: inactiveApps.filter((app) => (app.status || '').toLowerCase() === 'vacancy full').length,
     };
   }, [applications]);
 
@@ -612,7 +613,6 @@ const MyApplications = () => {
       { key: 'for interview', label: 'For Interview', count: counts.forInterview, icon: 'star' },
       { key: 'hired', label: 'Hired', count: counts.hired, icon: 'checkCircle' },
       { key: 'declined', label: 'Declined', count: counts.declined, icon: 'timesCircle' },
-    { key: 'vacancy full', label: 'Vacancy Full', count: counts.vacancyFull, icon: 'timesCircle' },
     ],
     [counts]
   );
@@ -620,10 +620,6 @@ const MyApplications = () => {
   const filteredApplications = useMemo(() => {
     if (statusFilter === 'declined') {
       return applications.filter((app) => (app.status || '').toLowerCase() === 'declined');
-    }
-
-    if (statusFilter === 'vacancy full') {
-      return applications.filter((app) => (app.status || '').toLowerCase() === 'vacancy full');
     }
 
     if (mainTab === 'inactive') {
@@ -639,12 +635,17 @@ const MyApplications = () => {
 
     if (statusFilter === 'all') return activeApps;
 
+    if (statusFilter === 'pending') {
+      return activeApps.filter((app) =>
+        ['pending', 'vacancy full'].includes((app.status || '').toLowerCase())
+      );
+    }
+
     return activeApps.filter((app) => (app.status || '').toLowerCase() === statusFilter);
   }, [applications, mainTab, statusFilter]);
 
   const filterLabel = useMemo(() => {
     if (statusFilter === 'declined') return 'Declined Applications';
-    if (statusFilter === 'vacancy full') return 'Vacancy Full Applications';
     if (mainTab === 'inactive') return 'Withdrawn / Cancelled Applications';
     if (statusFilter === 'pending') return 'Pending Applications';
     if (statusFilter === 'for interview') return 'For Interview Applications';
@@ -1029,7 +1030,7 @@ const MyApplications = () => {
                   const resumeUrl = application.jobseeker?.jobSeekerProfile?.resumeUrl || '';
                   const logoUrl = getCompanyLogo(application);
 
-                  const isActiveCard = ACTIVE_STATUSES.includes(statusValue);
+                  const isActiveCard = ACTIVE_STATUSES.includes(statusValue) && statusValue !== 'vacancy full';
                   const isReactivatableCard = REACTIVATABLE_STATUSES.includes(statusValue);
                   const isDeclinedCard = statusValue === 'declined';
                   const isActionLoading = actionLoadingId === application._id;
