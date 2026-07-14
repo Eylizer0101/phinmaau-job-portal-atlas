@@ -519,6 +519,12 @@ const EmployerVerificationDetails = () => {
 
   const [remarks, setRemarks] = useState("");
   const [showHoldModal, setShowHoldModal] = useState(false);
+
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [credentialPassword, setCredentialPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [pendingCredentialAction, setPendingCredentialAction] = useState(null);
   const [holdDocTypes, setHoldDocTypes] = useState([]);
   const [holdReason, setHoldReason] = useState("");
 
@@ -732,10 +738,13 @@ const EmployerVerificationDetails = () => {
     return fallbackName;
   };
 
-  const fetchDocumentBlob = async (docType, disposition = "inline") => {
+  const fetchDocumentBlob = async (docType, disposition = "inline", password = "") => {
     const response = await api.get(`/admin/employers/verification/${employerId}/docs/${docType}`, {
       params: { disposition },
       responseType: "blob",
+      headers: {
+        "x-admin-password": password,
+      },
     });
 
     const contentType = response.headers?.["content-type"] || "application/octet-stream";
@@ -745,35 +754,114 @@ const EmployerVerificationDetails = () => {
     return { blob, fileName };
   };
 
-  const openDoc = async (docType) => {
+  const closePasswordModal = () => {
+    if (passwordLoading) return;
+
+    setShowPasswordModal(false);
+    setCredentialPassword("");
+    setPasswordError("");
+    setPendingCredentialAction(null);
+  };
+
+  const requestCredentialAccess = (actionType, docType, label = "credential") => {
+    setPendingCredentialAction({
+      action: actionType,
+      docType,
+      label,
+    });
+    setCredentialPassword("");
+    setPasswordError("");
+    setShowPasswordModal(true);
+  };
+
+  const performViewDocument = async (docType, password) => {
+    const { blob } = await fetchDocumentBlob(docType, "inline", password);
+    const blobUrl = window.URL.createObjectURL(blob);
+
+    window.open(blobUrl, "_blank", "noopener,noreferrer");
+    window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
+  };
+
+  const performDownloadDocument = async (docType, fallbackName, password) => {
+    const { blob, fileName } = await fetchDocumentBlob(docType, "attachment", password);
+    const blobUrl = window.URL.createObjectURL(blob);
+    const downloadLink = document.createElement("a");
+
+    downloadLink.href = blobUrl;
+    downloadLink.download = fileName || fallbackName;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    downloadLink.remove();
+
+    window.URL.revokeObjectURL(blobUrl);
+  };
+
+  const confirmCredentialAccess = async () => {
+    if (!credentialPassword.trim()) {
+      setPasswordError("Please enter your password.");
+      return;
+    }
+
+    if (!pendingCredentialAction) return;
+
     try {
-      const { blob } = await fetchDocumentBlob(docType, "inline");
-      const blobUrl = window.URL.createObjectURL(blob);
-      window.open(blobUrl, "_blank", "noopener,noreferrer");
-      window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
-    } catch (viewError) {
-      console.error("Error viewing file:", viewError);
-      setError(viewError.response?.data?.message || "Unable to open this credential. Please try again.");
+      setPasswordLoading(true);
+      setPasswordError("");
+
+      if (pendingCredentialAction.action === "view") {
+        await performViewDocument(
+          pendingCredentialAction.docType,
+          credentialPassword
+        );
+      } else {
+        await performDownloadDocument(
+          pendingCredentialAction.docType,
+          pendingCredentialAction.label,
+          credentialPassword
+        );
+      }
+
+      setShowPasswordModal(false);
+      setCredentialPassword("");
+      setPendingCredentialAction(null);
+    } catch (credentialError) {
+      console.error("Employer credential access error:", credentialError);
+
+      let serverMessage = "";
+
+      if (credentialError.response?.data instanceof Blob) {
+        try {
+          const errorText = await credentialError.response.data.text();
+          const parsedError = JSON.parse(errorText);
+          serverMessage = parsedError?.message || "";
+        } catch {
+          serverMessage = "";
+        }
+      } else {
+        serverMessage = credentialError.response?.data?.message || "";
+      }
+
+      if (credentialError.response?.status === 401) {
+        setPasswordError(
+          serverMessage || "Incorrect password. Please try again."
+        );
+      } else {
+        setPasswordError(
+          serverMessage ||
+            "Unable to access this credential. Please try again."
+        );
+      }
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
-  const downloadDoc = async (docType, fallbackName = "document") => {
-    try {
-      const { blob, fileName } = await fetchDocumentBlob(docType, "attachment");
-      const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
+  const openDoc = (docType, label = "credential") => {
+    requestCredentialAccess("view", docType, label);
+  };
 
-      a.href = blobUrl;
-      a.download = fileName || fallbackName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-
-      window.URL.revokeObjectURL(blobUrl);
-    } catch (downloadError) {
-      console.error("Error downloading file:", downloadError);
-      setError(downloadError.response?.data?.message || "Unable to download this credential. Please try again.");
-    }
+  const downloadDoc = (docType, fallbackName = "document") => {
+    requestCredentialAccess("download", docType, fallbackName);
   };
 
   const openConfirm = (nextStatus) => {
@@ -1023,17 +1111,35 @@ const EmployerVerificationDetails = () => {
                     </div>
 
                     {hasFile ? (
-                      <button
-                        type="button"
-                        onClick={() => openDoc(docType.key)}
-                        disabled={action !== null}
-                        className={cn(
-                          "mt-3 flex h-8 items-center justify-center rounded border border-black/15 bg-white text-xs font-semibold text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:opacity-50",
-                          UI.ring
-                        )}
-                      >
-                        View
-                      </button>
+                      <div className="mt-3 grid grid-cols-2 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openDoc(docType.key, docType.label)}
+                          disabled={action !== null}
+                          className={cn(
+                            "flex h-8 items-center justify-center rounded border border-black/15 bg-white text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:opacity-50",
+                            UI.ring
+                          )}
+                          aria-label={`View ${docType.label}`}
+                          title={`View ${docType.label}`}
+                        >
+                          <SvgIcon name="eye" className="h-4 w-4" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => downloadDoc(docType.key, docType.label)}
+                          disabled={action !== null}
+                          className={cn(
+                            "flex h-8 items-center justify-center rounded border border-black/15 bg-white text-black/70 hover:bg-black/5 disabled:opacity-50",
+                            UI.ring
+                          )}
+                          aria-label={`Download ${docType.label}`}
+                          title={`Download ${docType.label}`}
+                        >
+                          <SvgIcon name="download" className="h-4 w-4" />
+                        </button>
+                      </div>
                     ) : (
                       <div className="mt-3 flex h-8 items-center justify-center rounded border border-black/15 bg-white text-[11px] font-semibold text-black/45">
                         Not submitted
@@ -1126,6 +1232,122 @@ const EmployerVerificationDetails = () => {
           </section>
         </div>
       </div>
+
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-[60] overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div
+              className="fixed inset-0 bg-black/45"
+              onClick={closePasswordModal}
+              aria-hidden="true"
+            />
+
+            <div
+              className="relative w-full max-w-md overflow-hidden rounded-2xl border border-black/15 bg-white shadow-2xl"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="employer-credential-password-title"
+            >
+              <div className="p-6 sm:p-7">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#2e66a6]/10 text-[#2e66a6]">
+                  <SvgIcon
+                    name={
+                      pendingCredentialAction?.action === "download"
+                        ? "download"
+                        : "eye"
+                    }
+                    className="h-6 w-6"
+                  />
+                </div>
+
+                <h3
+                  id="employer-credential-password-title"
+                  className="mt-4 text-center text-2xl font-bold text-black"
+                >
+                  Enter Password
+                </h3>
+
+                <p className="mt-2 text-center text-sm leading-6 text-black/65">
+                  Enter your admin password to{" "}
+                  {pendingCredentialAction?.action === "download"
+                    ? "download"
+                    : "view"}{" "}
+                  {pendingCredentialAction?.label || "this credential"}.
+                </p>
+
+                <div className="mt-5">
+                  <label
+                    htmlFor="employerCredentialPassword"
+                    className="block text-sm font-semibold text-black"
+                  >
+                    Password
+                  </label>
+
+                  <input
+                    id="employerCredentialPassword"
+                    type="password"
+                    value={credentialPassword}
+                    onChange={(event) => {
+                      setCredentialPassword(event.target.value);
+                      setPasswordError("");
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        confirmCredentialAccess();
+                      }
+                    }}
+                    autoFocus
+                    disabled={passwordLoading}
+                    className={cn(
+                      "mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm text-black placeholder-black/35",
+                      passwordError ? "border-black" : "border-black/20",
+                      UI.ring
+                    )}
+                    placeholder="Enter your password"
+                  />
+
+                  {passwordError ? (
+                    <p
+                      className="mt-2 text-sm font-medium text-black"
+                      role="alert"
+                    >
+                      {passwordError}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 border-t border-black/10 bg-white px-6 py-4">
+                <button
+                  type="button"
+                  onClick={closePasswordModal}
+                  disabled={passwordLoading}
+                  className={cn(
+                    "h-11 rounded-xl border border-black/20 bg-white text-sm font-semibold text-black hover:bg-black/5 disabled:opacity-50",
+                    UI.ring
+                  )}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={confirmCredentialAccess}
+                  disabled={passwordLoading}
+                  className={cn(
+                    "flex h-11 items-center justify-center gap-2 rounded-xl bg-[#2e66a6] text-sm font-semibold text-white hover:bg-[#255587] disabled:opacity-50",
+                    UI.ring
+                  )}
+                >
+                  {passwordLoading ? <Spinner /> : null}
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Modal
         open={confirm.open && confirm.nextStatus === "verified"}

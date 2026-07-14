@@ -34,7 +34,11 @@ router.get('/employers/verification/:id', adminController.getEmployerVerificatio
 router.put('/employers/verification/:id/status', adminController.updateEmployerVerificationStatus);
 router.put('/employers/verification/:id/hold', adminController.holdEmployerVerification);
 router.get('/employers/verification/:id/docs', adminController.getEmployerVerificationDocUrls);
-router.get('/employers/verification/:id/docs/:docType', adminController.downloadEmployerVerificationDocument);
+router.get(
+  '/employers/verification/:id/docs/:docType',
+  adminController.requireAdminPasswordForCredential,
+  adminController.downloadEmployerVerificationDocument
+);
 
 // ✅ JOBSEEKER VERIFICATION ROUTES
 router.get('/jobseekers/verification', adminController.getJobseekersForVerification);
