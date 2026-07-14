@@ -774,7 +774,7 @@ const RegisterPage = () => {
                   {errorText('course-error', formErrors.course)}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                   <div className="space-y-4">
                     {/* Year Graduated */}
                     <div className="space-y-1">
@@ -809,7 +809,7 @@ const RegisterPage = () => {
                     </div>
 
                     {/* Preferred Work Mode */}
-                    <div className="space-y-1">
+                    <div className="space-y-1 md:col-span-2">
                       <label className={labelBase} htmlFor="preferredWorkMode">
                         Preferred Work Mode
                       </label>
