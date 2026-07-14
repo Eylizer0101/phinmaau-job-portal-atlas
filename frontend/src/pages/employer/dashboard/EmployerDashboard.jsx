@@ -1746,7 +1746,7 @@ const EmployerDashboard = () => {
             <button
               type="button"
               onClick={() => navigate('/employer/post-job')}
-              className="mt-8 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#075fc8] px-4 text-xs font-semibold text-white shadow-sm transition hover:bg-[#064da3] focus:outline-none focus:ring-2 focus:ring-[#2e66a6] focus:ring-offset-2"
+              className="mt-8 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-xs font-semibold text-white shadow-sm transition hover:bg-[#064da3] focus:outline-none focus:ring-2 focus:ring-[#2e66a6] focus:ring-offset-2"
             >
               <OutlineIcon name="plus" className="h-4 w-4" />
               <span>Post Job</span>

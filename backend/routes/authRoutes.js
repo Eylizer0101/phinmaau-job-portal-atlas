@@ -19,6 +19,7 @@ router.post(
     { name: 'philhealth', maxCount: 1 },
     { name: 'pagibig', maxCount: 1 },
     { name: 'tin', maxCount: 1 },
+    { name: 'profileImage', maxCount: 1 },
   ]),
   authController.register
 );

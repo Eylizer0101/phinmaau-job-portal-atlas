@@ -216,11 +216,12 @@ const alumniResubmitStorage = createCloudinaryStorage({
 });
 
 const registerDocsStorage = createCloudinaryStorage({
-  resourceType: 'raw',
+  resourceType: 'auto',
   folderResolver: (req, file) => {
-    const allowedFields = ['cv', 'diploma', 'validId', 'tor', 'sss', 'philhealth', 'pagibig', 'tin'];
+    const allowedFields = ['cv', 'diploma', 'validId', 'tor', 'sss', 'philhealth', 'pagibig', 'tin', 'profileImage'];
     const field = String(file.fieldname || '').trim();
     if (!allowedFields.includes(field)) throw new Error('Invalid upload field');
+    if (field === 'profileImage') return 'profile-images';
     return `verification/alumni/${field}`;
   },
   publicIdResolver: (req, file) => {
@@ -354,9 +355,17 @@ const uploadAlumniResubmit = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
 });
 
+const registerFileFilter = (req, file, cb) => {
+  if (file.fieldname === 'profileImage') {
+    return imageFileFilter(req, file, cb);
+  }
+
+  return verificationFileFilter(req, file, cb);
+};
+
 const uploadRegisterDocs = multer({
   storage: registerDocsStorage,
-  fileFilter: verificationFileFilter,
+  fileFilter: registerFileFilter,
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 

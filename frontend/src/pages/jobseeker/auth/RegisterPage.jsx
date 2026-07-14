@@ -39,6 +39,7 @@ const RegisterPage = () => {
     campus: '',
     yearGraduated: '',
     preferredWorkMode: '',
+    profileImageFile: null,
 
     howSoonCanYouStart: '',
 
@@ -102,6 +103,7 @@ const RegisterPage = () => {
 
   // ---------- File picker refs (custom upload UI) ----------
   const fileRefs = {
+    profileImageFile: useRef(null),
     cvFile: useRef(null),
     diplomaFile: useRef(null),
     validIdFile: useRef(null),
@@ -216,6 +218,17 @@ const RegisterPage = () => {
     if (!String(formData.preferredWorkMode || '').trim()) errors.preferredWorkMode = 'Preferred Work Mode is required';
     if (!String(formData.howSoonCanYouStart || '').trim()) errors.howSoonCanYouStart = 'This field is required';
 
+    if (formData.profileImageFile) {
+      const allowedProfileTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      const maxProfileSize = 5 * 1024 * 1024;
+
+      if (!allowedProfileTypes.includes(formData.profileImageFile.type)) {
+        errors.profileImageFile = 'Accepted formats: JPG, PNG, WEBP';
+      } else if (formData.profileImageFile.size > maxProfileSize) {
+        errors.profileImageFile = 'Profile photo must be 5MB or smaller';
+      }
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -291,6 +304,7 @@ const RegisterPage = () => {
       fd.append('campus', String(formData.campus).trim());
       fd.append('yearGraduated', String(formData.yearGraduated).trim());
       fd.append('preferredWorkMode', String(formData.preferredWorkMode).trim());
+      if (formData.profileImageFile) fd.append('profileImage', formData.profileImageFile);
 
       fd.append('howSoonCanYouStart', String(formData.howSoonCanYouStart).trim());
 
@@ -760,68 +774,123 @@ const RegisterPage = () => {
                   {errorText('course-error', formErrors.course)}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Year Graduated */}
-                  <div className="space-y-1">
-                    <label className={labelBase} htmlFor="yearGraduated">
-                      Year Graduated
-                    </label>
-                    <div className="relative">
-                      <div className={iconWrap}>
-                        <IconCap />
-                      </div>
-                      <select
-                        id="yearGraduated"
-                        name="yearGraduated"
-                        value={formData.yearGraduated}
-                        onChange={handleChange}
-                        className={`${selectClass(!!formErrors.yearGraduated)} pl-10`}
-                        disabled={loading}
-                        aria-invalid={!!formErrors.yearGraduated}
-                        aria-describedby={formErrors.yearGraduated ? 'yearGraduated-error' : undefined}
-                      >
-                        <option value="" disabled>
-                          Select Year
-                        </option>
-                        {yearOptions.map((y) => (
-                          <option key={y} value={y}>
-                            {y}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+                  <div className="space-y-4">
+                    {/* Year Graduated */}
+                    <div className="space-y-1">
+                      <label className={labelBase} htmlFor="yearGraduated">
+                        Year Graduated
+                      </label>
+                      <div className="relative">
+                        <div className={iconWrap}>
+                          <IconCap />
+                        </div>
+                        <select
+                          id="yearGraduated"
+                          name="yearGraduated"
+                          value={formData.yearGraduated}
+                          onChange={handleChange}
+                          className={`${selectClass(!!formErrors.yearGraduated)} pl-10`}
+                          disabled={loading}
+                          aria-invalid={!!formErrors.yearGraduated}
+                          aria-describedby={formErrors.yearGraduated ? 'yearGraduated-error' : undefined}
+                        >
+                          <option value="" disabled>
+                            Select Year
                           </option>
-                        ))}
-                      </select>
+                          {yearOptions.map((y) => (
+                            <option key={y} value={y}>
+                              {y}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      {errorText('yearGraduated-error', formErrors.yearGraduated)}
                     </div>
-                    {errorText('yearGraduated-error', formErrors.yearGraduated)}
+
+                    {/* Preferred Work Mode */}
+                    <div className="space-y-1">
+                      <label className={labelBase} htmlFor="preferredWorkMode">
+                        Preferred Work Mode
+                      </label>
+                      <div className="relative">
+                        <div className={iconWrap}>
+                          <IconCap />
+                        </div>
+                        <select
+                          id="preferredWorkMode"
+                          name="preferredWorkMode"
+                          value={formData.preferredWorkMode}
+                          onChange={handleChange}
+                          className={`${selectClass(!!formErrors.preferredWorkMode)} pl-10`}
+                          disabled={loading}
+                          aria-invalid={!!formErrors.preferredWorkMode}
+                          aria-describedby={formErrors.preferredWorkMode ? 'preferredWorkMode-error' : undefined}
+                        >
+                          <option value="" disabled>
+                            Select option
+                          </option>
+                          <option value="On-site">On-site</option>
+                          <option value="Blended">Blended</option>
+                          <option value="Remote">Remote</option>
+                          <option value="Work from home">Work from home</option>
+                        </select>
+                      </div>
+                      {errorText('preferredWorkMode-error', formErrors.preferredWorkMode)}
+                    </div>
                   </div>
 
-                  {/* Preferred Work Mode */}
+                  {/* Profile Photo */}
                   <div className="space-y-1">
-                    <label className={labelBase} htmlFor="preferredWorkMode">
-                      Preferred Work Mode
+                    <label className={labelBase} htmlFor="profileImageFile">
+                      Upload Photo / Profile Photo
                     </label>
-                    <div className="relative">
-                      <div className={iconWrap}>
-                        <IconCap />
-                      </div>
-                      <select
-                        id="preferredWorkMode"
-                        name="preferredWorkMode"
-                        value={formData.preferredWorkMode}
-                        onChange={handleChange}
-                        className={`${selectClass(!!formErrors.preferredWorkMode)} pl-10`}
+                    <input
+                      ref={fileRefs.profileImageFile}
+                      id="profileImageFile"
+                      name="profileImageFile"
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      onChange={handleChange}
+                      className="sr-only"
+                      disabled={loading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => openFilePicker('profileImageFile')}
+                      disabled={loading}
+                      className={`flex min-h-[132px] w-full flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-4 text-center transition ${
+                        formErrors.profileImageFile
+                          ? 'border-red-400 bg-red-50'
+                          : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/40'
+                      }`}
+                    >
+                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#2e66a6] shadow-sm">
+                        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="1.8"
+                            d="M3 16.5V18a2 2 0 002 2h14a2 2 0 002-2v-1.5M8 8l4-4m0 0l4 4m-4-4v12"
+                          />
+                        </svg>
+                      </span>
+                      <span className="mt-3 text-sm font-semibold text-gray-700">
+                        {formData.profileImageFile ? formData.profileImageFile.name : 'Choose profile photo'}
+                      </span>
+                      <span className="mt-1 text-xs text-gray-500">JPG, PNG, or WEBP · Maximum 5MB</span>
+                    </button>
+                    {formData.profileImageFile ? (
+                      <button
+                        type="button"
+                        onClick={() => clearFile('profileImageFile')}
                         disabled={loading}
-                        aria-invalid={!!formErrors.preferredWorkMode}
-                        aria-describedby={formErrors.preferredWorkMode ? 'preferredWorkMode-error' : undefined}
+                        className="text-xs font-semibold text-red-600 hover:underline"
                       >
-                        <option value="" disabled>
-                          Select option
-                        </option>
-                        <option value="On-site">On-site</option>
-                        <option value="Blended">Blended</option>
-                        <option value="Remote">Remote</option>
-                        <option value="Work from home">Work from home</option>
-                      </select>
-                    </div>
-                    {errorText('preferredWorkMode-error', formErrors.preferredWorkMode)}
+                        Remove photo
+                      </button>
+                    ) : null}
+                    {errorText('profileImageFile-error', formErrors.profileImageFile)}
                   </div>
                 </div>
 

@@ -698,6 +698,14 @@ exports.register = async (req, res) => {
     const philhealthMeta = buildAlumniDocMeta(req, files?.philhealth?.[0], 'philhealth');
     const pagibigMeta = buildAlumniDocMeta(req, files?.pagibig?.[0], 'pagibig');
     const tinMeta = buildAlumniDocMeta(req, files?.tin?.[0], 'tin');
+    const profileImageFile = files?.profileImage?.[0];
+    const profileImage = profileImageFile
+      ? getUploadedFileUrl(
+          req,
+          profileImageFile,
+          `/uploads/profile-images/${profileImageFile.filename}`
+        )
+      : '';
 
     const verificationDocs = {
       cv: cvMeta,
@@ -721,6 +729,7 @@ exports.register = async (req, res) => {
       middleName: String(middleName || '').trim(),
       lastName: String(lastName || '').trim(),
       extensionName: normalizeExtensionName(extensionName),
+      profileImage,
 
       jobSeekerProfile: {
         course: String(course || '').trim(),
