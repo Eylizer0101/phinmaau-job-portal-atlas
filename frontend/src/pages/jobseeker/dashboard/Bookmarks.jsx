@@ -1315,6 +1315,11 @@ const Bookmarks = () => {
     jobId: '',
     jobTitle: '',
   });
+  const [removeCompanyModal, setRemoveCompanyModal] = useState({
+    isOpen: false,
+    companyId: '',
+    companyName: '',
+  });
 
   const toastTimerRef = useRef(null);
 
@@ -1541,48 +1546,71 @@ const Bookmarks = () => {
   }, [removeJobModal.jobId, savedJobs, selectedJobId, setToastMessage]);
 
   const handleRemoveSavedCompany = useCallback(
-    async (companyId) => {
+    (companyId) => {
       const targetCompany = savedCompanies.find((company) => company._id === companyId);
-      const confirmed = window.confirm(`Remove "${targetCompany?.companyName || 'this company'}" from your saved companies?`);
 
-      if (!confirmed) return;
+      setRemoveCompanyModal({
+        isOpen: true,
+        companyId,
+        companyName: targetCompany?.companyName || 'this company',
+      });
+    },
+    [savedCompanies]
+  );
+
+  const closeRemoveCompanyModal = useCallback(() => {
+    if (removingCompanyId) return;
+
+    setRemoveCompanyModal({
+      isOpen: false,
+      companyId: '',
+      companyName: '',
+    });
+  }, [removingCompanyId]);
+
+  const confirmRemoveSavedCompany = useCallback(async () => {
+    const companyId = removeCompanyModal.companyId;
+    if (!companyId) return;
+
+    try {
+      setRemovingCompanyId(companyId);
+
+      let removed = false;
 
       try {
-        setRemovingCompanyId(companyId);
-
-        let removed = false;
-
-        try {
-          const response = await api.delete(`/companies/saved/${companyId}`);
-          removed = Boolean(response.data?.success);
-        } catch {
-          const updatedLocal = getLocalSavedCompanies().filter(
-            (company) => String(company._id || company.id) !== String(companyId)
-          );
-          setLocalSavedCompanies(updatedLocal);
-          removed = true;
-        }
-
-        if (removed) {
-          const updated = savedCompanies.filter((company) => company._id !== companyId);
-          setSavedCompanies(updated);
-
-          if (selectedCompanyId === companyId) {
-            setSelectedCompanyId(updated[0]?._id || '');
-          }
-
-          setToastMessage('success', 'Company removed from bookmarks.');
-        } else {
-          setToastMessage('error', 'Failed to remove saved company.');
-        }
+        const response = await api.delete(`/companies/saved/${companyId}`);
+        removed = Boolean(response.data?.success);
       } catch {
-        setToastMessage('error', 'Failed to remove saved company.');
-      } finally {
-        setRemovingCompanyId('');
+        const updatedLocal = getLocalSavedCompanies().filter(
+          (company) => String(company._id || company.id) !== String(companyId)
+        );
+        setLocalSavedCompanies(updatedLocal);
+        removed = true;
       }
-    },
-    [savedCompanies, selectedCompanyId, setToastMessage]
-  );
+
+      if (removed) {
+        const updated = savedCompanies.filter((company) => company._id !== companyId);
+        setSavedCompanies(updated);
+
+        if (selectedCompanyId === companyId) {
+          setSelectedCompanyId(updated[0]?._id || '');
+        }
+
+        setRemoveCompanyModal({
+          isOpen: false,
+          companyId: '',
+          companyName: '',
+        });
+        setToastMessage('success', 'Company removed from bookmarks.');
+      } else {
+        setToastMessage('error', 'Failed to remove saved company.');
+      }
+    } catch {
+      setToastMessage('error', 'Failed to remove saved company.');
+    } finally {
+      setRemovingCompanyId('');
+    }
+  }, [removeCompanyModal.companyId, savedCompanies, selectedCompanyId, setToastMessage]);
 
   const selectedJob = useMemo(() => savedJobs.find((job) => job._id === selectedJobId) || null, [savedJobs, selectedJobId]);
 
@@ -2829,7 +2857,7 @@ const Bookmarks = () => {
           ReactDOM.createPortal(
             <div className="fixed inset-0 z-[9999]">
               <div
-                className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
+                className="absolute inset-0 bg-black/30 backdrop-blur-[1px]"
                 onClick={closeRemoveJobModal}
                 aria-hidden="true"
               />
@@ -2879,6 +2907,76 @@ const Bookmarks = () => {
                         className={`${UI.btnBase} ${UI.btnMd} ${UI.btnPrimary} ${UI.ring} flex-1`}
                       >
                         {removingId ? (
+                          <>
+                            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/35 border-t-white motion-reduce:animate-none" />
+                            Removing
+                          </>
+                        ) : (
+                          'Remove'
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
+
+        {removeCompanyModal.isOpen &&
+          ReactDOM.createPortal(
+            <div className="fixed inset-0 z-[9999]">
+              <div
+                className="absolute inset-0 bg-black/30 backdrop-blur-[1px]"
+                onClick={closeRemoveCompanyModal}
+                aria-hidden="true"
+              />
+
+              <div className="relative flex min-h-screen items-center justify-center p-4">
+                <div
+                  className="w-full max-w-[460px] rounded-2xl border border-black/10 bg-white shadow-2xl"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="removeSavedCompanyTitle"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="px-6 pb-6 pt-7 sm:px-7">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#2e66a6]/10 text-[#2e66a6]">
+                      <SvgIcon name="bookmarkFilled" className="h-6 w-6" />
+                    </div>
+
+                    <h3
+                      id="removeSavedCompanyTitle"
+                      className="mt-4 text-center text-xl font-bold text-black"
+                    >
+                      Remove Saved Company?
+                    </h3>
+
+                    <p className="mt-2 text-center text-sm leading-6 text-black/60">
+                      Are you sure you want to remove{' '}
+                      <span className="font-semibold text-black">
+                        “{removeCompanyModal.companyName}”
+                      </span>{' '}
+                      from your saved companies?
+                    </p>
+
+                    <div className="mt-6 flex gap-3">
+                      <button
+                        type="button"
+                        onClick={closeRemoveCompanyModal}
+                        disabled={Boolean(removingCompanyId)}
+                        className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSecondary} ${UI.ring} flex-1`}
+                      >
+                        Cancel
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={confirmRemoveSavedCompany}
+                        disabled={Boolean(removingCompanyId)}
+                        className={`${UI.btnBase} ${UI.btnMd} ${UI.btnPrimary} ${UI.ring} flex-1`}
+                      >
+                        {removingCompanyId ? (
                           <>
                             <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/35 border-t-white motion-reduce:animate-none" />
                             Removing
