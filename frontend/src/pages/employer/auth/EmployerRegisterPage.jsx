@@ -47,6 +47,9 @@ const EmployerRegisterPage = () => {
     businessPermit: null,
   });
 
+  const [companyLogo, setCompanyLogo] = useState(null);
+  const [companyLogoPreview, setCompanyLogoPreview] = useState('');
+
   const [fieldErrors, setFieldErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -61,6 +64,8 @@ const EmployerRegisterPage = () => {
   const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 
   // ---------- file picker refs (for custom upload UI) ----------
+  const companyLogoRef = useRef(null);
+
   const docRefs = {
     secRegistration: useRef(null),
     birRegistration: useRef(null),
@@ -73,7 +78,7 @@ const EmployerRegisterPage = () => {
 
   // ✅ UPDATED STEP FIELDS (3 steps only) - NEW ORDER
   const STEP_FIELDS = {
-    1: ['companyName', 'companyWebsiteUrl', 'industry', 'regionCity'],
+    1: ['companyName', 'companyWebsiteUrl', 'companyLogo', 'industry', 'regionCity'],
     2: ['firstName', 'middleName', 'lastName', 'extensionName', 'businessEmail', 'mobileNumber'],
     3: ['secRegistration', 'birRegistration', 'dtiRegistration', 'cityPermit', 'businessPermit'],
   };
@@ -103,6 +108,8 @@ const EmployerRegisterPage = () => {
     const targetId =
       key === 'regionCity'
         ? 'region'
+        : key === 'companyLogo'
+        ? 'companyLogo-btn'
         : DOC_KEYS.includes(key)
         ? `${key}-btn`
         : key;
@@ -225,6 +232,17 @@ const EmployerRegisterPage = () => {
       }
     }
 
+    if (check('companyLogo') && companyLogo) {
+      const allowedLogoTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      const maxLogoSize = 5 * 1024 * 1024;
+
+      if (!allowedLogoTypes.includes(companyLogo.type)) {
+        next.companyLogo = 'Only JPG, JPEG, PNG, GIF, or WEBP images are allowed.';
+      } else if (companyLogo.size > maxLogoSize) {
+        next.companyLogo = 'Company logo must be 5MB or smaller.';
+      }
+    }
+
     if (check('industry')) {
       if (!formData.industry.trim()) next.industry = 'Industry is required.';
     }
@@ -303,6 +321,40 @@ const EmployerRegisterPage = () => {
     clearFieldError('regionCity');
   };
 
+  const handleCompanyLogoChange = (e) => {
+    const file = e.target.files?.[0] || null;
+
+    if (companyLogoPreview) {
+      URL.revokeObjectURL(companyLogoPreview);
+    }
+
+    setCompanyLogo(file);
+    setCompanyLogoPreview(file ? URL.createObjectURL(file) : '');
+    setServerError('');
+    clearFieldError('companyLogo');
+  };
+
+  const openCompanyLogoPicker = () => {
+    if (loading) return;
+    companyLogoRef.current?.click?.();
+  };
+
+  const clearCompanyLogo = () => {
+    if (loading) return;
+
+    if (companyLogoPreview) {
+      URL.revokeObjectURL(companyLogoPreview);
+    }
+
+    setCompanyLogo(null);
+    setCompanyLogoPreview('');
+    clearFieldError('companyLogo');
+
+    if (companyLogoRef.current) {
+      companyLogoRef.current.value = '';
+    }
+  };
+
   const handleDocChange = (e) => {
     const { name, files } = e.target;
     const file = files?.[0] || null;
@@ -356,6 +408,7 @@ const EmployerRegisterPage = () => {
       fd.append('companyWebsiteUrl', formData.companyWebsiteUrl.trim());
       fd.append('regionCity', formData.regionCity.trim());
       fd.append('industry', formData.industry.trim());
+      if (companyLogo) fd.append('companyLogo', companyLogo);
 
       // Documents (5)
       fd.append('secRegistration', docs.secRegistration);
@@ -1040,8 +1093,67 @@ const EmployerRegisterPage = () => {
                             {errorText('companyWebsiteUrl-error', fieldErrors.companyWebsiteUrl)}
                           </div>
 
-                          {/* Industry - PINALAPAD */}
-                          <div className="space-y-1 md:col-span-2">
+                          {/* Company Logo */}
+                          <div className="space-y-1">
+                            <label htmlFor="companyLogo" className={labelBase}>
+                              Company Logo <span className="text-gray-400 font-semibold">(optional)</span>
+                            </label>
+
+                            <input
+                              ref={companyLogoRef}
+                              id="companyLogo"
+                              name="companyLogo"
+                              type="file"
+                              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                              onChange={handleCompanyLogoChange}
+                              className="sr-only"
+                              disabled={loading}
+                            />
+
+                            <div
+                              className={`flex h-11 items-center gap-3 rounded-xl border bg-white px-3 shadow-sm ${
+                                fieldErrors.companyLogo ? 'border-red-400' : 'border-gray-200'
+                              }`}
+                            >
+                              {companyLogoPreview ? (
+                                <img
+                                  src={companyLogoPreview}
+                                  alt="Company logo preview"
+                                  className="h-8 w-8 shrink-0 rounded-lg border border-gray-200 object-contain"
+                                />
+                              ) : (
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-50 text-gray-500">
+                                  <IconBuilding />
+                                </div>
+                              )}
+
+                              <button
+                                id="companyLogo-btn"
+                                type="button"
+                                onClick={openCompanyLogoPicker}
+                                disabled={loading}
+                                className="min-w-0 flex-1 truncate text-left text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {companyLogo ? companyLogo.name : 'Choose company logo'}
+                              </button>
+
+                              {companyLogo ? (
+                                <button
+                                  type="button"
+                                  onClick={clearCompanyLogo}
+                                  disabled={loading}
+                                  className="shrink-0 text-xs font-semibold text-red-600 hover:underline disabled:opacity-60"
+                                >
+                                  Remove
+                                </button>
+                              ) : null}
+                            </div>
+
+                            {errorText('companyLogo-error', fieldErrors.companyLogo)}
+                          </div>
+
+                          {/* Industry */}
+                          <div className="space-y-1">
                             <label htmlFor="industry" className={labelBase}>
                               Industry
                             </label>
