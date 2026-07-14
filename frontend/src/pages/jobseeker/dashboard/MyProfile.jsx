@@ -5485,7 +5485,6 @@ const MyProfile = () => {
   const handleAddMoreSection = (sectionKey) => {
     setAddedMoreSections((prev) => (prev.includes(sectionKey) ? prev : [...prev, sectionKey]));
     setOpenTabs((prev) => (prev.includes(sectionKey) ? prev : [...prev, sectionKey]));
-    setAddSectionsModalOpen(false);
   };
 
   useEffect(() => {
