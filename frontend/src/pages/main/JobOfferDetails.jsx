@@ -1209,8 +1209,8 @@ const JobOfferDetails = () => {
                     <div className={UI.insetPanel}>
                       <div className={`${UI.insetBody} space-y-8`}>
                         <section>
-                          <div className="flex items-start gap-3">
-                            <IconBadge icon="file" />
+                          <div className="flex items-center gap-3">
+                          <IconBadge icon="file" />
                             <div className="min-w-0">
                               <h3 className={UI.h3}>Job Description</h3>
                             </div>
@@ -1224,8 +1224,8 @@ const JobOfferDetails = () => {
                         <div className={UI.divider} />
 
                         <section>
-                          <div className="flex items-start gap-3">
-                            <IconBadge icon="tools" />
+                          <div className="flex items-center gap-3">
+                          <IconBadge icon="tools" />
                             <div className="min-w-0 ">
                               <h3 className={UI.h3}>Qualification</h3>
                             </div>

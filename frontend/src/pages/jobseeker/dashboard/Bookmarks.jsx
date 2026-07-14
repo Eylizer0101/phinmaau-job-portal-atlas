@@ -2419,7 +2419,7 @@ const Bookmarks = () => {
 
                                 <div className={`${UI.insetBody} space-y-8`}>
                                   <section>
-                                    <h3 className={UI.h3}>Job Description</h3>
+                                    <h3 className={`${UI.h3} pt-1`}>Job Description</h3>
                                     <div className="mt-4 text-sm sm:text-[15px] text-black/75 leading-7">
                                       <RichTextContent
                                         value={selectedJob.description}
@@ -2431,7 +2431,7 @@ const Bookmarks = () => {
                                   <div className={UI.divider} />
 
                                   <section>
-                                    <h3 className={UI.h3}>Qualification</h3>
+                                    <h3 className={`${UI.h3} pt-1`}>Qualification</h3>
                                     <div className="mt-4 text-sm sm:text-[15px] text-black/75 leading-7">
                                       <RichTextContent
                                         value={selectedJob.requirements}
