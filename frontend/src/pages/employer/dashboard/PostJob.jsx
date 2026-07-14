@@ -47,7 +47,7 @@ const Field = ({ id, label, required, hint, error, children }) => {
   return (
     <div className="space-y-2">
       <label htmlFor={id} className="block text-sm font-semibold text-gray-900">
-        {label} {required && <span className="text-red-600">*</span>}
+        {label}
       </label>
 
       {childWithA11y}
@@ -1250,7 +1250,7 @@ const PostJob = () => {
                     <section className="space-y-5">
                       <div className="flex items-end justify-between">
                         <h3 className="text-base font-bold text-gray-900">
-                          Salary Range <span className="text-red-600">*</span>
+                          Salary Range
                         </h3>
                       </div>
 
