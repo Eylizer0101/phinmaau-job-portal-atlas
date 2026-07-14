@@ -1326,6 +1326,7 @@ exports.getEmployerVerificationById = async (req, res) => {
       success: true,
       employer: {
         ...employer.toObject(),
+        registrationId: `EM-${new Date(employer.createdAt || Date.now()).getFullYear()}-${String(employer._id).slice(-6).toUpperCase()}`,
         docsComplete: docStatus.status === 'complete',
         docStatus: docStatus.message,
         documentDetails: {

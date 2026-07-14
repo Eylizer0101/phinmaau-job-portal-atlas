@@ -784,6 +784,35 @@ const EmployerVerificationDetails = () => {
 
   const closeConfirm = () => setConfirm({ open: false, nextStatus: null });
 
+  const registrationId =
+    employer?.registrationId ||
+    `EM-${new Date(employer?.createdAt || Date.now()).getFullYear()}-${String(employer?._id || "")
+      .slice(-6)
+      .toUpperCase()}`;
+
+  const regionCityParts = String(company.regionCity || "")
+    .split(" - ")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  const employerInfoLeft = [
+    ["First Name", employer?.firstName],
+    ["Middle Name", employer?.middleName],
+    ["Last Name", employer?.lastName],
+    ["Suffix", employer?.extensionName],
+    ["Company Name", company.companyName],
+    ["Industry", company.industry],
+    ["Website URL", company.companyWebsiteUrl],
+  ];
+
+  const employerInfoRight = [
+    ["Region", regionCityParts[0] || company.regionCity],
+    ["City / Province", regionCityParts.slice(1).join(" - ")],
+    ["Email", company.businessEmail || employer?.email],
+    ["Contact Number", company.mobileNumber],
+    ["Date Registered", niceDateTime(employer?.createdAt)],
+  ];
+
   if (loading) {
     return (
       <AdminLayout>
@@ -826,186 +855,289 @@ const EmployerVerificationDetails = () => {
 
   return (
     <AdminLayout>
-      <div className={UI.page}>
-        <div className={UI.section}>
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center">
-              <Link
-                to="/admin/employer-verification"
-                className={cn(
-                  "inline-flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-black font-medium hover:bg-gray-50",
-                  UI.ring
-                )}
-              >
-                <SvgIcon name="back" className="w-5 h-5" />
-                Back to Employer Details
-              </Link>
+      <div className="mx-auto max-w-7xl px-1 py-8">
+        <div className="mb-5">
+          <h1 className="text-2xl font-bold text-black sm:text-3xl">Employer Account Review</h1>
+          <p className="mt-1 text-sm text-black/60">
+            Review and verify employer account registrations and submitted company documents.
+          </p>
+        </div>
+
+        {error && (
+          <Alert type="error" onClose={() => setError("")}>
+            {error}
+          </Alert>
+        )}
+
+        {success && (
+          <Alert type="success" onClose={() => setSuccess("")}>
+            {success}
+          </Alert>
+        )}
+
+        <div className="rounded-xl border border-black/15 bg-white p-4 shadow-sm sm:p-5">
+          <div className="mb-5 flex flex-col gap-4 border-b border-black/10 pb-4 sm:flex-row sm:items-start sm:justify-between">
+            <Link
+              to="/admin/employer-verification"
+              className={cn(
+                "inline-flex w-fit items-center gap-2 text-sm font-semibold text-[#2e66a6] hover:text-[#255587]",
+                UI.ring
+              )}
+            >
+              <SvgIcon name="back" className="h-4 w-4" />
+              Back to List
+            </Link>
+
+            <div className="text-left sm:text-right">
+              <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                <span className="text-xs font-semibold text-black/60">Registration ID</span>
+                <span className="rounded-md bg-[#2e66a6]/10 px-2.5 py-1 text-xs font-bold text-[#2e66a6]">
+                  {registrationId}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-black/60">
+                <span className="font-semibold text-black/70">Date Registered:</span>{" "}
+                {niceDateTime(employer.createdAt)}
+              </p>
             </div>
           </div>
 
-          {error && (
-            <Alert type="error" onClose={() => setError("")}>
-              {error}
-            </Alert>
-          )}
-          {success && (
-            <Alert type="success" onClose={() => setSuccess("")}>
-              {success}
-            </Alert>
-          )}
+          <section className="rounded-xl border border-black/15 bg-white p-4 sm:p-5">
+            <div className="mb-4 flex items-center gap-2 text-[#2e66a6]">
+              <SvgIcon name="building" className="h-5 w-5" />
+              <h2 className="text-base font-bold">Employer Information</h2>
+            </div>
 
-          <div className={cn(UI.cardSoft, "overflow-hidden")}>
-            <div className="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center gap-4 min-w-0">
-                <div className="h-16 w-16 rounded-2xl bg-white border border-[#E2E8F0] overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
+            <div className="grid gap-5 lg:grid-cols-[1fr_1fr_220px]">
+              <div className="space-y-2">
+                {employerInfoLeft.map(([label, value]) => (
+                  <div key={label} className="grid grid-cols-[120px_1fr] gap-3 text-sm">
+                    <span className="text-black/60">{label}</span>
+                    <span className="font-semibold text-black break-words">{value || "—"}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-2 border-black/15 lg:border-l lg:pl-6">
+                {employerInfoRight.map(([label, value]) => (
+                  <div
+                    key={label}
+                    className={cn(
+                      "grid grid-cols-[130px_1fr] gap-3 text-sm",
+                      label === "Date Registered" && "mt-3 border-t border-black/15 pt-3"
+                    )}
+                  >
+                    <span className="text-black/60">{label}</span>
+                    <span className="font-semibold text-black break-words">{value || "—"}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-2xl border border-black/15 bg-white shadow-sm">
                   {logoUrl && !logoFailed ? (
                     <img
                       src={logoUrl}
-                      alt="Company logo"
+                      alt={`${companyName} logo`}
                       className="h-full w-full object-contain"
                       onError={() => setLogoFailed(true)}
                     />
                   ) : (
-                    <span className="text-2xl font-bold text-[#2e66a6]" aria-hidden="true">
+                    <span className="text-3xl font-bold text-[#2e66a6]">
                       {companyName?.trim()?.[0]?.toUpperCase() || "C"}
                     </span>
                   )}
                 </div>
 
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-lg sm:text-xl font-bold text-black truncate" title={companyName}>
-                      {companyName}
-                    </h2>
-                    {statusBadge(overallStatus)}
-                  </div>
-                  <p className="text-sm text-black/70 truncate" title={company.businessEmail || employer.email || ""}>
-                    {company.businessEmail || employer.email || "—"}
-                  </p>
+                <h3 className="mt-3 max-w-[200px] truncate text-base font-bold text-black" title={companyName}>
+                  {companyName}
+                </h3>
+                <p className="mt-1 max-w-[200px] text-xs text-black/60">
+                  {company.industry || "—"}
+                </p>
 
-                  {!docsComplete && <p className="mt-2 text-xs text-black/70">{missingDocsMessage}</p>}
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-2">
-                {canShowActionButtons ? (
-                  <>
-                    <Button
-                      variant="primary"
-                      size="md"
-                      onClick={() => openConfirm("verified")}
-                      disabled={!docsComplete || action !== null || !canTransition(overallStatus, "verified")}
-                      loading={false}
-                      leftIcon={<SvgIcon name="check" className="w-4 h-4" />}
-                      title={!docsComplete ? missingDocsMessage : "Approve employer"}
-                    >
-                      Approve
-                    </Button>
-
-                    <Button
-                      variant="soft"
-                      size="md"
-                      onClick={() => setShowHoldModal(true)}
-                      disabled={action !== null || !canTransition(overallStatus, "hold")}
-                      leftIcon={<SvgIcon name="pause" className="w-4 h-4" />}
-                    >
-                      Hold
-                    </Button>
-
-                    <Button
-                      variant="danger"
-                      size="md"
-                      onClick={() => setShowRejectModal(true)}
-                      disabled={action !== null || !canTransition(overallStatus, "rejected")}
-                      loading={action === "reject"}
-                      leftIcon={<SvgIcon name="x" className="w-4 h-4" />}
-                    >
-                      Decline
-                    </Button>
-                  </>
-                ) : (
-                  <div className="flex items-center">
-                    {statusBadge(overallStatus)}
-                  </div>
-                )}
+                <span
+                  className={cn(
+                    "mt-3 rounded-full border px-3 py-1 text-xs font-semibold",
+                    logoUrl
+                      ? "border-[#2e66a6]/25 bg-[#2e66a6]/10 text-[#2e66a6]"
+                      : "border-black/15 bg-white text-black/60"
+                  )}
+                >
+                  {logoUrl ? "Company Logo Submitted" : "No Company Logo"}
+                </span>
               </div>
             </div>
-          </div>
+          </section>
 
-          <div className={cn(UI.card, "overflow-hidden")}>
-            <div className="border-b border-[#E2E8F0] bg-[#EEF2F6] px-5 py-4 sm:px-6">
-              <h2 className={UI.h2}>Company Information</h2>
+          <section className="mt-4 rounded-xl border border-black/15 bg-white p-4 sm:p-5">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <SvgIcon name="doc" className="h-5 w-5 text-[#2e66a6]" />
+              <h2 className="text-base font-bold text-[#2e66a6]">Company Requirements</h2>
+              <span className="text-xs font-semibold text-[#2e66a6]">
+                ({DOC_TYPES.length} Required)
+              </span>
             </div>
-            <div className="p-5 sm:p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <InfoCard icon={<SvgIcon name="building" className="w-4 h-4" />} label="Company Name" value={company.companyName} />
-              <InfoCard label="Business Email" value={company.businessEmail || employer.email} />
-              <InfoCard label="Mobile Number" value={company.mobileNumber} />
-              <WebsiteCard url={company.companyWebsiteUrl} />
-              <InfoCard label="Region / City" value={company.regionCity} />
-              </div>
-            </div>
-          </div>
 
-          <div className={cn(UI.card, "overflow-hidden")}>
-            <div className="border-b border-[#E2E8F0] bg-[#EEF2F6] px-5 py-4 sm:px-6">
-              <h2 className={UI.h2}>Verification Documents</h2>
-            </div>
-            <div className="p-5 sm:p-6">
-
-            {!docsComplete && (
-              <div className="mt-4">
-                <Alert type="warning" onClose={null}>
-                  You cannot approve unless at least one <b>Business Registration</b> (SEC/BIR/DTI) and <b>City Permit</b> are uploaded.
-                </Alert>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {DOC_TYPES.map((d) => {
-                const docData = docs?.[d.key] || {};
-                const rawUrl = docData.url || "";
-                const hasFile = !!rawUrl;
-
-                const pub = toPublicUrl(rawUrl || "");
-                const meta = hasFile ? `${fileTypeLabel(pub)} • ${getFileName(pub)}` : "";
-                const uploadedAt = hasFile ? niceDateTime(docData.uploadedAt) : "";
-
-                const isRequired = d.key === "cityPermit";
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              {DOC_TYPES.map((docType, index) => {
+                const doc = docs?.[docType.key] || {};
+                const hasFile = Boolean(doc.url);
+                const fileName = doc.filename || getFileName(doc.url || "") || docType.label;
+                const fileSize = doc.fileSize
+                  ? doc.fileSize < 1024 * 1024
+                    ? `${(doc.fileSize / 1024).toFixed(0)} KB`
+                    : `${(doc.fileSize / (1024 * 1024)).toFixed(1)} MB`
+                  : "";
 
                 return (
-                  <DocumentCard
-                    key={d.key}
-                    label={d.label}
-                    hasFile={hasFile}
-                    meta={meta}
-                    uploadedAt={uploadedAt}
-                    isRequired={isRequired}
-                    disabled={action !== null}
-                    isVerified={isVerified}
-                    docStatus={docData.status || "not_submitted"}
-                    onView={() => openDoc(d.key)}
-                    onDownload={() => downloadDoc(d.key, d.label)}
-                  />
+                  <article
+                    key={docType.key}
+                    className="flex min-h-[160px] flex-col rounded-lg border border-black/15 bg-white p-3"
+                  >
+                    <div className="flex items-start gap-2">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2e66a6]/10 text-xs font-bold text-[#2e66a6]">
+                        {index + 1}
+                      </span>
+                      <h3 className="min-w-0 text-xs font-bold leading-5 text-black/75">
+                        {docType.label}
+                      </h3>
+                    </div>
+
+                    <div className="mt-3 flex flex-1 items-start gap-2">
+                      <div
+                        className={cn(
+                          "flex h-10 w-9 shrink-0 items-center justify-center rounded",
+                          hasFile ? "bg-red-50 text-red-600" : "bg-black/5 text-black/45"
+                        )}
+                      >
+                        <SvgIcon name="doc" className="h-5 w-5" />
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="truncate text-[11px] font-semibold text-black/75" title={fileName}>
+                          {hasFile ? fileName : "No file"}
+                        </p>
+                        {fileSize ? <p className="mt-1 text-[10px] text-black/45">({fileSize})</p> : null}
+                      </div>
+                    </div>
+
+                    {hasFile ? (
+                      <button
+                        type="button"
+                        onClick={() => openDoc(docType.key)}
+                        disabled={action !== null}
+                        className={cn(
+                          "mt-3 flex h-8 items-center justify-center rounded border border-black/15 bg-white text-xs font-semibold text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:opacity-50",
+                          UI.ring
+                        )}
+                      >
+                        View
+                      </button>
+                    ) : (
+                      <div className="mt-3 flex h-8 items-center justify-center rounded border border-black/15 bg-white text-[11px] font-semibold text-black/45">
+                        Not submitted
+                      </div>
+                    )}
+                  </article>
                 );
               })}
             </div>
-            </div>
-          </div>
 
-          <Modal
-            open={confirm.open && confirm.nextStatus === "verified"}
-            companyName={companyName}
-            onClose={closeConfirm}
-            onConfirm={() => {
-              closeConfirm();
-              updateStatus("verified", "approve");
-            }}
-            loading={action === "approve"}
-            disabled={!docsComplete || action !== null || !canTransition(overallStatus, "verified")}
-          />
+            <div
+              className={cn(
+                "mt-4 flex items-center gap-2 text-xs font-semibold",
+                docsComplete ? "text-[#2e66a6]" : "text-black/60"
+              )}
+            >
+              <SvgIcon name={docsComplete ? "check" : "doc"} className="h-4 w-4" />
+              {docsComplete
+                ? "All required documents have been submitted."
+                : missingDocsMessage}
+            </div>
+          </section>
+
+          <section className="mt-4 rounded-xl border border-black/15 bg-white p-4 sm:p-5">
+            <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
+              <div>
+                <label htmlFor="reviewNotes" className="text-xs font-semibold text-black/70">
+                  Review Notes <span className="font-normal text-black/45">(Optional)</span>
+                </label>
+                <textarea
+                  id="reviewNotes"
+                  value={remarks}
+                  onChange={(event) => setRemarks(event.target.value)}
+                  placeholder="Add notes here..."
+                  rows={3}
+                  className={cn(
+                    "mt-2 w-full resize-none rounded-lg border border-black/15 bg-white px-3 py-2 text-sm text-black placeholder-black/35",
+                    UI.ring
+                  )}
+                />
+              </div>
+
+              <div className="grid gap-2 sm:grid-cols-3 lg:mt-6 lg:min-w-[540px]">
+                {canShowActionButtons ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => openConfirm("verified")}
+                      disabled={!docsComplete || action !== null || !canTransition(overallStatus, "verified")}
+                      className={cn(
+                        "flex min-h-[58px] items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-5 text-sm font-bold text-white shadow-sm hover:bg-[#255587] disabled:cursor-not-allowed disabled:opacity-50",
+                        UI.ring
+                      )}
+                    >
+                      <SvgIcon name="check" className="h-5 w-5" />
+                      Approve
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowRejectModal(true)}
+                      disabled={action !== null || !canTransition(overallStatus, "rejected")}
+                      className={cn(
+                        "flex min-h-[58px] items-center justify-center gap-2 rounded-lg border border-[#2e66a6] bg-white px-5 text-sm font-bold text-[#2e66a6] shadow-sm hover:bg-[#2e66a6]/10 disabled:cursor-not-allowed disabled:opacity-50",
+                        UI.ring
+                      )}
+                    >
+                      <SvgIcon name="x" className="h-5 w-5" />
+                      Decline
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowHoldModal(true)}
+                      disabled={action !== null || !canTransition(overallStatus, "hold")}
+                      className={cn(
+                        "flex min-h-[58px] items-center justify-center gap-2 rounded-lg bg-black px-5 text-sm font-bold text-white shadow-sm hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-50",
+                        UI.ring
+                      )}
+                    >
+                      <SvgIcon name="pause" className="h-5 w-5" />
+                      Hold
+                    </button>
+                  </>
+                ) : (
+                  <div className="sm:col-span-3 flex justify-end">{statusBadge(overallStatus)}</div>
+                )}
+              </div>
+            </div>
+          </section>
         </div>
       </div>
+
+      <Modal
+        open={confirm.open && confirm.nextStatus === "verified"}
+        companyName={companyName}
+        onClose={closeConfirm}
+        onConfirm={() => {
+          closeConfirm();
+          updateStatus("verified", "approve");
+        }}
+        loading={action === "approve"}
+        disabled={!docsComplete || action !== null || !canTransition(overallStatus, "verified")}
+      />
 
       {showHoldModal && !isVerified && !isRejected && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
