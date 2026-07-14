@@ -361,6 +361,12 @@ const JobseekerVerificationDetails = () => {
   const [holdReason, setHoldReason] = useState("");
   const [reviewNotes, setReviewNotes] = useState("");
 
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [credentialPassword, setCredentialPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [pendingCredentialAction, setPendingCredentialAction] = useState(null);
+
   const API_BASE = api?.defaults?.baseURL || "";
   const DEFAULT_DECLINE_MESSAGE = "Your verification request was rejected. Please contact support.";
   const DEFAULT_DECLINE_REASON = "Verification requirements were not met.";
@@ -398,10 +404,13 @@ const JobseekerVerificationDetails = () => {
     return fallbackName;
   };
 
-  const fetchDocumentBlob = async (docType, disposition = "inline") => {
+  const fetchDocumentBlob = async (docType, disposition = "inline", password = "") => {
     const response = await api.get(`/admin/jobseekers/verification/${id}/docs/${docType}`, {
       params: { disposition },
       responseType: "blob",
+      headers: {
+        "x-admin-password": password,
+      },
     });
 
     const contentType = response.headers?.["content-type"] || "application/octet-stream";
@@ -411,35 +420,89 @@ const JobseekerVerificationDetails = () => {
     return { blob, fileName };
   };
 
-  const handleViewFile = async (docType) => {
+  const closePasswordModal = () => {
+    if (passwordLoading) return;
+    setShowPasswordModal(false);
+    setCredentialPassword("");
+    setPasswordError("");
+    setPendingCredentialAction(null);
+  };
+
+  const requestCredentialAccess = (action, docType, label = "credential") => {
+    setPendingCredentialAction({ action, docType, label });
+    setCredentialPassword("");
+    setPasswordError("");
+    setShowPasswordModal(true);
+  };
+
+  const performViewFile = async (docType, password) => {
+    const { blob } = await fetchDocumentBlob(docType, "inline", password);
+    const blobUrl = window.URL.createObjectURL(blob);
+    window.open(blobUrl, "_blank", "noopener,noreferrer");
+    window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
+  };
+
+  const performDownloadFile = async (docType, fallbackName, password) => {
+    const { blob, fileName } = await fetchDocumentBlob(docType, "attachment", password);
+    const blobUrl = window.URL.createObjectURL(blob);
+    const downloadLink = document.createElement("a");
+
+    downloadLink.href = blobUrl;
+    downloadLink.download = fileName || fallbackName;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    downloadLink.remove();
+
+    window.URL.revokeObjectURL(blobUrl);
+  };
+
+  const confirmCredentialAccess = async () => {
+    if (!credentialPassword.trim()) {
+      setPasswordError("Please enter your password.");
+      return;
+    }
+
+    if (!pendingCredentialAction) return;
+
     try {
-      const { blob } = await fetchDocumentBlob(docType, "inline");
-      const blobUrl = window.URL.createObjectURL(blob);
-      window.open(blobUrl, "_blank", "noopener,noreferrer");
-      window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
-    } catch (viewError) {
-      console.error("Error viewing file:", viewError);
-      alert(viewError.response?.data?.message || "Unable to open this credential. Please try again.");
+      setPasswordLoading(true);
+      setPasswordError("");
+
+      if (pendingCredentialAction.action === "view") {
+        await performViewFile(pendingCredentialAction.docType, credentialPassword);
+      } else {
+        await performDownloadFile(
+          pendingCredentialAction.docType,
+          pendingCredentialAction.label,
+          credentialPassword
+        );
+      }
+
+      setShowPasswordModal(false);
+      setCredentialPassword("");
+      setPendingCredentialAction(null);
+    } catch (credentialError) {
+      console.error("Credential access error:", credentialError);
+
+      if (credentialError.response?.status === 401) {
+        setPasswordError("Incorrect password. Please try again.");
+      } else {
+        setPasswordError(
+          credentialError.response?.data?.message ||
+            "Unable to access this credential. Please try again."
+        );
+      }
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
-  const handleDownloadFile = async (docType, fallbackName = "document") => {
-    try {
-      const { blob, fileName } = await fetchDocumentBlob(docType, "attachment");
-      const blobUrl = window.URL.createObjectURL(blob);
-      const downloadLink = document.createElement("a");
+  const handleViewFile = (docType, label = "credential") => {
+    requestCredentialAccess("view", docType, label);
+  };
 
-      downloadLink.href = blobUrl;
-      downloadLink.download = fileName || fallbackName;
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      downloadLink.remove();
-
-      window.URL.revokeObjectURL(blobUrl);
-    } catch (downloadError) {
-      console.error("Error downloading file:", downloadError);
-      alert(downloadError.response?.data?.message || "Unable to download this credential. Please try again.");
-    }
+  const handleDownloadFile = (docType, fallbackName = "document") => {
+    requestCredentialAccess("download", docType, fallbackName);
   };
 
   const fetchJobseekerDetails = useCallback(async () => {
@@ -679,10 +742,10 @@ const JobseekerVerificationDetails = () => {
 
   return (
     <AdminLayout>
-      <div className="mx-auto max-w-[1500px] px-2 py-6 sm:px-4 lg:px-6">
+      <div className="mx-auto max-w-7xl px-1 py-8">
         <div className="mb-5">
-          <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Account Review</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-2xl font-bold text-black sm:text-3xl">Account Review</h1>
+          <p className="mt-1 text-sm text-black/60">
             Review and verify job seeker account registrations and submitted documents.
           </p>
         </div>
@@ -699,8 +762,8 @@ const JobseekerVerificationDetails = () => {
           </Alert>
         )}
 
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-          <div className="mb-5 flex flex-col gap-4 border-b border-slate-100 pb-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="rounded-xl border border-black/15 bg-white p-4 shadow-sm sm:p-5">
+          <div className="mb-5 flex flex-col gap-4 border-b border-black/10 pb-4 sm:flex-row sm:items-start sm:justify-between">
             <Link
               to="/admin/jobseeker-verification"
               className={cn(
@@ -714,19 +777,19 @@ const JobseekerVerificationDetails = () => {
 
             <div className="text-left sm:text-right">
               <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                <span className="text-xs font-semibold text-slate-500">Registration ID</span>
-                <span className="rounded-md bg-blue-50 px-2.5 py-1 text-xs font-bold text-[#2e66a6]">
+                <span className="text-xs font-semibold text-black/60">Registration ID</span>
+                <span className="rounded-md bg-[#2e66a6]/10 px-2.5 py-1 text-xs font-bold text-[#2e66a6]">
                   {registrationId}
                 </span>
               </div>
-              <p className="mt-1 text-xs text-slate-500">
-                <span className="font-semibold text-slate-600">Date Registered:</span>{" "}
+              <p className="mt-1 text-xs text-black/60">
+                <span className="font-semibold text-black/70">Date Registered:</span>{" "}
                 {formatDate(jobseeker.createdAt, true)}
               </p>
             </div>
           </div>
 
-          <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+          <section className="rounded-xl border border-black/15 bg-white p-4 sm:p-5">
             <div className="mb-4 flex items-center gap-2 text-[#2e66a6]">
               <SvgIcon name="user" className="h-5 w-5" />
               <h2 className="text-base font-bold">Job Seeker Information</h2>
@@ -736,24 +799,30 @@ const JobseekerVerificationDetails = () => {
               <div className="space-y-2">
                 {infoRowsLeft.map(([label, value]) => (
                   <div key={label} className="grid grid-cols-[120px_1fr] gap-3 text-sm">
-                    <span className="text-slate-500">{label}</span>
-                    <span className="font-semibold text-slate-800">{value || "—"}</span>
+                    <span className="text-black/60">{label}</span>
+                    <span className="font-semibold text-black">{value || "—"}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="space-y-2 border-slate-200 lg:border-l lg:pl-6">
+              <div className="space-y-2 border-black/15 lg:border-l lg:pl-6">
                 {infoRowsRight.map(([label, value]) => (
-                  <div key={label} className="grid grid-cols-[150px_1fr] gap-3 text-sm">
-                    <span className="text-slate-500">{label}</span>
-                    <span className="font-semibold text-slate-800">{value || "—"}</span>
+                  <div
+                    key={label}
+                    className={cn(
+                      "grid grid-cols-[150px_1fr] gap-3 text-sm",
+                      label === "Date Registered" && "mt-3 border-t border-[#2e66a6]/35 pt-3"
+                    )}
+                  >
+                    <span className="text-black/65">{label}</span>
+                    <span className="font-semibold text-black">{value || "—"}</span>
                   </div>
                 ))}
 
                 {combinedSkills ? (
                   <div className="grid grid-cols-[150px_1fr] gap-3 text-sm">
-                    <span className="text-slate-500">Skills</span>
-                    <span className="font-semibold text-slate-800">{combinedSkills}</span>
+                    <span className="text-black/60">Skills</span>
+                    <span className="font-semibold text-black">{combinedSkills}</span>
                   </div>
                 ) : null}
               </div>
@@ -763,10 +832,10 @@ const JobseekerVerificationDetails = () => {
                   <img
                     src={buildFileUrl(jobseeker.profileImage)}
                     alt={`${fullName} registration`}
-                    className="h-36 w-36 rounded-full border-4 border-slate-100 object-cover shadow-sm"
+                    className="h-36 w-36 rounded-full border-4 border-black/10 object-cover shadow-sm"
                   />
                 ) : (
-                  <div className="flex h-36 w-36 items-center justify-center rounded-full border-4 border-slate-100 bg-slate-100 text-4xl font-bold text-slate-500">
+                  <div className="flex h-36 w-36 items-center justify-center rounded-full border-4 border-black/10 bg-black/5 text-4xl font-bold text-black/60">
                     {(fullName || "?").charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -776,7 +845,7 @@ const JobseekerVerificationDetails = () => {
                     "mt-3 rounded-full border px-3 py-1 text-xs font-semibold",
                     jobseeker.profileImage
                       ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                      : "border-slate-200 bg-slate-50 text-slate-500"
+                      : "border-black/15 bg-white text-black/60"
                   )}
                 >
                   {jobseeker.profileImage ? "ID Photo Submitted" : "No Photo Submitted"}
@@ -785,7 +854,7 @@ const JobseekerVerificationDetails = () => {
             </div>
           </section>
 
-          <section className="mt-4 rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+          <section className="mt-4 rounded-xl border border-black/15 bg-white p-4 sm:p-5">
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <SvgIcon name="document" className="h-5 w-5 text-[#2e66a6]" />
               <h2 className="text-base font-bold text-[#2e66a6]">Credentials</h2>
@@ -804,13 +873,13 @@ const JobseekerVerificationDetails = () => {
                 return (
                   <article
                     key={docType.key}
-                    className="flex min-h-[160px] flex-col rounded-lg border border-slate-200 bg-white p-3"
+                    className="flex min-h-[160px] flex-col rounded-lg border border-black/15 bg-white p-3"
                   >
                     <div className="flex items-start gap-2">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-[#2e66a6]">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2e66a6]/10 text-xs font-bold text-[#2e66a6]">
                         {index + 1}
                       </span>
-                      <h3 className="min-w-0 text-xs font-bold leading-5 text-slate-700">
+                      <h3 className="min-w-0 text-xs font-bold leading-5 text-black/75">
                         {docType.label}
                       </h3>
                     </div>
@@ -819,17 +888,17 @@ const JobseekerVerificationDetails = () => {
                       <div
                         className={cn(
                           "flex h-10 w-9 shrink-0 items-center justify-center rounded",
-                          hasFile ? "bg-red-50 text-red-600" : "bg-slate-100 text-slate-400"
+                          hasFile ? "bg-red-50 text-red-600" : "bg-black/5 text-black/45"
                         )}
                       >
                         <SvgIcon name="document" className="h-5 w-5" />
                       </div>
 
                       <div className="min-w-0">
-                        <p className="truncate text-[11px] font-semibold text-slate-700" title={fileName}>
+                        <p className="truncate text-[11px] font-semibold text-black/75" title={fileName}>
                           {hasFile ? fileName : "No file"}
                         </p>
-                        {fileSize ? <p className="mt-1 text-[10px] text-slate-400">({fileSize})</p> : null}
+                        {fileSize ? <p className="mt-1 text-[10px] text-black/45">({fileSize})</p> : null}
                       </div>
                     </div>
 
@@ -837,9 +906,9 @@ const JobseekerVerificationDetails = () => {
                       <div className="mt-3 grid grid-cols-2 gap-1.5">
                         <button
                           type="button"
-                          onClick={() => handleViewFile(docType.key)}
+                          onClick={() => handleViewFile(docType.key, docType.label)}
                           className={cn(
-                            "flex h-8 items-center justify-center rounded border border-slate-200 bg-white text-[#2e66a6] hover:bg-blue-50",
+                            "flex h-8 items-center justify-center rounded border border-black/15 bg-white text-[#2e66a6] hover:bg-[#2e66a6]/10",
                             UI.ring
                           )}
                           aria-label={`View ${docType.label}`}
@@ -851,7 +920,7 @@ const JobseekerVerificationDetails = () => {
                           type="button"
                           onClick={() => handleDownloadFile(docType.key, docType.label)}
                           className={cn(
-                            "flex h-8 items-center justify-center rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
+                            "flex h-8 items-center justify-center rounded border border-black/15 bg-white text-black/70 hover:bg-white",
                             UI.ring
                           )}
                           aria-label={`Download ${docType.label}`}
@@ -861,7 +930,7 @@ const JobseekerVerificationDetails = () => {
                         </button>
                       </div>
                     ) : (
-                      <div className="mt-3 flex h-8 items-center justify-center rounded border border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-400">
+                      <div className="mt-3 flex h-8 items-center justify-center rounded border border-black/15 bg-white text-[11px] font-semibold text-black/45">
                         Not submitted
                       </div>
                     )}
@@ -886,11 +955,11 @@ const JobseekerVerificationDetails = () => {
             </div>
           </section>
 
-          <section className="mt-4 rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
-            <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+          <section className="mt-4 rounded-xl border border-black/15 bg-white p-4 sm:p-5">
+            <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
               <div>
-                <label htmlFor="reviewNotes" className="text-xs font-semibold text-slate-600">
-                  Review Notes <span className="font-normal text-slate-400">(Optional)</span>
+                <label htmlFor="reviewNotes" className="text-xs font-semibold text-black/70">
+                  Review Notes <span className="font-normal text-black/45">(Optional)</span>
                 </label>
                 <textarea
                   id="reviewNotes"
@@ -899,13 +968,13 @@ const JobseekerVerificationDetails = () => {
                   placeholder="Add notes here..."
                   rows={3}
                   className={cn(
-                    "mt-2 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder-slate-400",
+                    "mt-2 w-full resize-none rounded-lg border border-black/15 bg-white px-3 py-2 text-sm text-black placeholder-slate-400",
                     UI.ring
                   )}
                 />
               </div>
 
-              <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[540px]">
+              <div className="grid gap-2 sm:grid-cols-3 lg:mt-6 lg:min-w-[540px]">
                 {canShowActionButtons ? (
                   <>
                     <button
@@ -913,7 +982,7 @@ const JobseekerVerificationDetails = () => {
                       onClick={() => setShowApproveModal(true)}
                       disabled={actionLoading || submittedCount === 0}
                       className={cn(
-                        "flex min-h-[58px] items-center justify-center gap-2 rounded-lg bg-emerald-500 px-5 text-sm font-bold text-white shadow-sm hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50",
+                        "flex min-h-[58px] items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-5 text-sm font-bold text-white shadow-sm hover:bg-[#2e66a6]/90 disabled:cursor-not-allowed disabled:opacity-50",
                         UI.ring
                       )}
                     >
@@ -926,7 +995,7 @@ const JobseekerVerificationDetails = () => {
                       onClick={() => setShowDeclineModal(true)}
                       disabled={actionLoading}
                       className={cn(
-                        "flex min-h-[58px] items-center justify-center gap-2 rounded-lg bg-red-500 px-5 text-sm font-bold text-white shadow-sm hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50",
+                        "flex min-h-[58px] items-center justify-center gap-2 rounded-lg border border-[#2e66a6] bg-white px-5 text-sm font-bold text-[#2e66a6] shadow-sm hover:bg-[#2e66a6]/10 disabled:cursor-not-allowed disabled:opacity-50",
                         UI.ring
                       )}
                     >
@@ -939,7 +1008,7 @@ const JobseekerVerificationDetails = () => {
                       onClick={() => setShowHoldModal(true)}
                       disabled={actionLoading || submittedCount === 0}
                       className={cn(
-                        "flex min-h-[58px] items-center justify-center gap-2 rounded-lg bg-amber-500 px-5 text-sm font-bold text-white shadow-sm hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50",
+                        "flex min-h-[58px] items-center justify-center gap-2 rounded-lg bg-black px-5 text-sm font-bold text-white shadow-sm hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-50",
                         UI.ring
                       )}
                     >
@@ -955,6 +1024,109 @@ const JobseekerVerificationDetails = () => {
           </section>
         </div>
       </div>
+
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-[60] overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div
+              className="fixed inset-0 bg-black/45"
+              onClick={closePasswordModal}
+              aria-hidden="true"
+            />
+
+            <div
+              className="relative w-full max-w-md overflow-hidden rounded-2xl border border-black/15 bg-white shadow-2xl"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="credential-password-title"
+            >
+              <div className="p-6 sm:p-7">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#2e66a6]/10 text-[#2e66a6]">
+                  <SvgIcon
+                    name={pendingCredentialAction?.action === "download" ? "download" : "eye"}
+                    className="h-6 w-6"
+                  />
+                </div>
+
+                <h3
+                  id="credential-password-title"
+                  className="mt-4 text-center text-2xl font-bold text-black"
+                >
+                  Enter Password
+                </h3>
+
+                <p className="mt-2 text-center text-sm leading-6 text-black/65">
+                  Enter your admin password to{" "}
+                  {pendingCredentialAction?.action === "download" ? "download" : "view"}{" "}
+                  {pendingCredentialAction?.label || "this credential"}.
+                </p>
+
+                <div className="mt-5">
+                  <label htmlFor="credentialPassword" className="block text-sm font-semibold text-black">
+                    Password
+                  </label>
+                  <input
+                    id="credentialPassword"
+                    type="password"
+                    value={credentialPassword}
+                    onChange={(event) => {
+                      setCredentialPassword(event.target.value);
+                      setPasswordError("");
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        confirmCredentialAccess();
+                      }
+                    }}
+                    autoFocus
+                    disabled={passwordLoading}
+                    className={cn(
+                      "mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm text-black placeholder-black/35",
+                      passwordError ? "border-black" : "border-black/20",
+                      UI.ring
+                    )}
+                    placeholder="Enter your password"
+                  />
+
+                  {passwordError ? (
+                    <p className="mt-2 text-sm font-medium text-black" role="alert">
+                      {passwordError}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 border-t border-black/10 bg-white px-6 py-4">
+                <button
+                  type="button"
+                  onClick={closePasswordModal}
+                  disabled={passwordLoading}
+                  className={cn(
+                    "h-11 rounded-xl border border-black/20 bg-white text-sm font-semibold text-black hover:bg-black/5 disabled:opacity-50",
+                    UI.ring
+                  )}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={confirmCredentialAccess}
+                  disabled={passwordLoading}
+                  className={cn(
+                    "flex h-11 items-center justify-center gap-2 rounded-xl bg-[#2e66a6] text-sm font-semibold text-white hover:bg-[#2e66a6]/90 disabled:opacity-50",
+                    UI.ring
+                  )}
+                >
+                  {passwordLoading ? <Spinner /> : null}
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showApproveModal && !isApproved && !isRejected && (
         <div className="fixed inset-0 z-50 overflow-y-auto">

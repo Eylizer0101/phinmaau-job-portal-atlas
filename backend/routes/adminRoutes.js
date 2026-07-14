@@ -42,6 +42,10 @@ router.get('/jobseekers/verification/:id', adminController.getJobseekerVerificat
 router.put('/jobseekers/verification/:id/status', adminController.updateJobseekerVerificationStatus);
 router.put('/jobseekers/verification/:id/hold', adminController.holdJobseekerVerification);
 router.get('/jobseekers/verification/:id/docs', adminController.getJobseekerVerificationDocUrls);
-router.get('/jobseekers/verification/:id/docs/:docType', adminController.downloadJobseekerVerificationDocument);
+router.get(
+  '/jobseekers/verification/:id/docs/:docType',
+  adminController.requireAdminPasswordForCredential,
+  adminController.downloadJobseekerVerificationDocument
+);
 
 module.exports = router;

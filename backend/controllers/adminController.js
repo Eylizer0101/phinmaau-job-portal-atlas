@@ -2321,6 +2321,45 @@ exports.getJobseekerVerificationDocUrls = async (req, res) => {
 };
 
 exports.downloadUserVerificationDocument = async (req, res) => streamVerificationDocument(req, res, null);
+exports.requireAdminPasswordForCredential = async (req, res, next) => {
+  try {
+    const password = String(req.headers['x-admin-password'] || '');
+
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password is required.',
+      });
+    }
+
+    const admin = await User.findById(req.userId).select('+password role');
+
+    if (!admin || admin.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access is required.',
+      });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, admin.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Incorrect password.',
+      });
+    }
+
+    return next();
+  } catch (error) {
+    console.error('Error verifying admin password for credential access:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to verify password.',
+    });
+  }
+};
+
 exports.downloadJobseekerVerificationDocument = async (req, res) => streamVerificationDocument(req, res, 'jobseeker');
 exports.downloadEmployerVerificationDocument = async (req, res) => streamVerificationDocument(req, res, 'employer');
 
