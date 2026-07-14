@@ -302,109 +302,6 @@ const MoreEntryList = ({ items = [], type = 'default', emptyText }) => {
   );
 };
 
-
-const sanitizeReadOnlyHtml = (value = '') => {
-  const raw = String(value || '').trim();
-  if (!raw) return '';
-  if (typeof window === 'undefined' || typeof window.DOMParser === 'undefined') return raw;
-  const allowed = new Set(['B','STRONG','I','EM','U','P','DIV','BR','UL','OL','LI','H1','H2']);
-  const parser = new window.DOMParser();
-  const doc = parser.parseFromString(`<div>${raw}</div>`, 'text/html');
-  const root = doc.body.firstElementChild;
-  if (!root) return '';
-  const clean = (node) => Array.from(node.childNodes).forEach((child) => {
-    if (child.nodeType !== window.Node.ELEMENT_NODE) return;
-    if (!allowed.has(child.tagName)) {
-      child.replaceWith(...Array.from(child.childNodes));
-      return;
-    }
-    Array.from(child.attributes).forEach((attr) => child.removeAttribute(attr.name));
-    clean(child);
-  });
-  clean(root);
-  return root.innerHTML;
-};
-
-const ReadOnlyRichText = ({ value, empty = 'No information added.' }) => {
-  const html = sanitizeReadOnlyHtml(value);
-  if (!html) return <p className="text-sm text-gray-400">{empty}</p>;
-  return (
-    <div
-      className="text-sm leading-7 text-gray-700 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1 [&_h1]:text-xl [&_h1]:font-bold [&_h2]:text-lg [&_h2]:font-bold"
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
-  );
-};
-
-const ReadOnlySection = ({ title, children, defaultOpen = false }) => {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <section className="border-b border-gray-200 last:border-b-0">
-      <button type="button" onClick={() => setOpen((value) => !value)} className="flex w-full items-center justify-between gap-4 py-4 text-left">
-        <span className="text-[17px] font-bold uppercase tracking-wide text-slate-900">{title}</span>
-        <span className={`text-slate-500 transition ${open ? 'rotate-180' : ''}`}>⌄</span>
-      </button>
-      {open ? <div className="pb-5">{children}</div> : null}
-    </section>
-  );
-};
-
-const ApplicantMessageModal = ({ open, applicant, application, onClose }) => {
-  const [content, setContent] = useState('');
-  const [sending, setSending] = useState(false);
-  const [messageError, setMessageError] = useState('');
-
-  if (!open) return null;
-
-  const sendMessage = async (event) => {
-    event.preventDefault();
-    if (!content.trim() || sending) return;
-    try {
-      setSending(true);
-      setMessageError('');
-      const token = localStorage.getItem('token');
-      const formData = new FormData();
-      formData.append('receiverId', applicant?._id || applicant?.id || '');
-      formData.append('content', content.trim());
-      formData.append('messageType', 'text');
-      formData.append('applicationId', application?._id || '');
-      formData.append('jobId', application?.job?._id || '');
-      await axios.post(`${API_HOST}/api/messages/send`, formData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setContent('');
-      onClose?.();
-    } catch (error) {
-      setMessageError(error.response?.data?.message || 'Failed to send message.');
-    } finally {
-      setSending(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center px-4 py-6">
-      <button type="button" className="absolute inset-0 bg-black/45" onClick={onClose} aria-label="Close message popup" />
-      <div className="relative w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-          <div>
-            <h3 className="text-lg font-bold text-slate-900">Message applicant</h3>
-            <p className="text-sm text-gray-500">{applicant?.fullName || applicant?.email || 'Applicant'}</p>
-          </div>
-          <button type="button" onClick={onClose} className="h-9 w-9 rounded-lg border border-gray-200 text-gray-500">×</button>
-        </div>
-        <form onSubmit={sendMessage} className="p-5">
-          <textarea value={content} onChange={(event) => setContent(event.target.value)} rows={6} placeholder="Write your message..." className="w-full rounded-xl border border-gray-200 p-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20" />
-          {messageError ? <p className="mt-2 text-sm text-red-600">{messageError}</p> : null}
-          <div className="mt-4 flex justify-end gap-3">
-            <button type="button" onClick={onClose} className="h-10 rounded-xl border border-gray-200 px-4 text-sm font-semibold">Cancel</button>
-            <button type="submit" disabled={sending || !content.trim()} className="h-10 rounded-xl bg-[#2e66a6] px-5 text-sm font-semibold text-white disabled:opacity-60">{sending ? 'Sending...' : 'Send Message'}</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
 const ApplicationDetails = () => {
   const navigate = useNavigate();
   const { applicationId } = useParams();
@@ -415,17 +312,18 @@ const ApplicationDetails = () => {
   const [success, setSuccess] = useState('');
   const [application, setApplication] = useState(null);
   const [statusUpdating, setStatusUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState('resume');
-  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('personal');
   const [isDeclineModalOpen, setIsDeclineModalOpen] = useState(false);
   const [declineReason, setDeclineReason] = useState('');
   const [declineComment, setDeclineComment] = useState('');
 
   const tabs = useMemo(
     () => [
-      { key: 'resume', label: 'Resume', icon: 'folder' },
-      { key: 'messages', label: 'Messages', icon: 'mail' },
-      { key: 'activity', label: 'Activity', icon: 'calendar' },
+      { key: 'personal', label: 'Personal Information', icon: 'user' },
+      { key: 'overview', label: 'Overview', icon: 'globe' },
+      { key: 'experience', label: 'Experience', icon: 'briefcase' },
+      { key: 'achievements', label: 'Achievements', icon: 'award' },
+      { key: 'preferences', label: 'Preferences', icon: 'check' },
     ],
     []
   );
@@ -502,7 +400,6 @@ const ApplicationDetails = () => {
           declineReason: response.data.application?.declineReason || '',
           declineComment: response.data.application?.declineComment || '',
           declinedFrom: response.data.application?.declinedFrom || '',
-          activityHistory: response.data.application?.activityHistory || prev?.activityHistory || [],
         }));
         setToast(setSuccess, response.data?.vacancy?.isFull ? 'Status updated: Hired. The job post is now Filled because the vacancy is already full.' : newStatus === 'for interview' ? 'Status updated: For Interview' : newStatus === 'hired' ? 'Status updated: Hired' : 'Application marked as Declined with feedback saved.');
       }
@@ -592,160 +489,215 @@ const ApplicationDetails = () => {
     }
   };
 
-  const activityItems = (() => {
-    const history = Array.isArray(application?.activityHistory) ? application.activityHistory : [];
-    if (history.length) {
-      return [...history].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    }
-
-    const fallback = [];
-    if (application?.appliedAt) fallback.push({ title: 'Application received', description: `${applicantName} submitted an application.`, createdAt: application.appliedAt });
-    if (application?.viewedAt || application?.reviewedAt) fallback.push({ title: 'Application reviewed', description: 'The employer opened and reviewed the application.', createdAt: application.viewedAt || application.reviewedAt });
-    if (currentStatus !== 'pending') fallback.push({ title: `Status: ${status.label}`, description: `The application is currently marked as ${status.label}.`, createdAt: application?.updatedAt || application?.reviewedAt });
-    return fallback.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  })();
-
-  const profileSections = {
-    workExperiences: Array.isArray(profile.workExperiences) ? profile.workExperiences : [],
-    certifications: Array.isArray(profile.certifications) ? profile.certifications : [],
-    projects: Array.isArray(profile.projects) ? profile.projects : [],
-    seminars: Array.isArray(profile.seminars) ? profile.seminars : [],
-    awards: Array.isArray(profile.awards) ? profile.awards : [],
-    affiliations: Array.isArray(profile.affiliations) ? profile.affiliations : [],
-    cocurricular: Array.isArray(profile.cocurricular) ? profile.cocurricular : [],
-    references: Array.isArray(profile.references) ? profile.references : [],
-  };
-
-  const renderSimpleEntries = (items, emptyText) => (
-    items.length ? (
-      <div className="space-y-4">
-        {items.map((item, index) => (
-          <div key={item._id || index} className="rounded-xl border border-gray-200 bg-white p-4">
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <div className="font-semibold text-slate-900">{display(item.title || item.organization || item.name || item.positionTitle || item.level, 'Untitled')}</div>
-                <div className="text-sm italic text-gray-500">{[item.role, item.issuer, item.company, item.companyName, item.school, item.campus].filter(Boolean).join(' • ')}</div>
-              </div>
-              <div className="text-xs font-semibold text-gray-500">{display(item.date || formatYearRange(item), '')}</div>
-            </div>
-            {item.description ? <div className="mt-3"><ReadOnlyRichText value={item.description} /></div> : null}
-            {item.phone ? <div className="mt-2 text-sm text-gray-600">{item.phone}</div> : null}
-            {item.email ? <div className="text-sm text-[#2e66a6]">{item.email}</div> : null}
-          </div>
-        ))}
-      </div>
-    ) : <EmptyState text={emptyText} />
-  );
-
   return (
     <EmployerLayout>
       <div className={UI.page}>
-        <div className="overflow-hidden rounded-[24px] border border-gray-200 bg-white">
-          <div className="border-b border-gray-200 px-5 py-5 sm:px-7">
-            <Link to="/employer/applicants" className="inline-flex items-center gap-2 text-sm font-semibold text-[#2e66a6]"><SvgIcon name="back" /> Back to Applicants</Link>
-            <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex min-w-0 items-center gap-4">
-                <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full border border-gray-200 bg-[#eef5fc]">
-                  {profileImage && !avatarBroken ? <img src={profileImage} alt={applicantName} className="h-full w-full object-cover" onError={() => setAvatarBroken(true)} /> : <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-[#2e66a6]">{initials}</div>}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="truncate text-2xl font-bold text-slate-900">{applicantName}</h1>
-                    <span className={cn('rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase', status.cls)}>{status.label}</span>
-                  </div>
-                  <p className="mt-1 text-sm text-gray-500">Applied for <span className="font-semibold text-slate-800">{display(application?.job?.title, 'Job Position')}</span></p>
-                  <p className="mt-1 text-xs text-gray-400">Applied {formatDate(application?.appliedAt, true)}</p>
+        <div className="overflow-hidden border border-gray-200 bg-white sm:rounded-[24px]">
+          <div className="border-b border-gray-200 bg-white px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="min-w-0">
+                <Link to="/employer/applicants" className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 hover:text-[#2e66a6]">
+                  <SvgIcon name="back" className="h-3.5 w-3.5" /> Applying for
+                </Link>
+                <h1 className="mt-4 text-[24px] font-semibold leading-tight tracking-[-0.01em] text-slate-900 sm:mt-5 sm:text-[32px]">{display(application?.job?.title, 'Job Position')}</h1>
+                <div className="mt-3 flex flex-col items-start gap-1.5 text-sm font-medium text-gray-600">
+                  <span className="inline-flex items-center gap-1.5"><SvgIcon name="briefcase" className="h-3.5 w-3.5" />{display(application?.job?.companyName, 'Company')}</span>
+                  <span className="inline-flex items-center gap-1.5"><SvgIcon name="location" className="h-3.5 w-3.5" />{display(application?.job?.location, 'Location not specified')}</span>
+                  {application?.job?._id ? (
+                    <Link
+                      to={`/employer/manage-jobs/${application.job._id}/view`}
+                      state={{
+                        from: 'applicationDetails',
+                        backPath: `/employer/application/${applicationId}`,
+                        backLabel: 'Application Details',
+                      }}
+                      className="inline-flex items-center gap-1.5 text-[#2e66a6] hover:underline"
+                    >
+                      <SvgIcon name="folder" className="h-3.5 w-3.5" />
+                      View Job Description
+                    </Link>
+                  ) : null}
                 </div>
               </div>
-              <div className="flex flex-wrap gap-3">
-                {currentStatus === 'pending' ? <button type="button" onClick={() => handleStatusUpdate('for interview')} disabled={statusUpdating} className="h-11 rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white">Move to Interview</button> : null}
-                {currentStatus === 'for interview' ? <button type="button" onClick={() => handleStatusUpdate('hired')} disabled={statusUpdating} className="h-11 rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white">Hired</button> : null}
-                {['pending','for interview'].includes(currentStatus) ? <button type="button" onClick={() => setIsDeclineModalOpen(true)} disabled={statusUpdating} className="h-11 rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-600">Decline Application</button> : null}
+
+              <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center lg:justify-end">
+                <div className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-[#f8fafc] px-3 py-2 text-sm font-semibold text-gray-700 sm:justify-start">
+                  <SvgIcon name="calendar" className="h-3.5 w-3.5" /> Applied {formatDate(application?.appliedAt)}
+                </div>
+                {currentStatus === 'pending' ? (
+                  <button type="button" onClick={() => handleStatusUpdate('for interview')} disabled={statusUpdating} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white shadow-none hover:bg-[#25578e] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
+                    {statusUpdating ? <Spinner /> : <SvgIcon name="calendar" />} Move to Interview
+                  </button>
+                ) : null}
+
+                {currentStatus === 'for interview' ? (
+                  <button type="button" onClick={() => handleStatusUpdate('hired')} disabled={statusUpdating} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white shadow-none hover:bg-[#25578e] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
+                    {statusUpdating ? <Spinner /> : <SvgIcon name="check" />} Hired
+                  </button>
+                ) : null}
+
+                {['pending', 'for interview'].includes(currentStatus) ? (
+                  <button type="button" onClick={() => setIsDeclineModalOpen(true)} disabled={statusUpdating} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 text-sm font-semibold text-white shadow-none hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
+                    <SvgIcon name="x" /> Declined
+                  </button>
+                ) : null}
               </div>
             </div>
           </div>
 
-          {error ? <div className="px-5 pt-4"><Alert type="error" onClose={() => setError('')}>{error}</Alert></div> : null}
-          {success ? <div className="px-5 pt-4"><Alert type="success" onClose={() => setSuccess('')}>{success}</Alert></div> : null}
+          <div className="bg-[#f8fafc] px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+            {error ? <div className="mb-4"><Alert type="error" onClose={() => setError('')}>{error}</Alert></div> : null}
+            {success ? <div className="mb-4"><Alert type="success" onClose={() => setSuccess('')}>{success}</Alert></div> : null}
 
-          <div className="border-b border-gray-200 px-5 sm:px-7">
-            <div className="flex gap-6 overflow-x-auto" role="tablist">
+            <div className="flex flex-col gap-5 rounded-[20px] border border-gray-200 bg-white p-4 shadow-none sm:p-5 md:flex-row md:items-center md:justify-between">
+              <div className="flex min-w-0 flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
+                <div className="h-[88px] w-[88px] shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-[#eef5fc] shadow-none sm:h-[96px] sm:w-[96px]">
+                  {profileImage && !avatarBroken ? (
+                    <img src={profileImage} alt={applicantName} className="h-full w-full object-cover" onError={() => setAvatarBroken(true)} />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-3xl font-semibold text-[#2e66a6]">{initials}</div>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start sm:gap-3">
+                    <h2 className="max-w-full break-words text-[20px] font-semibold leading-tight tracking-[-0.01em] text-slate-900 sm:text-[25px]" title={applicantName}>{applicantName}</h2>
+                    <span className="rounded-md bg-[#eef5fc] px-2.5 py-1 text-[10px] font-semibold uppercase text-[#2e66a6]">{classOfText}</span>
+                    <span className={cn('rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase', status.cls)}>{status.label}</span>
+                  </div>
+                  <div className="mt-3 flex flex-col items-center gap-1.5 text-xs font-medium text-gray-600 sm:items-start sm:text-sm md:flex-row md:flex-wrap md:gap-x-5 md:gap-y-2">
+                    <span className="inline-flex items-center gap-1.5"><SvgIcon name="school" className="h-3.5 w-3.5" />{display(profile.course, 'Course not provided')}</span>
+                    <span className="inline-flex items-center gap-1.5"><SvgIcon name="mail" className="h-3.5 w-3.5" />{applicantEmail}</span>
+                    <span className="inline-flex items-center gap-1.5"><SvgIcon name="phone" className="h-3.5 w-3.5" />{display(profile.phoneNumber, 'No phone')}</span>
+                    <span className="inline-flex items-center gap-1.5"><SvgIcon name="location" className="h-3.5 w-3.5" />{address}</span>
+                  </div>
+                </div>
+              </div>
+
+              <button type="button" onClick={downloadResume} disabled={!resumeUrl} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-5 text-sm font-semibold text-slate-800 shadow-none hover:border-[#2e66a6] hover:bg-[#eef5fc] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto">
+                <SvgIcon name="download" /> {resumeUrl ? 'Download CV' : 'No CV'}
+              </button>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-200 bg-white px-4 sm:px-6 lg:px-8">
+            <div className="-mx-4 flex gap-4 overflow-x-auto px-4 sm:mx-0 sm:gap-6 sm:px-0" role="tablist" aria-label="Applicant profile sections">
               {tabs.map((tab) => {
                 const active = activeTab === tab.key;
-                return <button key={tab.key} type="button" onClick={() => tab.key === 'messages' ? setIsMessageModalOpen(true) : setActiveTab(tab.key)} className={cn('relative h-14 shrink-0 px-1 text-sm font-semibold', active ? 'text-[#2e66a6]' : 'text-gray-500')}><SvgIcon name={tab.icon} className="mr-2 inline h-4 w-4" />{tab.label}<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', active ? 'bg-[#2e66a6]' : 'bg-transparent')} /></button>;
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={cn('relative inline-flex h-14 shrink-0 items-center gap-2 px-1 text-xs font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 sm:text-sm', active ? 'text-[#2e66a6]' : 'text-gray-500 hover:text-gray-700')}
+                  >
+                    <SvgIcon name={tab.icon} className="h-3.5 w-3.5" />
+                    {tab.label}
+                    <span className={cn('absolute bottom-0 left-0 right-0 h-[3px] rounded-full', active ? 'bg-[#2e66a6]' : 'bg-transparent')} />
+                  </button>
+                );
               })}
             </div>
           </div>
 
-          <div className="p-5 sm:p-7">
-            {activeTab === 'resume' ? (
-              <div className="mx-auto max-w-5xl">
-                <ReadOnlySection title="Basic Information" defaultOpen>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <DetailField label="Full Name" value={applicantName} />
-                    <DetailField label="Email" value={jobseeker.email} />
-                    <DetailField label="Phone" value={profile.phoneNumber} />
-                    <DetailField label="Address" value={profile.address} />
-                    <DetailField label="Course" value={profile.course} />
-                    <DetailField label="Campus" value={profile.campus} />
-                    <DetailField label="Class Of" value={profile.yearGraduated} />
-                    <DetailField label="Birthday" value={profile.birthday ? formatDate(profile.birthday) : ''} />
-                    <DetailField label="Nationality" value={profile.nationality} />
-                  </div>
-                </ReadOnlySection>
-                <ReadOnlySection title="Objective"><ReadOnlyRichText value={profile.aboutMe} empty="No objective added." /></ReadOnlySection>
-                <ReadOnlySection title="Availability & Preferences">
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <DetailField label="Preferred Work Mode" value={profile.preferredWorkMode} />
-                    <DetailField label="Employment Type" value={profile.employmentType} />
-                    <DetailField label="Willing to Relocate" value={profile.willingToRelocate} />
-                    <DetailField label="How Soon Can Start" value={profile.howSoonCanYouStart} />
-                    <DetailField label="Experience" value={profile.experience || profile.whatHaveYouDone} />
-                    <DetailField label="Preferred Language" value={profile.preferredLanguage} />
-                    <DetailField label="Educational Attainment" value={profile.educationalAttainment} />
-                    <DetailField label="Double Degree" value={profile.studyField} />
-                    <DetailField label="Civil Status" value={profile.civilStatus} />
-                  </div>
-                </ReadOnlySection>
-                <ReadOnlySection title="Work Experience">{renderSimpleEntries(profileSections.workExperiences, 'No work experience added.')}</ReadOnlySection>
-                <ReadOnlySection title="Skills"><TagList items={[...parseList(profile.technicalSkills), ...parseList(profile.softSkills)]} emptyText="No skills added." /></ReadOnlySection>
-                <ReadOnlySection title="Education">{renderSimpleEntries(educationEntries, 'No education added.')}</ReadOnlySection>
-                <ReadOnlySection title="Credentials">
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {Object.entries(profile.verificationDocs || {}).map(([key, document]) => document?.url ? <a key={key} href={getAssetUrl(document.url)} target="_blank" rel="noreferrer" className="rounded-xl border border-gray-200 p-4 text-sm font-semibold capitalize text-[#2e66a6]">{key} — View document</a> : null)}
-                  </div>
-                </ReadOnlySection>
-                <ReadOnlySection title="Certifications">{renderSimpleEntries(profileSections.certifications, 'No certifications added.')}</ReadOnlySection>
-                <ReadOnlySection title="Projects">{renderSimpleEntries(profileSections.projects, 'No projects added.')}</ReadOnlySection>
-                <ReadOnlySection title="Seminars and Trainings">{renderSimpleEntries(profileSections.seminars, 'No seminars and trainings added.')}</ReadOnlySection>
-                <ReadOnlySection title="Awards and Achievements">{renderSimpleEntries(profileSections.awards, 'No awards and achievements added.')}</ReadOnlySection>
-                <ReadOnlySection title="Affiliations">{renderSimpleEntries(profileSections.affiliations, 'No affiliations added.')}</ReadOnlySection>
-                <ReadOnlySection title="Co-Curricular Activities">{renderSimpleEntries(profileSections.cocurricular, 'No co-curricular activities added.')}</ReadOnlySection>
-                <ReadOnlySection title="References">{renderSimpleEntries(profileSections.references, 'No references added.')}</ReadOnlySection>
-              </div>
+          <div className="border-t border-gray-200 bg-white px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+            {activeTab === 'personal' ? (
+              <section className="space-y-5">
+                <h3 className="text-lg font-semibold tracking-[-0.005em] text-slate-900">Personal Information</h3>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <DetailField label="Birthday" value={profile.birthday ? formatDate(profile.birthday) : ''} />
+                  <DetailField label="Civil Status" value={profile.civilStatus} />
+                  <DetailField label="Height" value={profile.height} />
+                  <DetailField label="Weight" value={profile.weight} />
+                  <DetailField label="Nationality" value={profile.nationality} />
+                  <DetailField label="Gender" value={profile.gender} />
+                </div>
+              </section>
             ) : null}
 
-            {activeTab === 'activity' ? (
-              <div className="mx-auto max-w-3xl">
-                <h2 className="text-xl font-bold text-slate-900">Application Activity</h2>
-                <div className="relative mt-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:h-[calc(100%-16px)] before:w-px before:bg-gray-200">
-                  {activityItems.length ? activityItems.map((item, index) => (
-                    <div key={`${item.createdAt}-${index}`} className="relative pl-10">
-                      <span className="absolute left-0 top-1.5 h-6 w-6 rounded-full border-4 border-white bg-[#2e66a6] shadow-sm" />
-                      <div className="rounded-xl border border-gray-200 bg-white p-4">
-                        <h3 className="font-bold text-slate-900">{item.title}</h3>
-                        <p className="mt-1 text-sm text-gray-600">{item.description}</p>
-                        <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-gray-400">{formatDate(item.createdAt, true)}</p>
-                      </div>
-                    </div>
-                  )) : <EmptyState text="No application activity available yet." />}
+            {activeTab === 'overview' ? (
+              <section className="space-y-7">
+                <div>
+                  <h3 className="text-lg font-semibold tracking-[-0.005em] text-slate-900">Objective</h3>
+                  <p className="mt-3 text-sm leading-7 text-gray-600">{display(profile.aboutMe, 'No objective added yet.')}</p>
                 </div>
-              </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold tracking-[-0.005em] text-slate-900">Educational Background</h3>
+                  <div className="mt-4 space-y-3">
+                    {educationEntries.length ? educationEntries.map((edu, index) => (
+                      <TimelineItem key={`${edu.level || edu.school || edu.campus}-${index}`} icon="school" title={display(edu.level || edu.educationalAttainment, 'Education')} subtitle={display(edu.school || edu.campus, '')} date={formatYearRange(edu)}>
+                        {edu.description ? <p>{edu.description}</p> : null}
+                      </TimelineItem>
+                    )) : <EmptyState text="No educational background added yet." />}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold tracking-[-0.005em] text-slate-900">Skills</h3>
+                  <div className="mt-4">
+                    <TagList
+                      items={[...parseList(profile.technicalSkills), ...parseList(profile.softSkills)]}
+                      emptyText="No skills added."
+                    />
+                  </div>
+                </div>
+              </section>
+            ) : null}
+
+            {activeTab === 'experience' ? (
+              <section className="space-y-7">
+                <div>
+                  <h3 className="text-lg font-semibold tracking-[-0.005em] text-slate-900">Work Experience</h3>
+                  <div className="mt-4 space-y-3">
+                    {Array.isArray(profile.workExperiences) && profile.workExperiences.length ? profile.workExperiences.map((exp, index) => (
+                      <TimelineItem key={exp._id || `${exp.companyName}-${index}`} icon="briefcase" title={display(exp.positionTitle, 'Work Experience')} subtitle={display(exp.companyName, '')} date={exp.isPresent ? `${formatDate(exp.startDate)} - Present` : `${formatDate(exp.startDate)} - ${formatDate(exp.endDate)}`}>
+                        {exp.description ? <p>{exp.description}</p> : null}
+                      </TimelineItem>
+                    )) : <EmptyState text="No work experience added yet." />}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold tracking-[-0.005em] text-slate-900">Projects</h3>
+                  <div className="mt-4"><MoreEntryList items={profile.projects} type="project" emptyText="No projects added yet." /></div>
+                </div>
+              </section>
+            ) : null}
+
+            {activeTab === 'achievements' ? (
+              <section className="space-y-7">
+                <div>
+                  <h3 className="text-lg font-semibold tracking-[-0.005em] text-slate-900">Awards &amp; Achievements</h3>
+                  <div className="mt-4"><MoreEntryList items={profile.awards} type="award" emptyText="No awards and achievements added yet." /></div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold tracking-[-0.005em] text-slate-900">Seminars &amp; Certifications</h3>
+                  <div className="mt-4 space-y-3">
+                    <MoreEntryList items={profile.certifications} type="certification" emptyText="No certifications added yet." />
+                    <MoreEntryList items={profile.seminars} type="certification" emptyText="No seminars added yet." />
+                  </div>
+                </div>
+              </section>
+            ) : null}
+
+            {activeTab === 'preferences' ? (
+              <section className="space-y-5">
+                <h3 className="text-lg font-semibold tracking-[-0.005em] text-slate-900">Availability &amp; Preferences</h3>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <InfoCard icon="globe" label="Preferred Language" value={display(profile.preferredLanguage)} />
+                  <InfoCard icon="briefcase" label="Experience" value={display(profile.whatHaveYouDone)} />
+                  <InfoCard icon="folder" label="Preferred Work Mode" value={display(profile.preferredWorkMode)} />
+                  <InfoCard icon="briefcase" label="Employment Type" value={display(profile.employmentType)} />
+                  <InfoCard icon="school" label="Educational Attainment" value={display(profile.educationalAttainment)} />
+                  <InfoCard icon="location" label="Willing to Relocate" value={display(profile.willingToRelocate)} />
+                  <InfoCard icon="calendar" label="How Soon Can You Start" value={display(profile.howSoonCanYouStart)} />
+                </div>
+              </section>
             ) : null}
           </div>
         </div>
-
-        <ApplicantMessageModal open={isMessageModalOpen} applicant={jobseeker} application={application} onClose={() => setIsMessageModalOpen(false)} />
 
         <DeclineReasonModal
           open={isDeclineModalOpen}
