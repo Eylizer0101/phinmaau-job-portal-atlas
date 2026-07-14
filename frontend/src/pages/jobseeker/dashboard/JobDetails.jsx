@@ -1215,7 +1215,7 @@ const JobDetails = () => {
 
                   <div className="mt-2 flex flex-col items-start w-full">
                     {job.applicationDeadline ? (
-                      <div className="flex items-center gap-2 w-full text-sm font-medium text-black/80">
+                     <div className="flex items-center gap-2 w-full text-sm font-normal text-black/80">
                         <span className="text-[#2e66a6] flex-shrink-0">
                           <SvgIcon name="calendar" className="h-4 w-4" />
                         </span>
