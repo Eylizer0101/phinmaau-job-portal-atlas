@@ -934,10 +934,10 @@ const EditJob = () => {
   }, [formData.skillsRequired]);
 
   const salaryValid = useMemo(() => {
-    if (!formData.salaryMin || !formData.salaryMax) return true;
+    if (formData.salaryMin === '' || formData.salaryMax === '') return false;
     const min = Number(formData.salaryMin);
     const max = Number(formData.salaryMax);
-    if (Number.isNaN(min) || Number.isNaN(max)) return true;
+    if (Number.isNaN(min) || Number.isNaN(max)) return false;
     return min <= max;
   }, [formData.salaryMin, formData.salaryMax]);
 
@@ -1022,7 +1022,12 @@ const EditJob = () => {
       errors.vacancies = 'Vacancies must be 1 or more.';
     }
 
-    if ((touched.salaryMin || touched.salaryMax || submitted) && !salaryValid) {
+    if (
+      (touched.salaryMin || touched.salaryMax || submitted) &&
+      (formData.salaryMin === '' || formData.salaryMax === '')
+    ) {
+      errors.salary = 'Minimum and maximum salary are required.';
+    } else if ((touched.salaryMin || touched.salaryMax || submitted) && !salaryValid) {
       errors.salary = 'Minimum salary must be ≤ maximum salary.';
     }
 
@@ -1073,6 +1078,7 @@ const EditJob = () => {
     if (!vacanciesValid) return 'Vacancies must be 1 or more';
     if (!formData.applicationDeadline) return 'Application deadline is required';
     if (!isDeadlineValid) return 'Application deadline must be in the future';
+    if (formData.salaryMin === '' || formData.salaryMax === '') return 'Minimum and maximum salary are required';
     if (!salaryValid) return 'Minimum salary cannot be greater than maximum salary';
     if (!skillsCountValid) return 'Skills must be 10 or fewer';
 
@@ -1777,12 +1783,13 @@ const EditJob = () => {
 
                     <section className="space-y-5">
                       <div className="flex items-end justify-between">
-                        <h3 className="text-base font-bold text-gray-900">Salary Range</h3>
-                        <span className="text-gray-400 font-semibold">(optional)</span>
+                        <h3 className="text-base font-bold text-gray-900">
+                          Salary Range <span className="text-red-600">*</span>
+                        </h3>
                       </div>
 
                       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                        <Field id="salaryMin" label="Minimum Salary">
+                        <Field id="salaryMin" label="Minimum Salary" required>
                           <div className="relative">
                             <span className="absolute left-3 top-3 text-gray-500">₱</span>
                             <input
@@ -1795,12 +1802,13 @@ const EditJob = () => {
                               className={`${inputClass(!!fieldErrors.salary)} pl-8`}
                               placeholder="Min"
                               min="0"
+                              required
                               disabled={isBusy}
                             />
                           </div>
                         </Field>
 
-                        <Field id="salaryMax" label="Maximum Salary">
+                        <Field id="salaryMax" label="Maximum Salary" required>
                           <div className="relative">
                             <span className="absolute left-3 top-3 text-gray-500">₱</span>
                             <input
@@ -1813,6 +1821,7 @@ const EditJob = () => {
                               className={`${inputClass(!!fieldErrors.salary)} pl-8`}
                               placeholder="Max"
                               min="0"
+                              required
                               disabled={isBusy}
                             />
                           </div>
