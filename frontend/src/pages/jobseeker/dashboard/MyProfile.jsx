@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import JobSeekerLayout from '../../../layouts/JobSeekerLayout';
 import ProfileMoreDropdown from '../../../components/jobseeker/ProfileMoreDropdown';
+import { openResumePrintWindow } from '../../../components/shared/resumePrintTemplate';
 import {
   MAJOR_COURSE_OPTIONS,
   CAMPUS_OPTIONS,
@@ -4064,35 +4065,18 @@ const MyProfile = () => {
   };
 
   const downloadResumePdf = async () => {
-    const token = localStorage.getItem('token');
-    const response = await axios.get(`${API_BASE}/auth/resume/download`, {
-      headers: { Authorization: `Bearer ${token}` },
-      responseType: 'blob',
-    });
+    const resumeData = {
+      userData,
+      formData,
+      workExperiences,
+      verificationDocs,
+    };
 
-    const contentType = response.headers?.['content-type'] || '';
+    const downloaded = await openResumePrintWindow(resumeData);
 
-    if (!contentType.includes('application/pdf')) {
-      const errorText = await response.data.text();
-      console.error('Resume download error:', errorText);
-      setError('Failed to generate CV PDF. Please check your backend terminal.');
-      return;
+    if (!downloaded) {
+      setError('Failed to generate CV PDF. Please try again.');
     }
-
-    const blob = new Blob([response.data], { type: 'application/pdf' });
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    const safeName = (fullName || 'resume')
-      .replace(/[^a-z0-9\s-_]/gi, '')
-      .trim()
-      .replace(/\s+/g, '_') || 'resume';
-
-    link.href = downloadUrl;
-    link.download = `${safeName}_CV.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(downloadUrl);
   };
 
   const handleDownloadResume = () => {

@@ -18,6 +18,26 @@ const escapeHtml = (value = '') =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 
+const SHORT_MONTH_NAMES = { January: 'Jan', February: 'Feb', March: 'Mar', April: 'Apr', May: 'May', June: 'Jun', July: 'Jul', August: 'Aug', September: 'Sep', October: 'Oct', November: 'Nov', December: 'Dec' };
+
+const formatShortResumeDate = (value = '') => String(value || '').replace(/\b(January|February|March|April|May|June|July|August|September|October|November|December)\b/g, (month) => SHORT_MONTH_NAMES[month] || month).replace(/\s+(?:-|–|—|to)\s+/gi, ' – ').replace(/\s+/g, ' ').trim();
+
+const sanitizeResumeRichText = (value = '') => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (!/<\/?[a-z][\s\S]*>/i.test(raw)) return escapeHtml(raw).replace(/\n/g, '<br>');
+  if (typeof window === 'undefined' || typeof window.DOMParser === 'undefined') return escapeHtml(raw);
+  const allowedTags = new Set(['B','STRONG','I','EM','U','P','DIV','BR','UL','OL','LI','H1','H2']);
+  const parser = new window.DOMParser();
+  const doc = parser.parseFromString(`<div>${raw}</div>`, 'text/html');
+  const wrapper = doc.body.firstElementChild;
+  if (!wrapper) return '';
+  const cleanNode = (node) => { Array.from(node.childNodes).forEach((child) => { if (child.nodeType !== window.Node.ELEMENT_NODE) return; if (!allowedTags.has(child.tagName)) { child.replaceWith(...Array.from(child.childNodes)); return; } Array.from(child.attributes).forEach((attribute) => child.removeAttribute(attribute.name)); cleanNode(child); }); };
+  cleanNode(wrapper);
+  return wrapper.innerHTML;
+};
+
+
 const toArray = (value) => {
   if (Array.isArray(value)) {
     return value
@@ -58,17 +78,17 @@ const buildInitials = (fullName = '') => {
 const formatMonthYear = (value) => {
   if (!value) return '';
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
+  if (Number.isNaN(date.getTime())) return formatShortResumeDate(value);
   return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 };
 
 const getDateRange = (item = {}) => {
-  if (item.date) return item.date;
+  if (item.date) return formatShortResumeDate(item.date);
 
   const start = item.startDate ? formatMonthYear(item.startDate) : '';
   const end = item.isPresent ? 'Present' : item.endDate ? formatMonthYear(item.endDate) : '';
 
-  if (start && end) return `${start} - ${end}`;
+  if (start && end) return `${start} – ${end}`;
   if (start) return start;
   if (end) return end;
   return '';
@@ -80,10 +100,10 @@ const getEducationDateRange = (entry = {}) => {
   const endMonth = getText(entry.endMonth);
   const endYear = getText(entry.endYear || entry.yearGraduated);
 
-  const start = [startMonth, startYear].filter(Boolean).join(' ');
-  const end = [endMonth, endYear].filter(Boolean).join(' ');
+  const start = formatShortResumeDate([startMonth, startYear].filter(Boolean).join(' '));
+  const end = formatShortResumeDate([endMonth, endYear].filter(Boolean).join(' '));
 
-  if (start && end) return `${start} - ${end}`;
+  if (start && end) return `${start} – ${end}`;
   return end || start;
 };
 
@@ -117,60 +137,17 @@ const sectionHtml = (title, children, hidden = false) => {
   `;
 };
 
-const twoColumnRowsHtml = (rows = []) => {
+const threeColumnRowsHtml = (rows = []) => {
   const cleanRows = rows.filter((row) => getText(row.value));
   if (!cleanRows.length) return '';
-
-  const middle = Math.ceil(cleanRows.length / 2);
-  const columns = [cleanRows.slice(0, middle), cleanRows.slice(middle)];
-
-  return `
-    <div class="two-column-rows">
-      ${columns
-        .map(
-          (column) => `
-            <div class="info-column">
-              ${column
-                .map(
-                  (row) => `
-                    <div class="info-row">
-                      <span class="info-label">${escapeHtml(row.label)}:</span>
-                      <span class="info-value">${escapeHtml(row.value)}</span>
-                    </div>
-                  `
-                )
-                .join('')}
-            </div>
-          `
-        )
-        .join('')}
-    </div>
-  `;
+  const columns = [cleanRows.slice(0, 5), cleanRows.slice(5, 10), cleanRows.slice(10, 15)];
+  return `<div class="three-column-rows">${columns.map((column) => `<div class="info-column">${column.map((row) => `<div class="info-row"><span class="info-label">${escapeHtml(row.label)}:</span><span class="info-value">${escapeHtml(row.value)}</span></div>`).join('')}</div>`).join('')}</div>`;
 };
 
 const datedItemHtml = ({ title, subtitle, date, description, details, meta }) => {
-  const detailItems = Array.isArray(details) && details.length ? details : splitDetails(description);
-
-  return `
-    <div class="dated-item">
-      <div class="dated-header">
-        <div class="dated-main">
-          <div class="item-title">${escapeHtml(title)}</div>
-          ${subtitle ? `<div class="item-subtitle">${escapeHtml(subtitle)}</div>` : ''}
-          ${meta ? `<div class="item-meta">${escapeHtml(meta)}</div>` : ''}
-        </div>
-        ${date ? `<div class="item-date">${escapeHtml(date)}</div>` : ''}
-      </div>
-
-      ${
-        detailItems.length
-          ? `<ul class="resume-bullets">${detailItems
-              .map((detail) => `<li>${escapeHtml(detail)}</li>`)
-              .join('')}</ul>`
-          : ''
-      }
-    </div>
-  `;
+  const detailItems = Array.isArray(details) ? details.filter(isMeaningfulResumeValue) : [];
+  const descriptionHtml = sanitizeResumeRichText(description);
+  return `<div class="dated-item"><div class="dated-header"><div class="dated-main"><div class="item-title">${escapeHtml(title)}</div>${subtitle ? `<div class="item-subtitle">${escapeHtml(subtitle)}</div>` : ''}${meta ? `<div class="item-meta">${escapeHtml(meta)}</div>` : ''}</div>${date ? `<div class="item-date">${escapeHtml(formatShortResumeDate(date))}</div>` : ''}</div>${detailItems.length ? `<ul class="resume-bullets">${detailItems.map((detail) => `<li>${escapeHtml(detail)}</li>`).join('')}</ul>` : descriptionHtml ? `<div class="resume-rich-text">${descriptionHtml}</div>` : ''}</div>`;
 };
 
 const profileListSectionHtml = ({ title, items = [], type = 'default' }) => {
@@ -397,21 +374,10 @@ const resumeStyles = `
     text-align: justify;
   }
 
-  .two-column-rows,
-  .skills-grid,
-  .references-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    column-gap: 35px;
-  }
+  .three-column-rows { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 20px; }
+  .references-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 35px; }
 
-  .info-row,
-  .skill-row {
-    display: grid;
-    grid-template-columns: 112px 1fr;
-    gap: 4px;
-    min-height: 11px;
-  }
+  .info-row { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px; min-height: 11px; }
 
   .info-label,
   .skill-label,
@@ -472,14 +438,15 @@ const resumeStyles = `
     padding-left: 1px;
   }
 
-  .skill-row {
-    display: block;
-    min-height: 10px;
-  }
-
-  .skill-label {
-    white-space: nowrap;
-  }
+  .skills-inline { display: flex; flex-wrap: wrap; gap: 3px 16px; }
+  .skill-item { display: inline-block; color: #111111; white-space: nowrap; }
+  .resume-rich-text { margin-top: 2px; text-align: justify; }
+  .resume-rich-text p, .resume-rich-text div { margin: 1px 0; }
+  .resume-rich-text ul, .resume-rich-text ol { margin: 2px 0 0 14px; padding: 0; }
+  .resume-rich-text li { margin: 0; padding-left: 1px; }
+  .resume-rich-text h1, .resume-rich-text h2 { margin: 2px 0 1px; border: 0; padding: 0; text-transform: none; letter-spacing: 0; line-height: 1.15; }
+  .resume-rich-text h1 { font-size: 11px; }
+  .resume-rich-text h2 { font-size: 10px; }
 
   .references-grid {
     row-gap: 7px;
@@ -525,8 +492,7 @@ const resumeStyles = `
       margin-top: 12px;
     }
 
-    .two-column-rows,
-    .skills-grid,
+    .three-column-rows,
     .references-grid {
       grid-template-columns: 1fr;
       row-gap: 2px;
@@ -559,20 +525,19 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
   const availabilityRows = [
     { label: 'Preferred Work Mode', value: formData.preferredWorkMode },
     { label: 'Employment Type', value: formData.employmentType },
+    { label: 'Willing to Relocate', value: formData.willingToRelocate },
+    { label: 'How Soon Can Start', value: formData.howSoonCanYouStart },
+    { label: 'Experience', value: formData.experience },
+    { label: 'Preferred Language', value: formData.preferredLanguage },
     { label: 'Educational Attainment', value: formData.educationalAttainment },
-    { label: 'Field / Study', value: formData.studyField },
+    { label: 'Double Degree', value: formData.studyField },
+    { label: 'Salary', value: [formData.minimumSalary, formData.maximumSalary].filter(Boolean).join(' - ') },
+    { label: 'Nationality', value: formData.nationality },
+    { label: 'Height', value: formData.height },
+    { label: 'Weight', value: formData.weight ? `${String(formData.weight).replace(/\s*(kg|kgs|kilogram|kilograms)$/i, '').trim()} kg` : '' },
+    { label: 'Gender', value: formData.gender },
     { label: 'Civil Status', value: formData.civilStatus },
     { label: 'Birthday', value: formData.birthday },
-    { label: 'Salary', value: [formData.minimumSalary, formData.maximumSalary].filter(Boolean).join(' - ') },
-    {
-      label: 'Weight',
-      value: formData.weight ? `${String(formData.weight).replace(/\s*(kg|kgs|kilogram|kilograms)$/i, '').trim()} kg` : '',
-    },
-    { label: 'How Soon Can Start', value: formData.howSoonCanYouStart },
-    { label: 'Willing to Relocate', value: formData.willingToRelocate },
-    { label: 'Nationality', value: formData.nationality },
-    { label: 'Gender', value: formData.gender },
-    { label: 'Preferred Language', value: formData.preferredLanguage },
   ];
 
   const imageUrl = getProfileImageUrl(profileImage);
@@ -600,12 +565,8 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
   const skillsHtml = sectionHtml(
     'Skills',
     `
-      <div class="skills-grid">
-        ${
-          allSkills
-            .map((skill) => `<div class="skill-row"><span class="skill-label">${escapeHtml(skill)}</span></div>`)
-            .join('')
-        }
+      <div class="skills-inline">
+        ${allSkills.map((skill) => `<span class="skill-item">${escapeHtml(skill)}</span>`).join('')}
       </div>
     `,
     !allSkills.length
@@ -661,8 +622,8 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
             ${photoHtml}
           </header>
 
-          ${getText(formData.aboutMe) ? sectionHtml('Objective', `<p class="objective-text">${escapeHtml(getText(formData.aboutMe))}</p>`) : ''}
-          ${sectionHtml('Availability & Preferences', twoColumnRowsHtml(availabilityRows))}
+          ${getText(formData.aboutMe) ? sectionHtml('Objective', `<div class="objective-text resume-rich-text">${sanitizeResumeRichText(formData.aboutMe)}</div>`) : ''}
+          ${sectionHtml('Availability & Preferences', threeColumnRowsHtml(availabilityRows))}
           ${workExperienceHtml}
           ${skillsHtml}
           ${educationHtml}
@@ -832,6 +793,7 @@ export const normalizeUserToResumeData = ({ userData = {}, profile = {}, workExp
     educationalAttainment: profile.educationalAttainment || '',
     willingToRelocate: profile.willingToRelocate || '',
     studyField: profile.studyField || profile.course || '',
+    experience: profile.experience || '',
 
     certifications: Array.isArray(profile.certifications) ? profile.certifications : [],
     projects: Array.isArray(profile.projects) ? profile.projects : [],

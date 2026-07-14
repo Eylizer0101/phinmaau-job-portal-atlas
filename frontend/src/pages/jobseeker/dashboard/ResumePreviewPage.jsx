@@ -12,6 +12,33 @@ const getText = (value, fallback = '') => {
   return isMeaningfulResumeValue(text) ? text : fallback;
 };
 
+const SHORT_MONTH_NAMES = { January: 'Jan', February: 'Feb', March: 'Mar', April: 'Apr', May: 'May', June: 'Jun', July: 'Jul', August: 'Aug', September: 'Sep', October: 'Oct', November: 'Nov', December: 'Dec' };
+
+const formatShortResumeDate = (value = '') => String(value || '').replace(/\b(January|February|March|April|May|June|July|August|September|October|November|December)\b/g, (month) => SHORT_MONTH_NAMES[month] || month).replace(/\s+(?:-|–|—|to)\s+/gi, ' – ').replace(/\s+/g, ' ').trim();
+
+const escapeResumeHtml = (value = '') => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+const sanitizeResumeRichText = (value = '') => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (!/<\/?[a-z][\s\S]*>/i.test(raw)) return escapeResumeHtml(raw).replace(/\n/g, '<br>');
+  if (typeof window === 'undefined' || typeof window.DOMParser === 'undefined') return escapeResumeHtml(raw);
+  const allowedTags = new Set(['B','STRONG','I','EM','U','P','DIV','BR','UL','OL','LI','H1','H2']);
+  const parser = new window.DOMParser();
+  const doc = parser.parseFromString(`<div>${raw}</div>`, 'text/html');
+  const wrapper = doc.body.firstElementChild;
+  if (!wrapper) return '';
+  const cleanNode = (node) => { Array.from(node.childNodes).forEach((child) => { if (child.nodeType !== window.Node.ELEMENT_NODE) return; if (!allowedTags.has(child.tagName)) { child.replaceWith(...Array.from(child.childNodes)); return; } Array.from(child.attributes).forEach((attribute) => child.removeAttribute(attribute.name)); cleanNode(child); }); };
+  cleanNode(wrapper);
+  return wrapper.innerHTML;
+};
+
+const ResumeRichText = ({ value, className = '' }) => {
+  const html = sanitizeResumeRichText(value);
+  if (!html) return null;
+  return <div className={`resume-rich-text ${className}`} dangerouslySetInnerHTML={{ __html: html }} />;
+};
+
 const toArray = (value) => {
   if (Array.isArray(value)) {
     return value
@@ -52,17 +79,17 @@ const buildInitials = (fullName = '') => {
 const formatMonthYear = (value) => {
   if (!value) return '';
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
+  if (Number.isNaN(date.getTime())) return formatShortResumeDate(value);
   return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 };
 
 const getDateRange = (item = {}) => {
-  if (item.date) return item.date;
+  if (item.date) return formatShortResumeDate(item.date);
 
   const start = item.startDate ? formatMonthYear(item.startDate) : '';
   const end = item.isPresent ? 'Present' : item.endDate ? formatMonthYear(item.endDate) : '';
 
-  if (start && end) return `${start} - ${end}`;
+  if (start && end) return `${start} – ${end}`;
   if (start) return start;
   if (end) return end;
   return '';
@@ -74,10 +101,10 @@ const getEducationDateRange = (entry = {}) => {
   const endMonth = getText(entry.endMonth);
   const endYear = getText(entry.endYear || entry.yearGraduated);
 
-  const start = [startMonth, startYear].filter(Boolean).join(' ');
-  const end = [endMonth, endYear].filter(Boolean).join(' ');
+  const start = formatShortResumeDate([startMonth, startYear].filter(Boolean).join(' '));
+  const end = formatShortResumeDate([endMonth, endYear].filter(Boolean).join(' '));
 
-  if (start && end) return `${start} - ${end}`;
+  if (start && end) return `${start} – ${end}`;
   return end || start;
 };
 
@@ -132,50 +159,19 @@ const Section = ({ title, children, hidden = false }) => {
   );
 };
 
-const TwoColumnRows = ({ rows = [] }) => {
+const ThreeColumnRows = ({ rows = [] }) => {
   const cleanRows = rows.filter((row) => getText(row.value));
   if (!cleanRows.length) return null;
-
-  const middle = Math.ceil(cleanRows.length / 2);
-  const columns = [cleanRows.slice(0, middle), cleanRows.slice(middle)];
-
-  return (
-    <div className="two-column-rows">
-      {columns.map((column, columnIndex) => (
-        <div className="info-column" key={`info-column-${columnIndex}`}>
-          {column.map((row) => (
-            <div className="info-row" key={row.label}>
-              <span className="info-label">{row.label}:</span>
-              <span className="info-value">{row.value}</span>
-            </div>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
+  const columns = [cleanRows.slice(0, 5), cleanRows.slice(5, 10), cleanRows.slice(10, 15)];
+  return <div className="three-column-rows">{columns.map((column, columnIndex) => <div className="info-column" key={`info-column-${columnIndex}`}>{column.map((row) => <div className="info-row" key={row.label}><span className="info-label">{row.label}:</span><span className="info-value">{row.value}</span></div>)}</div>)}</div>;
 };
 
 const DatedItem = ({ title, subtitle, date, description, details, meta }) => {
-  const detailItems = Array.isArray(details) && details.length ? details : splitDetails(description);
-
+  const detailItems = Array.isArray(details) ? details.filter(isMeaningfulResumeValue) : [];
   return (
     <div className="dated-item">
-      <div className="dated-header">
-        <div className="dated-main">
-          <div className="item-title">{title}</div>
-          {subtitle ? <div className="item-subtitle">{subtitle}</div> : null}
-          {meta ? <div className="item-meta">{meta}</div> : null}
-        </div>
-        {date ? <div className="item-date">{date}</div> : null}
-      </div>
-
-      {detailItems.length ? (
-        <ul className="resume-bullets">
-          {detailItems.map((detail, index) => (
-            <li key={`${title}-${index}`}>{detail}</li>
-          ))}
-        </ul>
-      ) : null}
+      <div className="dated-header"><div className="dated-main"><div className="item-title">{title}</div>{subtitle ? <div className="item-subtitle">{subtitle}</div> : null}{meta ? <div className="item-meta">{meta}</div> : null}</div>{date ? <div className="item-date">{formatShortResumeDate(date)}</div> : null}</div>
+      {detailItems.length ? <ul className="resume-bullets">{detailItems.map((detail, index) => <li key={`${title}-${index}`}>{detail}</li>)}</ul> : <ResumeRichText value={description} />}
     </div>
   );
 };
@@ -298,20 +294,19 @@ const ResumePreviewPage = () => {
   const availabilityRows = [
     { label: 'Preferred Work Mode', value: formData.preferredWorkMode },
     { label: 'Employment Type', value: formData.employmentType },
+    { label: 'Willing to Relocate', value: formData.willingToRelocate },
+    { label: 'How Soon Can Start', value: formData.howSoonCanYouStart },
+    { label: 'Experience', value: formData.experience },
+    { label: 'Preferred Language', value: formData.preferredLanguage },
     { label: 'Educational Attainment', value: formData.educationalAttainment },
-    { label: 'Field / Study', value: formData.studyField },
+    { label: 'Double Degree', value: formData.studyField },
+    { label: 'Salary', value: [formData.minimumSalary, formData.maximumSalary].filter(Boolean).join(' - ') },
+    { label: 'Nationality', value: formData.nationality },
+    { label: 'Height', value: formData.height },
+    { label: 'Weight', value: formData.weight ? `${String(formData.weight).replace(/\s*(kg|kgs|kilogram|kilograms)$/i, '').trim()} kg` : '' },
+    { label: 'Gender', value: formData.gender },
     { label: 'Civil Status', value: formData.civilStatus },
     { label: 'Birthday', value: formData.birthday },
-    { label: 'Salary', value: [formData.minimumSalary, formData.maximumSalary].filter(Boolean).join(' - ') },
-    {
-      label: 'Weight',
-      value: formData.weight ? `${String(formData.weight).replace(/\s*(kg|kgs|kilogram|kilograms)$/i, '').trim()} kg` : '',
-    },
-    { label: 'How Soon Can Start', value: formData.howSoonCanYouStart },
-    { label: 'Willing to Relocate', value: formData.willingToRelocate },
-    { label: 'Nationality', value: formData.nationality },
-    { label: 'Gender', value: formData.gender },
-    { label: 'Preferred Language', value: formData.preferredLanguage },
   ];
 
   return (
@@ -489,21 +484,10 @@ const ResumePreviewPage = () => {
           text-align: justify;
         }
 
-        .two-column-rows,
-        .skills-grid,
-        .references-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          column-gap: 35px;
-        }
+        .three-column-rows { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 20px; }
+        .references-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 35px; }
 
-        .info-row,
-        .skill-row {
-          display: grid;
-          grid-template-columns: 112px 1fr;
-          gap: 4px;
-          min-height: 11px;
-        }
+        .info-row { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px; min-height: 11px; }
 
         .info-label,
         .skill-label,
@@ -564,14 +548,15 @@ const ResumePreviewPage = () => {
           padding-left: 1px;
         }
 
-        .skill-row {
-          display: block;
-          min-height: 10px;
-        }
-
-        .skill-label {
-          white-space: nowrap;
-        }
+        .skills-inline { display: flex; flex-wrap: wrap; gap: 3px 16px; }
+        .skill-item { display: inline-block; color: #111111; white-space: nowrap; }
+        .resume-rich-text { margin-top: 2px; text-align: justify; }
+        .resume-rich-text p, .resume-rich-text div { margin: 1px 0; }
+        .resume-rich-text ul, .resume-rich-text ol { margin: 2px 0 0 14px; padding: 0; }
+        .resume-rich-text li { margin: 0; padding-left: 1px; }
+        .resume-rich-text h1, .resume-rich-text h2 { margin: 2px 0 1px; border: 0; padding: 0; text-transform: none; letter-spacing: 0; line-height: 1.15; }
+        .resume-rich-text h1 { font-size: 11px; }
+        .resume-rich-text h2 { font-size: 10px; }
 
         .references-grid {
           row-gap: 7px;
@@ -617,8 +602,7 @@ const ResumePreviewPage = () => {
             margin-top: 12px;
           }
 
-          .two-column-rows,
-          .skills-grid,
+          .three-column-rows,
           .references-grid {
             grid-template-columns: 1fr;
             row-gap: 2px;
@@ -653,11 +637,11 @@ const ResumePreviewPage = () => {
             </header>
 
             <Section title="Objective">
-              <p className="objective-text">{getText(formData.aboutMe)}</p>
+              <ResumeRichText value={formData.aboutMe} className="objective-text" />
             </Section>
 
             <Section title="Availability & Preferences">
-              <TwoColumnRows rows={availabilityRows} />
+              <ThreeColumnRows rows={availabilityRows} />
             </Section>
 
             <Section title="Work Experience" hidden={!workExperiences.length}>
@@ -674,12 +658,8 @@ const ResumePreviewPage = () => {
 
             {allSkills.length ? (
               <Section title="Skills">
-                <div className="skills-grid">
-                  {allSkills.map((skill, index) => (
-                    <div className="skill-row" key={`skill-${skill}-${index}`}>
-                      <span className="skill-label">{skill}</span>
-                    </div>
-                  ))}
+                <div className="skills-inline">
+                  {allSkills.map((skill, index) => <span className="skill-item" key={`skill-${skill}-${index}`}>{skill}</span>)}
                 </div>
               </Section>
             ) : null}
