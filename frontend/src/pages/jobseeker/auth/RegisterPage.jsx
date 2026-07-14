@@ -843,7 +843,7 @@ const RegisterPage = () => {
                   {/* Profile Photo */}
                   <div className="space-y-1">
                     <label className={labelBase} htmlFor="profileImageFile">
-                      Upload Photo / Profile Photo
+                      Graduation Photo
                     </label>
                     <input
                       ref={fileRefs.profileImageFile}
@@ -859,14 +859,14 @@ const RegisterPage = () => {
                       type="button"
                       onClick={() => openFilePicker('profileImageFile')}
                       disabled={loading}
-                      className={`flex min-h-[132px] w-full flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-4 text-center transition ${
+                      className={`flex h-11 w-full items-center justify-center gap-3 rounded-xl border border-dashed px-3 text-center transition ${
                         formErrors.profileImageFile
                           ? 'border-red-400 bg-red-50'
                           : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/40'
                       }`}
                     >
-                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#2e66a6] shadow-sm">
-                        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#2e66a6] shadow-sm">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -875,10 +875,9 @@ const RegisterPage = () => {
                           />
                         </svg>
                       </span>
-                      <span className="mt-3 text-sm font-semibold text-gray-700">
-                        {formData.profileImageFile ? formData.profileImageFile.name : 'Choose profile photo'}
+                      <span className="truncate text-sm font-semibold text-gray-700">
+                        {formData.profileImageFile ? formData.profileImageFile.name : 'Choose graduation photo'}
                       </span>
-                      <span className="mt-1 text-xs text-gray-500">JPG, PNG, or WEBP · Maximum 5MB</span>
                     </button>
                     {formData.profileImageFile ? (
                       <button
