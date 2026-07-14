@@ -419,11 +419,10 @@ const MyApplications = () => {
 
   const getPendingDisplayState = (application) => {
     const statusValue = String(application?.status || '').toLowerCase();
-    const isViewedByEmployer = Boolean(application?.isViewedByEmployer);
 
     if (statusValue === 'pending') {
       return {
-        text: isViewedByEmployer ? 'Pending' : 'Application sent',
+        text: 'Pending',
         badgeClass: 'bg-black/5 text-black/80 border-black/20',
       };
     }
@@ -1236,19 +1235,7 @@ const MyApplications = () => {
                     <p className={`mt-1 text-sm ${UI.textSecondary}`}>Quick guide for what each status means.</p>
                   </div>
 
-                  <div className="mt-5 grid grid-cols-1 md:grid-cols-6 gap-4">
-                    <div className="p-4 rounded-xl border border-gray-200 bg-white">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-black/5 border border-black/15 flex items-center justify-center text-black/70">
-                          <SvgIcon name="clock" className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className={`font-semibold ${UI.textPrimary}`}>Pending sent</p>
-                          <p className={`mt-1 text-sm ${UI.textSecondary}`}>Your application was sent successfully and has not yet been opened by the employer.</p>
-                        </div>
-                      </div>
-                    </div>
-
+                  <div className="mt-5 grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div className="p-4 rounded-xl border border-gray-200 bg-white">
                       <div className="flex items-start gap-3">
                         <div className="w-10 h-10 rounded-lg bg-black/5 border border-black/15 flex items-center justify-center text-black/70">
@@ -1256,7 +1243,7 @@ const MyApplications = () => {
                         </div>
                         <div>
                           <p className={`font-semibold ${UI.textPrimary}`}>Pending</p>
-                          <p className={`mt-1 text-sm ${UI.textSecondary}`}>The employer has already viewed your application and it is still under review.</p>
+                          <p className={`mt-1 text-sm ${UI.textSecondary}`}>Your application was sent successfully and it is still under review.</p>
                         </div>
                       </div>
                     </div>
