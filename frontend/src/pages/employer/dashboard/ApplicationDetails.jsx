@@ -451,8 +451,11 @@ const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work =
     matchedSkillsCount: matchedSkills.length,
     requiredSkillsCount: requiredSkills.length,
     educationDisplay:
-      applicantEducation ||
       profile.course ||
+      latestEducation.course ||
+      latestEducation.studyField ||
+      profile.studyField ||
+      applicantEducation ||
       'Not provided',
     experienceDisplay:
       applicantYears >= 1
@@ -705,7 +708,19 @@ const ApplicationDetails = () => {
           <div className="flex flex-col gap-5 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 items-center gap-5">
               <div className="h-[108px] w-[108px] shrink-0 overflow-hidden rounded-full bg-[#eef5fc]">{image && !avatarBroken ? <img src={image} alt={name} onError={() => setAvatarBroken(true)} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-[#2e66a6]">{name[0]}</div>}</div>
-              <div className="min-w-0"><div className="flex flex-wrap items-center gap-3"><h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">{name}</h1><span className="rounded-md bg-green-50 px-2 py-1 text-xs font-semibold text-green-700">{currentStatus}</span></div><p className="mt-2 text-sm text-gray-500">Applied for <span className="font-semibold text-[#174b91]">{application.job?.title || 'Job Position'}</span></p><p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-500">
+              <div className="min-w-0"><div className="flex flex-wrap items-center gap-3"><h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">{name}</h1><span className="rounded-md bg-green-50 px-2 py-1 text-xs font-semibold text-green-700">{currentStatus}</span></div><p className="mt-2 text-sm text-gray-500">
+                Applied for{' '}
+                {application.job?._id || application.job ? (
+                  <Link
+                    to={`/employer/manage-jobs/${application.job?._id || application.job}/view`}
+                    className="font-semibold text-[#174b91] transition hover:text-[#2e66a6] hover:underline focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
+                  >
+                    {application.job?.title || 'Job Position'}
+                  </Link>
+                ) : (
+                  <span className="font-semibold text-[#174b91]">Job Position</span>
+                )}
+              </p><p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-500">
                 <SvgIcon name="calendar" className="h-4 w-4" />
                 <span>Applied on {formatDate(application.appliedAt || application.createdAt)}</span>
                 <span aria-hidden="true">•</span>
