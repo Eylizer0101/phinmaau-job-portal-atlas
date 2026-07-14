@@ -1024,6 +1024,7 @@ const MyApplications = () => {
                   const appliedAt = formatDate(application.appliedAt);
 
                   const locationText = application.job?.location || null;
+                  const workModeText = application.job?.workMode || null;
                   const salaryText = formatPesoRange(application.job?.salaryMin, application.job?.salaryMax);
                   const jobTypeText = application.job?.jobType || null;
 
@@ -1069,7 +1070,7 @@ const MyApplications = () => {
                                   </div>
                                 </div>
 
-                                {(jobTypeText || locationText || salaryText) && (
+                                {(jobTypeText || locationText || workModeText || salaryText) && (
                                   <div className="mt-3 flex flex-wrap gap-2">
                                     {jobTypeText && (
                                       <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
@@ -1086,6 +1087,15 @@ const MyApplications = () => {
                                           <SvgIcon name="location" className="w-3.5 h-3.5" />
                                         </span>
                                         {formatLocationDisplay(locationText)}
+                                      </span>
+                                    )}
+
+                                    {workModeText && (
+                                      <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
+                                        <span className="text-gray-500">
+                                          <SvgIcon name="building" className="w-3.5 h-3.5" />
+                                        </span>
+                                        {workModeText}
                                       </span>
                                     )}
 
