@@ -23,6 +23,10 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3M5 11h14M6 5h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2z" /></svg>;
     case 'archive':
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7H4m2 0v11a2 2 0 002 2h8a2 2 0 002-2V7M9 11h6M5 7l1-3h12l1 3" /></svg>;
+    case 'edit':
+      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>;
+    case 'trash':
+      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14M10 11v5m4-5v5" /></svg>;
     default:
       return null;
   }
@@ -812,28 +816,20 @@ const ManageJobs = () => {
                               backPath: '/employer/manage-jobs',
                               backLabel: 'Manage Jobs',
                             }}
-                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                            className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                             aria-label={`View ${title}`}
                             title="View"
                           >
-                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M1.5 12s3.5-7 10.5-7 10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12z"
-                              />
-                              <circle cx="12" cy="12" r="3" strokeWidth={2} />
-                            </svg>
-                            View
+                            <Icon name="eye" className="h-4 w-4" />
                           </Link>
 
                           <Link
                             to={`/employer/edit-job/${job._id}`}
-                            className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                            className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                             aria-label={`Edit ${title}`}
+                            title="Edit"
                           >
-                            Edit
+                            <Icon name="edit" className="h-4 w-4" />
                           </Link>
 
                           {derivedStatus === 'draft' && (
@@ -861,10 +857,11 @@ const ManageJobs = () => {
                               setShowDeleteModal(true);
                             }}
                             disabled={busyThisRow}
-                            className="col-span-2 inline-flex items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            aria-label={`Delete ${title}`}
+                            className="col-span-2 inline-flex h-10 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            aria-label={`Archive ${title}`}
+                            title="Archive"
                           >
-                            Archive
+                            <Icon name="trash" className="h-4 w-4" />
                           </button>
                         </div>
                       </div>
@@ -999,10 +996,11 @@ const ManageJobs = () => {
 
                                 <Link
                                   to={`/employer/edit-job/${job._id}`}
-                                  className="inline-flex shrink-0 items-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                                  className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                                   aria-label={`Edit ${title}`}
+                                  title="Edit"
                                 >
-                                  Edit
+                                  <Icon name="edit" className="h-4 w-4" />
                                 </Link>
 
                                 {derivedStatus === 'draft' && (
@@ -1030,10 +1028,11 @@ const ManageJobs = () => {
                                     setShowDeleteModal(true);
                                   }}
                                   disabled={busyThisRow}
-                                  className="inline-flex shrink-0 items-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                  aria-label={`Delete ${title}`}
+                                  className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                  aria-label={`Archive ${title}`}
+                                  title="Archive"
                                 >
-                                  Archive
+                                  <Icon name="trash" className="h-4 w-4" />
                                 </button>
                               </div>
                             </td>
