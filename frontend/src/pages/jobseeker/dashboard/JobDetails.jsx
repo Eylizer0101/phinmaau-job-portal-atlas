@@ -22,6 +22,24 @@ import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
  */
 
 
+const getRelocationDisplayLabel = (value) => {
+  const normalized = String(value || '').trim().toLowerCase();
+
+  if (normalized === 'yes - willing to relocate') {
+    return 'Willing to relocate';
+  }
+
+  if (normalized === 'no - position is fixed location') {
+    return 'Fixed location';
+  }
+
+  if (normalized === 'open to relocation if necessary') {
+    return 'Possible to relocate';
+  }
+
+  return String(value || '').trim() || 'Fixed location';
+};
+
 const getApiOrigin = () =>
   String(api?.defaults?.baseURL || process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
 
@@ -1263,7 +1281,7 @@ const JobDetails = () => {
                   <div className={`${UI.insetBody} space-y-6`}>
                     <div>
                       <p className={UI.caption}>Willing to Relocate?</p>
-                      <p className={UI.meta}>{job.willingToRelocate || 'No - position is fixed location'}</p>
+                      <p className={UI.meta}>{getRelocationDisplayLabel(job.willingToRelocate)}</p>
                     </div>
 
                     <div>

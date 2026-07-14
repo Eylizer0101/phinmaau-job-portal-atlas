@@ -3,6 +3,24 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import AdminLayout from '../../layouts/AdminLayout';
 
+const getRelocationDisplayLabel = (value) => {
+  const normalized = String(value || '').trim().toLowerCase();
+
+  if (normalized === 'yes - willing to relocate') {
+    return 'Willing to relocate';
+  }
+
+  if (normalized === 'no - position is fixed location') {
+    return 'Fixed location';
+  }
+
+  if (normalized === 'open to relocation if necessary') {
+    return 'Possible to relocate';
+  }
+
+  return String(value || '').trim() || 'Fixed location';
+};
+
 const UI = {
   page: 'min-h-screen bg-[#f8fafc]',
   container: 'mx-auto max-w-7xl px-1 py-8',
@@ -778,7 +796,7 @@ const AdminJobView = () => {
                       )}
                        {job.willingToRelocate && (
       <span className="rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#2e66a6]">
-        {job.willingToRelocate}
+        {getRelocationDisplayLabel(job.willingToRelocate)}
       </span>
     )}
                     </div>

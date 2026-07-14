@@ -3,6 +3,24 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 
+const getRelocationDisplayLabel = (value) => {
+  const normalized = String(value || '').trim().toLowerCase();
+
+  if (normalized === 'yes - willing to relocate') {
+    return 'Willing to relocate';
+  }
+
+  if (normalized === 'no - position is fixed location') {
+    return 'Fixed location';
+  }
+
+  if (normalized === 'open to relocation if necessary') {
+    return 'Possible to relocate';
+  }
+
+  return String(value || '').trim() || 'Fixed location';
+};
+
 const UI = {
   page: 'min-h-screen ',
   container: 'mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6',
@@ -653,7 +671,7 @@ const EmployerJobView = () => {
                       )}
                        {job.willingToRelocate && (
       <span className="rounded-full border border-[#d9dbe3] bg-[#f3f4f6] px-3 py-1 text-xs font-medium text-[#374151]">
-        {job.willingToRelocate}
+        {getRelocationDisplayLabel(job.willingToRelocate)}
       </span>
     )}
                     </div>
