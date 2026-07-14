@@ -359,6 +359,7 @@ const JobseekerVerificationDetails = () => {
 
   const [holdDocTypes, setHoldDocTypes] = useState([]);
   const [holdReason, setHoldReason] = useState("");
+  const [reviewNotes, setReviewNotes] = useState("");
 
   const API_BASE = api?.defaults?.baseURL || "";
   const DEFAULT_DECLINE_MESSAGE = "Your verification request was rejected. Please contact support.";
@@ -450,6 +451,7 @@ const JobseekerVerificationDetails = () => {
 
       if (res.data?.success) {
         setJobseeker(res.data.jobseeker);
+        setReviewNotes(res.data.jobseeker?.verificationSummary?.adminRemarks || "");
       } else {
         setError("Jobseeker not found");
       }
@@ -652,231 +654,302 @@ const JobseekerVerificationDetails = () => {
   const totalDocs = verificationSummary.totalDocs || 8;
   const combinedSkills = formatSkills(profile.technicalSkills, profile.softSkills);
 
+  const registrationId =
+    jobseeker.registrationId ||
+    `JS-${new Date(jobseeker.createdAt || Date.now()).getFullYear()}-${String(jobseeker._id || "")
+      .slice(-6)
+      .toUpperCase()}`;
+
+  const infoRowsLeft = [
+    ["First Name", jobseeker.firstName],
+    ["Middle Name", jobseeker.middleName],
+    ["Last Name", jobseeker.lastName],
+    ["Suffix", jobseeker.extensionName],
+    ["Campus", profile.campus],
+    ["Course", profile.course],
+    ["Year Graduated", profile.yearGraduated],
+  ];
+
+  const infoRowsRight = [
+    ["Preferred Work Mode", profile.preferredWorkMode],
+    ["Email", jobseeker.email],
+    ["Contact Number", displayPhone],
+    ["How Soon Can You Start", profile.howSoonCanYouStart],
+    ["Date Registered", formatDate(jobseeker.createdAt, true)],
+  ];
+
   return (
     <AdminLayout>
-      <div className={UI.page}>
-        <div className={UI.section}>
-          <div className="flex flex-col gap-4">
-           <div className="flex items-center">
-  <Link
-    to="/admin/jobseeker-verification"
-    className={cn(
-      "inline-flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-black font-medium hover:bg-gray-50",
-      UI.ring
-    )}
-  >
-    <SvgIcon name="back" className="w-5 h-5" />
-    Back to Jobseeker Details
-  </Link>
-</div>
+      <div className="mx-auto max-w-[1500px] px-2 py-6 sm:px-4 lg:px-6">
+        <div className="mb-5">
+          <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Account Review</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Review and verify job seeker account registrations and submitted documents.
+          </p>
+        </div>
 
-          
+        {error && (
+          <Alert type="error" onClose={() => setError("")}>
+            {error}
+          </Alert>
+        )}
+
+        {success && (
+          <Alert type="success" onClose={() => setSuccess("")}>
+            {success}
+          </Alert>
+        )}
+
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <div className="mb-5 flex flex-col gap-4 border-b border-slate-100 pb-4 sm:flex-row sm:items-start sm:justify-between">
+            <Link
+              to="/admin/jobseeker-verification"
+              className={cn(
+                "inline-flex w-fit items-center gap-2 text-sm font-semibold text-[#2e66a6] hover:text-[#245487]",
+                UI.ring
+              )}
+            >
+              <SvgIcon name="back" className="h-4 w-4" />
+              Back to List
+            </Link>
+
+            <div className="text-left sm:text-right">
+              <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                <span className="text-xs font-semibold text-slate-500">Registration ID</span>
+                <span className="rounded-md bg-blue-50 px-2.5 py-1 text-xs font-bold text-[#2e66a6]">
+                  {registrationId}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                <span className="font-semibold text-slate-600">Date Registered:</span>{" "}
+                {formatDate(jobseeker.createdAt, true)}
+              </p>
+            </div>
           </div>
 
-          {error && (
-            <Alert type="error" onClose={() => setError("")}>
-              {error}
-            </Alert>
-          )}
-          {success && (
-            <Alert type="success" onClose={() => setSuccess("")}>
-              {success}
-            </Alert>
-          )}
+          <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+            <div className="mb-4 flex items-center gap-2 text-[#2e66a6]">
+              <SvgIcon name="user" className="h-5 w-5" />
+              <h2 className="text-base font-bold">Job Seeker Information</h2>
+            </div>
 
-          <div className={cn(UI.cardSoft, "overflow-hidden")}>
-            <div className="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center gap-4 min-w-0">
+            <div className="grid gap-5 lg:grid-cols-[1fr_1fr_220px]">
+              <div className="space-y-2">
+                {infoRowsLeft.map(([label, value]) => (
+                  <div key={label} className="grid grid-cols-[120px_1fr] gap-3 text-sm">
+                    <span className="text-slate-500">{label}</span>
+                    <span className="font-semibold text-slate-800">{value || "—"}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-2 border-slate-200 lg:border-l lg:pl-6">
+                {infoRowsRight.map(([label, value]) => (
+                  <div key={label} className="grid grid-cols-[150px_1fr] gap-3 text-sm">
+                    <span className="text-slate-500">{label}</span>
+                    <span className="font-semibold text-slate-800">{value || "—"}</span>
+                  </div>
+                ))}
+
+                {combinedSkills ? (
+                  <div className="grid grid-cols-[150px_1fr] gap-3 text-sm">
+                    <span className="text-slate-500">Skills</span>
+                    <span className="font-semibold text-slate-800">{combinedSkills}</span>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="flex flex-col items-center justify-center">
                 {jobseeker.profileImage ? (
                   <img
                     src={buildFileUrl(jobseeker.profileImage)}
-                    alt={fullName}
-                    className="h-16 w-16 rounded-2xl object-cover border border-[#E2E8F0] shrink-0 shadow-sm"
+                    alt={`${fullName} registration`}
+                    className="h-36 w-36 rounded-full border-4 border-slate-100 object-cover shadow-sm"
                   />
                 ) : (
-                  <div className="h-16 w-16 rounded-2xl bg-[#2e66a6] flex items-center justify-center border border-[#2e66a6]/20 shrink-0 shadow-sm">
-                    <span className="text-2xl font-bold text-white" aria-hidden="true">
-                      {(fullName || "?").charAt(0).toUpperCase()}
-                    </span>
+                  <div className="flex h-36 w-36 items-center justify-center rounded-full border-4 border-slate-100 bg-slate-100 text-4xl font-bold text-slate-500">
+                    {(fullName || "?").charAt(0).toUpperCase()}
                   </div>
                 )}
 
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-lg sm:text-xl font-bold text-black truncate" title={fullName}>
-                      {fullName}
-                    </h2>
-                    {getStatusBadge(overallStatus)}
-                  </div>
+                <span
+                  className={cn(
+                    "mt-3 rounded-full border px-3 py-1 text-xs font-semibold",
+                    jobseeker.profileImage
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-slate-200 bg-slate-50 text-slate-500"
+                  )}
+                >
+                  {jobseeker.profileImage ? "ID Photo Submitted" : "No Photo Submitted"}
+                </span>
+              </div>
+            </div>
+          </section>
 
-                  <div className="mt-1 flex flex-col gap-1 text-sm text-black/70">
-                    <div className="inline-flex items-center gap-2">
-                      <SvgIcon name="graduation" className="w-4 h-4 text-black/40" />
-                      <span>Year Graduated: {profile.yearGraduated || "—"}</span>
+          <section className="mt-4 rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <SvgIcon name="document" className="h-5 w-5 text-[#2e66a6]" />
+              <h2 className="text-base font-bold text-[#2e66a6]">Credentials</h2>
+              <span className="text-xs font-semibold text-[#2e66a6]">
+                ({submittedCount}/{totalDocs} Submitted)
+              </span>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
+              {documentTypes.map((docType, index) => {
+                const doc = documentDetails[docType.key] || {};
+                const hasFile = Boolean(doc.url);
+                const fileName = doc.filename || getFileNameFromUrl(doc.url, docType.label);
+                const fileSize = formatFileSize(doc.fileSize);
+
+                return (
+                  <article
+                    key={docType.key}
+                    className="flex min-h-[160px] flex-col rounded-lg border border-slate-200 bg-white p-3"
+                  >
+                    <div className="flex items-start gap-2">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-[#2e66a6]">
+                        {index + 1}
+                      </span>
+                      <h3 className="min-w-0 text-xs font-bold leading-5 text-slate-700">
+                        {docType.label}
+                      </h3>
                     </div>
-                    <div className="inline-flex items-center gap-2">
-                      <SvgIcon name="calendar" className="w-4 h-4 text-black/40" />
-                      <span>Registered: {formatDate(jobseeker.createdAt, false)}</span>
+
+                    <div className="mt-3 flex flex-1 items-start gap-2">
+                      <div
+                        className={cn(
+                          "flex h-10 w-9 shrink-0 items-center justify-center rounded",
+                          hasFile ? "bg-red-50 text-red-600" : "bg-slate-100 text-slate-400"
+                        )}
+                      >
+                        <SvgIcon name="document" className="h-5 w-5" />
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="truncate text-[11px] font-semibold text-slate-700" title={fileName}>
+                          {hasFile ? fileName : "No file"}
+                        </p>
+                        {fileSize ? <p className="mt-1 text-[10px] text-slate-400">({fileSize})</p> : null}
+                      </div>
                     </div>
-                  </div>
-                </div>
+
+                    {hasFile ? (
+                      <div className="mt-3 grid grid-cols-2 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleViewFile(docType.key)}
+                          className={cn(
+                            "h-8 rounded border border-slate-200 bg-white text-[11px] font-semibold text-[#2e66a6] hover:bg-blue-50",
+                            UI.ring
+                          )}
+                        >
+                          View
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadFile(docType.key, docType.label)}
+                          className={cn(
+                            "h-8 rounded border border-slate-200 bg-white text-[11px] font-semibold text-slate-600 hover:bg-slate-50",
+                            UI.ring
+                          )}
+                        >
+                          Download
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="mt-3 flex h-8 items-center justify-center rounded border border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-400">
+                        Not submitted
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+
+            <div
+              className={cn(
+                "mt-4 flex items-center gap-2 text-xs font-semibold",
+                submittedCount === totalDocs ? "text-emerald-600" : "text-amber-600"
+              )}
+            >
+              <SvgIcon
+                name={submittedCount === totalDocs ? "check" : "document"}
+                className="h-4 w-4"
+              />
+              {submittedCount === totalDocs
+                ? "All required documents have been submitted."
+                : `${submittedCount} of ${totalDocs} credentials have been submitted.`}
+            </div>
+          </section>
+
+          <section className="mt-4 rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+            <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+              <div>
+                <label htmlFor="reviewNotes" className="text-xs font-semibold text-slate-600">
+                  Review Notes <span className="font-normal text-slate-400">(Optional)</span>
+                </label>
+                <textarea
+                  id="reviewNotes"
+                  value={reviewNotes}
+                  onChange={(event) => setReviewNotes(event.target.value)}
+                  placeholder="Add notes here..."
+                  rows={3}
+                  className={cn(
+                    "mt-2 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder-slate-400",
+                    UI.ring
+                  )}
+                />
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-2 flex-wrap lg:justify-end">
+              <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[540px]">
                 {canShowActionButtons ? (
                   <>
-                    <Button
-                      variant="primary"
-                      size="md"
+                    <button
+                      type="button"
                       onClick={() => setShowApproveModal(true)}
                       disabled={actionLoading || submittedCount === 0}
-                      loading={false}
-                      leftIcon={<SvgIcon name="check" className="w-4 h-4" />}
+                      className={cn(
+                        "flex min-h-[58px] items-center justify-center gap-2 rounded-lg bg-emerald-500 px-5 text-sm font-bold text-white shadow-sm hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50",
+                        UI.ring
+                      )}
                     >
+                      <SvgIcon name="check" className="h-5 w-5" />
                       Approve
-                    </Button>
+                    </button>
 
-                    <Button
-                      variant="soft"
-                      size="md"
-                      onClick={() => setShowHoldModal(true)}
-                      disabled={actionLoading || submittedCount === 0}
-                      leftIcon={<SvgIcon name="pause" className="w-4 h-4" />}
-                    >
-                      Hold
-                    </Button>
-
-                    <Button
-                      variant="secondary"
-                      size="md"
+                    <button
+                      type="button"
                       onClick={() => setShowDeclineModal(true)}
                       disabled={actionLoading}
-                      leftIcon={<SvgIcon name="x" className="w-4 h-4" />}
+                      className={cn(
+                        "flex min-h-[58px] items-center justify-center gap-2 rounded-lg bg-red-500 px-5 text-sm font-bold text-white shadow-sm hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50",
+                        UI.ring
+                      )}
                     >
+                      <SvgIcon name="x" className="h-5 w-5" />
                       Decline
-                    </Button>
+                    </button>
 
-                    {submittedCount === 0 && (
-                      <p className="text-xs text-black/60 text-center sm:text-left mt-2 sm:mt-0 sm:ml-2">
-                        No documents
-                      </p>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowHoldModal(true)}
+                      disabled={actionLoading || submittedCount === 0}
+                      className={cn(
+                        "flex min-h-[58px] items-center justify-center gap-2 rounded-lg bg-amber-500 px-5 text-sm font-bold text-white shadow-sm hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50",
+                        UI.ring
+                      )}
+                    >
+                      <SvgIcon name="pause" className="h-5 w-5" />
+                      Hold
+                    </button>
                   </>
                 ) : (
-                  <div className="flex items-center">
-                    {getStatusBadge(overallStatus)}
-                  </div>
+                  <div className="sm:col-span-3 flex justify-end">{getStatusBadge(overallStatus)}</div>
                 )}
               </div>
             </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className={cn(UI.card, "overflow-hidden")}>
-              <div className="border-b border-[#E2E8F0] bg-[#EEF2F6] px-5 py-4 sm:px-6">
-                <h2 className={UI.h2}>Basic Information</h2>
-               
-              </div>
-              <div className="p-5 sm:p-6">
-
-                <div className="mt-4 space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <InfoCard icon={<SvgIcon name="mail" className="w-4 h-4" />} label="Email Address" value={jobseeker.email} />
-                    <InfoCard icon={<SvgIcon name="phone" className="w-4 h-4" />} label="Contact Number" value={displayPhone} />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <InfoCard icon={<SvgIcon name="graduation" className="w-4 h-4" />} label="Campus" value={profile.campus} />
-                    <InfoCard icon={<SvgIcon name="briefcase" className="w-4 h-4" />} label="Course" value={profile.course} />
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4">
-                    <InfoCard
-                      icon={<SvgIcon name="document" className="w-4 h-4" />}
-                      label="Technical & Soft Skills"
-                      value={combinedSkills}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <InfoCard label="Preferred Work Mode" value={profile.preferredWorkMode} />
-                    <InfoCard label="How Soon Can You Start" value={profile.howSoonCanYouStart} />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <InfoCard icon={<SvgIcon name="graduation" className="w-4 h-4" />} label="Year Graduated" value={profile.yearGraduated} />
-                    <InfoCard
-                      icon={<SvgIcon name="calendar" className="w-4 h-4" />}
-                      label="Date Registered"
-                      value={formatDate(jobseeker.createdAt, false)}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className={cn(UI.card, "overflow-hidden")}>
-              <div className="border-b border-[#E2E8F0] bg-[#EEF2F6] px-5 py-4 sm:px-6">
-                <h2 className={UI.h2}>Credentials</h2>
-              
-              </div>
-              <div className="p-5 sm:p-6">
-
-                <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-3">
-                  {documentTypes.map((docType) => {
-                    const doc = documentDetails[docType.key] || {};
-                    const hasFile = !!doc.url;
-
-                    return (
-                      <div
-                        key={docType.key}
-                        className="flex min-h-[64px] w-full items-center justify-between gap-4 rounded-2xl border border-[#E2E8F0] bg-[#FFFFFF]/90 px-4 py-3 transition hover:border-[#2e66a6]/30 hover:bg-white hover:shadow-[0_8px_18px_rgba(15,23,42,0.05)] sm:px-5"
-                      >
-                        <div className="flex min-w-0 items-center gap-3">
-                          <SvgIcon name={docType.icon} className="w-5 h-5 shrink-0 text-[#2e66a6]" />
-                          <span className="truncate text-[15px] sm:text-base font-semibold text-black">
-                            {docType.label}
-                          </span>
-                        </div>
-
-                        {hasFile ? (
-                          <div className="flex shrink-0 items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleViewFile(docType.key)}
-                              className={cn(
-                                "inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#E2E8F0] bg-white text-black transition hover:border-[#2e66a6]/30 hover:bg-[#2e66a6]/[0.06]",
-                                UI.ring
-                              )}
-                              aria-label={`View ${docType.label}`}
-                              title={`View ${docType.label}`}
-                            >
-                              <SvgIcon name="eye" className="w-4 h-4" />
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleDownloadFile(docType.key, docType.label)}
-                              className={cn(
-                                "inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#E2E8F0] bg-white text-black transition hover:border-[#2e66a6]/30 hover:bg-[#2e66a6]/[0.06]",
-                                UI.ring
-                              )}
-                              aria-label={`Download ${docType.label}`}
-                              title={`Download ${docType.label}`}
-                            >
-                              <SvgIcon name="download" className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="shrink-0 rounded-full border border-[#E2E8F0] px-3 py-1 text-xs font-bold text-black/45">No file</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
+          </section>
         </div>
       </div>
 

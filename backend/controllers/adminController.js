@@ -1937,6 +1937,8 @@ exports.getJobseekerVerificationById = async (req, res) => {
         firstName: jobseeker.firstName,
         middleName: jobseeker.middleName,
         lastName: jobseeker.lastName,
+        extensionName: jobseeker.extensionName || '',
+        registrationId: `JS-${new Date(jobseeker.createdAt || Date.now()).getFullYear()}-${String(jobseeker._id).slice(-6).toUpperCase()}`,
         profileImage: jobseeker.profileImage,
         createdAt: jobseeker.createdAt,
 
