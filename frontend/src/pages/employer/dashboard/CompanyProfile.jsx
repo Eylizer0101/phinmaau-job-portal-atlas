@@ -199,6 +199,19 @@ const UploadIcon = ({ className = 'w-5 h-5' }) => (
   </svg>
 );
 
+const EyeIcon = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z" />
+    <circle cx="12" cy="12" r="2.75" strokeWidth="1.8" />
+  </svg>
+);
+
+const DownloadIcon = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M12 3v12m0 0l-4-4m4 4l4-4M5 20h14" />
+  </svg>
+);
+
 const BuildingIcon = ({ className = 'w-5 h-5' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor">
     <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M6 21V7l6-3v17M18 21V11l-6-2" />
@@ -376,7 +389,16 @@ const EmptyState = ({ icon, title, subtitle }) => {
   );
 };
 
-const CredentialRow = ({ item, uploading, inputRef, onUpload, onView, editable, saving }) => {
+const CredentialRow = ({
+  item,
+  uploading,
+  inputRef,
+  onUpload,
+  onView,
+  onDownload,
+  editable,
+  saving,
+}) => {
   const verification = item?.verification || { url: '', status: 'not_submitted' };
   const hasUploadedFile = Boolean(String(verification.url || '').trim());
 
@@ -393,18 +415,32 @@ const CredentialRow = ({ item, uploading, inputRef, onUpload, onView, editable, 
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-3">
+      <div className="flex shrink-0 items-center gap-2">
         {hasUploadedFile ? (
-          <button
-            type="button"
-            onClick={() => onView?.(item.key)}
-            className="text-[12px] font-medium text-[#2e66a6] hover:underline"
-          >
-            View
-          </button>
-        ) : null}
+          <>
+            <button
+              type="button"
+              onClick={() => onView?.(item.key)}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#d1d5db] bg-white text-[#2e66a6] transition hover:bg-[#f9fafb] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
+              aria-label={`View ${item.label}`}
+              title="View"
+            >
+              <EyeIcon className="h-4 w-4" />
+            </button>
 
-        <StatusPill status={verification.status} url={verification.url} />
+            <button
+              type="button"
+              onClick={() => onDownload?.(item.key)}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#d1d5db] bg-white text-[#2e66a6] transition hover:bg-[#f9fafb] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
+              aria-label={`Download ${item.label}`}
+              title="Download"
+            >
+              <DownloadIcon className="h-4 w-4" />
+            </button>
+          </>
+        ) : (
+          <StatusPill status={verification.status} url={verification.url} />
+        )}
 
         {editable && !hasUploadedFile ? (
           <>
@@ -495,6 +531,15 @@ const CompanyProfile = () => {
     url: '',
     title: '',
     fileName: '',
+  });
+
+  const [credentialAccess, setCredentialAccess] = useState({
+    isOpen: false,
+    docType: '',
+    mode: 'view',
+    password: '',
+    error: '',
+    verifying: false,
   });
 
   const [docUploading, setDocUploading] = useState({
@@ -968,20 +1013,85 @@ const CompanyProfile = () => {
     });
   }, []);
 
-  const viewVerificationDoc = useCallback(
-    async (docType) => {
-      clearMessages();
+  const openCredentialAccess = useCallback((docType, mode) => {
+    clearMessages();
+    setCredentialAccess({
+      isOpen: true,
+      docType,
+      mode,
+      password: '',
+      error: '',
+      verifying: false,
+    });
+  }, [clearMessages]);
+
+  const closeCredentialAccess = useCallback(() => {
+    setCredentialAccess({
+      isOpen: false,
+      docType: '',
+      mode: 'view',
+      password: '',
+      error: '',
+      verifying: false,
+    });
+  }, []);
+
+  const getCredentialFileName = useCallback((response, docLabel) => {
+    const disposition = response.headers?.['content-disposition'] || '';
+    const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+    const basicMatch = disposition.match(/filename="?([^";]+)"?/i);
+    const rawName = utf8Match?.[1] || basicMatch?.[1] || `${docLabel} - credential`;
+    try {
+      return decodeURIComponent(rawName);
+    } catch {
+      return rawName;
+    }
+  }, []);
+
+  const submitCredentialAccess = useCallback(
+    async (event) => {
+      event.preventDefault();
+
+      const password = String(credentialAccess.password || '').trim();
+      if (!password) {
+        setCredentialAccess((prev) => ({ ...prev, error: 'Please enter your password.' }));
+        return;
+      }
+
+      const docType = credentialAccess.docType;
+      const mode = credentialAccess.mode;
+      const docLabel = DOC_TYPES.find((doc) => doc.key === docType)?.label || 'Credential';
 
       try {
-        const docLabel = DOC_TYPES.find((doc) => doc.key === docType)?.label || 'Credential';
-        const response = await api.get(`/auth/download-verification/${docType}?disposition=inline`, {
-          responseType: 'blob',
-        });
+        setCredentialAccess((prev) => ({ ...prev, verifying: true, error: '' }));
+
+        const response = await api.post(
+          `/auth/verification/${docType}/secure-access`,
+          {
+            password,
+            disposition: mode === 'download' ? 'attachment' : 'inline',
+          },
+          { responseType: 'blob' }
+        );
 
         const blob = new Blob([response.data], {
           type: response.headers?.['content-type'] || 'application/octet-stream',
         });
         const fileUrl = window.URL.createObjectURL(blob);
+        const fileName = getCredentialFileName(response, docLabel);
+
+        closeCredentialAccess();
+
+        if (mode === 'download') {
+          const anchor = document.createElement('a');
+          anchor.href = fileUrl;
+          anchor.download = fileName;
+          document.body.appendChild(anchor);
+          anchor.click();
+          anchor.remove();
+          window.setTimeout(() => window.URL.revokeObjectURL(fileUrl), 1000);
+          return;
+        }
 
         setCredentialPreview((prev) => {
           if (prev.url) window.URL.revokeObjectURL(prev.url);
@@ -989,15 +1099,42 @@ const CompanyProfile = () => {
             isOpen: true,
             url: fileUrl,
             title: docLabel,
-            fileName: `${docLabel.replace(/[\/:*?"<>|]+/g, '-')} - credential`,
+            fileName,
           };
         });
       } catch (err) {
-        console.error('Credential view failed:', err);
-        setError(err.response?.data?.message || 'Unable to view this credential. Please try again.');
+        let message = 'Unable to access this credential. Please try again.';
+
+        if (err.response?.data instanceof Blob) {
+          try {
+            const errorText = await err.response.data.text();
+            const parsed = JSON.parse(errorText);
+            message = parsed?.message || message;
+          } catch {
+            // Keep fallback message.
+          }
+        } else if (err.response?.data?.message) {
+          message = err.response.data.message;
+        }
+
+        setCredentialAccess((prev) => ({
+          ...prev,
+          verifying: false,
+          error: message,
+        }));
       }
     },
-    [clearMessages]
+    [closeCredentialAccess, credentialAccess, getCredentialFileName]
+  );
+
+  const viewVerificationDoc = useCallback(
+    (docType) => openCredentialAccess(docType, 'view'),
+    [openCredentialAccess]
+  );
+
+  const downloadVerificationDoc = useCallback(
+    (docType) => openCredentialAccess(docType, 'download'),
+    [openCredentialAccess]
   );
 
   const uploadVerificationDoc = useCallback(
@@ -1234,6 +1371,7 @@ const CompanyProfile = () => {
                             inputRef={docInputRefs}
                             onUpload={handleDocPick}
                             onView={viewVerificationDoc}
+                            onDownload={downloadVerificationDoc}
                             editable={true}
                             saving={saving}
                           />
@@ -1335,6 +1473,88 @@ const CompanyProfile = () => {
         </div>
 
 
+        {credentialAccess.isOpen ? (
+          <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/45 px-4 py-6" role="dialog" aria-modal="true">
+            <div className="w-full max-w-md overflow-hidden rounded-[22px] border border-gray-100 bg-white shadow-2xl">
+              <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Enter Password</h3>
+                  <p className="mt-1 text-sm leading-5 text-gray-500">
+                    For your security, enter your account password before
+                    {credentialAccess.mode === 'download' ? ' downloading' : ' viewing'} this credential.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={closeCredentialAccess}
+                  disabled={credentialAccess.verifying}
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-60"
+                  aria-label="Close password modal"
+                >
+                  <CloseIcon className="h-4 w-4" />
+                </button>
+              </div>
+
+              <form onSubmit={submitCredentialAccess} className="space-y-4 px-6 py-6">
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    value={credentialAccess.password}
+                    onChange={(event) =>
+                      setCredentialAccess((prev) => ({
+                        ...prev,
+                        password: event.target.value,
+                        error: '',
+                      }))
+                    }
+                    placeholder="Enter your password"
+                    autoFocus
+                    disabled={credentialAccess.verifying}
+                    className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20 disabled:bg-gray-50"
+                  />
+                </div>
+
+                {credentialAccess.error ? (
+                  <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {credentialAccess.error}
+                  </div>
+                ) : null}
+
+                <div className="flex justify-end gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={closeCredentialAccess}
+                    disabled={credentialAccess.verifying}
+                    className="h-10 rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={credentialAccess.verifying}
+                    className="inline-flex h-10 min-w-[110px] items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white hover:bg-[#255487] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {credentialAccess.verifying ? (
+                      <>
+                        <SpinnerIcon className="h-4 w-4" />
+                        Verifying
+                      </>
+                    ) : credentialAccess.mode === 'download' ? (
+                      'Download'
+                    ) : (
+                      'View'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        ) : null}
+
         {credentialPreview.isOpen && credentialPreview.url ? (
           <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 px-4 py-6">
             <div className="flex h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
@@ -1344,13 +1564,6 @@ const CompanyProfile = () => {
                   <p className="text-xs text-[#6b7280]">Credential preview</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <a
-                    href={credentialPreview.url}
-                    download={credentialPreview.fileName || 'credential'}
-                    className="inline-flex h-9 items-center justify-center rounded-lg border border-[#d1d5db] bg-white px-3 text-xs font-semibold text-[#374151] hover:bg-[#f9fafb]"
-                  >
-                    Download
-                  </a>
                   <button
                     type="button"
                     onClick={closeCredentialPreview}

@@ -212,6 +212,13 @@ router.post(
 
 
 
+router.post(
+  '/verification/:docType/secure-access',
+  protect,
+  authorize('employer'),
+  authController.secureAccessEmployerVerificationDoc
+);
+
 router.get(
   '/download-verification/:docType',
   protect,
