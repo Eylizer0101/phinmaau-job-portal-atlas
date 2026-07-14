@@ -26,6 +26,46 @@ const VALID_DECLINE_REASONS = [
 
 const VALID_DECLINED_FROM = ['applicants', 'forInterview'];
 
+
+const addApplicationActivity = (application, activity = {}) => {
+  if (!application) return;
+  if (!Array.isArray(application.activityHistory)) application.activityHistory = [];
+  application.activityHistory.push({
+    type: activity.type || 'status',
+    title: String(activity.title || '').trim(),
+    description: String(activity.description || '').trim(),
+    status: String(activity.status || application.status || '').trim(),
+    createdAt: activity.createdAt || new Date(),
+    createdBy: activity.createdBy || null
+  });
+};
+
+const getStatusActivityCopy = (status, details = {}) => {
+  const normalized = String(status || '').toLowerCase();
+  if (normalized === 'for interview') return {
+    title: 'Moved to interview',
+    description: 'The employer moved this application to the interview stage.'
+  };
+  if (normalized === 'hired') return {
+    title: 'Applicant hired',
+    description: 'The employer marked the applicant as hired.'
+  };
+  if (normalized === 'declined') return {
+    title: 'Application declined',
+    description: details.declineReason
+      ? `Reason: ${details.declineReason}${details.declineComment ? ` — ${details.declineComment}` : ''}`
+      : 'The employer declined this application.'
+  };
+  if (normalized === 'pending') return {
+    title: 'Application moved to pending',
+    description: 'The application status was changed to pending.'
+  };
+  return {
+    title: 'Application status updated',
+    description: `The application status was changed to ${status}.`
+  };
+};
+
 const buildConversationId = (userA, userB) => {
   return [userA.toString(), userB.toString()].sort().join('_');
 };
@@ -534,7 +574,15 @@ exports.applyForJob = async (req, res) => {
         mimeType: profileCv.mimeType || '',
         fileSize: Number(profileCv.fileSize || 0),
         uploadedAt: profileCv.uploadedAt || new Date(),
-      }
+      },
+      activityHistory: [{
+        type: 'application',
+        title: 'Application received',
+        description: `${buildUserDisplayName(jobseeker, 'Applicant')} applied for ${job.title || 'the position'}.`,
+        status: 'pending',
+        createdAt: new Date(),
+        createdBy: req.user._id
+      }]
     });
 
     await application.save();
@@ -1813,6 +1861,21 @@ exports.updateApplicationStatus = async (req, res) => {
 
     if (notes) application.notes = notes;
 
+    if (oldStatus !== nextStatus) {
+      const activityCopy = getStatusActivityCopy(nextStatus, {
+        declineReason: application.declineReason,
+        declineComment: application.declineComment
+      });
+      addApplicationActivity(application, {
+        type: 'status',
+        title: activityCopy.title,
+        description: activityCopy.description,
+        status: nextStatus,
+        createdAt: new Date(),
+        createdBy: req.user._id
+      });
+    }
+
     if (nextStatus === 'hired' && oldStatus !== 'hired') {
       const vacancyLimit = Number(application.job?.vacancies || 0);
       if (Number.isFinite(vacancyLimit) && vacancyLimit > 0) {
@@ -1993,6 +2056,14 @@ exports.getApplicationDetails = async (req, res) => {
       if (!application.isViewedByEmployer) {
         application.isViewedByEmployer = true;
         application.viewedAt = new Date();
+        addApplicationActivity(application, {
+          type: 'review',
+          title: 'Application reviewed',
+          description: 'The employer opened and reviewed the applicant profile.',
+          status: application.status,
+          createdAt: application.viewedAt,
+          createdBy: req.user._id
+        });
         await application.save();
       }
     }

@@ -60,6 +60,19 @@ const interviewScheduleSchema = new mongoose.Schema(
   { _id: false }
 );
 
+
+const applicationActivitySchema = new mongoose.Schema(
+  {
+    type: { type: String, default: 'status' },
+    title: { type: String, default: '', trim: true },
+    description: { type: String, default: '', trim: true },
+    status: { type: String, default: '', trim: true },
+    createdAt: { type: Date, default: Date.now },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  },
+  { _id: false }
+);
+
 const appliedResumeSchema = new mongoose.Schema(
   {
     url: {
@@ -134,6 +147,10 @@ const applicationSchema = new mongoose.Schema({
     },
     reviewedAt: Date,
     notes: String,
+    activityHistory: {
+        type: [applicationActivitySchema],
+        default: []
+    },
 
     // ✅ NEW: track if employer already viewed the application details
     isViewedByEmployer: {
