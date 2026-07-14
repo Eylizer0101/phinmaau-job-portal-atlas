@@ -98,15 +98,44 @@ const richText = (value) => {
   return <div className="space-y-1">{lines.map((line, index) => <p key={`${line}-${index}`}>{line}</p>)}</div>;
 };
 
-const Section = ({ title, children }) => (
-  <section className="border-b border-[#d8e2ee] last:border-b-0">
-    <div className="flex min-h-[54px] items-center gap-3 py-3">
-      <span className="text-[13px] text-gray-500">⌃</span>
-      <h3 className="font-serif text-[17px] font-bold uppercase tracking-[0.01em] text-[#111827] sm:text-[19px]">{title}</h3>
-    </div>
-    {children}
-  </section>
-);
+const Section = ({ title, children, defaultOpen = false }) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <section className="border-b border-[#d8e2ee] last:border-b-0">
+      <button
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        aria-expanded={isOpen}
+        className="flex min-h-[54px] w-full items-center gap-3 py-3 text-left focus:outline-none"
+      >
+        <svg
+          className={cn(
+            'h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200',
+            isOpen ? 'rotate-0' : '-rotate-90'
+          )}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M5 15l7-7 7 7"
+          />
+        </svg>
+
+        <h3 className="font-serif text-[17px] font-bold uppercase tracking-[0.01em] text-[#111827] sm:text-[19px]">
+          {title}
+        </h3>
+      </button>
+
+      {isOpen ? children : null}
+    </section>
+  );
+};
 
 const EmptyLine = ({ children }) => <div className="pb-5 pt-1 font-serif text-[13px] italic text-gray-500">{children}</div>;
 
@@ -251,8 +280,8 @@ const ApplicationDetails = () => {
           <div className="flex border-t border-[#d8e2ee] px-5 sm:px-7"><button onClick={() => setActiveTab('resume')} className={cn('relative flex h-14 items-center gap-2 px-3 text-sm font-semibold', activeTab === 'resume' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="resume" className="h-4 w-4" /> Resume<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'resume' ? 'bg-[#174b91]' : '')} /></button><button onClick={() => setActiveTab('activity')} className={cn('relative flex h-14 items-center gap-2 px-5 text-sm font-semibold', activeTab === 'activity' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="activity" className="h-4 w-4" /> Activity<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'activity' ? 'bg-[#174b91]' : '')} /></button></div>
 
           {activeTab === 'resume' ? <div className="border-t border-[#d8e2ee] px-6 pb-8 pt-4 sm:px-10 lg:px-12">
-            <Section title="Basic Information"><div className="pb-8 pt-5 text-center"><div className="flex items-start justify-center gap-8"><div className="min-w-0 flex-1"><h2 className="font-serif text-[26px] font-bold uppercase leading-tight tracking-[0.22em] text-[#111827] sm:text-[34px]">{name}</h2><div className="mt-2 font-serif text-[13px]">{profile.address || 'Address not provided'}</div><div className="mt-1 font-serif text-[13px]">{[user.email, profile.phoneNumber].filter(Boolean).join(' • ')}</div><div className="mt-2 font-serif text-[13px] italic text-gray-500">{[profile.campus, profile.course, profile.yearGraduated ? `Class of ${profile.yearGraduated}` : ''].filter(Boolean).join(', ')}</div></div></div></div></Section>
-            <Section title="Objective">{profile.aboutMe ? <div className="pb-5 pt-2 text-justify font-serif text-[13px] leading-5 text-gray-900">{richText(profile.aboutMe)}</div> : <EmptyLine>No objective added yet.</EmptyLine>}</Section>
+            <Section title="Basic Information" defaultOpen><div className="pb-8 pt-5 text-center"><div className="flex items-start justify-center gap-8"><div className="min-w-0 flex-1"><h2 className="font-serif text-[26px] font-bold uppercase leading-tight tracking-[0.22em] text-[#111827] sm:text-[34px]">{name}</h2><div className="mt-2 font-serif text-[13px]">{profile.address || 'Address not provided'}</div><div className="mt-1 font-serif text-[13px]">{[user.email, profile.phoneNumber].filter(Boolean).join(' • ')}</div><div className="mt-2 font-serif text-[13px] italic text-gray-500">{[profile.campus, profile.course, profile.yearGraduated ? `Class of ${profile.yearGraduated}` : ''].filter(Boolean).join(', ')}</div></div></div></div></Section>
+            <Section title="Objective" defaultOpen>{profile.aboutMe ? <div className="pb-5 pt-2 text-justify font-serif text-[13px] leading-5 text-gray-900">{richText(profile.aboutMe)}</div> : <EmptyLine>No objective added yet.</EmptyLine>}</Section>
             <Section title="Availability & Preferences"><div className="grid grid-cols-1 gap-x-12 gap-y-4 pb-5 pt-2 font-serif text-[13px] leading-5 md:grid-cols-3"><div className="space-y-1"><div><b>Preferred Work Mode:</b> {profile.preferredWorkMode || 'Not provided'}</div><div><b>Employment Type:</b> {profile.employmentType || 'Not provided'}</div><div><b>Willing to Relocate:</b> {profile.willingToRelocate || 'Not provided'}</div><div><b>How Soon Can Start:</b> {profile.howSoonCanYouStart || 'Not provided'}</div><div><b>Experience:</b> {profile.experience || profile.whatHaveYouDone || 'Not provided'}</div></div><div className="space-y-1"><div><b>Preferred Language:</b> {profile.preferredLanguage || 'Not provided'}</div><div><b>Educational Attainment:</b> {profile.educationalAttainment || 'Not provided'}</div><div><b>Double Degree:</b> {profile.studyField || profile.course || 'Not provided'}</div><div><b>Salary:</b> {salary || 'Not provided'}</div><div><b>Nationality:</b> {profile.nationality || 'Not provided'}</div></div><div className="space-y-1"><div><b>Height:</b> {profile.height || 'Not provided'}</div><div><b>Weight:</b> {profile.weight || 'Not provided'}</div><div><b>Gender:</b> {profile.gender || 'Not provided'}</div><div><b>Civil Status:</b> {profile.civilStatus || 'Not provided'}</div><div><b>Birthday:</b> {profile.birthday || 'Not provided'}</div></div></div></Section>
             <Section title="Work Experience">{work.length ? <div className="space-y-4 pb-5 pt-2 font-serif text-[13px] leading-5">{work.map((item, index) => <div key={item._id || index} className="py-1"><div className="flex flex-col justify-between gap-1 sm:flex-row"><div><div className="font-bold">{item.companyName || 'Company Name'}</div><div className="italic">{item.positionTitle || 'Position'}</div></div><div className="whitespace-nowrap italic text-gray-700">{entryDate(item)}</div></div>{item.description ? <div className="mt-2">{richText(item.description)}</div> : null}</div>)}</div> : <EmptyLine>No work experience added yet.</EmptyLine>}</Section>
             <Section title="Skills">{skills.length ? <div className="flex flex-wrap gap-2 pb-5 pt-2 font-serif text-[13px]">{skills.map((item, index) => <span key={`${item.skill}-${index}`} className="inline-flex overflow-hidden whitespace-nowrap rounded-full border border-[#d8e2ee]"><span className="px-3 py-1">{item.skill}</span><span className={cn('border-l px-2.5 py-1 font-semibold', PROFICIENCY_STYLES[item.proficiency] || PROFICIENCY_STYLES.Basic)}>{item.proficiency}</span></span>)}</div> : <EmptyLine>No skills added yet.</EmptyLine>}</Section>
