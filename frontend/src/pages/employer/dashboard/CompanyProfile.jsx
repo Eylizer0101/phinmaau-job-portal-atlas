@@ -510,6 +510,7 @@ const CompanyProfile = () => {
   const [initialData, setInitialData] = useState(companyData);
   const [selectedRegion, setSelectedRegion] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
+  const [industryDropdownOpen, setIndustryDropdownOpen] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -566,6 +567,7 @@ const CompanyProfile = () => {
   const modalLogoInputRef = useRef(null);
   const modalCoverInputRef = useRef(null);
   const modalGalleryInputRef = useRef(null);
+  const industryComboboxRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -583,6 +585,16 @@ const CompanyProfile = () => {
     if (!r) return [];
     return PH_CITIES_BY_REGION?.[r] || [];
   }, [selectedRegion]);
+
+  const filteredIndustryOptions = useMemo(() => {
+    const query = String(companyData.industry || '').trim().toLowerCase();
+
+    if (!query) return INDUSTRY_OPTIONS;
+
+    return INDUSTRY_OPTIONS.filter((option) =>
+      option.toLowerCase().includes(query)
+    );
+  }, [companyData.industry]);
 
   const socialLinks = useMemo(
     () =>
@@ -739,6 +751,33 @@ const CompanyProfile = () => {
     const combined = composeRegionCity(selectedRegion, selectedCity);
     setCompanyData((prev) => ({ ...prev, regionCity: combined }));
   }, [selectedRegion, selectedCity, isEditOpen]);
+
+  useEffect(() => {
+    if (!industryDropdownOpen) return undefined;
+
+    const handleOutsideClick = (event) => {
+      if (
+        industryComboboxRef.current &&
+        !industryComboboxRef.current.contains(event.target)
+      ) {
+        setIndustryDropdownOpen(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIndustryDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [industryDropdownOpen]);
 
   const handleInputChange = useCallback(
     (e) => {
@@ -917,6 +956,7 @@ const CompanyProfile = () => {
     const parsed = parseRegionCity(companyData.regionCity);
     setSelectedRegion(parsed.region);
     setSelectedCity(parsed.city);
+    setIndustryDropdownOpen(false);
     setIsEditOpen(true);
   }, [clearFieldErrors, clearMessages, companyData.regionCity]);
 
@@ -925,6 +965,7 @@ const CompanyProfile = () => {
 
     clearMessages();
     clearFieldErrors();
+    setIndustryDropdownOpen(false);
     setIsEditOpen(false);
     resetLocalUploads();
     await fetchCompanyProfile();
@@ -1770,36 +1811,113 @@ const CompanyProfile = () => {
 
                       <div className="grid grid-cols-1 gap-4">
                         <FormField label="Industry" required error={fieldErrors.industry}>
-                          <div>
-                            <input
-                              type="text"
-                              name="industry"
-                              value={companyData.industry}
-                              onChange={handleInputChange}
-                              onBlur={() => {
-                                const normalizedIndustry = normalizeIndustryValue(companyData.industry);
-                                setCompanyData((prev) => ({
-                                  ...prev,
-                                  industry: normalizedIndustry,
-                                }));
-                              }}
-                              list="company-industry-options"
-                              autoComplete="off"
-                              className={cx(
-                                'w-full rounded-[10px] border bg-white px-4 py-3 text-[14px] outline-none transition',
-                                fieldErrors.industry
-                                  ? 'border-red-300 focus:border-red-500'
-                                  : 'border-[#d1d5db] focus:border-[#2e66a6]'
-                              )}
-                              placeholder="Select or type an industry"
-                              disabled={saving}
-                            />
+                          <div ref={industryComboboxRef} className="relative">
+                            <div className="relative">
+                              <input
+                                type="text"
+                                name="industry"
+                                value={companyData.industry}
+                                onChange={(event) => {
+                                  handleInputChange(event);
+                                  setIndustryDropdownOpen(true);
+                                }}
+                                onFocus={() => setIndustryDropdownOpen(true)}
+                                onBlur={() => {
+                                  window.setTimeout(() => {
+                                    const normalizedIndustry = normalizeIndustryValue(companyData.industry);
+                                    setCompanyData((prev) => ({
+                                      ...prev,
+                                      industry: normalizedIndustry,
+                                    }));
+                                  }, 0);
+                                }}
+                                autoComplete="off"
+                                className={cx(
+                                  'w-full rounded-[10px] border bg-white px-4 py-3 pr-11 text-[14px] outline-none transition',
+                                  fieldErrors.industry
+                                    ? 'border-red-300 focus:border-red-500'
+                                    : 'border-[#d1d5db] focus:border-[#2e66a6]'
+                                )}
+                                placeholder="Select or type an industry"
+                                disabled={saving}
+                                role="combobox"
+                                aria-expanded={industryDropdownOpen}
+                                aria-controls="company-industry-options"
+                                aria-autocomplete="list"
+                              />
 
-                            <datalist id="company-industry-options">
-                              {INDUSTRY_OPTIONS.map((option) => (
-                                <option key={option} value={option} />
-                              ))}
-                            </datalist>
+                              <button
+                                type="button"
+                                onClick={() => setIndustryDropdownOpen((prev) => !prev)}
+                                disabled={saving}
+                                className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-[#374151] disabled:opacity-60"
+                                aria-label="Toggle industry options"
+                              >
+                                <svg
+                                  className={cx(
+                                    'h-4 w-4 transition-transform',
+                                    industryDropdownOpen ? 'rotate-180' : ''
+                                  )}
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                  aria-hidden="true"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.51a.75.75 0 01-1.08 0l-4.25-4.51a.75.75 0 01.02-1.06z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+
+                            {industryDropdownOpen ? (
+                              <div
+                                id="company-industry-options"
+                                role="listbox"
+                                className="absolute left-0 right-0 top-full z-[120] mt-2 max-h-64 overflow-y-auto rounded-[12px] border border-[#d1d5db] bg-white py-1 shadow-[0_12px_30px_rgba(15,23,42,0.16)]"
+                              >
+                                {filteredIndustryOptions.length > 0 ? (
+                                  filteredIndustryOptions.map((option) => (
+                                    <button
+                                      key={option}
+                                      type="button"
+                                      role="option"
+                                      aria-selected={
+                                        option.toLowerCase() ===
+                                        String(companyData.industry || '').trim().toLowerCase()
+                                      }
+                                      onMouseDown={(event) => event.preventDefault()}
+                                      onClick={() => {
+                                        setCompanyData((prev) => ({
+                                          ...prev,
+                                          industry: option,
+                                        }));
+                                        setFieldErrors((prev) => ({
+                                          ...prev,
+                                          industry: undefined,
+                                        }));
+                                        clearMessages();
+                                        setIndustryDropdownOpen(false);
+                                      }}
+                                      className={cx(
+                                        'block w-full px-4 py-3 text-left text-[14px] transition hover:bg-[#f3f6fb]',
+                                        option.toLowerCase() ===
+                                          String(companyData.industry || '').trim().toLowerCase()
+                                          ? 'bg-[#eef4fb] font-semibold text-[#2e66a6]'
+                                          : 'text-[#111827]'
+                                      )}
+                                    >
+                                      {option}
+                                    </button>
+                                  ))
+                                ) : (
+                                  <div className="px-4 py-3 text-[13px] text-[#6b7280]">
+                                    No matching option. Your typed industry can still be saved.
+                                  </div>
+                                )}
+                              </div>
+                            ) : null}
                           </div>
                         </FormField>
 
