@@ -1079,10 +1079,10 @@ const JobOfferDetails = () => {
                       {primaryCtaLabel}
                     </button>
 
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="grid w-full grid-cols-2 gap-2">
                       <button
                         onClick={handleSaveClick}
-                        className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSecondary} ${UI.ring} min-w-[115px]`}
+                        className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSecondary} ${UI.ring} w-full min-w-0`}
                         type="button"
                       >
                         <SvgIcon name="bookmark" className="w-4 h-4" />
@@ -1091,7 +1091,7 @@ const JobOfferDetails = () => {
 
                       <button
                         onClick={handleShareJob}
-                        className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSecondary} ${UI.ring} min-w-[115px]`}
+                        className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSecondary} ${UI.ring} w-full min-w-0`}
                         type="button"
                       >
                         <SvgIcon name="share" className="w-4 h-4" />
