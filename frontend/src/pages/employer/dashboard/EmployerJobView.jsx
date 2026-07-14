@@ -232,6 +232,12 @@ const SvgIcon = ({ name, className = 'h-4 w-4' }) => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 19l-7-7 7-7" />
         </svg>
       );
+    case 'chevronRight':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 5l7 7-7 7" />
+        </svg>
+      );
     case 'building':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -723,7 +729,7 @@ const EmployerJobView = () => {
                 <button
                   type="button"
                   onClick={() => navigate(`/employer/job/${jobId}/applicants`)}
-                  className={`w-full rounded-xl bg-[#2e66a6] px-4 py-3 text-left text-white shadow-md transition hover:bg-[#25578f] lg:w-[255px] ${UI.ring}`}
+                  className={`w-full rounded-xl bg-[#2e66a6] px-4 py-3 text-left text-white shadow-md transition hover:bg-[#25578f] lg:mt-8 lg:w-[255px] lg:self-center ${UI.ring}`}
                   aria-label={`View ${jobApplications.length} applicants for ${job.title}`}
                 >
                   <div className="flex items-center gap-3">
@@ -763,7 +769,9 @@ const EmployerJobView = () => {
                       <p className="truncate text-[10px] text-blue-100">Review candidates who applied</p>
                     </div>
 
-                    <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white/15 text-lg">→</span>
+                    <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/15 text-white">
+                      <SvgIcon name="chevronRight" className="h-4 w-4" />
+                    </span>
                   </div>
                 </button>
               </div>
