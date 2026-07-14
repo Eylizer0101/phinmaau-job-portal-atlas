@@ -2972,7 +2972,10 @@ const ProfileEditModal = ({
     }
 
     if (sectionKey === 'education') {
-      const educationRows = normalizeEducationEntries(drafts.educationEntries || [], true);
+      const educationRows =
+        Array.isArray(drafts.educationEntries) && drafts.educationEntries.length
+          ? drafts.educationEntries
+          : [createEmptyEducationEntry()];
 
       return (
         <div className="space-y-5">
