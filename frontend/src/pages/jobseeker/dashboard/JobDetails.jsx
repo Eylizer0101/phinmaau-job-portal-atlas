@@ -30,14 +30,14 @@ const getRelocationDisplayLabel = (value) => {
   }
 
   if (normalized === 'no - position is fixed location') {
-    return 'location Fixed';
+    return 'Location Fixed';
   }
 
   if (normalized === 'open to relocation if necessary') {
     return 'Possible to relocate';
   }
 
-  return String(value || '').trim() || 'location Fixed';
+  return String(value || '').trim() || 'Location Fixed';
 };
 
 const getApiOrigin = () =>
