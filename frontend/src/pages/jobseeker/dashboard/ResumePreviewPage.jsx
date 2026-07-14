@@ -552,8 +552,10 @@ const ResumePreviewPage = () => {
         .skill-item { display: inline-block; color: #111111; white-space: nowrap; }
         .resume-rich-text { margin-top: 2px; text-align: justify; }
         .resume-rich-text p, .resume-rich-text div { margin: 1px 0; }
-        .resume-rich-text ul, .resume-rich-text ol { margin: 2px 0 0 14px; padding: 0; }
-        .resume-rich-text li { margin: 0; padding-left: 1px; }
+        .resume-rich-text ul, .resume-rich-text ol { margin: 2px 0 0 14px; padding-left: 14px; }
+        .resume-rich-text ul { list-style-type: disc !important; list-style-position: outside !important; }
+        .resume-rich-text ol { list-style-type: decimal !important; list-style-position: outside !important; }
+        .resume-rich-text li { display: list-item !important; margin: 0; padding-left: 1px; }
         .resume-rich-text h1, .resume-rich-text h2 { margin: 2px 0 1px; border: 0; padding: 0; text-transform: none; letter-spacing: 0; line-height: 1.15; }
         .resume-rich-text h1 { font-size: 11px; }
         .resume-rich-text h2 { font-size: 10px; }
