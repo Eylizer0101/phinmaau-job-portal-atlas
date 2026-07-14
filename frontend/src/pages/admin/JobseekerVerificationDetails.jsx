@@ -674,7 +674,6 @@ const JobseekerVerificationDetails = () => {
     ["Preferred Work Mode", profile.preferredWorkMode],
     ["Email", jobseeker.email],
     ["Contact Number", displayPhone],
-    ["How Soon Can You Start", profile.howSoonCanYouStart],
     ["Date Registered", formatDate(jobseeker.createdAt, true)],
   ];
 
@@ -840,21 +839,25 @@ const JobseekerVerificationDetails = () => {
                           type="button"
                           onClick={() => handleViewFile(docType.key)}
                           className={cn(
-                            "h-8 rounded border border-slate-200 bg-white text-[11px] font-semibold text-[#2e66a6] hover:bg-blue-50",
+                            "flex h-8 items-center justify-center rounded border border-slate-200 bg-white text-[#2e66a6] hover:bg-blue-50",
                             UI.ring
                           )}
+                          aria-label={`View ${docType.label}`}
+                          title={`View ${docType.label}`}
                         >
-                          View
+                          <SvgIcon name="eye" className="h-4 w-4" />
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDownloadFile(docType.key, docType.label)}
                           className={cn(
-                            "h-8 rounded border border-slate-200 bg-white text-[11px] font-semibold text-slate-600 hover:bg-slate-50",
+                            "flex h-8 items-center justify-center rounded border border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
                             UI.ring
                           )}
+                          aria-label={`Download ${docType.label}`}
+                          title={`Download ${docType.label}`}
                         >
-                          Download
+                          <SvgIcon name="download" className="h-4 w-4" />
                         </button>
                       </div>
                     ) : (
