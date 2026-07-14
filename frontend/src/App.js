@@ -55,6 +55,7 @@ import ArchivedJobs from './pages/employer/dashboard/ArchivedJobs';
 import EditJob from './pages/employer/dashboard/EditJob';
 import EmployerJobView from './pages/employer/dashboard/EmployerJobView';
 import Applicants from './pages/employer/dashboard/Applicants';
+import JobApplicants from './pages/employer/dashboard/JobApplicants';
 import ApplicationDetails from './pages/employer/dashboard/ApplicationDetails';
 import CompanyProfile from './pages/employer/dashboard/CompanyProfile';
 import EmployerMessages from './pages/employer/dashboard/EmployerMessages';
@@ -346,6 +347,14 @@ function App() {
           element={
             <RequireRole role="employer" redirectTo="/login">
               <Applicants />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/employer/job/:jobId/applicants"
+          element={
+            <RequireRole role="employer" redirectTo="/login">
+              <JobApplicants />
             </RequireRole>
           }
         />

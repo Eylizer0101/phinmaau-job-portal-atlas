@@ -435,6 +435,7 @@ const EmployerJobView = () => {
 
   const [job, setJob] = useState(null);
   const [companyInfo, setCompanyInfo] = useState(null);
+  const [jobApplications, setJobApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -543,9 +544,25 @@ const EmployerJobView = () => {
     }
   }, [jobId]);
 
+  const fetchJobApplications = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(
+        `https://phinmaau-job-portal-atlas.onrender.com/api/applications/job/${jobId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setJobApplications(Array.isArray(response.data?.applications) ? response.data.applications : []);
+    } catch (fetchError) {
+      console.error('Error loading job applicants:', fetchError);
+      setJobApplications([]);
+    }
+  }, [jobId]);
+
   useEffect(() => {
     fetchJobDetails();
-  }, [fetchJobDetails]);
+    fetchJobApplications();
+  }, [fetchJobDetails, fetchJobApplications]);
 
   const requiredSkills = useMemo(() => {
     if (Array.isArray(job?.skillsRequired)) return job.skillsRequired.filter(Boolean);
@@ -557,6 +574,26 @@ const EmployerJobView = () => {
     const other = String(job?.otherBenefits || '').trim();
     return other ? [...perks, other] : perks;
   }, [job?.perksAndBenefits, job?.otherBenefits]);
+
+  const applicantPreview = useMemo(
+    () => jobApplications.slice(0, 3),
+    [jobApplications]
+  );
+
+  const getApplicantImage = useCallback((application) => {
+    const value = application?.jobseeker?.profileImage;
+    if (!value) return '';
+    return String(value).startsWith('http')
+      ? value
+      : `https://phinmaau-job-portal-atlas.onrender.com${value}`;
+  }, []);
+
+  const getApplicantName = useCallback((application) => {
+    const person = application?.jobseeker || {};
+    return person.fullName || [person.firstName, person.middleName, person.lastName]
+      .filter(Boolean)
+      .join(' ') || 'Applicant';
+  }, []);
 
   if (loading) {
     return (
@@ -682,6 +719,53 @@ const EmployerJobView = () => {
                     </div>
                   </div>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => navigate(`/employer/job/${jobId}/applicants`)}
+                  className={`w-full rounded-xl bg-[#2e66a6] px-4 py-3 text-left text-white shadow-md transition hover:bg-[#25578f] lg:w-[255px] ${UI.ring}`}
+                  aria-label={`View ${jobApplications.length} applicants for ${job.title}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex -space-x-2">
+                      {applicantPreview.length ? (
+                        applicantPreview.map((application, index) => {
+                          const image = getApplicantImage(application);
+                          const applicantName = getApplicantName(application);
+
+                          return image ? (
+                            <img
+                              key={application._id || index}
+                              src={image}
+                              alt={applicantName}
+                              className="h-8 w-8 rounded-full border-2 border-white object-cover"
+                            />
+                          ) : (
+                            <span
+                              key={application._id || index}
+                              className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#dbeafe] text-[10px] font-bold text-[#1d4ed8]"
+                            >
+                              {applicantName.charAt(0).toUpperCase()}
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-white/20">
+                          <SvgIcon name="users" className="h-4 w-4" />
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold">
+                        {jobApplications.length} Applicant{jobApplications.length === 1 ? '' : 's'}
+                      </p>
+                      <p className="truncate text-[10px] text-blue-100">Review candidates who applied</p>
+                    </div>
+
+                    <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white/15 text-lg">→</span>
+                  </div>
+                </button>
               </div>
             </div>
           </div>

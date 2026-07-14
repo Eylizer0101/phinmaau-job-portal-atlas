@@ -1709,7 +1709,7 @@ exports.getJobApplications = async (req, res) => {
     const applications = await Application.find({ job: jobId })
       .populate({
         path: 'jobseeker',
-        select: 'fullName firstName middleName lastName email jobSeekerProfile.skills jobSeekerProfile.resumeUrl jobSeekerProfile.experience jobSeekerProfile.education jobSeekerProfile.contactNumber profileImage'
+        select: 'fullName firstName middleName lastName extensionName email profileImage jobSeekerProfile'
       })
       .populate({
         path: 'interviewSchedule.interviewer',
@@ -1720,6 +1720,20 @@ exports.getJobApplications = async (req, res) => {
     res.status(200).json({
       success: true,
       count: applications.length,
+      job: {
+        _id: job._id,
+        title: job.title,
+        vacancies: job.vacancies,
+        companyName: job.companyName,
+        companyLogo: job.companyLogo,
+        skillsRequired: job.skillsRequired,
+        educationLevel: job.educationLevel,
+        experienceLevel: job.experienceLevel,
+        openToFreshGraduates: job.openToFreshGraduates,
+        category: job.category,
+        description: job.description,
+        requirements: job.requirements,
+      },
       applications
     });
 
