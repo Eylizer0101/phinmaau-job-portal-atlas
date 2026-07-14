@@ -60,6 +60,35 @@ const formatDate = (value, options = {}) => {
   return date.toLocaleDateString('en-PH', options.year ? options : { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
+const formatRelativeTime = (value) => {
+  if (!value) return '';
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+
+  const diffMilliseconds = Date.now() - date.getTime();
+  const isFuture = diffMilliseconds < 0;
+  const absoluteMilliseconds = Math.abs(diffMilliseconds);
+
+  const minutes = Math.floor(absoluteMilliseconds / (1000 * 60));
+  const hours = Math.floor(absoluteMilliseconds / (1000 * 60 * 60));
+  const days = Math.floor(absoluteMilliseconds / (1000 * 60 * 60 * 24));
+  const months = Math.floor(days / 30);
+  const years = Math.floor(days / 365);
+
+  let valueText = '';
+
+  if (minutes < 1) valueText = 'just now';
+  else if (minutes < 60) valueText = `${minutes} minute${minutes === 1 ? '' : 's'}`;
+  else if (hours < 24) valueText = `${hours} hour${hours === 1 ? '' : 's'}`;
+  else if (days < 30) valueText = `${days} day${days === 1 ? '' : 's'}`;
+  else if (months < 12) valueText = `${months} month${months === 1 ? '' : 's'}`;
+  else valueText = `${years} year${years === 1 ? '' : 's'}`;
+
+  if (valueText === 'just now') return valueText;
+  return isFuture ? `in ${valueText}` : `${valueText} ago`;
+};
+
 const formatDateTime = (value) => {
   if (!value) return { date: '', time: '' };
   const date = new Date(value);
@@ -295,7 +324,12 @@ const ApplicationDetails = () => {
           <div className="flex flex-col gap-5 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 items-center gap-5">
               <div className="h-[108px] w-[108px] shrink-0 overflow-hidden rounded-full bg-[#eef5fc]">{image && !avatarBroken ? <img src={image} alt={name} onError={() => setAvatarBroken(true)} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-[#2e66a6]">{name[0]}</div>}</div>
-              <div className="min-w-0"><div className="flex flex-wrap items-center gap-3"><h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">{name}</h1><span className="rounded-md bg-green-50 px-2 py-1 text-xs font-semibold text-green-700">{currentStatus}</span></div><p className="mt-2 text-sm text-gray-500">Applied for <span className="font-semibold text-[#174b91]">{application.job?.title || 'Job Position'}</span></p><p className="mt-2 flex items-center gap-2 text-sm text-gray-500"><SvgIcon name="calendar" className="h-4 w-4" /> Applied on {formatDate(application.appliedAt || application.createdAt)}</p></div>
+              <div className="min-w-0"><div className="flex flex-wrap items-center gap-3"><h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">{name}</h1><span className="rounded-md bg-green-50 px-2 py-1 text-xs font-semibold text-green-700">{currentStatus}</span></div><p className="mt-2 text-sm text-gray-500">Applied for <span className="font-semibold text-[#174b91]">{application.job?.title || 'Job Position'}</span></p><p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-500">
+                <SvgIcon name="calendar" className="h-4 w-4" />
+                <span>Applied on {formatDate(application.appliedAt || application.createdAt)}</span>
+                <span aria-hidden="true">•</span>
+                <span>{formatRelativeTime(application.appliedAt || application.createdAt)}</span>
+              </p></div>
             </div>
             <div className="rounded-xl border border-[#d8e2ee] px-5 py-3 text-center"><div className="text-[11px] text-gray-500">JOBSEEKER LEVEL</div><div className="mt-1 text-lg font-bold text-[#174b91]">{profile.jobseekerLevel || profile.level || 'Applicant'}</div></div>
           </div>
