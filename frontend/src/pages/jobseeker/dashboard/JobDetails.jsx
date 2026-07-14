@@ -1202,7 +1202,7 @@ const JobDetails = () => {
                   </div>
 
                   <div className="mt-2 flex justify-end">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-[#f7faff] px-4 py-2.5 text-sm text-black/80">
+                    <div className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm text-black/80">
                       <span className="text-black/80">
                         <SvgIcon name="clock" className="w-4 h-4" />
                       </span>
