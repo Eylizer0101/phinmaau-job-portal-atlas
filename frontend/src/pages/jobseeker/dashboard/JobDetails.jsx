@@ -1213,10 +1213,10 @@ const JobDetails = () => {
                     </button>
                   </div>
 
-                  <div className="mt-2 flex flex-col items-end gap-1">
+                  <div className="mt-2 flex flex-col items-start w-full">
                     {job.applicationDeadline ? (
-                      <div className="inline-flex items-center gap-2 px-4 text-sm font-medium text-black/80">
-                        <span className="text-[#2e66a6]">
+                      <div className="flex items-center gap-2 w-full text-sm font-medium text-black/80">
+                        <span className="text-[#2e66a6] flex-shrink-0">
                           <SvgIcon name="calendar" className="h-4 w-4" />
                         </span>
                         <span>
@@ -1225,8 +1225,8 @@ const JobDetails = () => {
                       </div>
                     ) : null}
 
-                    <div className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm text-black/80">
-                      <span className="text-black/80">
+                    <div className="flex items-center gap-2 w-full text-sm text-black/80 mt-1">
+                      <span className="text-black/80 flex-shrink-0">
                         <SvgIcon name="clock" className="w-4 h-4" />
                       </span>
                       <span>{formatPostedRelative(job.createdAt)}</span>
