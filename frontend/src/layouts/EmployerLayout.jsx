@@ -11,6 +11,10 @@ const EmployerLayout = ({ children }) => {
 
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [openDropdowns, setOpenDropdowns] = useState({
+    Jobs: true,
+    Applications: true,
+  });
 
   // ✅ Logout modal state (QA/UI confirm)
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -331,18 +335,17 @@ const EmployerLayout = ({ children }) => {
   const navSections = useMemo(
     () => [
       {
-
-        items: [
-          {
-            name: "Dashboard",
-            path: "/employer/dashboard",
-            icon:
-              "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
-          },
-        ],
+        type: "item",
+        name: "Dashboard",
+        path: "/employer/dashboard",
+        icon:
+          "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
       },
       {
- 
+        type: "dropdown",
+        name: "Jobs",
+        icon:
+          "M20 7h-4V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM10 5h4v2h-4V5z",
         items: [
           {
             name: "Post Job",
@@ -367,6 +370,14 @@ const EmployerLayout = ({ children }) => {
             icon:
               "M8 7V3m8 4V3m-9 8h10m-11 9h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v11a2 2 0 002 2z",
           },
+        ],
+      },
+      {
+        type: "dropdown",
+        name: "Applications",
+        icon:
+          "M9 12h6m-6 4h6M9 8h6m2 13H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z",
+        items: [
           {
             name: "Hired",
             path: "/employer/hired",
@@ -376,26 +387,27 @@ const EmployerLayout = ({ children }) => {
           {
             name: "Declined",
             path: "/employer/declined",
-            icon:
-              "M6 18L18 6M6 6l12 12",
-          },
-          {
-            name: "Messages",
-            path: "/employer/messages",
-            icon:
-              "M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 002-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z",
+            icon: "M6 18L18 6M6 6l12 12",
           },
         ],
       },
-    
+      {
+        type: "item",
+        name: "Messages",
+        path: "/employer/messages",
+        icon:
+          "M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 002-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z",
+      },
     ],
     []
   );
 
   const currentLabel = useMemo(() => {
-    const all = navSections.flatMap((s) => s.items);
+    const all = navSections.flatMap((section) =>
+      section.type === "dropdown" ? section.items : [section]
+    );
     const match = all
-      .filter((i) => location.pathname.startsWith(i.path))
+      .filter((item) => location.pathname.startsWith(item.path))
       .sort((a, b) => b.path.length - a.path.length)[0];
     return match?.name || "Dashboard";
   }, [location.pathname, navSections]);
@@ -498,7 +510,7 @@ const EmployerLayout = ({ children }) => {
     }
   };
 
-  const SideNavItem = ({ item, onItemClick }) => {
+  const SideNavItem = ({ item, onItemClick, isNested = false }) => {
     const isDashboard = item.path === "/employer/dashboard";
     const match = useMatch({ path: item.path, end: isDashboard });
     const isActive = !!match;
@@ -509,7 +521,8 @@ const EmployerLayout = ({ children }) => {
           to={item.path}
           onClick={onItemClick}
           className={[
-            "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium select-none",
+            "group relative flex items-center gap-3 rounded-xl py-2.5 text-sm font-medium select-none",
+            isNested ? "pl-9 pr-3" : "px-3",
             "transition-colors duration-150 ease-out",
             focusRing,
             isActive
@@ -546,24 +559,109 @@ const EmployerLayout = ({ children }) => {
     );
   };
 
-  const NavList = ({ onItemClick }) => (
-    <nav className="p-3">
-      {navSections.map((section) => (
-        <div key={section.label} className="-mb-1">
-          <p className="px-3 pb-2 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-            {section.label}
-          </p>
-          <ul className="space-y-1">
+  const SidebarDropdown = ({ section, onItemClick }) => {
+    const isOpen = openDropdowns[section.name];
+    const hasActiveChild = section.items.some((item) =>
+      location.pathname.startsWith(item.path)
+    );
+
+    return (
+      <li>
+        <button
+          type="button"
+          onClick={() =>
+            setOpenDropdowns((prev) => ({
+              ...prev,
+              [section.name]: !prev[section.name],
+            }))
+          }
+          className={[
+            "group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium select-none",
+            "transition-colors duration-150 ease-out",
+            focusRing,
+            hasActiveChild
+              ? "text-slate-900"
+              : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
+          ].join(" ")}
+          aria-expanded={isOpen}
+        >
+          <svg
+            className={[
+              "h-5 w-5 shrink-0 transition-colors",
+              hasActiveChild
+                ? "text-slate-700"
+                : "text-gray-500 group-hover:text-gray-700",
+            ].join(" ")}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d={section.icon}
+            />
+          </svg>
+
+          <span className="flex-1 truncate text-left">{section.name}</span>
+
+          <svg
+            className={[
+              "h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200",
+              isOpen ? "rotate-180" : "",
+            ].join(" ")}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+
+        {isOpen && (
+          <ul className="mt-1 space-y-1">
             {section.items.map((item) => (
               <SideNavItem
                 key={item.name}
                 item={item}
                 onItemClick={onItemClick}
+                isNested
               />
             ))}
           </ul>
-        </div>
-      ))}
+        )}
+      </li>
+    );
+  };
+
+  const NavList = ({ onItemClick }) => (
+    <nav className="p-3">
+      <ul className="space-y-1">
+        {navSections.map((section) =>
+          section.type === "dropdown" ? (
+            <SidebarDropdown
+              key={section.name}
+              section={section}
+              onItemClick={onItemClick}
+            />
+          ) : (
+            <SideNavItem
+              key={section.name}
+              item={section}
+              onItemClick={onItemClick}
+            />
+          )
+        )}
+      </ul>
     </nav>
   );
 
