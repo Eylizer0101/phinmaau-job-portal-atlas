@@ -130,6 +130,141 @@ const richText = (value) => {
   return <div className="space-y-1">{lines.map((line, index) => <p key={`${line}-${index}`}>{line}</p>)}</div>;
 };
 
+const hasMeaningfulObjectValue = (item = {}) =>
+  Boolean(
+    item &&
+    typeof item === 'object' &&
+    Object.entries(item).some(([key, value]) => {
+      if (['_id', 'id', 'createdAt', 'updatedAt', '__v'].includes(key)) return false;
+      if (Array.isArray(value)) return value.length > 0;
+      if (value && typeof value === 'object') return hasMeaningfulObjectValue(value);
+      return Boolean(String(value ?? '').trim());
+    })
+  );
+
+const calculateJobSeekerLevel = ({
+  skills = [],
+  certifications = [],
+  projects = [],
+  seminars = [],
+  awards = [],
+  workExperiences = [],
+}) => {
+  const counts = {
+    skills: Array.isArray(skills) ? skills.filter(Boolean).length : 0,
+    certifications: Array.isArray(certifications)
+      ? certifications.filter(hasMeaningfulObjectValue).length
+      : 0,
+    projects: Array.isArray(projects)
+      ? projects.filter(hasMeaningfulObjectValue).length
+      : 0,
+    seminars: Array.isArray(seminars)
+      ? seminars.filter(hasMeaningfulObjectValue).length
+      : 0,
+    awards: Array.isArray(awards)
+      ? awards.filter(hasMeaningfulObjectValue).length
+      : 0,
+    work: Array.isArray(workExperiences) ? workExperiences.length : 0,
+  };
+
+  const tiers = [
+    {
+      name: 'First Time Job Seeker',
+      requirements: {
+        skills: 0,
+        certifications: 0,
+        projects: 0,
+        seminars: 0,
+        awards: 0,
+        work: 0,
+      },
+    },
+    {
+      name: 'Intermediate',
+      requirements: {
+        skills: 5,
+        certifications: 1,
+        projects: 1,
+        seminars: 1,
+        awards: 1,
+        work: 0,
+      },
+    },
+    {
+      name: 'Expert',
+      requirements: {
+        skills: 9,
+        certifications: 2,
+        projects: 2,
+        seminars: 2,
+        awards: 2,
+        work: 1,
+      },
+    },
+    {
+      name: 'Pro',
+      requirements: {
+        skills: 13,
+        certifications: 5,
+        projects: 5,
+        seminars: 5,
+        awards: 5,
+        work: 2,
+      },
+    },
+    {
+      name: 'Legend',
+      requirements: {
+        skills: 17,
+        certifications: 7,
+        projects: 7,
+        seminars: 7,
+        awards: 7,
+        work: 3,
+      },
+    },
+  ];
+
+  const meetsRequirements = (requirements) =>
+    Object.entries(requirements).every(([key, required]) => counts[key] >= required);
+
+  let currentTierIndex = 0;
+  tiers.forEach((tier, index) => {
+    if (meetsRequirements(tier.requirements)) currentTierIndex = index;
+  });
+
+  const currentTier = tiers[currentTierIndex];
+  const nextTier = tiers[currentTierIndex + 1];
+
+  if (!nextTier) {
+    return {
+      currentRank: currentTier.name,
+      nextTier: 'Completed',
+      percentage: 100,
+    };
+  }
+
+  const requirementEntries = Object.entries(nextTier.requirements).filter(
+    ([, required]) => required > 0
+  );
+
+  const ratios = requirementEntries.map(([key, required]) =>
+    Math.min(1, counts[key] / required)
+  );
+
+  const percentage = ratios.length
+    ? Math.round(
+        (ratios.reduce((total, ratio) => total + ratio, 0) / ratios.length) * 100
+      )
+    : 0;
+
+  return {
+    currentRank: currentTier.name,
+    nextTier: nextTier.name,
+    percentage,
+  };
+};
+
 const Section = ({ title, children, defaultOpen = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
@@ -287,6 +422,14 @@ const ApplicationDetails = () => {
   const education = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
   const work = Array.isArray(profile.workExperiences) ? profile.workExperiences : [];
   const skills = [...parseSkills(profile.technicalSkills), ...parseSkills(profile.softSkills)];
+  const jobSeekerLevel = calculateJobSeekerLevel({
+    skills,
+    certifications: profile.certifications || [],
+    projects: profile.projects || [],
+    seminars: profile.seminars || [],
+    awards: profile.awards || [],
+    workExperiences: work,
+  });
   const salary = [profile.minimumSalary, profile.maximumSalary].filter(Boolean).join(' - ');
   const activities = Array.isArray(application.activityHistory) && application.activityHistory.length
     ? [...application.activityHistory].sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt))
@@ -331,7 +474,48 @@ const ApplicationDetails = () => {
                 <span>{formatRelativeTime(application.appliedAt || application.createdAt)}</span>
               </p></div>
             </div>
-            <div className="rounded-xl border border-[#d8e2ee] px-5 py-3 text-center"><div className="text-[11px] text-gray-500">JOBSEEKER LEVEL</div><div className="mt-1 text-lg font-bold text-[#174b91]">{profile.jobseekerLevel || profile.level || 'Applicant'}</div></div>
+            <div className="w-full rounded-2xl border border-[#d8e2ee] bg-white px-4 py-3 shadow-[0_6px_20px_rgba(46,102,166,0.08)] lg:w-[270px]">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#edf4fb] text-[23px]" aria-hidden="true">
+                  🏆
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-gray-500">
+                    Jobseeker Level
+                  </div>
+                  <div className="mt-1 truncate text-lg font-bold text-[#174b91]">
+                    {jobSeekerLevel.currentRank}
+                  </div>
+
+                  <div className="mt-2 flex items-center justify-between gap-3 text-xs">
+                    <span className="min-w-0 truncate text-gray-500">
+                      Next Tier:{' '}
+                      <span className="font-semibold text-gray-800">
+                        {jobSeekerLevel.nextTier}
+                      </span>
+                    </span>
+                    <span className="shrink-0 font-bold text-[#2e66a6]">
+                      {jobSeekerLevel.percentage}%
+                    </span>
+                  </div>
+
+                  <div
+                    className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200"
+                    role="progressbar"
+                    aria-label="Job seeker level progress"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow={jobSeekerLevel.percentage}
+                  >
+                    <div
+                      className="h-full rounded-full bg-[#2e66a6]"
+                      style={{ width: `${jobSeekerLevel.percentage}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <div className="flex border-t border-[#d8e2ee] px-5 sm:px-7"><button onClick={() => setActiveTab('resume')} className={cn('relative flex h-14 items-center gap-2 px-3 text-sm font-semibold', activeTab === 'resume' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="resume" className="h-4 w-4" /> Resume<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'resume' ? 'bg-[#174b91]' : '')} /></button><button onClick={() => setActiveTab('activity')} className={cn('relative flex h-14 items-center gap-2 px-5 text-sm font-semibold', activeTab === 'activity' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="activity" className="h-4 w-4" /> Activity<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'activity' ? 'bg-[#174b91]' : '')} /></button></div>
 
