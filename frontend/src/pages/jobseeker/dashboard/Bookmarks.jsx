@@ -556,6 +556,21 @@ const formatApplicationDeadline = (deadline) => {
   })}`;
 };
 
+const formatApplicationDeadlineDate = (deadline) => {
+  if (!deadline) return '';
+
+  const date = new Date(deadline);
+
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+  });
+};
+
 const normalizeWorkModeLabel = (value) => {
   const v = String(value || '').trim().toLowerCase();
 
@@ -2231,7 +2246,17 @@ const Bookmarks = () => {
                                 ) : null}
                               </div>
 
-                              <div className="mt-4">{statusBadge}</div>
+                              <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-black/80">
+                                <span className="text-black/55">
+                                  <SvgIcon name="clock" className="w-4 h-4" />
+                                </span>
+                                <span>
+                                  {formatPostedRelative(selectedJob.createdAt)}
+                                  {selectedJob.applicationDeadline
+                                    ? ` and deadline of application is on ${formatApplicationDeadlineDate(selectedJob.applicationDeadline)}`
+                                    : ''}
+                                </span>
+                              </div>
                             </div>
                           </div>
 
@@ -2284,14 +2309,11 @@ const Bookmarks = () => {
                               </button>
                             </div>
 
-                            <div className="mt-1 flex justify-end">
-                              <div className="inline-flex items-center gap-2 rounded-full bg-[#FFFFFF] px-4 py-3 text-sm text-black/80">
-                                <span className="text-black/55">
-                                  <SvgIcon name="clock" className="w-4 h-4" />
-                                </span>
-                                <span>{formatPostedRelative(selectedJob.createdAt)}</span>
+                            {statusBadge ? (
+                              <div className="mt-1 flex justify-start">
+                                {statusBadge}
                               </div>
-                            </div>
+                            ) : null}
                           </div>
                         </div>
                       </div>
