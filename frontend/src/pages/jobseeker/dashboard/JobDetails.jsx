@@ -1168,7 +1168,15 @@ const JobDetails = () => {
                       )}
                     </div>
 
-                    <div className="mt-4">{statusBadge}</div>
+                    <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-black/80">
+                      <SvgIcon name="clock" className="h-4 w-4 flex-shrink-0" />
+                      <span>
+                        {formatPostedRelative(job.createdAt)}
+                        {job.applicationDeadline
+                          ? ` and deadline of application is on ${formatApplicationDeadline(job.applicationDeadline)}`
+                          : ''}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -1190,13 +1198,13 @@ const JobDetails = () => {
                     </p>
                   ) : null}
 
-                  <div className="flex items-center justify-end gap-2">
+                  <div className="grid w-full grid-cols-2 gap-2">
                     <button
                       onClick={handleSaveJob}
                       disabled={savingJob}
                       className={`${UI.btnBase} ${UI.btnMd} ${
                         isSaved ? 'bg-[#eef4ff] text-[#2e66a6] border border-[#2e66a6]/25' : UI.btnSecondary
-                      } ${UI.ring} min-w-[115px]`}
+                      } ${UI.ring} w-full min-w-0`}
                       type="button"
                     >
                       <SvgIcon name={isSaved ? 'bookmarkSolid' : 'bookmark'} className="w-4 h-4" />
@@ -1205,7 +1213,7 @@ const JobDetails = () => {
 
                     <button
                       onClick={handleShareJob}
-                      className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSecondary} ${UI.ring} min-w-[115px]`}
+                      className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSecondary} ${UI.ring} w-full min-w-0`}
                       type="button"
                     >
                       <SvgIcon name="share" className="w-4 h-4" />
@@ -1213,25 +1221,11 @@ const JobDetails = () => {
                     </button>
                   </div>
 
-                  <div className="mt-2 flex flex-col items-start w-full">
-                    {job.applicationDeadline ? (
-                     <div className="flex items-center gap-2 w-full text-sm font-normal text-black/80">
-                        <span className="text-[#2e66a6] flex-shrink-0">
-                          <SvgIcon name="calendar" className="h-4 w-4" />
-                        </span>
-                        <span>
-                          Deadline of Application is on {formatApplicationDeadline(job.applicationDeadline)}
-                        </span>
-                      </div>
-                    ) : null}
-
-                    <div className="flex items-center gap-2 w-full text-sm text-black/80 mt-1">
-                      <span className="text-black/80 flex-shrink-0">
-                        <SvgIcon name="clock" className="w-4 h-4" />
-                      </span>
-                      <span>{formatPostedRelative(job.createdAt)}</span>
+                  {statusBadge ? (
+                    <div className="mt-2 flex w-full items-start">
+                      {statusBadge}
                     </div>
-                  </div>
+                  ) : null}
                 </div>
               </div>
             </div>
