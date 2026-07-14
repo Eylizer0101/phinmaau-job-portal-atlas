@@ -60,7 +60,7 @@ const UI = {
   btnSecondary: 'bg-[#FFFFFF] text-[#000000] border border-black/20 hover:bg-black/5',
   btnGhost: 'bg-transparent text-black/70 hover:bg-black/5',
   chip:
-    'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-[#FFFFFF] text-black/80',
+    'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border border-black/10 bg-[#FFFFFF] text-black/80',
   alertBase: 'rounded-2xl border p-4 shadow-sm',
   alertError: 'bg-black/5 border-black/15 text-[#000000]',
   alertSuccess: 'bg-[#2e66a6]/10 border-[#2e66a6]/20 text-[#000000]',
@@ -938,13 +938,13 @@ const SavedCompanyCard = ({ company, selected, onClick, onRemove, removing }) =>
         disabled={removing}
         aria-label={`Remove ${company.companyName} from bookmarks`}
         className={`absolute top-4 right-4 ${UI.btnBase} h-9 w-9 p-0 ${
-          selected ? 'text-[#2e66a6] bg-[#FFFFFF] border border-[#2e66a6]/20' : 'text-black/55 hover:text-[#000000] hover:bg-[#FFFFFF]'
+          'text-[#2e66a6] bg-[#FFFFFF] border border-[#2e66a6]/20 hover:bg-[#f7faff]'
         } ${UI.ring}`}
       >
         {removing ? (
           <span className="inline-block w-4 h-4 rounded-full border-2 border-black/20 border-t-black/70 animate-spin motion-reduce:animate-none" />
         ) : (
-          <SvgIcon name="bookmark" className="w-4 h-4" />
+          <SvgIcon name="bookmarkFilled" className="w-4 h-4 text-[#2e66a6]" />
         )}
       </button>
     </div>
@@ -2257,7 +2257,7 @@ const Bookmarks = () => {
                             </div>
 
                             <div className="mt-1 flex justify-end">
-                              <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-[#FFFFFF] px-4 py-3 text-sm text-black/80">
+                              <div className="inline-flex items-center gap-2 rounded-full bg-[#FFFFFF] px-4 py-3 text-sm text-black/80">
                                 <span className="text-black/55">
                                   <SvgIcon name="clock" className="w-4 h-4" />
                                 </span>
@@ -2571,12 +2571,12 @@ const Bookmarks = () => {
                                   type="button"
                                   onClick={() => handleRemoveSavedCompany(selectedCompany._id)}
                                   disabled={removingCompanyId === selectedCompany._id}
-                                  className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSecondary} ${UI.ring} flex-1 xl:flex-none xl:w-[100px]`}
+                                  className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSecondary} ${UI.ring} flex-1 text-[#2e66a6] xl:flex-none xl:w-[100px]`}
                                 >
                                   {removingCompanyId === selectedCompany._id ? (
                                     <span className="inline-block w-4 h-4 rounded-full border-2 border-black/20 border-t-black/70 animate-spin motion-reduce:animate-none" />
                                   ) : (
-                                    <SvgIcon name="bookmark" className="w-5 h-5" />
+                                    <SvgIcon name="bookmarkFilled" className="w-5 h-5 text-[#2e66a6]" />
                                   )}
                                   Saved
                                 </button>
