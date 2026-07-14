@@ -726,6 +726,18 @@ const JobOfferDetails = () => {
     return `Posted ${years} year${years > 1 ? 's' : ''} ago`;
   }, []);
 
+  const formatApplicationDeadline = useCallback((dateString) => {
+    if (!dateString) return '';
+
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return '';
+
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+    });
+  }, []);
+
   const isJobActive = useCallback(() => {
     if (!job) return false;
     if (!job.isActive || !job.isPublished) return false;
@@ -1040,6 +1052,18 @@ const JobOfferDetails = () => {
                           </span>
                         )}
                       </div>
+
+                      <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-black/80">
+                        <span className="text-black/60">
+                          <SvgIcon name="clock" className="w-4 h-4" />
+                        </span>
+                        <span>
+                          {formatPostedRelative(job.createdAt)}
+                          {job.applicationDeadline
+                            ? ` and deadline of application is on ${formatApplicationDeadline(job.applicationDeadline)}`
+                            : ''}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -1075,14 +1099,6 @@ const JobOfferDetails = () => {
                       </button>
                     </div>
 
-                    <div className="mt-2 flex justify-end">
-                      <div className="inline-flex items-center gap-2 rounded-full bg-[#f7faff] border border-[#e6edf5] px-4 py-2.5 text-sm text-black/80">
-                        <span className="text-black/80">
-                          <SvgIcon name="clock" className="w-4 h-4" />
-                        </span>
-                        <span>{formatPostedRelative(job.createdAt)}</span>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
