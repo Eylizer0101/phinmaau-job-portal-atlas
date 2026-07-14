@@ -1310,6 +1310,11 @@ const Bookmarks = () => {
   const [reviewError, setReviewError] = useState('');
 
   const [savingJobId, setSavingJobId] = useState('');
+  const [removeJobModal, setRemoveJobModal] = useState({
+    isOpen: false,
+    jobId: '',
+    jobTitle: '',
+  });
 
   const toastTimerRef = useRef(null);
 
@@ -1481,36 +1486,59 @@ const Bookmarks = () => {
   }, []);
 
   const handleRemoveSavedJob = useCallback(
-    async (jobId) => {
+    (jobId) => {
       const targetJob = savedJobs.find((job) => job._id === jobId);
-      const confirmed = window.confirm(`Remove "${targetJob?.title || 'this job'}" from your saved jobs?`);
 
-      if (!confirmed) return;
-
-      try {
-        setRemovingId(jobId);
-        const response = await api.delete(`/jobs/saved/${jobId}`);
-
-        if (response.data?.success) {
-          const updated = savedJobs.filter((job) => job._id !== jobId);
-          setSavedJobs(updated);
-
-          if (selectedJobId === jobId) {
-            setSelectedJobId(updated[0]?._id || '');
-          }
-
-          setToastMessage('success', 'Job removed from bookmarks.');
-        } else {
-          setToastMessage('error', response.data?.message || 'Failed to remove bookmark.');
-        }
-      } catch (err) {
-        setToastMessage('error', err.response?.data?.message || 'Failed to remove bookmark.');
-      } finally {
-        setRemovingId('');
-      }
+      setRemoveJobModal({
+        isOpen: true,
+        jobId,
+        jobTitle: targetJob?.title || 'this job',
+      });
     },
-    [savedJobs, selectedJobId, setToastMessage]
+    [savedJobs]
   );
+
+  const closeRemoveJobModal = useCallback(() => {
+    if (removingId) return;
+
+    setRemoveJobModal({
+      isOpen: false,
+      jobId: '',
+      jobTitle: '',
+    });
+  }, [removingId]);
+
+  const confirmRemoveSavedJob = useCallback(async () => {
+    const jobId = removeJobModal.jobId;
+    if (!jobId) return;
+
+    try {
+      setRemovingId(jobId);
+      const response = await api.delete(`/jobs/saved/${jobId}`);
+
+      if (response.data?.success) {
+        const updated = savedJobs.filter((job) => job._id !== jobId);
+        setSavedJobs(updated);
+
+        if (selectedJobId === jobId) {
+          setSelectedJobId(updated[0]?._id || '');
+        }
+
+        setRemoveJobModal({
+          isOpen: false,
+          jobId: '',
+          jobTitle: '',
+        });
+        setToastMessage('success', 'Job removed from bookmarks.');
+      } else {
+        setToastMessage('error', response.data?.message || 'Failed to remove bookmark.');
+      }
+    } catch (err) {
+      setToastMessage('error', err.response?.data?.message || 'Failed to remove bookmark.');
+    } finally {
+      setRemovingId('');
+    }
+  }, [removeJobModal.jobId, savedJobs, selectedJobId, setToastMessage]);
 
   const handleRemoveSavedCompany = useCallback(
     async (companyId) => {
@@ -2796,6 +2824,76 @@ const Bookmarks = () => {
             </div>
           </div>
         </div>
+
+        {removeJobModal.isOpen &&
+          ReactDOM.createPortal(
+            <div className="fixed inset-0 z-[9999]">
+              <div
+                className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
+                onClick={closeRemoveJobModal}
+                aria-hidden="true"
+              />
+
+              <div className="relative flex min-h-screen items-center justify-center p-4">
+                <div
+                  className="w-full max-w-[460px] rounded-2xl border border-black/10 bg-white shadow-2xl"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="removeSavedJobTitle"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="px-6 pb-6 pt-7 sm:px-7">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#2e66a6]/10 text-[#2e66a6]">
+                      <SvgIcon name="bookmarkFilled" className="h-6 w-6" />
+                    </div>
+
+                    <h3
+                      id="removeSavedJobTitle"
+                      className="mt-4 text-center text-xl font-bold text-black"
+                    >
+                      Remove Saved Job?
+                    </h3>
+
+                    <p className="mt-2 text-center text-sm leading-6 text-black/60">
+                      Are you sure you want to remove{' '}
+                      <span className="font-semibold text-black">
+                        “{removeJobModal.jobTitle}”
+                      </span>{' '}
+                      from your saved jobs?
+                    </p>
+
+                    <div className="mt-6 flex gap-3">
+                      <button
+                        type="button"
+                        onClick={closeRemoveJobModal}
+                        disabled={Boolean(removingId)}
+                        className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSecondary} ${UI.ring} flex-1`}
+                      >
+                        Cancel
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={confirmRemoveSavedJob}
+                        disabled={Boolean(removingId)}
+                        className={`${UI.btnBase} ${UI.btnMd} ${UI.btnPrimary} ${UI.ring} flex-1`}
+                      >
+                        {removingId ? (
+                          <>
+                            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/35 border-t-white motion-reduce:animate-none" />
+                            Removing
+                          </>
+                        ) : (
+                          'Remove'
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
 
         <ApplyJobModal
           isOpen={showApplyModal}
