@@ -484,12 +484,25 @@ const JobseekerVerificationDetails = () => {
     } catch (credentialError) {
       console.error("Credential access error:", credentialError);
 
+      let serverMessage = "";
+
+      if (credentialError.response?.data instanceof Blob) {
+        try {
+          const errorText = await credentialError.response.data.text();
+          const parsedError = JSON.parse(errorText);
+          serverMessage = parsedError?.message || "";
+        } catch {
+          serverMessage = "";
+        }
+      } else {
+        serverMessage = credentialError.response?.data?.message || "";
+      }
+
       if (credentialError.response?.status === 401) {
-        setPasswordError("Incorrect password. Please try again.");
+        setPasswordError(serverMessage || "Incorrect password. Please try again.");
       } else {
         setPasswordError(
-          credentialError.response?.data?.message ||
-            "Unable to access this credential. Please try again."
+          serverMessage || "Unable to access this credential. Please try again."
         );
       }
     } finally {
