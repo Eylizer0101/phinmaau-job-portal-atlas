@@ -129,6 +129,17 @@ const normalizeUrl = (value) => {
   return `https://${raw}`;
 };
 
+const normalizeIndustryValue = (value) => {
+  const cleanValue = String(value || '').trim().replace(/\s+/g, ' ');
+  if (!cleanValue) return '';
+
+  const existingOption = INDUSTRY_OPTIONS.find(
+    (option) => option.toLowerCase() === cleanValue.toLowerCase()
+  );
+
+  return existingOption || cleanValue;
+};
+
 const normalizeGalleryItems = (galleryImages) => {
   if (!galleryImages) return [];
 
@@ -964,6 +975,7 @@ const CompanyProfile = () => {
         });
 
         fd.set('regionCity', composeRegionCity(selectedRegion, selectedCity));
+        fd.set('industry', normalizeIndustryValue(companyData.industry));
 
         if (logoFile) fd.append('companyLogo', logoFile);
         if (coverFile) fd.append('coverPhotoFile', coverFile);
@@ -1758,25 +1770,37 @@ const CompanyProfile = () => {
 
                       <div className="grid grid-cols-1 gap-4">
                         <FormField label="Industry" required error={fieldErrors.industry}>
-                          <select
-                            name="industry"
-                            value={companyData.industry}
-                            onChange={handleInputChange}
-                            className={cx(
-                              'w-full rounded-[10px] border bg-white px-4 py-3 text-[14px] outline-none transition',
-                              fieldErrors.industry
-                                ? 'border-red-300 focus:border-red-500'
-                                : 'border-[#d1d5db] focus:border-[#2e66a6]'
-                            )}
-                            disabled={saving}
-                          >
-                            <option value="">Select your Industry</option>
-                            {INDUSTRY_OPTIONS.map((option) => (
-                              <option key={option} value={option}>
-                                {option}
-                              </option>
-                            ))}
-                          </select>
+                          <div>
+                            <input
+                              type="text"
+                              name="industry"
+                              value={companyData.industry}
+                              onChange={handleInputChange}
+                              onBlur={() => {
+                                const normalizedIndustry = normalizeIndustryValue(companyData.industry);
+                                setCompanyData((prev) => ({
+                                  ...prev,
+                                  industry: normalizedIndustry,
+                                }));
+                              }}
+                              list="company-industry-options"
+                              autoComplete="off"
+                              className={cx(
+                                'w-full rounded-[10px] border bg-white px-4 py-3 text-[14px] outline-none transition',
+                                fieldErrors.industry
+                                  ? 'border-red-300 focus:border-red-500'
+                                  : 'border-[#d1d5db] focus:border-[#2e66a6]'
+                              )}
+                              placeholder="Select or type an industry"
+                              disabled={saving}
+                            />
+
+                            <datalist id="company-industry-options">
+                              {INDUSTRY_OPTIONS.map((option) => (
+                                <option key={option} value={option} />
+                              ))}
+                            </datalist>
+                          </div>
                         </FormField>
 
                         <FormField label="Company Website" required={false} error={fieldErrors.companyWebsiteUrl}>
