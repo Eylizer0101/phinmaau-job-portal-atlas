@@ -239,6 +239,8 @@ const ResumePreviewPage = () => {
   const userData = storedData?.userData || {};
   const formData = storedData?.formData || {};
   const profileImage = userData?.profileImage || formData?.profileImage || '';
+  const returnTo = storedData?.returnTo || '/jobseeker/my-profile';
+  const isEmployerPreview = storedData?.viewerMode === 'employer';
   const workExperiences = Array.isArray(storedData?.workExperiences) ? storedData.workExperiences : [];
   const fullName = buildName(formData) || 'Your Name';
   const initials = buildInitials(fullName);
@@ -275,7 +277,7 @@ const ResumePreviewPage = () => {
         <div className="mx-auto max-w-4xl">
           <button
             type="button"
-            onClick={() => navigate('/jobseeker/my-profile')}
+            onClick={() => navigate(returnTo)}
             className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-xl font-semibold text-gray-700 hover:bg-gray-50"
             aria-label="Close resume preview"
           >
@@ -616,13 +618,17 @@ const ResumePreviewPage = () => {
         <div className="preview-topbar print-hide">
           <button
             type="button"
-            onClick={() => navigate('/jobseeker/my-profile')}
+            onClick={() => navigate(returnTo)}
             className="preview-close-btn"
             aria-label="Close resume preview"
           >
             ×
           </button>
-          <span>This is what your resume looks like to your employers</span>
+          <span>
+            {isEmployerPreview
+              ? 'Full applicant resume preview'
+              : 'This is what your resume looks like to your employers'}
+          </span>
         </div>
 
         <main className="resume-paper">

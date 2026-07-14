@@ -390,6 +390,14 @@ function App() {
           }
         />
         <Route
+          path="/employer/application/resume-preview"
+          element={
+            <RequireRole role="employer" redirectTo="/login">
+              <ResumePreviewPage />
+            </RequireRole>
+          }
+        />
+        <Route
           path="/employer/company-profile"
           element={
             <RequireRole role="employer" redirectTo="/login">
