@@ -775,69 +775,36 @@ const RegisterPage = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                  <div className="space-y-4">
-                    {/* Year Graduated */}
-                    <div className="space-y-1">
-                      <label className={labelBase} htmlFor="yearGraduated">
-                        Year Graduated
-                      </label>
-                      <div className="relative">
-                        <div className={iconWrap}>
-                          <IconCap />
-                        </div>
-                        <select
-                          id="yearGraduated"
-                          name="yearGraduated"
-                          value={formData.yearGraduated}
-                          onChange={handleChange}
-                          className={`${selectClass(!!formErrors.yearGraduated)} pl-10`}
-                          disabled={loading}
-                          aria-invalid={!!formErrors.yearGraduated}
-                          aria-describedby={formErrors.yearGraduated ? 'yearGraduated-error' : undefined}
-                        >
-                          <option value="" disabled>
-                            Select Year
-                          </option>
-                          {yearOptions.map((y) => (
-                            <option key={y} value={y}>
-                              {y}
-                            </option>
-                          ))}
-                        </select>
+                  {/* Year Graduated */}
+                  <div className="space-y-1">
+                    <label className={labelBase} htmlFor="yearGraduated">
+                      Year Graduated
+                    </label>
+                    <div className="relative">
+                      <div className={iconWrap}>
+                        <IconCap />
                       </div>
-                      {errorText('yearGraduated-error', formErrors.yearGraduated)}
-                    </div>
-
-                    {/* Preferred Work Mode */}
-                    <div className="space-y-1 md:col-span-2">
-                      <label className={labelBase} htmlFor="preferredWorkMode">
-                        Preferred Work Mode
-                      </label>
-                      <div className="relative">
-                        <div className={iconWrap}>
-                          <IconCap />
-                        </div>
-                        <select
-                          id="preferredWorkMode"
-                          name="preferredWorkMode"
-                          value={formData.preferredWorkMode}
-                          onChange={handleChange}
-                          className={`${selectClass(!!formErrors.preferredWorkMode)} pl-10`}
-                          disabled={loading}
-                          aria-invalid={!!formErrors.preferredWorkMode}
-                          aria-describedby={formErrors.preferredWorkMode ? 'preferredWorkMode-error' : undefined}
-                        >
-                          <option value="" disabled>
-                            Select option
+                      <select
+                        id="yearGraduated"
+                        name="yearGraduated"
+                        value={formData.yearGraduated}
+                        onChange={handleChange}
+                        className={`${selectClass(!!formErrors.yearGraduated)} pl-10`}
+                        disabled={loading}
+                        aria-invalid={!!formErrors.yearGraduated}
+                        aria-describedby={formErrors.yearGraduated ? 'yearGraduated-error' : undefined}
+                      >
+                        <option value="" disabled>
+                          Select Year
+                        </option>
+                        {yearOptions.map((y) => (
+                          <option key={y} value={y}>
+                            {y}
                           </option>
-                          <option value="On-site">On-site</option>
-                          <option value="Blended">Blended</option>
-                          <option value="Remote">Remote</option>
-                          <option value="Work from home">Work from home</option>
-                        </select>
-                      </div>
-                      {errorText('preferredWorkMode-error', formErrors.preferredWorkMode)}
+                        ))}
+                      </select>
                     </div>
+                    {errorText('yearGraduated-error', formErrors.yearGraduated)}
                   </div>
 
                   {/* Profile Photo */}
@@ -890,6 +857,37 @@ const RegisterPage = () => {
                       </button>
                     ) : null}
                     {errorText('profileImageFile-error', formErrors.profileImageFile)}
+                  </div>
+
+                  {/* Preferred Work Mode */}
+                  <div className="space-y-1 md:col-span-2">
+                    <label className={labelBase} htmlFor="preferredWorkMode">
+                      Preferred Work Mode
+                    </label>
+                    <div className="relative">
+                      <div className={iconWrap}>
+                        <IconCap />
+                      </div>
+                      <select
+                        id="preferredWorkMode"
+                        name="preferredWorkMode"
+                        value={formData.preferredWorkMode}
+                        onChange={handleChange}
+                        className={`${selectClass(!!formErrors.preferredWorkMode)} pl-10`}
+                        disabled={loading}
+                        aria-invalid={!!formErrors.preferredWorkMode}
+                        aria-describedby={formErrors.preferredWorkMode ? 'preferredWorkMode-error' : undefined}
+                      >
+                        <option value="" disabled>
+                          Select option
+                        </option>
+                        <option value="On-site">On-site</option>
+                        <option value="Blended">Blended</option>
+                        <option value="Remote">Remote</option>
+                        <option value="Work from home">Work from home</option>
+                      </select>
+                    </div>
+                    {errorText('preferredWorkMode-error', formErrors.preferredWorkMode)}
                   </div>
                 </div>
 
