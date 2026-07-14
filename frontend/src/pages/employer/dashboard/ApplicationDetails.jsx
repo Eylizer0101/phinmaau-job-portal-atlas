@@ -474,45 +474,20 @@ const ApplicationDetails = () => {
                 <span>{formatRelativeTime(application.appliedAt || application.createdAt)}</span>
               </p></div>
             </div>
-            <div className="w-full rounded-2xl border border-[#d8e2ee] bg-white px-4 py-3 shadow-[0_6px_20px_rgba(46,102,166,0.08)] lg:w-[270px]">
-              <div className="flex items-start gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#edf4fb] text-[23px]" aria-hidden="true">
-                  🏆
+            <div className="flex w-full items-center gap-3 rounded-xl border border-[#e2e8f0] bg-white px-4 py-3 shadow-[0_4px_14px_rgba(15,23,42,0.06)] lg:w-auto lg:min-w-[210px]">
+              <div
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-xl text-white shadow-sm"
+                aria-hidden="true"
+              >
+                ★
+              </div>
+
+              <div className="min-w-0">
+                <div className="text-[10px] font-medium uppercase tracking-[0.08em] text-gray-500">
+                  Jobseeker Level
                 </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-gray-500">
-                    Jobseeker Level
-                  </div>
-                  <div className="mt-1 truncate text-lg font-bold text-[#174b91]">
-                    {jobSeekerLevel.currentRank}
-                  </div>
-
-                  <div className="mt-2 flex items-center justify-between gap-3 text-xs">
-                    <span className="min-w-0 truncate text-gray-500">
-                      Next Tier:{' '}
-                      <span className="font-semibold text-gray-800">
-                        {jobSeekerLevel.nextTier}
-                      </span>
-                    </span>
-                    <span className="shrink-0 font-bold text-[#2e66a6]">
-                      {jobSeekerLevel.percentage}%
-                    </span>
-                  </div>
-
-                  <div
-                    className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200"
-                    role="progressbar"
-                    aria-label="Job seeker level progress"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    aria-valuenow={jobSeekerLevel.percentage}
-                  >
-                    <div
-                      className="h-full rounded-full bg-[#2e66a6]"
-                      style={{ width: `${jobSeekerLevel.percentage}%` }}
-                    />
-                  </div>
+                <div className="mt-0.5 truncate text-lg font-bold text-[#2f3b8f]">
+                  {jobSeekerLevel.currentRank}
                 </div>
               </div>
             </div>
