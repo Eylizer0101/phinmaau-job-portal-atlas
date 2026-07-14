@@ -123,11 +123,118 @@ const parseSkills = (value) => {
   }).filter((item) => item.skill);
 };
 
+const decodeHtmlEntities = (value = '') => {
+  const text = String(value || '');
+  if (!text) return '';
+
+  if (typeof window === 'undefined' || typeof window.DOMParser === 'undefined') {
+    return text
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&amp;/gi, '&')
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'");
+  }
+
+  const parser = new window.DOMParser();
+  return parser.parseFromString(text, 'text/html').documentElement.textContent || '';
+};
+
+const sanitizeProfileRichText = (value = '') => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  if (typeof window === 'undefined' || typeof window.DOMParser === 'undefined') {
+    return raw
+      .replace(/<\/li>\s*<li>/gi, '\n• ')
+      .replace(/<li[^>]*>/gi, '• ')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>|<\/div>|<\/ul>|<\/ol>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&amp;/gi, '&')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  const parser = new window.DOMParser();
+  const doc = parser.parseFromString(`<div>${raw}</div>`, 'text/html');
+  const wrapper = doc.body.firstElementChild;
+  if (!wrapper) return '';
+
+  const allowedTags = new Set([
+    'B',
+    'STRONG',
+    'I',
+    'EM',
+    'U',
+    'P',
+    'DIV',
+    'BR',
+    'UL',
+    'OL',
+    'LI',
+  ]);
+
+  const cleanNode = (node) => {
+    Array.from(node.childNodes).forEach((child) => {
+      if (child.nodeType === window.Node.ELEMENT_NODE) {
+        if (!allowedTags.has(child.tagName)) {
+          child.replaceWith(...Array.from(child.childNodes));
+          return;
+        }
+
+        Array.from(child.attributes).forEach((attribute) => {
+          child.removeAttribute(attribute.name);
+        });
+
+        cleanNode(child);
+      }
+    });
+  };
+
+  cleanNode(wrapper);
+  return wrapper.innerHTML;
+};
+
 const richText = (value) => {
-  const text = String(value || '').trim();
-  if (!text) return null;
-  const lines = text.split(/\n+/).map((line) => line.trim()).filter(Boolean);
-  return <div className="space-y-1">{lines.map((line, index) => <p key={`${line}-${index}`}>{line}</p>)}</div>;
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+
+  const containsHtml = /<\/?[a-z][\s\S]*>/i.test(raw) || /&(?:lt|gt|nbsp|amp);/i.test(raw);
+
+  if (!containsHtml) {
+    const lines = raw
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    return (
+      <div className="space-y-1">
+        {lines.map((line, index) => (
+          <p key={`${line}-${index}`}>{line}</p>
+        ))}
+      </div>
+    );
+  }
+
+  const decoded = decodeHtmlEntities(raw);
+  const html = sanitizeProfileRichText(decoded);
+
+  return (
+    <div
+      className={cn(
+        'space-y-1',
+        '[&_p]:my-1 [&_div]:my-1',
+        '[&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5',
+        '[&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5',
+        '[&_li]:my-0.5'
+      )}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
 };
 
 const hasMeaningfulObjectValue = (item = {}) =>
