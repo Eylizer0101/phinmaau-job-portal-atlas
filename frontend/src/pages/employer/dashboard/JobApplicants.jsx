@@ -258,8 +258,8 @@ const JobApplicants = () => {
 
   return (
     <EmployerLayout>
-      <div className="min-h-screen bg-[#f3f4ff]">
-        <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      
+        <div className="mmx-auto max-w-7xl px-1 py-8">
           <button
             type="button"
             onClick={() => navigate(`/employer/manage-jobs/${jobId}/view`)}
@@ -346,7 +346,7 @@ const JobApplicants = () => {
             <div className="mt-8 rounded-3xl bg-white p-12 text-center text-[#6b7280]">No applicants have applied for this job yet.</div>
           )}
         </div>
-      </div>
+      
     </EmployerLayout>
   );
 };
