@@ -331,7 +331,7 @@ const resumeStyles = `
   .resume-photo {
     position: absolute;
     top: 0;
-    right: 3px;
+    right: 22px;
     width: 61px;
     height: 61px;
     display: flex;
