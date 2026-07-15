@@ -1706,7 +1706,7 @@ const EditJob = () => {
                             <span>
                               <span className="block text-sm font-semibold text-gray-900">Urgently Needed</span>
                               <span className="block text-xs leading-5 text-gray-500">
-                               Highlight this job posting to let applicants know the position requires immediate attention.
+                             Let job seekers know you're looking to fill this role immediately.
                               </span>
                             </span>
                           </label>
