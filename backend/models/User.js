@@ -422,15 +422,6 @@ const userSchema = new mongoose.Schema(
       industry: { type: String, default: '', trim: true },
       position: { type: String, default: '', trim: true },
 
-      // Google Calendar account used by this employer as the Meet organizer/host.
-      googleCalendar: {
-        connected: { type: Boolean, default: false },
-        email: { type: String, default: '', trim: true, lowercase: true },
-        refreshToken: { type: String, default: '', select: false },
-        connectedAt: { type: Date, default: null },
-        updatedAt: { type: Date, default: null },
-      },
-
       companyAddress: { type: String, default: '', trim: true },
       companyDescription: { type: String, default: '', trim: true },
       facebookUrl: { type: String, default: '', trim: true },
