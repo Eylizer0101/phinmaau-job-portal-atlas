@@ -3222,7 +3222,7 @@ const JobSeekerLevelCard = ({
           </h2>
         </div>
 
-        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden">
+        <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center overflow-hidden">
           <img
             src={badgeImage}
             alt={`${currentRank} badge`}
