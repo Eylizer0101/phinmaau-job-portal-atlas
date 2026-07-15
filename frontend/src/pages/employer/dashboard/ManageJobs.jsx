@@ -916,7 +916,37 @@ const ManageJobs = () => {
                         const derivedStatus = getDerivedStatus(job);
 
                         return (
-                          <tr key={job._id} className="hover:bg-gray-50">
+                          <tr
+                            key={job._id}
+                            role="link"
+                            tabIndex={0}
+                            aria-label={`View ${title}`}
+                            onClick={(event) => {
+                              if (event.target.closest?.('a, button, input, select, textarea')) return;
+
+                              navigate(`/employer/manage-jobs/${job._id}/view`, {
+                                state: {
+                                  from: 'manageJobs',
+                                  backPath: '/employer/manage-jobs',
+                                  backLabel: 'Manage Jobs',
+                                },
+                              });
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.target !== event.currentTarget) return;
+                              if (event.key !== 'Enter' && event.key !== ' ') return;
+
+                              event.preventDefault();
+                              navigate(`/employer/manage-jobs/${job._id}/view`, {
+                                state: {
+                                  from: 'manageJobs',
+                                  backPath: '/employer/manage-jobs',
+                                  backLabel: 'Manage Jobs',
+                                },
+                              });
+                            }}
+                            className="group cursor-pointer transition-colors hover:bg-[#2e66a6]/[0.06] focus-visible:bg-[#2e66a6]/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
+                          >
                             <td className="px-6 py-4 align-middle text-sm font-medium text-gray-700">
                               {formatDate(job.createdAt)}
                             </td>
@@ -941,13 +971,12 @@ const ManageJobs = () => {
                                 </div>
 
                                 <div className="min-w-0">
-                                  <Link
-                                    to={`/employer/edit-job/${job._id}`}
-                                    className="block truncate text-sm font-semibold text-gray-900 hover:text-[#2e66a6]"
+                                  <div
+                                    className="block truncate text-sm font-semibold text-gray-900 transition-colors group-hover:text-[#2e66a6]"
                                     title={title}
                                   >
                                     {title}
-                                  </Link>
+                                  </div>
                                   <div className="truncate text-sm text-gray-600">{safeCompany(job)}</div>
                                 </div>
                               </div>
