@@ -648,7 +648,7 @@ const ResumePreviewPage = () => {
               <ResumeRichText value={formData.aboutMe} className="objective-text" />
             </Section>
 
-            <Section title="Availability & Preferences">
+            <Section title="Personal Information">
               <ThreeColumnRows rows={availabilityRows} />
             </Section>
 

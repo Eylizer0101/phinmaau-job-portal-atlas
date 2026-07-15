@@ -625,7 +625,7 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
           </header>
 
           ${getText(formData.aboutMe) ? sectionHtml('Objective', `<div class="objective-text resume-rich-text">${sanitizeResumeRichText(formData.aboutMe)}</div>`) : ''}
-          ${sectionHtml('Availability & Preferences', threeColumnRowsHtml(availabilityRows))}
+          ${sectionHtml('Personal Information', threeColumnRowsHtml(availabilityRows))}
           ${workExperienceHtml}
           ${skillsHtml}
           ${educationHtml}

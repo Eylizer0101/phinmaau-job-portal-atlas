@@ -2859,7 +2859,7 @@ const ProfileEditModal = ({
 
   const titleMap = {
     about: 'Edit Objective',
-    career: 'Edit Availability & Preferences',
+    career: 'Edit Personal Information',
     skills: 'Edit Skills',
     education: 'Edit Education',
   };
@@ -3932,7 +3932,7 @@ const MyProfile = () => {
     const profileItems = [
       { key: 'basic', label: 'Basic Information', weight: 2, completed: basicInformationComplete },
       { key: 'objective', label: 'Career Objectives', weight: 1, completed: Boolean(String(formData.aboutMe || '').trim()) },
-      { key: 'availability', label: 'Availability & Preferences', weight: 2, completed: availabilityComplete },
+      { key: 'availability', label: 'Personal Information', weight: 2, completed: availabilityComplete },
       { key: 'work', label: 'Work Experience', weight: 15, completed: workExperiences.length > 0 },
       { key: 'skills', label: 'Skills', weight: 10, completed: skillsComplete },
       { key: 'education', label: 'Education', weight: 3, completed: educationComplete },
