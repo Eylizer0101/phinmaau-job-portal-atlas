@@ -2790,7 +2790,7 @@ const SkillProficiencyDescriptionModal = ({ open, onClose }) => {
 const ProfileTodoList = ({ completed = [] }) => {
   const items = [
     { key: 'basic', label: 'Complete Basic Info' },
-    { key: 'career', label: 'Availability and Preferences' },
+    { key: 'career', label: 'Personal Information' },
     { key: 'work', label: 'Work Experience' },
     { key: 'skills', label: 'Skills' },
     { key: 'education', label: 'Education' },
@@ -3437,9 +3437,9 @@ const TodoProgressCard = ({
     },
     {
       key: 'availability',
-      label: 'Complete Availability and Preferences',
+      label: 'Complete Personal Information',
       completed: Boolean(profileByKey.availability?.completed),
-      info: 'Availability and Preferences — 2%',
+      info: 'Personal Information — 2%',
     },
     {
       key: 'work',
