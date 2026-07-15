@@ -399,6 +399,7 @@ const JobseekerMessages = () => {
     const meetingLink =
       details.meetingLink ||
       cardData?.meetingLink ||
+      msg?.application?.interviewSchedule?.meetingLink ||
       '';
 
     const notes =
@@ -675,17 +676,15 @@ const JobseekerMessages = () => {
           )}
 
           {data.meetingLink && (
-            <div className="mt-3">
-              <p className={UI.interviewLabel}>Meeting Link</p>
-              <a
-                href={data.meetingLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-[#2e66a6] font-medium underline break-all"
-              >
-                Join Meeting
-              </a>
-            </div>
+            <a
+              href={data.meetingLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#25578f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+            >
+              <FontAwesomeIcon icon={faVideo} className="h-4 w-4" aria-hidden="true" />
+              Join Google Meet
+            </a>
           )}
 
           {data.notes && <p className={UI.interviewNotes}>{data.notes}</p>}

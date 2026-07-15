@@ -586,11 +586,30 @@ exports.getMessages = async (req, res) => {
       }
     );
 
-    // ✅ attach computed fullName fallback so UI never shows Unknown
-    const safeMessages = (messages || []).map((m) => {
-      if (m?.sender) attachFullName(m.sender);
-      if (m?.receiver) attachFullName(m.receiver);
-      return m;
+    // ✅ Attach computed names and ensure interview messages expose
+    // the latest saved Google Meet link from the related application.
+    const safeMessages = (messages || []).map((messageDoc) => {
+      if (messageDoc?.sender) attachFullName(messageDoc.sender);
+      if (messageDoc?.receiver) attachFullName(messageDoc.receiver);
+
+      const message = messageDoc.toObject();
+      const savedApplicationMeetingLink =
+        message?.application?.interviewSchedule?.meetingLink || '';
+      const messageMeetingLink =
+        message?.interviewDetails?.meetingLink || '';
+
+      if (
+        message.messageType === 'interview' &&
+        !messageMeetingLink &&
+        savedApplicationMeetingLink
+      ) {
+        message.interviewDetails = {
+          ...(message.interviewDetails || {}),
+          meetingLink: savedApplicationMeetingLink,
+        };
+      }
+
+      return message;
     });
 
     res.status(200).json({

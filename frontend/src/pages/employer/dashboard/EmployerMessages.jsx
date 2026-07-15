@@ -1443,6 +1443,11 @@ const EmployerMessages = () => {
     }
 
     const isConfirmationCard = !!confirmationData?.confirmationCard;
+    const meetingLink =
+      msg?.interviewDetails?.meetingLink ||
+      confirmationData?.meetingLink ||
+      msg?.application?.interviewSchedule?.meetingLink ||
+      '';
 
     if (isConfirmationCard) {
       return (
@@ -1515,6 +1520,18 @@ const EmployerMessages = () => {
               </div>
             </div>
           </div>
+
+          {meetingLink ? (
+            <a
+              href={meetingLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#23508a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+            >
+              <FontAwesomeIcon icon={faVideo} className="h-4 w-4" aria-hidden="true" />
+              Join Google Meet
+            </a>
+          ) : null}
 
           {confirmationData.rawNotes ? (
             <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">

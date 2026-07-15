@@ -1585,9 +1585,10 @@ exports.updateInterviewSchedule = async (req, res) => {
         .join(' ')
         .trim() || String(interviewer.email || '').trim();
 
-    let generatedMeetingLink = application?.interviewSchedule?.meetingLink || '';
+    const normalizedMeetingType = String(meetingType || '').trim();
+    let generatedMeetingLink = '';
 
-    if (String(meetingType || '').trim() === 'Video Call') {
+    if (normalizedMeetingType === 'Video Call') {
       try {
         const calendarEvent = await createCalendarEvent({
           summary: `AGAPAY Interview - ${application?.job?.title || 'Applicant'}`,
@@ -1597,9 +1598,21 @@ exports.updateInterviewSchedule = async (req, res) => {
           attendeeEmail: application.jobseeker.email,
         });
 
-        generatedMeetingLink = calendarEvent.meetingLink;
+        generatedMeetingLink = String(calendarEvent?.meetingLink || '').trim();
+
+        if (!generatedMeetingLink) {
+          return res.status(502).json({
+            success: false,
+            message: 'Google Meet did not return a meeting link. Please check the Google Calendar credentials and try again.'
+          });
+        }
       } catch (calendarError) {
-        console.error('Google Calendar Error:', calendarError.message);
+        console.error('Google Calendar Error:', calendarError);
+
+        return res.status(502).json({
+          success: false,
+          message: 'Unable to generate the Google Meet link. Please check the Google Calendar configuration and try again.'
+        });
       }
     }
 
@@ -1609,7 +1622,7 @@ exports.updateInterviewSchedule = async (req, res) => {
       ...application.interviewSchedule?.toObject?.(),
       scheduledAt: parsedScheduledAt,
       durationMinutes: application.interviewSchedule?.durationMinutes || 60,
-      meetingType: String(meetingType || '').trim(),
+      meetingType: normalizedMeetingType,
       meetingLink: generatedMeetingLink,
       notes: String(notes || '').trim(),
       setBy: req.user._id,
@@ -1634,7 +1647,7 @@ exports.updateInterviewSchedule = async (req, res) => {
     const interviewDetails = {
       date: parsedScheduledAt,
       time: timeLabel,
-      location: String(meetingType || '').trim() === 'On-site' ? 'On-site' : '',
+      location: normalizedMeetingType === 'On-site' ? 'On-site' : '',
       meetingLink: generatedMeetingLink,
       notes: JSON.stringify({
         confirmationCard: true,
@@ -1643,7 +1656,8 @@ exports.updateInterviewSchedule = async (req, res) => {
         jobTitle,
         dateLabel,
         timeLabel,
-        typeLabel: String(meetingType || '').trim(),
+        typeLabel: normalizedMeetingType,
+        meetingLink: generatedMeetingLink,
         interviewerLabel: interviewerName || 'Employer',
         rawNotes: String(notes || '').trim(),
       }),
