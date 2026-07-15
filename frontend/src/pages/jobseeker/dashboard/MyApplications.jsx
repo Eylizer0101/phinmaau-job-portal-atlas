@@ -1031,7 +1031,7 @@ const MyApplications = () => {
                   const resumeUrl = application.jobseeker?.jobSeekerProfile?.resumeUrl || '';
                   const logoUrl = getCompanyLogo(application);
 
-                  const isActiveCard = ACTIVE_STATUSES.includes(statusValue) && statusValue !== 'vacancy full';
+                  const isActiveCard = ACTIVE_STATUSES.includes(statusValue);
                   const isReactivatableCard = REACTIVATABLE_STATUSES.includes(statusValue);
                   const isDeclinedCard = statusValue === 'declined';
                   const isActionLoading = actionLoadingId === application._id;
@@ -1219,7 +1219,7 @@ const MyApplications = () => {
                           </div>
                         )}
 
-                        {application.notes && (
+                        {application.notes && statusValue !== 'vacancy full' && (
                           <div className={`mt-4 pt-4 ${UI.divider}`}>
                             <h4 className={`text-sm font-semibold ${UI.textPrimary}`}>Employer Notes</h4>
                             <div className={`mt-2 ${UI.inset} p-3`}>
