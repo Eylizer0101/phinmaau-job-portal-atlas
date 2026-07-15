@@ -7,6 +7,10 @@ const dotenv = require('dotenv');
 const applicationRoutes = require('./routes/applicationRoutes');
 const path = require('path');
 const fs = require('fs');
+const {
+  apiRouter: googleCalendarApiRoutes,
+  callbackRouter: googleCalendarCallbackRoutes,
+} = require('./routes/googleAuthRoutes');
 
 dotenv.config();
 
@@ -281,8 +285,11 @@ app.get('/', (req, res) => {
   });
 });
 
-// Google Calendar OAuth setup routes
-app.use('/auth/google', require('./routes/googleAuthRoutes'));
+// Google Calendar OAuth routes
+// Public callback must keep the redirect URI already configured in Google Cloud.
+app.use('/auth/google', googleCalendarCallbackRoutes);
+// Employer-only connection status, connect URL, and disconnect endpoints.
+app.use('/api/google-calendar', googleCalendarApiRoutes);
 
 // API Routes
 app.use('/api/auth', require('./routes/authRoutes'));

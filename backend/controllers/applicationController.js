@@ -5,7 +5,7 @@ const Job = require('../models/Job');
 const User = require('../models/User');
 const Message = require('../models/Message');
 const notificationController = require('./notificationController');
-const { createCalendarEvent } = require('../config/googleCalendar');
+const { createCalendarEvent, decryptGoogleRefreshToken } = require('../config/googleCalendar');
 
 const ACTIVE_APPLICATION_STATUSES = ['pending', 'for interview', 'hired'];
 const INACTIVE_APPLICATION_STATUSES = ['declined', 'withdrawn', 'cancelled', 'vacancy full'];
@@ -1589,6 +1589,37 @@ exports.updateInterviewSchedule = async (req, res) => {
     let generatedMeetingLink = '';
 
     if (normalizedMeetingType === 'Video Call') {
+      const employerWithGoogleCalendar = await User.findById(req.user._id).select(
+        '+employerProfile.googleCalendar.refreshToken employerProfile.googleCalendar.connected employerProfile.googleCalendar.email'
+      );
+
+      const googleCalendarConnection =
+        employerWithGoogleCalendar?.employerProfile?.googleCalendar || {};
+
+      if (!googleCalendarConnection.connected || !googleCalendarConnection.refreshToken) {
+        return res.status(409).json({
+          success: false,
+          code: 'GOOGLE_CALENDAR_NOT_CONNECTED',
+          message: 'Connect your own Google Calendar account in Employer Settings before scheduling a Video Call.'
+        });
+      }
+
+      let employerRefreshToken = '';
+
+      try {
+        employerRefreshToken = decryptGoogleRefreshToken(
+          googleCalendarConnection.refreshToken
+        );
+      } catch (tokenError) {
+        console.error('Google Calendar token decryption error:', tokenError);
+
+        return res.status(500).json({
+          success: false,
+          code: 'GOOGLE_CALENDAR_RECONNECT_REQUIRED',
+          message: 'Your Google Calendar connection could not be read. Disconnect and reconnect it in Employer Settings.'
+        });
+      }
+
       try {
         const calendarEvent = await createCalendarEvent({
           summary: `AGAPAY Interview - ${application?.job?.title || 'Applicant'}`,
@@ -1596,6 +1627,7 @@ exports.updateInterviewSchedule = async (req, res) => {
           startTime: parsedScheduledAt,
           endTime: new Date(parsedScheduledAt.getTime() + 60 * 60 * 1000),
           attendeeEmail: application.jobseeker.email,
+          refreshToken: employerRefreshToken,
         });
 
         generatedMeetingLink = String(calendarEvent?.meetingLink || '').trim();
@@ -1603,15 +1635,26 @@ exports.updateInterviewSchedule = async (req, res) => {
         if (!generatedMeetingLink) {
           return res.status(502).json({
             success: false,
-            message: 'Google Meet did not return a meeting link. Please check the Google Calendar credentials and try again.'
+            message: 'Google Meet did not return a meeting link. Please reconnect Google Calendar and try again.'
           });
         }
       } catch (calendarError) {
         console.error('Google Calendar Error:', calendarError);
 
-        return res.status(502).json({
+        const googleErrorMessage = String(calendarError?.message || '');
+        const requiresReconnect =
+          /invalid_grant|invalid credentials|unauthorized|token has been expired|revoked/i.test(
+            googleErrorMessage
+          );
+
+        return res.status(requiresReconnect ? 401 : 502).json({
           success: false,
-          message: 'Unable to generate the Google Meet link. Please check the Google Calendar configuration and try again.'
+          code: requiresReconnect
+            ? 'GOOGLE_CALENDAR_RECONNECT_REQUIRED'
+            : 'GOOGLE_CALENDAR_EVENT_FAILED',
+          message: requiresReconnect
+            ? 'Your Google Calendar permission expired or was revoked. Reconnect it in Employer Settings.'
+            : 'Unable to generate the Google Meet link using your connected Google Calendar account.'
         });
       }
     }
