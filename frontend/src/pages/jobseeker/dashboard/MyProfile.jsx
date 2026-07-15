@@ -55,6 +55,14 @@ const COLORS = {
   bg: '#ffffff',
 };
 
+const JOB_SEEKER_LEVEL_BADGES = {
+  'First Time Job Seeker': '/images/Firstime.png',
+  Intermediate: '/images/Intermediate.png',
+  Expert: '/images/Expert.png',
+  Pro: '/images/Pro.png',
+  Legend: '/images/Legend.png',
+};
+
 const REQUIRED_DOC_TYPES = ['cv', 'tor', 'diploma', 'validId', 'sss', 'philhealth', 'pagibig', 'tin'];
 
 const EDUCATION_LEVEL_OPTIONS = [
@@ -3199,6 +3207,8 @@ const JobSeekerLevelCard = ({
   suggestions = [],
 }) => {
   const safePercentage = Math.min(100, Math.max(0, Number(percentage) || 0));
+  const badgeImage = JOB_SEEKER_LEVEL_BADGES[currentRank]
+    || JOB_SEEKER_LEVEL_BADGES['First Time Job Seeker'];
 
   return (
     <section className="w-full rounded-[18px] border border-[#d8e2ee] bg-white p-5 shadow-[0_8px_30px_rgba(46,102,166,0.10)]">
@@ -3212,11 +3222,12 @@ const JobSeekerLevelCard = ({
           </h2>
         </div>
 
-        <div
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#edf4fb] text-[25px]"
-          aria-hidden="true"
-        >
-          🏆
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#edf4fb] p-1">
+          <img
+            src={badgeImage}
+            alt={`${currentRank} badge`}
+            className="h-full w-full object-contain"
+          />
         </div>
       </div>
 
