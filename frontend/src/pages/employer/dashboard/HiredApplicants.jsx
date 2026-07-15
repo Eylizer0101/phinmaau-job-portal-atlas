@@ -567,7 +567,23 @@ const selectBase =
                       const salaryText = formatSalary(app.job?.salaryMin, app.job?.salaryMax);
 
                       return (
-                        <tr key={app._id} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50">
+                        <tr
+                          key={app._id}
+                          role="link"
+                          tabIndex={0}
+                          aria-label={`View application of ${name}`}
+                          onClick={(event) => {
+                            if (event.target.closest?.('a, button, input, select, textarea, [role="button"]')) return;
+                            navigate(`/employer/application/${app._id}?from=hired`);
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.target !== event.currentTarget) return;
+                            if (event.key !== 'Enter' && event.key !== ' ') return;
+                            event.preventDefault();
+                            navigate(`/employer/application/${app._id}?from=hired`);
+                          }}
+                          className="border-b border-gray-200 last:border-b-0 group cursor-pointer transition-colors hover:bg-[#2e66a6]/[0.06] focus-visible:bg-[#2e66a6]/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
+                        >
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-4">
                               <Avatar

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import api from '../../../services/api';
 
@@ -1019,6 +1019,7 @@ const ActionMenu = ({ app, name, rowBusy, onHire, onDecline, openMenuId, setOpen
 };
 
 const ForInterview = () => {
+  const navigate = useNavigate();
   const API_BASE = (process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
   const [brokenAvatars, setBrokenAvatars] = useState(() => new Set());
 
@@ -1606,7 +1607,23 @@ const selectBase =
                         const interview = getInterviewMeta(app);
 
                         return (
-                          <tr key={app._id} className="hover:bg-gray-50">
+                          <tr
+                            key={app._id}
+                            role="link"
+                            tabIndex={0}
+                            aria-label={`View application of ${name}`}
+                            onClick={(event) => {
+                              if (event.target.closest?.('a, button, input, select, textarea, [role="button"]')) return;
+                              navigate(`/employer/application/${app._id}?from=for-interview`);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.target !== event.currentTarget) return;
+                              if (event.key !== 'Enter' && event.key !== ' ') return;
+                              event.preventDefault();
+                              navigate(`/employer/application/${app._id}?from=for-interview`);
+                            }}
+                            className="group cursor-pointer transition-colors hover:bg-[#2e66a6]/[0.06] focus-visible:bg-[#2e66a6]/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
+                          >
                             <td className="px-6 py-5 align-middle">
                               <div className="flex items-center gap-4">
                                 <Avatar

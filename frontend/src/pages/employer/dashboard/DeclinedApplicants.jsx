@@ -735,7 +735,23 @@ const DeclinedApplicants = () => {
                         const declinedStageLabel = getDeclinedStageLabel(app.declinedFrom);
 
                         return (
-                          <tr key={app._id} className="hover:bg-gray-50">
+                          <tr
+                            key={app._id}
+                            role="link"
+                            tabIndex={0}
+                            aria-label={`View application of ${name}`}
+                            onClick={(event) => {
+                              if (event.target.closest?.('a, button, input, select, textarea, [role="button"]')) return;
+                              navigate(`/employer/application/${app._id}?from=declined`);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.target !== event.currentTarget) return;
+                              if (event.key !== 'Enter' && event.key !== ' ') return;
+                              event.preventDefault();
+                              navigate(`/employer/application/${app._id}?from=declined`);
+                            }}
+                            className="group cursor-pointer transition-colors hover:bg-[#2e66a6]/[0.06] focus-visible:bg-[#2e66a6]/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
+                          >
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-4">
                                 <Avatar
