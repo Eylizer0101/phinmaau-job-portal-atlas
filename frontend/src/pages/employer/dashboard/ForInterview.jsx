@@ -209,6 +209,7 @@ const getInterviewMeta = (application) => {
     interviewer?.email ||
     '';
   const status = application?.interviewSchedule?.status || '';
+  const meetingLink = application?.interviewSchedule?.meetingLink || '';
 
   return {
     scheduledAt,
@@ -217,6 +218,7 @@ const getInterviewMeta = (application) => {
     interviewer,
     interviewerName,
     status,
+    meetingLink,
   };
 };
 
@@ -616,7 +618,7 @@ const ScheduleInterviewModal = ({
                       </span>
                       <div>
                         <div className="text-lg font-semibold text-[#11857f]">Video Call</div>
-                        <div className="text-sm text-gray-500">Google Meet / Zoom</div>
+                        <div className="text-sm text-gray-500">Google Meet</div>
                       </div>
                     </div>
                   </button>
@@ -1659,6 +1661,17 @@ const selectBase =
                                   <div className="mt-0.5 text-sm text-gray-600">
                                     {interview.meetingType || 'Interview'}
                                   </div>
+                                  {interview.meetingLink && (
+                                    <a
+                                      href={interview.meetingLink}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="mt-2 inline-flex text-sm font-semibold text-[#2e66a6] hover:underline"
+                                      onClick={(event) => event.stopPropagation()}
+                                    >
+                                      Join Google Meet
+                                    </a>
+                                  )}
                                 </div>
                               ) : (
                                 <div className="text-sm">
@@ -1747,6 +1760,17 @@ const selectBase =
                               {interview.meetingType || '( To be scheduled )'}
                             </span>
                           </div>
+
+                          {interview.meetingLink && (
+                            <a
+                              href={interview.meetingLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-2 inline-flex text-xs font-semibold text-[#2e66a6] hover:underline"
+                            >
+                              Join Google Meet
+                            </a>
+                          )}
                         </div>
 
                         <div className="mt-3">

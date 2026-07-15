@@ -5,6 +5,7 @@ const Job = require('../models/Job');
 const User = require('../models/User');
 const Message = require('../models/Message');
 const notificationController = require('./notificationController');
+const { createCalendarEvent } = require('../config/googleCalendar');
 
 const ACTIVE_APPLICATION_STATUSES = ['pending', 'for interview', 'hired'];
 const INACTIVE_APPLICATION_STATUSES = ['declined', 'withdrawn', 'cancelled', 'vacancy full'];
@@ -1584,6 +1585,24 @@ exports.updateInterviewSchedule = async (req, res) => {
         .join(' ')
         .trim() || String(interviewer.email || '').trim();
 
+    let generatedMeetingLink = application?.interviewSchedule?.meetingLink || '';
+
+    if (String(meetingType || '').trim() === 'Video Call') {
+      try {
+        const calendarEvent = await createCalendarEvent({
+          summary: `AGAPAY Interview - ${application?.job?.title || 'Applicant'}`,
+          description: `Interview with ${buildUserDisplayName(application.jobseeker, 'Applicant')}`,
+          startTime: parsedScheduledAt,
+          endTime: new Date(parsedScheduledAt.getTime() + 60 * 60 * 1000),
+          attendeeEmail: application.jobseeker.email,
+        });
+
+        generatedMeetingLink = calendarEvent.meetingLink;
+      } catch (calendarError) {
+        console.error('Google Calendar Error:', calendarError.message);
+      }
+    }
+
     const hadExistingSchedule = !!application?.interviewSchedule?.scheduledAt;
 
     application.interviewSchedule = {
@@ -1591,6 +1610,7 @@ exports.updateInterviewSchedule = async (req, res) => {
       scheduledAt: parsedScheduledAt,
       durationMinutes: application.interviewSchedule?.durationMinutes || 60,
       meetingType: String(meetingType || '').trim(),
+      meetingLink: generatedMeetingLink,
       notes: String(notes || '').trim(),
       setBy: req.user._id,
       setAt: new Date(),
@@ -1615,7 +1635,7 @@ exports.updateInterviewSchedule = async (req, res) => {
       date: parsedScheduledAt,
       time: timeLabel,
       location: String(meetingType || '').trim() === 'On-site' ? 'On-site' : '',
-      meetingLink: '',
+      meetingLink: generatedMeetingLink,
       notes: JSON.stringify({
         confirmationCard: true,
         action: actionLabel,
