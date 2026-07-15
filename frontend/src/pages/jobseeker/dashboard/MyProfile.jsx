@@ -6314,7 +6314,7 @@ const MyProfile = () => {
                       { key: 'about', label: 'Objective', actionLabel: formData.aboutMe ? 'EDIT' : 'ADD' },
                       {
                         key: 'career',
-                        label: 'Availability & Preferences',
+                        label: 'Personal Information',
                         actionLabel: [
                           formData.preferredWorkMode,
                           formData.employmentType,
