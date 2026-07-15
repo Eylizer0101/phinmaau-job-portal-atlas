@@ -37,6 +37,14 @@ const PROFICIENCY_STYLES = {
   Expert: 'border-emerald-200 bg-emerald-50 text-emerald-700',
 };
 
+const JOB_SEEKER_LEVEL_BADGES = {
+  'First Time Job Seeker': '/images/Firstime.png',
+  Intermediate: '/images/Intermediate.png',
+  Expert: '/images/Expert.png',
+  Pro: '/images/Pro.png',
+  Legend: '/images/Legend.png',
+};
+
 const SvgIcon = ({ name, className = 'h-5 w-5' }) => {
   const common = { className, fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' };
   const paths = {
@@ -606,6 +614,167 @@ const MatchRing = ({ score }) => {
   );
 };
 
+
+const JobSeekerLevelBadgeCard = ({
+  currentRank = 'First Time Job Seeker',
+}) => {
+  const [showLevelModal, setShowLevelModal] = useState(false);
+  const badgeImage = JOB_SEEKER_LEVEL_BADGES[currentRank]
+    || JOB_SEEKER_LEVEL_BADGES['First Time Job Seeker'];
+  const jobSeekerLevels = Object.entries(JOB_SEEKER_LEVEL_BADGES);
+
+  useEffect(() => {
+    if (!showLevelModal) return undefined;
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') setShowLevelModal(false);
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [showLevelModal]);
+
+  return (
+    <>
+      <div className="flex w-full items-center gap-3 rounded-xl border border-[#e2e8f0] bg-white px-4 py-3 shadow-[0_4px_14px_rgba(15,23,42,0.06)] lg:w-auto lg:min-w-[230px]">
+        <button
+          type="button"
+          onClick={() => setShowLevelModal(true)}
+          className="group flex h-[64px] w-[64px] shrink-0 items-center justify-center border-0 bg-transparent p-0 outline-none transition-transform duration-200 hover:scale-105 focus-visible:rounded-xl focus-visible:ring-2 focus-visible:ring-[#2e66a6]/40"
+          aria-label="View all job seeker levels"
+          aria-haspopup="dialog"
+        >
+          <img
+            src={badgeImage}
+            alt={`${currentRank} badge`}
+            className="h-full w-full object-contain transition group-hover:drop-shadow-[0_5px_8px_rgba(46,102,166,0.22)]"
+          />
+        </button>
+
+        <div className="min-w-0">
+          <div className="text-[10px] font-medium uppercase tracking-[0.08em] text-gray-500">
+            Jobseeker Level
+          </div>
+          <div className="mt-0.5 truncate text-lg font-bold text-[#2f3b8f]">
+            {currentRank}
+          </div>
+        </div>
+      </div>
+
+      {showLevelModal ? (
+        <div
+          className="fixed inset-0 z-[10060] flex items-center justify-center bg-black/50 px-4 py-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="employer-job-seeker-levels-title"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setShowLevelModal(false);
+          }}
+        >
+          <div className="w-full max-w-[980px] overflow-hidden rounded-[22px] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
+            <div className="flex items-center justify-between gap-4 bg-[#2e66a6] px-5 py-4 sm:px-7">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/75">
+                  Job Seeker Ranking
+                </p>
+                <h2
+                  id="employer-job-seeker-levels-title"
+                  className="mt-1 text-[21px] font-bold text-white sm:text-[24px]"
+                >
+                  Job Seeker Levels
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowLevelModal(false)}
+                className="flex h-10 w-10 items-center justify-center rounded-full text-[28px] leading-none text-white transition hover:bg-white/15"
+                aria-label="Close job seeker levels"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="max-h-[78vh] overflow-y-auto px-5 py-6 sm:px-7 sm:py-7">
+              <p className="text-sm leading-6 text-gray-600">
+                View the applicant&apos;s current rank and the complete job seeker level progression.
+              </p>
+
+              <div className="mt-4 overflow-x-auto rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-3">
+                <div className="flex min-w-max items-center gap-2 text-sm font-semibold text-[#2e66a6]">
+                  {jobSeekerLevels.map(([levelName], index) => (
+                    <React.Fragment key={levelName}>
+                      <span className={levelName === currentRank ? 'font-extrabold text-black' : ''}>
+                        {levelName}
+                      </span>
+                      {index < jobSeekerLevels.length - 1 ? (
+                        <span className="text-gray-400" aria-hidden="true">→</span>
+                      ) : null}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+                {jobSeekerLevels.map(([levelName, levelBadge], index) => {
+                  const isCurrentLevel = levelName === currentRank;
+
+                  return (
+                    <div
+                      key={levelName}
+                      className={`relative flex min-h-[210px] flex-col items-center rounded-[18px] border px-3 py-5 text-center transition ${
+                        isCurrentLevel
+                          ? 'border-[#2e66a6] bg-[#f3f8ff] shadow-[0_10px_30px_rgba(46,102,166,0.16)]'
+                          : 'border-gray-200 bg-white'
+                      }`}
+                    >
+                      <span
+                        className={`absolute left-3 top-3 flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
+                          isCurrentLevel
+                            ? 'bg-[#2e66a6] text-white'
+                            : 'bg-gray-100 text-gray-500'
+                        }`}
+                      >
+                        {index + 1}
+                      </span>
+
+                      <img
+                        src={levelBadge}
+                        alt={`${levelName} badge`}
+                        className="h-[112px] w-[112px] object-contain"
+                      />
+
+                      <h3 className="mt-3 text-[15px] font-bold leading-5 text-gray-900">
+                        {levelName}
+                      </h3>
+
+                      {isCurrentLevel ? (
+                        <span className="mt-2 inline-flex rounded-full bg-[#2e66a6] px-3 py-1 text-[11px] font-bold text-white">
+                          Current Level
+                        </span>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowLevelModal(false)}
+                  className="h-11 rounded-lg bg-[#2e66a6] px-6 text-sm font-semibold text-white transition hover:opacity-90"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+};
+
 const Section = ({ title, children, defaultOpen = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
@@ -851,23 +1020,7 @@ const ApplicationDetails = () => {
                 <span>{formatRelativeTime(application.appliedAt || application.createdAt)}</span>
               </p></div>
             </div>
-            <div className="flex w-full items-center gap-3 rounded-xl border border-[#e2e8f0] bg-white px-4 py-3 shadow-[0_4px_14px_rgba(15,23,42,0.06)] lg:w-auto lg:min-w-[210px]">
-              <div
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-xl text-white shadow-sm"
-                aria-hidden="true"
-              >
-                ★
-              </div>
-
-              <div className="min-w-0">
-                <div className="text-[10px] font-medium uppercase tracking-[0.08em] text-gray-500">
-                  Jobseeker Level
-                </div>
-                <div className="mt-0.5 truncate text-lg font-bold text-[#2f3b8f]">
-                  {jobSeekerLevel.currentRank}
-                </div>
-              </div>
-            </div>
+            <JobSeekerLevelBadgeCard currentRank={jobSeekerLevel.currentRank} />
           </div>
           <div className="flex border-t border-[#d8e2ee] px-5 sm:px-7"><button onClick={() => setActiveTab('resume')} className={cn('relative flex h-14 items-center gap-2 px-3 text-sm font-semibold', activeTab === 'resume' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="resume" className="h-4 w-4" /> Resume<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'resume' ? 'bg-[#174b91]' : '')} /></button><button onClick={() => setActiveTab('activity')} className={cn('relative flex h-14 items-center gap-2 px-5 text-sm font-semibold', activeTab === 'activity' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="activity" className="h-4 w-4" /> Activity<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'activity' ? 'bg-[#174b91]' : '')} /></button></div>
 
