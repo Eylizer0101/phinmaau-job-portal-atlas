@@ -834,6 +834,7 @@ const LoginPage = () => {
                       autoCapitalize="none"
                       autoCorrect="off"
                       spellCheck={false}
+                      placeholder="Enter your username"
                       className={`${fieldClass(!!fieldErrors.username)} pl-10`}
                       disabled={loading || isLocked}
                       required
@@ -884,6 +885,7 @@ const LoginPage = () => {
                       onFocus={() => setFocused((p) => ({ ...p, password: true }))}
                       onBlur={() => setFocused((p) => ({ ...p, password: false }))}
                       autoComplete="current-password"
+                      placeholder="Enter your password"
                       className={`${fieldClass(!!fieldErrors.password)} pl-10 pr-20`}
                       disabled={loading || isLocked}
                       required
@@ -1012,7 +1014,7 @@ const LoginPage = () => {
                     onClick={() => navigate('/join-as')}
                     className="font-semibold text-[#2e66a6] hover:text-[#245387] transition underline"
                   >
-                    Sign up
+                    Sign Up here
                   </button>
                 </p>
               </div>
