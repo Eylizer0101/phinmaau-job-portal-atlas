@@ -5,6 +5,8 @@ import api from '../../../services/api';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
+const PENDING_INTERVIEW_SCHEDULE_KEY = 'agapayPendingInterviewSchedule';
+
 const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
   const common = { className, fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', ...props };
 
@@ -1174,20 +1176,6 @@ const ForInterview = () => {
   }, [fetchForInterviewApplications]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-
-    if (params.get('googleCalendar') !== 'connected') return;
-
-    params.delete('googleCalendar');
-
-    const nextSearch = params.toString();
-    const cleanUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${window.location.hash}`;
-
-    window.history.replaceState({}, document.title, cleanUrl);
-    window.location.reload();
-  }, []);
-
-  useEffect(() => {
     if (!success) return;
     const t = setTimeout(() => setSuccess(''), 2200);
     return () => clearTimeout(t);
@@ -1446,6 +1434,18 @@ const ForInterview = () => {
         );
 
         if (shouldConnect) {
+          sessionStorage.setItem(
+            PENDING_INTERVIEW_SCHEDULE_KEY,
+            JSON.stringify({
+              applicationId: payload.applicationId,
+              scheduledAt: payload.scheduledAt,
+              meetingType: payload.meetingType,
+              interviewerId: payload.interviewerId,
+              notes: payload.notes,
+              savedAt: Date.now(),
+            })
+          );
+
           await connectEmployerGoogleCalendar();
           return;
         }
@@ -1456,6 +1456,117 @@ const ForInterview = () => {
       setSavingSchedule(false);
     }
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get('googleCalendar') !== 'connected') return;
+
+    params.delete('googleCalendar');
+
+    const nextSearch = params.toString();
+    const cleanUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${window.location.hash}`;
+
+    window.history.replaceState({}, document.title, cleanUrl);
+
+    const rawPendingSchedule = sessionStorage.getItem(PENDING_INTERVIEW_SCHEDULE_KEY);
+
+    if (!rawPendingSchedule) {
+      setSuccess('Google Calendar connected successfully.');
+      fetchForInterviewApplications();
+      return;
+    }
+
+    let pendingSchedule = null;
+
+    try {
+      pendingSchedule = JSON.parse(rawPendingSchedule);
+    } catch {
+      sessionStorage.removeItem(PENDING_INTERVIEW_SCHEDULE_KEY);
+      setError('Google Calendar was connected, but the pending interview schedule could not be restored.');
+      return;
+    }
+
+    const savedAt = Number(pendingSchedule?.savedAt || 0);
+    const isExpired = !savedAt || Date.now() - savedAt > 30 * 60 * 1000;
+    const hasRequiredData =
+      pendingSchedule?.applicationId &&
+      pendingSchedule?.scheduledAt &&
+      pendingSchedule?.meetingType &&
+      pendingSchedule?.interviewerId;
+
+    if (isExpired || !hasRequiredData) {
+      sessionStorage.removeItem(PENDING_INTERVIEW_SCHEDULE_KEY);
+      setError('Google Calendar was connected, but the pending interview schedule expired. Please schedule it again.');
+      return;
+    }
+
+    let cancelled = false;
+
+    const resumePendingSchedule = async () => {
+      try {
+        setSavingSchedule(true);
+        setError('');
+        setSuccess('');
+
+        sessionStorage.removeItem(PENDING_INTERVIEW_SCHEDULE_KEY);
+
+        const response = await api.put(
+          `/applications/${pendingSchedule.applicationId}/interview-schedule`,
+          {
+            scheduledAt: pendingSchedule.scheduledAt,
+            meetingType: pendingSchedule.meetingType,
+            interviewerId: pendingSchedule.interviewerId,
+            notes: pendingSchedule.notes || '',
+          }
+        );
+
+        if (cancelled) return;
+
+        if (!response.data?.success) {
+          throw new Error('Failed to save interview schedule.');
+        }
+
+        const updatedApplication = response.data.application;
+
+        setApplications((prev) =>
+          prev.map((item) =>
+            item._id === updatedApplication._id ? updatedApplication : item
+          )
+        );
+
+        setModalOpen(false);
+        setSelectedApplication(null);
+        setSuccess(
+          updatedApplication?.interviewSchedule?.status === 'rescheduled'
+            ? 'Interview rescheduled and sent to chat successfully.'
+            : 'Interview scheduled and sent to chat successfully.'
+        );
+
+        await fetchForInterviewApplications();
+      } catch (resumeError) {
+        if (cancelled) return;
+
+        console.error(resumeError);
+        setError(
+          resumeError?.response?.data?.message ||
+          resumeError?.message ||
+          'Google Calendar was connected, but the interview schedule could not be completed. Please try again.'
+        );
+      } finally {
+        if (!cancelled) {
+          setSavingSchedule(false);
+          setConnectingGoogleCalendar(false);
+        }
+      }
+    };
+
+    resumePendingSchedule();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchForInterviewApplications]);
 
   const inputBase =
   'h-[50px] w-full rounded-xl border border-gray-300 pl-11 pr-10 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2';
