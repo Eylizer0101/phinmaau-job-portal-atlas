@@ -1174,6 +1174,20 @@ const ForInterview = () => {
   }, [fetchForInterviewApplications]);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get('googleCalendar') !== 'connected') return;
+
+    params.delete('googleCalendar');
+
+    const nextSearch = params.toString();
+    const cleanUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${window.location.hash}`;
+
+    window.history.replaceState({}, document.title, cleanUrl);
+    window.location.reload();
+  }, []);
+
+  useEffect(() => {
     if (!success) return;
     const t = setTimeout(() => setSuccess(''), 2200);
     return () => clearTimeout(t);
