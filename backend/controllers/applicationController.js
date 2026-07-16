@@ -1625,13 +1625,38 @@ exports.updateInterviewSchedule = async (req, res) => {
         console.error('Google Calendar Error:', calendarError);
 
         const errorStatus = Number(calendarError?.response?.status || 0);
-        const needsReconnect = errorStatus === 400 || errorStatus === 401;
+        const calendarErrorMessage = String(
+          calendarError?.response?.data?.error?.message ||
+          calendarError?.message ||
+          ''
+        ).toLowerCase();
+
+        const needsReconnect =
+          errorStatus === 400 ||
+          errorStatus === 401 ||
+          errorStatus === 403 ||
+          calendarErrorMessage.includes('insufficient authentication scopes') ||
+          calendarErrorMessage.includes('invalid_grant');
+
+        if (needsReconnect) {
+          interviewer.googleCalendarAuth = {
+            refreshToken: '',
+            googleEmail: '',
+            connectedAt: null,
+          };
+
+          try {
+            await interviewer.save();
+          } catch (clearTokenError) {
+            console.error('Unable to clear invalid Google Calendar connection:', clearTokenError);
+          }
+        }
 
         return res.status(needsReconnect ? 428 : 502).json({
           success: false,
           code: needsReconnect ? 'GOOGLE_CALENDAR_RECONNECT_REQUIRED' : 'GOOGLE_CALENDAR_ERROR',
           message: needsReconnect
-            ? 'Your Google Calendar connection expired or was removed. Please connect it again.'
+            ? 'Your Google Calendar connection is missing the required permission or has expired. Please connect it again.'
             : 'Unable to generate the Google Meet link. Please check the Google Calendar configuration and try again.'
         });
       }

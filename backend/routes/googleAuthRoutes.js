@@ -246,16 +246,27 @@ router.get('/callback', async (req, res) => {
         console.warn('Unable to read connected Google email:', profileError.message);
       }
 
-      const refreshToken =
-        String(tokens?.refresh_token || '').trim() ||
-        String(employer.googleCalendarAuth?.refreshToken || '').trim();
+      const refreshToken = String(tokens?.refresh_token || '').trim();
+      const grantedScopes = String(tokens?.scope || '')
+        .split(/\s+/)
+        .map((scope) => scope.trim())
+        .filter(Boolean);
 
       if (!refreshToken) {
         return sendHtml(
           res,
           400,
-          'No refresh token was returned',
-          '<p>Remove the app access from your Google Account, then connect again and approve Calendar access.</p>'
+          'No new refresh token was returned',
+          '<p>Remove the app access from your Google Account, then connect again and approve Calendar access. The previous saved token will not be reused.</p>'
+        );
+      }
+
+      if (grantedScopes.length && !grantedScopes.includes(GOOGLE_CALENDAR_SCOPE)) {
+        return sendHtml(
+          res,
+          403,
+          'Google Calendar permission was not granted',
+          '<p>Please connect again and allow the app to view and edit events on your Google calendars.</p>'
         );
       }
 
