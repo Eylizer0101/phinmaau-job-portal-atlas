@@ -853,6 +853,87 @@ const DeclineReasonModal = ({ open, applicantName, reasons, selectedReason, comm
   </div>;
 };
 
+
+const StatusConfirmationModal = ({
+  open,
+  action,
+  applicantName,
+  onClose,
+  onConfirm,
+  submitting,
+}) => {
+  if (!open || !action) return null;
+
+  const isInterview = action === 'for interview';
+  const title = isInterview ? 'Move applicant to interview?' : 'Mark applicant as hired?';
+  const description = isInterview
+    ? `Are you sure you want to move ${applicantName} to the interview stage?`
+    : `Are you sure you want to mark ${applicantName} as hired?`;
+  const confirmLabel = isInterview ? 'Move to Interview' : 'Confirm Hired';
+  const iconName = isInterview ? 'calendar' : 'check';
+
+  return (
+    <div
+      className="fixed inset-0 z-[95] flex items-center justify-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="status-confirmation-title"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !submitting) onClose();
+      }}
+    >
+      <div className="w-full max-w-md overflow-hidden rounded-[24px] bg-white shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#eef5fc] text-[#174b91]">
+              <SvgIcon name={iconName} className="h-6 w-6" />
+            </div>
+            <div>
+              <h2 id="status-confirmation-title" className="text-xl font-bold text-gray-900">
+                {title}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-gray-500">
+                {description}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="Close confirmation"
+          >
+            <SvgIcon name="x" className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="flex flex-col-reverse gap-3 px-6 py-5 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="h-11 rounded-xl border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={submitting}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#102a78] px-5 text-sm font-semibold text-white transition hover:bg-[#0d2365] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {submitting ? <Spinner /> : <SvgIcon name={iconName} className="h-5 w-5" />}
+            {submitting ? 'Updating...' : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const MessagePopup = ({ open, onClose, applicant, application }) => {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
@@ -907,6 +988,7 @@ const ApplicationDetails = () => {
   const [declineReason, setDeclineReason] = useState('');
   const [declineComment, setDeclineComment] = useState('');
   const [messageOpen, setMessageOpen] = useState(false);
+  const [confirmationAction, setConfirmationAction] = useState('');
   const [avatarBroken, setAvatarBroken] = useState(false);
 
   const fetchDetails = useCallback(async () => {
@@ -917,9 +999,29 @@ const ApplicationDetails = () => {
   useEffect(() => { fetchDetails(); }, [fetchDetails]);
 
   const updateStatus = async (status, extra = {}) => {
-    try { setStatusUpdating(true); setError(''); const res = await axios.put(`${API_HOST}/api/applications/${applicationId}/status`, { status, ...extra }, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }); setApplication((prev) => ({ ...prev, ...(res.data?.application || {}), jobseeker: prev.jobseeker, employer: prev.employer })); setSuccess(res.data?.message || 'Application status updated.'); setTimeout(() => setSuccess(''), 3000); }
-    catch (err) { setError(err.response?.data?.message || 'Failed to update application status.'); }
-    finally { setStatusUpdating(false); }
+    try {
+      setStatusUpdating(true);
+      setError('');
+      const res = await axios.put(
+        `${API_HOST}/api/applications/${applicationId}/status`,
+        { status, ...extra },
+        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+      );
+      setApplication((prev) => ({
+        ...prev,
+        ...(res.data?.application || {}),
+        jobseeker: prev.jobseeker,
+        employer: prev.employer,
+      }));
+      setSuccess(res.data?.message || 'Application status updated.');
+      setTimeout(() => setSuccess(''), 3000);
+      return true;
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update application status.');
+      return false;
+    } finally {
+      setStatusUpdating(false);
+    }
   };
 
 
@@ -1137,9 +1239,23 @@ const ApplicationDetails = () => {
               </div>
             </div>
           </div>
-          <div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5"><h2 className="text-lg font-bold">Employer Actions</h2><div className="mt-5 space-y-3">{currentStatus === 'pending' ? <button onClick={() => updateStatus('for interview')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{statusUpdating ? <Spinner /> : <SvgIcon name="calendar" />} Move to Interview</button> : null}{currentStatus === 'for interview' ? <button onClick={() => updateStatus('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{statusUpdating ? <Spinner /> : <SvgIcon name="check" />} Hired</button> : null}<button onClick={() => setMessageOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91]"><SvgIcon name="message" /> Send Message</button>{['pending', 'for interview'].includes(currentStatus) ? <button onClick={() => setDeclineOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400 px-4 py-3 text-sm font-semibold text-red-600"><SvgIcon name="x" /> Decline Application</button> : null}</div></div></aside>
+          <div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5"><h2 className="text-lg font-bold">Employer Actions</h2><div className="mt-5 space-y-3">{currentStatus === 'pending' ? <button onClick={() => setConfirmationAction('for interview')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="calendar" /> Move to Interview</button> : null}{currentStatus === 'for interview' ? <button onClick={() => setConfirmationAction('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="check" /> Hired</button> : null}<button onClick={() => setMessageOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91]"><SvgIcon name="message" /> Send Message</button>{['pending', 'for interview'].includes(currentStatus) ? <button onClick={() => setDeclineOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400 px-4 py-3 text-sm font-semibold text-red-600"><SvgIcon name="x" /> Decline Application</button> : null}</div></div></aside>
       </div>
       <DeclineReasonModal open={declineOpen} applicantName={name} reasons={declineReasons} selectedReason={declineReason} comment={declineComment} onReasonChange={setDeclineReason} onCommentChange={setDeclineComment} onClose={() => { setDeclineOpen(false); setDeclineReason(''); setDeclineComment(''); }} onConfirm={async () => { const from = currentStatus === 'for interview' ? 'forInterview' : 'applicants'; setDeclineOpen(false); await updateStatus('declined', { declineReason, declineComment, declinedFrom: from }); }} submitting={statusUpdating} />
+      <StatusConfirmationModal
+        open={Boolean(confirmationAction)}
+        action={confirmationAction}
+        applicantName={name}
+        submitting={statusUpdating}
+        onClose={() => {
+          if (!statusUpdating) setConfirmationAction('');
+        }}
+        onConfirm={async () => {
+          if (!confirmationAction || statusUpdating) return;
+          const updated = await updateStatus(confirmationAction);
+          if (updated) setConfirmationAction('');
+        }}
+      />
       <MessagePopup open={messageOpen} onClose={() => setMessageOpen(false)} applicant={user} application={application} />
     </div>
   </EmployerLayout>;
