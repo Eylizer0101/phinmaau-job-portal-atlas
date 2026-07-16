@@ -740,32 +740,42 @@ const EmployerRegisterPage = () => {
   };
 
 
+  // ---------- How it Works Carousel ----------
   const howItWorksSlides = [
     {
       id: 1,
       title: 'Provide your official company details',
-      description:
-        'Make sure all information is accurate, complete, and legitimate. This ensures that graduates can identify your company properly and trust the opportunities you post on the platform.',
+      description: [
+        'Make sure all information is accurate, complete, and legitimate.',
+        'This ensures that graduates can identify your company properly',
+        'and trust the opportunities you post on the platform.',
+      ],
       icon: 'details',
     },
     {
       id: 2,
       title: 'Provide Primary Contact Information',
-      description:
-        'This allows our team and potential applicants to communicate with the right representative regarding job postings, updates, and application matters.',
+      description: [
+        'This allows our team and potential applicants to communicate',
+        'with the right representative regarding job postings, updates,',
+        'and application matters.',
+      ],
       icon: 'profile',
     },
     {
       id: 3,
       title: 'Submit the necessary company documents',
-      description:
-        'This helps verify the legitimacy of your organization and maintains a secure and professional environment for both employers and graduates.',
+      description: [
+        'This helps verify the legitimacy of your organization and',
+        'maintains a secure and professional environment for both',
+        'employers and graduates.',
+      ],
       icon: 'documents',
     },
     {
       id: 4,
       title: 'Account Review',
-      description: 'Before submitting, carefully review all provided information.',
+      description: ['Before submitting, carefully review all provided information.'],
       checklist: [
         'Is the company information correct and updated?',
         'Is the primary contact person accurate?',
@@ -777,8 +787,13 @@ const EmployerRegisterPage = () => {
     {
       id: 5,
       title: 'AGAPAY team carefully reviews all',
-      description:
-        'submitted information to ensure authenticity, accuracy, and credibility. This process typically takes 24 to 48 hours. Once approved, you will receive a confirmation email containing your login details. Please keep an eye on your inbox if we need any additional information, our team will contact you directly.',
+      description: [
+        'submitted information to ensure authenticity, accuracy, and',
+        'credibility. This process typically takes 24 to 48 hours.',
+        'Once approved, you will receive a confirmation email containing',
+        'your login details. Please keep an eye on your inbox if we need',
+        'any additional information, our team will contact you directly.',
+      ],
       icon: 'approval',
     },
   ];
@@ -788,6 +803,8 @@ const EmployerRegisterPage = () => {
   const goToHowItWorksSlide = (index) => {
     setCurrentHowItWorksSlide((index + totalHowItWorksSlides) % totalHowItWorksSlides);
   };
+
+  const activeHowItWorksSlide = howItWorksSlides[currentHowItWorksSlide];
 
   const renderHowItWorksIcon = (icon) => {
     if (icon === 'profile') {
@@ -812,7 +829,7 @@ const EmployerRegisterPage = () => {
       return (
         <svg className="w-7 h-7 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 11l3 3L22 4" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12v7a2 2 0 01-2 2H5a2 2 0 012-2V5a2 2 0 012-2h11" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
         </svg>
       );
     }
@@ -828,7 +845,8 @@ const EmployerRegisterPage = () => {
 
     return (
       <svg className="w-7 h-7 text-[#1f67b7]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
       </svg>
     );
   };
@@ -842,71 +860,94 @@ const EmployerRegisterPage = () => {
       <div className="pointer-events-none absolute -left-16 bottom-20 h-36 w-36 rounded-full bg-[#52b2db]/30 blur-3xl" />
 
       <div className="relative z-10 px-3 py-4 sm:px-7 sm:py-6 lg:px-7">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20 backdrop-blur-sm">
-            <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-3-3v6m8-3a8 8 0 11-16 0 8 8 0 0116 0z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-white/70">Registration Guide</p>
-            <h3 className="text-xl sm:text-2xl font-extrabold leading-tight text-white">How it Works</h3>
-          </div>
+        <div className="text-center">
+          <h3 className="text-xl sm:text-3xl font-extrabold text-white leading-tight">How it Works</h3>
+          <div className="mt-8 sm:mt-9" aria-hidden="true" />
         </div>
 
-        <div className="relative mt-4 sm:mt-6">
+        <div className="mt-4 sm:mt-5 flex items-center justify-center px-1 sm:px-2" aria-label="How it Works step progress">
+          {howItWorksSlides.map((slide, index) => {
+            const isActive = index === currentHowItWorksSlide;
+            return (
+              <React.Fragment key={slide.id}>
+                <button
+                  type="button"
+                  onClick={() => goToHowItWorksSlide(index)}
+                  className={`flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border text-xs sm:text-sm font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25 ${
+                    isActive
+                      ? 'scale-110 border-white bg-white text-[#1f5ea4] shadow-lg'
+                      : 'border-white/55 bg-white/5 text-white hover:bg-white/15'
+                  }`}
+                  aria-label={`Go to how it works step ${slide.id}`}
+                  aria-current={isActive ? 'step' : undefined}
+                >
+                  {slide.id}
+                </button>
+
+                {index !== howItWorksSlides.length - 1 && <div className="h-px flex-1 max-w-[48px] sm:max-w-[64px] bg-white/45" aria-hidden="true" />}
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        <div className="relative mt-4 sm:mt-5">
           <button
             type="button"
             onClick={() => goToHowItWorksSlide(currentHowItWorksSlide - 1)}
-            className="absolute left-1 sm:-left-4 top-1/2 z-30 flex h-9 w-9 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white shadow-lg ring-1 ring-white/20 backdrop-blur-sm transition hover:-translate-y-1/2 hover:scale-105 hover:bg-white/25 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
+            className="absolute left-1 sm:-left-6 top-1/2 z-20 flex h-9 w-9 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#225d9f] shadow-lg ring-1 ring-black/5 transition hover:-translate-y-1/2 hover:scale-105 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/35"
             aria-label="Previous how it works step"
           >
-            <svg className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path
+                fillRule="evenodd"
+                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
             </svg>
           </button>
 
           <button
             type="button"
             onClick={() => goToHowItWorksSlide(currentHowItWorksSlide + 1)}
-            className="absolute right-1 sm:-right-4 top-1/2 z-30 flex h-9 w-9 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#1f5ea4] shadow-lg ring-1 ring-white/40 transition hover:-translate-y-1/2 hover:scale-105 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
+            className="absolute right-1 sm:-right-6 top-1/2 z-20 flex h-9 w-9 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#225d9f] shadow-lg ring-1 ring-black/5 transition hover:-translate-y-1/2 hover:scale-105 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/35"
             aria-label="Next how it works step"
           >
-            <svg className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path
+                fillRule="evenodd"
+                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                clipRule="evenodd"
+              />
             </svg>
           </button>
 
-          <div className="mx-7 sm:mx-8 overflow-hidden rounded-[22px]">
+          <div className="pointer-events-none absolute left-9 right-5 -top-8 z-0 h-[315px] rounded-3xl bg-white/14 shadow-[0_10px_28px_rgba(8,34,88,0.12)] ring-1 ring-white/15 rotate-[3deg] sm:left-16 sm:right-8 sm:-top-10 sm:h-[335px] lg:h-[345px]" />
+          <div className="pointer-events-none absolute left-5 right-9 -top-3 z-0 h-[315px] rounded-3xl bg-white/10 shadow-[0_10px_28px_rgba(8,34,88,0.10)] ring-1 ring-white/10 rotate-[-5deg] sm:left-10 sm:right-16 sm:-top-5 sm:h-[335px] lg:h-[345px]" />
+
+          <div className="relative z-10 overflow-hidden rounded-3xl">
             <div
               className="flex transition-transform duration-500 ease-in-out"
               style={{ transform: `translateX(-${currentHowItWorksSlide * 100}%)` }}
             >
               {howItWorksSlides.map((slide) => (
-                <div key={slide.id} className="w-full shrink-0">
-                  <div className="min-h-[300px] sm:min-h-[360px] rounded-[22px] bg-white px-5 py-6 sm:px-7 sm:py-8 text-center text-[#173253] shadow-[0_18px_45px_rgba(5,27,65,0.22)] ring-1 ring-white/70 flex flex-col items-center justify-center">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eaf3ff] ring-1 ring-[#cfe1f7]">
+                <div key={slide.id} className="w-full shrink-0 px-1">
+                  <div className="h-[315px] sm:h-[335px] lg:h-[345px] overflow-hidden rounded-3xl bg-white px-5 sm:px-7 py-4 sm:py-5 text-center text-[#10233f] shadow-[0_12px_35px_rgba(8,34,88,0.18)] ring-1 ring-white/70 flex flex-col items-center justify-center">
+                    <div className="mb-2 sm:mb-3 flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-[#edf5ff] ring-4 sm:ring-6 ring-[#f4f8fd]">
                       {renderHowItWorksIcon(slide.icon)}
                     </div>
 
-                    <div className="mt-4 inline-flex min-w-9 h-9 items-center justify-center rounded-full bg-gradient-to-br from-[#2e7df5] to-[#10439a] px-3 text-base font-extrabold text-white shadow-lg">
-                      {slide.id}
-                    </div>
+                    <h4 className="text-sm sm:text-lg font-extrabold leading-snug text-[#0f2442] break-words">{slide.title}</h4>
 
-                    <h4 className="mt-4 text-base sm:text-xl font-extrabold leading-tight text-[#0f2d5f]">
-                      {slide.title}
-                    </h4>
-
-                    <div className="mt-3 space-y-1 text-xs sm:text-sm font-medium leading-relaxed text-[#31415a]">
-                      {(Array.isArray(slide.description) ? slide.description : [slide.description]).map((line) => (
+                    <div className="mt-2 sm:mt-3 space-y-0.5 text-[11px] sm:text-[14px] font-medium leading-relaxed text-[#31415a] break-words">
+                      {slide.description.map((line) => (
                         <p key={`${slide.id}-${line}`}>{line}</p>
                       ))}
                     </div>
 
                     {slide.checklist ? (
-                      <div className="mt-4 w-full max-w-[390px] space-y-2 text-left">
+                      <div className="mt-2 sm:mt-3 w-full max-w-[360px] space-y-1.5 sm:space-y-2 text-left">
                         {slide.checklist.map((item) => (
-                          <div key={item} className="flex items-start gap-3 text-xs sm:text-sm font-semibold text-[#173253]">
+                          <div key={item} className="flex items-start gap-2 sm:gap-3 text-[11px] sm:text-[15px] font-semibold text-[#173253] break-words">
                             <span className="mt-0.5 text-[#1f67b7]">✓</span>
                             <span>{item}</span>
                           </div>
@@ -914,11 +955,7 @@ const EmployerRegisterPage = () => {
                       </div>
                     ) : null}
 
-                    {slide.footer ? (
-                      <p className="mt-4 text-xs sm:text-sm font-semibold leading-relaxed text-[#173253]">
-                        {slide.footer}
-                      </p>
-                    ) : null}
+                    {slide.footer ? <p className="mt-2 sm:mt-3 text-[11px] sm:text-[14px] font-semibold leading-relaxed text-[#173253] break-words">{slide.footer}</p> : null}
                   </div>
                 </div>
               ))}
@@ -926,27 +963,24 @@ const EmployerRegisterPage = () => {
           </div>
         </div>
 
-        <div className="mt-4 flex items-center justify-center gap-2" aria-label="How it Works slide indicators">
+        <div className="mt-3 sm:mt-4 flex items-center justify-center gap-2 sm:gap-3" aria-label="How it Works slide indicators">
           {howItWorksSlides.map((slide, index) => (
             <button
               key={slide.id}
               type="button"
               onClick={() => goToHowItWorksSlide(index)}
-              className={`h-2.5 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25 ${
-                currentHowItWorksSlide === index ? 'w-8 bg-white' : 'w-2.5 bg-white/40 hover:bg-white/70'
+              className={`h-2.5 w-2.5 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/25 ${
+                currentHowItWorksSlide === index ? 'bg-white' : 'bg-white/40 hover:bg-white/70'
               }`}
               aria-label={`Go to how it works step ${slide.id}`}
               aria-current={currentHowItWorksSlide === index ? 'step' : undefined}
             />
           ))}
         </div>
-
-        <p className="mt-3 text-center text-xs sm:text-sm font-bold text-white/90">
-          {currentHowItWorksSlide + 1} of {totalHowItWorksSlides}
-        </p>
       </div>
     </section>
   );
+
 
   const ThankYouModal = () => {
     if (!showThanksModal) return null;
@@ -1032,12 +1066,32 @@ const EmployerRegisterPage = () => {
               </button>
 
               <div className="h-full w-full flex flex-col justify-center">
-                <div className="w-full max-w-[500px] mx-auto">
-                  <HowItWorksCarousel />
+                <div className="w-full max-w-[520px] mx-auto relative lg:mt-10">
+                  <div className="pointer-events-none absolute inset-0 z-0">
+                    <div
+                      className="
+        absolute
+        w-[70px]
+        h-[70px]
+        rounded-full
+        blur-[35px]
+        top-[15%]
+        right-[15%]
+        opacity-70
+      "
+                      style={{
+                        background:
+                          'radial-gradient(circle, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.18) 45%, transparent 75%)',
+                      }}
+                    />
+                  </div>
+
+                  <div className="relative z-10">
+                    <HowItWorksCarousel />
+                  </div>
                 </div>
               </div>
             </div>
-
             <div className="hidden lg:flex items-center justify-center" aria-hidden="true">
               <div className="w-px h-[85%] bg-gradient-to-b from-transparent via-gray-200 to-transparent" />
             </div>
