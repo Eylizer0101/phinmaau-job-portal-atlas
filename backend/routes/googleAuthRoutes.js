@@ -4,6 +4,8 @@ const {
   GOOGLE_CALENDAR_SCOPE,
   createGoogleOAuthClient,
 } = require('../config/googleCalendar');
+const User = require('../models/User');
+const { protect, authorize } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
@@ -17,11 +19,15 @@ const secureEqual = (leftValue, rightValue) => {
   return crypto.timingSafeEqual(left, right);
 };
 
-const createSignedState = (secret) => {
+const getStateSecret = () =>
+  String(process.env.GOOGLE_OAUTH_STATE_SECRET || process.env.JWT_SECRET || getSetupKey()).trim();
+
+const createSignedState = (secret, extraPayload = {}) => {
   const payload = Buffer.from(
     JSON.stringify({
       nonce: crypto.randomBytes(16).toString('hex'),
       expiresAt: Date.now() + 10 * 60 * 1000,
+      ...extraPayload,
     })
   ).toString('base64url');
 
@@ -33,24 +39,27 @@ const createSignedState = (secret) => {
   return `${payload}.${signature}`;
 };
 
-const verifySignedState = (state, secret) => {
+const verifyAndDecodeSignedState = (state, secret) => {
   const [payload, suppliedSignature] = String(state || '').split('.');
-  if (!payload || !suppliedSignature) return false;
+  if (!payload || !suppliedSignature) return null;
 
   const expectedSignature = crypto
     .createHmac('sha256', secret)
     .update(payload)
     .digest('base64url');
 
-  if (!secureEqual(suppliedSignature, expectedSignature)) return false;
+  if (!secureEqual(suppliedSignature, expectedSignature)) return null;
 
   try {
     const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
-    return Number(decoded?.expiresAt || 0) > Date.now();
+    return Number(decoded?.expiresAt || 0) > Date.now() ? decoded : null;
   } catch {
-    return false;
+    return null;
   }
 };
+
+const verifySignedState = (state, secret) =>
+  Boolean(verifyAndDecodeSignedState(state, secret));
 
 const escapeHtml = (value) =>
   String(value || '')
@@ -80,6 +89,56 @@ const sendHtml = (res, statusCode, title, bodyHtml) => {
 </body>
 </html>`);
 };
+
+
+// Returns a Google authorization URL for the currently logged-in employer.
+// The employer must approve using the Google account that should own/host the Meet.
+router.get(
+  '/employer/connect-url',
+  protect,
+  authorize('employer'),
+  async (req, res) => {
+    try {
+      const stateSecret = getStateSecret();
+
+      if (!stateSecret) {
+        return res.status(503).json({
+          success: false,
+          message: 'Google OAuth state secret is not configured.',
+        });
+      }
+
+      const oauth2Client = createGoogleOAuthClient({
+        requireRefreshToken: false,
+      });
+
+      const state = createSignedState(stateSecret, {
+        flow: 'employer-calendar',
+        userId: req.user._id.toString(),
+      });
+
+      const authorizationUrl = oauth2Client.generateAuthUrl({
+        access_type: 'offline',
+        prompt: 'consent select_account',
+        include_granted_scopes: true,
+        scope: [GOOGLE_CALENDAR_SCOPE, 'openid', 'email'],
+        state,
+        login_hint: String(req.user.email || '').trim() || undefined,
+      });
+
+      return res.json({
+        success: true,
+        authorizationUrl,
+      });
+    } catch (error) {
+      console.error('Employer Google OAuth connect URL error:', error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Unable to start Google Calendar connection.',
+      });
+    }
+  }
+);
 
 router.get('/connect', (req, res) => {
   try {
@@ -130,6 +189,97 @@ router.get('/connect', (req, res) => {
 
 router.get('/callback', async (req, res) => {
   try {
+    const stateSecret = getStateSecret();
+    const decodedState = stateSecret
+      ? verifyAndDecodeSignedState(req.query.state, stateSecret)
+      : null;
+
+    if (decodedState?.flow === 'employer-calendar') {
+      if (req.query.error) {
+        return sendHtml(
+          res,
+          400,
+          'Google authorization was not completed',
+          `<p>Google returned: <code>${escapeHtml(req.query.error)}</code></p>`
+        );
+      }
+
+      const authorizationCode = String(req.query.code || '').trim();
+      if (!authorizationCode) {
+        return sendHtml(
+          res,
+          400,
+          'Missing authorization code',
+          '<p>Google did not return an authorization code.</p>'
+        );
+      }
+
+      const employer = await User.findOne({
+        _id: decodedState.userId,
+        role: 'employer',
+      }).select('+googleCalendarAuth.refreshToken');
+
+      if (!employer) {
+        return sendHtml(
+          res,
+          404,
+          'Employer account not found',
+          '<p>The employer account connected to this request no longer exists.</p>'
+        );
+      }
+
+      const oauth2Client = createGoogleOAuthClient({
+        requireRefreshToken: false,
+      });
+      const { tokens } = await oauth2Client.getToken(authorizationCode);
+      oauth2Client.setCredentials(tokens);
+
+      let googleEmail = '';
+      try {
+        const oauth2 = require('googleapis').google.oauth2({
+          version: 'v2',
+          auth: oauth2Client,
+        });
+        const profileResponse = await oauth2.userinfo.get();
+        googleEmail = String(profileResponse.data?.email || '').trim().toLowerCase();
+      } catch (profileError) {
+        console.warn('Unable to read connected Google email:', profileError.message);
+      }
+
+      const refreshToken =
+        String(tokens?.refresh_token || '').trim() ||
+        String(employer.googleCalendarAuth?.refreshToken || '').trim();
+
+      if (!refreshToken) {
+        return sendHtml(
+          res,
+          400,
+          'No refresh token was returned',
+          '<p>Remove the app access from your Google Account, then connect again and approve Calendar access.</p>'
+        );
+      }
+
+      employer.googleCalendarAuth = {
+        refreshToken,
+        googleEmail,
+        connectedAt: new Date(),
+      };
+      await employer.save();
+
+      const frontendUrl = String(
+        process.env.FRONTEND_URL ||
+        process.env.APP_URL ||
+        'http://localhost:3000'
+      )
+        .split(',')[0]
+        .trim()
+        .replace(/\/$/, '');
+
+      return res.redirect(
+        `${frontendUrl}/employer/for-interview?googleCalendar=connected`
+      );
+    }
+
     const setupKey = getSetupKey();
 
     if (!setupKey) {

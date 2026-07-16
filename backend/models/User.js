@@ -317,6 +317,14 @@ const userSchema = new mongoose.Schema(
 
     isVerified: { type: Boolean, default: false },
 
+    // Google Calendar connection used when this employer creates interview meetings.
+    // select:false prevents the refresh token from being returned in normal user queries.
+    googleCalendarAuth: {
+      refreshToken: { type: String, default: '', select: false },
+      googleEmail: { type: String, default: '', lowercase: true, trim: true },
+      connectedAt: { type: Date, default: null },
+    },
+
     // ✅ NEW: force password change flag
     mustChangePassword: { type: Boolean, default: false },
 

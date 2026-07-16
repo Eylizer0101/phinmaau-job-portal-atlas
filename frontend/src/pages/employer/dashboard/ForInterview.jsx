@@ -1042,6 +1042,7 @@ const ForInterview = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [savingSchedule, setSavingSchedule] = useState(false);
+  const [connectingGoogleCalendar, setConnectingGoogleCalendar] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
 
   const [declineModalOpen, setDeclineModalOpen] = useState(false);
@@ -1367,6 +1368,30 @@ const ForInterview = () => {
     setSelectedApplication(null);
   };
 
+  const connectEmployerGoogleCalendar = async () => {
+    try {
+      setConnectingGoogleCalendar(true);
+      setError('');
+
+      const response = await api.get('/auth/google/employer/connect-url');
+      const authorizationUrl = String(response.data?.authorizationUrl || '').trim();
+
+      if (!authorizationUrl) {
+        throw new Error('Google authorization URL was not returned.');
+      }
+
+      window.location.assign(authorizationUrl);
+    } catch (connectError) {
+      console.error(connectError);
+      setError(
+        connectError?.response?.data?.message ||
+        connectError?.message ||
+        'Unable to connect Google Calendar.'
+      );
+      setConnectingGoogleCalendar(false);
+    }
+  };
+
   const handleScheduleSubmit = async (payload) => {
     try {
       setSavingSchedule(true);
@@ -1395,6 +1420,23 @@ const ForInterview = () => {
       }
     } catch (err) {
       console.error(err);
+
+      const errorCode = err?.response?.data?.code;
+      const needsGoogleConnection =
+        errorCode === 'GOOGLE_CALENDAR_NOT_CONNECTED' ||
+        errorCode === 'GOOGLE_CALENDAR_RECONNECT_REQUIRED';
+
+      if (needsGoogleConnection) {
+        const shouldConnect = window.confirm(
+          `${err?.response?.data?.message || 'Connect your employer Google account to continue.'}\n\nConnect Google Calendar now?`
+        );
+
+        if (shouldConnect) {
+          await connectEmployerGoogleCalendar();
+          return;
+        }
+      }
+
       setError(err?.response?.data?.message || 'Failed to save interview schedule.');
     } finally {
       setSavingSchedule(false);
@@ -1415,6 +1457,11 @@ const selectBase =
           <p className="mt-1 text-sm text-gray-600">
             Applicants selected and scheduled for interview
           </p>
+          {connectingGoogleCalendar ? (
+            <p className="mt-2 text-sm font-medium text-[#2e66a6]">
+              Redirecting to Google Calendar connection...
+            </p>
+          ) : null}
         </div>
 
         {error && (

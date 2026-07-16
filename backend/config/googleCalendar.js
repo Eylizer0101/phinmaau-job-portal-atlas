@@ -26,8 +26,13 @@ const getGoogleOAuthConfig = ({ requireRefreshToken = true } = {}) => {
   return config;
 };
 
-const createGoogleOAuthClient = ({ requireRefreshToken = true } = {}) => {
-  const config = getGoogleOAuthConfig({ requireRefreshToken });
+const createGoogleOAuthClient = ({
+  requireRefreshToken = true,
+  refreshToken = '',
+} = {}) => {
+  const config = getGoogleOAuthConfig({
+    requireRefreshToken: requireRefreshToken && !String(refreshToken || '').trim(),
+  });
 
   const oauth2Client = new google.auth.OAuth2(
     config.clientId,
@@ -35,9 +40,12 @@ const createGoogleOAuthClient = ({ requireRefreshToken = true } = {}) => {
     config.redirectUri
   );
 
-  if (config.refreshToken) {
+  const finalRefreshToken =
+    String(refreshToken || '').trim() || String(config.refreshToken || '').trim();
+
+  if (finalRefreshToken) {
     oauth2Client.setCredentials({
-      refresh_token: config.refreshToken,
+      refresh_token: finalRefreshToken,
     });
   }
 
@@ -97,9 +105,17 @@ const createCalendarEvent = async ({
   startTime,
   endTime,
   attendeeEmail,
+  organizerRefreshToken = '',
+  calendarId = 'primary',
 }) => {
-  const config = getGoogleOAuthConfig();
-  const auth = createGoogleOAuthClient();
+  const config = getGoogleOAuthConfig({
+    requireRefreshToken: !String(organizerRefreshToken || '').trim(),
+  });
+  const auth = createGoogleOAuthClient({
+    refreshToken: organizerRefreshToken,
+  });
+  const targetCalendarId =
+    String(calendarId || '').trim() || config.calendarId || 'primary';
 
   const calendar = google.calendar({
     version: 'v3',
@@ -109,7 +125,7 @@ const createCalendarEvent = async ({
   const requestId = `agapay-${crypto.randomUUID()}`;
 
   const eventResponse = await calendar.events.insert({
-    calendarId: config.calendarId,
+    calendarId: targetCalendarId,
     conferenceDataVersion: 1,
     sendUpdates: attendeeEmail ? 'all' : 'none',
     requestBody: {
@@ -151,7 +167,7 @@ const createCalendarEvent = async ({
 
   const completedConference = await waitForGoogleMeetLink({
     calendar,
-    calendarId: config.calendarId,
+    calendarId: targetCalendarId,
     eventId: eventResponse.data.id,
   });
 

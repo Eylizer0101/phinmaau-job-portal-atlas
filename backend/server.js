@@ -282,7 +282,9 @@ app.get('/', (req, res) => {
 });
 
 // Google Calendar OAuth setup routes
-app.use('/auth/google', require('./routes/googleAuthRoutes'));
+const googleAuthRoutes = require('./routes/googleAuthRoutes');
+app.use('/auth/google', googleAuthRoutes);
+app.use('/api/auth/google', googleAuthRoutes);
 
 // API Routes
 app.use('/api/auth', require('./routes/authRoutes'));

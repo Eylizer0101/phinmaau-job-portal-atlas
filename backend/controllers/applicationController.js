@@ -1561,7 +1561,7 @@ exports.updateInterviewSchedule = async (req, res) => {
     const finalInterviewerId = interviewerId || req.user._id;
 
     const interviewer = await User.findById(finalInterviewerId).select(
-      'firstName middleName lastName email role'
+      'firstName middleName lastName email role googleCalendarAuth.googleEmail googleCalendarAuth.connectedAt +googleCalendarAuth.refreshToken'
     );
 
     if (!interviewer) {
@@ -1589,6 +1589,19 @@ exports.updateInterviewSchedule = async (req, res) => {
     let generatedMeetingLink = '';
 
     if (normalizedMeetingType === 'Video Call') {
+      const employerRefreshToken = String(
+        interviewer.googleCalendarAuth?.refreshToken || ''
+      ).trim();
+
+      if (!employerRefreshToken) {
+        return res.status(428).json({
+          success: false,
+          code: 'GOOGLE_CALENDAR_NOT_CONNECTED',
+          message:
+            'Connect your employer Google account first. That Google account will become the meeting organizer, while the jobseeker will join as an attendee.',
+        });
+      }
+
       try {
         const calendarEvent = await createCalendarEvent({
           summary: `AGAPAY Interview - ${application?.job?.title || 'Applicant'}`,
@@ -1596,6 +1609,8 @@ exports.updateInterviewSchedule = async (req, res) => {
           startTime: parsedScheduledAt,
           endTime: new Date(parsedScheduledAt.getTime() + 60 * 60 * 1000),
           attendeeEmail: application.jobseeker.email,
+          organizerRefreshToken: employerRefreshToken,
+          calendarId: 'primary',
         });
 
         generatedMeetingLink = String(calendarEvent?.meetingLink || '').trim();
@@ -1609,9 +1624,15 @@ exports.updateInterviewSchedule = async (req, res) => {
       } catch (calendarError) {
         console.error('Google Calendar Error:', calendarError);
 
-        return res.status(502).json({
+        const errorStatus = Number(calendarError?.response?.status || 0);
+        const needsReconnect = errorStatus === 400 || errorStatus === 401;
+
+        return res.status(needsReconnect ? 428 : 502).json({
           success: false,
-          message: 'Unable to generate the Google Meet link. Please check the Google Calendar configuration and try again.'
+          code: needsReconnect ? 'GOOGLE_CALENDAR_RECONNECT_REQUIRED' : 'GOOGLE_CALENDAR_ERROR',
+          message: needsReconnect
+            ? 'Your Google Calendar connection expired or was removed. Please connect it again.'
+            : 'Unable to generate the Google Meet link. Please check the Google Calendar configuration and try again.'
         });
       }
     }
