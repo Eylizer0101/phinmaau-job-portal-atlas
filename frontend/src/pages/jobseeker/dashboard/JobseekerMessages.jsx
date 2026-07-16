@@ -25,6 +25,11 @@ import {
   faEye,
   faInfoCircle,
   faUser,
+  faEllipsisVertical,
+  faArchive,
+  faTrash,
+  faEyeSlash,
+  faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import JobSeekerLayout from '../../../layouts/JobSeekerLayout';
 
@@ -157,6 +162,13 @@ const JobseekerMessages = () => {
   const [showSidebar, setShowSidebar] = useState(true);
 
   const [logoError, setLogoError] = useState({});
+  const [activeTab, setActiveTab] = useState('all');
+  const [topMenuOpen, setTopMenuOpen] = useState(false);
+  const [itemMenuId, setItemMenuId] = useState(null);
+  const [selectionMode, setSelectionMode] = useState(null);
+  const [selectedConversationIds, setSelectedConversationIds] = useState([]);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -477,9 +489,10 @@ const JobseekerMessages = () => {
   // ---------- Derived ----------
   const filteredConversations = useMemo(() => {
     const q = convSearch.trim().toLowerCase();
-    if (!q) return conversations;
-
     return conversations.filter((conv) => {
+      if (activeTab === 'unread' && Number(conv.unreadCount || 0) <= 0) return false;
+      if (!q) return true;
+
       const company =
         conv.otherUser?.employerProfile?.companyName?.toLowerCase() ||
         conv.otherUser?.companyName?.toLowerCase() ||
@@ -488,7 +501,7 @@ const JobseekerMessages = () => {
       const last = conv.lastMessage?.content?.toLowerCase() || '';
       return company.includes(q) || name.includes(q) || last.includes(q);
     });
-  }, [conversations, convSearch]);
+  }, [conversations, convSearch, activeTab]);
 
   const selectedHeaderTitle = useMemo(() => {
     if (!selectedConversation) return '';
@@ -519,6 +532,56 @@ const JobseekerMessages = () => {
   const handleSelectConversation = (conv) => {
     setSelectedConversation(conv);
     setShowSidebar(false);
+  };
+
+  const toggleConversationSelection = (conversationId) => {
+    setSelectedConversationIds((prev) =>
+      prev.includes(conversationId)
+        ? prev.filter((id) => id !== conversationId)
+        : [...prev, conversationId]
+    );
+  };
+
+  const beginSelectionMode = (mode) => {
+    setSelectionMode(mode);
+    setSelectedConversationIds([]);
+    setTopMenuOpen(false);
+    setItemMenuId(null);
+  };
+
+  const cancelSelectionMode = () => {
+    setSelectionMode(null);
+    setSelectedConversationIds([]);
+  };
+
+  const runConversationAction = async (action, conversationIds) => {
+    if (!conversationIds?.length) return;
+    try {
+      setActionLoading(true);
+      const token = getToken();
+      await axios.patch(
+        `${API_BASE_URL}/messages/conversations/action`,
+        { action, conversationIds },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (conversationIds.includes(selectedConversation?._id)) {
+        setSelectedConversation(null);
+        setMessages([]);
+      }
+      await fetchConversations();
+      cancelSelectionMode();
+      setItemMenuId(null);
+    } catch (error) {
+      console.error(`Error performing ${action}:`, error);
+      alert(error.response?.data?.message || `Failed to ${action} conversation.`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCompanyHeaderClick = () => {
+    const companyId = selectedConversation?.otherUser?._id;
+    if (companyId) navigate(`/jobseeker/company-details/${companyId}`);
   };
 
   const handleFileSelect = (e) => {
@@ -764,6 +827,77 @@ const JobseekerMessages = () => {
                       aria-label="Search conversations"
                     />
                   </div>
+
+                  <div className="mt-3 flex items-center gap-1.5">
+                    {[
+                      { key: 'all', label: 'All' },
+                      { key: 'unread', label: 'Unread' },
+                    ].map((tab) => (
+                      <button
+                        key={tab.key}
+                        type="button"
+                        onClick={() => setActiveTab(tab.key)}
+                        className={`rounded-full px-3 py-2 text-sm font-semibold transition ${
+                          activeTab === tab.key
+                            ? 'bg-[#eaf3ff] text-[#2e66a6]'
+                            : 'text-black/65 hover:bg-[#f7faff]'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() => navigate('/jobseeker/community')}
+                      className="rounded-full px-3 py-2 text-sm font-semibold text-black/65 transition hover:bg-[#f7faff]"
+                    >
+                      Community
+                    </button>
+
+                    <div className="relative ml-auto">
+                      <button
+                        type="button"
+                        onClick={() => setTopMenuOpen((open) => !open)}
+                        className={`h-9 w-9 rounded-full text-black/65 hover:bg-[#f7faff] ${UI.ring}`}
+                        aria-label="Conversation actions"
+                      >
+                        <FontAwesomeIcon icon={faEllipsisVertical} />
+                      </button>
+
+                      {topMenuOpen && (
+                        <div className="absolute right-0 top-11 z-30 w-48 rounded-xl border border-[#e6edf5] bg-white p-1.5 shadow-xl">
+                          <button type="button" onClick={() => beginSelectionMode('archive')} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-[#f7faff]">
+                            <FontAwesomeIcon icon={faArchive} className="w-4" /> Archive Chats
+                          </button>
+                          <button type="button" onClick={() => beginSelectionMode('hide')} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-[#f7faff]">
+                            <FontAwesomeIcon icon={faEyeSlash} className="w-4" /> Hide Companies
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {selectionMode && (
+                    <div className="mt-3 flex items-center justify-between rounded-xl bg-[#f7faff] px-3 py-2">
+                      <span className="text-xs font-semibold text-[#2e66a6]">
+                        {selectedConversationIds.length} selected
+                      </span>
+                      <div className="flex gap-2">
+                        <button type="button" onClick={cancelSelectionMode} className="text-xs font-semibold text-black/60">
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!selectedConversationIds.length || actionLoading}
+                          onClick={() => runConversationAction(selectionMode, selectedConversationIds)}
+                          className="rounded-lg bg-[#2e66a6] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                        >
+                          {selectionMode === 'archive' ? 'Archive' : 'Hide'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-3">
@@ -787,16 +921,33 @@ const JobseekerMessages = () => {
                         const last = conv.lastMessage?.content || 'No messages yet';
 
                         return (
-                          <button
+                          <div
                             key={conv._id}
-                            type="button"
-                            onClick={() => handleSelectConversation(conv)}
-                            className={['w-full text-left', UI.convItem, active ? UI.convActive : '', UI.ring].join(' ')}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => selectionMode ? toggleConversationSelection(conv._id) : handleSelectConversation(conv)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                selectionMode ? toggleConversationSelection(conv._id) : handleSelectConversation(conv);
+                              }
+                            }}
+                            className={['group w-full text-left', UI.convItem, active ? UI.convActive : '', UI.ring].join(' ')}
                             aria-current={active ? 'page' : undefined}
                           >
                             {active && <span className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-[#2e66a6]" />}
 
                             <div className="flex items-start gap-3">
+                              {selectionMode && (
+                                <input
+                                  type="checkbox"
+                                  checked={selectedConversationIds.includes(conv._id)}
+                                  onChange={() => toggleConversationSelection(conv._id)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="mt-3 h-4 w-4 accent-[#2e66a6]"
+                                  aria-label={`Select ${title}`}
+                                />
+                              )}
                               {renderCompanyLogo(conv.otherUser, 'h-10 w-10', 'text-sm')}
 
                               <div className="min-w-0 flex-1">
@@ -812,7 +963,32 @@ const JobseekerMessages = () => {
                                     )}
                                   </div>
 
-                                  <span className={`text-xs ${UI.textMuted} flex-shrink-0`}>{time}</span>
+                                  <div className="relative flex flex-shrink-0 items-center gap-1">
+                                    <span className={`text-xs ${UI.textMuted} group-hover:hidden`}>{time}</span>
+                                    {!selectionMode && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setItemMenuId((id) => id === conv._id ? null : conv._id);
+                                        }}
+                                        className={`hidden h-8 w-8 rounded-full hover:bg-white group-hover:inline-flex items-center justify-center ${UI.ring}`}
+                                        aria-label="Chat options"
+                                      >
+                                        <FontAwesomeIcon icon={faEllipsisVertical} />
+                                      </button>
+                                    )}
+                                    {itemMenuId === conv._id && (
+                                      <div className="absolute right-0 top-9 z-40 w-40 rounded-xl border border-[#e6edf5] bg-white p-1.5 shadow-xl">
+                                        <button type="button" onClick={(e) => { e.stopPropagation(); runConversationAction('archive', [conv._id]); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-[#f7faff]">
+                                          <FontAwesomeIcon icon={faArchive} /> Archive
+                                        </button>
+                                        <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteTarget(conv); setItemMenuId(null); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50">
+                                          <FontAwesomeIcon icon={faTrash} /> Delete Chat
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
 
                                 <p className={`text-sm ${UI.textSecondary} truncate mt-1`} title={last}>
@@ -824,7 +1000,7 @@ const JobseekerMessages = () => {
                                 )}
                               </div>
                             </div>
-                          </button>
+                          </div>
                         );
                       })}
                     </div>
@@ -858,16 +1034,23 @@ const JobseekerMessages = () => {
                           <FontAwesomeIcon icon={faArrowLeft} />
                         </button>
 
-                        {renderCompanyLogo(selectedConversation.otherUser, 'h-10 w-10', 'text-sm')}
+                        <button
+                          type="button"
+                          onClick={handleCompanyHeaderClick}
+                          className={`flex min-w-0 items-center gap-3 rounded-xl px-2 py-1 text-left hover:bg-[#f7faff] ${UI.ring}`}
+                          title="View company details"
+                        >
+                          {renderCompanyLogo(selectedConversation.otherUser, 'h-10 w-10', 'text-sm')}
 
-                        <div className="min-w-0">
-                          <p className={`font-bold ${UI.textPrimary} truncate`} title={selectedHeaderTitle}>
-                            {selectedHeaderTitle}
-                          </p>
-                          <p className={`text-sm ${UI.textSecondary} truncate`} title={selectedHeaderSub}>
-                            {selectedHeaderSub}
-                          </p>
-                        </div>
+                          <span className="min-w-0">
+                            <span className={`block font-bold ${UI.textPrimary} truncate`} title={selectedHeaderTitle}>
+                              {selectedHeaderTitle}
+                            </span>
+                            <span className={`block text-sm ${UI.textSecondary} truncate`} title={selectedHeaderSub}>
+                              {selectedHeaderSub}
+                            </span>
+                          </span>
+                        </button>
                       </div>
                     </div>
 
@@ -1164,6 +1347,40 @@ const JobseekerMessages = () => {
           </div>
         </div>
       </div>
+      {deleteTarget && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-black">Delete this chat?</h2>
+                <p className="mt-2 text-sm leading-6 text-black/60">
+                  Are you sure you want to delete this conversation?
+                </p>
+              </div>
+              <button type="button" onClick={() => setDeleteTarget(null)} className="h-9 w-9 rounded-full hover:bg-[#f7faff]" aria-label="Close">
+                <FontAwesomeIcon icon={faXmark} />
+              </button>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" onClick={() => setDeleteTarget(null)} className="rounded-xl border border-[#d8e2ee] px-4 py-2 text-sm font-semibold hover:bg-[#f7faff]">
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={async () => {
+                  const id = deleteTarget._id;
+                  setDeleteTarget(null);
+                  await runConversationAction('delete', [id]);
+                }}
+                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </JobSeekerLayout>
   );
 };

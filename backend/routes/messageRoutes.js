@@ -11,7 +11,8 @@ const {
   getEmployersForJobseeker,
   scheduleInterview,
   uploadFile,
-  getFile
+  getFile,
+  updateConversationAction
 } = require('../controllers/messageController');
 
 const multer = require('multer');
@@ -46,6 +47,7 @@ router.post('/send', upload.single('file'), sendMessage); // ✅ FIXED
 router.post('/upload', upload.single('file'), uploadFile);
 router.get('/file/:filename', getFile);
 router.get('/conversations', getConversations);
+router.patch('/conversations/action', updateConversationAction);
 router.get('/conversation/:conversationId', getMessages);
 router.get('/unread-count', getUnreadCount);
 router.put('/mark-read/:conversationId', markAsRead);

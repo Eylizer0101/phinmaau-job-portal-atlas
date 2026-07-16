@@ -35,6 +35,7 @@ import ResumePreviewPage from './pages/jobseeker/dashboard/ResumePreviewPage';
 import JobDetails from './pages/jobseeker/dashboard/JobDetails';
 import CompanyViewDetails from './pages/jobseeker/dashboard/CompanyViewDetails';
 import JobseekerMessages from './pages/jobseeker/dashboard/JobseekerMessages';
+import CommunityPage from './pages/jobseeker/dashboard/CommunityPage';
 import MyApplications from './pages/jobseeker/dashboard/MyApplications';
 import NotificationsPage from './pages/jobseeker/dashboard/NotificationsPage';
 import JobSeekerSettings from './pages/jobseeker/dashboard/Settings';
@@ -260,6 +261,16 @@ function App() {
             <RequireRole role="jobseeker" redirectTo="/login">
               <JobSeekerLayout>
                 <JobseekerMessages />
+              </JobSeekerLayout>
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/jobseeker/community"
+          element={
+            <RequireRole role="jobseeker" redirectTo="/login">
+              <JobSeekerLayout>
+                <CommunityPage />
               </JobSeekerLayout>
             </RequireRole>
           }

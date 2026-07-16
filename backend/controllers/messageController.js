@@ -2,6 +2,7 @@ const Message = require('../models/Message');
 const User = require('../models/User');
 const Job = require('../models/Job');
 const Application = require('../models/Application');
+const ConversationPreference = require('../models/ConversationPreference');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -536,10 +537,21 @@ exports.getConversations = async (req, res) => {
       }
     ]);
 
+    const preferences = await ConversationPreference.find({
+      user: userId,
+      conversationId: { $in: conversations.map((conversation) => conversation._id) },
+    }).lean();
+
+    const preferenceMap = new Map(preferences.map((preference) => [preference.conversationId, preference]));
+    const visibleConversations = conversations.filter((conversation) => {
+      const preference = preferenceMap.get(conversation._id);
+      return !preference?.archived && !preference?.hiddenCompany && !preference?.deleted;
+    });
+
     res.status(200).json({
       success: true,
-      count: conversations.length,
-      data: conversations
+      count: visibleConversations.length,
+      data: visibleConversations
     });
 
   } catch (error) {
@@ -1037,5 +1049,47 @@ exports.getInterviewsCount = async (req, res) => {
       success: false,
       message: 'Error fetching interviews count'
     });
+  }
+};
+
+// Archive, hide, or delete one or more conversations for the current user.
+exports.updateConversationAction = async (req, res) => {
+  try {
+    const action = String(req.body.action || '').toLowerCase();
+    const conversationIds = Array.isArray(req.body.conversationIds)
+      ? [...new Set(req.body.conversationIds.map((id) => String(id).trim()).filter(Boolean))]
+      : [];
+
+    if (!['archive', 'hide', 'delete'].includes(action)) {
+      return res.status(400).json({ success: false, message: 'Invalid conversation action' });
+    }
+    if (!conversationIds.length) {
+      return res.status(400).json({ success: false, message: 'Select at least one conversation' });
+    }
+
+    const userId = req.user._id;
+    for (const conversationId of conversationIds) {
+      const participants = conversationId.split('_');
+      if (!participants.includes(userId.toString())) {
+        return res.status(403).json({ success: false, message: 'Not authorized for one or more conversations' });
+      }
+
+      const otherUserId = participants.find((id) => id !== userId.toString()) || null;
+      const update = { otherUser: otherUserId };
+      if (action === 'archive') update.archived = true;
+      if (action === 'hide') update.hiddenCompany = true;
+      if (action === 'delete') update.deleted = true;
+
+      await ConversationPreference.findOneAndUpdate(
+        { user: userId, conversationId },
+        { $set: update },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    }
+
+    res.json({ success: true, message: `Conversation action '${action}' completed` });
+  } catch (error) {
+    console.error('Error updating conversation action:', error);
+    res.status(500).json({ success: false, message: 'Error updating conversations' });
   }
 };
