@@ -778,7 +778,7 @@ const JobseekerVerification = () => {
         <Card className="relative z-20 mb-6 overflow-visible" padding={false}>
           <div className="p-5">
             <div className="grid grid-cols-1 gap-3 xl:grid-cols-12 xl:items-center">
-              <div className="xl:col-span-4">
+              <div className="xl:col-span-3">
                 <div className="relative">
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                   <Icon name="search" className="h-5 w-5" />
@@ -853,7 +853,7 @@ const JobseekerVerification = () => {
                 </select>
               </div>
 
-              <div className="xl:col-span-1">
+              <div className="xl:col-span-2">
                 <DateFilterDropdown
                   value={filters.date}
                   startDate={filters.dateFrom}

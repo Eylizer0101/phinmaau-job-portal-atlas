@@ -567,7 +567,7 @@ const AdminJobOffers = () => {
           </div>
 
           <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(220px,1.6fr)_repeat(4,minmax(120px,0.75fr))_minmax(150px,0.9fr)_auto] xl:items-end">
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(200px,1.35fr)_repeat(4,minmax(105px,0.65fr))_minmax(165px,0.95fr)_auto] xl:items-end">
               <label className="relative block">
                 <span className="sr-only">Search job offers</span>
                 <Icon name="search" className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
