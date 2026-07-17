@@ -186,6 +186,12 @@ const jobLocationImageStorage = createCloudinaryStorage({
   resourceType: 'image',
 });
 
+const communityImageStorage = createCloudinaryStorage({
+  folderResolver: () => 'community-posts',
+  publicIdResolver: (req, file) => createUniquePublicId(`${getOwnerId(req)}-community`, file),
+  resourceType: 'image',
+});
+
 const alumniVerificationStorage = createCloudinaryStorage({
   resourceType: 'raw',
   folderResolver: (req) => {
@@ -343,6 +349,12 @@ const uploadJobLocationImage = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
+const uploadCommunityImage = multer({
+  storage: communityImageStorage,
+  fileFilter: imageFileFilter,
+  limits: { fileSize: 8 * 1024 * 1024 },
+});
+
 const uploadAlumniVerification = multer({
   storage: alumniVerificationStorage,
   fileFilter: verificationFileFilter,
@@ -386,6 +398,7 @@ module.exports = {
   uploadLogo,
   uploadProfileImage,
   uploadJobLocationImage,
+  uploadCommunityImage,
   uploadAlumniVerification,
   uploadAlumniResubmit,
   uploadEmployerVerification,
