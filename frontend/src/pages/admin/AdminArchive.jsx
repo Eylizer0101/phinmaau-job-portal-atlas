@@ -370,9 +370,8 @@ const DateFilterDropdown = ({ value, dateFrom, dateTo, onChange }) => {
   };
 
   return (
-    <div className="relative w-full">
-      <span className="mb-1 block text-[11px] font-bold uppercase tracking-[0.14em] text-gray-500">Date</span>
-      <button
+    <div className="relative w-full min-w-[180px]">
+            <button
         type="button"
         onClick={(event) => {
           event.stopPropagation();
@@ -387,7 +386,7 @@ const DateFilterDropdown = ({ value, dateFrom, dateTo, onChange }) => {
       {open ? (
         <div
           onClick={(event) => event.stopPropagation()}
-          className="absolute left-0 top-[68px] z-50 w-64 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
+          className="absolute left-0 top-[48px] z-50 w-64 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
         >
           <div className="space-y-1">
             {DATE_FILTER_OPTIONS.map((option) => (

@@ -1410,7 +1410,7 @@ const UserManagement = () => {
 
         <div className="relative z-20 mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="p-5">
-            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] xl:items-start">
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(240px,1.55fr)_minmax(120px,0.7fr)_minmax(120px,0.7fr)_minmax(145px,0.85fr)_minmax(165px,0.95fr)_auto] xl:items-center">
               <div className="relative min-w-0">
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                   <Icon name="search" className="h-4 w-4" />
@@ -1439,68 +1439,64 @@ const UserManagement = () => {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
-                  disabled={loading}
-                  aria-label="Filter by verification status"
-                >
-                  <option value="all">All Status</option>
-                  <option value="unverified">Unverified</option>
-                  <option value="verified">Verified</option>
-                  <option value="onhold">On hold</option>
-                </select>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
+                disabled={loading}
+                aria-label="Filter by verification status"
+              >
+                <option value="all">All Status</option>
+                <option value="unverified">Unverified</option>
+                <option value="verified">Verified</option>
+                <option value="onhold">On hold</option>
+              </select>
 
-                <select
-                  value={roleFilter}
-                  onChange={(e) => setRoleFilter(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
-                  disabled={loading}
-                  aria-label="Filter by role"
-                >
-                  <option value="all">All Roles</option>
-                  <option value="jobseeker">Jobseeker</option>
-                  <option value="employer">Employer</option>
-                </select>
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
+                disabled={loading}
+                aria-label="Filter by role"
+              >
+                <option value="all">All Roles</option>
+                <option value="jobseeker">Jobseeker</option>
+                <option value="employer">Employer</option>
+              </select>
 
-                <select
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
-                  disabled={loading}
-                  aria-label="Sort users"
-                >
-                  <option value="newest">Sort By</option>
-                  <option value="newest">Most Recent Newest to Oldest</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="name_asc">A to Z</option>
-                  <option value="name_desc">Z to A</option>
-                </select>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+                className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
+                disabled={loading}
+                aria-label="Sort users"
+              >
+                <option value="newest">Sort By</option>
+                <option value="newest">Most Recent Newest to Oldest</option>
+                <option value="oldest">Oldest First</option>
+                <option value="name_asc">A to Z</option>
+                <option value="name_desc">Z to A</option>
+              </select>
 
-                <DateFilterDropdown
-                  value={dateFilter}
-                  startDate={dateFrom}
-                  endDate={dateTo}
-                  disabled={loading}
-                  onSelect={handleDateFilterChange}
-                />
-              </div>
-            </div>
+              <DateFilterDropdown
+                value={dateFilter}
+                startDate={dateFrom}
+                endDate={dateTo}
+                disabled={loading}
+                onSelect={handleDateFilterChange}
+              />
 
-            {(query.trim() !== '' || statusFilter !== 'all' || roleFilter !== 'all' || sort !== 'newest' || dateFilter !== 'all' || dateFrom !== '' || dateTo !== '') && (
-              <div className="mt-2 flex w-full justify-end">
+              {(query.trim() !== '' || statusFilter !== 'all' || roleFilter !== 'all' || sort !== 'newest' || dateFilter !== 'all' || dateFrom !== '' || dateTo !== '') && (
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:opacity-60 sm:w-[220px]"
+                  className="h-11 whitespace-nowrap rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:opacity-60"
                   disabled={loading}
                 >
                   Clear
                 </button>
-              </div>
-            )}
+              )}
+            </div>
 
             <p className="mt-3 text-xs text-gray-500">
               Showing <span className="font-semibold text-gray-700">{filteredUsers.length}</span> result(s).
