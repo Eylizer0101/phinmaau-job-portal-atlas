@@ -1029,7 +1029,23 @@ const EmployerVerification = () => {
                         const status = item.overallStatus || "unverified";
 
                         return (
-                          <tr key={item._id} className="hover:bg-gray-50/70 transition-colors">
+                          <tr
+                            key={item._id}
+                            role="link"
+                            tabIndex={0}
+                            onClick={(event) => {
+                              if (event.target.closest("button, a, input, select, textarea, label")) return;
+                              navigate(`/admin/employer-verification/${item._id}`);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.target !== event.currentTarget) return;
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                navigate(`/admin/employer-verification/${item._id}`);
+                              }
+                            }}
+                            className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
+                          >
                             <td className="px-5 py-4">
                               <div className="flex items-center gap-3 min-w-0">
                                 {item.companyLogo ? (

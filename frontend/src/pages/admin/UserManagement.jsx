@@ -1571,7 +1571,20 @@ const UserManagement = () => {
                         return (
                           <tr
                             key={user.key}
-                            className="hover:bg-gray-50"
+                            role="link"
+                            tabIndex={0}
+                            onClick={(event) => {
+                              if (event.target.closest("button, a, input, select, textarea, label")) return;
+                              handleViewDetails(user.key);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.target !== event.currentTarget) return;
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                handleViewDetails(user.key);
+                              }
+                            }}
+                            className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
                           >
                             <td className="px-5 py-4">
                               <div className="flex items-center gap-3 min-w-0">

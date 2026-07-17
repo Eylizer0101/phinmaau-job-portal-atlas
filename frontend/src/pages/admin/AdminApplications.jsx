@@ -654,7 +654,23 @@ const AdminApplications = () => {
                       const company = app.job?.companyName || app.employer?.employerProfile?.companyName || 'Company';
                       const address = app.job?.location || app.employer?.employerProfile?.companyAddress || '—';
                       return (
-                        <tr key={app._id} className="hover:bg-slate-50/80">
+                        <tr
+                          key={app._id}
+                          role="link"
+                          tabIndex={0}
+                          onClick={(event) => {
+                            if (event.target.closest("button, a, input, select, textarea, label")) return;
+                            navigate(`/admin/applications/${app._id}`);
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.target !== event.currentTarget) return;
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              navigate(`/admin/applications/${app._id}`);
+                            }
+                          }}
+                          className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
+                        >
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <ApplicantAvatar user={app.jobseeker} />

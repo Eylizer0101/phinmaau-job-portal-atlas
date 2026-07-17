@@ -727,7 +727,23 @@ const AdminArchive = () => {
 
       if (activeTab === "jobs") {
         return (
-          <tr key={row._id} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/70">
+          <tr
+            key={row._id}
+            role="link"
+            tabIndex={0}
+            onClick={(event) => {
+              if (event.target.closest("button, a, input, select, textarea, label")) return;
+              openDetails(row);
+            }}
+            onKeyDown={(event) => {
+              if (event.target !== event.currentTarget) return;
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openDetails(row);
+              }
+            }}
+            className="cursor-pointer border-b border-slate-100 transition-colors last:border-b-0 hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
+          >
             <td className="px-6 py-4">
               <div className="flex items-center gap-3">
                 {renderAvatar(row, "company")}
@@ -758,7 +774,23 @@ const AdminArchive = () => {
 
       if (activeTab === "applications") {
         return (
-          <tr key={row._id} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/70">
+          <tr
+            key={row._id}
+            role="link"
+            tabIndex={0}
+            onClick={(event) => {
+              if (event.target.closest("button, a, input, select, textarea, label")) return;
+              openDetails(row);
+            }}
+            onKeyDown={(event) => {
+              if (event.target !== event.currentTarget) return;
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openDetails(row);
+              }
+            }}
+            className="cursor-pointer border-b border-slate-100 transition-colors last:border-b-0 hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
+          >
             <td className="px-6 py-4">
               <div className="flex items-center gap-3">
                 {renderAvatar(row.jobseeker, "user")}
@@ -790,7 +822,23 @@ const AdminArchive = () => {
       }
 
       return (
-        <tr key={row._id} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/70">
+        <tr
+            key={row._id}
+            role="link"
+            tabIndex={0}
+            onClick={(event) => {
+              if (event.target.closest("button, a, input, select, textarea, label")) return;
+              openDetails(row);
+            }}
+            onKeyDown={(event) => {
+              if (event.target !== event.currentTarget) return;
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openDetails(row);
+              }
+            }}
+            className="cursor-pointer border-b border-slate-100 transition-colors last:border-b-0 hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
+          >
           <td className="px-6 py-4">
             <div className="flex items-center gap-3">
               {renderAvatar(row, "user")}

@@ -647,7 +647,23 @@ const AdminJobOffers = () => {
                     jobs.map((job) => {
                       const status = statusMeta(job.adminStatus);
                       return (
-                        <tr key={job._id} className="transition hover:bg-gray-50/70">
+                        <tr
+                          key={job._id}
+                          role="link"
+                          tabIndex={0}
+                          onClick={(event) => {
+                            if (event.target.closest("button, a, input, select, textarea, label")) return;
+                            navigate(`/admin/jobs/${job._id}`, { state: { backPath: '/admin/job-offers', backLabel: 'Job Offers' } });
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.target !== event.currentTarget) return;
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              navigate(`/admin/jobs/${job._id}`, { state: { backPath: '/admin/job-offers', backLabel: 'Job Offers' } });
+                            }
+                          }}
+                          className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
+                        >
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#2e66a6]/15 bg-[#2e66a6]/10 text-[#2e66a6]">
