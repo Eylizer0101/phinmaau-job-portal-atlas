@@ -527,8 +527,6 @@ const DateFilterDropdown = ({ value, startDate, endDate, disabled, onSelect }) =
 
   return (
     <div className="relative">
-      <span className="mb-1 block text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Date</span>
-
       <button
         type="button"
         disabled={disabled}
