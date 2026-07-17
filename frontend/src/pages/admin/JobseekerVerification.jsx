@@ -777,8 +777,9 @@ const JobseekerVerification = () => {
 
         <Card className="relative z-20 mb-6 overflow-visible" padding={false}>
           <div className="p-5">
-            <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-              <div className="relative min-w-0 xl:w-[420px] xl:flex-none">
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-12 xl:items-center">
+              <div className="xl:col-span-4">
+                <div className="relative">
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                   <Icon name="search" className="h-5 w-5" />
                 </span>
@@ -801,9 +802,10 @@ const JobseekerVerification = () => {
                     <Icon name="x" className="h-4 w-4" />
                   </button>
                 ) : null}
+                </div>
               </div>
 
-              <div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="xl:col-span-2">
                 <select
                   value={filters.campus}
                   onChange={(e) => onChangeFilter("campus", e.target.value)}
@@ -817,7 +819,9 @@ const JobseekerVerification = () => {
                     </option>
                   ))}
                 </select>
+              </div>
 
+              <div className="xl:col-span-2">
                 <select
                   value={filters.course}
                   onChange={(e) => onChangeFilter("course", e.target.value)}
@@ -831,7 +835,9 @@ const JobseekerVerification = () => {
                     </option>
                   ))}
                 </select>
+              </div>
 
+              <div className="xl:col-span-2">
                 <select
                   value={filters.status}
                   onChange={(e) => onChangeFilter("status", e.target.value)}
@@ -845,7 +851,9 @@ const JobseekerVerification = () => {
                     </option>
                   ))}
                 </select>
+              </div>
 
+              <div className="xl:col-span-1">
                 <DateFilterDropdown
                   value={filters.date}
                   startDate={filters.dateFrom}
@@ -854,26 +862,26 @@ const JobseekerVerification = () => {
                   onSelect={onChangeDateFilter}
                 />
               </div>
-            </div>
 
-            {(searchDraft ||
-              filters.campus !== "all" ||
-              filters.course !== "all" ||
-              filters.status !== "all" ||
-              filters.date !== "all" ||
-              filters.dateFrom ||
-              filters.dateTo) && (
-              <div className="mt-3 flex justify-end">
-                <Button
-                  variant="secondary"
-                  className="h-11 px-6"
-                  onClick={clearAllFilters}
-                  disabled={loading}
-                >
-                  Clear All
-                </Button>
-              </div>
-            )}
+              {(searchDraft ||
+                filters.campus !== "all" ||
+                filters.course !== "all" ||
+                filters.status !== "all" ||
+                filters.date !== "all" ||
+                filters.dateFrom ||
+                filters.dateTo) && (
+                <div className="xl:col-span-1">
+                  <Button
+                    variant="secondary"
+                    className="h-11 w-full px-3"
+                    onClick={clearAllFilters}
+                    disabled={loading}
+                  >
+                    Clear All
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </Card>
 
