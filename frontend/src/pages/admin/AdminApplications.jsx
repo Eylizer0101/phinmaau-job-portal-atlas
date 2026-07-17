@@ -357,8 +357,8 @@ const DateFilterDropdown = ({ value, dateFrom, dateTo, onChange }) => {
   };
 
   return (
-    <div className="relative w-full min-w-[180px]">
-            <button
+    <div className="relative w-full">
+      <button
         type="button"
         onClick={(event) => {
           event.stopPropagation();
@@ -373,7 +373,7 @@ const DateFilterDropdown = ({ value, dateFrom, dateTo, onChange }) => {
       {open ? (
         <div
           onClick={(event) => event.stopPropagation()}
-          className="absolute left-0 top-[48px] z-50 w-64 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
+          className="absolute left-0 top-[68px] z-50 w-64 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
         >
           <div className="space-y-1">
             {DATE_FILTER_OPTIONS.map((option) => (
@@ -592,7 +592,7 @@ const AdminApplications = () => {
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-black/5">
-          <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(260px,1.45fr)_minmax(150px,0.85fr)_minmax(150px,0.85fr)_minmax(150px,0.85fr)_minmax(150px,0.85fr)_minmax(180px,1fr)] xl:items-end">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(240px,1.4fr)_repeat(4,minmax(135px,0.75fr))_minmax(190px,1fr)_auto] xl:items-end">
             <div className="relative min-w-0">
               <Icon name="search" className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
               <input

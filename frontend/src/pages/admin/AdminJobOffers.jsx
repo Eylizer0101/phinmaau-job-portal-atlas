@@ -367,8 +367,8 @@ const DateFilterDropdown = ({ value, dateFrom, dateTo, onChange }) => {
   };
 
   return (
-    <div className="relative w-full min-w-[180px]">
-            <button
+    <div className="relative w-full">
+      <button
         type="button"
         onClick={(event) => {
           event.stopPropagation();
@@ -383,7 +383,7 @@ const DateFilterDropdown = ({ value, dateFrom, dateTo, onChange }) => {
       {open ? (
         <div
           onClick={(event) => event.stopPropagation()}
-          className="absolute left-0 top-[48px] z-50 w-64 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
+          className="absolute left-0 top-[68px] z-50 w-64 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
         >
           <div className="space-y-1">
             {DATE_FILTER_OPTIONS.map((option) => (
@@ -566,7 +566,7 @@ const AdminJobOffers = () => {
           </div>
 
           <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(200px,1.35fr)_repeat(4,minmax(105px,0.65fr))_minmax(165px,0.95fr)_auto] xl:items-end">
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(240px,1.4fr)_repeat(4,minmax(135px,0.75fr))_minmax(190px,1fr)_auto] xl:items-end">
               <label className="relative block">
                 <span className="sr-only">Search job offers</span>
                 <Icon name="search" className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
