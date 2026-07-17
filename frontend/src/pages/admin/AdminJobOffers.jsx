@@ -367,7 +367,7 @@ const DateFilterDropdown = ({ value, dateFrom, dateTo, onChange }) => {
   };
 
   return (
-    <div className="relative w-full sm:w-[220px]">
+    <div className="relative w-full">
       <span className="mb-1 block text-[11px] font-bold uppercase tracking-[0.14em] text-gray-500">Date</span>
       <button
         type="button"
@@ -567,7 +567,7 @@ const AdminJobOffers = () => {
           </div>
 
           <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(260px,1.5fr)_minmax(150px,0.7fr)_minmax(170px,0.8fr)_minmax(170px,0.8fr)_minmax(170px,0.8fr)]">
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(220px,1.6fr)_repeat(4,minmax(120px,0.75fr))_minmax(150px,0.9fr)_auto] xl:items-end">
               <label className="relative block">
                 <span className="sr-only">Search job offers</span>
                 <Icon name="search" className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
@@ -583,9 +583,7 @@ const AdminJobOffers = () => {
               <Select value={filters.company} onChange={(v) => updateFilter('company', v)} options={['All Company', ...options.companies]} />
               <Select value={filters.industry} onChange={(v) => updateFilter('industry', v)} options={['All Industry', ...options.industries]} />
               <Select value={filters.jobTitle} onChange={(v) => updateFilter('jobTitle', v)} options={['All Job Title', ...options.jobTitles]} />
-            </div>
 
-          <br></br>
               <DateFilterDropdown
                 value={filters.date}
                 dateFrom={filters.dateFrom}
@@ -597,12 +595,12 @@ const AdminJobOffers = () => {
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                  className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                 >
                   <Icon name="refresh" /> Clear All
                 </button>
               ) : null}
-            
+            </div>
           </section>
 
           <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">

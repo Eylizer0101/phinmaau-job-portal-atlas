@@ -357,7 +357,7 @@ const DateFilterDropdown = ({ value, dateFrom, dateTo, onChange }) => {
   };
 
   return (
-    <div className="relative w-full sm:w-[220px]">
+    <div className="relative w-full">
       <span className="mb-1 block text-[11px] font-bold uppercase tracking-[0.14em] text-gray-500">Date</span>
       <button
         type="button"
@@ -593,8 +593,8 @@ const AdminApplications = () => {
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-black/5">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-center">
-            <div className="relative min-w-0 flex-1">
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(220px,1.6fr)_repeat(4,minmax(120px,0.75fr))_minmax(150px,0.9fr)_auto] xl:items-end">
+            <div className="relative min-w-0">
               <Icon name="search" className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
               <input
                 value={search}
@@ -609,9 +609,7 @@ const AdminApplications = () => {
             <FilterSelect value={companyFilter} onChange={setCompanyFilter} options={['All Company', ...companies]} />
             <FilterSelect value={industryFilter} onChange={setIndustryFilter} options={['All Industry', ...industries]} />
             <FilterSelect value={jobTitleFilter} onChange={setJobTitleFilter} options={['All Job Title', ...jobTitles]} />
-          </div>
 
-          <div className="mt-5 flex flex-wrap items-end gap-3">
             <DateFilterDropdown
               value={dateFilter}
               dateFrom={dateFrom}
@@ -620,7 +618,7 @@ const AdminApplications = () => {
             />
 
             {hasActiveFilters ? (
-              <button onClick={clearFilters} type="button" className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 hover:bg-slate-50">
+              <button onClick={clearFilters} type="button" className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 hover:bg-slate-50">
                 <Icon name="refresh" /> Clear All
               </button>
             ) : null}
