@@ -57,7 +57,21 @@ exports.createPost = async (req, res) => {
 
     const allowed = ['insight', 'skill', 'question', 'resource', 'opportunity'];
     const category = allowed.includes(req.body.category) ? req.body.category : 'insight';
-    const imageUrl = req.file?.secure_url || req.file?.url || req.file?.path || String(req.body.imageUrl || '').trim();
+    const uploadedImageUrl = [
+      req.file?.secure_url,
+      req.file?.url,
+      req.file?.path,
+      req.file?.location,
+    ].find((value) => typeof value === 'string' && value.trim());
+
+    const imageUrl = String(uploadedImageUrl || req.body.imageUrl || '').trim();
+
+    if (req.file && !imageUrl) {
+      return res.status(500).json({
+        success: false,
+        message: 'Image upload finished, but no image URL was generated.',
+      });
+    }
 
     const post = await CommunityPost.create({
       author: req.user._id,
@@ -69,7 +83,12 @@ exports.createPost = async (req, res) => {
     });
 
     const populatedPost = await populatePost(CommunityPost.findById(post._id));
-    res.status(201).json({ success: true, data: populatedPost });
+    const responsePost = populatedPost?.toObject ? populatedPost.toObject() : populatedPost;
+
+    res.status(201).json({
+      success: true,
+      data: responsePost,
+    });
   } catch (error) {
     console.error('Error creating community post:', error);
     res.status(500).json({ success: false, message: error.message || 'Error creating community post' });

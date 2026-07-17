@@ -196,11 +196,22 @@ const CommunityPage = () => {
       payload.append('category', form.category);
       payload.append('linkUrl', normalizeUrl(form.linkUrl));
       payload.append('topics', form.topics);
-      if (selectedPhoto) payload.append('image', selectedPhoto);
+      if (selectedPhoto) {
+        payload.append('image', selectedPhoto, selectedPhoto.name);
+      }
 
-      const response = await api.post('/community/posts', payload);
+      const response = await api.post('/community/posts', payload, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
       if (response.data?.success) {
-        setPosts((prev) => [response.data.data, ...prev]);
+        const createdPost = response.data.data;
+
+        if (selectedPhoto && !createdPost?.imageUrl) {
+          throw new Error('The post was created, but the uploaded image URL was not returned.');
+        }
+
+        setPosts((prev) => [createdPost, ...prev]);
         resetCreateForm();
         setShowCreate(false);
       }
