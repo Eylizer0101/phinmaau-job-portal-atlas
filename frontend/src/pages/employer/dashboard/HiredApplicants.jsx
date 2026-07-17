@@ -34,6 +34,8 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
+const ITEMS_PER_PAGE = 9;
+
 const formatDate = (dateValue) => {
   if (!dateValue) return '—';
   const d = dateValue instanceof Date ? dateValue : new Date(dateValue);
@@ -83,6 +85,7 @@ const HiredApplicants = () => {
   const [selectedJob, setSelectedJob] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
+  const [currentPage, setCurrentPage] = useState(1);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [brokenAvatars, setBrokenAvatars] = useState(() => new Set());
 
@@ -309,6 +312,20 @@ const HiredApplicants = () => {
 
     return sorted;
   }, [applications, buildApplicantName, dateFilter, debouncedQuery, sortBy]);
+
+
+  const totalItems = filteredApplications.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+  const paginatedApplications = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredApplications.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredApplications, currentPage]);
+  const showingStart = totalItems === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
+  const showingEnd = Math.min(currentPage * ITEMS_PER_PAGE, totalItems);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   const clearFilters = () => {
     setQuery('');
@@ -560,7 +577,7 @@ const selectBase =
                   </thead>
 
                   <tbody>
-                    {filteredApplications.map((app) => {
+                    {paginatedApplications.map((app) => {
                       const name = buildApplicantName(app.jobseeker);
                       const email = app.jobseeker?.email || '—';
                       const jobTitle = app.job?.title || '—';
@@ -631,7 +648,7 @@ const selectBase =
 
               {/* Mobile */}
               <div className="space-y-3 p-4 md:hidden">
-                {filteredApplications.map((app) => {
+                {paginatedApplications.map((app) => {
                   const name = buildApplicantName(app.jobseeker);
                   const email = app.jobseeker?.email || '—';
                   const jobTitle = app.job?.title || '—';
@@ -683,6 +700,34 @@ const selectBase =
                   );
                 })}
               </div>
+
+              <div className="flex flex-col gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4 text-sm text-gray-600 sm:flex-row sm:items-center sm:justify-between">
+                <span>
+                  Showing {showingStart} to {showingEnd} of {totalItems} result(s)
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                    disabled={currentPage === 1}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <span className="rounded-lg bg-[#2e66a6] px-3 py-2 text-sm font-semibold text-white">
+                    {currentPage}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                    disabled={currentPage >= totalPages}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+
             </>
           )}
         </div>

@@ -5,6 +5,8 @@ import api from '../../../services/api';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
+const ITEMS_PER_PAGE = 9;
+
 const PENDING_INTERVIEW_SCHEDULE_KEY = 'agapayPendingInterviewSchedule';
 
 const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
@@ -1039,6 +1041,7 @@ const ForInterview = () => {
   const [selectedJob, setSelectedJob] = useState('all');
   const [filterBy, setFilterBy] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
+  const [currentPage, setCurrentPage] = useState(1);
   const [openFilterMenu, setOpenFilterMenu] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -1288,6 +1291,20 @@ const ForInterview = () => {
 
     return list;
   }, [applications, query, filterBy, sortBy]);
+
+
+  const totalItems = filteredApplications.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+  const paginatedApplications = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredApplications.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredApplications, currentPage]);
+  const showingStart = totalItems === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
+  const showingEnd = Math.min(currentPage * ITEMS_PER_PAGE, totalItems);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   const jobOptions = useMemo(() => {
     return [
@@ -1772,7 +1789,7 @@ const selectBase =
                     </thead>
 
                     <tbody className="divide-y divide-gray-200 bg-white">
-                      {filteredApplications.map((app) => {
+                      {paginatedApplications.map((app) => {
                         const name = buildApplicantName(app.jobseeker);
                         const email = app.jobseeker?.email || '—';
                         const jobTitle = app.job?.title || 'Job Title';
@@ -1887,7 +1904,7 @@ const selectBase =
                 </div>
 
                 <div className="space-y-3 md:hidden">
-                  {filteredApplications.map((app) => {
+                  {paginatedApplications.map((app) => {
                     const name = buildApplicantName(app.jobseeker);
                     const email = app.jobseeker?.email || '—';
                     const jobTitle = app.job?.title || 'Job Title';
@@ -2011,6 +2028,34 @@ const selectBase =
                     );
                   })}
                 </div>
+
+              <div className="flex flex-col gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4 text-sm text-gray-600 sm:flex-row sm:items-center sm:justify-between">
+                <span>
+                  Showing {showingStart} to {showingEnd} of {totalItems} result(s)
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                    disabled={currentPage === 1}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <span className="rounded-lg bg-[#2e66a6] px-3 py-2 text-sm font-semibold text-white">
+                    {currentPage}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                    disabled={currentPage >= totalPages}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+
               </>
             )}
           </div>

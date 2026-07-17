@@ -34,6 +34,8 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
+const ITEMS_PER_PAGE = 9;
+
 const Button = ({ variant = 'secondary', size = 'md', leftIcon, children, className, disabled, ...props }) => {
   const base = 'inline-flex items-center justify-center gap-2 font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-80';
   const sizes = { xs: 'px-2 py-1.5 text-xs rounded-lg', sm: 'px-3 py-2 text-sm rounded-lg', md: 'px-4 py-3 text-sm rounded-xl' };
@@ -89,6 +91,7 @@ const ManageJobs = () => {
   const [dateFilter, setDateFilter] = useState('overall');
   const [q, setQ] = useState('');
   const [sortBy, setSortBy] = useState('most_recent');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [badLogos, setBadLogos] = useState({});
   const [counts, setCounts] = useState({
@@ -532,6 +535,20 @@ const ManageJobs = () => {
     return list;
   }, [jobs, jobFilter, statusFilter, dateFilter, q, sortBy]);
 
+
+  const totalItems = filteredJobs.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+  const paginatedJobs = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredJobs.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredJobs, currentPage]);
+  const showingStart = totalItems === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
+  const showingEnd = Math.min(currentPage * ITEMS_PER_PAGE, totalItems);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
   const hasActiveFilters = useMemo(() => {
     return (
       q.trim() !== '' ||
@@ -748,7 +765,7 @@ const ManageJobs = () => {
             ) : (
               <>
                 <div className="space-y-4 md:hidden">
-                  {filteredJobs.map((job) => {
+                  {paginatedJobs.map((job) => {
                     const title = safeTitle(job);
                     const busyThisRow = action.jobId === job._id;
                     const logoUrl = job.companyLogo && String(job.companyLogo).trim() ? job.companyLogo : '';
@@ -909,7 +926,7 @@ const ManageJobs = () => {
                     </thead>
 
                     <tbody className="divide-y divide-gray-200 bg-white">
-                      {filteredJobs.map((job) => {
+                      {paginatedJobs.map((job) => {
                         const title = safeTitle(job);
                         const busyThisRow = action.jobId === job._id;
                         const logoUrl = job.companyLogo && String(job.companyLogo).trim() ? job.companyLogo : '';
@@ -1072,6 +1089,34 @@ const ManageJobs = () => {
                   </table>
                 </div>
               </div>
+
+              <div className="flex flex-col gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4 text-sm text-gray-600 sm:flex-row sm:items-center sm:justify-between">
+                <span>
+                  Showing {showingStart} to {showingEnd} of {totalItems} result(s)
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                    disabled={currentPage === 1}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <span className="rounded-lg bg-[#2e66a6] px-3 py-2 text-sm font-semibold text-white">
+                    {currentPage}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                    disabled={currentPage >= totalPages}
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+
               </>
             )}
           </div>
