@@ -592,7 +592,7 @@ const AdminApplications = () => {
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-black/5">
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(240px,1.4fr)_repeat(4,minmax(135px,0.75fr))_minmax(190px,1fr)_auto] xl:items-end">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(260px,1.5fr)_repeat(4,minmax(150px,0.8fr))] xl:items-center">
             <div className="relative min-w-0">
               <Icon name="search" className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
               <input
@@ -608,13 +608,17 @@ const AdminApplications = () => {
             <FilterSelect value={companyFilter} onChange={setCompanyFilter} options={['All Company', ...companies]} />
             <FilterSelect value={industryFilter} onChange={setIndustryFilter} options={['All Industry', ...industries]} />
             <FilterSelect value={jobTitleFilter} onChange={setJobTitleFilter} options={['All Job Title', ...jobTitles]} />
+          </div>
 
-            <DateFilterDropdown
-              value={dateFilter}
-              dateFrom={dateFrom}
-              dateTo={dateTo}
-              onChange={handleDateFilterChange}
-            />
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <div className="w-full sm:w-[220px]">
+              <DateFilterDropdown
+                value={dateFilter}
+                dateFrom={dateFrom}
+                dateTo={dateTo}
+                onChange={handleDateFilterChange}
+              />
+            </div>
 
             {hasActiveFilters ? (
               <button onClick={clearFilters} type="button" className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 hover:bg-slate-50">
