@@ -22,6 +22,7 @@ const categories = [
   { key: 'skill', label: 'Skills' },
   { key: 'question', label: 'Questions' },
   { key: 'resource', label: 'Resources' },
+  { key: 'opportunity', label: 'Opportunities' },
 ];
 
 const createCategories = [
