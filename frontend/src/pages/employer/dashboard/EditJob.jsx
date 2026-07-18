@@ -2404,7 +2404,7 @@ const EditJob = () => {
                 aria-labelledby="cancel-edit-job-title"
                 className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
               >
-                <div className="h-2 bg-amber-500" />
+               
 
                 <div className="p-6">
                   <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-2xl font-bold text-amber-700">
