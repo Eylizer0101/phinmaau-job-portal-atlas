@@ -488,32 +488,39 @@ const CommunityPage = () => {
               className="h-11 w-full rounded-xl border border-[#d8e2ee] bg-white pl-10 pr-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
             />
           </div>
-          <button
-            type="button"
-            onClick={() => setShowManaged(true)}
-            className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 text-sm font-semibold hover:bg-[#f7faff]"
-          >
-            <FontAwesomeIcon icon={faSliders} />
-            <span className="hidden sm:inline">Managed Posts</span>
-          </button>
         </div>
       </div>
 
-      <div className="mb-5 flex flex-wrap gap-2">
-        {categories.map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            onClick={() => setCategory(item.key)}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-              category === item.key
-                ? 'bg-[#2e66a6] text-white'
-                : 'bg-white text-black/60 hover:bg-[#f7faff]'
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
+      <div className="mb-5">
+        <div className="flex flex-wrap gap-2">
+          {categories.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setCategory(item.key)}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                category === item.key
+                  ? 'bg-[#2e66a6] text-white'
+                  : 'bg-white text-black/60 hover:bg-[#f7faff]'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        {category === 'you' && (
+          <div className="mt-3 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setShowManaged(true)}
+              className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 text-sm font-semibold hover:bg-[#f7faff]"
+            >
+              <FontAwesomeIcon icon={faSliders} />
+              <span>Managed Posts</span>
+            </button>
+          </div>
+        )}
       </div>
 
       <button
