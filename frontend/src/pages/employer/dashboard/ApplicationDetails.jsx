@@ -1053,6 +1053,7 @@ const ApplicationDetails = () => {
   const [messageOpen, setMessageOpen] = useState(false);
   const [confirmationAction, setConfirmationAction] = useState('');
   const [avatarBroken, setAvatarBroken] = useState(false);
+  const [resumeFrameHeight, setResumeFrameHeight] = useState(1120);
 
   const fetchDetails = useCallback(async () => {
     try { setLoading(true); setError(''); const res = await axios.get(`${API_HOST}/api/applications/${applicationId}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }); setApplication(res.data?.application || null); }
@@ -1154,30 +1155,49 @@ const ApplicationDetails = () => {
 
         .page-shell {
           min-height: 0 !important;
-          padding: 0 !important;
-          background: #ffffff !important;
-        }
-
-        .resume-paper {
-          width: 100% !important;
-          min-height: 0 !important;
-          margin: 0 !important;
-          box-shadow: none !important;
-        }
-
-        .resume-inner {
-          padding: 13mm 12mm 12mm !important;
+          padding-top: 0 !important;
         }
 
         html,
         body {
           margin: 0 !important;
           min-height: 0 !important;
-          overflow-x: hidden !important;
-          background: #ffffff !important;
+          overflow: hidden !important;
         }
       </style>`
     );
+
+  const handleResumeFrameLoad = (event) => {
+    const frame = event.currentTarget;
+    const frameDocument = frame.contentDocument;
+    if (!frameDocument) return;
+
+    const updateFrameHeight = () => {
+      const bodyHeight = frameDocument.body?.scrollHeight || 0;
+      const documentHeight = frameDocument.documentElement?.scrollHeight || 0;
+      const nextHeight = Math.max(bodyHeight, documentHeight, 1120);
+      setResumeFrameHeight(nextHeight);
+    };
+
+    updateFrameHeight();
+
+    const frameWindow = frame.contentWindow;
+    const ResizeObserverClass = frameWindow?.ResizeObserver;
+
+    if (ResizeObserverClass) {
+      const resizeObserver = new ResizeObserverClass(updateFrameHeight);
+      if (frameDocument.body) resizeObserver.observe(frameDocument.body);
+      if (frameDocument.documentElement) resizeObserver.observe(frameDocument.documentElement);
+      frame.dataset.resizeObserverAttached = 'true';
+    }
+
+    Array.from(frameDocument.images || []).forEach((imageElement) => {
+      if (!imageElement.complete) {
+        imageElement.addEventListener('load', updateFrameHeight, { once: true });
+        imageElement.addEventListener('error', updateFrameHeight, { once: true });
+      }
+    });
+  };
 
   return <EmployerLayout>
     <div className="mx-auto max-w-7xl px-1 py-8">
@@ -1212,12 +1232,15 @@ const ApplicationDetails = () => {
           <div className="flex border-t border-[#d8e2ee] px-5 sm:px-7"><button onClick={() => setActiveTab('resume')} className={cn('relative flex h-14 items-center gap-2 px-3 text-sm font-semibold', activeTab === 'resume' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="resume" className="h-4 w-4" /> Resume<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'resume' ? 'bg-[#174b91]' : '')} /></button><button onClick={() => setActiveTab('activity')} className={cn('relative flex h-14 items-center gap-2 px-5 text-sm font-semibold', activeTab === 'activity' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="activity" className="h-4 w-4" /> Activity<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'activity' ? 'bg-[#174b91]' : '')} /></button></div>
 
           {activeTab === 'resume' ? (
-            <div className="border-t border-[#d8e2ee] bg-[#e5e7eb] p-3 sm:p-5">
-              <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="border-t border-[#d8e2ee] bg-[#e5e7eb] py-5">
+              <div className="overflow-hidden bg-transparent">
                 <iframe
                   title={`${name} resume`}
                   srcDoc={embeddedResumeHtml}
-                  className="block h-[1120px] w-full border-0 bg-white"
+                  onLoad={handleResumeFrameLoad}
+                  scrolling="no"
+                  className="block w-full border-0 bg-transparent"
+                  style={{ height: `${resumeFrameHeight}px`, overflow: 'hidden' }}
                   sandbox="allow-same-origin"
                 />
               </div>
