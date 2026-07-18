@@ -1325,7 +1325,7 @@ const JobDetails = () => {
                   </div>
 
                   {statusBadge ? (
-                    <div className="mt-2 flex w-full items-start">
+                    <div className="mt-2 flex w-full items-center justify-center">
                       {statusBadge}
                     </div>
                   ) : null}
