@@ -438,8 +438,25 @@ const resumeStyles = `
     padding-left: 1px;
   }
 
-  .skills-inline { display: flex; flex-wrap: wrap; gap: 3px 16px; }
-  .skill-item { display: inline-block; color: #111111; white-space: nowrap; }
+  .skills-groups { display: flex; flex-direction: column; gap: 3px; }
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(3, auto);
+    grid-auto-flow: column;
+    column-gap: 22px;
+    row-gap: 2px;
+    margin: 1px 0 0;
+    padding-left: 14px;
+    list-style-position: outside;
+  }
+  .skill-item {
+    display: list-item;
+    color: #111111;
+    padding-left: 1px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
   .resume-rich-text { margin-top: 2px; text-align: justify; }
   .resume-rich-text p, .resume-rich-text div { margin: 1px 0; }
   .resume-rich-text ul, .resume-rich-text ol { margin: 2px 0 0 14px; padding-left: 14px; }
@@ -564,11 +581,24 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
 
   const allSkills = [...technicalSkills, ...softSkills].filter(isMeaningfulResumeValue);
 
+  const skillGroups = Array.from(
+    { length: Math.ceil(allSkills.length / 9) },
+    (_, groupIndex) => allSkills.slice(groupIndex * 9, groupIndex * 9 + 9)
+  );
+
   const skillsHtml = sectionHtml(
     'Skills',
     `
-      <div class="skills-inline">
-        ${allSkills.map((skill) => `<span class="skill-item">${escapeHtml(skill)}</span>`).join('')}
+      <div class="skills-groups">
+        ${skillGroups
+          .map(
+            (group) => `
+              <ul class="skills-grid">
+                ${group.map((skill) => `<li class="skill-item">${escapeHtml(skill)}</li>`).join('')}
+              </ul>
+            `
+          )
+          .join('')}
       </div>
     `,
     !allSkills.length

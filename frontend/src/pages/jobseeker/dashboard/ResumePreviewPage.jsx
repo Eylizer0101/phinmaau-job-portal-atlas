@@ -550,8 +550,25 @@ const ResumePreviewPage = () => {
           padding-left: 1px;
         }
 
-        .skills-inline { display: flex; flex-wrap: wrap; gap: 3px 16px; }
-        .skill-item { display: inline-block; color: #111111; white-space: nowrap; }
+        .skills-groups { display: flex; flex-direction: column; gap: 3px; }
+        .skills-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-rows: repeat(3, auto);
+          grid-auto-flow: column;
+          column-gap: 22px;
+          row-gap: 2px;
+          margin: 1px 0 0;
+          padding-left: 14px;
+          list-style-position: outside;
+        }
+        .skill-item {
+          display: list-item;
+          color: #111111;
+          padding-left: 1px;
+          min-width: 0;
+          overflow-wrap: anywhere;
+        }
         .resume-rich-text { margin-top: 2px; text-align: justify; }
         .resume-rich-text p, .resume-rich-text div { margin: 1px 0; }
         .resume-rich-text ul, .resume-rich-text ol { margin: 2px 0 0 14px; padding-left: 14px; }
@@ -666,8 +683,20 @@ const ResumePreviewPage = () => {
 
             {allSkills.length ? (
               <Section title="Skills">
-                <div className="skills-inline">
-                  {allSkills.map((skill, index) => <span className="skill-item" key={`skill-${skill}-${index}`}>{skill}</span>)}
+                <div className="skills-groups">
+                  {Array.from({ length: Math.ceil(allSkills.length / 9) }, (_, groupIndex) => {
+                    const skillGroup = allSkills.slice(groupIndex * 9, groupIndex * 9 + 9);
+
+                    return (
+                      <ul className="skills-grid" key={`skill-group-${groupIndex}`}>
+                        {skillGroup.map((skill, index) => (
+                          <li className="skill-item" key={`skill-${skill}-${groupIndex}-${index}`}>
+                            {skill}
+                          </li>
+                        ))}
+                      </ul>
+                    );
+                  })}
                 </div>
               </Section>
             ) : null}
