@@ -1054,6 +1054,8 @@ const ApplicationDetails = () => {
   const [confirmationAction, setConfirmationAction] = useState('');
   const [avatarBroken, setAvatarBroken] = useState(false);
   const [resumeFrameHeight, setResumeFrameHeight] = useState(1120);
+  const [resumeScale, setResumeScale] = useState(1);
+  const resumeContainerRef = useRef(null);
 
   const fetchDetails = useCallback(async () => {
     try { setLoading(true); setError(''); const res = await axios.get(`${API_HOST}/api/applications/${applicationId}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }); setApplication(res.data?.application || null); }
@@ -1155,15 +1157,9 @@ const ApplicationDetails = () => {
 
         .page-shell {
           min-height: 0 !important;
-          padding: 0 !important;
+          padding-top: 0 !important;
+          padding-bottom: 0 !important;
           background: #ffffff !important;
-        }
-
-        .resume-paper {
-          width: 100% !important;
-          min-height: 0 !important;
-          margin: 0 !important;
-          box-shadow: none !important;
         }
 
         html,
@@ -1181,31 +1177,40 @@ const ApplicationDetails = () => {
     const frameDocument = frame.contentDocument;
     if (!frameDocument) return;
 
-    const updateFrameHeight = () => {
+    const updateResumeSize = () => {
       const bodyHeight = frameDocument.body?.scrollHeight || 0;
       const documentHeight = frameDocument.documentElement?.scrollHeight || 0;
-      const nextHeight = Math.max(bodyHeight, documentHeight, 1120);
-      setResumeFrameHeight(nextHeight);
+      const fullHeight = Math.max(bodyHeight, documentHeight, 1120);
+      setResumeFrameHeight(fullHeight);
+
+      const containerWidth = resumeContainerRef.current?.clientWidth || 0;
+      const previewWidth = 826;
+      const nextScale = containerWidth > 0 ? Math.min(1, containerWidth / previewWidth) : 1;
+      setResumeScale(nextScale);
     };
 
-    updateFrameHeight();
+    updateResumeSize();
 
     const frameWindow = frame.contentWindow;
     const ResizeObserverClass = frameWindow?.ResizeObserver;
 
     if (ResizeObserverClass) {
-      const resizeObserver = new ResizeObserverClass(updateFrameHeight);
-      if (frameDocument.body) resizeObserver.observe(frameDocument.body);
-      if (frameDocument.documentElement) resizeObserver.observe(frameDocument.documentElement);
-      frame.dataset.resizeObserverAttached = 'true';
+      const documentObserver = new ResizeObserverClass(updateResumeSize);
+      if (frameDocument.body) documentObserver.observe(frameDocument.body);
+      if (frameDocument.documentElement) documentObserver.observe(frameDocument.documentElement);
     }
 
     Array.from(frameDocument.images || []).forEach((imageElement) => {
       if (!imageElement.complete) {
-        imageElement.addEventListener('load', updateFrameHeight, { once: true });
-        imageElement.addEventListener('error', updateFrameHeight, { once: true });
+        imageElement.addEventListener('load', updateResumeSize, { once: true });
+        imageElement.addEventListener('error', updateResumeSize, { once: true });
       }
     });
+
+    if (typeof ResizeObserver !== 'undefined' && resumeContainerRef.current) {
+      const containerObserver = new ResizeObserver(updateResumeSize);
+      containerObserver.observe(resumeContainerRef.current);
+    }
   };
 
   return <EmployerLayout>
@@ -1242,18 +1247,27 @@ const ApplicationDetails = () => {
 
           {activeTab === 'resume' ? (
             <div className="border-t border-[#d8e2ee] bg-white">
-              <iframe
-                title={`${name} resume`}
-                srcDoc={embeddedResumeHtml}
-                onLoad={handleResumeFrameLoad}
-                scrolling="no"
-                className="block w-full border-0 bg-white"
-                style={{
-                  height: `${resumeFrameHeight}px`,
-                  overflow: 'hidden',
-                }}
-                sandbox="allow-same-origin"
-              />
+              <div
+                ref={resumeContainerRef}
+                className="relative w-full overflow-hidden bg-white"
+                style={{ height: `${resumeFrameHeight * resumeScale}px` }}
+              >
+                <iframe
+                  title={`${name} resume`}
+                  srcDoc={embeddedResumeHtml}
+                  onLoad={handleResumeFrameLoad}
+                  scrolling="no"
+                  className="absolute left-1/2 top-0 block border-0 bg-white"
+                  style={{
+                    width: '826px',
+                    height: `${resumeFrameHeight}px`,
+                    overflow: 'hidden',
+                    transform: `translateX(-50%) scale(${resumeScale})`,
+                    transformOrigin: 'top center',
+                  }}
+                  sandbox="allow-same-origin"
+                />
+              </div>
             </div>
           ) : <div className="border-t border-[#d8e2ee] px-6 py-8 sm:px-10"><div className="relative ml-3 border-l-2 border-gray-200 pl-8">{activities.map((item, index) => { const dt = formatDateTime(item.occurredAt || item.createdAt); return <div key={item._id || `${item.type}-${index}`} className="relative pb-10 last:pb-0"><div className="absolute -left-[43px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-4 border-white bg-[#2e66a6] shadow"><SvgIcon name={item.type === 'message' ? 'message' : item.type === 'submitted' ? 'resume' : 'activity'} className="h-3 w-3 text-white" /></div><h3 className="text-lg font-semibold text-gray-900">{item.title || 'Application updated'}</h3><p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">{item.description || 'The application record was updated.'}</p><div className="mt-2 text-xs font-bold tracking-wide text-gray-500">{dt.date}{dt.time ? ` · ${dt.time}` : ''}</div></div>; })}</div></div>}
         </main>
