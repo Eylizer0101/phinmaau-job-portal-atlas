@@ -25,6 +25,7 @@ import api from '../../../services/api';
 
 const categories = [
   { key: 'all', label: 'All' },
+  { key: 'you', label: 'You' },
   { key: 'insight', label: 'Insights' },
   { key: 'skill', label: 'Skills' },
   { key: 'question', label: 'Questions' },

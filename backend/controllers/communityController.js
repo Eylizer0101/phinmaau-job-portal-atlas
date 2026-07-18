@@ -111,7 +111,12 @@ exports.getPosts = async (req, res) => {
     const search = String(req.query.search || '').trim();
     const query = {};
 
-    if (category !== 'all') query.category = category;
+    if (category === 'you') {
+      query.author = req.user._id;
+    } else if (category !== 'all') {
+      query.category = category;
+    }
+
     if (search) {
       query.$or = [
         { content: { $regex: search, $options: 'i' } },
