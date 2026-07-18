@@ -5,6 +5,16 @@ const Job = require('../models/Job');
 // helper: safe regex
 const escapeRegex = (s) => String(s || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+const normalizeBooleanValue = (value, fallback = true) => {
+  if (typeof value === 'boolean') return value;
+
+  const normalized = String(value ?? '').trim().toLowerCase();
+  if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
+  if (['false', '0', 'no', 'off'].includes(normalized)) return false;
+
+  return fallback;
+};
+
 const buildReviewerName = (user) => {
   const fullName = String(user?.fullName || '').trim();
   if (fullName) return fullName;
@@ -80,7 +90,14 @@ const mapCompanyFromUser = (user) => {
           _id: review._id,
           reviewer: review.reviewer,
           reviewerName: review.reviewerName || 'Anonymous User',
+          roleAppliedFor: review.roleAppliedFor || 'Role not specified',
           rating: Number(review.rating) || 0,
+          processRating: Number(review.processRating) || 0,
+          daysToFirstResponse: Number(review.daysToFirstResponse) || 0,
+          totalProcessDays: Number(review.totalProcessDays) || 0,
+          outcome: review.outcome || 'still_in_process',
+          wouldApplyAgain:
+            typeof review.wouldApplyAgain === 'boolean' ? review.wouldApplyAgain : true,
           message: review.message || '',
           createdAt: review.createdAt,
           updatedAt: review.updatedAt,
@@ -279,10 +296,29 @@ exports.getVerifiedCompanyDetails = async (req, res) => {
 exports.submitCompanyReview = async (req, res) => {
   try {
     const { id } = req.params;
-    const { rating, message } = req.body;
+    const {
+      rating,
+      processRating,
+      roleAppliedFor,
+      daysToFirstResponse,
+      totalProcessDays,
+      outcome,
+      wouldApplyAgain,
+      message,
+      reviewerName,
+    } = req.body;
 
     const numericRating = Number(rating);
+    const numericProcessRating =
+      processRating === undefined || processRating === null || processRating === ''
+        ? numericRating
+        : Number(processRating);
+    const numericDaysToFirstResponse = Number(daysToFirstResponse ?? 0);
+    const numericTotalProcessDays = Number(totalProcessDays ?? 0);
+    const trimmedRoleAppliedFor =
+      String(roleAppliedFor || '').trim() || 'Role not specified';
     const trimmedMessage = String(message || '').trim();
+    const trimmedReviewerName = String(reviewerName || '').trim();
 
     if (!numericRating || numericRating < 1 || numericRating > 5) {
       return res.status(400).json({
@@ -290,6 +326,45 @@ exports.submitCompanyReview = async (req, res) => {
         message: 'Rating must be between 1 and 5.',
       });
     }
+
+    if (
+      !Number.isFinite(numericProcessRating) ||
+      numericProcessRating < 0 ||
+      numericProcessRating > 5
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Process rating must be between 0 and 5.',
+      });
+    }
+
+    if (
+      !Number.isFinite(numericDaysToFirstResponse) ||
+      numericDaysToFirstResponse < 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Days to first response must be 0 or higher.',
+      });
+    }
+
+    if (!Number.isFinite(numericTotalProcessDays) || numericTotalProcessDays < 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Total process days must be 0 or higher.',
+      });
+    }
+
+    const allowedOutcomes = [
+      'received_offer',
+      'rejected',
+      'ghosted',
+      'withdrew',
+      'still_in_process',
+    ];
+    const normalizedOutcome = allowedOutcomes.includes(String(outcome || '').trim())
+      ? String(outcome).trim()
+      : 'still_in_process';
 
     if (!trimmedMessage) {
       return res.status(400).json({
@@ -341,13 +416,20 @@ exports.submitCompanyReview = async (req, res) => {
 
     company.employerProfile.reviews.push({
       reviewer: req.user._id,
-      reviewerName: buildReviewerName(req.user),
+      reviewerName: trimmedReviewerName || buildReviewerName(req.user),
+      roleAppliedFor: trimmedRoleAppliedFor,
       rating: numericRating,
+      processRating: numericProcessRating,
+      daysToFirstResponse: numericDaysToFirstResponse,
+      totalProcessDays: numericTotalProcessDays,
+      outcome: normalizedOutcome,
+      wouldApplyAgain: normalizeBooleanValue(wouldApplyAgain, true),
       message: trimmedMessage,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
 
+    company.markModified('employerProfile.reviews');
     await company.save();
 
     return res.status(201).json({
@@ -357,9 +439,22 @@ exports.submitCompanyReview = async (req, res) => {
     });
   } catch (error) {
     console.error('Error submitting company review:', error);
+
+    if (error?.name === 'ValidationError') {
+      const validationMessage = Object.values(error.errors || {})
+        .map((item) => item?.message)
+        .filter(Boolean)
+        .join(' ');
+
+      return res.status(400).json({
+        success: false,
+        message: validationMessage || 'Review data is invalid.',
+      });
+    }
+
     return res.status(500).json({
       success: false,
-      message: 'Server error submitting review',
+      message: error?.message || 'Server error submitting review',
     });
   }
 };

@@ -1080,21 +1080,58 @@ const CompanyViewDetails = () => {
       setReviewSubmitting(true);
       setReviewError("");
 
+      const storedUser = getStoredUser();
+      const reviewerName = [
+        storedUser?.firstName,
+        storedUser?.middleName,
+        storedUser?.lastName,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
       const response = await api.post(`/companies/verified/${id}/reviews`, {
         rating: reviewRating,
+        processRating: reviewRating,
+        roleAppliedFor: "Role not specified",
+        daysToFirstResponse: 0,
+        totalProcessDays: 0,
+        outcome: "still_in_process",
+        wouldApplyAgain: true,
         message: trimmedMessage,
+        reviewerName:
+          reviewerName ||
+          storedUser?.fullName ||
+          storedUser?.username ||
+          storedUser?.email?.split("@")?.[0] ||
+          "Anonymous User",
       });
 
       if (response?.data?.success) {
-        await fetchCompanyDetails();
+        if (response.data.company) {
+          setCompany(response.data.company);
+        }
+
         setActiveTab("reviews");
-        closeReviewModal();
+        setShowReviewModal(false);
+        setReviewError("");
+        setReviewRating(0);
+        setReviewMessage("");
+        showToast(response.data.message || "Review submitted successfully!", "success");
+
+        try {
+          await fetchCompanyDetails();
+        } catch (refreshError) {
+          console.error("Error refreshing company after review:", refreshError);
+        }
       }
     } catch (err) {
       console.error("Error submitting review:", err);
 
       if (err.response?.data?.message) {
-        setReviewError(err.response.data.message);
+        setReviewError(String(err.response.data.message));
+      } else if (err.response?.data?.error) {
+        setReviewError(String(err.response.data.error));
       } else if (err.response?.status === 401) {
         setReviewError("Session expired. Please login again.");
       } else if (err.response?.status === 403) {
