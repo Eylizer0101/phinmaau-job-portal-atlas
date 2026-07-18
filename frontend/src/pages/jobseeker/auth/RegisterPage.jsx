@@ -1162,10 +1162,10 @@ const RegisterPage = () => {
           <button
             type="button"
             onClick={() => goToHowItWorksSlide(currentHowItWorksSlide - 1)}
-            className="absolute left-1 sm:-left-6 top-1/2 z-20 flex h-9 w-9 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#225d9f] shadow-lg ring-1 ring-black/5 transition hover:-translate-y-1/2 hover:scale-105 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/35"
+            className="absolute left-1 sm:-left-6 top-1/2 z-20 flex h-11 w-11 sm:h-12 sm:w-12 -translate-y-1/2 items-center justify-center bg-transparent text-[#225d9f] transition hover:-translate-y-1/2 hover:scale-110 focus-visible:outline-none"
             aria-label="Previous how it works step"
           >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <svg className="w-7 h-7 sm:w-8 sm:h-8" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path
                 fillRule="evenodd"
                 d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
@@ -1177,10 +1177,10 @@ const RegisterPage = () => {
           <button
             type="button"
             onClick={() => goToHowItWorksSlide(currentHowItWorksSlide + 1)}
-            className="absolute right-1 sm:-right-6 top-1/2 z-20 flex h-9 w-9 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#225d9f] shadow-lg ring-1 ring-black/5 transition hover:-translate-y-1/2 hover:scale-105 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/35"
+            className="absolute right-1 sm:-right-6 top-1/2 z-20 flex h-11 w-11 sm:h-12 sm:w-12 -translate-y-1/2 items-center justify-center bg-transparent text-[#225d9f] transition hover:-translate-y-1/2 hover:scale-110 focus-visible:outline-none"
             aria-label="Next how it works step"
           >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <svg className="w-7 h-7 sm:w-8 sm:h-8" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path
                 fillRule="evenodd"
                 d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
