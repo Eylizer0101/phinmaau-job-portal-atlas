@@ -559,12 +559,32 @@ const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work =
     courseRatio * 15
   );
 
+  const missingSkills = requiredSkills.filter((requiredSkill) => !matchedSkills.includes(requiredSkill));
+  const educationMatched = requiredEducationRank
+    ? applicantEducationRank >= requiredEducationRank
+    : Boolean(applicantEducationRank);
+  const experienceMatched = requiredYears ? applicantYears >= requiredYears : true;
+  const courseMatched = courseWords.length ? courseHits.length > 0 : false;
+
+  const formatYears = (years) => {
+    if (years >= 1) {
+      const value = Number.isInteger(years) ? Math.round(years) : Number(years.toFixed(1));
+      return `${value} year${value === 1 ? '' : 's'}`;
+    }
+    if (years > 0) return 'Less than 1 year';
+    return 'No experience';
+  };
+
   return {
     score: Math.max(0, Math.min(100, score)),
     label: getMatchLabel(score),
     skillsLabel: getMatchLabel(Math.round(skillRatio * 100)),
     matchedSkillsCount: matchedSkills.length,
     requiredSkillsCount: requiredSkills.length,
+    matchedSkills,
+    missingSkills,
+    applicantSkills,
+    requiredSkills,
     educationDisplay:
       profile.course ||
       latestEducation.course ||
@@ -572,12 +592,27 @@ const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work =
       profile.studyField ||
       applicantEducation ||
       'Not provided',
+    applicantEducationDisplay: applicantEducation || 'Not provided',
+    requiredEducationDisplay: requiredEducation || 'Not specified',
+    educationMatched,
     experienceDisplay:
       applicantYears >= 1
         ? `${Number.isInteger(applicantYears) ? Math.round(applicantYears) : applicantYears.toFixed(1)} year${applicantYears >= 2 ? 's' : ''}`
         : applicantYears > 0
           ? 'Less than 1 year'
           : profile.experience || profile.whatHaveYouDone || 'No experience',
+    applicantExperienceDisplay: formatYears(applicantYears),
+    requiredExperienceDisplay: requiredYears ? formatYears(requiredYears) : 'No experience required',
+    experienceMatched,
+    courseMatched,
+    applicantCourseDisplay:
+      profile.course ||
+      latestEducation.course ||
+      latestEducation.studyField ||
+      profile.studyField ||
+      'Not provided',
+    matchedCourseKeywords: [...new Set(courseHits)],
+    missingCourseKeywords: [...new Set(courseWords.filter((word) => !courseHits.includes(word)))],
     hasEducation: Boolean(applicantEducation),
     hasExperience: Boolean(applicantYears > 0 || profile.experience || profile.whatHaveYouDone),
     hasSkills: Boolean(applicantSkills.length),
@@ -1177,64 +1212,156 @@ const ApplicationDetails = () => {
               </div>
             </div>
 
-            <div className="divide-y divide-gray-200">
-              <div className="flex items-start justify-between gap-4 py-4">
-                <div className="min-w-0">
-                  <div className="text-[13px] font-semibold text-gray-800">Education</div>
-                  <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-gray-500">
-                    {matchSummary.educationDisplay}
+            <div className="max-h-[360px] overflow-y-auto pr-2">
+              <div className="divide-y divide-gray-200">
+                <div className="py-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-semibold text-gray-800">Education</div>
+                      <div className="mt-1 text-[12px] leading-5 text-gray-500">
+                        Applicant: {matchSummary.applicantEducationDisplay}
+                      </div>
+                      <div className="text-[12px] leading-5 text-gray-500">
+                        Required: {matchSummary.requiredEducationDisplay}
+                      </div>
+                    </div>
+                    <div
+                      className={cn(
+                        'mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
+                        matchSummary.educationMatched
+                          ? 'border-[#159447] text-[#159447]'
+                          : 'border-red-400 text-red-500'
+                      )}
+                    >
+                      <SvgIcon name={matchSummary.educationMatched ? 'check' : 'x'} className="h-3 w-3" />
+                    </div>
                   </div>
-                </div>
-                <div
-                  className={cn(
-                    'mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
-                    matchSummary.hasEducation
-                      ? 'border-[#159447] text-[#159447]'
-                      : 'border-gray-300 text-gray-300'
+                  {!matchSummary.educationMatched && (
+                    <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-[11px] leading-4 text-red-700">
+                      The applicant's education level is below or different from the job requirement.
+                    </p>
                   )}
-                >
-                  <SvgIcon name="check" className="h-3 w-3" />
                 </div>
-              </div>
 
-              <div className="flex items-start justify-between gap-4 py-4">
-                <div className="min-w-0">
-                  <div className="text-[13px] font-semibold text-gray-800">Experience</div>
-                  <div className="mt-1 text-[12px] leading-5 text-gray-500">
-                    {matchSummary.experienceDisplay}
+                <div className="py-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-semibold text-gray-800">Experience</div>
+                      <div className="mt-1 text-[12px] leading-5 text-gray-500">
+                        Applicant: {matchSummary.applicantExperienceDisplay}
+                      </div>
+                      <div className="text-[12px] leading-5 text-gray-500">
+                        Required: {matchSummary.requiredExperienceDisplay}
+                      </div>
+                    </div>
+                    <div
+                      className={cn(
+                        'mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
+                        matchSummary.experienceMatched
+                          ? 'border-[#159447] text-[#159447]'
+                          : 'border-red-400 text-red-500'
+                      )}
+                    >
+                      <SvgIcon name={matchSummary.experienceMatched ? 'check' : 'x'} className="h-3 w-3" />
+                    </div>
                   </div>
-                </div>
-                <div
-                  className={cn(
-                    'mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
-                    matchSummary.hasExperience
-                      ? 'border-[#159447] text-[#159447]'
-                      : 'border-gray-300 text-gray-300'
+                  {!matchSummary.experienceMatched && (
+                    <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-[11px] leading-4 text-red-700">
+                      The applicant does not yet meet the required years of experience.
+                    </p>
                   )}
-                >
-                  <SvgIcon name="check" className="h-3 w-3" />
                 </div>
-              </div>
 
-              <div className="flex items-start justify-between gap-4 py-4">
-                <div className="min-w-0">
-                  <div className="text-[13px] font-semibold text-gray-800">Skills Match</div>
-                  <div className="mt-1 text-[12px] leading-5 text-gray-500">
-                    {matchSummary.skillsLabel}
-                    {matchSummary.requiredSkillsCount > 0
-                      ? ` · ${matchSummary.matchedSkillsCount}/${matchSummary.requiredSkillsCount} matched`
-                      : ''}
+                <div className="py-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-semibold text-gray-800">Skills Match</div>
+                      <div className="mt-1 text-[12px] leading-5 text-gray-500">
+                        {matchSummary.skillsLabel}
+                        {matchSummary.requiredSkillsCount > 0
+                          ? ` · ${matchSummary.matchedSkillsCount}/${matchSummary.requiredSkillsCount} matched`
+                          : ' · No required skills listed'}
+                      </div>
+                    </div>
+                    <div
+                      className={cn(
+                        'mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
+                        matchSummary.missingSkills.length === 0 && matchSummary.requiredSkillsCount > 0
+                          ? 'border-[#159447] text-[#159447]'
+                          : 'border-red-400 text-red-500'
+                      )}
+                    >
+                      <SvgIcon
+                        name={matchSummary.missingSkills.length === 0 && matchSummary.requiredSkillsCount > 0 ? 'check' : 'x'}
+                        className="h-3 w-3"
+                      />
+                    </div>
                   </div>
-                </div>
-                <div
-                  className={cn(
-                    'mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
-                    matchSummary.hasSkills
-                      ? 'border-[#159447] text-[#159447]'
-                      : 'border-gray-300 text-gray-300'
+
+                  {matchSummary.matchedSkills.length > 0 && (
+                    <div className="mt-3">
+                      <div className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">Matched skills</div>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {matchSummary.matchedSkills.map((skill) => (
+                          <span key={`matched-${skill}`} className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-medium text-emerald-700">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   )}
-                >
-                  <SvgIcon name="check" className="h-3 w-3" />
+
+                  {matchSummary.missingSkills.length > 0 && (
+                    <div className="mt-3">
+                      <div className="text-[11px] font-semibold uppercase tracking-wide text-red-700">Missing skills</div>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {matchSummary.missingSkills.map((skill) => (
+                          <span key={`missing-${skill}`} className="rounded-full border border-red-200 bg-red-50 px-2 py-1 text-[10px] font-medium text-red-700">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {matchSummary.requiredSkillsCount === 0 && (
+                    <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] leading-4 text-amber-700">
+                      The job post has no specific required skills, so the skills score uses the applicant's available profile skills.
+                    </p>
+                  )}
+                </div>
+
+                <div className="py-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-semibold text-gray-800">Course Relevance</div>
+                      <div className="mt-1 text-[12px] leading-5 text-gray-500">
+                        Applicant course: {matchSummary.applicantCourseDisplay}
+                      </div>
+                    </div>
+                    <div
+                      className={cn(
+                        'mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
+                        matchSummary.courseMatched
+                          ? 'border-[#159447] text-[#159447]'
+                          : 'border-red-400 text-red-500'
+                      )}
+                    >
+                      <SvgIcon name={matchSummary.courseMatched ? 'check' : 'x'} className="h-3 w-3" />
+                    </div>
+                  </div>
+
+                  {matchSummary.matchedCourseKeywords.length > 0 && (
+                    <p className="mt-2 text-[11px] leading-4 text-emerald-700">
+                      Relevant keywords: {matchSummary.matchedCourseKeywords.join(', ')}
+                    </p>
+                  )}
+
+                  {!matchSummary.courseMatched && (
+                    <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-[11px] leading-4 text-red-700">
+                      The applicant's course or study field has little or no keyword match with the job title, category, description, and requirements.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
