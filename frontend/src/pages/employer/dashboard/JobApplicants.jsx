@@ -15,6 +15,10 @@ const SvgIcon = ({ name, className = 'h-4 w-4' }) => {
     calendar: 'M8 7V3m8 4V3M5 11h14M6 5h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2z',
     arrow: 'M5 12h14m-5-5 5 5-5 5',
     sparkle: 'M12 3l1.2 3.8L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3z M5 14l.8 2.2L8 17l-2.2.8L5 20l-.8-2.2L2 17l2.2-.8L5 14z',
+    search: 'M21 21l-4.3-4.3m1.3-5.2a7 7 0 11-14 0 7 7 0 0114 0z',
+    x: 'M6 18L18 6M6 6l12 12',
+    chevronLeft: 'M15 19l-7-7 7-7',
+    chevronRight: 'M9 5l7 7-7 7',
   };
 
   return (
@@ -203,6 +207,169 @@ const levelStyle = (level) => {
   return 'bg-gray-100 text-gray-700';
 };
 
+
+const cn = (...classes) => classes.filter(Boolean).join(' ');
+
+const dateOptions = [
+  { value: 'all', label: 'All Time' },
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: '7days', label: 'Last 7 Days' },
+  { value: '30days', label: 'Last 30 Days' },
+  { value: 'thisMonth', label: 'This Month' },
+  { value: 'lastMonth', label: 'Last Month' },
+  { value: 'custom', label: 'Custom Range' },
+];
+
+const formatDateInput = (date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return '';
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const getPresetDateRange = (value) => {
+  const today = new Date();
+  const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  if (value === 'today') return { dateFrom: formatDateInput(endOfToday), dateTo: formatDateInput(endOfToday) };
+  if (value === 'yesterday') {
+    const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+    return { dateFrom: formatDateInput(yesterday), dateTo: formatDateInput(yesterday) };
+  }
+  if (value === '7days') return { dateFrom: formatDateInput(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6)), dateTo: formatDateInput(endOfToday) };
+  if (value === '30days') return { dateFrom: formatDateInput(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29)), dateTo: formatDateInput(endOfToday) };
+  if (value === 'thisMonth') return { dateFrom: formatDateInput(new Date(today.getFullYear(), today.getMonth(), 1)), dateTo: formatDateInput(endOfToday) };
+  if (value === 'lastMonth') return { dateFrom: formatDateInput(new Date(today.getFullYear(), today.getMonth() - 1, 1)), dateTo: formatDateInput(new Date(today.getFullYear(), today.getMonth(), 0)) };
+  return { dateFrom: '', dateTo: '' };
+};
+
+const formatDateLabel = (value) => {
+  if (!value) return 'Select date';
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return 'Select date';
+  return date.toLocaleDateString('en-PH', { month: 'short', day: '2-digit', year: 'numeric' });
+};
+
+const getDateOptionLabel = (value, startDate, endDate) => {
+  if (value === 'custom' && startDate && endDate) return `${formatDateLabel(startDate)} - ${formatDateLabel(endDate)}`;
+  return dateOptions.find((option) => option.value === value)?.label || 'All Time';
+};
+
+const addCalendarMonths = (date, amount) => {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + amount);
+  return next;
+};
+
+const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const getYearOptions = () => {
+  const startYear = 1950;
+  const endYear = new Date().getFullYear();
+  return Array.from({ length: endYear - startYear + 1 }, (_, index) => startYear + index);
+};
+
+const CalendarMonth = ({ monthDate, startDate, endDate, onPickDate, onChangeMonth }) => {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstWeekday = new Date(year, month, 1).getDay();
+  const gridStart = new Date(year, month, 1 - firstWeekday);
+  const start = startDate ? new Date(`${startDate}T00:00:00`) : null;
+  const end = endDate ? new Date(`${endDate}T00:00:00`) : null;
+  const days = Array.from({ length: 42 }, (_, index) => {
+    const d = new Date(gridStart);
+    d.setDate(gridStart.getDate() + index);
+    return d;
+  });
+  const isSameDay = (a, b) => a && b && a.toDateString() === b.toDateString();
+  const inRange = (d) => start && end && d >= start && d <= end;
+
+  return (
+    <div className="min-w-0 flex-1">
+      <div className="mb-4 grid grid-cols-[32px_1fr_32px] items-center gap-2">
+        <button type="button" onClick={() => onChangeMonth(addCalendarMonths(monthDate, -1))} className="flex h-8 w-8 items-center justify-center rounded-lg text-2xl text-slate-700 hover:bg-slate-100" aria-label="Previous month">‹</button>
+        <div className="grid grid-cols-[1fr_86px] gap-2">
+          <select value={month} onChange={(event) => onChangeMonth(new Date(year, Number(event.target.value), 1))} className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
+            {monthNames.map((name, index) => <option key={name} value={index}>{name}</option>)}
+          </select>
+          <select value={year} onChange={(event) => onChangeMonth(new Date(Number(event.target.value), month, 1))} className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
+            {getYearOptions().map((yearOption) => <option key={yearOption} value={yearOption}>{yearOption}</option>)}
+          </select>
+        </div>
+        <button type="button" onClick={() => onChangeMonth(addCalendarMonths(monthDate, 1))} className="flex h-8 w-8 items-center justify-center rounded-lg text-2xl text-slate-700 hover:bg-slate-100" aria-label="Next month">›</button>
+      </div>
+      <div className="grid grid-cols-7 gap-y-2 text-center text-xs font-bold text-slate-500">
+        {['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].map((day) => <div key={day}>{day}</div>)}
+      </div>
+      <div className="mt-3 grid grid-cols-7 gap-y-1 text-center text-sm text-slate-600">
+        {days.map((day) => {
+          const value = formatDateInput(day);
+          const outside = day.getMonth() !== month;
+          const selected = isSameDay(day, start) || isSameDay(day, end);
+          return (
+            <button type="button" key={`${value}-${month}`} onClick={() => onPickDate(value)} className={cn('mx-auto flex h-9 w-full items-center justify-center transition', outside ? 'text-slate-300' : 'text-slate-700', inRange(day) ? 'bg-[#2e66a6]/10 text-[#2e66a6]' : '', selected ? 'rounded-lg bg-[#2e66a6] font-extrabold text-white shadow-md' : 'hover:bg-[#2e66a6]/10')}>
+              {day.getDate()}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const CustomDateRangeModal = ({ open, startDate, endDate, onCancel, onApply }) => {
+  const todayValue = formatDateInput(new Date());
+  const [draftStart, setDraftStart] = useState(startDate || todayValue);
+  const [draftEnd, setDraftEnd] = useState(endDate || todayValue);
+  const [leftMonth, setLeftMonth] = useState(new Date(`${startDate || todayValue}T00:00:00`));
+  const [rightMonth, setRightMonth] = useState(new Date(`${endDate || todayValue}T00:00:00`));
+
+  useEffect(() => {
+    if (!open) return;
+    const nextStart = startDate || todayValue;
+    const nextEnd = endDate || todayValue;
+    setDraftStart(nextStart);
+    setDraftEnd(nextEnd);
+    setLeftMonth(new Date(`${nextStart}T00:00:00`));
+    setRightMonth(new Date(`${nextEnd}T00:00:00`));
+  }, [open, startDate, endDate, todayValue]);
+
+  if (!open) return null;
+  const pickDate = (value) => {
+    if (!draftStart || (draftStart && draftEnd)) {
+      setDraftStart(value);
+      setDraftEnd('');
+    } else if (new Date(`${value}T00:00:00`) < new Date(`${draftStart}T00:00:00`)) {
+      setDraftEnd(draftStart);
+      setDraftStart(value);
+    } else {
+      setDraftEnd(value);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 px-4 py-6">
+      <div className="w-full max-w-4xl overflow-hidden rounded-xl bg-white shadow-2xl">
+        <div className="grid gap-5 px-6 pb-5 pt-5 md:grid-cols-[1fr_auto_1fr] md:items-end">
+          <div><div className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">Start Date</div><div className="flex h-12 items-center gap-3 rounded-xl bg-slate-100 px-4 text-lg font-bold text-[#2e66a6]"><SvgIcon name="calendar" className="h-5 w-5" />{formatDateLabel(draftStart)}</div></div>
+          <div className="hidden pb-3 text-3xl text-slate-500 md:block">→</div>
+          <div><div className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">End Date</div><div className="flex h-12 items-center gap-3 rounded-xl bg-slate-100 px-4 text-lg font-bold text-[#2e66a6]"><SvgIcon name="calendar" className="h-5 w-5" />{formatDateLabel(draftEnd)}</div></div>
+        </div>
+        <div className="grid gap-8 px-6 pb-5 md:grid-cols-2">
+          <CalendarMonth monthDate={leftMonth} startDate={draftStart} endDate={draftEnd} onPickDate={pickDate} onChangeMonth={setLeftMonth} />
+          <CalendarMonth monthDate={rightMonth} startDate={draftStart} endDate={draftEnd} onPickDate={pickDate} onChangeMonth={setRightMonth} />
+        </div>
+        <div className="flex items-center justify-end gap-4 border-t border-slate-100 px-6 py-5">
+          <button type="button" onClick={onCancel} className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">Cancel</button>
+          <button type="button" disabled={!draftStart || !draftEnd} onClick={() => onApply(draftStart, draftEnd)} className="rounded-xl bg-[#2e66a6] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#25578f] disabled:cursor-not-allowed disabled:opacity-50">Apply Range</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const JobApplicants = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
@@ -210,6 +377,14 @@ const JobApplicants = () => {
   const [error, setError] = useState('');
   const [job, setJob] = useState(null);
   const [applications, setApplications] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [showCustomDateModal, setShowCustomDateModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   const fetchApplicants = useCallback(async () => {
     try {
@@ -227,9 +402,7 @@ const JobApplicants = () => {
     }
   }, [jobId]);
 
-  useEffect(() => {
-    fetchApplicants();
-  }, [fetchApplicants]);
+  useEffect(() => { fetchApplicants(); }, [fetchApplicants]);
 
   const applicantCards = useMemo(() => applications.map((application) => {
     const user = application.jobseeker || {};
@@ -238,115 +411,136 @@ const JobApplicants = () => {
     const education = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
     const skills = [...parseSkills(profile.technicalSkills), ...parseSkills(profile.softSkills)];
     return {
-      application,
-      user,
-      profile,
-      skills,
-      level: calculateJobSeekerLevel({
-        skills,
-        certifications: profile.certifications || [],
-        projects: profile.projects || [],
-        seminars: profile.seminars || [],
-        awards: profile.awards || [],
-        workExperiences: work,
-      }),
+      application, user, profile, skills,
+      level: calculateJobSeekerLevel({ skills, certifications: profile.certifications || [], projects: profile.projects || [], seminars: profile.seminars || [], awards: profile.awards || [], workExperiences: work }),
       matchScore: calculateApplicationMatch({ job: job || {}, profile, skills, work, education }),
     };
   }), [applications, job]);
+
+  const filteredApplicants = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    return applicantCards.filter(({ application, user, profile }) => {
+      const name = user.fullName || [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' ');
+      const searchableText = [name, user.email, profile.phoneNumber, profile.contactNumber, job?.title].filter(Boolean).join(' ').toLowerCase();
+      if (query && !searchableText.includes(query)) return false;
+      if (statusFilter !== 'all' && String(application.status || '').toLowerCase() !== statusFilter) return false;
+      if (dateFrom && dateTo) {
+        const appliedDate = new Date(application.appliedAt || application.createdAt);
+        const start = new Date(`${dateFrom}T00:00:00`);
+        const end = new Date(`${dateTo}T23:59:59.999`);
+        if (Number.isNaN(appliedDate.getTime()) || appliedDate < start || appliedDate > end) return false;
+      }
+      return true;
+    });
+  }, [applicantCards, searchTerm, statusFilter, dateFrom, dateTo, job]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredApplicants.length / itemsPerPage));
+  useEffect(() => { if (currentPage > totalPages) setCurrentPage(totalPages); }, [currentPage, totalPages]);
+  const paginatedApplicants = filteredApplicants.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const firstShown = filteredApplicants.length ? (currentPage - 1) * itemsPerPage + 1 : 0;
+  const lastShown = Math.min(currentPage * itemsPerPage, filteredApplicants.length);
+
+  const changeDateFilter = (value) => {
+    if (value === 'custom') {
+      setShowCustomDateModal(true);
+      return;
+    }
+    const range = getPresetDateRange(value);
+    setDateFilter(value);
+    setDateFrom(range.dateFrom);
+    setDateTo(range.dateTo);
+    setCurrentPage(1);
+  };
+
+  const applyCustomDateRange = (startDate, endDate) => {
+    setDateFilter('custom');
+    setDateFrom(startDate);
+    setDateTo(endDate);
+    setCurrentPage(1);
+    setShowCustomDateModal(false);
+  };
 
   const openPositions = Math.max(0, Number(job?.vacancies || 0) - applications.filter((item) => item.status === 'hired').length);
 
   return (
     <EmployerLayout>
-      
-        <div className="mmx-auto max-w-7xl px-1 py-8">
-          <button
-            type="button"
-            onClick={() => navigate(`/employer/manage-jobs/${jobId}/view`)}
-            className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[#111827] shadow-sm hover:bg-gray-50"
-          >
-            <SvgIcon name="back" />
-            Back to job details
-          </button>
+      <div className="mmx-auto max-w-7xl px-1 py-8">
+        <button type="button" onClick={() => navigate(`/employer/manage-jobs/${jobId}/view`)} className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[#111827] shadow-sm hover:bg-gray-50">
+          <SvgIcon name="back" /> Back to job details
+        </button>
 
-          <div className="mt-7">
-            <p className="text-sm font-bold uppercase tracking-wide text-[#2e66a6]">Applicants</p>
-            <h1 className="mt-1 text-3xl font-bold text-[#111827]">{job?.title || 'Job Applicants'}</h1>
-            <p className="mt-2 text-lg text-[#6b7280]">
-              {applications.length} candidate{applications.length === 1 ? '' : 's'} applied · {openPositions} open position{openPositions === 1 ? '' : 's'}
-            </p>
+        <div className="mt-7">
+          <p className="text-sm font-bold uppercase tracking-wide text-[#2e66a6]">Applicants</p>
+          <h1 className="mt-1 text-3xl font-bold text-[#111827]">{job?.title || 'Job Applicants'}</h1>
+          <p className="mt-2 text-lg text-[#6b7280]">{applications.length} candidate{applications.length === 1 ? '' : 's'} applied · {openPositions} open position{openPositions === 1 ? '' : 's'}</p>
+        </div>
+
+        <div className="mt-8 rounded-3xl border border-[#e3e5ef] bg-white p-5 shadow-sm">
+          <div className="grid gap-3 lg:grid-cols-[1.45fr_0.8fr_0.9fr]">
+            <div className="relative">
+              <SvgIcon name="search" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              <input value={searchTerm} onChange={(event) => { setSearchTerm(event.target.value); setCurrentPage(1); }} placeholder="Search applicant name, email..." className="h-12 w-full rounded-xl border border-gray-200 bg-white pl-12 pr-4 text-sm text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20" />
+            </div>
+            <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setCurrentPage(1); }} className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
+              <option value="all">All Status</option><option value="pending">Pending</option><option value="for interview">For Interview</option><option value="hired">Hired</option><option value="declined">Declined</option>
+            </select>
+            <div className="relative">
+              <SvgIcon name="calendar" className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
+              <select value={dateFilter} onChange={(event) => changeDateFilter(event.target.value)} className="h-12 w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 pr-12 text-sm font-medium text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
+                {dateOptions.map((option) => <option key={option.value} value={option.value}>{option.value === dateFilter ? getDateOptionLabel(option.value, dateFrom, dateTo) : option.label}</option>)}
+              </select>
+            </div>
           </div>
+        </div>
 
-          {loading ? (
-            <div className="mt-8 rounded-3xl bg-white p-12 text-center text-[#6b7280]">Loading applicants...</div>
-          ) : error ? (
-            <div className="mt-8 rounded-3xl bg-white p-12 text-center text-red-600">{error}</div>
-          ) : applicantCards.length ? (
+        {loading ? (
+          <div className="mt-8 rounded-3xl bg-white p-12 text-center text-[#6b7280]">Loading applicants...</div>
+        ) : error ? (
+          <div className="mt-8 rounded-3xl bg-white p-12 text-center text-red-600">{error}</div>
+        ) : paginatedApplicants.length ? (
+          <>
             <div className="mt-8 space-y-5">
-              {applicantCards.map(({ application, user, profile, level, matchScore }) => {
+              {paginatedApplicants.map(({ application, user, profile, level, matchScore }) => {
                 const name = user.fullName || [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' ') || 'Applicant';
-                const image = user.profileImage
-                  ? (String(user.profileImage).startsWith('http') ? user.profileImage : `${API_HOST}${user.profileImage}`)
-                  : '';
+                const image = user.profileImage ? (String(user.profileImage).startsWith('http') ? user.profileImage : `${API_HOST}${user.profileImage}`) : '';
                 const phone = profile.phoneNumber || profile.contactNumber || 'Not provided';
-
                 return (
                   <article key={application._id} className="rounded-3xl border border-[#e3e5ef] bg-white p-6 shadow-sm">
                     <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
                       <div className="flex min-w-0 items-center gap-5">
-                        {image ? (
-                          <img src={image} alt={name} className="h-20 w-20 rounded-full object-cover" />
-                        ) : (
-                          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#e8edff] text-2xl font-bold text-[#2e66a6]">
-                            {name.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-
+                        {image ? <img src={image} alt={name} className="h-20 w-20 rounded-full object-cover" /> : <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#e8edff] text-2xl font-bold text-[#2e66a6]">{name.charAt(0).toUpperCase()}</div>}
                         <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-3">
-                            <h2 className="text-xl font-bold text-[#111827]">{name}</h2>
-                            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusStyle(application.status)}`}>
-                              {statusLabel(application.status)}
-                            </span>
-                          </div>
-
-                          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#7b8190]">
-                            <span className="inline-flex items-center gap-1.5"><SvgIcon name="mail" />{user.email || 'Not provided'}</span>
-                            <span className="hidden text-[#c2c5ce] sm:inline">|</span>
-                            <span className="inline-flex items-center gap-1.5"><SvgIcon name="phone" />{phone}</span>
-                          </div>
-
-                          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
-                            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${levelStyle(level)}`}>★ {level}</span>
-                            <span className="inline-flex items-center gap-1.5 text-[#7b8190]"><SvgIcon name="calendar" />Applied {formatRelativeTime(application.appliedAt || application.createdAt)}</span>
-                          </div>
+                          <div className="flex flex-wrap items-center gap-3"><h2 className="text-xl font-bold text-[#111827]">{name}</h2><span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusStyle(application.status)}`}>{statusLabel(application.status)}</span></div>
+                          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#7b8190]"><span className="inline-flex items-center gap-1.5"><SvgIcon name="mail" />{user.email || 'Not provided'}</span><span className="hidden text-[#c2c5ce] sm:inline">|</span><span className="inline-flex items-center gap-1.5"><SvgIcon name="phone" />{phone}</span></div>
+                          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm"><span className={`rounded-full px-3 py-1 text-xs font-semibold ${levelStyle(level)}`}>★ {level}</span><span className="inline-flex items-center gap-1.5 text-[#7b8190]"><SvgIcon name="calendar" />Applied {formatRelativeTime(application.appliedAt || application.createdAt)}</span></div>
                         </div>
                       </div>
-
                       <div className="flex flex-row items-center gap-3 md:flex-col md:items-stretch">
-                        <div className="inline-flex items-center justify-center gap-2 rounded-full bg-[#eaf0ff] px-5 py-2 text-sm font-bold text-[#2e66a6]">
-                          <SvgIcon name="sparkle" />
-                          {matchScore}% match
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/employer/application/${application._id}?from=job-applicants&jobId=${encodeURIComponent(jobId)}`)}
-                          className="inline-flex items-center justify-center gap-2 rounded-full bg-[#2e66a6] px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[#25578f]"
-                        >
-                          View profile
-                          <SvgIcon name="arrow" />
-                        </button>
+                        <div className="inline-flex items-center justify-center gap-2 rounded-full bg-[#eaf0ff] px-5 py-2 text-sm font-bold text-[#2e66a6]"><SvgIcon name="sparkle" />{matchScore}% match</div>
+                        <button type="button" onClick={() => navigate(`/employer/application/${application._id}?from=job-applicants&jobId=${encodeURIComponent(jobId)}`)} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#2e66a6] px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[#25578f]">View profile <SvgIcon name="arrow" /></button>
                       </div>
                     </div>
                   </article>
                 );
               })}
             </div>
-          ) : (
-            <div className="mt-8 rounded-3xl bg-white p-12 text-center text-[#6b7280]">No applicants have applied for this job yet.</div>
-          )}
-        </div>
-      
+            <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-[#e3e5ef] bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-gray-500">Showing {firstShown} to {lastShown} of {filteredApplicants.length} entries</p>
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                <button type="button" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => page - 1)} className="inline-flex h-9 items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"><SvgIcon name="chevronLeft" />Previous</button>
+                <div className="inline-flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, index) => index + 1).slice(Math.max(0, currentPage - 3), Math.min(totalPages, currentPage + 2)).map((pageNumber) => <button key={pageNumber} type="button" onClick={() => setCurrentPage(pageNumber)} className={cn('inline-flex h-9 min-w-[36px] items-center justify-center rounded-lg border px-3 text-sm font-semibold transition', pageNumber === currentPage ? 'border-[#2e66a6] bg-[#2e66a6] text-white' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50')}>{pageNumber}</button>)}
+                </div>
+                <button type="button" disabled={currentPage === totalPages} onClick={() => setCurrentPage((page) => page + 1)} className="inline-flex h-9 items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50">Next<SvgIcon name="chevronRight" /></button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="mt-8 rounded-3xl bg-white p-12 text-center text-[#6b7280]">No applicants found for the selected filters.</div>
+        )}
+      </div>
+
+      <CustomDateRangeModal open={showCustomDateModal} startDate={dateFrom} endDate={dateTo} onCancel={() => setShowCustomDateModal(false)} onApply={applyCustomDateRange} />
     </EmployerLayout>
   );
 };
