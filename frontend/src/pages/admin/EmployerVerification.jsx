@@ -252,8 +252,48 @@ const formatDate = (dateString) => {
   });
 };
 
-const buildAddressDisplay = (item) => {
-  return item?.address || item?.employerProfile?.regionCity || "—";
+const buildLocationDisplay = (item) => {
+  const profile = item?.employerProfile || {};
+  const rawAddress = String(item?.address || profile?.regionCity || "").trim();
+
+  const region =
+    item?.region ||
+    profile?.region ||
+    profile?.companyRegion ||
+    rawAddress.split(" - ")[0]?.trim() ||
+    "—";
+
+  const city =
+    item?.city ||
+    item?.municipality ||
+    profile?.city ||
+    profile?.municipality ||
+    profile?.companyCity ||
+    "";
+
+  const province =
+    item?.province ||
+    profile?.province ||
+    profile?.companyProvince ||
+    "";
+
+  const addressParts = rawAddress
+    .split(" - ")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  const fallbackProvince = addressParts[1] || "";
+  const fallbackCity = addressParts[2] || "";
+
+  const cityProvince =
+    [city || fallbackCity, province || fallbackProvince]
+      .filter(Boolean)
+      .filter((value, index, values) => values.indexOf(value) === index)
+      .join(", ") ||
+    fallbackProvince ||
+    "—";
+
+  return { region, cityProvince };
 };
 
 const buildAvatar = (item) => {
@@ -1008,12 +1048,13 @@ const EmployerVerification = () => {
             ) : (
               <>
                 <div className="hidden lg:block overflow-x-auto">
-                  <table className="w-full min-w-[1100px]">
+                  <table className="w-full min-w-[1250px]">
                     <thead className="bg-slate-50 border-b border-gray-100">
                       <tr>
                         <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Company</th>
                         <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Industry</th>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Address</th>
+                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Region</th>
+                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">City / Province</th>
                         <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Registered</th>
                         <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Status</th>
                         <th className="px-5 py-4 text-right text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Actions</th>
@@ -1025,7 +1066,7 @@ const EmployerVerification = () => {
                         const companyName = item.companyName || item.employerProfile?.companyName || "No Company";
                         const companyEmail = item.businessEmail || item.email || "—";
                         const industry = item.industry || item.employerProfile?.industry || "—";
-                        const address = buildAddressDisplay(item);
+                        const { region, cityProvince } = buildLocationDisplay(item);
                         const status = item.overallStatus || "unverified";
 
                         return (
@@ -1071,8 +1112,15 @@ const EmployerVerification = () => {
                             </td>
 
                             <td className="px-5 py-4 text-sm text-gray-700">{industry}</td>
-                            <td className="px-5 py-4 text-sm text-gray-700 max-w-[220px] truncate" title={address}>
-                              {address}
+                            <td className="max-w-[190px] px-5 py-4 text-sm text-gray-700">
+                              <div className="truncate whitespace-nowrap" title={region}>
+                                {region}
+                              </div>
+                            </td>
+                            <td className="max-w-[190px] px-5 py-4 text-sm text-gray-700">
+                              <div className="truncate whitespace-nowrap" title={cityProvince}>
+                                {cityProvince}
+                              </div>
                             </td>
                             <td className="px-5 py-4 text-sm text-gray-700">{formatDate(item.createdAt)}</td>
                             <td className="px-5 py-4">{statusBadge(status)}</td>
@@ -1101,7 +1149,7 @@ const EmployerVerification = () => {
                     const companyName = item.companyName || item.employerProfile?.companyName || "No Company";
                     const companyEmail = item.businessEmail || item.email || "—";
                     const industry = item.industry || item.employerProfile?.industry || "—";
-                    const address = buildAddressDisplay(item);
+                    const { region, cityProvince } = buildLocationDisplay(item);
                     const status = item.overallStatus || "unverified";
 
                     return (
@@ -1133,8 +1181,13 @@ const EmployerVerification = () => {
                               <div>
                                 <span className="font-semibold text-gray-800">Registered:</span> {formatDate(item.createdAt)}
                               </div>
-                              <div className="col-span-2">
-                                <span className="font-semibold text-gray-800">Address:</span> {address}
+                              <div className="min-w-0">
+                                <span className="font-semibold text-gray-800">Region:</span>
+                                <span className="ml-1 block truncate whitespace-nowrap" title={region}>{region}</span>
+                              </div>
+                              <div className="min-w-0">
+                                <span className="font-semibold text-gray-800">City / Province:</span>
+                                <span className="ml-1 block truncate whitespace-nowrap" title={cityProvince}>{cityProvince}</span>
                               </div>
                               <div className="col-span-2">{statusBadge(status)}</div>
                             </div>
