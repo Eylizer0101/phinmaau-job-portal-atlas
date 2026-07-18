@@ -1157,9 +1157,26 @@ const CompanyViewDetails = () => {
       });
 
       if (response?.data?.success) {
-        await fetchCompanyDetails();
+        const updatedCompany = response.data.company;
+
+        if (updatedCompany) {
+          setCompany(updatedCompany);
+        }
+
         setActiveTab("reviews");
-        closeReviewModal();
+        setShowReviewModal(false);
+        setReviewError("");
+        resetReviewForm();
+        showToast(response.data.message || "Review posted successfully.", "success");
+
+        // Refresh silently so the rating, count, and review list stay synced
+        // with the latest backend data. The modal is already closed before
+        // this request runs.
+        try {
+          await fetchCompanyDetails();
+        } catch (refreshError) {
+          console.error("Error refreshing company after review:", refreshError);
+        }
       }
     } catch (err) {
       console.error("Error submitting review:", err);

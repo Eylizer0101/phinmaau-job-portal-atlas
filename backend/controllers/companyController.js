@@ -373,6 +373,7 @@ exports.submitCompanyReview = async (req, res) => {
       updatedAt: new Date(),
     });
 
+    company.markModified('employerProfile.reviews');
     await company.save();
 
     return res.status(201).json({
