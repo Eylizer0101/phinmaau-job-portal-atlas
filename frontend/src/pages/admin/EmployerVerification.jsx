@@ -1057,7 +1057,7 @@ const EmployerVerification = () => {
                         <th className="w-[15%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">City / Province</th>
                         <th className="w-[13%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Registered</th>
                         <th className="w-[8%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Status</th>
-                        <th className="w-[6%] px-4 py-4 text-right text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Actions</th>
+                        <th className="w-[6%] px-4 py-4 text-right text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Action</th>
                       </tr>
                     </thead>
 
