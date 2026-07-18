@@ -91,7 +91,7 @@ const EmployerDateFilterDropdown = ({ value, startDate, endDate, disabled, onSel
         type="button"
         disabled={disabled}
         onClick={() => setOpen((prev) => !prev)}
-        className="flex h-11 w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
+        className="flex h-[54px] w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
       >
         <span className="truncate">{getEmployerDateFilterLabel(value, startDate, endDate)}</span>
         <svg className="h-4 w-4 shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -299,6 +299,13 @@ const EmployerCustomDateRangeModal = ({ open, startDate, endDate, onCancel, onAp
           {cells.map((date) => {
             const outsideMonth = date.getMonth() !== viewDate.getMonth();
             const isSelected = sameDate(date, selectedDate);
+            const isRangeStart = sameDate(date, selectedStart);
+            const isRangeEnd = sameDate(date, selectedEnd);
+            const isInRange =
+              selectedStart &&
+              selectedEnd &&
+              date.getTime() >= selectedStart.getTime() &&
+              date.getTime() <= selectedEnd.getTime();
             const isDisabled =
               minimumDate &&
               new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime() <
@@ -315,14 +322,16 @@ const EmployerCustomDateRangeModal = ({ open, startDate, endDate, onCancel, onAp
                 disabled={isDisabled}
                 onClick={() => onDateChange(toDateValue(date))}
                 className={cn(
-                  'mx-auto my-1 flex h-9 w-9 items-center justify-center rounded-lg text-sm font-semibold transition',
-                  isSelected
-                    ? 'bg-[#e8f0fb] text-white shadow-sm ring-1 ring-[#dce8f7]'
+                  'my-1 flex h-9 w-full items-center justify-center text-sm font-semibold transition',
+                  isInRange && !isRangeStart && !isRangeEnd
+                    ? 'bg-[#e7edf5] text-slate-700'
                     : outsideMonth
                     ? 'text-slate-300 hover:bg-slate-50'
                     : 'text-slate-600 hover:bg-slate-100',
-                  isSelected && 'bg-[#2e66a6] text-white',
-                  isDisabled && 'cursor-not-allowed text-slate-200 hover:bg-transparent'
+                  (isRangeStart || isRangeEnd) &&
+                    'mx-auto w-9 rounded-lg bg-[#2e66a6] text-white shadow-sm ring-1 ring-[#dce8f7]',
+                  isSelected && !isRangeStart && !isRangeEnd && 'mx-auto w-9 rounded-lg bg-[#2e66a6] text-white',
+                  isDisabled && !isInRange && 'cursor-not-allowed text-slate-200 hover:bg-transparent'
                 )}
               >
                 {date.getDate()}
