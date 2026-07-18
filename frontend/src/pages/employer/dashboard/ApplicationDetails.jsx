@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
+import { normalizeUserToResumeData } from '../../../components/shared/resumePrintTemplate';
 
 const API_HOST = process.env.REACT_APP_API_URL
   ? process.env.REACT_APP_API_URL.replace(/\/api\/?$/, '')
@@ -1137,6 +1138,26 @@ const ApplicationDetails = () => {
   const declineReasons = currentStatus === 'for interview' ? FOR_INTERVIEW_DECLINE_REASONS : APPLICANTS_DECLINE_REASONS;
 
 
+
+  const openFullResumePreview = () => {
+    const resumeData = normalizeUserToResumeData({
+      userData: user,
+      profile,
+      workExperiences: work,
+    });
+
+    sessionStorage.setItem(
+      'resumePreviewData',
+      JSON.stringify({
+        ...resumeData,
+        returnTo: `/employer/application/${applicationId}${location.search || ''}`,
+        viewerMode: 'employer',
+      })
+    );
+
+    navigate('/employer/application/resume-preview');
+  };
+
   return <EmployerLayout>
     <div className="mx-auto max-w-7xl px-1 py-8">
       <Link to={backDestination} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-[#174b91]"><SvgIcon name="back" className="h-4 w-4" /> Back to Applicants</Link>
@@ -1170,7 +1191,18 @@ const ApplicationDetails = () => {
           <div className="flex border-t border-[#d8e2ee] px-5 sm:px-7"><button onClick={() => setActiveTab('resume')} className={cn('relative flex h-14 items-center gap-2 px-3 text-sm font-semibold', activeTab === 'resume' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="resume" className="h-4 w-4" /> Resume<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'resume' ? 'bg-[#174b91]' : '')} /></button><button onClick={() => setActiveTab('activity')} className={cn('relative flex h-14 items-center gap-2 px-5 text-sm font-semibold', activeTab === 'activity' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="activity" className="h-4 w-4" /> Activity<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'activity' ? 'bg-[#174b91]' : '')} /></button></div>
 
           {activeTab === 'resume' ? (
-            <div className="border-t border-[#d8e2ee] bg-white px-5 py-6 sm:px-7 lg:px-8">
+            <div className="border-t border-[#d8e2ee] bg-white px-5 pb-6 pt-3 sm:px-7 lg:px-8">
+              <div className="flex justify-end pb-2">
+                <button
+                  type="button"
+                  onClick={openFullResumePreview}
+                  className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 hover:text-[#174b91] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
+                >
+                  <SvgIcon name="eye" className="h-4 w-4" />
+                  Open full view
+                </button>
+              </div>
+
               <article className="mx-auto w-full bg-white font-serif text-[10px] leading-[1.22] text-black">
                 <header className="relative min-h-[92px] border-b border-black pb-2 pr-[105px] text-center">
                   <h2 className="text-[22px] font-bold uppercase leading-tight tracking-[0.02em]">
