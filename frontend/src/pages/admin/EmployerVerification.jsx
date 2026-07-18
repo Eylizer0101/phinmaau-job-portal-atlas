@@ -1048,16 +1048,16 @@ const EmployerVerification = () => {
             ) : (
               <>
                 <div className="hidden lg:block overflow-x-auto">
-                  <table className="w-full min-w-[1250px]">
+                  <table className="w-full table-fixed">
                     <thead className="bg-slate-50 border-b border-gray-100">
                       <tr>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Company</th>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Industry</th>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Region</th>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">City / Province</th>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Registered</th>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Status</th>
-                        <th className="px-5 py-4 text-right text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Actions</th>
+                        <th className="w-[25%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Company</th>
+                        <th className="w-[15%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Industry</th>
+                        <th className="w-[18%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Region</th>
+                        <th className="w-[15%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">City / Province</th>
+                        <th className="w-[13%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Registered</th>
+                        <th className="w-[8%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Status</th>
+                        <th className="w-[6%] px-4 py-4 text-right text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Actions</th>
                       </tr>
                     </thead>
 
@@ -1087,7 +1087,7 @@ const EmployerVerification = () => {
                             }}
                             className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
                           >
-                            <td className="px-5 py-4">
+                            <td className="px-4 py-4">
                               <div className="flex items-center gap-3 min-w-0">
                                 {item.companyLogo ? (
                                   <img
@@ -1111,20 +1111,24 @@ const EmployerVerification = () => {
                               </div>
                             </td>
 
-                            <td className="px-5 py-4 text-sm text-gray-700">{industry}</td>
-                            <td className="max-w-[190px] px-5 py-4 text-sm text-gray-700">
+                            <td className="px-4 py-4 text-sm text-gray-700">
+                              <div className="truncate whitespace-nowrap" title={industry}>
+                                {industry}
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 text-sm text-gray-700">
                               <div className="truncate whitespace-nowrap" title={region}>
                                 {region}
                               </div>
                             </td>
-                            <td className="max-w-[190px] px-5 py-4 text-sm text-gray-700">
+                            <td className="px-4 py-4 text-sm text-gray-700">
                               <div className="truncate whitespace-nowrap" title={cityProvince}>
                                 {cityProvince}
                               </div>
                             </td>
-                            <td className="px-5 py-4 text-sm text-gray-700">{formatDate(item.createdAt)}</td>
-                            <td className="px-5 py-4">{statusBadge(status)}</td>
-                            <td className="px-5 py-4">
+                            <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-700">{formatDate(item.createdAt)}</td>
+                            <td className="px-4 py-4">{statusBadge(status)}</td>
+                            <td className="px-4 py-4">
                               <div className="flex items-center justify-end gap-2">
                                 <Button
                                   variant="secondary"
