@@ -1155,6 +1155,15 @@ const ApplicationDetails = () => {
 
         .page-shell {
           min-height: 0 !important;
+          padding: 0 !important;
+          background: #ffffff !important;
+        }
+
+        .resume-paper {
+          width: 100% !important;
+          min-height: 0 !important;
+          margin: 0 !important;
+          box-shadow: none !important;
         }
 
         html,
@@ -1162,6 +1171,7 @@ const ApplicationDetails = () => {
           margin: 0 !important;
           min-height: 0 !important;
           overflow: hidden !important;
+          background: #ffffff !important;
         }
       </style>`
     );
@@ -1231,23 +1241,19 @@ const ApplicationDetails = () => {
           <div className="flex border-t border-[#d8e2ee] px-5 sm:px-7"><button onClick={() => setActiveTab('resume')} className={cn('relative flex h-14 items-center gap-2 px-3 text-sm font-semibold', activeTab === 'resume' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="resume" className="h-4 w-4" /> Resume<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'resume' ? 'bg-[#174b91]' : '')} /></button><button onClick={() => setActiveTab('activity')} className={cn('relative flex h-14 items-center gap-2 px-5 text-sm font-semibold', activeTab === 'activity' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="activity" className="h-4 w-4" /> Activity<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'activity' ? 'bg-[#174b91]' : '')} /></button></div>
 
           {activeTab === 'resume' ? (
-            <div className="border-t border-[#d8e2ee] bg-[#e5e7eb]">
-              <div className="overflow-x-auto overflow-y-hidden">
-                <iframe
-                  title={`${name} resume`}
-                  srcDoc={embeddedResumeHtml}
-                  onLoad={handleResumeFrameLoad}
-                  scrolling="no"
-                  className="mx-auto block border-0 bg-transparent"
-                  style={{
-                    width: 'calc(210mm + 32px)',
-                    minWidth: 'calc(210mm + 32px)',
-                    height: `${resumeFrameHeight}px`,
-                    overflow: 'hidden',
-                  }}
-                  sandbox="allow-same-origin"
-                />
-              </div>
+            <div className="border-t border-[#d8e2ee] bg-white">
+              <iframe
+                title={`${name} resume`}
+                srcDoc={embeddedResumeHtml}
+                onLoad={handleResumeFrameLoad}
+                scrolling="no"
+                className="block w-full border-0 bg-white"
+                style={{
+                  height: `${resumeFrameHeight}px`,
+                  overflow: 'hidden',
+                }}
+                sandbox="allow-same-origin"
+              />
             </div>
           ) : <div className="border-t border-[#d8e2ee] px-6 py-8 sm:px-10"><div className="relative ml-3 border-l-2 border-gray-200 pl-8">{activities.map((item, index) => { const dt = formatDateTime(item.occurredAt || item.createdAt); return <div key={item._id || `${item.type}-${index}`} className="relative pb-10 last:pb-0"><div className="absolute -left-[43px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-4 border-white bg-[#2e66a6] shadow"><SvgIcon name={item.type === 'message' ? 'message' : item.type === 'submitted' ? 'resume' : 'activity'} className="h-3 w-3 text-white" /></div><h3 className="text-lg font-semibold text-gray-900">{item.title || 'Application updated'}</h3><p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">{item.description || 'The application record was updated.'}</p><div className="mt-2 text-xs font-bold tracking-wide text-gray-500">{dt.date}{dt.time ? ` · ${dt.time}` : ''}</div></div>; })}</div></div>}
         </main>
