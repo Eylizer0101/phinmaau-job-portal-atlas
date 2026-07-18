@@ -90,14 +90,23 @@ const mapCompanyFromUser = (user) => {
           _id: review._id,
           reviewer: review.reviewer,
           reviewerName: review.reviewerName || 'Anonymous User',
-          roleAppliedFor: review.roleAppliedFor || 'Role not specified',
+          roleAppliedFor: String(review.roleAppliedFor || '').trim() || null,
           rating: Number(review.rating) || 0,
-          processRating: Number(review.processRating) || 0,
-          daysToFirstResponse: Number(review.daysToFirstResponse) || 0,
-          totalProcessDays: Number(review.totalProcessDays) || 0,
-          outcome: review.outcome || 'still_in_process',
+          processRating:
+            review.processRating === undefined || review.processRating === null
+              ? null
+              : Number(review.processRating),
+          daysToFirstResponse:
+            review.daysToFirstResponse === undefined || review.daysToFirstResponse === null
+              ? null
+              : Number(review.daysToFirstResponse),
+          totalProcessDays:
+            review.totalProcessDays === undefined || review.totalProcessDays === null
+              ? null
+              : Number(review.totalProcessDays),
+          outcome: review.outcome || null,
           wouldApplyAgain:
-            typeof review.wouldApplyAgain === 'boolean' ? review.wouldApplyAgain : true,
+            typeof review.wouldApplyAgain === 'boolean' ? review.wouldApplyAgain : null,
           message: review.message || '',
           createdAt: review.createdAt,
           updatedAt: review.updatedAt,

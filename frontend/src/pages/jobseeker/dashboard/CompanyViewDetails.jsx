@@ -687,14 +687,23 @@ const CompanyViewDetails = () => {
         ? companyData.reviews.map((review, index) => ({
             _id: review?._id || review?.id || `review-${index}`,
             reviewerName: review?.reviewerName || "Anonymous User",
-            roleAppliedFor: review?.roleAppliedFor || "Role not specified",
+            roleAppliedFor: String(review?.roleAppliedFor || "").trim() || null,
             rating: Number(review?.rating) || 0,
-            processRating: Number(review?.processRating) || 0,
-            daysToFirstResponse: Number(review?.daysToFirstResponse) || 0,
-            totalProcessDays: Number(review?.totalProcessDays) || 0,
-            outcome: review?.outcome || "still_in_process",
+            processRating:
+              review?.processRating === undefined || review?.processRating === null
+                ? null
+                : Number(review.processRating),
+            daysToFirstResponse:
+              review?.daysToFirstResponse === undefined || review?.daysToFirstResponse === null
+                ? null
+                : Number(review.daysToFirstResponse),
+            totalProcessDays:
+              review?.totalProcessDays === undefined || review?.totalProcessDays === null
+                ? null
+                : Number(review.totalProcessDays),
+            outcome: review?.outcome || null,
             wouldApplyAgain:
-              typeof review?.wouldApplyAgain === "boolean" ? review.wouldApplyAgain : true,
+              typeof review?.wouldApplyAgain === "boolean" ? review.wouldApplyAgain : null,
             message: review?.message || "",
             createdAt: review?.createdAt || review?.date || null,
             date: review?.date || formatReviewDate(review?.createdAt || review?.date),
@@ -1927,7 +1936,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
                             {review.reviewerName || "Anonymous User"}
                           </h3>
                           <p className="mt-0.5 text-[14px] text-black/55">
-                            {review.roleAppliedFor || "Role not specified"}
+                            {review.roleAppliedFor || "Role not provided"}
                             <span className="mx-1.5">·</span>
                             {formatReviewTimeAgo(review.createdAt) || review.date}
                           </p>
@@ -1939,7 +1948,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
                           review.outcome
                         )}`}
                       >
-                        {getOutcomeLabel(review.outcome)}
+                        {review.outcome ? getOutcomeLabel(review.outcome) : "Outcome not provided"}
                       </span>
                     </div>
 
@@ -1959,7 +1968,9 @@ The company also values transparency, teamwork, and continuous improvement, crea
                           <span className="text-sm">First reply</span>
                         </div>
                         <p className="mt-1 text-[18px] font-bold text-black">
-                          {Number(review.daysToFirstResponse) || 0}d
+                          {review.daysToFirstResponse === null
+                            ? "Not provided"
+                            : `${Number(review.daysToFirstResponse) || 0}d`}
                         </p>
                       </div>
 
@@ -1969,7 +1980,9 @@ The company also values transparency, teamwork, and continuous improvement, crea
                           <span className="text-sm">Total length</span>
                         </div>
                         <p className="mt-1 text-[18px] font-bold text-black">
-                          {Number(review.totalProcessDays) || 0}d
+                          {review.totalProcessDays === null
+                            ? "Not provided"
+                            : `${Number(review.totalProcessDays) || 0}d`}
                         </p>
                       </div>
 
@@ -1979,7 +1992,9 @@ The company also values transparency, teamwork, and continuous improvement, crea
                           <span className="text-sm">Process</span>
                         </div>
                         <p className="mt-1 text-[18px] font-bold text-black">
-                          {Number(review.processRating) || 0}/5
+                          {review.processRating === null
+                            ? "Not provided"
+                            : `${Number(review.processRating) || 0}/5`}
                         </p>
                       </div>
 
@@ -1989,7 +2004,11 @@ The company also values transparency, teamwork, and continuous improvement, crea
                           <span className="text-sm">Apply again?</span>
                         </div>
                         <p className="mt-1 text-[18px] font-bold text-black">
-                          {review.wouldApplyAgain === false ? "No" : "Yes"}
+                          {review.wouldApplyAgain === null
+                            ? "Not provided"
+                            : review.wouldApplyAgain
+                              ? "Yes"
+                              : "No"}
                         </p>
                       </div>
                     </div>
