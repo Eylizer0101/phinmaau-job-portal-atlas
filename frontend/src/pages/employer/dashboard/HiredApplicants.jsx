@@ -34,6 +34,179 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
+
+const EMPLOYER_DATE_FILTER_OPTIONS = [
+  { value: 'all', label: 'All Time' },
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: 'this_week', label: 'This Week' },
+  { value: 'last_7_days', label: 'Last 7 Days' },
+  { value: 'this_month', label: 'This Month' },
+  { value: 'last_month', label: 'Last Month' },
+  { value: 'this_year', label: 'This Year' },
+  { value: 'last_year', label: 'Last Year' },
+  { value: 'custom', label: 'Custom Range' },
+];
+
+const formatEmployerDateInput = (date) => {
+  if (!date) return '';
+  const d = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(d.getTime())) return '';
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const formatEmployerDateLabel = (value) => {
+  if (!value) return 'Select date';
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return 'Select date';
+  return date.toLocaleDateString('en-PH', { month: 'short', day: '2-digit', year: 'numeric' });
+};
+
+const getEmployerDateFilterLabel = (value, startDate, endDate) => {
+  if (value === 'custom' && startDate && endDate) {
+    return `${formatEmployerDateLabel(startDate)} - ${formatEmployerDateLabel(endDate)}`;
+  }
+  return EMPLOYER_DATE_FILTER_OPTIONS.find((option) => option.value === value)?.label || 'All Time';
+};
+
+const EmployerDateFilterDropdown = ({ value, startDate, endDate, disabled, onSelect }) => {
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const handleClick = (event) => {
+      if (!dropdownRef.current?.contains(event.target)) setOpen(false);
+    };
+    window.addEventListener('mousedown', handleClick);
+    return () => window.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  return (
+    <div ref={dropdownRef} className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((prev) => !prev)}
+        className="flex h-11 w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
+      >
+        <span className="truncate">{getEmployerDateFilterLabel(value, startDate, endDate)}</span>
+        <svg className="h-4 w-4 shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3M5 11h14M6 5h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2z" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-[52px] z-50 w-56 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5">
+          <div className="space-y-1">
+            {EMPLOYER_DATE_FILTER_OPTIONS.map((option) => (
+              <button
+                type="button"
+                key={option.value}
+                onClick={() => {
+                  setOpen(false);
+                  onSelect(option.value);
+                }}
+                className={cn(
+                  'w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition',
+                  value === option.value
+                    ? 'bg-[#2e66a6]/10 text-[#2e66a6]'
+                    : 'text-slate-600 hover:bg-slate-50'
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const EmployerCustomDateRangeModal = ({ open, startDate, endDate, onCancel, onApply }) => {
+  const todayValue = formatEmployerDateInput(new Date());
+  const [draftStart, setDraftStart] = useState(startDate || todayValue);
+  const [draftEnd, setDraftEnd] = useState(endDate || todayValue);
+
+  useEffect(() => {
+    if (!open) return;
+    setDraftStart(startDate || todayValue);
+    setDraftEnd(endDate || todayValue);
+  }, [open, startDate, endDate, todayValue]);
+
+  if (!open) return null;
+
+  const invalidRange =
+    !draftStart ||
+    !draftEnd ||
+    new Date(`${draftStart}T00:00:00`) > new Date(`${draftEnd}T00:00:00`);
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 px-4 py-6">
+      <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="border-b border-gray-100 px-6 py-5">
+          <h3 className="text-xl font-bold text-gray-900">Select Custom Date Range</h3>
+          <p className="mt-1 text-sm text-gray-600">Choose the start and end dates for the filter.</p>
+        </div>
+
+        <div className="grid gap-5 px-6 py-6 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
+          <label className="block">
+            <span className="mb-2 block text-xs font-extrabold uppercase tracking-[0.12em] text-slate-500">
+              Start Date
+            </span>
+            <input
+              type="date"
+              value={draftStart}
+              onChange={(event) => setDraftStart(event.target.value)}
+              className="h-12 w-full rounded-xl border border-gray-200 bg-slate-50 px-4 text-sm font-semibold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+            />
+          </label>
+
+          <div className="hidden pb-3 text-2xl text-slate-400 sm:block">→</div>
+
+          <label className="block">
+            <span className="mb-2 block text-xs font-extrabold uppercase tracking-[0.12em] text-slate-500">
+              End Date
+            </span>
+            <input
+              type="date"
+              value={draftEnd}
+              min={draftStart || undefined}
+              onChange={(event) => setDraftEnd(event.target.value)}
+              className="h-12 w-full rounded-xl border border-gray-200 bg-slate-50 px-4 text-sm font-semibold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+            />
+          </label>
+        </div>
+
+        {invalidRange && draftStart && draftEnd && (
+          <p className="px-6 pb-2 text-sm font-medium text-red-600">
+            End date must be the same as or later than the start date.
+          </p>
+        )}
+
+        <div className="flex items-center justify-end gap-4 border-t border-gray-100 px-6 py-5">
+          <button type="button" onClick={onCancel} className="text-sm font-bold text-slate-600 hover:text-slate-900">
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={invalidRange}
+            onClick={() => onApply(draftStart, draftEnd)}
+            className="h-11 rounded-xl bg-[#2e66a6] px-7 text-sm font-extrabold text-white shadow-lg shadow-[#2e66a6]/20 transition hover:bg-[#255487] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Apply Range
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 const ITEMS_PER_PAGE = 9;
 
 const formatDate = (dateValue) => {
@@ -84,6 +257,9 @@ const HiredApplicants = () => {
   const [query, setQuery] = useState('');
   const [selectedJob, setSelectedJob] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
+  const [customDateFrom, setCustomDateFrom] = useState('');
+  const [customDateTo, setCustomDateTo] = useState('');
+  const [showCustomDateModal, setShowCustomDateModal] = useState(false);
   const [sortBy, setSortBy] = useState('recent');
   const [currentPage, setCurrentPage] = useState(1);
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -277,8 +453,10 @@ const HiredApplicants = () => {
         return appliedDate >= startOfMonth && appliedDate < startOfNextMonth;
       }
 
-      if (dateFilter === 'last_30_days') {
-        return appliedDate >= thirtyDaysAgo && appliedDate < startOfTomorrow;
+      if (dateFilter === 'last_month') {
+        const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        return appliedDate >= startOfLastMonth && appliedDate < startOfCurrentMonth;
       }
 
       if (dateFilter === 'this_year') {
@@ -289,6 +467,13 @@ const HiredApplicants = () => {
         const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
         const startOfThisYear = new Date(now.getFullYear(), 0, 1);
         return appliedDate >= startOfLastYear && appliedDate < startOfThisYear;
+      }
+
+      if (dateFilter === 'custom' && customDateFrom && customDateTo) {
+        const customStart = new Date(`${customDateFrom}T00:00:00`);
+        const customEndExclusive = new Date(`${customDateTo}T00:00:00`);
+        customEndExclusive.setDate(customEndExclusive.getDate() + 1);
+        return appliedDate >= customStart && appliedDate < customEndExclusive;
       }
 
       return true;
@@ -311,7 +496,7 @@ const HiredApplicants = () => {
     });
 
     return sorted;
-  }, [applications, buildApplicantName, dateFilter, debouncedQuery, sortBy]);
+  }, [applications, buildApplicantName, dateFilter, customDateFrom, customDateTo, debouncedQuery, sortBy]);
 
 
   const totalItems = filteredApplications.length;
@@ -331,6 +516,8 @@ const HiredApplicants = () => {
     setQuery('');
     setSelectedJob('all');
     setDateFilter('all');
+    setCustomDateFrom('');
+    setCustomDateTo('');
     setSortBy('recent');
   };
 
@@ -344,17 +531,6 @@ const HiredApplicants = () => {
     ];
   }, [jobs]);
 
-  const dateFilterOptions = [
-    { value: 'all', label: 'Overall' },
-    { value: 'today', label: 'Today' },
-    { value: 'yesterday', label: 'Yesterday' },
-    { value: 'this_week', label: 'This Week' },
-    { value: 'last_7_days', label: 'Last 7 Days' },
-    { value: 'this_month', label: 'This Month' },
-    { value: 'last_30_days', label: 'Last 30 Days' },
-    { value: 'this_year', label: 'This Year' },
-    { value: 'last_year', label: 'Last Year' },
-  ];
 
   const sortOptions = [
     { value: 'salary_desc', label: 'Salary Highest to Lowest' },
@@ -499,13 +675,21 @@ const selectBase =
               </div>
 
               <div className="lg:col-span-2">
-                <DropdownFilter
-                  id="dateFilter"
-                  label="Filter By"
+                <EmployerDateFilterDropdown
                   value={dateFilter}
-                  onChange={setDateFilter}
-                  options={dateFilterOptions}
+                  startDate={customDateFrom}
+                  endDate={customDateTo}
                   disabled={loading}
+                  onSelect={(value) => {
+                    if (value === 'custom') {
+                      setShowCustomDateModal(true);
+                      return;
+                    }
+                    setDateFilter(value);
+                    setCustomDateFrom('');
+                    setCustomDateTo('');
+                    setCurrentPage(1);
+                  }}
                 />
               </div>
 
@@ -732,6 +916,20 @@ const selectBase =
           )}
         </div>
       </div>
+
+      <EmployerCustomDateRangeModal
+        open={showCustomDateModal}
+        startDate={customDateFrom}
+        endDate={customDateTo}
+        onCancel={() => setShowCustomDateModal(false)}
+        onApply={(dateFrom, dateTo) => {
+          setDateFilter('custom');
+          setCustomDateFrom(dateFrom);
+          setCustomDateTo(dateTo);
+          setShowCustomDateModal(false);
+          setCurrentPage(1);
+        }}
+      />
     </EmployerLayout>
   );
 };
