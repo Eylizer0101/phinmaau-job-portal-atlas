@@ -1178,10 +1178,6 @@ const PostJob = () => {
   const showDescCounterRed = (touched.description || submitted) && descLen > 0 && descLen < 80;
   const showReqCounterRed = (touched.requirements || submitted) && reqLen > 0 && reqLen < 40;
 
-  const stickyStyle = {
-    paddingLeft: 'var(--employer-sidebar-width, 0px)',
-  };
-
   return (
     <EmployerLayout>
       <div className="min-h-screen bg-gray-50 -mt-2">
@@ -1728,15 +1724,8 @@ const PostJob = () => {
                     </section>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            <br></br>
-
-            <div
-              className="fixed bottom-0 right-0 left-0 lg:left-72 border-t border-gray-200 bg-white/95 backdrop-blur z-40"
-              style={stickyStyle}
-            >
+                <div className="border-t border-gray-200 bg-white px-6 py-4">
+                  <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="mx-auto max-w-6xl px-4 py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-gray-600">
                   {activeStep < JOB_FORM_STEPS.length ? (
@@ -1806,8 +1795,11 @@ const PostJob = () => {
                     </button>
                   )}
                 </div>
+                  </div>
+                </div>
               </div>
             </div>
+        </div>
           </form>
         </div>
       </div>
