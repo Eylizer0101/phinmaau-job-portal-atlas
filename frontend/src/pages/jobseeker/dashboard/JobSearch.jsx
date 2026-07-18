@@ -1431,7 +1431,7 @@ const JobSearch = () => {
                           <span className="truncate">{formatApplicationDeadline(job.applicationDeadline)}</span>
                         </div>
 
-                        <div className="mt-4 flex flex-nowrap items-center gap-2 overflow-hidden">
+                        <div className="mt-4 flex flex-wrap items-center gap-2">
 
                           {experienceBadgeLabel && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-blue-50 text-[#2e66a6] border border-blue-200">
