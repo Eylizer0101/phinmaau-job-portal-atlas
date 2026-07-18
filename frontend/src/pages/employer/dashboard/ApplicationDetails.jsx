@@ -1204,7 +1204,7 @@ const ApplicationDetails = () => {
               </div>
 
               <article className="mx-auto w-full bg-white font-serif text-[10px] leading-[1.22] text-black">
-                <header className="relative min-h-[92px] border-b border-black pb-2 pr-[105px] text-center">
+                <header className="relative min-h-[92px] pb-2 pr-[105px] text-center">
                   <h2 className="text-[22px] font-bold uppercase leading-tight tracking-[0.02em]">
                     {name}
                   </h2>
