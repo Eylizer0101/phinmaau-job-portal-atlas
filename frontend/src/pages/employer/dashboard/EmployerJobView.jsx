@@ -3,6 +3,19 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 
+const API_HOST = process.env.REACT_APP_API_URL
+  ? process.env.REACT_APP_API_URL.replace(/\/api\/?$/, '')
+  : 'https://phinmaau-job-portal-atlas.onrender.com';
+
+const resolveAssetUrl = (value = '') => {
+  const cleanValue = String(value || '').trim();
+  if (!cleanValue) return '';
+  if (/^https?:\/\//i.test(cleanValue) || cleanValue.startsWith('data:') || cleanValue.startsWith('blob:')) {
+    return cleanValue;
+  }
+  return cleanValue.startsWith('/') ? `${API_HOST}${cleanValue}` : `${API_HOST}/${cleanValue}`;
+};
+
 
 const sanitizeRichTextHtml = (value = '') => {
   const raw = String(value || '').trim();
@@ -741,8 +754,16 @@ const EmployerJobView = () => {
           </div>
 
           <div className={`${UI.card} mb-5 overflow-hidden`}>
-            <div className="relative h-[85px] w-full overflow-hidden sm:h-[105px]">
-              <img src="/images/jobback.png" alt="Job details banner" className="h-full w-full object-cover" />
+            <div className="relative h-[130px] w-full overflow-hidden sm:h-[165px]">
+              <img
+                src={resolveAssetUrl(job?.employerDetails?.coverPhoto) || '/images/jobback.png'}
+                alt={`${job.companyName || 'Company'} cover banner`}
+                className="h-full w-full object-cover object-center"
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = '/images/jobback.png';
+                }}
+              />
               <div className="absolute inset-0 bg-black/10" />
             </div>
 

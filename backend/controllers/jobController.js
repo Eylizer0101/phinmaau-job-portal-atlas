@@ -778,6 +778,7 @@ exports.getJobById = async (req, res) => {
       if (employer && employer.employerProfile) {
         employerDetails = {
           companyLogo: employer.employerProfile.companyLogo || '',
+          coverPhoto: employer.employerProfile.coverPhoto || '',
           companyAddress: employer.employerProfile.companyAddress || '',
           industry: employer.employerProfile.industry || '',
           companyWebsite: employer.employerProfile.companyWebsiteUrl || '',

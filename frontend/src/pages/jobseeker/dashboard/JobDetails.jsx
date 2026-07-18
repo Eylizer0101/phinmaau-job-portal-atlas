@@ -124,6 +124,17 @@ const getRelocationDisplayLabel = (value) => {
 const getApiOrigin = () =>
   String(api?.defaults?.baseURL || process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
 
+const resolveAssetUrl = (value = '') => {
+  const cleanValue = String(value || '').trim();
+  if (!cleanValue) return '';
+  if (/^https?:\/\//i.test(cleanValue) || cleanValue.startsWith('data:') || cleanValue.startsWith('blob:')) {
+    return cleanValue;
+  }
+  return cleanValue.startsWith('/')
+    ? `${getApiOrigin()}${cleanValue}`
+    : `${getApiOrigin()}/${cleanValue}`;
+};
+
 const UI = {
   page: 'bg-white min-h-screen',
 
@@ -1142,8 +1153,16 @@ const JobDetails = () => {
     <JobSeekerLayout>
       <>
         <div className={UI.page}>
-          <div className="relative left-1/2 right-1/2 w-screen -ml-[50vw] -mr-[50vw] -mt-24 h-[220px] sm:h-[280px] lg:h-[300px] overflow-hidden bg-white">
-            <img src="/images/jobback.png" alt="Job details banner" className="w-full h-full object-cover" />
+          <div className="relative left-1/2 right-1/2 w-screen -ml-[50vw] -mr-[50vw] -mt-24 h-[240px] sm:h-[300px] lg:h-[330px] overflow-hidden bg-white">
+            <img
+              src={resolveAssetUrl(job?.employerDetails?.coverPhoto) || '/images/jobback.png'}
+              alt={`${job.companyName || 'Company'} cover banner`}
+              className="w-full h-full object-cover object-center"
+              onError={(event) => {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = '/images/jobback.png';
+              }}
+            />
           </div>
 
           <div className={`${UI.container} -mt-16 sm:-mt-20 lg:-mt-24 relative z-10`}>

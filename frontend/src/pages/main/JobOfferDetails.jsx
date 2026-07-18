@@ -1032,8 +1032,26 @@ const JobOfferDetails = () => {
       <div className="pt-32 sm:pt-36 -mt-8">
         <>
           <div className={UI.page}>
-            <div className="relative left-1/2 right-1/2 w-screen -ml-[50vw] -mr-[50vw] -mt-20 h-[220px] sm:h-[280px] lg:h-[300px] overflow-hidden bg-white">
-              <img src="/images/jobback.png" alt="Job details banner" className="w-full h-full object-cover" />
+            <div className="relative left-1/2 right-1/2 w-screen -ml-[50vw] -mr-[50vw] -mt-20 h-[240px] sm:h-[300px] lg:h-[330px] overflow-hidden bg-white">
+              <img
+                src={
+                  job?.employerDetails?.coverPhoto
+                    ? (
+                        /^https?:\/\//i.test(job.employerDetails.coverPhoto)
+                          ? job.employerDetails.coverPhoto
+                          : job.employerDetails.coverPhoto.startsWith('/')
+                            ? `${apiOrigin}${job.employerDetails.coverPhoto}`
+                            : `${apiOrigin}/${job.employerDetails.coverPhoto}`
+                      )
+                    : '/images/jobback.png'
+                }
+                alt={`${job.companyName || 'Company'} cover banner`}
+                className="w-full h-full object-cover object-center"
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = '/images/jobback.png';
+                }}
+              />
             </div>
 
             <div className={`${UI.container} -mt-16 sm:-mt-20 lg:-mt-24 relative z-10`}>
