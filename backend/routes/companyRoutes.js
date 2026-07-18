@@ -1,23 +1,25 @@
-// backend/routes/companyRoutes.js
 const express = require('express');
 const router = express.Router();
-const companyController = require('../controllers/companyController');
+
+const communityController = require('../controllers/communityController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const { uploadCommunityImage } = require('../middleware/uploadMiddleware');
 
-// ✅ Public: Verified companies only
-router.get('/verified', companyController.getVerifiedCompanies);
+router.use(protect);
+router.use(authorize('jobseeker', 'employer'));
 
-// ✅ Saved companies routes
-router.get('/saved', protect, authorize('jobseeker'), companyController.getSavedCompanies);
-router.get('/saved/check/:companyId', protect, authorize('jobseeker'), companyController.checkSavedCompany);
-router.post('/saved/:companyId', protect, authorize('jobseeker'), companyController.saveCompany);
-router.delete('/saved/:companyId', protect, authorize('jobseeker'), companyController.removeSavedCompany);
-router.delete('/saved', protect, authorize('jobseeker'), companyController.removeAllSavedCompanies);
+router.get('/posts', communityController.getPosts);
+router.post('/posts', uploadCommunityImage.single('image'), communityController.createPost);
+router.put('/posts/:postId', uploadCommunityImage.single('image'), communityController.updatePost);
+router.delete('/posts/:postId', communityController.deletePost);
 
-// ✅ Public: Single verified company details
-router.get('/verified/:id', companyController.getVerifiedCompanyDetails);
+router.post('/posts/:postId/like', communityController.toggleLike);
+router.get('/posts/:postId/comments', communityController.getComments);
+router.post('/posts/:postId/comments', communityController.addComment);
+router.post('/posts/:postId/comments/:commentId/reaction', communityController.reactToComment);
+router.post('/posts/:postId/comments/:commentId/replies', communityController.addReply);
 
-// ✅ Protected: Jobseeker can submit company review
-router.post('/verified/:id/reviews', protect, authorize('jobseeker'), companyController.submitCompanyReview);
+router.post('/reports', communityController.reportContent);
+router.get('/managed', communityController.getManagedContent);
 
 module.exports = router;

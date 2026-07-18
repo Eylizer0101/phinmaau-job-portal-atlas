@@ -9,10 +9,17 @@ import {
   faHashtag,
   faHeart,
   faComment,
-  faShareNodes,
   faXmark,
   faPaperPlane,
   faSpinner,
+  faEllipsisVertical,
+  faPen,
+  faTrash,
+  faFlag,
+  faThumbsUp,
+  faThumbsDown,
+  faReply,
+  faSliders,
 } from '@fortawesome/free-solid-svg-icons';
 import api from '../../../services/api';
 
@@ -22,7 +29,6 @@ const categories = [
   { key: 'skill', label: 'Skills' },
   { key: 'question', label: 'Questions' },
   { key: 'resource', label: 'Resources' },
-  { key: 'opportunity', label: 'Opportunities' },
 ];
 
 const createCategories = [
@@ -30,7 +36,14 @@ const createCategories = [
   { key: 'skill', label: 'Skill Share' },
   { key: 'question', label: 'Question' },
   { key: 'resource', label: 'Resource' },
-  { key: 'opportunity', label: 'Opportunity' },
+];
+
+const reportReasons = [
+  { key: 'spam', label: 'Spam or scam', description: 'Misleading or repetitive promotional content' },
+  { key: 'harassment', label: 'Harassment or bullying', description: 'Targeting or intimidating another community member' },
+  { key: 'misleading', label: 'False or misleading info', description: 'Inaccurate claims presented as fact' },
+  { key: 'inappropriate', label: 'Inappropriate content', description: 'Offensive, violent, or unsafe material' },
+  { key: 'other', label: 'Something else', description: 'A different issue not listed above' },
 ];
 
 const API_ORIGIN = String(
@@ -100,20 +113,39 @@ const Avatar = ({ user, size = 'h-11 w-11' }) => {
 const CommunityPage = () => {
   const navigate = useNavigate();
   const photoInputRef = useRef(null);
+
   const [posts, setPosts] = useState([]);
   const [category, setCategory] = useState('all');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+
   const [showCreate, setShowCreate] = useState(false);
+  const [editingPost, setEditingPost] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ content: '', category: 'insight', linkUrl: '', topics: '' });
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState('');
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [showTopicInput, setShowTopicInput] = useState(false);
-  const [openComments, setOpenComments] = useState({});
-  const [commentDrafts, setCommentDrafts] = useState({});
-  const [commentLoading, setCommentLoading] = useState({});
+
+  const [activeMenu, setActiveMenu] = useState('');
+  const [commentsPost, setCommentsPost] = useState(null);
+  const [commentDraft, setCommentDraft] = useState('');
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [replyTarget, setReplyTarget] = useState(null);
+  const [replyDraft, setReplyDraft] = useState('');
+  const [reactionLoading, setReactionLoading] = useState('');
+
+  const [reportTarget, setReportTarget] = useState(null);
+  const [reportReason, setReportReason] = useState('');
+  const [reportLoading, setReportLoading] = useState(false);
+
+  const [showManaged, setShowManaged] = useState(false);
+  const [managedType, setManagedType] = useState('all');
+  const [managedSort, setManagedSort] = useState('newest');
+  const [managedData, setManagedData] = useState({ posts: [], comments: [] });
+  const [managedLoading, setManagedLoading] = useState(false);
+
   const [likeLoading, setLikeLoading] = useState({});
   const [notice, setNotice] = useState('');
 
@@ -130,7 +162,9 @@ const CommunityPage = () => {
   const fetchPosts = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get('/community/posts', { params: { category, search: search.trim() } });
+      const response = await api.get('/community/posts', {
+        params: { category, search: search.trim() },
+      });
       if (response.data?.success) setPosts(response.data.data || []);
     } catch (error) {
       console.error('Error fetching community posts:', error);
@@ -161,6 +195,7 @@ const CommunityPage = () => {
     setPhotoPreview('');
     setShowLinkInput(false);
     setShowTopicInput(false);
+    setEditingPost(null);
     if (photoInputRef.current) photoInputRef.current.value = '';
   };
 
@@ -168,6 +203,21 @@ const CommunityPage = () => {
     if (submitting) return;
     resetCreateForm();
     setShowCreate(false);
+  };
+
+  const openEditPost = (post) => {
+    setEditingPost(post);
+    setForm({
+      content: post.content || '',
+      category: post.category || 'insight',
+      linkUrl: post.linkUrl || '',
+      topics: (post.topics || []).join(', '),
+    });
+    setPhotoPreview(resolveMediaUrl(post.imageUrl));
+    setShowLinkInput(Boolean(post.linkUrl));
+    setShowTopicInput(true);
+    setShowCreate(true);
+    setActiveMenu('');
   };
 
   const handlePhotoChange = (event) => {
@@ -183,13 +233,24 @@ const CommunityPage = () => {
       event.target.value = '';
       return;
     }
+
     if (photoPreview?.startsWith('blob:')) URL.revokeObjectURL(photoPreview);
     setSelectedPhoto(file);
     setPhotoPreview(URL.createObjectURL(file));
   };
 
-  const createPost = async () => {
-    if (!form.content.trim()) return;
+  const savePost = async () => {
+    if (!form.content.trim()) {
+      alert('Post content is required.');
+      return;
+    }
+
+    if (!form.topics.trim()) {
+      setShowTopicInput(true);
+      alert('Topic is required bago makapag-post.');
+      return;
+    }
+
     try {
       setSubmitting(true);
       const payload = new FormData();
@@ -197,29 +258,49 @@ const CommunityPage = () => {
       payload.append('category', form.category);
       payload.append('linkUrl', normalizeUrl(form.linkUrl));
       payload.append('topics', form.topics);
-      if (selectedPhoto) {
-        payload.append('image', selectedPhoto, selectedPhoto.name);
-      }
+      if (selectedPhoto) payload.append('image', selectedPhoto, selectedPhoto.name);
 
-      const response = await api.post('/community/posts', payload, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const response = editingPost
+        ? await api.put(`/community/posts/${editingPost._id}`, payload, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          })
+        : await api.post('/community/posts', payload, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
 
       if (response.data?.success) {
-        const createdPost = response.data.data;
-
-        if (selectedPhoto && !createdPost?.imageUrl) {
-          throw new Error('The post was created, but the uploaded image URL was not returned.');
-        }
-
-        setPosts((prev) => [createdPost, ...prev]);
+        const savedPost = response.data.data;
+        setPosts((prev) => (
+          editingPost
+            ? prev.map((post) => (post._id === savedPost._id ? savedPost : post))
+            : [savedPost, ...prev]
+        ));
+        setNotice(editingPost ? 'Post updated successfully.' : 'Post created successfully.');
         resetCreateForm();
         setShowCreate(false);
       }
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to create post.');
+      alert(error.response?.data?.message || 'Failed to save post.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const deletePost = async (post) => {
+    const confirmed = window.confirm('Are you sure you want to delete this post? You will not be able to recover it.');
+    if (!confirmed) return;
+
+    try {
+      const response = await api.delete(`/community/posts/${post._id}`);
+      if (response.data?.success) {
+        setPosts((prev) => prev.filter((item) => item._id !== post._id));
+        if (commentsPost?._id === post._id) setCommentsPost(null);
+        setNotice('Post deleted successfully.');
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to delete post.');
+    } finally {
+      setActiveMenu('');
     }
   };
 
@@ -242,73 +323,152 @@ const CommunityPage = () => {
     }
   };
 
-  const toggleComments = (postId) => {
-    setOpenComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
+  const openCommentsModal = async (post) => {
+    setCommentsPost(post);
+    try {
+      const response = await api.get(`/community/posts/${post._id}/comments`);
+      if (response.data?.success) {
+        const nextPost = { ...post, comments: response.data.data || [], commentsCount: response.data.count || 0 };
+        setCommentsPost(nextPost);
+        setPosts((prev) => prev.map((item) => (item._id === post._id ? nextPost : item)));
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to load comments.');
+    }
   };
 
-  const submitComment = async (postId) => {
-    const content = String(commentDrafts[postId] || '').trim();
-    if (!content || commentLoading[postId]) return;
+  const submitComment = async () => {
+    const content = commentDraft.trim();
+    if (!content || !commentsPost || commentLoading) return;
+
     try {
-      setCommentLoading((prev) => ({ ...prev, [postId]: true }));
-      const response = await api.post(`/community/posts/${postId}/comments`, { content });
+      setCommentLoading(true);
+      const response = await api.post(`/community/posts/${commentsPost._id}/comments`, { content });
       if (response.data?.success) {
-        setPosts((prev) => prev.map((post) => (
-          post._id === postId
-            ? {
-                ...post,
-                comments: [...(post.comments || []), response.data.data],
-                commentsCount: response.data.commentsCount,
-              }
-            : post
-        )));
-        setCommentDrafts((prev) => ({ ...prev, [postId]: '' }));
-        setOpenComments((prev) => ({ ...prev, [postId]: true }));
+        const nextComments = [...(commentsPost.comments || []), response.data.data];
+        const nextPost = { ...commentsPost, comments: nextComments, commentsCount: response.data.commentsCount };
+        setCommentsPost(nextPost);
+        setPosts((prev) => prev.map((post) => (post._id === nextPost._id ? nextPost : post)));
+        setCommentDraft('');
       }
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to add comment.');
     } finally {
-      setCommentLoading((prev) => ({ ...prev, [postId]: false }));
+      setCommentLoading(false);
     }
   };
 
-  const sharePost = async (post) => {
-    const shareUrl = `${window.location.origin}/jobseeker/community?post=${post._id}`;
-    const shareData = {
-      title: 'AGAPAY Community Post',
-      text: post.content,
-      url: shareUrl,
-    };
+  const reactToComment = async (commentId, reaction) => {
+    if (!commentsPost || reactionLoading) return;
+    try {
+      setReactionLoading(`${commentId}-${reaction}`);
+      const response = await api.post(
+        `/community/posts/${commentsPost._id}/comments/${commentId}/reaction`,
+        { reaction }
+      );
+
+      if (response.data?.success) {
+        const nextComments = (commentsPost.comments || []).map((comment) => (
+          comment._id === commentId ? response.data.data : comment
+        ));
+        const nextPost = { ...commentsPost, comments: nextComments };
+        setCommentsPost(nextPost);
+        setPosts((prev) => prev.map((post) => (post._id === nextPost._id ? nextPost : post)));
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to update comment reaction.');
+    } finally {
+      setReactionLoading('');
+    }
+  };
+
+  const submitReply = async (commentId) => {
+    const content = replyDraft.trim();
+    if (!content || !commentsPost) return;
 
     try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-        return;
+      const response = await api.post(
+        `/community/posts/${commentsPost._id}/comments/${commentId}/replies`,
+        { content }
+      );
+      if (response.data?.success) {
+        const nextComments = (commentsPost.comments || []).map((comment) => (
+          comment._id === commentId ? response.data.data : comment
+        ));
+        const nextPost = { ...commentsPost, comments: nextComments };
+        setCommentsPost(nextPost);
+        setPosts((prev) => prev.map((post) => (post._id === nextPost._id ? nextPost : post)));
+        setReplyTarget(null);
+        setReplyDraft('');
       }
-      await navigator.clipboard.writeText(shareUrl);
-      setNotice('Post link copied successfully.');
     } catch (error) {
-      if (error?.name === 'AbortError') return;
-      try {
-        await navigator.clipboard.writeText(shareUrl);
-        setNotice('Post link copied successfully.');
-      } catch {
-        alert('Hindi ma-copy ang post link.');
-      }
+      alert(error.response?.data?.message || 'Failed to add reply.');
     }
   };
+
+  const submitReport = async () => {
+    if (!reportTarget || !reportReason || reportLoading) return;
+
+    try {
+      setReportLoading(true);
+      const response = await api.post('/community/reports', {
+        targetType: reportTarget.type,
+        postId: reportTarget.postId,
+        commentId: reportTarget.commentId || '',
+        reason: reportReason,
+      });
+      if (response.data?.success) {
+        setNotice('Report submitted successfully.');
+        setReportTarget(null);
+        setReportReason('');
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to submit report.');
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const fetchManagedContent = useCallback(async () => {
+    if (!showManaged) return;
+    try {
+      setManagedLoading(true);
+      const response = await api.get('/community/managed', {
+        params: { type: managedType, sort: managedSort },
+      });
+      if (response.data?.success) {
+        setManagedData({
+          posts: response.data.posts || [],
+          comments: response.data.comments || [],
+        });
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to load managed content.');
+    } finally {
+      setManagedLoading(false);
+    }
+  }, [showManaged, managedType, managedSort]);
+
+  useEffect(() => {
+    fetchManagedContent();
+  }, [fetchManagedContent]);
 
   return (
     <div className="mx-auto w-full max-w-[1280px] px-4 pb-12 sm:px-6 lg:px-8">
       {notice && (
-        <div className="fixed right-5 top-5 z-[150] rounded-xl bg-[#2e66a6] px-4 py-3 text-sm font-semibold text-white shadow-lg">
+        <div className="fixed right-5 top-5 z-[170] rounded-xl bg-[#2e66a6] px-4 py-3 text-sm font-semibold text-white shadow-lg">
           {notice}
         </div>
       )}
 
       <div className="mb-5 flex flex-col gap-4 border-b border-[#e6edf5] pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <button type="button" onClick={() => navigate('/jobseeker/messages')} className="h-10 w-10 rounded-xl border border-[#d8e2ee] bg-white hover:bg-[#f7faff]" aria-label="Back to messages">
+          <button
+            type="button"
+            onClick={() => navigate('/jobseeker/messages')}
+            className="h-10 w-10 rounded-xl border border-[#d8e2ee] bg-white hover:bg-[#f7faff]"
+            aria-label="Back to messages"
+          >
             <FontAwesomeIcon icon={faArrowLeft} />
           </button>
           <div>
@@ -317,28 +477,64 @@ const CommunityPage = () => {
           </div>
         </div>
 
-        <div className="relative w-full sm:w-72">
-          <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/35" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search posts" className="h-11 w-full rounded-xl border border-[#d8e2ee] bg-white pl-10 pr-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20" />
+        <div className="flex w-full gap-2 sm:w-auto">
+          <div className="relative min-w-0 flex-1 sm:w-72">
+            <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 -translate-y-1/2 text-black/35" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search posts"
+              className="h-11 w-full rounded-xl border border-[#d8e2ee] bg-white pl-10 pr-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowManaged(true)}
+            className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 text-sm font-semibold hover:bg-[#f7faff]"
+          >
+            <FontAwesomeIcon icon={faSliders} />
+            <span className="hidden sm:inline">Managed Posts</span>
+          </button>
         </div>
       </div>
 
       <div className="mb-5 flex flex-wrap gap-2">
         {categories.map((item) => (
-          <button key={item.key} type="button" onClick={() => setCategory(item.key)} className={`rounded-full px-4 py-2 text-sm font-semibold transition ${category === item.key ? 'bg-[#2e66a6] text-white' : 'bg-white text-black/60 hover:bg-[#f7faff]'}`}>
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => setCategory(item.key)}
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+              category === item.key
+                ? 'bg-[#2e66a6] text-white'
+                : 'bg-white text-black/60 hover:bg-[#f7faff]'
+            }`}
+          >
             {item.label}
           </button>
         ))}
       </div>
 
-      <button type="button" onClick={() => setShowCreate(true)} className="mb-5 flex w-full items-center gap-3 rounded-2xl border border-[#e6edf5] bg-white p-4 text-left shadow-sm hover:border-[#2e66a6]/30">
+      <button
+        type="button"
+        onClick={() => setShowCreate(true)}
+        className="mb-5 flex w-full items-center gap-3 rounded-2xl border border-[#e6edf5] bg-white p-4 text-left shadow-sm hover:border-[#2e66a6]/30"
+      >
         <Avatar user={currentUser} />
-        <span className="flex-1 rounded-full bg-[#f7faff] px-4 py-3 text-sm text-black/45">Share an insight or skill...</span>
-        <span className="hidden gap-3 text-xs text-black/50 sm:flex"><FontAwesomeIcon icon={faImage} /> Photo <FontAwesomeIcon icon={faLink} /> Link <FontAwesomeIcon icon={faHashtag} /> Topic</span>
+        <span className="flex-1 rounded-full bg-[#f7faff] px-4 py-3 text-sm text-black/45">
+          Share an insight or skill...
+        </span>
+        <span className="hidden gap-3 text-xs text-black/50 sm:flex">
+          <FontAwesomeIcon icon={faImage} /> Photo
+          <FontAwesomeIcon icon={faLink} /> Link
+          <FontAwesomeIcon icon={faHashtag} /> Topic
+        </span>
       </button>
 
       {loading ? (
-        <div className="py-20 text-center text-black/45"><FontAwesomeIcon icon={faSpinner} spin className="mr-2" /> Loading posts...</div>
+        <div className="py-20 text-center text-black/45">
+          <FontAwesomeIcon icon={faSpinner} spin className="mr-2" /> Loading posts...
+        </div>
       ) : posts.length === 0 ? (
         <div className="rounded-2xl border border-[#e6edf5] bg-white py-20 text-center">
           <p className="font-semibold">No community posts yet</p>
@@ -348,82 +544,106 @@ const CommunityPage = () => {
         <div className="space-y-4">
           {posts.map((post) => {
             const name = getDisplayName(post.author);
+            const authorId = getUserId(post.author);
+            const isOwner = authorId === currentUserId;
             const liked = typeof post.likedByCurrentUser === 'boolean'
               ? post.likedByCurrentUser
               : (post.likes || []).some((id) => String(id?._id || id) === currentUserId);
 
             return (
-              <article key={post._id} className="rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-sm">
-                <div className="flex items-center gap-3">
+              <article key={post._id} className="relative rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-sm">
+                <div className="flex items-start gap-3">
                   <Avatar user={post.author} />
-                  <div className="min-w-0">
-                    <p className="truncate font-bold text-black">{name}</p>
-                    <p className="text-xs text-black/45">{post.author?.role === 'employer' ? post.author?.employerProfile?.companyName || 'Employer' : 'Community Member'} · {formatTime(post.createdAt)}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-bold text-black">
+                      {name}{isOwner ? ' (You)' : ''}
+                    </p>
+                    <p className="text-xs text-black/45">
+                      {post.author?.role === 'employer'
+                        ? post.author?.employerProfile?.companyName || 'Employer'
+                        : post.author?.jobSeekerLevel || 'First Time Job Seeker'}
+                      {' · '}
+                      {formatTime(post.createdAt)}
+                    </p>
+                  </div>
+
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setActiveMenu((value) => (value === post._id ? '' : post._id))}
+                      className="flex h-9 w-9 items-center justify-center rounded-full text-black/50 hover:bg-[#f7faff]"
+                      aria-label="Post actions"
+                    >
+                      <FontAwesomeIcon icon={faEllipsisVertical} />
+                    </button>
+
+                    {activeMenu === post._id && (
+                      <div className="absolute right-0 top-10 z-20 w-40 rounded-xl border border-[#e6edf5] bg-white p-1.5 shadow-xl">
+                        {isOwner ? (
+                          <>
+                            <button type="button" onClick={() => openEditPost(post)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-[#f7faff]">
+                              <FontAwesomeIcon icon={faPen} className="w-4" /> Edit Post
+                            </button>
+                            <button type="button" onClick={() => deletePost(post)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50">
+                              <FontAwesomeIcon icon={faTrash} className="w-4" /> Delete Post
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReportTarget({ type: 'post', postId: post._id, name });
+                              setActiveMenu('');
+                            }}
+                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                          >
+                            <FontAwesomeIcon icon={faFlag} className="w-4" /> Report Post
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-black/75">{post.content}</p>
+
                 {post.topics?.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {post.topics.map((topic) => <span key={topic} className="rounded-full bg-[#f1edff] px-3 py-1 text-xs font-medium text-[#6350a8]">#{String(topic).replace(/^#/, '')}</span>)}
+                    {post.topics.map((topic) => (
+                      <span key={topic} className="rounded-full bg-[#f1edff] px-3 py-1 text-xs font-medium text-[#6350a8]">
+                        #{String(topic).replace(/^#/, '')}
+                      </span>
+                    ))}
                   </div>
                 )}
-                {post.imageUrl && <img src={resolveMediaUrl(post.imageUrl)} alt="Community post" className="mt-4 max-h-[460px] w-full rounded-xl object-cover" />}
-                {post.linkUrl && <a href={normalizeUrl(post.linkUrl)} target="_blank" rel="noreferrer" className="mt-3 block truncate text-sm font-semibold text-[#2e66a6] hover:underline">{post.linkUrl}</a>}
+
+                {post.imageUrl && (
+                  <img src={resolveMediaUrl(post.imageUrl)} alt="Community post" className="mt-4 max-h-[460px] w-full rounded-xl object-cover" />
+                )}
+
+                {post.linkUrl && (
+                  <a href={normalizeUrl(post.linkUrl)} target="_blank" rel="noreferrer" className="mt-3 block truncate text-sm font-semibold text-[#2e66a6] hover:underline">
+                    {post.linkUrl}
+                  </a>
+                )}
 
                 <div className="mt-4 flex items-center gap-6 border-t border-[#eef2f7] pt-4 text-sm text-black/50">
-                  <button type="button" onClick={() => toggleLike(post._id)} disabled={likeLoading[post._id]} className={`transition hover:text-[#2e66a6] disabled:opacity-60 ${liked ? 'text-red-500' : ''}`} aria-label={liked ? 'Unlike post' : 'Like post'}>
-                    <FontAwesomeIcon icon={faHeart} className="mr-2" />{post.likes?.length || 0}
+                  <button
+                    type="button"
+                    onClick={() => toggleLike(post._id)}
+                    disabled={likeLoading[post._id]}
+                    className={`transition hover:text-[#2e66a6] disabled:opacity-60 ${liked ? 'text-red-500' : ''}`}
+                    aria-label={liked ? 'Unlike post' : 'Like post'}
+                  >
+                    <FontAwesomeIcon icon={faHeart} className="mr-2" />
+                    {post.likes?.length || 0}
                   </button>
-                  <button type="button" onClick={() => toggleComments(post._id)} className="transition hover:text-[#2e66a6]" aria-label="Show comments">
-                    <FontAwesomeIcon icon={faComment} className="mr-2" />{post.commentsCount ?? post.comments?.length ?? 0}
-                  </button>
-                  <button type="button" onClick={() => sharePost(post)} className="transition hover:text-[#2e66a6]" aria-label="Share post">
-                    <FontAwesomeIcon icon={faShareNodes} />
+
+                  <button type="button" onClick={() => openCommentsModal(post)} className="transition hover:text-[#2e66a6]" aria-label="Show comments">
+                    <FontAwesomeIcon icon={faComment} className="mr-2" />
+                    {post.commentsCount ?? post.comments?.length ?? 0}
                   </button>
                 </div>
-
-                {openComments[post._id] && (
-                  <div className="mt-4 border-t border-[#eef2f7] pt-4">
-                    <div className="space-y-3">
-                      {(post.comments || []).length === 0 ? (
-                        <p className="text-sm text-black/45">No comments yet. Be the first to comment.</p>
-                      ) : (
-                        post.comments.map((comment) => (
-                          <div key={comment._id} className="flex gap-3">
-                            <Avatar user={comment.author} size="h-9 w-9" />
-                            <div className="min-w-0 flex-1 rounded-xl bg-[#f7faff] px-4 py-3">
-                              <div className="flex flex-wrap items-center gap-x-2">
-                                <p className="text-sm font-bold text-black">{getDisplayName(comment.author)}</p>
-                                <span className="text-xs text-black/40">{formatTime(comment.createdAt)}</span>
-                              </div>
-                              <p className="mt-1 whitespace-pre-wrap text-sm text-black/70">{comment.content}</p>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-
-                    <div className="mt-4 flex items-center gap-3">
-                      <Avatar user={currentUser} size="h-9 w-9" />
-                      <input
-                        value={commentDrafts[post._id] || ''}
-                        onChange={(event) => setCommentDrafts((prev) => ({ ...prev, [post._id]: event.target.value }))}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter' && !event.shiftKey) {
-                            event.preventDefault();
-                            submitComment(post._id);
-                          }
-                        }}
-                        placeholder="Write a comment..."
-                        className="h-10 min-w-0 flex-1 rounded-full border border-[#d8e2ee] bg-white px-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
-                      />
-                      <button type="button" onClick={() => submitComment(post._id)} disabled={!String(commentDrafts[post._id] || '').trim() || commentLoading[post._id]} className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2e66a6] text-white disabled:opacity-50" aria-label="Post comment">
-                        <FontAwesomeIcon icon={commentLoading[post._id] ? faSpinner : faPaperPlane} spin={Boolean(commentLoading[post._id])} />
-                      </button>
-                    </div>
-                  </div>
-                )}
               </article>
             );
           })}
@@ -431,70 +651,329 @@ const CommunityPage = () => {
       )}
 
       {showCreate && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4">
           <div className="max-h-[94vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#e6edf5] bg-white px-6 py-5">
-              <h2 className="text-xl font-bold">Create Post</h2>
-              <button type="button" onClick={closeCreateModal} className="h-9 w-9 rounded-full hover:bg-[#f7faff]" aria-label="Close"><FontAwesomeIcon icon={faXmark} /></button>
+              <h2 className="text-xl font-bold">{editingPost ? 'Edit Post' : 'Create Post'}</h2>
+              <button type="button" onClick={closeCreateModal} className="h-9 w-9 rounded-full hover:bg-[#f7faff]" aria-label="Close">
+                <FontAwesomeIcon icon={faXmark} />
+              </button>
             </div>
 
             <div className="p-6">
               <div className="mb-4 flex items-center gap-3">
                 <Avatar user={currentUser} />
-                <div><p className="font-bold">{getDisplayName(currentUser)}</p><p className="text-sm text-black/45">Posting to Community</p></div>
+                <div>
+                  <p className="font-bold">{getDisplayName(currentUser)}</p>
+                  <p className="text-sm text-black/45">Posting to Community</p>
+                </div>
               </div>
 
-              <textarea autoFocus value={form.content} onChange={(e) => setForm((prev) => ({ ...prev, content: e.target.value }))} placeholder="What insight or skill would you like to share with the community?" className="min-h-40 w-full resize-none rounded-xl border border-[#e6edf5] p-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20" />
+              <textarea
+                value={form.content}
+                onChange={(event) => setForm((prev) => ({ ...prev, content: event.target.value }))}
+                placeholder="What insight or skill would you like to share with the community?"
+                rows={6}
+                className="w-full resize-none rounded-xl border border-[#d8e2ee] p-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+              />
+
+              <p className="mb-2 mt-5 text-sm font-semibold">Category</p>
+              <div className="flex flex-wrap gap-2">
+                {createCategories.map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, category: item.key }))}
+                    className={`rounded-full px-4 py-2 text-sm ${
+                      form.category === item.key ? 'bg-[#2e66a6] text-white' : 'bg-[#f7faff] text-black/65'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
 
               {photoPreview && (
-                <div className="relative mt-4 overflow-hidden rounded-xl border border-[#e6edf5] bg-[#f7faff]">
-                  <img src={photoPreview} alt="Selected post preview" className="max-h-80 w-full object-contain" />
-                  <button type="button" onClick={() => {
-                    if (photoPreview.startsWith('blob:')) URL.revokeObjectURL(photoPreview);
-                    setSelectedPhoto(null);
-                    setPhotoPreview('');
-                    if (photoInputRef.current) photoInputRef.current.value = '';
-                  }} className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow" aria-label="Remove photo">
+                <div className="relative mt-4 overflow-hidden rounded-xl border border-[#e6edf5]">
+                  <img src={photoPreview} alt="Post preview" className="max-h-72 w-full object-contain" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (photoPreview?.startsWith('blob:')) URL.revokeObjectURL(photoPreview);
+                      setPhotoPreview('');
+                      setSelectedPhoto(null);
+                    }}
+                    className="absolute right-2 top-2 h-9 w-9 rounded-full bg-white/95 shadow"
+                  >
                     <FontAwesomeIcon icon={faXmark} />
                   </button>
                 </div>
               )}
 
-              <p className="mt-5 text-sm font-semibold">Category</p>
-              <div className="mt-2 flex flex-wrap gap-2">{createCategories.map((item) => <button key={item.key} type="button" onClick={() => setForm((prev) => ({ ...prev, category: item.key }))} className={`rounded-full px-4 py-2 text-sm font-semibold ${form.category === item.key ? 'bg-[#2e66a6] text-white' : 'bg-[#f7faff] text-black/65'}`}>{item.label}</button>)}</div>
-
-              <div className="mt-5 flex items-center gap-2 border-t border-[#eef2f7] pt-4">
-                <input ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={handlePhotoChange} className="hidden" />
-                <button type="button" onClick={() => photoInputRef.current?.click()} className={`flex h-10 w-10 items-center justify-center rounded-xl transition ${selectedPhoto ? 'bg-[#2e66a6] text-white' : 'text-black/55 hover:bg-[#f7faff]'}`} aria-label="Add photo" title="Photo">
-                  <FontAwesomeIcon icon={faImage} />
-                </button>
-                <button type="button" onClick={() => setShowLinkInput((prev) => !prev)} className={`flex h-10 w-10 items-center justify-center rounded-xl transition ${showLinkInput || form.linkUrl ? 'bg-[#2e66a6] text-white' : 'text-black/55 hover:bg-[#f7faff]'}`} aria-label="Add link" title="Link">
-                  <FontAwesomeIcon icon={faLink} />
-                </button>
-                <button type="button" onClick={() => setShowTopicInput((prev) => !prev)} className={`flex h-10 w-10 items-center justify-center rounded-xl transition ${showTopicInput || form.topics ? 'bg-[#2e66a6] text-white' : 'text-black/55 hover:bg-[#f7faff]'}`} aria-label="Add topics" title="Topic">
-                  <FontAwesomeIcon icon={faHashtag} />
-                </button>
-              </div>
-
               {showLinkInput && (
-                <div className="relative mt-3">
-                  <FontAwesomeIcon icon={faLink} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/35" />
-                  <input value={form.linkUrl} onChange={(e) => setForm((prev) => ({ ...prev, linkUrl: e.target.value }))} placeholder="Paste a link (optional)" className="h-11 w-full rounded-xl border border-[#d8e2ee] pl-11 pr-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20" />
-                </div>
+                <input
+                  value={form.linkUrl}
+                  onChange={(event) => setForm((prev) => ({ ...prev, linkUrl: event.target.value }))}
+                  placeholder="Paste website or article link (optional)"
+                  className="mt-4 h-11 w-full rounded-xl border border-[#d8e2ee] px-4 text-sm outline-none focus:border-[#2e66a6]"
+                />
               )}
 
               {showTopicInput && (
-                <div className="relative mt-3">
-                  <FontAwesomeIcon icon={faHashtag} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/35" />
-                  <input value={form.topics} onChange={(e) => setForm((prev) => ({ ...prev, topics: e.target.value }))} placeholder="Topics separated by commas" className="h-11 w-full rounded-xl border border-[#d8e2ee] pl-11 pr-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20" />
+                <div className="mt-4">
+                  <label className="mb-1 block text-sm font-semibold">Topic <span className="text-red-500">*</span></label>
+                  <input
+                    value={form.topics}
+                    onChange={(event) => setForm((prev) => ({ ...prev, topics: event.target.value }))}
+                    placeholder="Required: Figma, ChatGPT, Gemini"
+                    className="h-11 w-full rounded-xl border border-[#d8e2ee] px-4 text-sm outline-none focus:border-[#2e66a6]"
+                  />
                 </div>
+              )}
+
+              <div className="mt-5 flex items-center gap-2 border-t border-[#e6edf5] pt-4">
+                <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+                <button type="button" onClick={() => photoInputRef.current?.click()} className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-[#f7faff]" aria-label="Add photo">
+                  <FontAwesomeIcon icon={faImage} />
+                </button>
+                <button type="button" onClick={() => setShowLinkInput((value) => !value)} className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-[#f7faff]" aria-label="Add link">
+                  <FontAwesomeIcon icon={faLink} />
+                </button>
+                <button type="button" onClick={() => setShowTopicInput(true)} className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-[#f7faff]" aria-label="Add topic">
+                  <FontAwesomeIcon icon={faHashtag} />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex justify-end border-t border-[#e6edf5] px-6 py-4">
+              <button
+                type="button"
+                onClick={savePost}
+                disabled={submitting || !form.content.trim() || !form.topics.trim()}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#2e66a6] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                <FontAwesomeIcon icon={submitting ? faSpinner : faPaperPlane} spin={submitting} />
+                {editingPost ? 'Save Changes' : 'Post'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {commentsPost && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/55 p-4">
+          <div className="flex max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#e6edf5] px-5 py-4">
+              <h2 className="font-bold">Comments ({commentsPost.commentsCount ?? commentsPost.comments?.length ?? 0})</h2>
+              <button type="button" onClick={() => setCommentsPost(null)} className="h-9 w-9 rounded-full hover:bg-[#f7faff]">
+                <FontAwesomeIcon icon={faXmark} />
+              </button>
+            </div>
+
+            <div className="flex-1 space-y-4 overflow-y-auto p-5">
+              {(commentsPost.comments || []).length === 0 ? (
+                <p className="py-10 text-center text-sm text-black/45">No comments yet. Be the first to comment.</p>
+              ) : (
+                commentsPost.comments.map((comment) => {
+                  const commentAuthorName = getDisplayName(comment.author);
+                  const isCommentOwner = getUserId(comment.author) === currentUserId;
+                  const helpful = (comment.helpful || []).some((id) => String(id?._id || id) === currentUserId);
+                  const notHelpful = (comment.notHelpful || []).some((id) => String(id?._id || id) === currentUserId);
+
+                  return (
+                    <div key={comment._id} className="flex gap-3">
+                      <Avatar user={comment.author} size="h-9 w-9" />
+                      <div className="min-w-0 flex-1">
+                        <div className="rounded-xl bg-[#f7faff] px-4 py-3">
+                          <p className="text-sm font-bold">{commentAuthorName}{isCommentOwner ? ' (You)' : ''}</p>
+                          <p className="mt-1 whitespace-pre-wrap text-sm text-black/70">{comment.content}</p>
+                        </div>
+
+                        <div className="mt-1 flex flex-wrap items-center gap-3 px-2 text-[11px] text-black/45">
+                          <span>{formatTime(comment.createdAt)}</span>
+                          <button type="button" onClick={() => reactToComment(comment._id, 'helpful')} className={helpful ? 'font-semibold text-[#2e66a6]' : 'hover:text-[#2e66a6]'}>
+                            <FontAwesomeIcon icon={faThumbsUp} className="mr-1" /> Helpful ({comment.helpful?.length || 0})
+                          </button>
+                          <button type="button" onClick={() => reactToComment(comment._id, 'notHelpful')} className={notHelpful ? 'font-semibold text-red-500' : 'hover:text-red-500'}>
+                            <FontAwesomeIcon icon={faThumbsDown} className="mr-1" /> Not Helpful ({comment.notHelpful?.length || 0})
+                          </button>
+                          <button type="button" onClick={() => setReplyTarget(replyTarget === comment._id ? null : comment._id)} className="hover:text-[#2e66a6]">
+                            <FontAwesomeIcon icon={faReply} className="mr-1" /> Reply
+                          </button>
+                          {!isCommentOwner && (
+                            <button
+                              type="button"
+                              onClick={() => setReportTarget({
+                                type: 'comment',
+                                postId: commentsPost._id,
+                                commentId: comment._id,
+                                name: commentAuthorName,
+                              })}
+                              className="hover:text-red-500"
+                            >
+                              <FontAwesomeIcon icon={faFlag} className="mr-1" /> Report
+                            </button>
+                          )}
+                        </div>
+
+                        {(comment.replies || []).map((reply) => (
+                          <div key={reply._id} className="ml-6 mt-3 flex gap-2">
+                            <Avatar user={reply.author} size="h-8 w-8" />
+                            <div className="rounded-xl bg-white px-3 py-2 shadow-sm ring-1 ring-[#e6edf5]">
+                              <p className="text-xs font-bold">{getDisplayName(reply.author)}</p>
+                              <p className="mt-1 text-sm text-black/70">{reply.content}</p>
+                            </div>
+                          </div>
+                        ))}
+
+                        {replyTarget === comment._id && (
+                          <div className="ml-6 mt-3 flex gap-2">
+                            <input
+                              value={replyDraft}
+                              onChange={(event) => setReplyDraft(event.target.value)}
+                              placeholder={`Reply to ${commentAuthorName}...`}
+                              className="h-9 min-w-0 flex-1 rounded-full border border-[#d8e2ee] px-3 text-sm outline-none focus:border-[#2e66a6]"
+                            />
+                            <button type="button" onClick={() => submitReply(comment._id)} disabled={!replyDraft.trim()} className="h-9 rounded-full bg-[#2e66a6] px-4 text-xs font-semibold text-white disabled:opacity-50">
+                              Reply
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
 
-            <div className="sticky bottom-0 flex justify-end border-t border-[#e6edf5] bg-white px-6 py-4">
-              <button type="button" disabled={!form.content.trim() || submitting} onClick={createPost} className="rounded-full bg-[#2e66a6] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#25578f] disabled:opacity-50">
-                <FontAwesomeIcon icon={submitting ? faSpinner : faPaperPlane} spin={submitting} className="mr-2" /> Post
+            <div className="flex items-center gap-3 border-t border-[#e6edf5] p-4">
+              <Avatar user={currentUser} size="h-9 w-9" />
+              <input
+                value={commentDraft}
+                onChange={(event) => setCommentDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    submitComment();
+                  }
+                }}
+                placeholder="Write a comment..."
+                className="h-10 min-w-0 flex-1 rounded-full border border-[#d8e2ee] px-4 text-sm outline-none focus:border-[#2e66a6]"
+              />
+              <button type="button" onClick={submitComment} disabled={!commentDraft.trim() || commentLoading} className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2e66a6] text-white disabled:opacity-50">
+                <FontAwesomeIcon icon={commentLoading ? faSpinner : faPaperPlane} spin={commentLoading} />
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {reportTarget && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/55 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#e6edf5] px-5 py-4">
+              <div>
+                <h2 className="font-bold">Report {reportTarget.type === 'post' ? 'Post' : 'Comment'}</h2>
+                <p className="mt-1 text-xs text-black/45">Why are you reporting this content by {reportTarget.name}?</p>
+              </div>
+              <button type="button" onClick={() => setReportTarget(null)} className="h-9 w-9 rounded-full hover:bg-[#f7faff]">
+                <FontAwesomeIcon icon={faXmark} />
+              </button>
+            </div>
+
+            <div className="space-y-3 p-5">
+              {reportReasons.map((reason) => (
+                <label key={reason.key} className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#e6edf5] p-4 hover:bg-[#f7faff]">
+                  <input type="radio" name="reportReason" value={reason.key} checked={reportReason === reason.key} onChange={() => setReportReason(reason.key)} className="mt-1" />
+                  <span>
+                    <span className="block text-sm font-semibold">{reason.label}</span>
+                    <span className="block text-xs text-black/45">{reason.description}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+
+            <div className="flex justify-end gap-3 border-t border-[#e6edf5] px-5 py-4">
+              <button type="button" onClick={() => setReportTarget(null)} className="rounded-xl px-4 py-2 text-sm font-semibold hover:bg-[#f7faff]">Cancel</button>
+              <button type="button" onClick={submitReport} disabled={!reportReason || reportLoading} className="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                {reportLoading ? 'Submitting...' : 'Submit Report'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showManaged && (
+        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/55 p-4">
+          <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e6edf5] px-5 py-4">
+              <div>
+                <h2 className="text-xl font-bold">Managed Posts</h2>
+                <p className="text-sm text-black/45">Review your own posts and comments.</p>
+              </div>
+              <button type="button" onClick={() => setShowManaged(false)} className="h-9 w-9 rounded-full hover:bg-[#f7faff]">
+                <FontAwesomeIcon icon={faXmark} />
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-3 border-b border-[#e6edf5] p-4">
+              <select value={managedSort} onChange={(event) => setManagedSort(event.target.value)} className="h-10 rounded-xl border border-[#d8e2ee] px-3 text-sm">
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+              </select>
+              <select value={managedType} onChange={(event) => setManagedType(event.target.value)} className="h-10 rounded-xl border border-[#d8e2ee] px-3 text-sm">
+                <option value="all">All</option>
+                <option value="posts">Posts</option>
+                <option value="comments">Comments</option>
+              </select>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-5">
+              {managedLoading ? (
+                <div className="py-16 text-center text-black/45"><FontAwesomeIcon icon={faSpinner} spin className="mr-2" /> Loading...</div>
+              ) : (
+                <div className="space-y-5">
+                  {(managedType === 'all' || managedType === 'posts') && (
+                    <section>
+                      <h3 className="mb-3 font-bold">Your Posts ({managedData.posts.length})</h3>
+                      <div className="space-y-3">
+                        {managedData.posts.length === 0 ? (
+                          <p className="rounded-xl bg-[#f7faff] p-4 text-sm text-black/45">No posts found.</p>
+                        ) : managedData.posts.map((post) => (
+                          <div key={post._id} className="rounded-xl border border-[#e6edf5] p-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="whitespace-pre-wrap text-sm text-black/75">{post.content}</p>
+                                <p className="mt-2 text-xs text-black/40">{formatTime(post.createdAt)} · {post.category}</p>
+                              </div>
+                              <div className="flex gap-2">
+                                <button type="button" onClick={() => { setShowManaged(false); openEditPost(post); }} className="h-9 w-9 rounded-lg hover:bg-[#f7faff]"><FontAwesomeIcon icon={faPen} /></button>
+                                <button type="button" onClick={() => deletePost(post)} className="h-9 w-9 rounded-lg text-red-500 hover:bg-red-50"><FontAwesomeIcon icon={faTrash} /></button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {(managedType === 'all' || managedType === 'comments') && (
+                    <section>
+                      <h3 className="mb-3 font-bold">Your Comments ({managedData.comments.length})</h3>
+                      <div className="space-y-3">
+                        {managedData.comments.length === 0 ? (
+                          <p className="rounded-xl bg-[#f7faff] p-4 text-sm text-black/45">No comments found.</p>
+                        ) : managedData.comments.map((item) => (
+                          <div key={`${item.postId}-${item.comment._id}`} className="rounded-xl border border-[#e6edf5] p-4">
+                            <p className="text-sm text-black/75">{item.comment.content}</p>
+                            <p className="mt-2 text-xs text-black/40">On post: {item.postContent} · {formatTime(item.comment.createdAt)}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
