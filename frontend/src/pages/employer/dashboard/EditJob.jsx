@@ -648,6 +648,83 @@ const toFormSnapshot = (data) => ({
   locationLongitude: data.locationLongitude === null || data.locationLongitude === undefined ? '' : String(data.locationLongitude),
 });
 
+
+const JOB_FORM_STEPS = [
+  {
+    id: 1,
+    title: 'Job Details',
+    eyebrow: 'Role, schedule & salary',
+    description: 'Add the main job information, schedule, vacancies, deadline, and salary range.',
+  },
+  {
+    id: 2,
+    title: 'Requirements & Qualifications',
+    eyebrow: 'Description, experience & education',
+    description: 'Describe the role and set the qualifications applicants need.',
+  },
+  {
+    id: 3,
+    title: 'Skills & Benefits',
+    eyebrow: 'What you offer',
+    description: 'Add required skills, perks, and other benefits for this role.',
+  },
+  {
+    id: 4,
+    title: 'Work Location',
+    eyebrow: 'Where the work happens',
+    description: 'Set relocation details and choose the exact work location.',
+  },
+];
+
+const JobFormProgress = ({ activeStep, onStepChange }) => (
+  <div className="mb-5 overflow-x-auto rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm sm:px-6">
+    <div className="flex min-w-[720px] items-center justify-center gap-2">
+      {JOB_FORM_STEPS.map((step, index) => {
+        const completed = step.id < activeStep;
+        const active = step.id === activeStep;
+        const canOpen = step.id <= activeStep;
+
+        return (
+          <React.Fragment key={step.id}>
+            <button
+              type="button"
+              onClick={() => canOpen && onStepChange(step.id)}
+              disabled={!canOpen}
+              className={[
+                'inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition',
+                active
+                  ? 'bg-[#e8f2ff] text-[#075fc8]'
+                  : completed
+                  ? 'text-emerald-700 hover:bg-emerald-50'
+                  : 'text-gray-500',
+                !canOpen ? 'cursor-default' : '',
+              ].join(' ')}
+            >
+              <span
+                className={[
+                  'inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold',
+                  completed
+                    ? 'bg-emerald-600 text-white'
+                    : active
+                    ? 'bg-[#075fc8] text-white'
+                    : 'bg-gray-100 text-gray-500',
+                ].join(' ')}
+              >
+                {completed ? '✓' : step.id}
+              </span>
+              <span>{step.title}</span>
+            </button>
+
+            {index < JOB_FORM_STEPS.length - 1 && (
+              <span className="text-gray-300" aria-hidden="true">›</span>
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  </div>
+);
+
 const EditJob = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -666,6 +743,7 @@ const EditJob = () => {
 
   const [submitted, setSubmitted] = useState(false);
   const [touched, setTouched] = useState({});
+  const [activeStep, setActiveStep] = useState(1);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const modalRef = useRef(null);
@@ -975,6 +1053,42 @@ const EditJob = () => {
       skillsCountValid
     );
   }, [formData, vacanciesValid, isDeadlineValid, salaryValid, skillsCountValid]);
+
+  const stepReady = useMemo(() => ({
+    1: Boolean(
+      formData.title.trim() &&
+      vacanciesValid &&
+      isDeadlineValid &&
+      salaryValid
+    ),
+    2: Boolean(
+      getRichTextPlainText(formData.description).length >= 80 &&
+      getRichTextPlainText(formData.requirements).length >= 40 &&
+      EXPERIENCE_LEVELS.includes(String(formData.experienceLevel || '').trim()) &&
+      String(formData.educationLevel || '').trim()
+    ),
+    3: Boolean(skillsCountValid),
+    4: Boolean(formData.location.trim()),
+  }), [formData, vacanciesValid, isDeadlineValid, salaryValid, skillsCountValid]);
+
+  const currentStep = JOB_FORM_STEPS[activeStep - 1];
+
+  const goToNextStep = () => {
+    if (!stepReady[activeStep]) return;
+    setActiveStep((step) => Math.min(JOB_FORM_STEPS.length, step + 1));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const goToPreviousStep = () => {
+    setActiveStep((step) => Math.max(1, step - 1));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (activeStep !== 4) return;
+    const timer = window.setTimeout(() => window.dispatchEvent(new Event('resize')), 120);
+    return () => window.clearTimeout(timer);
+  }, [activeStep]);
 
   const fieldErrors = useMemo(() => {
     const errors = {};
@@ -1666,21 +1780,29 @@ const EditJob = () => {
             </Alert>
           )}
 
+          <JobFormProgress activeStep={activeStep} onStepChange={setActiveStep} />
+
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
             <div className="lg:col-span-12">
               <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
                 <div className="border-b border-gray-200 px-6 py-5">
                   <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                      <h2 className="text-lg font-bold text-gray-900">Job information</h2>
-                      <p className="text-sm text-gray-500">Keep it clear and specific.</p>
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-[#075fc8]">
+                        {currentStep.eyebrow}
+                      </p>
+                      <h2 className="mt-1 text-lg font-bold text-gray-900">{currentStep.title}</h2>
+                      <p className="text-sm text-gray-500">{currentStep.description}</p>
                     </div>
+                    <span className="w-fit rounded-full bg-[#e8f2ff] px-3 py-1 text-xs font-semibold text-[#075fc8]">
+                      Step {activeStep} of {JOB_FORM_STEPS.length}
+                    </span>
                   </div>
                 </div>
 
                 <div className="px-6 py-6">
                   <div className="mx-auto w-full max-w-5xl space-y-10">
-                    <section className="space-y-5">
+                    <section className={`${activeStep === 1 ? 'block' : 'hidden'} space-y-5`}>
                       <h3 className="text-base font-bold text-gray-900">Basics</h3>
 
                       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -1779,9 +1901,9 @@ const EditJob = () => {
                       </div>
                     </section>
 
-                    <div className="border-t border-gray-100" />
+                    <div className="hidden border-t border-gray-100" />
 
-                    <section className="space-y-5">
+                    <section className={`${activeStep === 1 ? 'block' : 'hidden'} space-y-5`}>
                       <div className="flex items-end justify-between">
                         <h3 className="text-base font-bold text-gray-900">
                           Salary Range
@@ -1848,9 +1970,9 @@ const EditJob = () => {
                       </label>
 
 
-                    <div className="border-t border-gray-100" />
+                    <div className="hidden border-t border-gray-100" />
 
-                    <section className="space-y-5">
+                    <section className={`${activeStep === 2 ? 'block' : 'hidden'} space-y-5`}>
                       <h3 className="text-base font-bold text-gray-900">Applicant Requirements</h3>
 
                       <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
@@ -1916,9 +2038,9 @@ const EditJob = () => {
                       </div>
                     </section>
 
-                    <div className="border-t border-gray-100" />
+                    <div className="hidden border-t border-gray-100" />
 
-                    <section className="space-y-5">
+                    <section className={`${activeStep === 2 ? 'block' : 'hidden'} space-y-5`}>
                       <h3 className="text-base font-bold text-gray-900">Job Details</h3>
 
                       <Field
@@ -1960,9 +2082,9 @@ const EditJob = () => {
                       </Field>
                     </section>
 
-                    <div className="border-t border-gray-100" />
+                    <div className="hidden border-t border-gray-100" />
 
-                    <section className="space-y-5">
+                    <section className={`${activeStep === 3 ? 'block' : 'hidden'} space-y-5`}>
                       <h3 className="text-base font-bold text-gray-900">Required Skills</h3>
 
                       <Field
@@ -2026,9 +2148,9 @@ const EditJob = () => {
                       )}
                     </section>
 
-                    <div className="border-t border-gray-100" />
+                    <div className="hidden border-t border-gray-100" />
 
-                    <section className="space-y-5">
+                    <section className={`${activeStep === 3 ? 'block' : 'hidden'} space-y-5`}>
                       <h3 className="text-base font-bold text-gray-900">Perks and Benefits</h3>
 
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -2065,9 +2187,9 @@ const EditJob = () => {
                       </Field>
                     </section>
 
-                    <div className="border-t border-gray-100" />
+                    <div className="hidden border-t border-gray-100" />
 
-                    <section className="space-y-5">
+                    <section className={`${activeStep === 4 ? 'block' : 'hidden'} space-y-5`}>
                       <h3 className="text-base font-bold text-gray-900">Additional Details</h3>
 
                       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -2094,8 +2216,8 @@ const EditJob = () => {
                       </div>
                     </section>
 
-                    <div className="border-t border-gray-100" />
-                    <section className="space-y-5">
+                    <div className="hidden border-t border-gray-100" />
+                    <section className={`${activeStep === 4 ? 'block' : 'hidden'} space-y-5`}>
                       <h3 className="text-base font-bold text-gray-900">Additional Details</h3>
 
                       <div className="grid grid-cols-1 gap-5">
@@ -2137,7 +2259,13 @@ const EditJob = () => {
             style={stickyStyle}>
             <div className="mx-auto max-w-6xl px-4 py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-gray-600">
-                {requiredOk ? (
+                {activeStep < JOB_FORM_STEPS.length ? (
+                  stepReady[activeStep] ? (
+                    <span className="font-semibold text-[#2e66a6]">This step is complete.</span>
+                  ) : (
+                    <span>Complete this step to continue.</span>
+                  )
+                ) : requiredOk ? (
                   <span className="font-semibold text-[#2e66a6]">
                     All required fields complete. You can {isDraft ? 'publish' : 'save changes'}.
                   </span>
@@ -2170,27 +2298,49 @@ const EditJob = () => {
                   {savingDraft ? 'Saving…' : 'Save Draft'}
                 </button>
 
-                <button
-                  type="button"
-                  onClick={primaryActionHandler}
-                  disabled={
-                    publishing ||
-                    savingDraft ||
-                    savingChanges ||
-                    deleting ||
-                    !requiredOk ||
-                    (isDraft ? false : !isDirty) ||
-                    (isDraft && !canPublish)
-                  }
-                  title={isDraft && !canPublish ? 'Verify your company to publish.' : ''}
-                  className="rounded-xl bg-[#2e66a6] px-5 py-2 text-sm font-semibold text-white hover:bg-[#25558a] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2e66a6]"
-                >
-                  {publishing || savingChanges
-                    ? 'Saving…'
-                    : isDraft && !canPublish
-                    ? 'Verify to publish'
-                    : primaryActionLabel}
-                </button>
+                {activeStep > 1 && (
+                  <button
+                    type="button"
+                    onClick={goToPreviousStep}
+                    disabled={isBusy}
+                    className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2e66a6]"
+                  >
+                    Back
+                  </button>
+                )}
+
+                {activeStep < JOB_FORM_STEPS.length ? (
+                  <button
+                    type="button"
+                    onClick={goToNextStep}
+                    disabled={isBusy || !stepReady[activeStep]}
+                    className="rounded-xl bg-[#2e66a6] px-5 py-2 text-sm font-semibold text-white hover:bg-[#25558a] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2e66a6]"
+                  >
+                    Continue →
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={primaryActionHandler}
+                    disabled={
+                      publishing ||
+                      savingDraft ||
+                      savingChanges ||
+                      deleting ||
+                      !requiredOk ||
+                      (isDraft ? false : !isDirty) ||
+                      (isDraft && !canPublish)
+                    }
+                    title={isDraft && !canPublish ? 'Verify your company to publish.' : ''}
+                    className="rounded-xl bg-[#2e66a6] px-5 py-2 text-sm font-semibold text-white hover:bg-[#25558a] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2e66a6]"
+                  >
+                    {publishing || savingChanges
+                      ? 'Saving…'
+                      : isDraft && !canPublish
+                      ? 'Verify to publish'
+                      : primaryActionLabel}
+                  </button>
+                )}
               </div>
             </div>
           </div>
