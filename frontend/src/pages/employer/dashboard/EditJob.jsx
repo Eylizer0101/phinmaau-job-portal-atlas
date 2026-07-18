@@ -753,6 +753,8 @@ const EditJob = () => {
   const [activeStep, setActiveStep] = useState(1);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [savingCancelDraft, setSavingCancelDraft] = useState(false);
   const modalRef = useRef(null);
   const cancelBtnRef = useRef(null);
 
@@ -1553,6 +1555,36 @@ const EditJob = () => {
     }
   };
 
+  const handleCancelAndSaveDraft = async () => {
+    setSubmitted(true);
+    clearMessages();
+
+    if (!formData.title.trim()) {
+      setShowCancelModal(false);
+      setError('Please add a job title before saving as draft.');
+      focusFirstError({ title: 'required' });
+      return;
+    }
+
+    setSavingCancelDraft(true);
+
+    try {
+      const payload = buildPayload({ mode: 'draft' });
+      await persist(payload);
+
+      setShowCancelModal(false);
+      navigate('/employer/manage-jobs', {
+        state: { jobEditSuccess: true, successType: 'edit-draft' },
+      });
+    } catch (err) {
+      console.error(err);
+      setShowCancelModal(false);
+      setError(getAxiosErrorMessage(err, 'Failed to save the job as draft. Please try again.'));
+    } finally {
+      setSavingCancelDraft(false);
+    }
+  };
+
   const handlePublish = async () => {
     setSubmitted(true);
     clearMessages();
@@ -2298,10 +2330,7 @@ const EditJob = () => {
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    if (!confirmLeaveIfDirty()) return;
-                    navigate('/employer/manage-jobs');
-                  }}
+                  onClick={() => setShowCancelModal(true)}
                   className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2e66a6]"
                 >
                   Cancel
@@ -2367,6 +2396,53 @@ const EditJob = () => {
 
 
         </div>
+          {showCancelModal && (
+            <div className="fixed inset-0 z-[2100] flex items-center justify-center bg-black/50 p-4">
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="cancel-edit-job-title"
+                className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
+              >
+                <div className="h-2 bg-amber-500" />
+
+                <div className="p-6">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-2xl font-bold text-amber-700">
+                    !
+                  </div>
+
+                  <h2 id="cancel-edit-job-title" className="text-xl font-bold text-gray-900">
+                    Are you sure you want to cancel?
+                  </h2>
+
+                  <p className="mt-2 text-sm leading-6 text-gray-600">
+                    Your current job post progress will be saved as a draft.
+                  </p>
+
+                  <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setShowCancelModal(false)}
+                      disabled={savingCancelDraft}
+                      className="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Continue Editing
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleCancelAndSaveDraft}
+                      disabled={savingCancelDraft}
+                      className="rounded-xl bg-[#2e66a6] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#23508a] disabled:opacity-50"
+                    >
+                      {savingCancelDraft ? 'Saving Draft…' : 'Save as Draft and Exit'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {showDeleteModal && (
             <div
               className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
