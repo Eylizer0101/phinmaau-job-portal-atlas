@@ -1069,45 +1069,45 @@ const MyApplications = () => {
                                     <span>Applied {appliedAt}</span>
                                   </div>
                                 </div>
-
-                                {(jobTypeText || locationText || workModeText || salaryText) && (
-                                  <div className="mt-3 flex flex-wrap gap-2">
-                                    {jobTypeText && (
-                                      <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
-                                        <span className="text-gray-500">
-                                          <SvgIcon name="briefcase" className="w-3.5 h-3.5" />
-                                        </span>
-                                        {jobTypeText}
-                                      </span>
-                                    )}
-
-                                    {locationText && (
-                                      <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
-                                        <span className="text-gray-500">
-                                          <SvgIcon name="location" className="w-3.5 h-3.5" />
-                                        </span>
-                                        {formatLocationDisplay(locationText)}
-                                      </span>
-                                    )}
-
-                                    {workModeText && (
-                                      <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
-                                        <span className="text-gray-500">
-                                          <SvgIcon name="building" className="w-3.5 h-3.5" />
-                                        </span>
-                                        {workModeText}
-                                      </span>
-                                    )}
-
-                                    {salaryText && (
-                                      <span className={`${UI.chipBase} bg-[#2e66a6]/10 text-[#2e66a6] border-[#2e66a6]/20`}>
-                                        {salaryText}
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
                               </div>
                             </div>
+
+                            {(jobTypeText || locationText || workModeText || salaryText) && (
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {jobTypeText && (
+                                  <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
+                                    <span className="text-gray-500">
+                                      <SvgIcon name="briefcase" className="w-3.5 h-3.5" />
+                                    </span>
+                                    {jobTypeText}
+                                  </span>
+                                )}
+
+                                {locationText && (
+                                  <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
+                                    <span className="text-gray-500">
+                                      <SvgIcon name="location" className="w-3.5 h-3.5" />
+                                    </span>
+                                    {formatLocationDisplay(locationText)}
+                                  </span>
+                                )}
+
+                                {workModeText && (
+                                  <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
+                                    <span className="text-gray-500">
+                                      <SvgIcon name="building" className="w-3.5 h-3.5" />
+                                    </span>
+                                    {workModeText}
+                                  </span>
+                                )}
+
+                                {salaryText && (
+                                  <span className={`${UI.chipBase} bg-[#2e66a6]/10 text-[#2e66a6] border-[#2e66a6]/20`}>
+                                    {salaryText}
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
 
                      <div className="flex flex-col items-start lg:items-end gap-3">
