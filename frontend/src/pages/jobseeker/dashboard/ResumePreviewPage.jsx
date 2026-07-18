@@ -559,15 +559,24 @@ const ResumePreviewPage = () => {
           column-gap: 22px;
           row-gap: 2px;
           margin: 1px 0 0;
-          padding-left: 14px;
-          list-style-position: outside;
+          padding: 0;
+          list-style: none !important;
         }
         .skill-item {
-          display: list-item;
+          position: relative;
+          display: block !important;
           color: #111111;
-          padding-left: 1px;
+          padding-left: 11px;
           min-width: 0;
           overflow-wrap: anywhere;
+        }
+        .skill-item::before {
+          content: '•';
+          position: absolute;
+          left: 0;
+          top: 0;
+          color: #111111;
+          font-weight: 700;
         }
         .resume-rich-text { margin-top: 2px; text-align: justify; }
         .resume-rich-text p, .resume-rich-text div { margin: 1px 0; }
