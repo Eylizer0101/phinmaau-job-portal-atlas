@@ -754,7 +754,7 @@ const EmployerJobView = () => {
           </div>
 
           <div className={`${UI.card} mb-5 overflow-hidden`}>
-            <div className="relative h-[260px] w-full overflow-hidden sm:h-[320px] lg:h-[360px]">
+            <div className="relative h-[220px] w-full overflow-hidden sm:h-[260px] lg:h-[300px]">
               <img
                 src={resolveAssetUrl(job?.employerDetails?.coverPhoto) || '/images/jobback.png'}
                 alt={`${job.companyName || 'Company'} cover banner`}

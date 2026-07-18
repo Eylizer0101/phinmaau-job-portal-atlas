@@ -1302,7 +1302,7 @@ const CompanyProfile = () => {
           )}
 
           <div className="overflow-hidden rounded-[16px]">
-            <div className="relative h-[260px] sm:h-[320px] lg:h-[360px] overflow-hidden rounded-t-[16px] border border-b-0 border-[#d1d5db] bg-white">
+            <div className="relative h-[220px] sm:h-[260px] lg:h-[300px] overflow-hidden rounded-t-[16px] border border-b-0 border-[#d1d5db] bg-white">
               <img src={coverImage} alt="Company cover" className="h-full w-full object-cover" />
               <div className="absolute inset-0 bg-black/5" />
             </div>
