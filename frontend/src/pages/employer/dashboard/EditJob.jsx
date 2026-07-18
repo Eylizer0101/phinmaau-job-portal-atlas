@@ -654,25 +654,22 @@ const JOB_FORM_STEPS = [
     id: 1,
     title: 'Job Details',
     
-    description: 'Add the main job information, schedule, vacancies, deadline, and salary range.',
+    
   },
   {
     id: 2,
     title: 'Requirements & Qualifications',
-    eyebrow: 'Description, experience & education',
-    description: 'Describe the role and set the qualifications applicants need.',
+    
   },
   {
     id: 3,
     title: 'Skills & Benefits',
-    eyebrow: 'What you offer',
-    description: 'Add required skills, perks, and other benefits for this role.',
+   
   },
   {
     id: 4,
     title: 'Work Location',
-    eyebrow: 'Where the work happens',
-    description: 'Set relocation details and choose the exact work location.',
+
   },
 ];
 
@@ -1950,6 +1947,7 @@ const EditJob = () => {
                     </section>
 
                     
+                    <div className={activeStep === 1 ? 'block' : 'hidden'}>
                       <label className="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 cursor-pointer">
                         <input
                           type="checkbox"
@@ -1964,6 +1962,7 @@ const EditJob = () => {
                           </span>
                         </span>
                       </label>
+                    </div>
 
 
                     <div className="hidden border-t border-gray-100" />
