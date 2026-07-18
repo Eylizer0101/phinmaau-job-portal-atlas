@@ -1155,7 +1155,6 @@ const ApplicationDetails = () => {
 
         .page-shell {
           min-height: 0 !important;
-          padding-top: 0 !important;
         }
 
         html,
@@ -1232,15 +1231,20 @@ const ApplicationDetails = () => {
           <div className="flex border-t border-[#d8e2ee] px-5 sm:px-7"><button onClick={() => setActiveTab('resume')} className={cn('relative flex h-14 items-center gap-2 px-3 text-sm font-semibold', activeTab === 'resume' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="resume" className="h-4 w-4" /> Resume<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'resume' ? 'bg-[#174b91]' : '')} /></button><button onClick={() => setActiveTab('activity')} className={cn('relative flex h-14 items-center gap-2 px-5 text-sm font-semibold', activeTab === 'activity' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="activity" className="h-4 w-4" /> Activity<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'activity' ? 'bg-[#174b91]' : '')} /></button></div>
 
           {activeTab === 'resume' ? (
-            <div className="border-t border-[#d8e2ee] bg-[#e5e7eb] py-5">
-              <div className="overflow-hidden bg-transparent">
+            <div className="border-t border-[#d8e2ee] bg-[#e5e7eb]">
+              <div className="overflow-x-auto overflow-y-hidden">
                 <iframe
                   title={`${name} resume`}
                   srcDoc={embeddedResumeHtml}
                   onLoad={handleResumeFrameLoad}
                   scrolling="no"
-                  className="block w-full border-0 bg-transparent"
-                  style={{ height: `${resumeFrameHeight}px`, overflow: 'hidden' }}
+                  className="mx-auto block border-0 bg-transparent"
+                  style={{
+                    width: 'calc(210mm + 32px)',
+                    minWidth: 'calc(210mm + 32px)',
+                    height: `${resumeFrameHeight}px`,
+                    overflow: 'hidden',
+                  }}
                   sandbox="allow-same-origin"
                 />
               </div>
