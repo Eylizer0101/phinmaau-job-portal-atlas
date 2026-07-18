@@ -447,7 +447,7 @@ const selectBase =
         <div className="relative z-20 mb-6 overflow-visible rounded-[22px] border border-gray-300 bg-[#ffffff] shadow-sm">
           <div className="overflow-visible p-5">
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-              <div className="lg:col-span-5">
+              <div className={hasActiveFilters ? 'lg:col-span-4' : 'lg:col-span-5'}>
                 <div className="relative">
                   <span className="pointer-events-none absolute left-4 top-3.5 text-gray-400">
                     <Icon name="search" className="h-5 w-5" />
@@ -519,22 +519,22 @@ const selectBase =
                   disabled={loading}
                 />
               </div>
-            </div>
-
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600">
-              <div>
-                Showing <span className="font-semibold text-gray-800">{filteredApplications.length}</span> result(s).
-              </div>
 
               {hasActiveFilters && (
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-                >
-                  Clear
-                </button>
+                <div className="lg:col-span-1">
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="inline-flex h-[54px] w-full items-center justify-center rounded-xl border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                  >
+                    Clear
+                  </button>
+                </div>
               )}
+            </div>
+
+            <div className="mt-4 text-sm text-gray-600">
+              Showing <span className="font-semibold text-gray-800">{filteredApplications.length}</span> result(s).
             </div>
           </div>
         </div>

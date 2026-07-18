@@ -1621,7 +1621,7 @@ const selectBase =
         <div className="mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="p-5">
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-              <div className={hasActiveFilters ? 'lg:col-span-5' : 'lg:col-span-6'}>
+              <div className={hasActiveFilters ? 'lg:col-span-4' : 'lg:col-span-5'}>
                 <div className="relative">
                   <span className="pointer-events-none absolute left-4 top-3.5 text-gray-400">
                     <Icon name="search" className="h-5 w-5" />
@@ -1735,8 +1735,8 @@ const selectBase =
               </div>
 
               {hasActiveFilters && (
-                <div className="lg:col-span-1">
-                  <Button variant="secondary" className="w-full" onClick={clearFilters}>
+                <div className="lg:col-span-2">
+                  <Button variant="secondary" className="h-[50px] w-full" onClick={clearFilters}>
                     Clear
                   </Button>
                 </div>

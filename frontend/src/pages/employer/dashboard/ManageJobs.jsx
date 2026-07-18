@@ -653,7 +653,14 @@ const ManageJobs = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-[minmax(140px,1fr)_minmax(120px,0.75fr)_minmax(130px,0.8fr)_minmax(170px,1fr)]">
+              <div
+                className={cn(
+                  'grid grid-cols-1 gap-2 sm:grid-cols-2',
+                  hasActiveFilters
+                    ? 'lg:grid-cols-5 xl:grid-cols-[minmax(130px,1fr)_minmax(105px,0.72fr)_minmax(115px,0.76fr)_minmax(145px,0.9fr)_minmax(100px,0.62fr)]'
+                    : 'lg:grid-cols-4 xl:grid-cols-[minmax(140px,1fr)_minmax(120px,0.75fr)_minmax(130px,0.8fr)_minmax(170px,1fr)]'
+                )}
+              >
                 <select
                   value={jobFilter}
                   onChange={(e) => setJobFilter(e.target.value)}
@@ -708,20 +715,17 @@ const ManageJobs = () => {
                   <option value="most_recent">Most Recent Newest to Oldest</option>
                 </select>
 
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={clearControls}
+                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                  >
+                    Clear
+                  </button>
+                )}
               </div>
             </div>
-
-            {hasActiveFilters && (
-              <div className="mt-2 flex w-full justify-end">
-                <button
-                  type="button"
-                  onClick={clearControls}
-                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 hover:bg-gray-50 sm:w-[220px]"
-                >
-                  Clear
-                </button>
-              </div>
-            )}
 
             <p className="mt-3 text-xs text-gray-500">
               Showing <span className="font-semibold text-gray-700">{filteredJobs.length}</span> result(s).
