@@ -18,10 +18,11 @@ router.put('/:id/read', notificationController.markAsRead);
 // Mark all as read
 router.put('/mark-all-read', notificationController.markAllAsRead);
 
+// Clear all notifications
+// Keep this route before '/:id' so Express does not treat "clear-all" as an ID.
+router.delete('/clear-all', notificationController.clearAll);
+
 // Delete notification
 router.delete('/:id', notificationController.deleteNotification);
-
-// Clear all notifications
-router.delete('/clear-all', notificationController.clearAll);
 
 module.exports = router;

@@ -53,6 +53,8 @@ const NotificationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all, unread, read
   const [unreadCount, setUnreadCount] = useState(0);
+  const [deleteConfirmation, setDeleteConfirmation] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const navigate = useNavigate();
 
@@ -166,6 +168,35 @@ const NotificationsPage = () => {
     }
   };
 
+  const openDeleteConfirmation = (notificationId) => {
+    setDeleteConfirmation({ type: 'single', notificationId });
+  };
+
+  const openClearAllConfirmation = () => {
+    setDeleteConfirmation({ type: 'all' });
+  };
+
+  const closeDeleteConfirmation = () => {
+    if (isDeleting) return;
+    setDeleteConfirmation(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmation || isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      if (deleteConfirmation.type === 'all') {
+        await handleClearAll();
+      } else {
+        await handleDeleteNotification(deleteConfirmation.notificationId);
+      }
+      setDeleteConfirmation(null);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'job_match':
@@ -255,6 +286,62 @@ const NotificationsPage = () => {
 
   return (
     <div className={UI.pageBg}>
+      {deleteConfirmation && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4"
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closeDeleteConfirmation();
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-confirmation-title"
+            aria-describedby="delete-confirmation-description"
+            className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-6 shadow-xl"
+          >
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-red-50">
+              <FontAwesomeIcon icon={faTrash} className="h-5 w-5 text-red-600" />
+            </div>
+
+            <h2 id="delete-confirmation-title" className="mt-4 text-center text-lg font-bold text-gray-900">
+              {deleteConfirmation.type === 'all' ? 'Clear all notifications?' : 'Delete notification?'}
+            </h2>
+
+            <p id="delete-confirmation-description" className="mt-2 text-center text-sm text-gray-600">
+              {deleteConfirmation.type === 'all'
+                ? 'This will remove all notifications from your list.'
+                : 'This notification will be removed from your list.'}
+            </p>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={closeDeleteConfirmation}
+                disabled={isDeleting}
+                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSecondary} ${UI.ring} flex-1`}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className={`${UI.btnBase} ${UI.btnMd} bg-red-600 text-white hover:bg-red-700 ${UI.ring} flex-1`}
+              >
+                {isDeleting
+                  ? 'Deleting...'
+                  : deleteConfirmation.type === 'all'
+                  ? 'Clear all'
+                  : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className={UI.container}>
         {/* Header (match Messages page style) */}
         <div className={`${UI.shell} p-5 sm:p-6 mb-6`}>
@@ -339,7 +426,7 @@ const NotificationsPage = () => {
           {notifications.length > 0 && (
             <button
               type="button"
-              onClick={handleClearAll}
+              onClick={openClearAllConfirmation}
               className={`${UI.btnBase} ${UI.btnMd} ${UI.btnDangerGhost} ${UI.ring}`}
             >
               <FontAwesomeIcon icon={faTrash} className="w-4 h-4" />
@@ -477,7 +564,7 @@ const NotificationsPage = () => {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDeleteNotification(notification._id);
+                              openDeleteConfirmation(notification._id);
                             }}
                             className={`${UI.btnBase} h-9 w-9 rounded-xl ${UI.btnGhost} ${UI.ring}`}
                             aria-label="Delete notification"

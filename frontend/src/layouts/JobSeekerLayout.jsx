@@ -71,6 +71,8 @@ const JobSeekerLayout = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [notificationLoading, setNotificationLoading] = useState(false);
+  const [notificationDeleteConfirmation, setNotificationDeleteConfirmation] = useState(null);
+  const [isDeletingNotification, setIsDeletingNotification] = useState(false);
 
   // Messages unread count
   const [messageUnreadCount, setMessageUnreadCount] = useState(0);
@@ -447,6 +449,27 @@ const JobSeekerLayout = ({ children }) => {
     }
   };
 
+  const openNotificationDeleteConfirmation = (notificationId) => {
+    setNotificationDeleteConfirmation(notificationId);
+  };
+
+  const closeNotificationDeleteConfirmation = () => {
+    if (isDeletingNotification) return;
+    setNotificationDeleteConfirmation(null);
+  };
+
+  const confirmNotificationDelete = async () => {
+    if (!notificationDeleteConfirmation || isDeletingNotification) return;
+
+    setIsDeletingNotification(true);
+    try {
+      await handleDeleteNotification(notificationDeleteConfirmation);
+      setNotificationDeleteConfirmation(null);
+    } finally {
+      setIsDeletingNotification(false);
+    }
+  };
+
   const handleLogout = () => {
     if (isLoggingOut) return;
 
@@ -640,6 +663,56 @@ const JobSeekerLayout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+      {notificationDeleteConfirmation && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 px-4"
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closeNotificationDeleteConfirmation();
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="notification-delete-title"
+            aria-describedby="notification-delete-description"
+            className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-6 shadow-xl"
+          >
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-red-50">
+              <FontAwesomeIcon icon={faTrash} className="h-5 w-5 text-red-600" />
+            </div>
+
+            <h2 id="notification-delete-title" className="mt-4 text-center text-lg font-bold text-gray-900">
+              Delete notification?
+            </h2>
+
+            <p id="notification-delete-description" className="mt-2 text-center text-sm text-gray-600">
+              This notification will be removed from your list.
+            </p>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={closeNotificationDeleteConfirmation}
+                disabled={isDeletingNotification}
+                className={`flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60 ${focusRing}`}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={confirmNotificationDelete}
+                disabled={isDeletingNotification}
+                className={`flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60 ${focusRing}`}
+              >
+                {isDeletingNotification ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showLogoutModal && (
         <div
           className={[
@@ -1007,7 +1080,7 @@ const JobSeekerLayout = ({ children }) => {
                                     type="button"
                                     onClick={async (e) => {
                                       e.stopPropagation();
-                                      await handleDeleteNotification(n._id);
+                                      openNotificationDeleteConfirmation(n._id);
                                     }}
                                     className={`text-gray-500 hover:text-red-600 p-2 rounded-lg ${focusRing}`}
                                     aria-label="Delete notification"
@@ -1394,7 +1467,7 @@ const JobSeekerLayout = ({ children }) => {
                             className={`text-gray-500 hover:text-red-600 p-2 rounded-lg ${focusRing}`}
                             onClick={async (e) => {
                               e.stopPropagation();
-                              await handleDeleteNotification(n._id);
+                              openNotificationDeleteConfirmation(n._id);
                             }}
                             aria-label="Delete notification"
                           >
