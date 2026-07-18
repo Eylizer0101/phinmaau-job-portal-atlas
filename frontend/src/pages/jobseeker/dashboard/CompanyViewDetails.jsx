@@ -1960,18 +1960,20 @@ The company also values transparency, teamwork, and continuous improvement, crea
                         </div>
                       </div>
 
-                      <span
-                        className={`inline-flex w-fit items-center rounded-full border px-3 py-1 text-xs font-semibold ${getOutcomeBadgeClass(
-                          review.outcome
-                        )}`}
-                      >
-                        {review.outcome ? getOutcomeLabel(review.outcome) : "Outcome not provided"}
-                      </span>
-                    </div>
+                      <div className="flex w-full flex-col items-start gap-3 sm:w-auto sm:items-end">
+                        <span
+                          className={`inline-flex w-fit items-center rounded-full border px-3 py-1 text-xs font-semibold ${getOutcomeBadgeClass(
+                            review.outcome
+                          )}`}
+                        >
+                          {review.outcome ? getOutcomeLabel(review.outcome) : "Outcome not provided"}
+                        </span>
 
-                    <div className="mt-5 flex items-center gap-3 flex-wrap">
-                      <StarRating rating={review.rating} size="w-6 h-6" />
-                      <span className="text-[15px] font-medium text-black/65">Overall</span>
+                        <div className="flex items-center gap-3 flex-wrap sm:justify-end">
+                          <StarRating rating={review.rating} size="w-6 h-6" />
+                          <span className="text-[15px] font-medium text-black/65">Overall</span>
+                        </div>
+                      </div>
                     </div>
 
                     <p className="mt-5 text-[16px] leading-7 text-black/80">
