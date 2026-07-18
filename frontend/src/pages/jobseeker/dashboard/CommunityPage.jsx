@@ -124,6 +124,7 @@ const CommunityPage = () => {
   const [editingPost, setEditingPost] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ content: '', category: 'insight', linkUrl: '', topics: '' });
+  const [topicDraft, setTopicDraft] = useState('');
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState('');
   const [showLinkInput, setShowLinkInput] = useState(false);
@@ -192,6 +193,7 @@ const CommunityPage = () => {
   const resetCreateForm = () => {
     if (photoPreview?.startsWith('blob:')) URL.revokeObjectURL(photoPreview);
     setForm({ content: '', category: 'insight', linkUrl: '', topics: '' });
+    setTopicDraft('');
     setSelectedPhoto(null);
     setPhotoPreview('');
     setShowLinkInput(false);
@@ -238,6 +240,45 @@ const CommunityPage = () => {
     if (photoPreview?.startsWith('blob:')) URL.revokeObjectURL(photoPreview);
     setSelectedPhoto(file);
     setPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const getTopicList = () => (
+    String(form.topics || '')
+      .split(',')
+      .map((topic) => topic.trim().replace(/^#+/, ''))
+      .filter(Boolean)
+  );
+
+  const addTopic = () => {
+    const nextTopic = topicDraft.trim().replace(/^#+/, '');
+    if (!nextTopic) return;
+
+    const currentTopics = getTopicList();
+    const alreadyExists = currentTopics.some(
+      (topic) => topic.toLowerCase() === nextTopic.toLowerCase()
+    );
+
+    if (alreadyExists) {
+      setTopicDraft('');
+      return;
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      topics: [...currentTopics, nextTopic].join(', '),
+    }));
+    setTopicDraft('');
+  };
+
+  const removeTopic = (topicToRemove) => {
+    const nextTopics = getTopicList().filter(
+      (topic) => topic.toLowerCase() !== String(topicToRemove).toLowerCase()
+    );
+
+    setForm((prev) => ({
+      ...prev,
+      topics: nextTopics.join(', '),
+    }));
   };
 
   const savePost = async () => {
@@ -727,13 +768,53 @@ const CommunityPage = () => {
 
               {showTopicInput && (
                 <div className="mt-4">
-                  <label className="mb-1 block text-sm font-semibold">Topic <span className="text-red-500">*</span></label>
-                  <input
-                    value={form.topics}
-                    onChange={(event) => setForm((prev) => ({ ...prev, topics: event.target.value }))}
-                    placeholder="Required: Figma, ChatGPT, Gemini"
-                    className="h-11 w-full rounded-xl border border-[#d8e2ee] px-4 text-sm outline-none focus:border-[#2e66a6]"
-                  />
+                  <label className="mb-1 block text-sm font-semibold">
+                    Topic <span className="text-red-500">*</span>
+                  </label>
+
+                  <div className="flex overflow-hidden rounded-xl border border-[#d8e2ee] bg-white focus-within:border-[#2e66a6] focus-within:ring-2 focus-within:ring-[#2e66a6]/20">
+                    <input
+                      value={topicDraft}
+                      onChange={(event) => setTopicDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          addTopic();
+                        }
+                      }}
+                      placeholder="Type a topic"
+                      className="h-11 min-w-0 flex-1 px-4 text-sm outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={addTopic}
+                      disabled={!topicDraft.trim()}
+                      className="m-1 rounded-lg bg-[#2e66a6] px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Add
+                    </button>
+                  </div>
+
+                  {getTopicList().length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {getTopicList().map((topic) => (
+                        <span
+                          key={topic}
+                          className="inline-flex items-center gap-2 rounded-full border border-[#cfe0f4] bg-[#eef5fd] px-3 py-1.5 text-sm font-medium text-[#2e66a6]"
+                        >
+                          #{topic}
+                          <button
+                            type="button"
+                            onClick={() => removeTopic(topic)}
+                            className="flex h-5 w-5 items-center justify-center rounded-full hover:bg-[#d9e9fa]"
+                            aria-label={`Remove ${topic}`}
+                          >
+                            <FontAwesomeIcon icon={faXmark} className="text-[10px]" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
