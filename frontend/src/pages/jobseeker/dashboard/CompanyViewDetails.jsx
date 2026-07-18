@@ -1189,7 +1189,7 @@ const CompanyViewDetails = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F3F5FF]">
-        <div className="relative left-1/2 right-1/2 w-screen -ml-[50vw] -mr-[50vw] -mt-32 h-[200px] sm:h-[240px] lg:h-[250px] overflow-hidden">
+        <div className="relative left-1/2 right-1/2 w-screen -ml-[50vw] -mr-[50vw] -mt-32 h-[220px] sm:h-[270px] lg:h-[290px] overflow-hidden">
           <img src="/images/jobback.png" alt="Company banner" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-black/10" />
         </div>
@@ -1208,7 +1208,7 @@ const CompanyViewDetails = () => {
   if (error || !company) {
     return (
       <div className="min-h-screen bg-[#F3F5FF]">
-        <div className="relative left-1/2 right-1/2 w-screen -ml-[50vw] -mr-[50vw] -mt-32 h-[200px] sm:h-[240px] lg:h-[250px] overflow-hidden">
+        <div className="relative left-1/2 right-1/2 w-screen -ml-[50vw] -mr-[50vw] -mt-32 h-[220px] sm:h-[270px] lg:h-[290px] overflow-hidden">
           <img src="/images/jobback.png" alt="Company banner" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-black/10" />
         </div>
@@ -1266,8 +1266,16 @@ const CompanyViewDetails = () => {
           </div>
         </div>
       )}
-      <div className="relative left-1/2 right-1/2 w-screen -ml-[50vw] -mr-[50vw] -mt-20 h-[220px] sm:h-[280px] lg:h-[300px] overflow-hidden bg-white">
-        <img src="/images/jobback.png" alt="Company banner" className="w-full h-full object-cover" />
+      <div className="relative left-1/2 right-1/2 w-screen -ml-[50vw] -mr-[50vw] -mt-20 h-[240px] sm:h-[300px] lg:h-[330px] overflow-hidden bg-white">
+        <img
+          src={company.coverPhoto || "/images/jobback.png"}
+          alt={`${company.companyName || "Company"} cover banner`}
+          className="w-full h-full object-cover object-center"
+          onError={(event) => {
+            event.currentTarget.onerror = null;
+            event.currentTarget.src = "/images/jobback.png";
+          }}
+        />
       </div>
 
       <div className={`${UI.container} -mt-16 sm:-mt-20 lg:-mt-24 relative z-10`}>
