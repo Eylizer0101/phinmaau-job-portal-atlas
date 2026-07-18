@@ -112,7 +112,7 @@ const EmployerDateFilterDropdown = ({ value, startDate, endDate, disabled, onSel
       </button>
 
       {open && (
-        <div className="absolute left-0 top-[52px] z-50 w-56 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5">
+        <div className="absolute left-0 top-[56px] z-[100] w-56 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5">
           <div className="space-y-1">
             {EMPLOYER_DATE_FILTER_OPTIONS.map((option) => (
               <button
@@ -986,7 +986,7 @@ const DeclinedApplicants = () => {
           </Alert>
         )}
 
-        <div className="mb-6 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="p-5">
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
               <div className={hasActiveFilters ? 'lg:col-span-4' : 'lg:col-span-5'}>

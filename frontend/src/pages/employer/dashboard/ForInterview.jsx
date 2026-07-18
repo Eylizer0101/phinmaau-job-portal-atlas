@@ -2043,67 +2043,67 @@ const selectBase =
                 </select>
               </div>
 
-              <div className="lg:col-span-3">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
-                  <div className="min-w-[180px]">
-                    <EmployerDateFilterDropdown
-                      value={filterBy}
-                      startDate={customDateFrom}
-                      endDate={customDateTo}
-                      onSelect={(value) => {
-                        if (value === 'custom') {
-                          setShowCustomDateModal(true);
-                          return;
-                        }
-                        setFilterBy(value);
-                        setCustomDateFrom('');
-                        setCustomDateTo('');
-                        setCurrentPage(1);
-                      }}
-                    />
-                  </div>
+              <div className="lg:col-span-2">
+                <EmployerDateFilterDropdown
+                  value={filterBy}
+                  startDate={customDateFrom}
+                  endDate={customDateTo}
+                  onSelect={(value) => {
+                    if (value === 'custom') {
+                      setShowCustomDateModal(true);
+                      return;
+                    }
+                    setFilterBy(value);
+                    setCustomDateFrom('');
+                    setCustomDateTo('');
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
 
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setOpenFilterMenu((prev) => (prev === 'sort' ? null : 'sort'))}
-                      className="inline-flex h-[50px] w-full items-center justify-between gap-2 whitespace-nowrap rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 sm:w-auto"
-                    >
-                      Sort By
-                      <Icon name="chevron-down" className="h-4 w-4" />
-                    </button>
+              <div className="relative lg:col-span-2">
+                <button
+                  type="button"
+                  onClick={() => setOpenFilterMenu((prev) => (prev === 'sort' ? null : 'sort'))}
+                  className="inline-flex h-[50px] w-full items-center justify-between gap-2 whitespace-nowrap rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                >
+                  Sort By
+                  <Icon name="chevron-down" className="h-4 w-4" />
+                </button>
 
-                    {openFilterMenu === 'sort' && (
-                      <div className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-xl border border-gray-200 bg-white py-2 shadow-lg">
-                        {[
-                          ['salary_highest', 'Salary Highest to Lowest'],
-                          ['expiry_soonest', 'Expiry Date Soonest to Latest'],
-                          ['recent', 'Most Recent Newest to Oldest'],
-                        ].map(([value, label]) => (
-                          <button
-                            key={value}
-                            type="button"
-                            onClick={() => {
-                              setSortBy(value);
-                              setOpenFilterMenu(null);
-                            }}
-                            className={cn(
-                              'block w-full px-4 py-2 text-left text-sm hover:bg-gray-50',
-                              sortBy === value ? 'font-semibold text-[#1154cc]' : 'text-gray-700'
-                            )}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                {openFilterMenu === 'sort' && (
+                  <div className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-xl border border-gray-200 bg-white py-2 shadow-lg">
+                    {[
+                      ['salary_highest', 'Salary Highest to Lowest'],
+                      ['expiry_soonest', 'Expiry Date Soonest to Latest'],
+                      ['recent', 'Most Recent Newest to Oldest'],
+                    ].map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => {
+                          setSortBy(value);
+                          setOpenFilterMenu(null);
+                        }}
+                        className={cn(
+                          'block w-full px-4 py-2 text-left text-sm hover:bg-gray-50',
+                          sortBy === value ? 'font-semibold text-[#1154cc]' : 'text-gray-700'
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
                   </div>
-                </div>
+                )}
               </div>
 
               {hasActiveFilters && (
-                <div className="lg:col-span-2">
-                  <Button variant="secondary" className="h-[50px] w-full" onClick={clearFilters}>
+                <div className="lg:col-span-1">
+                  <Button
+                    variant="secondary"
+                    className="h-[50px] w-full px-3"
+                    onClick={clearFilters}
+                  >
                     Clear
                   </Button>
                 </div>
