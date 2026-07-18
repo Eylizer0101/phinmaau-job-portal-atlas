@@ -1204,18 +1204,18 @@ const ApplicationDetails = () => {
               </div>
 
               <article className="mx-auto w-full bg-white font-serif text-[10px] leading-[1.22] text-black">
-                <header className="relative min-h-[92px] pb-2 pr-[105px] text-center">
-                  <h2 className="text-[22px] font-bold uppercase leading-tight tracking-[0.02em]">
+                <header className="relative flex min-h-[110px] flex-col items-center justify-center pb-4 pr-[120px] text-center">
+                  <h2 className="text-[28px] font-bold uppercase leading-tight tracking-[0.02em]">
                     {name}
                   </h2>
 
-                  <p className="mt-1 break-words text-[8px]">
+                  <p className="mt-2 break-words text-[10px] leading-relaxed">
                     {[profile.address, user.email, profile.phoneNumber]
                       .filter(Boolean)
                       .join(' | ') || 'Contact information not provided'}
                   </p>
 
-                  <p className="mt-1 text-[8px] italic">
+                  <p className="mt-1 text-[10px] italic">
                     {[profile.campus, profile.course, profile.yearGraduated ? `Class of ${profile.yearGraduated}` : '']
                       .filter(Boolean)
                       .join(', ')}
