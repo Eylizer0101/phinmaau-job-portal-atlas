@@ -3,6 +3,461 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 
+const cn = (...classes) => classes.filter(Boolean).join(' ');
+
+
+const ARCHIVED_DATE_FILTER_OPTIONS = [
+  { value: 'all', label: 'All Time' },
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: 'this_week', label: 'This Week' },
+  { value: 'last_7_days', label: 'Last 7 Days' },
+  { value: 'this_month', label: 'This Month' },
+  { value: 'last_month', label: 'Last Month' },
+  { value: 'this_year', label: 'This Year' },
+  { value: 'last_year', label: 'Last Year' },
+  { value: 'custom', label: 'Custom Range' },
+];
+
+const formatArchivedDateInput = (date) => {
+  if (!date) return '';
+  const value = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(value.getTime())) return '';
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const formatArchivedDateLabel = (value) => {
+  if (!value) return 'Select date';
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return 'Select date';
+  return date.toLocaleDateString('en-PH', {
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric',
+  });
+};
+
+const getArchivedDateFilterLabel = (value, startDate, endDate) => {
+  if (value === 'custom' && startDate && endDate) {
+    return `${formatArchivedDateLabel(startDate)} - ${formatArchivedDateLabel(endDate)}`;
+  }
+
+  return ARCHIVED_DATE_FILTER_OPTIONS.find((option) => option.value === value)?.label || 'All Time';
+};
+
+const ArchivedDateFilterDropdown = ({
+  value,
+  startDate,
+  endDate,
+  disabled,
+  onSelect,
+  heightClass = 'h-11',
+}) => {
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const handleOutsideClick = (event) => {
+      if (!dropdownRef.current?.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+
+    window.addEventListener('mousedown', handleOutsideClick);
+    return () => window.removeEventListener('mousedown', handleOutsideClick);
+  }, [open]);
+
+  return (
+    <div ref={dropdownRef} className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((previous) => !previous)}
+        className={cn(
+          'flex w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60',
+          heightClass
+        )}
+      >
+        <span className="truncate">{getArchivedDateFilterLabel(value, startDate, endDate)}</span>
+        <svg
+          className="h-4 w-4 shrink-0 text-gray-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8 7V3m8 4V3M5 11h14M6 5h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2z"
+          />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-[52px] z-[100] w-56 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5">
+          <div className="space-y-1">
+            {ARCHIVED_DATE_FILTER_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  onSelect(option.value);
+                }}
+                className={cn(
+                  'w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition',
+                  value === option.value
+                    ? 'bg-[#2e66a6]/10 text-[#2e66a6]'
+                    : 'text-slate-600 hover:bg-slate-50'
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ArchivedCustomDateRangeModal = ({
+  open,
+  startDate,
+  endDate,
+  onCancel,
+  onApply,
+}) => {
+  const todayValue = formatArchivedDateInput(new Date());
+  const [draftStart, setDraftStart] = useState(startDate || todayValue);
+  const [draftEnd, setDraftEnd] = useState(endDate || todayValue);
+  const [startView, setStartView] = useState(() => new Date());
+  const [endView, setEndView] = useState(() => new Date());
+
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+
+  const weekdayNames = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+
+  const parseDateValue = (value) => {
+    if (!value) return null;
+    const date = new Date(`${value}T00:00:00`);
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
+
+  const sameDate = (first, second) =>
+    first &&
+    second &&
+    first.getFullYear() === second.getFullYear() &&
+    first.getMonth() === second.getMonth() &&
+    first.getDate() === second.getDate();
+
+  const getCalendarCells = (viewDate) => {
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const startOffset = firstDay.getDay();
+    const cells = [];
+
+    for (let index = 0; index < 42; index += 1) {
+      cells.push(new Date(year, month, index - startOffset + 1));
+    }
+
+    return cells;
+  };
+
+  useEffect(() => {
+    if (!open) return;
+
+    const initialStart = parseDateValue(startDate) || new Date();
+    const initialEnd = parseDateValue(endDate) || initialStart;
+
+    setDraftStart(formatArchivedDateInput(initialStart));
+    setDraftEnd(formatArchivedDateInput(initialEnd));
+    setStartView(new Date(initialStart.getFullYear(), initialStart.getMonth(), 1));
+    setEndView(new Date(initialEnd.getFullYear(), initialEnd.getMonth(), 1));
+  }, [open, startDate, endDate]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') onCancel();
+    };
+
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [open, onCancel]);
+
+  if (!open) return null;
+
+  const selectedStart = parseDateValue(draftStart);
+  const selectedEnd = parseDateValue(draftEnd);
+
+  const invalidRange =
+    !selectedStart ||
+    !selectedEnd ||
+    selectedStart.getTime() > selectedEnd.getTime();
+
+  const yearOptions = Array.from(
+    { length: 21 },
+    (_, index) => new Date().getFullYear() - 10 + index
+  );
+
+  const CalendarPanel = ({
+    label,
+    value,
+    viewDate,
+    onViewChange,
+    onDateChange,
+    minimumDate,
+  }) => {
+    const selectedDate = parseDateValue(value);
+    const cells = getCalendarCells(viewDate);
+
+    const moveMonth = (amount) => {
+      onViewChange(new Date(viewDate.getFullYear(), viewDate.getMonth() + amount, 1));
+    };
+
+    return (
+      <div className="min-w-0">
+        <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500">
+          {label}
+        </p>
+
+        <div className="mt-3 flex h-14 items-center gap-3 rounded-xl bg-[#edf3fb] px-5 text-[#2e66a6]">
+          <svg
+            className="h-5 w-5 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 7V3m8 4V3M5 11h14M6 5h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2z"
+            />
+          </svg>
+          <span className="truncate text-lg font-extrabold">
+            {selectedDate
+              ? selectedDate.toLocaleDateString('en-PH', {
+                  month: 'short',
+                  day: '2-digit',
+                  year: 'numeric',
+                })
+              : 'Select date'}
+          </span>
+        </div>
+
+        <div className="mt-5 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => moveMonth(-1)}
+            className="flex h-10 w-8 shrink-0 items-center justify-center rounded-lg text-xl font-bold text-slate-600 hover:bg-slate-100"
+            aria-label={`Previous month for ${label}`}
+          >
+            ‹
+          </button>
+
+          <select
+            value={viewDate.getMonth()}
+            onChange={(event) =>
+              onViewChange(
+                new Date(viewDate.getFullYear(), Number(event.target.value), 1)
+              )
+            }
+            className="h-10 min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 text-center text-sm font-bold text-[#2e66a6] outline-none focus:border-[#2e66a6]"
+          >
+            {monthNames.map((month, index) => (
+              <option key={month} value={index}>
+                {month}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={viewDate.getFullYear()}
+            onChange={(event) =>
+              onViewChange(
+                new Date(Number(event.target.value), viewDate.getMonth(), 1)
+              )
+            }
+            className="h-10 w-[94px] rounded-lg border border-gray-200 bg-white px-3 text-center text-sm font-bold text-[#2e66a6] outline-none focus:border-[#2e66a6]"
+          >
+            {yearOptions.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            onClick={() => moveMonth(1)}
+            className="flex h-10 w-8 shrink-0 items-center justify-center rounded-lg text-xl font-bold text-slate-600 hover:bg-slate-100"
+            aria-label={`Next month for ${label}`}
+          >
+            ›
+          </button>
+        </div>
+
+        <div className="mt-4 grid grid-cols-7 text-center">
+          {weekdayNames.map((day) => (
+            <div
+              key={day}
+              className="pb-2 text-[11px] font-extrabold text-slate-500"
+            >
+              {day}
+            </div>
+          ))}
+
+          {cells.map((date) => {
+            const outsideMonth = date.getMonth() !== viewDate.getMonth();
+            const isSelected = sameDate(date, selectedDate);
+            const isRangeStart = sameDate(date, selectedStart);
+            const isRangeEnd = sameDate(date, selectedEnd);
+            const isInRange =
+              selectedStart &&
+              selectedEnd &&
+              date.getTime() >= selectedStart.getTime() &&
+              date.getTime() <= selectedEnd.getTime();
+
+            const isDisabled =
+              minimumDate &&
+              new Date(
+                date.getFullYear(),
+                date.getMonth(),
+                date.getDate()
+              ).getTime() <
+                new Date(
+                  minimumDate.getFullYear(),
+                  minimumDate.getMonth(),
+                  minimumDate.getDate()
+                ).getTime();
+
+            return (
+              <button
+                key={`${label}-${date.toISOString()}`}
+                type="button"
+                disabled={isDisabled}
+                onClick={() => onDateChange(formatArchivedDateInput(date))}
+                className={cn(
+                  'my-1 flex h-9 w-full items-center justify-center text-sm font-semibold transition',
+                  isInRange && !isRangeStart && !isRangeEnd
+                    ? 'bg-[#e7edf5] text-slate-700'
+                    : outsideMonth
+                    ? 'text-slate-300 hover:bg-slate-50'
+                    : 'text-slate-600 hover:bg-slate-100',
+                  (isRangeStart || isRangeEnd) &&
+                    'mx-auto w-9 rounded-lg bg-[#2e66a6] text-white shadow-sm ring-1 ring-[#dce8f7]',
+                  isSelected &&
+                    !isRangeStart &&
+                    !isRangeEnd &&
+                    'mx-auto w-9 rounded-lg bg-[#2e66a6] text-white',
+                  isDisabled &&
+                    !isInRange &&
+                    'cursor-not-allowed text-slate-200 hover:bg-transparent'
+                )}
+              >
+                {date.getDate()}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 px-4 py-6">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Select custom date range"
+        className="w-full max-w-[960px] overflow-hidden rounded-2xl bg-white shadow-2xl"
+      >
+        <div className="grid gap-8 px-6 pb-8 pt-6 md:grid-cols-[1fr_auto_1fr] md:px-8">
+          <CalendarPanel
+            label="Start Date"
+            value={draftStart}
+            viewDate={startView}
+            onViewChange={setStartView}
+            onDateChange={(value) => {
+              setDraftStart(value);
+              const nextStart = parseDateValue(value);
+              const currentEnd = parseDateValue(draftEnd);
+
+              if (!currentEnd || (nextStart && nextStart > currentEnd)) {
+                setDraftEnd(value);
+                setEndView(
+                  new Date(nextStart.getFullYear(), nextStart.getMonth(), 1)
+                );
+              }
+            }}
+          />
+
+          <div className="hidden items-start pt-10 text-3xl text-slate-500 md:flex">
+            →
+          </div>
+
+          <CalendarPanel
+            label="End Date"
+            value={draftEnd}
+            viewDate={endView}
+            onViewChange={setEndView}
+            onDateChange={setDraftEnd}
+            minimumDate={selectedStart}
+          />
+        </div>
+
+        {invalidRange && (
+          <p className="px-6 pb-3 text-sm font-semibold text-red-600 md:px-8">
+            End date must be the same as or later than the start date.
+          </p>
+        )}
+
+        <div className="flex items-center justify-end gap-5 border-t border-gray-100 px-6 py-5 md:px-8">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="text-sm font-extrabold text-slate-600 transition hover:text-slate-900"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            disabled={invalidRange}
+            onClick={() => onApply(draftStart, draftEnd)}
+            className="h-12 rounded-xl bg-[#2e66a6] px-8 text-base font-extrabold text-white shadow-lg shadow-[#2e66a6]/20 transition hover:bg-[#255487] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Apply Range
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 const ArchivedJobs = () => {
   const navigate = useNavigate();
 
@@ -17,6 +472,9 @@ const ArchivedJobs = () => {
   const [jobFilter, setJobFilter] = useState('all');
   const [q, setQ] = useState('');
   const [sortBy, setSortBy] = useState('all');
+  const [customDateFrom, setCustomDateFrom] = useState('');
+  const [customDateTo, setCustomDateTo] = useState('');
+  const [showCustomDateModal, setShowCustomDateModal] = useState(false);
 
   const [badLogos, setBadLogos] = useState({});
   const [counts, setCounts] = useState({
@@ -321,22 +779,26 @@ const ArchivedJobs = () => {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const startOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
     const dayOfWeek = now.getDay();
     const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset);
     const startOfNextWeek = new Date(startOfWeek);
     startOfNextWeek.setDate(startOfWeek.getDate() + 7);
+    const sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     const startOfNextYear = new Date(now.getFullYear() + 1, 0, 1);
+    const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
 
     const getComparableDate = (job) => {
+      const archivedDate = safeDate(job.archivedAt);
+      if (archivedDate.getTime() !== new Date(0).getTime()) return archivedDate;
+
       const createdDate = safeDate(job.createdAt);
       if (createdDate.getTime() !== new Date(0).getTime()) return createdDate;
-
-      const postedDate = safeDate(job.datePosted);
-      if (postedDate.getTime() !== new Date(0).getTime()) return postedDate;
 
       return safeDate(job.updatedAt);
     };
@@ -346,27 +808,56 @@ const ArchivedJobs = () => {
         const date = getComparableDate(job);
         return date >= startOfToday && date < startOfTomorrow;
       });
+    } else if (sortBy === 'yesterday') {
+      list = list.filter((job) => {
+        const date = getComparableDate(job);
+        return date >= startOfYesterday && date < startOfToday;
+      });
     } else if (sortBy === 'this_week') {
       list = list.filter((job) => {
         const date = getComparableDate(job);
         return date >= startOfWeek && date < startOfNextWeek;
+      });
+    } else if (sortBy === 'last_7_days') {
+      list = list.filter((job) => {
+        const date = getComparableDate(job);
+        return date >= sevenDaysAgo && date < startOfTomorrow;
       });
     } else if (sortBy === 'this_month') {
       list = list.filter((job) => {
         const date = getComparableDate(job);
         return date >= startOfMonth && date < startOfNextMonth;
       });
+    } else if (sortBy === 'last_month') {
+      list = list.filter((job) => {
+        const date = getComparableDate(job);
+        return date >= startOfLastMonth && date < startOfMonth;
+      });
     } else if (sortBy === 'this_year') {
       list = list.filter((job) => {
         const date = getComparableDate(job);
         return date >= startOfYear && date < startOfNextYear;
+      });
+    } else if (sortBy === 'last_year') {
+      list = list.filter((job) => {
+        const date = getComparableDate(job);
+        return date >= startOfLastYear && date < startOfYear;
+      });
+    } else if (sortBy === 'custom' && customDateFrom && customDateTo) {
+      const customStart = new Date(`${customDateFrom}T00:00:00`);
+      const customEndExclusive = new Date(`${customDateTo}T00:00:00`);
+      customEndExclusive.setDate(customEndExclusive.getDate() + 1);
+
+      list = list.filter((job) => {
+        const date = getComparableDate(job);
+        return date >= customStart && date < customEndExclusive;
       });
     }
 
     list.sort((a, b) => safeDate(b.createdAt) - safeDate(a.createdAt));
 
     return list;
-  }, [jobs, jobFilter, q, sortBy]);
+  }, [jobs, jobFilter, q, sortBy, customDateFrom, customDateTo]);
 
   const hasActiveFilters = useMemo(() => {
     return q.trim() !== '' || jobFilter !== 'all' || sortBy !== 'all';
@@ -376,6 +867,8 @@ const ArchivedJobs = () => {
     setJobFilter('all');
     setQ('');
     setSortBy('all');
+    setCustomDateFrom('');
+    setCustomDateTo('');
   };
 
   return (
@@ -418,18 +911,22 @@ const ArchivedJobs = () => {
                 ))}
               </select>
 
-              <select
+              <ArchivedDateFilterDropdown
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-              >
-                <option value="all">SORT BY</option>
-                <option value="all">All</option>
-                <option value="today">Today</option>
-                <option value="this_week">This Week</option>
-                <option value="this_month">This Month</option>
-                <option value="this_year">This Year</option>
-              </select>
+                startDate={customDateFrom}
+                endDate={customDateTo}
+                disabled={loading}
+                onSelect={(value) => {
+                  if (value === 'custom') {
+                    setShowCustomDateModal(true);
+                    return;
+                  }
+
+                  setSortBy(value);
+                  setCustomDateFrom('');
+                  setCustomDateTo('');
+                }}
+              />
 
               </div>
             </div>
@@ -839,6 +1336,19 @@ const ArchivedJobs = () => {
           </div>
         )}
       </div>
+
+      <ArchivedCustomDateRangeModal
+        open={showCustomDateModal}
+        startDate={customDateFrom}
+        endDate={customDateTo}
+        onCancel={() => setShowCustomDateModal(false)}
+        onApply={(dateFrom, dateTo) => {
+          setSortBy('custom');
+          setCustomDateFrom(dateFrom);
+          setCustomDateTo(dateTo);
+          setShowCustomDateModal(false);
+        }}
+      />
     </EmployerLayout>
   );
 };
