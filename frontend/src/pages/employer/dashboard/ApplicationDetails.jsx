@@ -613,6 +613,31 @@ const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work =
       'Not provided',
     matchedCourseKeywords: [...new Set(courseHits)],
     missingCourseKeywords: [...new Set(courseWords.filter((word) => !courseHits.includes(word)))],
+    applicantWorkModeDisplay: profile.preferredWorkMode || 'Not provided',
+    requiredWorkModeDisplay: job.workMode || job.workArrangement || job.workSetup || 'Not specified',
+    workModeMatched:
+      Boolean(profile.preferredWorkMode && (job.workMode || job.workArrangement || job.workSetup)) &&
+      normalizeMatchText(profile.preferredWorkMode) ===
+        normalizeMatchText(job.workMode || job.workArrangement || job.workSetup),
+    applicantEmploymentTypeDisplay: profile.employmentType || 'Not provided',
+    requiredEmploymentTypeDisplay: job.jobType || 'Not specified',
+    employmentTypeMatched:
+      Boolean(profile.employmentType && job.jobType) &&
+      normalizeMatchText(profile.employmentType) === normalizeMatchText(job.jobType),
+    applicantLocationDisplay: profile.address || profile.currentAddress || 'Not provided',
+    requiredLocationDisplay: job.location || 'Not specified',
+    locationMatched:
+      Boolean((profile.address || profile.currentAddress) && job.location) &&
+      (
+        normalizeMatchText(profile.address || profile.currentAddress).includes(normalizeMatchText(job.location)) ||
+        normalizeMatchText(job.location).includes(normalizeMatchText(profile.address || profile.currentAddress))
+      ),
+    willingToRelocateDisplay: profile.willingToRelocate || 'Not provided',
+    isWillingToRelocate: ['yes', 'open', 'willing'].some((word) =>
+      normalizeMatchText(profile.willingToRelocate).includes(word)
+    ),
+    acceptsFreshGraduates: Boolean(job.openToFreshGraduates),
+    applicantHasExperience: applicantYears > 0,
     hasEducation: Boolean(applicantEducation),
     hasExperience: Boolean(applicantYears > 0 || profile.experience || profile.whatHaveYouDone),
     hasSkills: Boolean(applicantSkills.length),
@@ -1362,6 +1387,132 @@ const ApplicationDetails = () => {
                       The applicant's course or study field has little or no keyword match with the job title, category, description, and requirements.
                     </p>
                   )}
+                </div>
+
+                <div className="py-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-semibold text-gray-800">Work Mode</div>
+                      <div className="mt-1 text-[12px] leading-5 text-gray-500">
+                        Applicant: {matchSummary.applicantWorkModeDisplay}
+                      </div>
+                      <div className="text-[12px] leading-5 text-gray-500">
+                        Job: {matchSummary.requiredWorkModeDisplay}
+                      </div>
+                    </div>
+                    <div className={cn(
+                      'mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
+                      matchSummary.workModeMatched
+                        ? 'border-[#159447] text-[#159447]'
+                        : 'border-red-400 text-red-500'
+                    )}>
+                      <SvgIcon name={matchSummary.workModeMatched ? 'check' : 'x'} className="h-3 w-3" />
+                    </div>
+                  </div>
+                  {!matchSummary.workModeMatched && (
+                    <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-[11px] leading-4 text-red-700">
+                      The applicant's preferred work mode does not match the job setup.
+                    </p>
+                  )}
+                </div>
+
+                <div className="py-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-semibold text-gray-800">Employment Type</div>
+                      <div className="mt-1 text-[12px] leading-5 text-gray-500">
+                        Applicant: {matchSummary.applicantEmploymentTypeDisplay}
+                      </div>
+                      <div className="text-[12px] leading-5 text-gray-500">
+                        Job: {matchSummary.requiredEmploymentTypeDisplay}
+                      </div>
+                    </div>
+                    <div className={cn(
+                      'mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
+                      matchSummary.employmentTypeMatched
+                        ? 'border-[#159447] text-[#159447]'
+                        : 'border-red-400 text-red-500'
+                    )}>
+                      <SvgIcon name={matchSummary.employmentTypeMatched ? 'check' : 'x'} className="h-3 w-3" />
+                    </div>
+                  </div>
+                  {!matchSummary.employmentTypeMatched && (
+                    <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-[11px] leading-4 text-red-700">
+                      The applicant's preferred employment type is different from the job offer.
+                    </p>
+                  )}
+                </div>
+
+                <div className="py-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-semibold text-gray-800">Location</div>
+                      <div className="mt-1 text-[12px] leading-5 text-gray-500">
+                        Applicant: {matchSummary.applicantLocationDisplay}
+                      </div>
+                      <div className="text-[12px] leading-5 text-gray-500">
+                        Job: {matchSummary.requiredLocationDisplay}
+                      </div>
+                      <div className="text-[12px] leading-5 text-gray-500">
+                        Relocation: {matchSummary.willingToRelocateDisplay}
+                      </div>
+                    </div>
+                    <div className={cn(
+                      'mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
+                      matchSummary.locationMatched || matchSummary.isWillingToRelocate
+                        ? 'border-[#159447] text-[#159447]'
+                        : 'border-red-400 text-red-500'
+                    )}>
+                      <SvgIcon
+                        name={matchSummary.locationMatched || matchSummary.isWillingToRelocate ? 'check' : 'x'}
+                        className="h-3 w-3"
+                      />
+                    </div>
+                  </div>
+                  {!matchSummary.locationMatched && !matchSummary.isWillingToRelocate && (
+                    <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-[11px] leading-4 text-red-700">
+                      The applicant's location is different and no willingness to relocate was indicated.
+                    </p>
+                  )}
+                </div>
+
+                <div className="py-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-semibold text-gray-800">Fresh Graduate Eligibility</div>
+                      <div className="mt-1 text-[12px] leading-5 text-gray-500">
+                        Job accepts fresh graduates: {matchSummary.acceptsFreshGraduates ? 'Yes' : 'No'}
+                      </div>
+                      <div className="text-[12px] leading-5 text-gray-500">
+                        Applicant experience: {matchSummary.applicantExperienceDisplay}
+                      </div>
+                    </div>
+                    <div className={cn(
+                      'mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
+                      matchSummary.acceptsFreshGraduates || matchSummary.applicantHasExperience
+                        ? 'border-[#159447] text-[#159447]'
+                        : 'border-red-400 text-red-500'
+                    )}>
+                      <SvgIcon
+                        name={matchSummary.acceptsFreshGraduates || matchSummary.applicantHasExperience ? 'check' : 'x'}
+                        className="h-3 w-3"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="py-4">
+                  <div className="rounded-xl border border-blue-100 bg-blue-50 p-3">
+                    <div className="text-[12px] font-bold text-[#174b91]">Match Summary</div>
+                    <p className="mt-2 text-[11px] leading-5 text-gray-700">
+                      The applicant matched {matchSummary.matchedSkillsCount} of {matchSummary.requiredSkillsCount} required skill{matchSummary.requiredSkillsCount === 1 ? '' : 's'}.
+                      {!matchSummary.educationMatched ? ' Education requirement is not fully met.' : ' Education requirement is met.'}
+                      {!matchSummary.experienceMatched ? ' Required experience is not yet met.' : ' Experience requirement is met.'}
+                      {!matchSummary.courseMatched ? ' Course relevance is low.' : ' Course is relevant to the position.'}
+                      {!matchSummary.workModeMatched ? ' Preferred work mode differs from the job setup.' : ''}
+                      {!matchSummary.employmentTypeMatched ? ' Preferred employment type differs from the offer.' : ''}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
