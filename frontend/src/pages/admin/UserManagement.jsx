@@ -1041,7 +1041,6 @@ const UserManagement = () => {
   });
 
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [statusFilter, setStatusFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState('newest');
@@ -1073,7 +1072,6 @@ const UserManagement = () => {
       const params = {
         page: currentPage,
         limit: pageSize,
-        verificationStatus: statusFilter !== 'all' ? (statusFilter === 'onhold' ? 'hold' : statusFilter) : undefined,
         role: roleFilter !== 'all' ? roleFilter : undefined,
         search: debouncedQuery || undefined,
         sort,
@@ -1104,11 +1102,12 @@ const UserManagement = () => {
           createdAt: user.createdAt,
           studentId: user.jobSeekerProfile?.studentId,
           companyName: user.employerProfile?.companyName,
-          address:
-            user.jobSeekerProfile?.address ||
-            user.employerProfile?.regionCity ||
-            [user.jobSeekerProfile?.cityProvince, user.jobSeekerProfile?.region].filter(Boolean).join(', ') ||
-            'Not provided'
+          contactNumber:
+            user.role === 'employer'
+              ? user.employerProfile?.mobileNumber || 'Not provided'
+              : user.role === 'jobseeker'
+              ? user.jobSeekerProfile?.phoneNumber || 'Not provided'
+              : 'Not provided'
         }));
 
         setUsers(formattedUsers);
@@ -1143,7 +1142,7 @@ const UserManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize, statusFilter, roleFilter, debouncedQuery, sort, dateFrom, dateTo, clearMessages]);
+  }, [currentPage, pageSize, roleFilter, debouncedQuery, sort, dateFrom, dateTo, clearMessages]);
 
   useEffect(() => {
     fetchUsers();
@@ -1245,11 +1244,6 @@ const UserManagement = () => {
   const filteredUsers = useMemo(() => {
     let filtered = users;
 
-    if (statusFilter !== 'all') {
-      const normalizedStatus = statusFilter === 'onhold' ? 'hold' : statusFilter;
-      filtered = filtered.filter(user => user.verificationStatus === normalizedStatus);
-    }
-
     if (roleFilter !== 'all') {
       filtered = filtered.filter(user => user.role === roleFilter);
     }
@@ -1286,7 +1280,7 @@ const UserManagement = () => {
         default: return 0;
       }
     });
-  }, [users, statusFilter, roleFilter, debouncedQuery, sort, dateFrom, dateTo]);
+  }, [users, roleFilter, debouncedQuery, sort, dateFrom, dateTo]);
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
@@ -1320,7 +1314,6 @@ const UserManagement = () => {
 
   const clearFilters = () => {
     setQuery('');
-    setStatusFilter('all');
     setRoleFilter('all');
     setSort('newest');
     setDateFilter('all');
@@ -1410,7 +1403,7 @@ const UserManagement = () => {
 
         <div className="relative z-20 mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="p-5">
-            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(240px,1.55fr)_minmax(120px,0.7fr)_minmax(120px,0.7fr)_minmax(145px,0.85fr)_minmax(165px,0.95fr)_auto] xl:items-center">
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(280px,1.7fr)_minmax(150px,0.8fr)_minmax(175px,0.95fr)_minmax(190px,1fr)_auto] xl:items-center">
               <div className="relative min-w-0">
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                   <Icon name="search" className="h-4 w-4" />
@@ -1438,19 +1431,6 @@ const UserManagement = () => {
                   </button>
                 )}
               </div>
-
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
-                disabled={loading}
-                aria-label="Filter by verification status"
-              >
-                <option value="all">All Status</option>
-                <option value="unverified">Unverified</option>
-                <option value="verified">Verified</option>
-                <option value="onhold">On hold</option>
-              </select>
 
               <select
                 value={roleFilter}
@@ -1486,7 +1466,7 @@ const UserManagement = () => {
                 onSelect={handleDateFilterChange}
               />
 
-              {(query.trim() !== '' || statusFilter !== 'all' || roleFilter !== 'all' || sort !== 'newest' || dateFilter !== 'all' || dateFrom !== '' || dateTo !== '') && (
+              {(query.trim() !== '' || roleFilter !== 'all' || sort !== 'newest' || dateFilter !== 'all' || dateFrom !== '' || dateTo !== '') && (
                 <button
                   type="button"
                   onClick={clearFilters}
@@ -1549,13 +1529,10 @@ const UserManagement = () => {
                           Role
                         </th>
                         <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
-                          Address
+                          Contact Number
                         </th>
                         <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Date Registered
-                        </th>
-                        <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
-                          Status
                         </th>
                         <th className="px-5 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Actions
@@ -1607,18 +1584,12 @@ const UserManagement = () => {
                               </div>
                             </td>
 
-                            <td className="px-5 py-4 text-sm text-gray-700 max-w-[220px] truncate" title={user.address}>
-                              {user.address || 'Not provided'}
+                            <td className="px-5 py-4 text-sm text-gray-700 whitespace-nowrap">
+                              {user.contactNumber || 'Not provided'}
                             </td>
 
                             <td className="px-5 py-4 text-sm text-gray-700">
                               {formatDate(user.createdAt)}
-                            </td>
-
-                            <td className="px-5 py-4">
-                              <Badge variant={getVerificationBadge(user.verificationStatus).variant}>
-                                {getVerificationBadge(user.verificationStatus).label}
-                              </Badge>
                             </td>
 
                             <td className="px-5 py-4">
@@ -1666,12 +1637,7 @@ const UserManagement = () => {
                                   <span className="font-semibold text-gray-800">Registered:</span> {formatDate(user.createdAt)}
                                 </div>
                                 <div className="col-span-2">
-                                  <span className="font-semibold text-gray-800">Address:</span> {user.address || 'Not provided'}
-                                </div>
-                                <div className="col-span-2">
-                                  <Badge variant={getVerificationBadge(user.verificationStatus).variant}>
-                                    {getVerificationBadge(user.verificationStatus).label}
-                                  </Badge>
+                                  <span className="font-semibold text-gray-800">Contact Number:</span> {user.contactNumber || 'Not provided'}
                                 </div>
                               </div>
 
