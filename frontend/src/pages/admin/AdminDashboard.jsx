@@ -33,10 +33,12 @@ const dateOptions = [
   { value: "all", label: "All Time" },
   { value: "today", label: "Today" },
   { value: "yesterday", label: "Yesterday" },
+  { value: "thisWeek", label: "This Week" },
   { value: "7days", label: "Last 7 Days" },
-  { value: "30days", label: "Last 30 Days" },
   { value: "thisMonth", label: "This Month" },
   { value: "lastMonth", label: "Last Month" },
+  { value: "thisYear", label: "This Year" },
+  { value: "lastYear", label: "Last Year" },
   { value: "custom", label: "Custom Range" },
 ];
 
@@ -131,15 +133,22 @@ const getDummyDateRange = (filters = {}) => {
   } else if (filters.date === "yesterday") {
     start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
     end = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1, 23, 59, 59);
+  } else if (filters.date === "thisWeek") {
+    const dayOfWeek = today.getDay();
+    const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - mondayOffset);
   } else if (filters.date === "7days") {
     start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6);
-  } else if (filters.date === "30days") {
-    start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29);
   } else if (filters.date === "thisMonth") {
     start = new Date(today.getFullYear(), today.getMonth(), 1);
   } else if (filters.date === "lastMonth") {
     start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
     end = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59);
+  } else if (filters.date === "thisYear") {
+    start = new Date(today.getFullYear(), 0, 1);
+  } else if (filters.date === "lastYear") {
+    start = new Date(today.getFullYear() - 1, 0, 1);
+    end = new Date(today.getFullYear() - 1, 11, 31, 23, 59, 59);
   } else if (filters.date === "custom" && filters.startDate && filters.endDate) {
     start = new Date(`${filters.startDate}T00:00:00`);
     end = new Date(`${filters.endDate}T23:59:59`);

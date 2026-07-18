@@ -40,10 +40,12 @@ const DATE_FILTER_OPTIONS = [
   { value: 'all', label: 'All Time' },
   { value: 'today', label: 'Today' },
   { value: 'yesterday', label: 'Yesterday' },
+  { value: 'thisWeek', label: 'This Week' },
   { value: '7days', label: 'Last 7 Days' },
-  { value: '30days', label: 'Last 30 Days' },
   { value: 'thisMonth', label: 'This Month' },
   { value: 'lastMonth', label: 'Last Month' },
+  { value: 'thisYear', label: 'This Year' },
+  { value: 'lastYear', label: 'Last Year' },
   { value: 'custom', label: 'Custom Range' },
 ];
 
@@ -76,23 +78,29 @@ const getPresetDateRange = (value) => {
   const today = new Date();
   const current = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-  if (value === 'today') return { dateFrom: formatDateInput(current), dateTo: formatDateInput(current) };
+  if (value === 'today') {
+    return { dateFrom: formatDateInput(current), dateTo: formatDateInput(current) };
+  }
 
   if (value === 'yesterday') {
     const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
     return { dateFrom: formatDateInput(yesterday), dateTo: formatDateInput(yesterday) };
   }
 
-  if (value === '7days') {
+  if (value === 'thisWeek') {
+    const dayOfWeek = today.getDay();
+    const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     return {
-      dateFrom: formatDateInput(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6)),
+      dateFrom: formatDateInput(
+        new Date(today.getFullYear(), today.getMonth(), today.getDate() - mondayOffset)
+      ),
       dateTo: formatDateInput(current),
     };
   }
 
-  if (value === '30days') {
+  if (value === '7days') {
     return {
-      dateFrom: formatDateInput(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29)),
+      dateFrom: formatDateInput(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6)),
       dateTo: formatDateInput(current),
     };
   }
@@ -108,6 +116,20 @@ const getPresetDateRange = (value) => {
     return {
       dateFrom: formatDateInput(new Date(today.getFullYear(), today.getMonth() - 1, 1)),
       dateTo: formatDateInput(new Date(today.getFullYear(), today.getMonth(), 0)),
+    };
+  }
+
+  if (value === 'thisYear') {
+    return {
+      dateFrom: formatDateInput(new Date(today.getFullYear(), 0, 1)),
+      dateTo: formatDateInput(current),
+    };
+  }
+
+  if (value === 'lastYear') {
+    return {
+      dateFrom: formatDateInput(new Date(today.getFullYear() - 1, 0, 1)),
+      dateTo: formatDateInput(new Date(today.getFullYear() - 1, 11, 31)),
     };
   }
 
