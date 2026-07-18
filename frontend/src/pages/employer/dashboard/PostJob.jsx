@@ -1725,8 +1725,7 @@ const PostJob = () => {
                   </div>
                 </div>
                 <div className="border-t border-gray-200 bg-white px-6 py-4">
-                  <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="mx-auto max-w-6xl px-4 py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-gray-600">
                   {activeStep < JOB_FORM_STEPS.length ? (
                     stepReady[activeStep] ? (
@@ -1796,7 +1795,6 @@ const PostJob = () => {
                   )}
                 </div>
                   </div>
-                </div>
               </div>
             </div>
         </div>
