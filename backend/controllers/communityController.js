@@ -185,22 +185,29 @@ exports.createPost = async (req, res) => {
 
 exports.updatePost = async (req, res) => {
   try {
-    const post = await CommunityPost.findById(req.params.postId);
+    const post = await CommunityPost.findById(req.params.postId).select('author category imageUrl');
     if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
+
     if (String(post.author) !== String(req.user._id)) {
       return res.status(403).json({ success: false, message: 'You can only edit your own post' });
     }
 
     const content = String(req.body.content || '').trim();
     const topics = normalizeTopics(req.body.topics);
-    if (!content) return res.status(400).json({ success: false, message: 'Post content is required' });
-    if (!topics.length) return res.status(400).json({ success: false, message: 'At least one topic is required' });
 
-    const allowed = ['insight', 'skill', 'question', 'resource'];
-    post.content = content;
-    post.category = allowed.includes(req.body.category) ? req.body.category : post.category;
-    post.linkUrl = String(req.body.linkUrl || '').trim();
-    post.topics = topics;
+    if (!content) {
+      return res.status(400).json({ success: false, message: 'Post content is required' });
+    }
+
+    if (!topics.length) {
+      return res.status(400).json({ success: false, message: 'At least one topic is required' });
+    }
+
+    const allowedCategories = ['insight', 'skill', 'question', 'resource'];
+    const requestedCategory = String(req.body.category || '').trim().toLowerCase();
+    const category = allowedCategories.includes(requestedCategory)
+      ? requestedCategory
+      : (allowedCategories.includes(post.category) ? post.category : 'insight');
 
     const uploadedImageUrl = [
       req.file?.secure_url,
@@ -209,14 +216,36 @@ exports.updatePost = async (req, res) => {
       req.file?.location,
     ].find((value) => typeof value === 'string' && value.trim());
 
-    if (uploadedImageUrl) post.imageUrl = String(uploadedImageUrl).trim();
-    await post.save();
+    const updateData = {
+      content,
+      category,
+      linkUrl: String(req.body.linkUrl || '').trim(),
+      topics,
+    };
+
+    if (uploadedImageUrl) {
+      updateData.imageUrl = String(uploadedImageUrl).trim();
+    }
+
+    // Direct update para hindi ma-revalidate ang buong lumang post,
+    // kabilang ang old comments o legacy fields na hindi naman ine-edit.
+    await CommunityPost.updateOne(
+      { _id: post._id, author: req.user._id },
+      { $set: updateData },
+      { runValidators: false }
+    );
 
     const populatedPost = await populatePost(CommunityPost.findById(post._id));
-    res.json({ success: true, data: decoratePost(populatedPost, req.user._id) });
+    return res.json({
+      success: true,
+      data: decoratePost(populatedPost, req.user._id),
+    });
   } catch (error) {
     console.error('Error updating community post:', error);
-    res.status(500).json({ success: false, message: 'Error updating community post' });
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Error updating community post',
+    });
   }
 };
 
