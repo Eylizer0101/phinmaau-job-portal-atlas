@@ -722,6 +722,16 @@ const JobFormProgress = ({ activeStep, onStepChange }) => (
   </div>
 );
 
+
+const sanitizeSalaryInput = (value = '') =>
+  String(value || '').replace(/[^0-9]/g, '');
+
+const formatSalaryInput = (value = '') => {
+  const clean = sanitizeSalaryInput(value);
+  if (!clean) return '';
+  return Number(clean).toLocaleString('en-PH');
+};
+
 const EditJob = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -1009,12 +1019,13 @@ const EditJob = () => {
   }, [formData.skillsRequired]);
 
   const salaryValid = useMemo(() => {
+    if (formData.hideSalary) return true;
     if (formData.salaryMin === '' || formData.salaryMax === '') return false;
     const min = Number(formData.salaryMin);
     const max = Number(formData.salaryMax);
     if (Number.isNaN(min) || Number.isNaN(max)) return false;
     return min <= max;
-  }, [formData.salaryMin, formData.salaryMax]);
+  }, [formData.hideSalary, formData.salaryMin, formData.salaryMax]);
 
   const vacanciesValid = useMemo(() => {
     const v = Number(formData.vacancies);
@@ -1134,11 +1145,16 @@ const EditJob = () => {
     }
 
     if (
+      !formData.hideSalary &&
       (touched.salaryMin || touched.salaryMax || submitted) &&
       (formData.salaryMin === '' || formData.salaryMax === '')
     ) {
-      errors.salary = 'Minimum and maximum salary are required.';
-    } else if ((touched.salaryMin || touched.salaryMax || submitted) && !salaryValid) {
+      errors.salary = 'Minimum and maximum salary are required unless salary is hidden.';
+    } else if (
+      !formData.hideSalary &&
+      (touched.salaryMin || touched.salaryMax || submitted) &&
+      !salaryValid
+    ) {
       errors.salary = 'Minimum salary must be ≤ maximum salary.';
     }
 
@@ -1189,8 +1205,12 @@ const EditJob = () => {
     if (!vacanciesValid) return 'Vacancies must be 1 or more';
     if (!formData.applicationDeadline) return 'Application deadline is required';
     if (!isDeadlineValid) return 'Application deadline must be in the future';
-    if (formData.salaryMin === '' || formData.salaryMax === '') return 'Minimum and maximum salary are required';
-    if (!salaryValid) return 'Minimum salary cannot be greater than maximum salary';
+    if (!formData.hideSalary && (formData.salaryMin === '' || formData.salaryMax === '')) {
+      return 'Minimum and maximum salary are required unless salary is hidden';
+    }
+    if (!formData.hideSalary && !salaryValid) {
+      return 'Minimum salary cannot be greater than maximum salary';
+    }
     if (!skillsCountValid) return 'Skills must be 10 or fewer';
 
     const exp = normalizeExperienceLevel(formData.experienceLevel);
@@ -1909,15 +1929,19 @@ const EditJob = () => {
                             <span className="absolute left-3 top-3 text-gray-500">₱</span>
                             <input
                               id="salaryMin"
-                              type="number"
+                              type="text"
+                              inputMode="numeric"
                               name="salaryMin"
-                              value={formData.salaryMin}
-                              onChange={handleChange}
+                              value={formatSalaryInput(formData.salaryMin)}
+                              onChange={(event) => setFormData((prev) => ({
+                                ...prev,
+                                salaryMin: sanitizeSalaryInput(event.target.value),
+                              }))}
                               onBlur={() => markTouched('salaryMin')}
                               className={`${inputClass(!!fieldErrors.salary)} pl-8`}
-                              placeholder="Min"
-                              min="0"
-                              required
+                              placeholder={formData.hideSalary ? 'Salary hidden' : 'Min'}
+                              disabled={formData.hideSalary}
+                              required={!formData.hideSalary}
                               disabled={isBusy}
                             />
                           </div>
@@ -1928,15 +1952,19 @@ const EditJob = () => {
                             <span className="absolute left-3 top-3 text-gray-500">₱</span>
                             <input
                               id="salaryMax"
-                              type="number"
+                              type="text"
+                              inputMode="numeric"
                               name="salaryMax"
-                              value={formData.salaryMax}
-                              onChange={handleChange}
+                              value={formatSalaryInput(formData.salaryMax)}
+                              onChange={(event) => setFormData((prev) => ({
+                                ...prev,
+                                salaryMax: sanitizeSalaryInput(event.target.value),
+                              }))}
                               onBlur={() => markTouched('salaryMax')}
                               className={`${inputClass(!!fieldErrors.salary)} pl-8`}
-                              placeholder="Max"
-                              min="0"
-                              required
+                              placeholder={formData.hideSalary ? 'Salary hidden' : 'Max'}
+                              disabled={formData.hideSalary}
+                              required={!formData.hideSalary}
                               disabled={isBusy}
                             />
                           </div>

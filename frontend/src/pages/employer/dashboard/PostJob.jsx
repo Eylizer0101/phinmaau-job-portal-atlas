@@ -633,6 +633,16 @@ const JobFormProgress = ({ activeStep, onStepChange }) => (
   </div>
 );
 
+
+const sanitizeSalaryInput = (value = '') =>
+  String(value || '').replace(/[^0-9]/g, '');
+
+const formatSalaryInput = (value = '') => {
+  const clean = sanitizeSalaryInput(value);
+  if (!clean) return '';
+  return Number(clean).toLocaleString('en-PH');
+};
+
 const PostJob = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -643,6 +653,8 @@ const PostJob = () => {
   const [submitted, setSubmitted] = useState(false);
   const [touched, setTouched] = useState({});
   const [activeStep, setActiveStep] = useState(1);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [savingCancelDraft, setSavingCancelDraft] = useState(false);
 
   const getStoredUser = useCallback(() => {
     try {
@@ -875,12 +887,13 @@ const PostJob = () => {
   };
 
   const salaryValid = useMemo(() => {
+    if (formData.hideSalary) return true;
     if (formData.salaryMin === '' || formData.salaryMax === '') return false;
     const min = Number(formData.salaryMin);
     const max = Number(formData.salaryMax);
     if (Number.isNaN(min) || Number.isNaN(max)) return false;
     return min <= max;
-  }, [formData.salaryMin, formData.salaryMax]);
+  }, [formData.hideSalary, formData.salaryMin, formData.salaryMax]);
 
   const isDeadlineValid = useMemo(() => {
     if (!formData.applicationDeadline) return false;
@@ -987,11 +1000,16 @@ const PostJob = () => {
     }
 
     if (
+      !formData.hideSalary &&
       (touched.salaryMin || touched.salaryMax || submitted) &&
       (formData.salaryMin === '' || formData.salaryMax === '')
     ) {
-      errors.salary = 'Minimum and maximum salary are required.';
-    } else if ((touched.salaryMin || touched.salaryMax || submitted) && !salaryValid) {
+      errors.salary = 'Minimum and maximum salary are required unless salary is hidden.';
+    } else if (
+      !formData.hideSalary &&
+      (touched.salaryMin || touched.salaryMax || submitted) &&
+      !salaryValid
+    ) {
       errors.salary = 'Minimum salary must be ≤ maximum salary.';
     }
 
@@ -1026,8 +1044,12 @@ const PostJob = () => {
     if (!formData.location.trim()) return 'Location (City) is required';
     if (!formData.applicationDeadline) return 'Application deadline is required';
     if (!isDeadlineValid) return 'Application deadline must be in the future';
-    if (formData.salaryMin === '' || formData.salaryMax === '') return 'Minimum and maximum salary are required';
-    if (!salaryValid) return 'Minimum salary cannot be greater than maximum salary';
+    if (!formData.hideSalary && (formData.salaryMin === '' || formData.salaryMax === '')) {
+      return 'Minimum and maximum salary are required unless salary is hidden';
+    }
+    if (!formData.hideSalary && !salaryValid) {
+      return 'Minimum salary cannot be greater than maximum salary';
+    }
     if (!skillsCountValid) return 'Skills must be 10 or fewer';
 
     const exp = normalizeExperienceLevel(formData.experienceLevel);
@@ -1108,6 +1130,23 @@ const PostJob = () => {
       setError(err.response?.data?.message || 'Failed to save draft. Please try again.');
     } finally {
       setSavingDraft(false);
+    }
+  };
+
+  const handleCancelAndSaveDraft = async () => {
+    setSavingCancelDraft(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      await postJob({ isDraft: true });
+      setShowCancelModal(false);
+      navigate('/employer/manage-jobs');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to save the job as draft. Please try again.');
+      setShowCancelModal(false);
+    } finally {
+      setSavingCancelDraft(false);
     }
   };
 
@@ -1374,17 +1413,21 @@ const PostJob = () => {
                             <span className="absolute left-3 top-3 text-gray-500">₱</span>
                             <input
                               id="salaryMin"
-                              type="number"
+                              type="text"
+                              inputMode="numeric"
                               name="salaryMin"
-                              value={formData.salaryMin}
-                              onChange={handleChange}
+                              value={formatSalaryInput(formData.salaryMin)}
+                              onChange={(event) => setFormData((prev) => ({
+                                ...prev,
+                                salaryMin: sanitizeSalaryInput(event.target.value),
+                              }))}
                               onBlur={() => markTouched('salaryMin')}
                               className={`w-full rounded-xl border px-4 py-3 pl-8 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:border-[#2e66a6] ${
                                 fieldErrors.salary ? 'border-red-300' : 'border-gray-300'
-                              }`}
-                              placeholder="Min"
-                              min="0"
-                              required
+                              } ${formData.hideSalary ? 'cursor-not-allowed bg-gray-100 text-gray-500' : ''}`}
+                              placeholder={formData.hideSalary ? 'Salary hidden' : 'Min'}
+                              disabled={formData.hideSalary}
+                              required={!formData.hideSalary}
                             />
                           </div>
                         </Field>
@@ -1394,17 +1437,21 @@ const PostJob = () => {
                             <span className="absolute left-3 top-3 text-gray-500">₱</span>
                             <input
                               id="salaryMax"
-                              type="number"
+                              type="text"
+                              inputMode="numeric"
                               name="salaryMax"
-                              value={formData.salaryMax}
-                              onChange={handleChange}
+                              value={formatSalaryInput(formData.salaryMax)}
+                              onChange={(event) => setFormData((prev) => ({
+                                ...prev,
+                                salaryMax: sanitizeSalaryInput(event.target.value),
+                              }))}
                               onBlur={() => markTouched('salaryMax')}
                               className={`w-full rounded-xl border px-4 py-3 pl-8 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:border-[#2e66a6] ${
                                 fieldErrors.salary ? 'border-red-300' : 'border-gray-300'
-                              }`}
-                              placeholder="Max"
-                              min="0"
-                              required
+                              } ${formData.hideSalary ? 'cursor-not-allowed bg-gray-100 text-gray-500' : ''}`}
+                              placeholder={formData.hideSalary ? 'Salary hidden' : 'Max'}
+                              disabled={formData.hideSalary}
+                              required={!formData.hideSalary}
                             />
                           </div>
                         </Field>
@@ -1747,7 +1794,7 @@ const PostJob = () => {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => navigate('/employer/dashboard')}
+                    onClick={() => setShowCancelModal(true)}
                     className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
                   >
                     Cancel
@@ -1799,6 +1846,49 @@ const PostJob = () => {
           </form>
         </div>
       </div>
+
+      {showCancelModal && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cancel-post-title"
+            className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
+          >
+            <div className="h-2 bg-amber-500" />
+            <div className="p-6">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-2xl text-amber-700">
+                !
+              </div>
+              <h2 id="cancel-post-title" className="text-xl font-bold text-gray-900">
+                Cancel creating this job?
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-gray-600">
+                Your current job post will be saved as a draft before you leave. You can continue editing it later from Manage Jobs.
+              </p>
+
+              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowCancelModal(false)}
+                  disabled={savingCancelDraft}
+                  className="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Continue Editing
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelAndSaveDraft}
+                  disabled={savingCancelDraft}
+                  className="rounded-xl bg-[#2e66a6] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#23508a] disabled:opacity-50"
+                >
+                  {savingCancelDraft ? 'Saving Draft…' : 'Save as Draft and Exit'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </EmployerLayout>
   );
 };
