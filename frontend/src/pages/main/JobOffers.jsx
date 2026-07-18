@@ -1230,12 +1230,6 @@ const JobOffers = () => {
                       className="group rounded-[22px] p-5 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(46,102,166,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[372px]"
                       style={{ border: `1px solid ${COLORS.border}` }}
                     >
-                        {job.isUrgent ? (
-                          <div className="mb-4 inline-flex w-fit items-center rounded-full bg-[#171717] px-3 py-1 text-xs font-bold leading-none text-white shadow-sm">
-                            Urgently Needed
-                          </div>
-                        ) : null}
-
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-4 min-w-0 flex-1">
                           <div className="w-12 h-12 rounded-[14px] overflow-hidden flex-shrink-0 border border-[#D7E2EE] bg-white shadow-sm">
@@ -1254,6 +1248,12 @@ const JobOffers = () => {
                           </div>
 
                           <div className="min-w-0 flex-1">
+                            {job.isUrgent ? (
+                              <div className="mb-2 inline-flex w-fit items-center rounded-full bg-[#171717] px-3 py-1 text-xs font-bold leading-none text-white shadow-sm">
+                                Urgently Needed
+                              </div>
+                            ) : null}
+
                             <h3 className="min-w-0 truncate whitespace-nowrap text-[17px] md:text-lg font-bold text-black leading-snug group-hover:text-[#2e66a6] transition">
                               {String(job.title || "Job Title").replaceAll('"', "")}
                             </h3>
