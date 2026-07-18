@@ -383,7 +383,11 @@ const MainLandingPage = () => {
               </div>
 
               <div className="mt-10 flex justify-center" aria-hidden="true">
-                <div className="flex h-10 w-10 items-center justify-center text-slate-700">
+                <div className="flex items-center gap-3 text-slate-700">
+                  <span className="text-sm md:text-base font-medium tracking-wide">
+                    Explore more
+                  </span>
+                  <div className="flex h-10 w-10 items-center justify-center">
                   <svg
                     className="h-7 w-7"
                     viewBox="0 0 24 24"
@@ -397,6 +401,7 @@ const MainLandingPage = () => {
                       strokeLinejoin="round"
                     />
                   </svg>
+                  </div>
                 </div>
               </div>
             </div>
