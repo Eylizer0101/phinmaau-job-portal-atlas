@@ -491,7 +491,7 @@ const CommunityPage = () => {
         </div>
       </div>
 
-      <div className="mb-5">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2">
           {categories.map((item) => (
             <button
@@ -510,16 +510,14 @@ const CommunityPage = () => {
         </div>
 
         {category === 'you' && (
-          <div className="mt-3 flex justify-end">
-            <button
-              type="button"
-              onClick={() => setShowManaged(true)}
-              className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 text-sm font-semibold hover:bg-[#f7faff]"
-            >
-              <FontAwesomeIcon icon={faSliders} />
-              <span>Managed Posts</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowManaged(true)}
+            className="inline-flex h-11 shrink-0 items-center justify-center gap-2 self-start rounded-xl border border-[#d8e2ee] bg-white px-4 text-sm font-semibold hover:bg-[#f7faff] sm:self-auto"
+          >
+            <FontAwesomeIcon icon={faSliders} />
+            <span>Managed Posts</span>
+          </button>
         )}
       </div>
 
