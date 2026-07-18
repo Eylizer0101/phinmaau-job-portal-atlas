@@ -1,12 +1,11 @@
+
+
 // src/pages/employer/dashboard/ApplicationDetails.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
-import {
-  buildResumeHtml,
-  normalizeUserToResumeData,
-} from '../../../components/shared/resumePrintTemplate';
+import { normalizeUserToResumeData } from '../../../components/shared/resumePrintTemplate';
 
 const API_HOST = process.env.REACT_APP_API_URL
   ? process.env.REACT_APP_API_URL.replace(/\/api\/?$/, '')
@@ -1053,9 +1052,6 @@ const ApplicationDetails = () => {
   const [messageOpen, setMessageOpen] = useState(false);
   const [confirmationAction, setConfirmationAction] = useState('');
   const [avatarBroken, setAvatarBroken] = useState(false);
-  const [resumeFrameHeight, setResumeFrameHeight] = useState(1120);
-  const [resumeScale, setResumeScale] = useState(1);
-  const resumeContainerRef = useRef(null);
 
   const fetchDetails = useCallback(async () => {
     try { setLoading(true); setError(''); const res = await axios.get(`${API_HOST}/api/applications/${applicationId}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }); setApplication(res.data?.application || null); }
@@ -1141,76 +1137,23 @@ const ApplicationDetails = () => {
       ].filter(Boolean);
   const declineReasons = currentStatus === 'for interview' ? FOR_INTERVIEW_DECLINE_REASONS : APPLICANTS_DECLINE_REASONS;
 
-  const embeddedResumeData = normalizeUserToResumeData({
-    userData: user,
-    profile,
-    workExperiences: work,
-  });
-
-  const embeddedResumeHtml = buildResumeHtml(embeddedResumeData)
-    .replace(
-      '</style>',
-      `
-        .preview-topbar {
-          display: none !important;
-        }
-
-        .page-shell {
-          min-height: 0 !important;
-          padding-top: 0 !important;
-          padding-bottom: 0 !important;
-          background: #ffffff !important;
-        }
-
-        html,
-        body {
-          margin: 0 !important;
-          min-height: 0 !important;
-          overflow: hidden !important;
-          background: #ffffff !important;
-        }
-      </style>`
-    );
-
-  const handleResumeFrameLoad = (event) => {
-    const frame = event.currentTarget;
-    const frameDocument = frame.contentDocument;
-    if (!frameDocument) return;
-
-    const updateResumeSize = () => {
-      const bodyHeight = frameDocument.body?.scrollHeight || 0;
-      const documentHeight = frameDocument.documentElement?.scrollHeight || 0;
-      const fullHeight = Math.max(bodyHeight, documentHeight, 1120);
-      setResumeFrameHeight(fullHeight);
-
-      const containerWidth = resumeContainerRef.current?.clientWidth || 0;
-      const previewWidth = 826;
-      const nextScale = containerWidth > 0 ? Math.min(1, containerWidth / previewWidth) : 1;
-      setResumeScale(nextScale);
-    };
-
-    updateResumeSize();
-
-    const frameWindow = frame.contentWindow;
-    const ResizeObserverClass = frameWindow?.ResizeObserver;
-
-    if (ResizeObserverClass) {
-      const documentObserver = new ResizeObserverClass(updateResumeSize);
-      if (frameDocument.body) documentObserver.observe(frameDocument.body);
-      if (frameDocument.documentElement) documentObserver.observe(frameDocument.documentElement);
-    }
-
-    Array.from(frameDocument.images || []).forEach((imageElement) => {
-      if (!imageElement.complete) {
-        imageElement.addEventListener('load', updateResumeSize, { once: true });
-        imageElement.addEventListener('error', updateResumeSize, { once: true });
-      }
+  const openFullResumePreview = () => {
+    const resumeData = normalizeUserToResumeData({
+      userData: user,
+      profile,
+      workExperiences: work,
     });
 
-    if (typeof ResizeObserver !== 'undefined' && resumeContainerRef.current) {
-      const containerObserver = new ResizeObserver(updateResumeSize);
-      containerObserver.observe(resumeContainerRef.current);
-    }
+    sessionStorage.setItem(
+      'resumePreviewData',
+      JSON.stringify({
+        ...resumeData,
+        returnTo: `/employer/application/${applicationId}${location.search || ''}`,
+        viewerMode: 'employer',
+      })
+    );
+
+    navigate('/employer/application/resume-preview');
   };
 
   return <EmployerLayout>
@@ -1245,31 +1188,25 @@ const ApplicationDetails = () => {
           </div>
           <div className="flex border-t border-[#d8e2ee] px-5 sm:px-7"><button onClick={() => setActiveTab('resume')} className={cn('relative flex h-14 items-center gap-2 px-3 text-sm font-semibold', activeTab === 'resume' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="resume" className="h-4 w-4" /> Resume<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'resume' ? 'bg-[#174b91]' : '')} /></button><button onClick={() => setActiveTab('activity')} className={cn('relative flex h-14 items-center gap-2 px-5 text-sm font-semibold', activeTab === 'activity' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="activity" className="h-4 w-4" /> Activity<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'activity' ? 'bg-[#174b91]' : '')} /></button></div>
 
-          {activeTab === 'resume' ? (
-            <div className="border-t border-[#d8e2ee] bg-white">
-              <div
-                ref={resumeContainerRef}
-                className="relative w-full overflow-hidden bg-white"
-                style={{ height: `${resumeFrameHeight * resumeScale}px` }}
+          {activeTab === 'resume' ? <div className="border-t border-[#d8e2ee] px-6 pb-8 pt-4 sm:px-10 lg:px-12">
+            <div className="flex justify-end pb-2">
+              <button
+                type="button"
+                onClick={openFullResumePreview}
+                className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 hover:text-[#174b91] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
               >
-                <iframe
-                  title={`${name} resume`}
-                  srcDoc={embeddedResumeHtml}
-                  onLoad={handleResumeFrameLoad}
-                  scrolling="no"
-                  className="absolute left-1/2 top-0 block border-0 bg-white"
-                  style={{
-                    width: '826px',
-                    height: `${resumeFrameHeight}px`,
-                    overflow: 'hidden',
-                    transform: `translateX(-50%) scale(${resumeScale})`,
-                    transformOrigin: 'top center',
-                  }}
-                  sandbox="allow-same-origin"
-                />
-              </div>
+                <SvgIcon name="eye" className="h-4 w-4" />
+                Open full view
+              </button>
             </div>
-          ) : <div className="border-t border-[#d8e2ee] px-6 py-8 sm:px-10"><div className="relative ml-3 border-l-2 border-gray-200 pl-8">{activities.map((item, index) => { const dt = formatDateTime(item.occurredAt || item.createdAt); return <div key={item._id || `${item.type}-${index}`} className="relative pb-10 last:pb-0"><div className="absolute -left-[43px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-4 border-white bg-[#2e66a6] shadow"><SvgIcon name={item.type === 'message' ? 'message' : item.type === 'submitted' ? 'resume' : 'activity'} className="h-3 w-3 text-white" /></div><h3 className="text-lg font-semibold text-gray-900">{item.title || 'Application updated'}</h3><p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">{item.description || 'The application record was updated.'}</p><div className="mt-2 text-xs font-bold tracking-wide text-gray-500">{dt.date}{dt.time ? ` · ${dt.time}` : ''}</div></div>; })}</div></div>}
+            <Section title="Basic Information" defaultOpen><div className="pb-8 pt-5 text-center"><div className="flex items-start justify-center gap-8"><div className="min-w-0 flex-1"><h2 className="font-serif text-[26px] font-bold uppercase leading-tight tracking-[0.22em] text-[#111827] sm:text-[34px]">{name}</h2><div className="mt-2 font-serif text-[13px]">{profile.address || 'Address not provided'}</div><div className="mt-1 font-serif text-[13px]">{[user.email, profile.phoneNumber].filter(Boolean).join(' • ')}</div><div className="mt-2 font-serif text-[13px] italic text-gray-500">{[profile.campus, profile.course, profile.yearGraduated ? `Class of ${profile.yearGraduated}` : ''].filter(Boolean).join(', ')}</div></div></div></div></Section>
+            <Section title="Objective" defaultOpen>{profile.aboutMe ? <div className="pb-5 pt-2 text-justify font-serif text-[13px] leading-5 text-gray-900">{richText(profile.aboutMe)}</div> : <EmptyLine>No objective added yet.</EmptyLine>}</Section>
+            <Section title="Availability & Preferences"><div className="grid grid-cols-1 gap-x-12 gap-y-4 pb-5 pt-2 font-serif text-[13px] leading-5 md:grid-cols-3"><div className="space-y-1"><div><b>Preferred Work Mode:</b> {profile.preferredWorkMode || 'Not provided'}</div><div><b>Employment Type:</b> {profile.employmentType || 'Not provided'}</div><div><b>Willing to Relocate:</b> {profile.willingToRelocate || 'Not provided'}</div><div><b>How Soon Can Start:</b> {profile.howSoonCanYouStart || 'Not provided'}</div><div><b>Experience:</b> {profile.experience || profile.whatHaveYouDone || 'Not provided'}</div></div><div className="space-y-1"><div><b>Preferred Language:</b> {profile.preferredLanguage || 'Not provided'}</div><div><b>Educational Attainment:</b> {profile.educationalAttainment || 'Not provided'}</div><div><b>Double Degree:</b> {profile.studyField || profile.course || 'Not provided'}</div><div><b>Salary:</b> {salary || 'Not provided'}</div><div><b>Nationality:</b> {profile.nationality || 'Not provided'}</div></div><div className="space-y-1"><div><b>Height:</b> {profile.height || 'Not provided'}</div><div><b>Weight:</b> {profile.weight || 'Not provided'}</div><div><b>Gender:</b> {profile.gender || 'Not provided'}</div><div><b>Civil Status:</b> {profile.civilStatus || 'Not provided'}</div><div><b>Birthday:</b> {profile.birthday || 'Not provided'}</div></div></div></Section>
+            <Section title="Work Experience">{work.length ? <div className="space-y-4 pb-5 pt-2 font-serif text-[13px] leading-5">{work.map((item, index) => <div key={item._id || index} className="py-1"><div className="flex flex-col justify-between gap-1 sm:flex-row"><div><div className="font-bold">{item.companyName || 'Company Name'}</div><div className="italic">{item.positionTitle || 'Position'}</div></div><div className="whitespace-nowrap italic text-gray-700">{entryDate(item)}</div></div>{item.description ? <div className="mt-2">{richText(item.description)}</div> : null}</div>)}</div> : <EmptyLine>No work experience added yet.</EmptyLine>}</Section>
+            <Section title="Skills">{skills.length ? <div className="flex flex-wrap gap-2 pb-5 pt-2 font-serif text-[13px]">{skills.map((item, index) => <span key={`${item.skill}-${index}`} className="inline-flex overflow-hidden whitespace-nowrap rounded-full border border-[#d8e2ee]"><span className="px-3 py-1">{item.skill}</span><span className={cn('border-l px-2.5 py-1 font-semibold', PROFICIENCY_STYLES[item.proficiency] || PROFICIENCY_STYLES.Basic)}>{item.proficiency}</span></span>)}</div> : <EmptyLine>No skills added yet.</EmptyLine>}</Section>
+            <Section title="Education">{education.length ? <div className="space-y-3 pb-5 pt-2 font-serif text-[13px] leading-5">{education.map((item, index) => <div key={item._id || index} className="flex flex-col justify-between gap-1 py-1 sm:flex-row"><div><div className="font-bold">{item.school || item.campus || 'School / University'}</div><div className="italic">{item.educationalAttainment || item.level || 'Educational Attainment'}</div>{item.description ? <div className="mt-1">{richText(item.description)}</div> : null}</div><div className="whitespace-nowrap italic text-gray-700">{entryDate(item)}</div></div>)}</div> : <EmptyLine>No education added yet.</EmptyLine>}</Section>
+            <Section title="Certifications"><ProfileEntries items={profile.certifications || []} /></Section><Section title="Projects"><ProfileEntries items={profile.projects || []} /></Section><Section title="Seminars and Trainings"><ProfileEntries items={profile.seminars || []} /></Section><Section title="Awards and Achievements"><ProfileEntries items={profile.awards || []} /></Section><Section title="Affiliations"><ProfileEntries items={profile.affiliations || []} /></Section><Section title="Co-Curricular Activities"><ProfileEntries items={profile.cocurricular || []} /></Section><Section title="References"><ProfileEntries items={profile.references || []} type="references" /></Section>
+          </div> : <div className="border-t border-[#d8e2ee] px-6 py-8 sm:px-10"><div className="relative ml-3 border-l-2 border-gray-200 pl-8">{activities.map((item, index) => { const dt = formatDateTime(item.occurredAt || item.createdAt); return <div key={item._id || `${item.type}-${index}`} className="relative pb-10 last:pb-0"><div className="absolute -left-[43px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-4 border-white bg-[#2e66a6] shadow"><SvgIcon name={item.type === 'message' ? 'message' : item.type === 'submitted' ? 'resume' : 'activity'} className="h-3 w-3 text-white" /></div><h3 className="text-lg font-semibold text-gray-900">{item.title || 'Application updated'}</h3><p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">{item.description || 'The application record was updated.'}</p><div className="mt-2 text-xs font-bold tracking-wide text-gray-500">{dt.date}{dt.time ? ` · ${dt.time}` : ''}</div></div>; })}</div></div>}
         </main>
 
         <aside className="space-y-5"><div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5 sm:p-6">
