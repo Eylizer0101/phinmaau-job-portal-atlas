@@ -80,13 +80,7 @@ const mapCompanyFromUser = (user) => {
           _id: review._id,
           reviewer: review.reviewer,
           reviewerName: review.reviewerName || 'Anonymous User',
-          roleAppliedFor: review.roleAppliedFor || '',
           rating: Number(review.rating) || 0,
-          processRating: Number(review.processRating) || 0,
-          daysToFirstResponse: Number(review.daysToFirstResponse) || 0,
-          totalProcessDays: Number(review.totalProcessDays) || 0,
-          outcome: review.outcome || 'still_in_process',
-          wouldApplyAgain: Boolean(review.wouldApplyAgain),
           message: review.message || '',
           createdAt: review.createdAt,
           updatedAt: review.updatedAt,
@@ -285,50 +279,23 @@ exports.getVerifiedCompanyDetails = async (req, res) => {
 exports.submitCompanyReview = async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      rating,
-      processRating,
-      roleAppliedFor,
-      daysToFirstResponse,
-      totalProcessDays,
-      outcome,
-      wouldApplyAgain,
-      message,
-      reviewerName,
-    } = req.body;
+    const { rating, message } = req.body;
 
     const numericRating = Number(rating);
-    const numericProcessRating = Number(processRating);
-    const numericFirstResponse = Number(daysToFirstResponse);
-    const numericTotalProcess = Number(totalProcessDays);
-    const trimmedRole = String(roleAppliedFor || '').trim();
     const trimmedMessage = String(message || '').trim();
-    const trimmedReviewerName = String(reviewerName || '').trim();
-    const allowedOutcomes = ['received_offer', 'rejected', 'ghosted', 'withdrew', 'still_in_process'];
-    const safeOutcome = allowedOutcomes.includes(outcome) ? outcome : 'still_in_process';
 
     if (!numericRating || numericRating < 1 || numericRating > 5) {
-      return res.status(400).json({ success: false, message: 'Overall rating must be between 1 and 5.' });
-    }
-
-    if (!numericProcessRating || numericProcessRating < 1 || numericProcessRating > 5) {
-      return res.status(400).json({ success: false, message: 'Process rating must be between 1 and 5.' });
-    }
-
-    if (!trimmedRole) {
-      return res.status(400).json({ success: false, message: 'Role applied for is required.' });
-    }
-
-    if (!Number.isFinite(numericFirstResponse) || numericFirstResponse < 0) {
-      return res.status(400).json({ success: false, message: 'Days to first response must be 0 or higher.' });
-    }
-
-    if (!Number.isFinite(numericTotalProcess) || numericTotalProcess < 0) {
-      return res.status(400).json({ success: false, message: 'Total process length must be 0 or higher.' });
+      return res.status(400).json({
+        success: false,
+        message: 'Rating must be between 1 and 5.',
+      });
     }
 
     if (!trimmedMessage) {
-      return res.status(400).json({ success: false, message: 'Review message is required.' });
+      return res.status(400).json({
+        success: false,
+        message: 'Review message is required.',
+      });
     }
 
     const company = await User.findOne({
@@ -340,40 +307,47 @@ exports.submitCompanyReview = async (req, res) => {
     });
 
     if (!company) {
-      return res.status(404).json({ success: false, message: 'Verified company not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'Verified company not found',
+      });
     }
 
     if (String(company._id) === String(req.user?._id)) {
-      return res.status(400).json({ success: false, message: 'You cannot review your own company.' });
+      return res.status(400).json({
+        success: false,
+        message: 'You cannot review your own company.',
+      });
     }
 
-    if (!company.employerProfile) company.employerProfile = {};
-    if (!Array.isArray(company.employerProfile.reviews)) company.employerProfile.reviews = [];
+    if (!company.employerProfile) {
+      company.employerProfile = {};
+    }
+
+    if (!Array.isArray(company.employerProfile.reviews)) {
+      company.employerProfile.reviews = [];
+    }
 
     const alreadyReviewed = company.employerProfile.reviews.some(
       (review) => String(review?.reviewer) === String(req.user?._id)
     );
 
     if (alreadyReviewed) {
-      return res.status(400).json({ success: false, message: 'You have already reviewed this company.' });
+      return res.status(400).json({
+        success: false,
+        message: 'You have already reviewed this company.',
+      });
     }
 
     company.employerProfile.reviews.push({
       reviewer: req.user._id,
-      reviewerName: trimmedReviewerName || buildReviewerName(req.user),
-      roleAppliedFor: trimmedRole,
+      reviewerName: buildReviewerName(req.user),
       rating: numericRating,
-      processRating: numericProcessRating,
-      daysToFirstResponse: numericFirstResponse,
-      totalProcessDays: numericTotalProcess,
-      outcome: safeOutcome,
-      wouldApplyAgain: Boolean(wouldApplyAgain),
       message: trimmedMessage,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
 
-    company.markModified('employerProfile.reviews');
     await company.save();
 
     return res.status(201).json({

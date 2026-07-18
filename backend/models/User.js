@@ -171,44 +171,11 @@ const companyReviewSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
-    roleAppliedFor: {
-      type: String,
-      required: true,
-      trim: true,
-      maxlength: 160,
-    },
     rating: {
       type: Number,
       required: true,
       min: 1,
       max: 5,
-    },
-    processRating: {
-      type: Number,
-      required: true,
-      min: 1,
-      max: 5,
-    },
-    daysToFirstResponse: {
-      type: Number,
-      required: true,
-      min: 0,
-      default: 0,
-    },
-    totalProcessDays: {
-      type: Number,
-      required: true,
-      min: 0,
-      default: 0,
-    },
-    outcome: {
-      type: String,
-      enum: ['received_offer', 'rejected', 'ghosted', 'withdrew', 'still_in_process'],
-      default: 'still_in_process',
-    },
-    wouldApplyAgain: {
-      type: Boolean,
-      default: true,
     },
     message: {
       type: String,
