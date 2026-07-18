@@ -820,10 +820,27 @@ const CompanyViewDetails = () => {
         ? companyData.reviews.map((review, index) => ({
             id: review?._id || review?.id || `review-${index}`,
             reviewerName: review?.reviewerName || "Anonymous User",
+            roleAppliedFor: String(review?.roleAppliedFor || "").trim() || null,
             date: formatReviewDate(review?.createdAt || review?.date),
             rating: Number(review?.rating) || 0,
+            processRating:
+              review?.processRating === undefined || review?.processRating === null
+                ? null
+                : Number(review.processRating),
+            daysToFirstResponse:
+              review?.daysToFirstResponse === undefined || review?.daysToFirstResponse === null
+                ? null
+                : Number(review.daysToFirstResponse),
+            totalProcessDays:
+              review?.totalProcessDays === undefined || review?.totalProcessDays === null
+                ? null
+                : Number(review.totalProcessDays),
+            outcome: review?.outcome || null,
+            wouldApplyAgain:
+              typeof review?.wouldApplyAgain === "boolean" ? review.wouldApplyAgain : null,
             message: review?.message || "",
             createdAt: review?.createdAt || null,
+            updatedAt: review?.updatedAt || null,
           }))
         : [];
 
