@@ -653,7 +653,7 @@ const JOB_FORM_STEPS = [
   {
     id: 1,
     title: 'Job Details',
-    eyebrow: 'Role, schedule & salary',
+    
     description: 'Add the main job information, schedule, vacancies, deadline, and salary range.',
   },
   {
