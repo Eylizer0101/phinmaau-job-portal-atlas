@@ -33,12 +33,12 @@ const communityPostSchema = new mongoose.Schema({
   },
   imageUrl: { type: String, default: '' },
   linkUrl: { type: String, default: '' },
+  // New posts are still required to have a topic by communityController.
+  // The schema allows an empty array so older posts without topics can still
+  // receive comments, replies, reactions, reports, and likes.
   topics: {
     type: [{ type: String, trim: true }],
-    validate: {
-      validator: (items) => Array.isArray(items) && items.length > 0,
-      message: 'At least one topic is required',
-    },
+    default: [],
   },
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   comments: { type: [communityCommentSchema], default: [] },
