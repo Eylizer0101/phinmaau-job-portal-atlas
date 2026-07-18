@@ -1696,7 +1696,7 @@ const PostJob = () => {
                         <Field
                           id="location"
                           label="Location Address / OpenStreetMap"
-                          hint="Free map picker powered by OpenStreetMap. Search a place or click the map to set the exact pin."
+                         
                           error={fieldErrors.location}
                         >
                           <LocationMapPicker
