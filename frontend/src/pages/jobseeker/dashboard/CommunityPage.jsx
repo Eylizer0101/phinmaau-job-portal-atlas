@@ -810,7 +810,7 @@ const CommunityPage = () => {
                   ref={linkInputRef}
                   value={form.linkUrl}
                   onChange={(event) => setForm((prev) => ({ ...prev, linkUrl: event.target.value }))}
-                  placeholder="Paste website or article link (optional)"
+                  placeholder="Paste website or article link"
                   className="mt-4 h-11 w-full rounded-xl border border-[#d8e2ee] px-4 text-sm outline-none focus:border-[#2e66a6]"
                 />
               )}
