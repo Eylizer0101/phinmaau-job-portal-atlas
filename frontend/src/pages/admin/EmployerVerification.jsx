@@ -1047,7 +1047,7 @@ const EmployerVerification = () => {
               </div>
             ) : (
               <>
-                <div className="hidden lg:block overflow-x-auto">
+                <div className="hidden lg:block overflow-x-hidden">
                   <table className="w-full table-fixed">
                     <thead className="bg-slate-50 border-b border-gray-100">
                       <tr>
