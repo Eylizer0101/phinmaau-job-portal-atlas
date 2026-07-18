@@ -1086,86 +1086,83 @@ const JobOfferDetails = () => {
 
               <div className={`${UI.card} ${UI.pad} mb-6`}>
                 <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start gap-4 min-w-0">
-                      <CompanyLogo src={job.companyLogo} name={job.companyName} />
+                  <div className="flex items-start gap-4 min-w-0 flex-1">
+                    <CompanyLogo src={job.companyLogo} name={job.companyName} />
 
-                      <div className="min-w-0 flex-1">
-                        {job?.isUrgent ? (
-                          <div className="mb-3 inline-flex items-center rounded-full bg-[#171717] px-4 py-2.5 text-xs font-bold text-white shadow-sm">
-                            Urgently Needed
-                          </div>
-                        ) : null}
+                    <div className="min-w-0 flex-1">
+                      {job?.isUrgent ? (
+                  <div className="mb-3 inline-flex items-center rounded-full bg-[#171717] px-4 text-xs font-bold text-white shadow-sm">
+                    Urgently Needed
+                  </div>
+                ) : null}
+                <h1
+                        className={`${UI.h1} overflow-hidden text-ellipsis sm:truncate`}
+                        style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2 }}
+                        title={job.title}
+                      >
+                        {job.title}
+                      </h1>
 
-                        <h1
-                          className={`${UI.h1} overflow-hidden text-ellipsis sm:truncate`}
-                          style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2 }}
-                          title={job.title}
-                        >
-                          {job.title}
-                        </h1>
-
-                        <div className="mt-2">
-                          <div className={`inline-flex items-center gap-2 ${UI.meta} min-w-0`}>
-                            <span className="text-black/60">
-                              <SvgIcon name="building" className="w-4 h-4" />
-                            </span>
-                            <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap" title={job.companyName}>
-                              {job.companyName}
-                            </span>
-                          </div>
+                      <div className="mt-2">
+                        <div className={`inline-flex items-center gap-2 ${UI.meta} min-w-0`}>
+                          <span className="text-black/60">
+                            <SvgIcon name="building" className="w-4 h-4" />
+                          </span>
+                          <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap" title={job.companyName}>
+                            {job.companyName}
+                          </span>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="mt-4">
-                      <div className={`inline-flex items-center gap-2 ${UI.caption}`}>
-                        <span className="text-black/60">
-                          <SvgIcon name="location" className="w-4 h-4" />
-                        </span>
-                        <span>{formatLocationDisplay(job.location)}</span>
+                      <div className="mt-1">
+                        <div className={`inline-flex items-center gap-2 ${UI.caption}`}>
+                          <span className="text-black/60">
+                            <SvgIcon name="location" className="w-4 h-4" />
+                          </span>
+                          <span>{formatLocationDisplay(job.location)}</span>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {job.jobType && (
-                        <span className={UI.chip}>
-                          <span className="text-black/60">
-                            <SvgIcon name="briefcase" className="w-3.5 h-3.5" />
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {job.jobType && (
+                          <span className={UI.chip}>
+                            <span className="text-black/60">
+                              <SvgIcon name="briefcase" className="w-3.5 h-3.5" />
+                            </span>
+                            {job.jobType}
                           </span>
-                          {job.jobType}
-                        </span>
-                      )}
+                        )}
 
-                      {job.workMode && (
-                        <span className={UI.chip}>
-                          <span className="text-black/60">
-                            <SvgIcon name="building" className="w-3.5 h-3.5" />
+                        {job.workMode && (
+                          <span className={UI.chip}>
+                            <span className="text-black/60">
+                              <SvgIcon name="building" className="w-3.5 h-3.5" />
+                            </span>
+                            {job.workMode}
                           </span>
-                          {job.workMode}
-                        </span>
-                      )}
+                        )}
 
-                      {job.vacancies && (
-                        <span className={UI.chip}>
-                          <span className="text-black/60">
-                            <SvgIcon name="users" className="w-3.5 h-3.5" />
+                        {job.vacancies && (
+                          <span className={UI.chip}>
+                            <span className="text-black/60">
+                              <SvgIcon name="users" className="w-3.5 h-3.5" />
+                            </span>
+                            {job.vacancies} Vacancies
                           </span>
-                          {job.vacancies} Vacancies
-                        </span>
-                      )}
-                    </div>
+                        )}
+                      </div>
 
-                    <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-black/80">
-                      <span className="text-black/60">
-                        <SvgIcon name="clock" className="w-4 h-4" />
-                      </span>
-                      <span>
-                        {formatPostedRelative(job.createdAt)}
-                        {job.applicationDeadline
-                          ? ` and deadline of application is on ${formatApplicationDeadline(job.applicationDeadline)}`
-                          : ''}
-                      </span>
+                      <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-black/80">
+                        <span className="text-black/60">
+                          <SvgIcon name="clock" className="w-4 h-4" />
+                        </span>
+                        <span>
+                          {formatPostedRelative(job.createdAt)}
+                          {job.applicationDeadline
+                            ? ` and deadline of application is on ${formatApplicationDeadline(job.applicationDeadline)}`
+                            : ''}
+                        </span>
+                      </div>
                     </div>
                   </div>
 

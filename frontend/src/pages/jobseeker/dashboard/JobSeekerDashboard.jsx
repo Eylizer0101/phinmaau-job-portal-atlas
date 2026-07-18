@@ -1498,96 +1498,71 @@ const JobSeekerDashboard = () => {
                         className="px-6 py-5 transition-all duration-300 ease-out hover:bg-gray-50/80 group cursor-pointer active:bg-[#F8FAFC]"
                         onClick={() => navigate('/jobseeker/my-applications')}
                       >
-                        <div>
-                          <div className="flex items-start gap-4">
-                            <div className="flex-shrink-0">
-                              <div className="w-14 h-14 rounded-xl overflow-hidden border border-[#D9E3F2] bg-white shadow-xs transition-all duration-300 group-hover:shadow-sm group-hover:border-[#D9E3F2]">
-                                {logoUrl ? (
-                                  <img
-                                    src={logoUrl}
-                                    alt={companyName}
-                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                    onError={(e) => {
-                                      e.target.style.display = 'none';
-                                      const fallbackDiv = document.createElement('div');
-                                      fallbackDiv.className =
-                                        'w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200';
-                                      fallbackDiv.innerHTML = `<span class="font-bold text-lg text-black">${companyInitials}</span>`;
-                                      e.target.parentElement.appendChild(fallbackDiv);
-                                    }}
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                                    <span className="font-bold text-lg text-black">{companyInitials}</span>
-                                  </div>
-                                )}
+                        <div className="flex items-start gap-4">
+                          <div className="flex-shrink-0">
+                            <div className="w-14 h-14 rounded-xl overflow-hidden border border-[#D9E3F2] bg-white shadow-xs transition-all duration-300 group-hover:shadow-sm group-hover:border-[#D9E3F2]">
+                              {logoUrl ? (
+                                <img
+                                  src={logoUrl}
+                                  alt={companyName}
+                                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    const fallbackDiv = document.createElement('div');
+                                    fallbackDiv.className =
+                                      'w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200';
+                                    fallbackDiv.innerHTML = `<span class="font-bold text-lg text-black">${companyInitials}</span>`;
+                                    e.target.parentElement.appendChild(fallbackDiv);
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                                  <span className="font-bold text-lg text-black">{companyInitials}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-3">
+                              <div className="min-w-0">
+                                <h4 className="font-semibold text-black text-base leading-snug mb-1 line-clamp-1">
+                                  {app.job?.title}
+                                </h4>
+                                <p className="text-sm text-gray-600 line-clamp-1">{companyName}</p>
+                              </div>
+                              <div className="flex-shrink-0">
+                                <span
+                                  className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium ${status.bg} ${status.text} border ${status.border}`}
+                                >
+                                  <FontAwesomeIcon icon={status.icon} className="w-3 h-3 mr-1.5" />
+                                  {status.label}
+                                </span>
                               </div>
                             </div>
 
-                            <div className="flex-1 min-w-0">
-                              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <h4 className="font-semibold text-black text-base leading-snug mb-1 line-clamp-1">
-                                    {app.job?.title}
-                                  </h4>
-                                  <p className="text-sm text-gray-600 line-clamp-1">{companyName}</p>
+                            <div className="flex flex-wrap items-center gap-4 text-sm mb-4 min-w-0">
+                              {app.job?.location && (
+                                <div className="flex items-center gap-2 text-gray-600 min-w-0 w-full max-w-full">
+                                  <div className="w-4 h-4 flex-shrink-0 flex items-center justify-center text-gray-400">
+                                    <FontAwesomeIcon icon={faMapMarkerAlt} className="w-3.5 h-3.5 flex-shrink-0" />
+                                  </div>
+                                  <span className="leading-none block min-w-0 max-w-full truncate">{formatLocationDisplay(app.job.location)}</span>
                                 </div>
+                              )}
 
-                                <div className="flex-shrink-0">
-                                  <span
-                                    className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium ${status.bg} ${status.text} border ${status.border}`}
-                                  >
-                                    <FontAwesomeIcon icon={status.icon} className="w-3 h-3 mr-1.5" />
-                                    {status.label}
+                              {getRecentApplicationJobSummary(app.job) && (
+                                <div className="flex min-w-0 items-center gap-2">
+                                  <span className="ml-1 block min-w-0 truncate font-semibold leading-none text-[#2e66a6]">
+                                    {getRecentApplicationJobSummary(app.job)}
                                   </span>
                                 </div>
-                              </div>
+                              )}
                             </div>
 
-                            <div className="flex-shrink-0 ml-2">
-                              <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                              </svg>
-                            </div>
-                          </div>
-
-                          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm min-w-0">
-                            {app.job?.location && (
-                              <div className="flex items-center gap-2 text-gray-600 min-w-0 w-full max-w-full">
-                                <div className="w-4 h-4 flex-shrink-0 flex items-center justify-center text-gray-400">
-                                  <FontAwesomeIcon icon={faMapMarkerAlt} className="w-3.5 h-3.5 flex-shrink-0" />
-                                </div>
-                                <span className="leading-none block min-w-0 max-w-full truncate">
-                                  {formatLocationDisplay(app.job.location)}
-                                </span>
-                              </div>
-                            )}
-
-                            {getRecentApplicationJobSummary(app.job) && (
-                              <div className="flex min-w-0 items-center gap-2">
-                                <span className="block min-w-0 truncate font-semibold leading-none text-[#2e66a6]">
-                                  {getRecentApplicationJobSummary(app.job)}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="mt-4 ml-[72px] flex flex-wrap items-center justify-between gap-3 text-sm pt-3 border-t border-[#D9E3F2]">
-                            <div className="flex items-center gap-2 text-gray-500">
-                              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={1.5}
-                                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                />
-                              </svg>
-                              <span>Applied {formatDate(app.appliedAt)}</span>
-                            </div>
-
-                            {getEffectiveApplicationStatus(app) === 'for interview' && app.interviewDate && (
-                              <div className="flex items-center gap-2 text-[#2D9CDB] font-medium">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div className="flex flex-wrap items-center justify-between gap-3 text-sm pt-3 border-t border-[#D9E3F2]">
+                              <div className="flex items-center gap-2 text-gray-500">
+                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
@@ -1595,11 +1570,32 @@ const JobSeekerDashboard = () => {
                                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                                   />
                                 </svg>
-                                <span>Interview {formatDate(app.interviewDate)}</span>
+                                <span>Applied {formatDate(app.appliedAt)}</span>
                               </div>
-                            )}
+
+                              {getEffectiveApplicationStatus(app) === 'for interview' && app.interviewDate && (
+                                <div className="flex items-center gap-2 text-[#2D9CDB] font-medium">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={1.5}
+                                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                    />
+                                  </svg>
+                                  <span>Interview {formatDate(app.interviewDate)}</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>                      </div>
+
+                          <div className="flex-shrink-0 ml-2">
+                            <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
