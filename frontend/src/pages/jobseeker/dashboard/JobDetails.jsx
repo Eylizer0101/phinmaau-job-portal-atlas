@@ -1324,11 +1324,7 @@ const JobDetails = () => {
                     </button>
                   </div>
 
-                  {statusBadge ? (
-                    <div className="mt-2 flex w-full items-start">
-                      {statusBadge}
-                    </div>
-                  ) : null}
+                
                 </div>
               </div>
             </div>
