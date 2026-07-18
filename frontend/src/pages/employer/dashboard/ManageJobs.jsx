@@ -1057,7 +1057,7 @@ const ManageJobs = () => {
                   onChange={(e) => setJobFilter(e.target.value)}
                   className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                 >
-                  <option value="all">Job Title</option>
+                  <option value="all">All Job Title</option>
                   {jobOptions.map((job) => (
                     <option key={job.id} value={job.id}>
                       {job.title}
@@ -1070,7 +1070,7 @@ const ManageJobs = () => {
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                 >
-                  <option value="all">Status</option>
+                  <option value="all">All Status</option>
                   <option value="open">Open</option>
                   <option value="closed">Closed</option>
                   <option value="filled">Filled</option>
