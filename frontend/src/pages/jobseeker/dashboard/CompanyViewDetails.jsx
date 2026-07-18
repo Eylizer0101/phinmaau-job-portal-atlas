@@ -311,6 +311,51 @@ const formatReviewDate = (value) => {
   });
 };
 
+const formatReviewTimeAgo = (value) => {
+  if (!value) return "";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const diffMs = Date.now() - date.getTime();
+  const diffDays = Math.max(0, Math.floor(diffMs / 86400000));
+
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "1 day ago";
+  if (diffDays < 30) return `${diffDays} days ago`;
+
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMonths === 1) return "1 month ago";
+  if (diffMonths < 12) return `${diffMonths} months ago`;
+
+  const diffYears = Math.floor(diffMonths / 12);
+  return diffYears === 1 ? "1 year ago" : `${diffYears} years ago`;
+};
+
+const getOutcomeLabel = (value) => {
+  const labels = {
+    received_offer: "Received offer",
+    rejected: "Rejected",
+    ghosted: "Ghosted",
+    withdrew: "Withdrew",
+    still_in_process: "Still in process",
+  };
+
+  return labels[String(value || "").trim()] || "Still in process";
+};
+
+const getOutcomeBadgeClass = (value) => {
+  const classes = {
+    received_offer: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    rejected: "bg-red-50 text-red-700 border-red-200",
+    ghosted: "bg-amber-50 text-amber-700 border-amber-200",
+    withdrew: "bg-gray-100 text-gray-700 border-gray-200",
+    still_in_process: "bg-blue-50 text-blue-700 border-blue-200",
+  };
+
+  return classes[String(value || "").trim()] || classes.still_in_process;
+};
+
 const getStoredUser = () => {
   try {
     return JSON.parse(localStorage.getItem("user") || "null");
@@ -573,7 +618,14 @@ const CompanyViewDetails = () => {
 
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewRating, setReviewRating] = useState(0);
+  const [reviewProcessRating, setReviewProcessRating] = useState(0);
+  const [reviewRoleAppliedFor, setReviewRoleAppliedFor] = useState("");
+  const [reviewDaysToFirstResponse, setReviewDaysToFirstResponse] = useState("");
+  const [reviewTotalProcessDays, setReviewTotalProcessDays] = useState("");
+  const [reviewOutcome, setReviewOutcome] = useState("still_in_process");
+  const [reviewWouldApplyAgain, setReviewWouldApplyAgain] = useState(true);
   const [reviewMessage, setReviewMessage] = useState("");
+  const [reviewerName, setReviewerName] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewError, setReviewError] = useState("");
 
@@ -635,7 +687,14 @@ const CompanyViewDetails = () => {
         ? companyData.reviews.map((review, index) => ({
             _id: review?._id || review?.id || `review-${index}`,
             reviewerName: review?.reviewerName || "Anonymous User",
+            roleAppliedFor: review?.roleAppliedFor || "Role not specified",
             rating: Number(review?.rating) || 0,
+            processRating: Number(review?.processRating) || 0,
+            daysToFirstResponse: Number(review?.daysToFirstResponse) || 0,
+            totalProcessDays: Number(review?.totalProcessDays) || 0,
+            outcome: review?.outcome || "still_in_process",
+            wouldApplyAgain:
+              typeof review?.wouldApplyAgain === "boolean" ? review.wouldApplyAgain : true,
             message: review?.message || "",
             createdAt: review?.createdAt || review?.date || null,
             date: review?.date || formatReviewDate(review?.createdAt || review?.date),
@@ -1020,6 +1079,34 @@ const CompanyViewDetails = () => {
     }
   };
 
+  const resetReviewForm = () => {
+    const storedUser = getStoredUser();
+    const defaultReviewerName = [
+      storedUser?.firstName,
+      storedUser?.middleName,
+      storedUser?.lastName,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+    setReviewRating(0);
+    setReviewProcessRating(0);
+    setReviewRoleAppliedFor("");
+    setReviewDaysToFirstResponse("");
+    setReviewTotalProcessDays("");
+    setReviewOutcome("still_in_process");
+    setReviewWouldApplyAgain(true);
+    setReviewMessage("");
+    setReviewerName(
+      defaultReviewerName ||
+        storedUser?.fullName ||
+        storedUser?.username ||
+        storedUser?.email?.split("@")?.[0] ||
+        ""
+    );
+  };
+
   const openReviewModal = () => {
     const token = localStorage.getItem("token");
     const user = getStoredUser();
@@ -1036,8 +1123,7 @@ const CompanyViewDetails = () => {
     }
 
     setReviewError("");
-    setReviewRating(0);
-    setReviewMessage("");
+    resetReviewForm();
     setShowReviewModal(true);
   };
 
@@ -1045,8 +1131,7 @@ const CompanyViewDetails = () => {
     if (reviewSubmitting) return;
     setShowReviewModal(false);
     setReviewError("");
-    setReviewRating(0);
-    setReviewMessage("");
+    resetReviewForm();
   };
 
   const handleSubmitReview = async () => {
@@ -1064,15 +1149,41 @@ const CompanyViewDetails = () => {
       return;
     }
 
+    const trimmedRoleAppliedFor = String(reviewRoleAppliedFor || "").trim();
     const trimmedMessage = String(reviewMessage || "").trim();
+    const trimmedReviewerName = String(reviewerName || "").trim();
+    const daysToFirstResponse =
+      reviewDaysToFirstResponse === "" ? 0 : Number(reviewDaysToFirstResponse);
+    const totalProcessDays =
+      reviewTotalProcessDays === "" ? 0 : Number(reviewTotalProcessDays);
+
+    if (!trimmedRoleAppliedFor) {
+      setReviewError("Please enter the role you applied for.");
+      return;
+    }
 
     if (!reviewRating || reviewRating < 1 || reviewRating > 5) {
-      setReviewError("Please select a star rating from 1 to 5.");
+      setReviewError("Please select an overall rating from 1 to 5.");
+      return;
+    }
+
+    if (!reviewProcessRating || reviewProcessRating < 1 || reviewProcessRating > 5) {
+      setReviewError("Please select an application process rating from 1 to 5.");
+      return;
+    }
+
+    if (!Number.isFinite(daysToFirstResponse) || daysToFirstResponse < 0) {
+      setReviewError("Days to first response must be 0 or higher.");
+      return;
+    }
+
+    if (!Number.isFinite(totalProcessDays) || totalProcessDays < 0) {
+      setReviewError("Total process length must be 0 or higher.");
       return;
     }
 
     if (!trimmedMessage) {
-      setReviewError("Please enter your review message.");
+      setReviewError("Please enter your review.");
       return;
     }
 
@@ -1080,31 +1191,16 @@ const CompanyViewDetails = () => {
       setReviewSubmitting(true);
       setReviewError("");
 
-      const storedUser = getStoredUser();
-      const reviewerName = [
-        storedUser?.firstName,
-        storedUser?.middleName,
-        storedUser?.lastName,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .trim();
-
       const response = await api.post(`/companies/verified/${id}/reviews`, {
         rating: reviewRating,
-        processRating: reviewRating,
-        roleAppliedFor: "Role not specified",
-        daysToFirstResponse: 0,
-        totalProcessDays: 0,
-        outcome: "still_in_process",
-        wouldApplyAgain: true,
+        processRating: reviewProcessRating,
+        roleAppliedFor: trimmedRoleAppliedFor,
+        daysToFirstResponse,
+        totalProcessDays,
+        outcome: reviewOutcome,
+        wouldApplyAgain: reviewWouldApplyAgain,
         message: trimmedMessage,
-        reviewerName:
-          reviewerName ||
-          storedUser?.fullName ||
-          storedUser?.username ||
-          storedUser?.email?.split("@")?.[0] ||
-          "Anonymous User",
+        reviewerName: trimmedReviewerName,
       });
 
       if (response?.data?.success) {
@@ -1115,8 +1211,7 @@ const CompanyViewDetails = () => {
         setActiveTab("reviews");
         setShowReviewModal(false);
         setReviewError("");
-        setReviewRating(0);
-        setReviewMessage("");
+        resetReviewForm();
         showToast(response.data.message || "Review submitted successfully!", "success");
 
         try {
@@ -1795,54 +1890,110 @@ The company also values transparency, teamwork, and continuous improvement, crea
                   Working at {company.companyName || "Company"}
                 </h2>
                 <p className="mt-1 text-black/65 text-[16px]">
-                  {reviewCount} Open review{reviewCount === 1 ? "" : "s"}
+                  {reviewCount} review{reviewCount === 1 ? "" : "s"}
                 </p>
               </div>
 
               <button
                 type="button"
-                className="text-[15px] font-medium text-black/70 hover:text-black inline-flex items-center gap-2"
+                onClick={handleWriteReview}
+                className="text-[15px] font-medium text-[#2e66a6] hover:text-[#25578f] inline-flex items-center gap-2"
               >
-                See all reviews <span aria-hidden="true">→</span>
+                Write a review <span aria-hidden="true">→</span>
               </button>
             </div>
 
-            <div className="mt-6 space-y-4">
+            <div className="mt-6 space-y-5">
               {reviews.length === 0 ? (
                 <EmptyTabState
                   icon="starOutline"
                   title="No reviews yet."
-                  description="Be the first to share your experience with this company."
+                  description="Be the first to share your hiring process experience with this company."
                 />
               ) : (
                 reviews.map((review) => (
-                  <div
-                    key={review.id}
-                    className="rounded-2xl border border-[#e6edf5] bg-white px-4 py-4 sm:px-5 shadow-[0_8px_22px_rgba(46,102,166,0.04)]"
+                  <article
+                    key={review.id || review._id}
+                    className="rounded-2xl border border-[#dfe7f0] bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-[0_10px_28px_rgba(46,102,166,0.06)]"
                   >
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div className="flex items-start gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-full bg-black/[0.06] flex items-center justify-center shrink-0">
-                          <span className="text-black/50 text-sm font-semibold">
-                            {(review.reviewerName?.[0] || "U").toUpperCase()}
-                          </span>
+                        <div className="w-11 h-11 rounded-xl bg-[#f0f4f8] border border-[#e1e8f0] flex items-center justify-center shrink-0">
+                          <SvgIcon name="industry" className="w-5 h-5 text-[#60758a]" />
                         </div>
 
                         <div className="min-w-0">
-                          <h3 className="text-[16px] font-bold text-black">
-                            {review.reviewerName}
+                          <h3 className="text-[17px] font-bold text-black">
+                            {review.reviewerName || "Anonymous User"}
                           </h3>
-                          <p className="text-[13px] text-black/50">{review.date}</p>
+                          <p className="mt-0.5 text-[14px] text-black/55">
+                            {review.roleAppliedFor || "Role not specified"}
+                            <span className="mx-1.5">·</span>
+                            {formatReviewTimeAgo(review.createdAt) || review.date}
+                          </p>
                         </div>
                       </div>
 
-                      <StarRating rating={review.rating} size="w-5 h-5" />
+                      <span
+                        className={`inline-flex w-fit items-center rounded-full border px-3 py-1 text-xs font-semibold ${getOutcomeBadgeClass(
+                          review.outcome
+                        )}`}
+                      >
+                        {getOutcomeLabel(review.outcome)}
+                      </span>
                     </div>
 
-                    <p className="mt-4 text-[16px] leading-7 text-black/80">
+                    <div className="mt-5 flex items-center gap-3 flex-wrap">
+                      <StarRating rating={review.rating} size="w-6 h-6" />
+                      <span className="text-[15px] font-medium text-black/65">Overall</span>
+                    </div>
+
+                    <p className="mt-5 text-[16px] leading-7 text-black/80">
                       {review.message}
                     </p>
-                  </div>
+
+                    <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                      <div className="rounded-xl border border-[#dfe7f0] bg-[#fbfcfe] px-4 py-3">
+                        <div className="flex items-center gap-2 text-black/50">
+                          <SvgIcon name="clock" className="w-5 h-5" />
+                          <span className="text-sm">First reply</span>
+                        </div>
+                        <p className="mt-1 text-[18px] font-bold text-black">
+                          {Number(review.daysToFirstResponse) || 0}d
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl border border-[#dfe7f0] bg-[#fbfcfe] px-4 py-3">
+                        <div className="flex items-center gap-2 text-black/50">
+                          <SvgIcon name="clock" className="w-5 h-5" />
+                          <span className="text-sm">Total length</span>
+                        </div>
+                        <p className="mt-1 text-[18px] font-bold text-black">
+                          {Number(review.totalProcessDays) || 0}d
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl border border-[#dfe7f0] bg-[#fbfcfe] px-4 py-3">
+                        <div className="flex items-center gap-2 text-black/50">
+                          <SvgIcon name="starOutline" className="w-5 h-5" />
+                          <span className="text-sm">Process</span>
+                        </div>
+                        <p className="mt-1 text-[18px] font-bold text-black">
+                          {Number(review.processRating) || 0}/5
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl border border-[#dfe7f0] bg-[#fbfcfe] px-4 py-3">
+                        <div className="flex items-center gap-2 text-black/50">
+                          <span className="text-lg leading-none">♧</span>
+                          <span className="text-sm">Apply again?</span>
+                        </div>
+                        <p className="mt-1 text-[18px] font-bold text-black">
+                          {review.wouldApplyAgain === false ? "No" : "Yes"}
+                        </p>
+                      </div>
+                    </div>
+                  </article>
                 ))
               )}
             </div>
@@ -1853,74 +2004,214 @@ The company also values transparency, teamwork, and continuous improvement, crea
       {showReviewModal && (
         <div className="fixed inset-0 z-[85]">
           <div
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0 bg-black/55 backdrop-blur-[1px]"
             onClick={closeReviewModal}
             aria-hidden="true"
           />
 
-          <div className="absolute inset-0 flex items-center justify-center px-4">
-            <div className="w-full max-w-[520px] bg-white border border-gray-200 shadow-2xl rounded-2xl">
-              <div className="flex items-start justify-end px-4 pt-4">
-                <button
-                  onClick={closeReviewModal}
-                  className="h-9 w-9 rounded-full border border-gray-200 hover:bg-gray-50 flex items-center justify-center transition"
-                  aria-label="Close"
-                  title="Close"
-                  disabled={reviewSubmitting}
-                >
-                  <span className="text-lg leading-none text-gray-700">×</span>
-                </button>
-              </div>
-
-              <div className="px-8 pb-8 -mt-1">
-                <h3 className="mt-2 text-center text-3xl font-semibold text-gray-800 leading-snug">
-                  Write a Review
-                </h3>
-
-                <div className="mt-5 rounded-xl p-4 bg-gray-50 border border-gray-200">
-                  <h4 className="font-semibold text-gray-900">
-                    {company?.companyName || "Company"}
-                  </h4>
-                  <p className="text-sm mt-1 text-gray-600">
-                    Share your experience working with this company.
+          <div className="absolute inset-0 overflow-y-auto px-4 py-6 sm:py-10">
+            <div className="mx-auto w-full max-w-[760px] rounded-2xl border border-[#dfe6ee] bg-white shadow-2xl">
+              <div className="flex items-start justify-between gap-4 border-b border-[#e7edf3] px-5 py-5 sm:px-7">
+                <div>
+                  <h3 className="text-[22px] font-bold text-[#172033]">
+                    Rate a company's hiring process
+                  </h3>
+                  <p className="mt-1 text-sm text-black/55">
+                    Help other jobseekers know what to expect — especially how long it took.
                   </p>
                 </div>
 
-                <div className="mt-6">
-                  <label className="block font-semibold mb-2 text-sm text-gray-900">
-                    Rating
-                  </label>
-                  <ReviewStarInput
-                    rating={reviewRating}
-                    onChange={setReviewRating}
-                    disabled={reviewSubmitting}
-                  />
+                <button
+                  onClick={closeReviewModal}
+                  className="h-9 w-9 shrink-0 rounded-full hover:bg-gray-100 flex items-center justify-center transition"
+                  aria-label="Close"
+                  title="Close"
+                  disabled={reviewSubmitting}
+                  type="button"
+                >
+                  <span className="text-2xl leading-none text-gray-600">×</span>
+                </button>
+              </div>
+
+              <div className="px-5 py-6 sm:px-7">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block mb-2 text-sm font-semibold text-gray-900">
+                      Company *
+                    </label>
+                    <input
+                      value={company?.companyName || ""}
+                      disabled
+                      className="w-full h-11 rounded-lg border border-gray-200 bg-gray-50 px-4 text-sm text-gray-700"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block mb-2 text-sm font-semibold text-gray-900">
+                      Role you applied for *
+                    </label>
+                    <input
+                      value={reviewRoleAppliedFor}
+                      onChange={(e) => setReviewRoleAppliedFor(e.target.value)}
+                      placeholder="e.g. Frontend Engineer"
+                      maxLength={160}
+                      disabled={reviewSubmitting}
+                      className="w-full h-11 rounded-lg border border-gray-200 px-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block mb-2 text-sm font-semibold text-gray-900">
+                      Overall rating *
+                    </label>
+                    <ReviewStarInput
+                      rating={reviewRating}
+                      onChange={setReviewRating}
+                      disabled={reviewSubmitting}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block mb-2 text-sm font-semibold text-gray-900">
+                      Application process rating *
+                    </label>
+                    <ReviewStarInput
+                      rating={reviewProcessRating}
+                      onChange={setReviewProcessRating}
+                      disabled={reviewSubmitting}
+                    />
+                  </div>
                 </div>
 
-                <div className="mt-6">
-                  <label className="block font-semibold mb-2 text-sm text-gray-900">
-                    Review Message
+                <div className="mt-5 rounded-xl border border-[#dfe6ee] bg-[#fafbfd] p-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                    <SvgIcon name="clock" className="w-5 h-5 text-gray-600" />
+                    How long did it take?
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block mb-2 text-sm font-semibold text-gray-900">
+                        Days to first response
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={reviewDaysToFirstResponse}
+                        onChange={(e) => setReviewDaysToFirstResponse(e.target.value)}
+                        placeholder="e.g. 3"
+                        disabled={reviewSubmitting}
+                        className="w-full h-11 rounded-lg border border-gray-200 px-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                      />
+                      <p className="mt-1.5 text-xs text-black/45">From when you applied.</p>
+                    </div>
+
+                    <div>
+                      <label className="block mb-2 text-sm font-semibold text-gray-900">
+                        Total process length (days)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={reviewTotalProcessDays}
+                        onChange={(e) => setReviewTotalProcessDays(e.target.value)}
+                        placeholder="e.g. 21"
+                        disabled={reviewSubmitting}
+                        className="w-full h-11 rounded-lg border border-gray-200 px-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                      />
+                      <p className="mt-1.5 text-xs text-black/45">Application to final decision.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block mb-2 text-sm font-semibold text-gray-900">
+                      Outcome
+                    </label>
+                    <select
+                      value={reviewOutcome}
+                      onChange={(e) => setReviewOutcome(e.target.value)}
+                      disabled={reviewSubmitting}
+                      className="w-full h-11 rounded-lg border border-gray-200 bg-white px-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                    >
+                      <option value="received_offer">Received offer</option>
+                      <option value="rejected">Rejected</option>
+                      <option value="ghosted">Ghosted</option>
+                      <option value="withdrew">Withdrew</option>
+                      <option value="still_in_process">Still in process</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block mb-3 text-sm font-semibold text-gray-900">
+                      Would you apply again?
+                    </label>
+                    <div className="flex items-center gap-5">
+                      <label className="inline-flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="wouldApplyAgain"
+                          checked={reviewWouldApplyAgain === true}
+                          onChange={() => setReviewWouldApplyAgain(true)}
+                          disabled={reviewSubmitting}
+                          className="h-4 w-4 accent-[#172033]"
+                        />
+                        Yes
+                      </label>
+                      <label className="inline-flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="wouldApplyAgain"
+                          checked={reviewWouldApplyAgain === false}
+                          onChange={() => setReviewWouldApplyAgain(false)}
+                          disabled={reviewSubmitting}
+                          className="h-4 w-4 accent-[#172033]"
+                        />
+                        No
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-5">
+                  <label className="block mb-2 text-sm font-semibold text-gray-900">
+                    Your review *
                   </label>
                   <textarea
                     value={reviewMessage}
                     onChange={(e) => setReviewMessage(e.target.value)}
                     rows="5"
-                    className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2e66a6] focus:border-transparent text-sm border border-gray-200"
-                    placeholder="Write your review here..."
+                    maxLength={2000}
+                    className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none resize-y focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                    placeholder="How were the interviews? Communication? Timing? What surprised you?"
                     disabled={reviewSubmitting}
                   />
                 </div>
 
+                <div className="mt-5">
+                  <label className="block mb-2 text-sm font-semibold text-gray-900">
+                    Your name (optional)
+                  </label>
+                  <input
+                    value={reviewerName}
+                    onChange={(e) => setReviewerName(e.target.value)}
+                    placeholder="Anonymous"
+                    disabled={reviewSubmitting}
+                    className="w-full h-11 rounded-lg border border-gray-200 px-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                  />
+                </div>
+
                 {reviewError && (
-                  <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600">
+                  <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">
                     <p className="text-sm font-medium">{reviewError}</p>
                   </div>
                 )}
 
-                <div className="mt-6 flex justify-end gap-3">
+                <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                   <button
                     onClick={closeReviewModal}
-                    className="w-full h-11 rounded-lg text-sm font-semibold text-gray-800 border border-gray-200 bg-gray-100 hover:bg-gray-200 transition"
+                    className="h-11 rounded-lg px-6 text-sm font-semibold text-gray-800 hover:bg-gray-100 transition"
                     disabled={reviewSubmitting}
                     type="button"
                   >
@@ -1930,10 +2221,10 @@ The company also values transparency, teamwork, and continuous improvement, crea
                   <button
                     onClick={handleSubmitReview}
                     disabled={reviewSubmitting}
-                    className="w-full h-11 rounded-lg text-sm font-semibold text-white transition bg-[#1e4ba0] hover:bg-[#1b4290]"
+                    className="h-11 rounded-lg bg-[#172033] px-6 text-sm font-semibold text-white transition hover:bg-[#0f1726] disabled:opacity-60"
                     type="button"
                   >
-                    {reviewSubmitting ? "Submitting..." : "Submit Review"}
+                    {reviewSubmitting ? "Posting..." : "Post review"}
                   </button>
                 </div>
               </div>

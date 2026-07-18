@@ -309,32 +309,31 @@ exports.submitCompanyReview = async (req, res) => {
     } = req.body;
 
     const numericRating = Number(rating);
-    const numericProcessRating =
-      processRating === undefined || processRating === null || processRating === ''
-        ? numericRating
-        : Number(processRating);
+    const numericProcessRating = Number(processRating);
     const numericDaysToFirstResponse = Number(daysToFirstResponse ?? 0);
     const numericTotalProcessDays = Number(totalProcessDays ?? 0);
-    const trimmedRoleAppliedFor =
-      String(roleAppliedFor || '').trim() || 'Role not specified';
+    const trimmedRoleAppliedFor = String(roleAppliedFor || '').trim();
     const trimmedMessage = String(message || '').trim();
     const trimmedReviewerName = String(reviewerName || '').trim();
 
     if (!numericRating || numericRating < 1 || numericRating > 5) {
       return res.status(400).json({
         success: false,
-        message: 'Rating must be between 1 and 5.',
+        message: 'Overall rating must be between 1 and 5.',
       });
     }
 
-    if (
-      !Number.isFinite(numericProcessRating) ||
-      numericProcessRating < 0 ||
-      numericProcessRating > 5
-    ) {
+    if (!numericProcessRating || numericProcessRating < 1 || numericProcessRating > 5) {
       return res.status(400).json({
         success: false,
-        message: 'Process rating must be between 0 and 5.',
+        message: 'Application process rating must be between 1 and 5.',
+      });
+    }
+
+    if (!trimmedRoleAppliedFor) {
+      return res.status(400).json({
+        success: false,
+        message: 'Role applied for is required.',
       });
     }
 
@@ -351,7 +350,14 @@ exports.submitCompanyReview = async (req, res) => {
     if (!Number.isFinite(numericTotalProcessDays) || numericTotalProcessDays < 0) {
       return res.status(400).json({
         success: false,
-        message: 'Total process days must be 0 or higher.',
+        message: 'Total process length must be 0 or higher.',
+      });
+    }
+
+    if (!trimmedMessage) {
+      return res.status(400).json({
+        success: false,
+        message: 'Review message is required.',
       });
     }
 
@@ -365,13 +371,6 @@ exports.submitCompanyReview = async (req, res) => {
     const normalizedOutcome = allowedOutcomes.includes(String(outcome || '').trim())
       ? String(outcome).trim()
       : 'still_in_process';
-
-    if (!trimmedMessage) {
-      return res.status(400).json({
-        success: false,
-        message: 'Review message is required.',
-      });
-    }
 
     const company = await User.findOne({
       _id: id,

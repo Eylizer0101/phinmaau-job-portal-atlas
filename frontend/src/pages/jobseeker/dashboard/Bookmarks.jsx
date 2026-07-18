@@ -1977,50 +1977,19 @@ const Bookmarks = () => {
       setReviewSubmitting(true);
       setReviewError('');
 
-      const storedUser = getStoredUser();
-      const reviewerName = [
-        storedUser?.firstName,
-        storedUser?.middleName,
-        storedUser?.lastName,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .trim();
-
       const response = await api.post(`/companies/verified/${selectedCompany._id}/reviews`, {
         rating: reviewRating,
-        processRating: reviewRating,
-        roleAppliedFor: 'Role not specified',
-        daysToFirstResponse: 0,
-        totalProcessDays: 0,
-        outcome: 'still_in_process',
-        wouldApplyAgain: true,
         message: trimmedMessage,
-        reviewerName:
-          reviewerName ||
-          storedUser?.fullName ||
-          storedUser?.username ||
-          storedUser?.email?.split('@')?.[0] ||
-          'Anonymous User',
       });
 
       if (response?.data?.success) {
+        await fetchSavedCompanies();
         setActiveCompanyTab('reviews');
-        setShowReviewModal(false);
-        setReviewError('');
-        setReviewRating(0);
-        setReviewMessage('');
-        setToastMessage('success', response.data.message || 'Review submitted successfully!');
-
-        try {
-          await fetchSavedCompanies();
-        } catch (refreshError) {
-          console.error('Error refreshing saved companies after review:', refreshError);
-        }
+        closeReviewModal();
+        setToastMessage('success', 'Review submitted successfully!');
       }
     } catch (err) {
-      if (err.response?.data?.message) setReviewError(String(err.response.data.message));
-      else if (err.response?.data?.error) setReviewError(String(err.response.data.error));
+      if (err.response?.data?.message) setReviewError(err.response.data.message);
       else if (err.response?.status === 401) setReviewError('Session expired. Please login again.');
       else if (err.response?.status === 403) setReviewError('Only job seekers can submit reviews.');
       else if (err.response?.status === 400) setReviewError('Unable to submit review.');
