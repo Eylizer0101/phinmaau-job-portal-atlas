@@ -114,6 +114,8 @@ const Avatar = ({ user, size = 'h-11 w-11' }) => {
 const CommunityPage = () => {
   const navigate = useNavigate();
   const photoInputRef = useRef(null);
+  const linkInputRef = useRef(null);
+  const topicInputRef = useRef(null);
 
   const [posts, setPosts] = useState([]);
   const [category, setCategory] = useState('all');
@@ -206,6 +208,30 @@ const CommunityPage = () => {
     if (submitting) return;
     resetCreateForm();
     setShowCreate(false);
+  };
+
+  const openCreateWith = (type = 'content') => {
+    resetCreateForm();
+
+    if (type === 'link') {
+      setShowLinkInput(true);
+    }
+
+    if (type === 'topic') {
+      setShowTopicInput(true);
+    }
+
+    setShowCreate(true);
+
+    window.setTimeout(() => {
+      if (type === 'photo') {
+        photoInputRef.current?.click();
+      } else if (type === 'link') {
+        linkInputRef.current?.focus();
+      } else if (type === 'topic') {
+        topicInputRef.current?.focus();
+      }
+    }, 100);
   };
 
   const openEditPost = (post) => {
@@ -562,21 +588,43 @@ const CommunityPage = () => {
         )}
       </div>
 
-      <button
-        type="button"
-        onClick={() => setShowCreate(true)}
-        className="mb-5 flex w-full items-center gap-3 rounded-2xl border border-[#e6edf5] bg-white p-4 text-left shadow-sm hover:border-[#2e66a6]/30"
-      >
+      <div className="mb-5 flex w-full items-center gap-3 rounded-2xl border border-[#e6edf5] bg-white p-4 shadow-sm hover:border-[#2e66a6]/30">
         <Avatar user={currentUser} />
-        <span className="flex-1 rounded-full bg-[#f7faff] px-4 py-3 text-sm text-black/45">
+
+        <button
+          type="button"
+          onClick={() => openCreateWith('content')}
+          className="min-w-0 flex-1 rounded-full bg-[#f7faff] px-4 py-3 text-left text-sm text-black/45 hover:bg-[#eef5fd]"
+        >
           Share an insight or skill...
-        </span>
-        <span className="hidden gap-3 text-xs text-black/50 sm:flex">
-          <FontAwesomeIcon icon={faImage} /> Photo
-          <FontAwesomeIcon icon={faLink} /> Link
-          <FontAwesomeIcon icon={faHashtag} /> Topic
-        </span>
-      </button>
+        </button>
+
+        <div className="hidden items-center gap-1 text-xs text-black/50 sm:flex">
+          <button
+            type="button"
+            onClick={() => openCreateWith('photo')}
+            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 hover:bg-[#f7faff] hover:text-[#2e66a6]"
+          >
+            <FontAwesomeIcon icon={faImage} /> Photo
+          </button>
+
+          <button
+            type="button"
+            onClick={() => openCreateWith('link')}
+            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 hover:bg-[#f7faff] hover:text-[#2e66a6]"
+          >
+            <FontAwesomeIcon icon={faLink} /> Link
+          </button>
+
+          <button
+            type="button"
+            onClick={() => openCreateWith('topic')}
+            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 hover:bg-[#f7faff] hover:text-[#2e66a6]"
+          >
+            <FontAwesomeIcon icon={faHashtag} /> Topic
+          </button>
+        </div>
+      </div>
 
       {loading ? (
         <div className="py-20 text-center text-black/45">
@@ -759,6 +807,7 @@ const CommunityPage = () => {
 
               {showLinkInput && (
                 <input
+                  ref={linkInputRef}
                   value={form.linkUrl}
                   onChange={(event) => setForm((prev) => ({ ...prev, linkUrl: event.target.value }))}
                   placeholder="Paste website or article link (optional)"
@@ -774,6 +823,7 @@ const CommunityPage = () => {
 
                   <div className="flex overflow-hidden rounded-xl border border-[#d8e2ee] bg-white focus-within:border-[#2e66a6] focus-within:ring-2 focus-within:ring-[#2e66a6]/20">
                     <input
+                      ref={topicInputRef}
                       value={topicDraft}
                       onChange={(event) => setTopicDraft(event.target.value)}
                       onKeyDown={(event) => {
