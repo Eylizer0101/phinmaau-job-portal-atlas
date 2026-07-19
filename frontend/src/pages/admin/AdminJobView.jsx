@@ -611,70 +611,6 @@ const getApplicantStatusMeta = (statusRaw) => {
   };
 };
 
-const ApplicantList = ({ applicants, formatFullDate, navigate }) => (
-  <div className={`${UI.sectionCard} p-5 sm:p-6`}>
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-      <SectionHeader icon="users" title="Applicant List" />
-      <span className="w-fit rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#2e66a6]">
-        {applicants.length} {applicants.length === 1 ? 'Applicant' : 'Applicants'}
-      </span>
-    </div>
-
-    <div className="mt-5 overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-[#e5e7eb] text-left text-xs">
-          <thead className="bg-[#f8fafc] text-[10px] font-bold uppercase tracking-widest text-[#6b7280]">
-            <tr>
-              <th className="px-4 py-3">Applicant Name</th>
-              <th className="px-4 py-3">Email</th>
-              <th className="px-4 py-3">Date Applied</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-center">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#eef0f4] bg-white">
-            {applicants.length > 0 ? (
-              applicants.map((application) => {
-                const statusMeta = getApplicantStatusMeta(application.status);
-
-                return (
-                  <tr key={application._id} className="text-[#374151] transition hover:bg-[#f8fafc]">
-                    <td className="px-4 py-4 font-semibold text-[#111827]">{getApplicantName(application)}</td>
-                    <td className="px-4 py-4">{getApplicantEmail(application)}</td>
-                    <td className="px-4 py-4">{formatFullDate(application.appliedAt || application.createdAt)}</td>
-                    <td className="px-4 py-4">
-                      <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase ${statusMeta.className}`}>
-                        {statusMeta.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      <button
-                        type="button"
-                        onClick={() => navigate(`/admin/applications/${application._id}`)}
-                        className={`inline-flex h-9 w-9 items-center justify-center rounded-xl text-[#4b5563] transition hover:bg-[#eef5fc] hover:text-[#2e66a6] ${UI.ring}`}
-                        title="View application"
-                        aria-label="View application"
-                      >
-                        <SvgIcon name="eye" className="h-4 w-4" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })
-            ) : (
-              <tr>
-                <td colSpan="5" className="px-4 py-10 text-center text-sm text-[#6b7280]">
-                  No applicants yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-);
-
 const AdminJobView = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
@@ -936,9 +872,16 @@ const AdminJobView = () => {
     )}
                     </div>
 
-                    <div className="mt-3 space-y-1 text-xs text-[#6b7280]">
-                      <p>{formatPostedRelative(job.createdAt)}</p>
-                      {job.applicationDeadline && <p>Application deadline is on {formatFullDate(job.applicationDeadline)}</p>}
+                    <div className="mt-3 text-xs text-[#6b7280]">
+                      <p>
+                        {formatPostedRelative(job.createdAt)}
+                        {job.applicationDeadline && (
+                          <>
+                            {' • '}
+                            Application deadline is on {formatFullDate(job.applicationDeadline)}
+                          </>
+                        )}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -1047,7 +990,39 @@ const AdminJobView = () => {
           </div>
 
           <div className="mt-5">
-            <ApplicantList applicants={applicants} formatFullDate={formatFullDate} navigate={navigate} />
+            <button
+              type="button"
+              onClick={() =>
+                navigate(`/admin/jobs/${jobId}/applicants`, {
+                  state: {
+                    jobTitle: job.title,
+                    backPath: `/admin/jobs/${jobId}`,
+                    backLabel: 'Job Details',
+                  },
+                })
+              }
+              className={`group flex w-full items-center justify-between gap-4 rounded-[22px] border border-[#d7e6f5] bg-white p-4 text-left shadow-sm transition hover:border-[#b9d0e8] hover:bg-[#f8fbff] sm:p-5 ${UI.ring}`}
+              aria-label={`View ${applicants.length} ${applicants.length === 1 ? 'applicant' : 'applicants'}`}
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#eef5fc] text-[#2e66a6]">
+                  <SvgIcon name="users" className="h-5 w-5" />
+                </span>
+
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-[#111827]">
+                    {applicants.length} {applicants.length === 1 ? 'Applicant' : 'Applicants'}
+                  </p>
+                  <p className="mt-0.5 text-xs text-[#6b7280]">Review candidates who applied.</p>
+                </div>
+              </div>
+
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#2e66a6] text-white transition group-hover:translate-x-0.5">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5l7 7-7 7" />
+                </svg>
+              </span>
+            </button>
           </div>
         </div>
       </div>

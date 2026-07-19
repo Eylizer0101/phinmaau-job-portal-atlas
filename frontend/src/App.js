@@ -78,6 +78,7 @@ import UserManagementDetails from './pages/admin/UserManagementDetails';
 import AdminApplications from './pages/admin/AdminApplications';
 import AdminApplicationView from './pages/admin/AdminApplicationView';
 import AdminJobView from './pages/admin/AdminJobView';
+import AdminJobApplicants from './pages/admin/AdminJobApplicants';
 import AdminJobOffers from './pages/admin/AdminJobOffers';
 import AdminArchive from './pages/admin/AdminArchive';
 import AdminArchiveDetails from './pages/admin/AdminArchiveDetails';
@@ -569,6 +570,14 @@ function App() {
           element={
             <RequireRole role="admin" redirectTo="/login">
               <AdminJobView />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/admin/jobs/:jobId/applicants"
+          element={
+            <RequireRole role="admin" redirectTo="/login">
+              <AdminJobApplicants />
             </RequireRole>
           }
         />
