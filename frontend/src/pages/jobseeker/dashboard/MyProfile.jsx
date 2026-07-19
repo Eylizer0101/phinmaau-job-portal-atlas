@@ -3923,6 +3923,10 @@ const MyProfile = () => {
     return Array.isArray(formData.educationEntries) ? formData.educationEntries : [];
   }, [formData.educationEntries]);
 
+  // Used only for rendering the Education section.
+  // The To-Do completion check below still uses the stricter educationComplete logic.
+  const hasEducationEntries = educationEntries.length > 0;
+
   const todoProgress = useMemo(() => {
     const credentialWeights = {
       validId: 8,
