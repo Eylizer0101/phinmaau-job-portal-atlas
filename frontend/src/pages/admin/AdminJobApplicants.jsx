@@ -50,6 +50,7 @@ const SvgIcon = ({ name, className = 'h-4 w-4' }) => {
     ),
     search: <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m1.1-5.4a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />,
     calendar: <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3M5 11h14M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />,
+    chevron: <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />,
     x: <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />,
     refresh: <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v6h6M20 20v-6h-6M5 15a7 7 0 0012 3l3-4M19 9A7 7 0 007 6L4 10" />,
   };
@@ -529,6 +530,109 @@ const CustomDateRangeModal = ({
   );
 };
 
+
+const DateFilterDropdown = ({
+  value,
+  dateFrom,
+  dateTo,
+  onChange,
+}) => {
+  const [open, setOpen] = useState(false);
+  const [showCustom, setShowCustom] = useState(false);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const close = () => setOpen(false);
+    window.addEventListener('click', close);
+
+    return () => window.removeEventListener('click', close);
+  }, [open]);
+
+  const selectOption = (nextValue) => {
+    if (nextValue === 'custom') {
+      setOpen(false);
+      setShowCustom(true);
+      return;
+    }
+
+    const range = getPresetDateRange(nextValue);
+
+    onChange({
+      date: nextValue,
+      dateFrom: range.from,
+      dateTo: range.to,
+    });
+
+    setOpen(false);
+  };
+
+  const applyCustomRange = (customFrom, customTo) => {
+    onChange({
+      date: 'custom',
+      dateFrom: customFrom,
+      dateTo: customTo,
+    });
+
+    setShowCustom(false);
+  };
+
+  return (
+    <div className="relative w-full">
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          setOpen((previous) => !previous);
+        }}
+        className="flex h-12 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+      >
+        <span className="truncate">
+          {value === 'custom' && dateFrom && dateTo
+            ? `${formatFullDate(dateFrom)} - ${formatFullDate(dateTo)}`
+            : DATE_FILTER_OPTIONS.find((option) => option.value === value)?.label ||
+              'All Time'}
+        </span>
+
+        <SvgIcon name="calendar" className="h-4 w-4 shrink-0 text-gray-500" />
+      </button>
+
+      {open ? (
+        <div
+          onClick={(event) => event.stopPropagation()}
+          className="absolute left-0 top-[56px] z-50 w-64 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
+        >
+          <div className="space-y-1">
+            {DATE_FILTER_OPTIONS.map((option) => (
+              <button
+                type="button"
+                key={option.value}
+                onClick={() => selectOption(option.value)}
+                className={cn(
+                  'w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition',
+                  value === option.value
+                    ? 'bg-[#2e66a6]/10 text-[#2e66a6]'
+                    : 'text-gray-600 hover:bg-gray-50'
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <CustomDateRangeModal
+        open={showCustom}
+        startDate={dateFrom}
+        endDate={dateTo}
+        onCancel={() => setShowCustom(false)}
+        onApply={applyCustomRange}
+      />
+    </div>
+  );
+};
+
 const AdminJobApplicants = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
@@ -546,7 +650,6 @@ const AdminJobApplicants = () => {
   const [dateFilter, setDateFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
 
-  const [customDateOpen, setCustomDateOpen] = useState(false);
   const [customDateFrom, setCustomDateFrom] = useState('');
   const [customDateTo, setCustomDateTo] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -590,22 +693,6 @@ const AdminJobApplicants = () => {
     fetchApplicants();
   }, [fetchApplicants]);
 
-  useEffect(() => {
-    if (!customDateOpen) return;
-
-    const closeOnEscape = (event) => {
-      if (event.key === 'Escape') setCustomDateOpen(false);
-    };
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', closeOnEscape);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener('keydown', closeOnEscape);
-    };
-  }, [customDateOpen]);
 
   const campusOptions = useMemo(
     () =>
@@ -714,28 +801,7 @@ const AdminJobApplicants = () => {
     setCurrentPage(1);
   };
 
-  const handleDateFilterChange = (value) => {
-    if (value === 'custom') {
-      setCustomDateOpen(true);
-      return;
-    }
 
-    setDateFilter(value);
-    setCurrentPage(1);
-  };
-
-  const applyCustomDate = (startDate, endDate) => {
-    setCustomDateFrom(startDate);
-    setCustomDateTo(endDate);
-    setDateFilter('custom');
-    setCurrentPage(1);
-    setCustomDateOpen(false);
-  };
-
-  const dateFilterLabel =
-    dateFilter === 'custom' && customDateFrom && customDateTo
-      ? `${formatFullDate(customDateFrom)} - ${formatFullDate(customDateTo)}`
-      : DATE_FILTER_OPTIONS.find((option) => option.value === dateFilter)?.label || 'All Time';
 
 
   const totalPages = Math.max(
@@ -825,28 +891,28 @@ const AdminJobApplicants = () => {
 
             {!loading && !error && (
               <div className="px-5 py-5 sm:px-6">
-                <div className="overflow-x-auto pb-1">
-                  <div className="flex min-w-[1320px] items-center gap-3">
-                    <label className="relative min-w-[290px] flex-1">
-                      <span className="sr-only">Search applicants</span>
-                      <SvgIcon
-                        name="search"
-                        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]"
-                      />
-                      <input
-                        type="search"
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                        placeholder="Search name or email"
-                        className={`h-11 w-full rounded-xl border border-[#d7e6f5] bg-white pl-10 pr-4 text-sm text-[#111827] outline-none transition placeholder:text-[#9ca3af] hover:border-[#b9d0e8] focus:border-[#2e66a6] ${UI.ring}`}
-                      />
-                    </label>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[minmax(220px,1.45fr)_repeat(3,minmax(125px,0.72fr))_minmax(175px,0.95fr)_minmax(175px,0.95fr)_auto] xl:items-center">
+                  <label className="relative block">
+                    <span className="sr-only">Search applicants</span>
+                    <SvgIcon
+                      name="search"
+                      className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                      type="search"
+                      value={search}
+                      onChange={(event) => setSearch(event.target.value)}
+                      placeholder="Search name or email"
+                      className="h-12 w-full rounded-xl border border-gray-200 bg-white pl-12 pr-4 text-sm text-black outline-none transition placeholder:text-gray-400 hover:border-gray-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                    />
+                  </label>
 
+                  <label className="relative block">
+                    <span className="sr-only">Filter by campus</span>
                     <select
                       value={campusFilter}
                       onChange={(event) => setCampusFilter(event.target.value)}
-                      className={`h-11 w-[155px] rounded-xl border border-[#d7e6f5] bg-white px-3 text-sm font-medium text-[#374151] outline-none transition hover:border-[#b9d0e8] focus:border-[#2e66a6] ${UI.ring}`}
-                      aria-label="Filter by campus"
+                      className="h-12 w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 pr-10 text-sm font-semibold text-gray-700 outline-none transition hover:border-gray-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
                     >
                       <option value="all">All Campus</option>
                       {campusOptions.map((campus) => (
@@ -855,12 +921,18 @@ const AdminJobApplicants = () => {
                         </option>
                       ))}
                     </select>
+                    <SvgIcon
+                      name="chevron"
+                      className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+                    />
+                  </label>
 
+                  <label className="relative block">
+                    <span className="sr-only">Filter by course</span>
                     <select
                       value={courseFilter}
                       onChange={(event) => setCourseFilter(event.target.value)}
-                      className={`h-11 w-[155px] rounded-xl border border-[#d7e6f5] bg-white px-3 text-sm font-medium text-[#374151] outline-none transition hover:border-[#b9d0e8] focus:border-[#2e66a6] ${UI.ring}`}
-                      aria-label="Filter by course"
+                      className="h-12 w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 pr-10 text-sm font-semibold text-gray-700 outline-none transition hover:border-gray-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
                     >
                       <option value="all">All Course</option>
                       {courseOptions.map((course) => (
@@ -869,12 +941,18 @@ const AdminJobApplicants = () => {
                         </option>
                       ))}
                     </select>
+                    <SvgIcon
+                      name="chevron"
+                      className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+                    />
+                  </label>
 
+                  <label className="relative block">
+                    <span className="sr-only">Filter by status</span>
                     <select
                       value={statusFilter}
                       onChange={(event) => setStatusFilter(event.target.value)}
-                      className={`h-11 w-[145px] rounded-xl border border-[#d7e6f5] bg-white px-3 text-sm font-medium text-[#374151] outline-none transition hover:border-[#b9d0e8] focus:border-[#2e66a6] ${UI.ring}`}
-                      aria-label="Filter by status"
+                      className="h-12 w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 pr-10 text-sm font-semibold text-gray-700 outline-none transition hover:border-gray-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
                     >
                       <option value="all">All Status</option>
                       {statusOptions.map((status) => (
@@ -883,52 +961,56 @@ const AdminJobApplicants = () => {
                         </option>
                       ))}
                     </select>
+                    <SvgIcon
+                      name="chevron"
+                      className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+                    />
+                  </label>
 
+                  <DateFilterDropdown
+                    value={dateFilter}
+                    dateFrom={customDateFrom}
+                    dateTo={customDateTo}
+                    onChange={(next) => {
+                      setDateFilter(next.date);
+                      setCustomDateFrom(next.dateFrom);
+                      setCustomDateTo(next.dateTo);
+                      setCurrentPage(1);
+                    }}
+                  />
+
+                  <label className="relative block">
+                    <span className="sr-only">Sort applicants</span>
+                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-500">
+                      Sort by
+                    </span>
                     <select
-                      value={dateFilter}
-                      onChange={(event) =>
-                        handleDateFilterChange(event.target.value)
-                      }
-                      className={`h-11 w-[175px] rounded-xl border border-[#d7e6f5] bg-white px-3 text-sm font-medium text-[#374151] outline-none transition hover:border-[#b9d0e8] focus:border-[#2e66a6] ${UI.ring}`}
-                      aria-label="Filter by date applied"
+                      value={sortBy}
+                      onChange={(event) => setSortBy(event.target.value)}
+                      className="h-12 w-full appearance-none rounded-xl border border-gray-200 bg-white pl-[68px] pr-10 text-sm font-semibold text-gray-700 outline-none transition hover:border-gray-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
                     >
-                      {DATE_FILTER_OPTIONS.map((option) => (
+                      {SORT_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
-                          {option.value === 'custom' &&
-                          dateFilter === 'custom'
-                            ? dateFilterLabel
-                            : option.label}
+                          {option.label}
                         </option>
                       ))}
                     </select>
+                    <SvgIcon
+                      name="chevron"
+                      className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+                    />
+                  </label>
 
-                    <label className="flex h-11 items-center gap-2 whitespace-nowrap rounded-xl border border-[#d7e6f5] bg-white px-3">
-                      <span className="text-xs font-semibold text-[#6b7280]">
-                        Sort by
-                      </span>
-                      <select
-                        value={sortBy}
-                        onChange={(event) => setSortBy(event.target.value)}
-                        className={`h-9 min-w-[125px] border-0 bg-transparent px-1 text-sm font-medium text-[#374151] outline-none ${UI.ring}`}
-                      >
-                        {SORT_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-
+                  {hasActiveFilters ? (
                     <button
                       type="button"
                       onClick={clearFilters}
-                      disabled={!hasActiveFilters}
-                      className={`inline-flex h-11 min-w-[92px] items-center justify-center gap-2 rounded-xl border border-[#d7e6f5] bg-white px-4 text-xs font-semibold text-[#4b5563] transition hover:bg-[#eef5fc] hover:text-[#2e66a6] disabled:cursor-not-allowed disabled:opacity-45 ${UI.ring}`}
+                      className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 sm:col-span-2 lg:col-span-1 xl:col-span-1"
                     >
                       <SvgIcon name="refresh" className="h-4 w-4" />
                       Clear
                     </button>
-                  </div>
+                  ) : null}
                 </div>
               </div>
             )}
@@ -1077,14 +1159,6 @@ const AdminJobApplicants = () => {
           </div>
         </div>
       </div>
-
-      <CustomDateRangeModal
-        open={customDateOpen}
-        startDate={customDateFrom}
-        endDate={customDateTo}
-        onCancel={() => setCustomDateOpen(false)}
-        onApply={applyCustomDate}
-      />
     </AdminLayout>
   );
 };
