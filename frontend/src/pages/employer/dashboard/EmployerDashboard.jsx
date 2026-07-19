@@ -539,7 +539,9 @@ const EmployerDashboard = () => {
           const allApplications = appsResponse.data.applications || [];
           const appStats = appsResponse.data.stats || {};
 
-          const pendingApplications = allApplications.filter((app) => app.status === 'pending');
+          const pendingApplications = allApplications.filter(
+            (app) => app.status === 'pending' && !app.alreadyEmployed
+          );
           const forInterviewApplications = allApplications.filter((app) => app.status === 'for interview');
           const hiredApplications = allApplications.filter((app) => app.status === 'hired');
           const declinedApplications = allApplications.filter((app) => app.status === 'declined');
@@ -569,10 +571,7 @@ const EmployerDashboard = () => {
             },
             applications: {
               total: typeof appStats.total === 'number' ? appStats.total : allApplications.length,
-              pending:
-                typeof appStats.pending === 'number'
-                  ? appStats.pending
-                  : pendingApplications.length,
+              pending: pendingApplications.length,
               forInterview:
                 typeof appStats.forInterview === 'number'
                   ? appStats.forInterview
