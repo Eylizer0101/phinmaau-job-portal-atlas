@@ -1,966 +1,890 @@
-// src/pages/main/JobOfferDetails.jsx
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import ReactDOM from 'react-dom';
-import { useParams, useNavigate } from 'react-router-dom';
-import MainNavbar from '../../components/shared/MainNavbar';
-import api from '../../services/api';
+// src/pages/main/JobOffers.jsx
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import MainNavbar from "../../components/shared/MainNavbar";
+import api from "../../services/api";
 
-/**
- * UPDATED:
- * ✅ UI matched to JobDetails.jsx
- * ✅ Existing backend data preserved
- * ✅ Apply button behavior preserved as popup modal only
- * ✅ Guest modal UI matched to CompanyDetails.jsx style
- * ✅ UI-only refresh: 60/30/10 palette using white canvas, blue structure/accent, black text
- */
+const normalizeAmount = (value) => String(value || "").replace(/[^\d]/g, "");
 
+const normalizeBoolean = (value) => {
+  if (typeof value === "boolean") return value;
+  const v = String(value || "").trim().toLowerCase();
+  return v === "true" || v === "1" || v === "yes" || v === "on";
+};
 
-const sanitizeRichTextHtml = (value = '') => {
-  const raw = String(value || '').trim();
-  if (!raw) return '';
+const normalizeExperienceLevel = (value) => String(value || "").trim().toLowerCase();
 
-  if (typeof window === 'undefined' || typeof window.DOMParser === 'undefined') {
-    return raw
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/\r?\n/g, '<br>');
+const isFreshGraduateJob = (job) => {
+  return normalizeBoolean(job?.openToFreshGraduates);
+};
+
+const isNoExperienceJob = (experienceLevel) => {
+  return normalizeExperienceLevel(experienceLevel) === "no experience required";
+};
+
+const getExperienceBadgeLabel = (experienceLevel) => {
+  const raw = String(experienceLevel || "").trim();
+  if (!raw) return "";
+
+  const normalized = normalizeExperienceLevel(raw);
+
+  if (normalized === "no experience required") {
+    return "No experience required";
   }
 
-  const containsHtml = /<\/?[a-z][\s\S]*>/i.test(raw);
-  const source = containsHtml
-    ? raw
-    : raw
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\r?\n/g, '<br>');
+  if (normalized === "1 year") return "1 Year Experience";
+  if (normalized === "2 years") return "2 Years Experience";
+  if (normalized === "3 years") return "3 Years Experience";
+  if (normalized === "4 years") return "4 Years Experience";
+  if (normalized === "5 years") return "5 Years Experience";
+  if (normalized === "6+ years") return "6+ Years Experience";
 
-  const parser = new window.DOMParser();
-  const doc = parser.parseFromString(source, 'text/html');
-
-  doc
-    .querySelectorAll(
-      'script, style, iframe, object, embed, form, input, button, textarea, select, option, link, meta, base'
-    )
-    .forEach((node) => node.remove());
-
-  doc.body.querySelectorAll('*').forEach((element) => {
-    [...element.attributes].forEach((attribute) => {
-      const name = attribute.name.toLowerCase();
-      const rawValue = String(attribute.value || '').trim();
-      const valueText = rawValue.toLowerCase();
-
-      if (name === 'style') {
-        const safeStyles = rawValue
-          .split(';')
-          .map((rule) => rule.trim())
-          .filter(Boolean)
-          .map((rule) => {
-            const separatorIndex = rule.indexOf(':');
-            if (separatorIndex < 0) return '';
-
-            const property = rule.slice(0, separatorIndex).trim().toLowerCase();
-            const propertyValue = rule.slice(separatorIndex + 1).trim().toLowerCase();
-
-            if (
-              property === 'text-align' &&
-              ['left', 'center', 'right', 'justify'].includes(propertyValue)
-            ) {
-              return `text-align: ${propertyValue}`;
-            }
-
-            if (property === 'margin-left') {
-              const match = propertyValue.match(/^(\d+(?:\.\d+)?)(px|em|rem)$/);
-              if (!match) return '';
-
-              const amount = Number(match[1]);
-              const unit = match[2];
-              const maximum = unit === 'px' ? 160 : 10;
-
-              if (Number.isFinite(amount) && amount >= 0 && amount <= maximum) {
-                return `margin-left: ${amount}${unit}`;
-              }
-            }
-
-            return '';
-          })
-          .filter(Boolean);
-
-        if (safeStyles.length) {
-          element.setAttribute('style', safeStyles.join('; '));
-        } else {
-          element.removeAttribute('style');
-        }
-
-        return;
-      }
-
-      if (
-        name.startsWith('on') ||
-        name === 'srcdoc' ||
-        name === 'class' ||
-        ((name === 'href' || name === 'src') &&
-          (valueText.startsWith('javascript:') || valueText.startsWith('data:text/html')))
-      ) {
-        element.removeAttribute(attribute.name);
-      }
-    });
-
-    if (element.hasAttribute('align')) {
-      const alignment = String(element.getAttribute('align') || '').toLowerCase();
-      if (['left', 'center', 'right', 'justify'].includes(alignment)) {
-        element.style.textAlign = alignment;
-      }
-      element.removeAttribute('align');
-    }
-
-    if (element.tagName === 'A') {
-      element.setAttribute('target', '_blank');
-      element.setAttribute('rel', 'noopener noreferrer');
-    }
-  });
-
-  return doc.body.innerHTML;
+  return raw;
 };
 
-const RichTextContent = ({ value, fallback }) => {
-  const sanitizedHtml = useMemo(
-    () => sanitizeRichTextHtml(value || fallback || ''),
-    [value, fallback]
-  );
-
-  return (
-    <div
-      className={[
-        'break-words',
-        '[&_p]:my-2 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0',
-        '[&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-6',
-        '[&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-6',
-        '[&_li]:my-1',
-        '[&_h1]:my-3 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:leading-tight',
-        '[&_h2]:my-3 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:leading-tight',
-        '[&_strong]:font-bold [&_b]:font-bold',
-        '[&_em]:italic [&_i]:italic [&_u]:underline',
-        '[&_a]:text-[#2e66a6] [&_a]:underline',
-      ].join(' ')}
-      dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
-    />
-  );
-};
-
-const getRelocationDisplayLabel = (value) => {
-  const normalized = String(value || '').trim().toLowerCase();
-
-  if (normalized === 'yes - willing to relocate') {
-    return 'Willing to relocate';
-  }
-
-  if (normalized === 'no - position is fixed location') {
-    return 'Location Fixed';
-  }
-
-  if (normalized === 'open to relocation if necessary') {
-    return 'Possible to relocate';
-  }
-
-  return String(value || '').trim() || 'Location Fixed';
-};
-
-const UI = {
-  page: 'bg-white min-h-screen',
-
-  container:
-    'relative left-1/2 right-1/2 w-[min(94vw,1280px)] max-w-none -translate-x-1/2 px-4 sm:px-6 lg:px-8 pb-10',
-
-  card: 'bg-white border border-[#e6edf5] rounded-[1.35rem] shadow-[0_18px_45px_rgba(46,102,166,0.08)] w-full',
-  pad: 'p-5 sm:p-7 lg:p-8',
-  insetPanel: 'rounded-[1.25rem] border border-[#e6edf5] overflow-hidden bg-white shadow-[0_12px_32px_rgba(46,102,166,0.06)] w-full',
-  insetHead: 'px-5 sm:px-6 py-4 bg-[#f7faff] border-b border-[#e6edf5]',
-  insetBody: 'px-5 sm:px-6 py-6',
-
-  grid: 'grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_370px] gap-6 xl:gap-8 items-start',
-  left: 'min-w-0',
-  right: 'min-w-0',
-
-  h1: 'text-3xl sm:text-4xl font-extrabold tracking-tight text-black leading-tight',
-  h2: 'text-lg sm:text-xl font-bold text-black',
-  h3: 'text-base font-bold text-black',
-  body: 'text-sm sm:text-base text-black/75 leading-relaxed',
-  meta: 'text-sm text-black/70',
-  caption: 'text-xs font-semibold uppercase tracking-wide text-black/50',
-  label: 'text-sm font-semibold text-black',
-  divider: 'border-t border-[#e6edf5]',
-  ring:
-    'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 focus-visible:ring-offset-white',
-  btnBase:
-    'inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none motion-reduce:transition-none motion-reduce:transform-none',
-  btnSm: 'h-9 px-3 text-sm',
-  btnMd: 'h-10 px-4 text-sm',
-  btnLg: 'h-11 px-5 text-base',
-  btnPrimary: 'bg-[#2e66a6] text-white hover:bg-[#25578f] active:bg-[#1f4b7c] shadow-[0_10px_22px_rgba(46,102,166,0.22)]',
-  btnSecondary: 'bg-white text-black border border-[#d8e2ee] hover:border-[#2e66a6]/40 hover:bg-[#f7faff]',
-  btnGhost: 'bg-transparent text-black/70 hover:bg-black/5',
-  chip:
-    'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border border-[#d8e2ee] bg-[#f7faff] text-black/80',
-  badgeBase: 'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border',
-  textarea:
-    'w-full rounded-lg border border-black/20 bg-white px-4 py-3 text-sm text-black placeholder:text-black/40 resize-y',
-  alertBase: 'rounded-xl border p-4',
-  alertError: 'bg-red-50 border-red-200 text-black',
-  alertSuccess: 'bg-[#2e66a6]/10 border-[#2e66a6]/30 text-black',
-  srOnly: 'sr-only',
-};
-
-const normalizeLocation = (jobData) => {
-  const candidates = [
-    jobData?.location,
-    jobData?.jobLocation,
-    jobData?.address,
-    jobData?.employerDetails?.location,
-    jobData?.employerDetails?.companyAddress,
-    jobData?.employer?.companyAddress,
-    jobData?.employerId?.companyAddress,
-    jobData?.companyAddress,
-    jobData?.regionCity && jobData?.country ? `${jobData.regionCity}, ${jobData.country}` : '',
-    jobData?.employerDetails?.regionCity && jobData?.employerDetails?.country
-      ? `${jobData.employerDetails.regionCity}, ${jobData.employerDetails.country}`
-      : '',
-  ];
-
-  for (const c of candidates) {
-    if (!c) continue;
-
-    if (typeof c === 'object') {
-      const city = c.city || c.town || c.regionCity || '';
-      const prov = c.province || c.state || '';
-      const country = c.country || '';
-      const built = [city, prov, country].filter(Boolean).join(', ');
-      if (built.trim()) return built.trim();
-      continue;
-    }
-
-    const s = String(c).trim();
-    if (!s) continue;
-
-    const bad = ['not specified', 'n/a', 'not set', 'location not specified'];
-    if (bad.includes(s.toLowerCase())) continue;
-
-    return s;
-  }
-
-  return '';
-};
-
-const formatLocationDisplay = (loc) => {
-  const v = String(loc || '').trim();
-  return v || '—';
-};
-
-const getJobCoordinates = (jobData) => {
-  const lat = Number(jobData?.locationLatitude);
-  const lng = Number(jobData?.locationLongitude);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  return { lat, lng };
-};
-
-const buildWorkLocationUrl = (jobData) => {
-  const coords = getJobCoordinates(jobData);
-  if (coords) {
-    return `https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=17/${coords.lat}/${coords.lng}`;
-  }
-
-  const locationText = formatLocationDisplay(jobData?.location);
-  if (!locationText || locationText === '—') return '';
-
-  return `https://www.openstreetmap.org/search?query=${encodeURIComponent(locationText)}`;
-};
-
-const isUsableCoordinates = (coords) => {
-  if (!coords) return false;
-  if (!Number.isFinite(coords.lat) || !Number.isFinite(coords.lng)) return false;
-  if (Math.abs(coords.lat) < 0.0001 && Math.abs(coords.lng) < 0.0001) return false;
-  return true;
-};
-
-const buildOpenStreetMapUrl = ({ coords, address }) => {
-  const cleanAddress = String(address || '').trim();
-
-  if (isUsableCoordinates(coords)) {
-    return `https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=17/${coords.lat}/${coords.lng}`;
-  }
-
-  if (cleanAddress && cleanAddress !== '—') {
-    return `https://www.openstreetmap.org/search?query=${encodeURIComponent(cleanAddress)}`;
-  }
-
-  return 'https://www.openstreetmap.org';
-};
-
-const StaticLocationMap = ({ job, heightClass = 'h-[130px]' }) => {
-  const savedCoords = getJobCoordinates(job);
-  const address = formatLocationDisplay(job?.location);
-  const [resolvedCoords, setResolvedCoords] = useState(isUsableCoordinates(savedCoords) ? savedCoords : null);
-  const [lookupDone, setLookupDone] = useState(false);
+const CheckboxDropdown = ({
+  id,
+  label,
+  placeholder,
+  items,
+  selected,
+  setSelected,
+  enableSearch = false,
+  menuWidth = "w-[320px]",
+  openDropdown,
+  setOpenDropdown,
+  pillBtn,
+}) => {
+  const [localSearch, setLocalSearch] = useState("");
 
   useEffect(() => {
-    let cancelled = false;
+    if (openDropdown !== id) setLocalSearch("");
+  }, [openDropdown, id]);
 
-    const runLookup = async () => {
-      if (isUsableCoordinates(savedCoords)) {
-        setResolvedCoords(savedCoords);
-        setLookupDone(true);
-        return;
-      }
+  const toggleValue = (val) => {
+    setSelected((prev) => {
+      const exists = prev.includes(val);
+      if (exists) return prev.filter((x) => x !== val);
+      return [...prev, val];
+    });
+  };
 
-      const cleanAddress = String(job?.location || '').trim();
-      if (!cleanAddress) {
-        setResolvedCoords(null);
-        setLookupDone(true);
-        return;
-      }
+  const filtered = enableSearch
+    ? (items || []).filter((x) =>
+        String(x || "").toLowerCase().includes(localSearch.toLowerCase().trim())
+      )
+    : items || [];
 
-      try {
-        const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=ph&accept-language=en&q=${encodeURIComponent(cleanAddress)}`;
-        const response = await fetch(url);
-        const data = await response.json();
-        const first = Array.isArray(data) ? data[0] : null;
-        const nextLat = Number(first?.lat);
-        const nextLng = Number(first?.lon);
+  const count = selected.length;
+  const isOpen = openDropdown === id;
 
-        if (!cancelled && Number.isFinite(nextLat) && Number.isFinite(nextLng)) {
-          setResolvedCoords({
-            lat: Number(nextLat.toFixed(6)),
-            lng: Number(nextLng.toFixed(6)),
-          });
-        }
-      } catch {
-        if (!cancelled) setResolvedCoords(null);
-      } finally {
-        if (!cancelled) setLookupDone(true);
-      }
-    };
-
-    runLookup();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [job?.location, savedCoords?.lat, savedCoords?.lng]);
-
-  const openMapUrl = buildOpenStreetMapUrl({ coords: resolvedCoords || savedCoords, address });
-
-  if (!isUsableCoordinates(resolvedCoords)) {
-    return (
-      <a
-        href={openMapUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`${heightClass} relative flex w-full items-center justify-center bg-black/5 text-black/40 hover:bg-black/10 transition`}
-        title="Open work location in OpenStreetMap"
-        aria-label="Open work location in OpenStreetMap"
+  return (
+    <div className="relative inline-block">
+      <button
+        type="button"
+        className={pillBtn}
+        onClick={() => setOpenDropdown(isOpen ? null : id)}
+        aria-expanded={isOpen}
+        aria-controls={`${id}-menu`}
       >
-        <div className="text-center px-4">
-          <SvgIcon name="location" className="mx-auto h-7 w-7" />
-          <p className="mt-2 text-xs text-black/50">
-            {lookupDone ? 'Click to open work location' : 'Loading work location map...'}
-          </p>
-        </div>
-      </a>
-    );
-  }
+        <span className="whitespace-nowrap">{label}</span>
 
-  const bbox = `${resolvedCoords.lng - 0.01},${resolvedCoords.lat - 0.01},${resolvedCoords.lng + 0.01},${resolvedCoords.lat + 0.01}`;
-  const src = `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&layer=mapnik&marker=${resolvedCoords.lat},${resolvedCoords.lng}`;
-
-  return (
-    <a
-      href={openMapUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`${heightClass} relative block w-full overflow-hidden bg-black/5 group`}
-      title="Open work location in OpenStreetMap"
-      aria-label="Open work location in OpenStreetMap"
-    >
-      <iframe
-        title="Work location map"
-        src={src}
-        className="h-full w-full border-0 pointer-events-none"
-        loading="lazy"
-      />
-      <span className="absolute inset-0 bg-transparent group-hover:bg-black/5 transition" aria-hidden="true" />
-      <span className="absolute bottom-2 right-2 rounded-full bg-white/95 px-3 py-1 text-[11px] font-semibold text-[#2e66a6] shadow-sm">
-        Open Map
-      </span>
-    </a>
-  );
-};
-
-const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
-  switch (name) {
-    case 'arrowLeft':
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
-        </svg>
-      );
-    case 'briefcase':
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m-3 0h14a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z"
-          />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 13h18" />
-        </svg>
-      );
-    case 'location':
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M12 21s7-4.438 7-11a7 7 0 10-14 0c0 6.562 7 11 7 11z"
-          />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10a2 2 0 100-4 2 2 0 000 4z" />
-        </svg>
-      );
-    case 'calendar':
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-          />
-        </svg>
-      );
-    case 'users':
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M17 20h5v-1a4 4 0 00-4-4h-1M9 20H2v-1a4 4 0 014-4h1m7-4a4 4 0 10-8 0 4 4 0 008 0zm8 2a3 3 0 10-6 0 3 3 0 006 0z"
-          />
-        </svg>
-      );
-    case 'building':
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M3 21h18M6 21V5a2 2 0 012-2h8a2 2 0 012 2v16M9 7h.01M9 11h.01M9 15h.01M12 7h.01M12 11h.01M12 15h.01M15 7h.01M15 11h.01M15 15h.01"
-          />
-        </svg>
-      );
-    case 'file':
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-          />
-        </svg>
-      );
-    case 'checkCircle':
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-      );
-    case 'exclamation':
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v4m0 4h.01" />
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M10.29 3.86l-7.4 12.82A2 2 0 004.62 20h14.76a2 2 0 001.73-3.32l-7.4-12.82a2 2 0 00-3.42 0z"
-          />
-        </svg>
-      );
-    case 'calendarCheck':
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-          />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 14l2 2 4-4" />
-        </svg>
-      );
-    case 'tag':
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M7 7h.01M3 11l8.586 8.586a2 2 0 002.828 0L21 13a2 2 0 000-2.828L13.414 3.586A2 2 0 0012 3H5a2 2 0 00-2 2v6z"
-          />
-        </svg>
-      );
-    case 'userTie':
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 12a4 4 0 100-8 4 4 0 000 8z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 20a8 8 0 0116 0" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 14l2 2 2-2" />
-        </svg>
-      );
-    case 'graduation':
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 14l9-5-9-5-9 5 9 5z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 12v5c0 1.657 2.686 3 6 3s6-1.343 6-3v-5" />
-        </svg>
-      );
-    case 'tools':
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M14.7 6.3a4 4 0 01-5.657 5.657l-5.04 5.04a2 2 0 102.829 2.828l5.04-5.04A4 4 0 0114.7 6.3z"
-          />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-3 3" />
-        </svg>
-      );
-    case 'external':
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14 3h7v7" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 14L21 3" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 14v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6" />
-        </svg>
-      );
-    case 'share':
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 8a3 3 0 110-6 3 3 0 010 6zM6 14a3 3 0 110-6 3 3 0 010 6zm9 10a3 3 0 110-6 3 3 0 010 6z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.59 10.51l3.82-2.02m-3.82 5l3.82 2.02" />
-        </svg>
-      );
-    case 'bookmark':
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M6 4.75A1.75 1.75 0 017.75 3h8.5A1.75 1.75 0 0118 4.75V21l-6-3.5L6 21V4.75z"
-          />
-        </svg>
-      );
-    case 'xmark':
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 6l12 12M18 6L6 18" />
-        </svg>
-      );
-    case 'clock':
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      );
-    case 'money':
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M3 7.5A1.5 1.5 0 014.5 6h15A1.5 1.5 0 0121 7.5v9A1.5 1.5 0 0119.5 18h-15A1.5 1.5 0 013 16.5v-9z"
-          />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9.25v5.5M14.25 10.5c0-.69-1.007-1.25-2.25-1.25s-2.25.56-2.25 1.25 1.007 1.25 2.25 1.25 2.25.56 2.25 1.25-1.007 1.25-2.25 1.25-2.25-.56-2.25-1.25" />
-        </svg>
-      );
-    default:
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6l4 2" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      );
-  }
-};
-
-const CompanyLogo = ({ src, name }) => {
-  const [failed, setFailed] = useState(false);
-  const initial = (name?.trim()?.[0] || 'C').toUpperCase();
-
-  if (!src || failed) {
-    return (
-      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border border-[#d8e2ee] bg-[#f7faff] flex items-center justify-center flex-shrink-0">
-        <span className="font-bold text-lg sm:text-xl text-black/70" aria-hidden="true">
-          {initial}
-        </span>
-        <span className={UI.srOnly}>{name || 'Company'}</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden border border-[#d8e2ee] bg-white flex-shrink-0">
-      <img
-        src={src}
-        alt={`${name || 'Company'} logo`}
-        className="w-full h-full object-cover"
-        onError={() => setFailed(true)}
-        loading="lazy"
-      />
-    </div>
-  );
-};
-
-const IconBadge = ({ icon }) => (
-  <span className="w-11 h-11 rounded-2xl bg-[#2e66a6]/10 border border-[#2e66a6]/25 flex items-center justify-center flex-shrink-0 text-[#2e66a6]">
-    <SvgIcon name={icon} className="w-5 h-5" />
-  </span>
-);
-
-const TopMetricCard = ({ icon, title, value, isPeso = false }) => (
-  <div className="rounded-[1.15rem] border border-[#e6edf5] bg-white px-5 py-5 min-h-[108px] shadow-[0_10px_24px_rgba(46,102,166,0.05)] hover:shadow-[0_14px_30px_rgba(46,102,166,0.08)] transition">
-    <div className="flex items-start gap-3">
-      <div className="w-10 h-10 rounded-2xl border border-[#2e66a6]/20 bg-[#2e66a6]/10 flex items-center justify-center text-[#2e66a6] flex-shrink-0">
-        {isPeso ? (
-          <span className="font-bold text-sm leading-none">₱</span>
-        ) : (
-          <SvgIcon name={icon} className="w-4 h-4" />
+        {count > 0 && (
+          <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[#2e66a6]/10 text-[#2e66a6] border border-[#2e66a6]/25">
+            {count}
+          </span>
         )}
-      </div>
-      <div className="min-w-0">
-        <p className="text-[11px] uppercase tracking-wide font-semibold text-black/45">{title}</p>
-        <p className="mt-1.5 text-sm sm:text-[15px] leading-6 font-semibold text-black break-words">{value}</p>
-      </div>
-    </div>
-  </div>
-);
 
-const BenefitItem = ({ children }) => (
-  <div className="rounded-xl border border-[#e6edf5] bg-[#fdfefe] px-4 py-3 text-xs sm:text-sm text-black/70">
-    {children}
-  </div>
-);
+        <svg
+          className={`w-4 h-4 text-black/65 ml-1 transition ${isOpen ? "rotate-180" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
 
-const Skeleton = () => (
-  <div className={UI.page}>
-    <div className={UI.container} aria-hidden="true">
-      <div className="animate-pulse motion-reduce:animate-none space-y-6 pt-6">
-        <div className="h-6 w-56 bg-black/5 rounded" />
-        <div className="h-24 bg-black/5 rounded-2xl" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="h-24 bg-black/5 rounded-2xl" />
-          <div className="h-24 bg-black/5 rounded-2xl" />
-          <div className="h-24 bg-black/5 rounded-2xl" />
+      {isOpen && (
+        <div
+          id={`${id}-menu`}
+          className={`absolute z-50 mt-2 ${menuWidth} max-w-[92vw] bg-white border border-[#D7E2EE] rounded-xl shadow-xl p-4`}
+          role="dialog"
+          aria-label={`${label} filter`}
+        >
+          {enableSearch && (
+            <input
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              placeholder={placeholder}
+              className="w-full px-4 py-3 rounded-xl bg-[#F7FAFD] border border-[#D7E2EE] outline-none text-sm focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+            />
+          )}
+
+          <div className={`${enableSearch ? "mt-4" : ""} max-h-[280px] overflow-auto pr-1`}>
+            {filtered.length === 0 ? (
+              <div className="text-sm text-black/55 py-4">No results</div>
+            ) : (
+              filtered.map((opt) => (
+                <label key={opt} className="flex items-center gap-3 py-2 text-sm text-black cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(opt)}
+                    onChange={() => toggleValue(opt)}
+                    className="h-4 w-4"
+                  />
+                  <span className="select-none whitespace-nowrap">{opt}</span>
+                </label>
+              ))
+            )}
+          </div>
         </div>
-        <div className="h-96 bg-black/5 rounded-2xl" />
-      </div>
+      )}
     </div>
-  </div>
+  );
+};
+
+const SalaryDropdown = ({
+  id,
+  label,
+  value,
+  setValue,
+  openDropdown,
+  setOpenDropdown,
+  pillBtn,
+}) => {
+  const isOpen = openDropdown === id;
+
+  return (
+    <div className="relative inline-block">
+      <button
+        type="button"
+        className={pillBtn}
+        onClick={() => setOpenDropdown(isOpen ? null : id)}
+        aria-expanded={isOpen}
+        aria-controls={`${id}-menu`}
+      >
+        <span className="whitespace-nowrap">{label}</span>
+
+        {value ? (
+          <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[#2e66a6]/10 text-[#2e66a6] border border-[#2e66a6]/25">
+            1
+          </span>
+        ) : null}
+
+        <svg
+          className={`w-4 h-4 text-black/65 ml-1 transition ${isOpen ? "rotate-180" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div
+          id={`${id}-menu`}
+          className="absolute right-0 z-50 mt-2 w-[320px] max-w-[92vw] bg-white border border-[#D7E2EE] rounded-xl shadow-xl p-4"
+          role="dialog"
+          aria-label={`${label} filter`}
+        >
+          <div className="space-y-3">
+            <div className="flex items-center overflow-hidden rounded-xl border border-[#2e66a6] bg-white">
+              <div className="px-4 py-3 text-[18px] font-semibold text-black/75 border-r border-[#D7E2EE]">
+                PHP
+              </div>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={value}
+                onChange={(e) => setValue(normalizeAmount(e.target.value))}
+                placeholder="Indicate minimum salary"
+                className="w-full px-4 py-3 outline-none text-sm text-black/75 bg-white"
+              />
+            </div>
+
+            <button
+              type="button"
+              className="w-full h-[50px] rounded-xl text-sm font-semibold text-white bg-[#2e66a6] hover:bg-[#28598f] transition"
+              onClick={() => setOpenDropdown(null)}
+            >
+              Add Filter
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const SortDropdown = ({
+  id,
+  label,
+  value,
+  setValue,
+  openDropdown,
+  setOpenDropdown,
+  pillBtn,
+}) => {
+  const isOpen = openDropdown === id;
+
+  const options = [
+    {
+      group: "Salary",
+      items: [{ value: "salary_desc", label: "Highest to Lowest" }],
+    },
+    {
+      group: "Expiry Date",
+      items: [{ value: "expiry_asc", label: "Soonest to Latest" }],
+    },
+    {
+      group: "Freshness",
+      items: [{ value: "newest", label: "Newest to Oldest" }],
+    },
+  ];
+
+  return (
+    <div className="relative inline-block">
+      <button
+        type="button"
+        className={pillBtn}
+        onClick={() => setOpenDropdown(isOpen ? null : id)}
+        aria-expanded={isOpen}
+        aria-controls={`${id}-menu`}
+      >
+        <span className="whitespace-nowrap">{label}</span>
+
+        {value ? (
+          <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[#2e66a6]/10 text-[#2e66a6] border border-[#2e66a6]/25">
+            1
+          </span>
+        ) : null}
+
+        <svg
+          className={`w-4 h-4 text-black/65 ml-1 transition ${isOpen ? "rotate-180" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div
+          id={`${id}-menu`}
+          className="absolute right-0 z-50 mt-2 w-[280px] max-w-[92vw] bg-white border border-[#D7E2EE] rounded-xl shadow-xl p-3"
+          role="dialog"
+          aria-label={`${label} filter`}
+        >
+          <div className="space-y-2">
+            {options.map((section) => (
+              <div key={section.group} className="rounded-lg border border-gray-100 overflow-hidden">
+                <div className="px-3 py-2 bg-[#F7FAFD] text-xs font-bold uppercase tracking-wide text-black/55">
+                  {section.group}
+                </div>
+
+                <div className="p-1">
+                  {section.items.map((item) => {
+                    const selected = value === item.value;
+
+                    return (
+                      <button
+                        key={item.value}
+                        type="button"
+                        onClick={() => {
+                          setValue(item.value);
+                          setOpenDropdown(null);
+                        }}
+                        className={`w-full flex items-center justify-between rounded-lg px-3 py-2 text-sm transition ${
+                          selected
+                            ? "bg-blue-50 text-[#2e66a6] border border-blue-200"
+                            : "text-black/75 hover:bg-[#F7FAFD] border border-transparent"
+                        }`}
+                      >
+                        <span>{item.label}</span>
+                        {selected && (
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+
+            {value && (
+              <button
+                type="button"
+                onClick={() => {
+                  setValue("");
+                  setOpenDropdown(null);
+                }}
+                className="w-full mt-1 rounded-lg border border-[#D7E2EE] px-3 py-2 text-sm font-medium text-black/75 hover:bg-[#F7FAFD] transition"
+              >
+                Clear Sort
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const FilterCheck = ({ label, checked, onChange }) => (
+  <label className="inline-flex items-center gap-2 min-h-[42px] px-2.5 rounded-xl text-[14px] font-semibold text-black whitespace-nowrap cursor-pointer select-none hover:bg-white/80 transition">
+    <input
+      type="checkbox"
+      checked={checked}
+      onChange={onChange}
+      className="h-[16px] w-[16px] rounded border border-[#AFC6DD] accent-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
+    />
+    <span>{label}</span>
+  </label>
 );
 
-const JobOfferDetails = () => {
-  const { id } = useParams();
+const MainFooter = () => {
+  return (
+    <footer className="bg-white border-t border-[#D7E2EE]">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-12 md:py-14">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+          <div>
+            <img src="/images/agapay.png" alt="AGAPAY" className="h-10 w-auto" />
+
+            <h3 className="mt-6 text-[20px] md:text-[22px] font-bold text-black leading-tight max-w-[320px]">
+              Your Future Employer is Looking for Someone Exactly Like You!
+            </h3>
+
+            <p className="mt-4 text-black/70 text-base leading-relaxed max-w-[340px]">
+              The job market is competitive but you are prepared.
+            </p>
+
+            <div className="mt-6 space-y-3 text-black/70 text-sm md:text-[15px]">
+              <p>✉ agapay@au.phinma.edu.ph</p>
+              <p>☎ +63 (2) 8123-4567</p>
+
+              <p className="flex items-start gap-2">
+                <svg
+                  className="w-5 h-5 text-black mt-0.5 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z" />
+                </svg>
+                <span>PHINMA - Araullo University, Cabanatuan City, Nueva Ecija</span>
+              </p>
+            </div>
+
+            <div className="mt-6 flex items-center gap-4">
+              <div className="w-9 h-9 rounded-full bg-white border border-[#D7E2EE] flex items-center justify-center shadow-sm">
+                <svg className="w-4 h-4 text-[#2e66a6]" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M22 12a10 10 0 1 0-11.5 9.9v-7h-2.6v-2.9h2.6V9.8c0-2.6 1.5-4 3.9-4 1.1 0 2.3.2 2.3.2v2.5h-1.3c-1.3 0-1.7.8-1.7 1.6v2h2.9l-.5 2.9h-2.4v7A10 10 0 0 0 22 12z" />
+                </svg>
+              </div>
+
+              <div className="w-9 h-9 rounded-full bg-white border border-[#D7E2EE] flex items-center justify-center shadow-sm">
+                <svg className="w-4 h-4 text-[#2e66a6]" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8h4v12h-4V8zm7.5 0h3.6v1.6h.1c.5-.9 1.7-1.8 3.5-1.8 3.7 0 4.4 2.4 4.4 5.6V20h-4v-5.3c0-1.3 0-3-1.9-3s-2.2 1.5-2.2 2.9V20h-4V8z" />
+                </svg>
+              </div>
+
+              <div className="w-9 h-9 rounded-full bg-white border border-[#D7E2EE] flex items-center justify-center shadow-sm">
+                <svg className="w-4 h-4 text-[#2e66a6]" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M24 4.6a9.8 9.8 0 0 1-2.8.8 4.9 4.9 0 0 0 2.2-2.7 9.8 9.8 0 0 1-3.1 1.2 4.9 4.9 0 0 0-8.4 4.5A13.9 13.9 0 0 1 1.7 3.1 4.9 4.9 0 0 0 3.2 9a4.8 4.8 0 0 1-2.2-.6v.1a4.9 4.9 0 0 0 3.9 4.8 4.9 4.9 0 0 1-2.2.1 4.9 4.9 0 0 0 4.6 3.4A9.9 9.9 0 0 1 0 19.5 13.9 13.9 0 0 0 7.5 22c9 0 13.9-7.5 13.9-14v-.6A9.7 9.7 0 0 0 24 4.6z" />
+                </svg>
+              </div>
+
+              <div className="w-9 h-9 rounded-full bg-white border border-[#D7E2EE] flex items-center justify-center shadow-sm">
+                <svg className="w-4 h-4 text-[#2e66a6]" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31.6 31.6 0 0 0 0 12a31.6 31.6 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.6 31.6 0 0 0 24 12a31.6 31.6 0 0 0-.5-5.8zM9.8 15.5v-7l6.2 3.5-6.2 3.5z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-extrabold tracking-[0.16em] text-black uppercase">
+              Job Seeker
+            </h4>
+
+            <ul className="mt-6 space-y-4 text-black/70 text-[15px]">
+              <li>Job Search</li>
+              <li>Job Offers</li>
+              <li>Job Application</li>
+              <li>Saved Jobs</li>
+              <li>Companies</li>
+              <li>Job Seeker Profile</li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-extrabold tracking-[0.16em] text-black uppercase">
+              Employers
+            </h4>
+
+            <ul className="mt-6 space-y-4 text-black/70 text-[15px]">
+              <li>Post Job</li>
+              <li>Find Talent</li>
+              <li>Company Profile</li>
+              <li>Manage Talent</li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-extrabold tracking-[0.16em] text-black uppercase">
+              About Agapay
+            </h4>
+
+            <ul className="mt-6 space-y-4 text-black/70 text-[15px]">
+              <li>About Us</li>
+              <li>Contact Us</li>
+              <li>Careers</li>
+              <li>Partners with Us</li>
+              <li>Help Center</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-10 border-t border-[#D7E2EE] pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <p className="text-black/55 text-sm">
+            © 2026 PHINMA ARAULLO UNIVERSITY. All rights reserved.
+          </p>
+
+          <div className="flex items-center gap-4 text-black/55 text-sm">
+            <span>Privacy Policy</span>
+            <span>|</span>
+            <span>Terms of Use</span>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+};
+
+const JobOffers = () => {
   const navigate = useNavigate();
 
-  const [job, setJob] = useState(null);
-  const [companyInfo, setCompanyInfo] = useState(null);
-  const [similarJobs, setSimilarJobs] = useState([]);
+  const [allJobs, setAllJobs] = useState([]);
+  const [loadingInitial, setLoadingInitial] = useState(true);
+  const [updating, setUpdating] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  const [showGuestApplyModal, setShowGuestApplyModal] = useState(false);
-  const [modalMode, setModalMode] = useState('apply');
+  const [showGuestModal, setShowGuestModal] = useState(false);
+  const firstModalBtnRef = useRef(null);
   const modalRef = useRef(null);
-  const firstBtnRef = useRef(null);
 
-  const [toast, setToast] = useState({ type: '', message: '' });
-  const toastTimerRef = useRef(null);
+  const [searchFocused, setSearchFocused] = useState(false);
 
-  const apiOrigin = useMemo(() => {
-    const base = api?.defaults?.baseURL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
-    return String(base).replace(/\/api\/?$/, '');
-  }, []);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  const [selectedLocations, setSelectedLocations] = useState([]);
+  const [selectedJobTitles, setSelectedJobTitles] = useState([]);
+  const [selectedEmploymentTypes, setSelectedEmploymentTypes] = useState([]);
+  const [selectedEducationLevels, setSelectedEducationLevels] = useState([]);
+  const [selectedCompanies, setSelectedCompanies] = useState([]);
+  const [selectedWorkModes, setSelectedWorkModes] = useState([]);
+
+  const [salaryMinInput, setSalaryMinInput] = useState("");
+
+  const [sortBy, setSortBy] = useState("");
+
+  const [freshGraduate, setFreshGraduate] = useState(false);
+  const [noExperience, setNoExperience] = useState(false);
+
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const filterBoxRef = useRef(null);
 
   const getStoredUser = () => {
     try {
-      return JSON.parse(localStorage.getItem('user') || 'null');
+      return JSON.parse(localStorage.getItem("user") || "null");
     } catch {
       return null;
     }
   };
 
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   const user = getStoredUser();
   const isGuest = !token || !user;
 
-  const gateReason = useMemo(() => {
-    if (modalMode === 'save') {
-      if (isGuest) {
-        return {
-          title: 'Save this job with an AGAPAY account',
-          body: 'Create your profile, save this job, and come back to it anytime with an AGAPAY account.',
-          primary: 'Sign Up',
-          secondary: 'Login',
-          primaryAction: 'signup',
-        };
-      }
+  const COLORS = useMemo(
+    () => ({
+      primary: "#2e66a6",
+      primaryHover: "#28598f",
+      primaryActive: "#214a78",
 
-      if (user?.role !== 'jobseeker') {
-        return {
-          title: 'Jobseeker account required',
-          body: 'This action is only available for Jobseekers. Please login using a Jobseeker account.',
-          primary: 'Go to Login',
-          secondary: 'Close',
-          primaryAction: 'login',
-        };
-      }
+      pageBg: "#FFFFFF",
+      frame: "#F5F8FC",
+      card: "#FFFFFF",
+      border: "#D7E2EE",
+      borderStrong: "#AFC6DD",
+      mutedBox: "#F7FAFD",
 
-      return {
-        title: 'Save this job with an AGAPAY account',
-        body: 'Create your profile, save this job, and come back to it anytime with an AGAPAY account.',
-        primary: 'Sign Up',
-        secondary: 'Login',
-        primaryAction: 'signup',
-      };
-    }
-
-    if (isGuest) {
-      return {
-        title: 'Apply to this job with an AGAPAY account',
-        body: 'Build your profile, apply to this job, and track your application status with a AGAPAY account.',
-        primary: 'Sign Up',
-        secondary: 'Login',
-        primaryAction: 'signup',
-      };
-    }
-
-    if (user?.role !== 'jobseeker') {
-      return {
-        title: 'Jobseeker account required',
-        body: 'This action is only available for Jobseekers. Please login using a Jobseeker account.',
-        primary: 'Go to Login',
-        secondary: 'Close',
-        primaryAction: 'login',
-      };
-    }
-
-    return {
-      title: 'Apply to this job with an AGAPAY account',
-      body: 'Build your profile, apply to this job, and track your application status with a AGAPAY account.',
-      primary: 'Sign Up',
-      secondary: 'Login',
-      primaryAction: 'signup',
-    };
-  }, [isGuest, user?.role, modalMode]);
-
-  const setToastWithAutoClear = useCallback((type, message, ms = 1800) => {
-    setToast({ type, message });
-    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
-    toastTimerRef.current = window.setTimeout(() => setToast({ type: '', message: '' }), ms);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
-    };
-  }, []);
-
-  const goLogin = () => {
-    setShowGuestApplyModal(false);
-    navigate('/login');
-  };
-
-  const openJoinAs = () => {
-    setShowGuestApplyModal(false);
-    navigate('/join-as');
-  };
-
-  const closeGuestApplyModal = useCallback(() => {
-    setShowGuestApplyModal(false);
-  }, []);
-
-  const formatSalary = useCallback((min, max, hideSalary = false) => {
-    if (hideSalary) return 'Salary Undisclosed';
-    const hasMin = typeof min === 'number';
-    const hasMax = typeof max === 'number';
-    if (!hasMin && !hasMax) return 'Salary not specified';
-
-    const fmt = (n) => `₱${Number(n).toLocaleString('en-PH')}`;
-    if (hasMin && hasMax) return `${fmt(min)} – ${fmt(max)}`;
-    if (hasMin) return `From ${fmt(min)}`;
-    return `Up to ${fmt(max)}`;
-  }, []);
-
-  const formatPostedRelative = useCallback((dateString) => {
-    if (!dateString) return 'Posted recently';
-
-    const postedDate = new Date(dateString);
-    const now = new Date();
-
-    if (Number.isNaN(postedDate.getTime())) return 'Posted recently';
-
-    const diffMs = now - postedDate;
-    const minute = 1000 * 60;
-    const hour = minute * 60;
-    const day = hour * 24;
-    const week = day * 7;
-    const month = day * 30;
-    const year = day * 365;
-
-    if (diffMs < minute) return 'Posted just now';
-
-    if (diffMs < hour) {
-      const mins = Math.floor(diffMs / minute);
-      return `Posted ${mins} minute${mins > 1 ? 's' : ''} ago`;
-    }
-
-    if (diffMs < day) {
-      const hours = Math.floor(diffMs / hour);
-      return `Posted ${hours} hour${hours > 1 ? 's' : ''} ago`;
-    }
-
-    if (diffMs < week) {
-      const days = Math.floor(diffMs / day);
-      return `Posted ${days} day${days > 1 ? 's' : ''} ago`;
-    }
-
-    if (diffMs < month) {
-      const weeks = Math.floor(diffMs / week);
-      return `Posted ${weeks} week${weeks > 1 ? 's' : ''} ago`;
-    }
-
-    if (diffMs < year) {
-      const months = Math.floor(diffMs / month);
-      return `Posted ${months} month${months > 1 ? 's' : ''} ago`;
-    }
-
-    const years = Math.floor(diffMs / year);
-    return `Posted ${years} year${years > 1 ? 's' : ''} ago`;
-  }, []);
-
-  const formatApplicationDeadline = useCallback((dateString) => {
-    if (!dateString) return '';
-
-    const date = new Date(dateString);
-    if (Number.isNaN(date.getTime())) return '';
-
-    return date.toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-    });
-  }, []);
-
-  const isJobActive = useCallback(() => {
-    if (!job) return false;
-    if (!job.isActive || !job.isPublished) return false;
-    if (job.applicationDeadline && new Date(job.applicationDeadline) < new Date()) return false;
-    return true;
-  }, [job]);
-
-  const fetchJobDetails = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError('');
-
-      const response = await api.get(`/jobs/${id}`);
-
-      if (response.data?.success) {
-        const jobData = response.data.job;
-
-        const normalizedLoc = normalizeLocation(jobData);
-        const patchedJob = {
-          ...jobData,
-          location: normalizedLoc || jobData.location || '',
-        };
-
-        setJob(patchedJob);
-
-        if (jobData.employerDetails) {
-          setCompanyInfo({
-            companyAddress: jobData.employerDetails.companyAddress || '',
-            industry: jobData.employerDetails.industry || '',
-            companyWebsite: jobData.employerDetails.companyWebsite || '',
-          });
-        } else {
-          setCompanyInfo(null);
-        }
-      } else {
-        setError('Job not found');
-      }
-    } catch (err) {
-      if (err.response?.status === 404) setError('Job not found or has been removed');
-      else if (err.response?.status === 500) setError('Server error. Please try again later.');
-      else if (err.request) setError('Cannot connect to server. Please check your connection.');
-      else setError('Error loading job details. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  const fetchSimilarJobs = useCallback(
-    async (category) => {
-      try {
-        if (!category) return;
-
-        const response = await api.get('/jobs', {
-          params: { category, limit: 4 },
-        });
-
-        let jobsData = [];
-        if (response.data?.success && response.data?.jobs) jobsData = response.data.jobs;
-        else if (Array.isArray(response.data)) jobsData = response.data;
-
-        setSimilarJobs((jobsData || []).filter((j) => j._id !== id).slice(0, 3));
-      } catch {
-        // non-blocking
-      }
-    },
-    [id]
+      text: "#000000",
+      subtext: "#404040",
+    }),
+    []
   );
 
-  useEffect(() => {
-    fetchJobDetails();
-  }, [fetchJobDetails]);
+  const formatLocationDisplay = (loc) => {
+    const v = String(loc || "").trim();
+    return v || "—";
+  };
+
+  const normalizeJobsResponse = (response) => {
+    let jobsData = [];
+    if (response.data?.success && response.data?.jobs) jobsData = response.data.jobs;
+    else if (response.data?.data) jobsData = response.data.data;
+    else if (Array.isArray(response.data)) jobsData = response.data;
+    else if (response.data?.success && response.data?.data) jobsData = response.data.data;
+    return jobsData || [];
+  };
+
+  const formatSalary = (min, max, hideSalary = false) => {
+  if (hideSalary) return 'Salary Undisclosed';
+    if (!min && !max) return "Salary not specified";
+
+    const minNum = min ? Number(min) : null;
+    const maxNum = max ? Number(max) : null;
+
+    const formattedMin = Number.isFinite(minNum) ? `₱${minNum.toLocaleString()}` : "";
+    const formattedMax = Number.isFinite(maxNum) ? `₱${maxNum.toLocaleString()}` : "";
+
+    if (formattedMin && formattedMax) return `${formattedMin} - ${formattedMax}`;
+    if (formattedMin) return `From ${formattedMin}`;
+    return `Up to ${formattedMax}`;
+  };
+
+  const formatApplicationDeadline = (deadline) => {
+    if (!deadline) return "Application deadline not specified";
+
+    const date = new Date(deadline);
+
+    if (Number.isNaN(date.getTime())) {
+      return "Application deadline not specified";
+    }
+
+    return `Deadline of application: ${date.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+    })}`;
+  };
+
+  const jobMatchesSearch = (job, term) => {
+    const t = String(term || "").trim().toLowerCase();
+    if (!t) return true;
+
+    const title = String(job?.title || "").toLowerCase();
+    const company = String(job?.companyName || "").toLowerCase();
+    const locRaw = String(job?.location || "").toLowerCase();
+    const locFormatted = String(formatLocationDisplay(job?.location) || "").toLowerCase();
+
+    return title.includes(t) || company.includes(t) || locRaw.includes(t) || locFormatted.includes(t);
+  };
+
+  const normalizeWorkModeLabel = (value) => {
+    const v = String(value || "").trim().toLowerCase();
+
+    if (!v) return "";
+
+    if (v.includes("hybrid") || v.includes("blended")) return "Blended";
+    if (v.includes("work from home") || v.includes("wfh")) return "Work from Home";
+    if (v.includes("remote")) return "Remote";
+    if (v.includes("on-site") || v.includes("onsite") || v.includes("on site")) return "On-site";
+
+    return String(value || "").trim();
+  };
+
+  const fetchAllJobs = async () => {
+    try {
+      setErrorMsg("");
+      setLoadingInitial(true);
+      const response = await api.get("/jobs");
+      const jobsData = normalizeJobsResponse(response);
+
+      const now = new Date();
+      const eligible = (jobsData || []).filter((job) => {
+        if (!job) return false;
+
+        if (job.isPublished === false) return false;
+        if (job.isActive === false) return false;
+
+        if (!job.applicationDeadline) return true;
+        const d = new Date(job.applicationDeadline);
+        if (Number.isNaN(d.getTime())) return true;
+        return d >= now;
+      });
+
+      setAllJobs(eligible);
+    } catch (e) {
+      console.error("Error fetching jobs:", e);
+      setAllJobs([]);
+      setErrorMsg("We couldn’t load job posts right now. Please try again.");
+    } finally {
+      setLoadingInitial(false);
+    }
+  };
 
   useEffect(() => {
-    if (job?.category) fetchSimilarJobs(job.category);
-  }, [job?.category, fetchSimilarJobs]);
+    fetchAllJobs();
+  }, []);
 
   useEffect(() => {
-    if (!showGuestApplyModal) return;
+    const onClick = (e) => {
+      if (!openDropdown) return;
+      if (!filterBoxRef.current) return;
+      if (!filterBoxRef.current.contains(e.target)) {
+        setOpenDropdown(null);
+      }
+    };
+
+    const onKey = (e) => {
+      if (e.key === "Escape") setOpenDropdown(null);
+    };
+
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [openDropdown]);
+
+  useEffect(() => {
+    setUpdating(true);
+    const t = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setUpdating(false);
+    }, 250);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const options = useMemo(() => {
+    const uniq = (arr) => Array.from(new Set(arr.filter(Boolean)));
+
+    const locations = uniq(allJobs.map((j) => formatLocationDisplay(j?.location))).sort((a, b) =>
+      a.localeCompare(b)
+    );
+
+    const jobTitles = uniq(
+      allJobs
+        .map((j) => String(j?.title || "").replaceAll('"', "").trim())
+        .filter(Boolean)
+    ).sort((a, b) => a.localeCompare(b));
+
+    const employmentTypes = uniq(allJobs.map((j) => String(j?.jobType || "").trim()).filter(Boolean)).sort(
+      (a, b) => a.localeCompare(b)
+    );
+
+    const educationLevels = uniq(
+      allJobs.map((j) => String(j?.educationLevel || "").trim()).filter(Boolean)
+    ).sort((a, b) => a.localeCompare(b));
+
+    const companies = uniq(allJobs.map((j) => String(j?.companyName || "").trim()).filter(Boolean)).sort(
+      (a, b) => a.localeCompare(b)
+    );
+
+    return { locations, jobTitles, employmentTypes, educationLevels, companies };
+  }, [allJobs]);
+
+  const hasActiveFilters =
+    search.trim() ||
+    selectedLocations.length ||
+    selectedJobTitles.length ||
+    selectedEmploymentTypes.length ||
+    selectedEducationLevels.length ||
+    selectedCompanies.length ||
+    selectedWorkModes.length ||
+    salaryMinInput.trim() ||
+    sortBy ||
+    freshGraduate ||
+    noExperience;
+
+  useEffect(() => {
+    if (!loadingInitial) {
+      setUpdating(true);
+      const t = setTimeout(() => setUpdating(false), 120);
+      return () => clearTimeout(t);
+    }
+  }, [
+    loadingInitial,
+    selectedLocations,
+    selectedJobTitles,
+    selectedEmploymentTypes,
+    selectedEducationLevels,
+    selectedCompanies,
+    selectedWorkModes,
+    salaryMinInput,
+    sortBy,
+    freshGraduate,
+    noExperience,
+  ]);
+
+  const filteredJobs = useMemo(() => {
+    const includesAny = (value, selected) => {
+      if (!selected?.length) return true;
+      const v = String(value || "").trim();
+      return selected.includes(v) || selected.includes(formatLocationDisplay(v));
+    };
+
+    const salaryMinValue = Number(normalizeAmount(salaryMinInput));
+
+    const filtered = (allJobs || [])
+      .filter((job) => jobMatchesSearch(job, debouncedSearch))
+      .filter((job) => includesAny(formatLocationDisplay(job.location), selectedLocations))
+      .filter((job) =>
+        selectedJobTitles.length ? selectedJobTitles.includes(String(job.title || "").replaceAll('"', "").trim()) : true
+      )
+      .filter((job) =>
+        selectedEmploymentTypes.length ? selectedEmploymentTypes.includes(String(job.jobType || "").trim()) : true
+      )
+      .filter((job) =>
+        selectedEducationLevels.length ? selectedEducationLevels.includes(String(job.educationLevel || "").trim()) : true
+      )
+      .filter((job) =>
+        selectedCompanies.length ? selectedCompanies.includes(String(job.companyName || "").trim()) : true
+      )
+      .filter((job) =>
+        selectedWorkModes.length ? selectedWorkModes.includes(normalizeWorkModeLabel(job.workMode)) : true
+      )
+      .filter((job) => {
+        if (!salaryMinInput.trim() || Number.isNaN(salaryMinValue)) return true;
+
+        const jobMin = Number(job?.salaryMin);
+        const jobMax = Number(job?.salaryMax);
+
+        if (Number.isFinite(jobMax)) return jobMax >= salaryMinValue;
+        if (Number.isFinite(jobMin)) return jobMin >= salaryMinValue;
+
+        return false;
+      })
+      .filter((job) => {
+        if (!freshGraduate && !noExperience) return true;
+
+        const matchesFreshGraduate = freshGraduate ? isFreshGraduateJob(job) : false;
+        const matchesNoExperience = noExperience ? isNoExperienceJob(job?.experienceLevel) : false;
+
+        if (freshGraduate && noExperience) return matchesFreshGraduate || matchesNoExperience;
+        if (freshGraduate) return matchesFreshGraduate;
+        return matchesNoExperience;
+      });
+
+    const getSalaryComparable = (job) => {
+      const max = Number(job?.salaryMax);
+      const min = Number(job?.salaryMin);
+
+      if (Number.isFinite(max)) return max;
+      if (Number.isFinite(min)) return min;
+      return -1;
+    };
+
+    const getExpiryComparable = (job) => {
+      const date = new Date(job?.applicationDeadline || 0).getTime();
+      return Number.isNaN(date) ? Number.MAX_SAFE_INTEGER : date;
+    };
+
+    const getFreshnessComparable = (job) => {
+      const created = new Date(job?.createdAt || job?.updatedAt || 0).getTime();
+      return Number.isNaN(created) ? 0 : created;
+    };
+
+    const sorted = [...filtered];
+
+    if (sortBy === "salary_desc") {
+      sorted.sort((a, b) => getSalaryComparable(b) - getSalaryComparable(a));
+    } else if (sortBy === "expiry_asc") {
+      sorted.sort((a, b) => getExpiryComparable(a) - getExpiryComparable(b));
+    } else if (sortBy === "newest") {
+      sorted.sort((a, b) => getFreshnessComparable(b) - getFreshnessComparable(a));
+    }
+
+    return sorted;
+  }, [
+    allJobs,
+    debouncedSearch,
+    selectedLocations,
+    selectedJobTitles,
+    selectedEmploymentTypes,
+    selectedEducationLevels,
+    selectedCompanies,
+    selectedWorkModes,
+    salaryMinInput,
+    sortBy,
+    freshGraduate,
+    noExperience,
+  ]);
+
+  const clearFilters = () => {
+    setSearch("");
+    setSelectedLocations([]);
+    setSelectedJobTitles([]);
+    setSelectedEmploymentTypes([]);
+    setSelectedEducationLevels([]);
+    setSelectedCompanies([]);
+    setSelectedWorkModes([]);
+    setSalaryMinInput("");
+    setSortBy("");
+    setFreshGraduate(false);
+    setNoExperience(false);
+    setOpenDropdown(null);
+  };
+
+  const openGateModal = () => setShowGuestModal(true);
+
+  const gateReason = useMemo(() => {
+    return {
+      title: "Apply to this job with an AGAPAY account",
+      body: "Build your profile, apply to this job, and track your application status with a AGAPAY account.",
+      primary: "Sign Up",
+      secondary: "Login",
+      primaryAction: "signup",
+    };
+  }, []);
+
+  const handleLearnMore = (job) => {
+    const jobId = job?._id || job?.id;
+    if (!jobId) return;
+    navigate(`/jobs/${jobId}`);
+  };
+
+  const handleApply = (job) => {
+    const jobId = job?._id || job?.id;
+    if (!jobId) return;
+    openGateModal();
+  };
+
+  const handleSaveJob = (job) => {
+    const jobId = job?._id || job?.id;
+    if (!jobId) return;
+    openGateModal();
+  };
+
+  useEffect(() => {
+    if (!showGuestModal) return;
 
     const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
 
-    window.setTimeout(() => firstBtnRef.current?.focus?.(), 0);
+    setTimeout(() => firstModalBtnRef.current?.focus(), 0);
 
     const onKeyDown = (e) => {
-      if (e.key === 'Escape') closeGuestApplyModal();
+      if (e.key === "Escape") setShowGuestModal(false);
 
-      if (e.key === 'Tab' && modalRef.current) {
+      if (e.key === "Tab" && modalRef.current) {
         const focusables = modalRef.current.querySelectorAll(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );
@@ -983,588 +907,624 @@ const JobOfferDetails = () => {
       }
     };
 
-    window.addEventListener('keydown', onKeyDown);
-
+    window.addEventListener("keydown", onKeyDown);
     return () => {
-      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = prevOverflow;
     };
-  }, [showGuestApplyModal, closeGuestApplyModal]);
+  }, [showGuestModal]);
 
-  const handleBackButton = useCallback(() => {
-    navigate('/jobs');
-  }, [navigate]);
+  const goLogin = () => {
+    setShowGuestModal(false);
+    navigate("/login");
+  };
 
-  const handleApplyClick = useCallback(() => {
-    setModalMode('apply');
-    setShowGuestApplyModal(true);
-  }, []);
+  const openJoinAs = () => {
+    setShowGuestModal(false);
+    navigate("/join-as");
+  };
 
-  const handleSaveClick = useCallback(() => {
-    setModalMode('save');
-    setShowGuestApplyModal(true);
-  }, []);
+  const primaryBtn =
+    "min-h-[44px] px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-[0_8px_18px_rgba(46,102,166,0.18)] " +
+    "hover:shadow-[0_10px_22px_rgba(46,102,166,0.24)] active:scale-[0.99] " +
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 transition-all";
 
-  const handleShareJob = useCallback(() => {
-    const jobUrl = window.location.href;
-    const shareText = `Check out this job: ${job?.title} at ${job?.companyName}`;
+  const ghostLink =
+    "min-h-[44px] px-1 text-sm font-semibold text-black/70 hover:text-[#2e66a6] leading-none " +
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 " +
+    "inline-flex items-center gap-2 transition-colors";
 
-    if (navigator.share) {
-      navigator.share({ title: job?.title, text: shareText, url: jobUrl });
-      return;
-    }
+  const pillBtn =
+    "h-[42px] rounded-xl px-4 bg-white border border-[#C9D8E8] text-sm font-semibold text-black/75 shadow-[0_1px_2px_rgba(0,0,0,0.04)] " +
+    "flex items-center gap-2 hover:border-[#2e66a6]/55 hover:bg-[#F7FAFD] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 transition-all flex-shrink-0";
 
-    navigator.clipboard
-      .writeText(jobUrl)
-      .then(() => setToastWithAutoClear('success', 'Job link copied to clipboard.'))
-      .catch(() => setToastWithAutoClear('error', 'Failed to copy link. Please try again.'));
-  }, [job, setToastWithAutoClear]);
+  const searchBox = `
+    ${searchFocused ? "w-full lg:w-[410px]" : "w-full lg:w-[410px]"}
+    h-[46px] bg-white border border-[#C9D8E8] rounded-xl px-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]
+    flex items-center gap-3 flex-shrink-0
+    transition-all duration-200 ease-in-out
+    focus-within:border-[#2e66a6] focus-within:ring-2 focus-within:ring-[#2e66a6]/18
+  `;
 
-  const perksAndBenefitsList = useMemo(() => {
-    const perks = Array.isArray(job?.perksAndBenefits) ? job.perksAndBenefits.filter(Boolean) : [];
-    const other = String(job?.otherBenefits || '').trim();
-    return other ? [...perks, other] : perks;
-  }, [job?.perksAndBenefits, job?.otherBenefits]);
+  const filterRowClass = "flex flex-wrap items-center gap-3";
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white">
-        <MainNavbar />
-        <div className="pt-20">
-          <Skeleton />
-        </div>
-      </div>
-    );
-  }
+  const toggleWorkMode = (label) => {
+    setSelectedWorkModes((prev) => {
+      if (prev.includes(label)) {
+        return prev.filter((item) => item !== label);
+      }
+      return [...prev, label];
+    });
+  };
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-white">
-        <MainNavbar />
-        <div className="pt-20">
-          <div className={UI.page}>
-            <div className={UI.container}>
-              <div className={`${UI.card} ${UI.pad} text-center`}>
-                <div className="mx-auto w-14 h-14 rounded-2xl bg-black/5 border border-black/10 flex items-center justify-center mb-4 text-black/60">
-                  <SvgIcon name="exclamation" className="w-7 h-7" />
-                </div>
-
-                <h1 className={UI.h2}>{error}</h1>
-                <p className={`mt-2 ${UI.body}`}>The job you're looking for might have been removed or is no longer available.</p>
-
-                <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-                  <button onClick={handleBackButton} className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSecondary} ${UI.ring}`} type="button">
-                    <SvgIcon name="arrowLeft" className="w-4 h-4" />
-                    Go Back
-                  </button>
-
-                  <button
-                    onClick={() => navigate('/jobs')}
-                    className={`${UI.btnBase} ${UI.btnMd} ${UI.btnPrimary} ${UI.ring}`}
-                    type="button"
-                  >
-                    Browse Jobs
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!job) return null;
-
-  const jobActive = isJobActive();
-  const primaryCtaLabel = jobActive ? 'Apply Now' : 'Application Closed';
+  const isCompanyVerified = (job) => {
+    return Boolean(job?.companyVerified ?? job?.isCompanyVerified ?? job?.isVerified ?? job?.verified);
+  };
 
   return (
     <div className="min-h-screen bg-white">
       <MainNavbar />
 
-      <div className="pt-32 sm:pt-36 -mt-8">
-        <>
-          <div className={UI.page}>
-            <div className="relative left-1/2 right-1/2 w-screen -ml-[50vw] -mr-[50vw] -mt-20 h-[240px] sm:h-[300px] lg:h-[330px] overflow-hidden bg-white">
-              <img
-                src={
-                  job?.employerDetails?.coverPhoto
-                    ? (
-                        /^https?:\/\//i.test(job.employerDetails.coverPhoto)
-                          ? job.employerDetails.coverPhoto
-                          : job.employerDetails.coverPhoto.startsWith('/')
-                            ? `${apiOrigin}${job.employerDetails.coverPhoto}`
-                            : `${apiOrigin}/${job.employerDetails.coverPhoto}`
-                      )
-                    : '/images/jobback.png'
-                }
-                alt={`${job.companyName || 'Company'} cover banner`}
-                className="w-full h-full object-cover object-center"
-                onError={(event) => {
-                  event.currentTarget.onerror = null;
-                  event.currentTarget.src = '/images/jobback.png';
-                }}
-              />
-            </div>
-
-            <div className={`${UI.container} -mt-16 sm:-mt-20 lg:-mt-24 relative z-10`}>
-              <div className="mb-3 sm:mb-4">
-                <button
-                  onClick={handleBackButton}
-                  className={`${UI.btnBase} ${UI.btnSm} ${UI.btnSecondary} ${UI.ring} shadow-sm bg-white`}
-                  type="button"
-                >
-                  <SvgIcon name="arrowLeft" className="w-4 h-4" />
-                  Back to Job Offers
-                </button>
+      <div className="pt-24 pb-14">
+        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-transparent">
+            <div
+              ref={filterBoxRef}
+              className="rounded-[24px] border border-[#D7E2EE] bg-[#F7FAFD] px-5 py-5 md:px-6 md:py-5 shadow-[0_8px_24px_rgba(46,102,166,0.06)]"
+            >
+              <div className="mb-5 flex flex-col gap-1">
+                <h1 className="text-[28px] md:text-[32px] font-bold tracking-tight text-black leading-tight">Job Offers</h1>
+                <p className="text-[15px] text-black/65 leading-relaxed">Browse available jobs and apply immediately.</p>
               </div>
-              {toast.message && (
-                <div
-                  className={`${UI.alertBase} ${toast.type === 'error' ? UI.alertError : UI.alertSuccess} mb-4`}
-                  role={toast.type === 'error' ? 'alert' : 'status'}
-                  aria-live="polite"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="font-semibold">{toast.message}</p>
-                    <button
-                      onClick={() => setToast({ type: '', message: '' })}
-                      className={`${UI.btnBase} ${UI.btnSm} ${UI.btnGhost} ${UI.ring}`}
-                      type="button"
+
+              <div className={filterRowClass}>
+                <div className={searchBox}>
+                  <svg
+                    className="w-5 h-5 text-black/55"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+
+                  <input
+                    type="text"
+                    placeholder="Find a Job or Company..."
+                    className="w-full h-full outline-none text-sm text-black/75 bg-transparent"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    onFocus={() => setSearchFocused(true)}
+                    onBlur={() => setSearchFocused(false)}
+                    aria-label="Search jobs"
+                  />
+                </div>
+
+                <CheckboxDropdown
+                  id="location"
+                  label="Location"
+                  placeholder="Search location"
+                  items={options.locations}
+                  selected={selectedLocations}
+                  setSelected={setSelectedLocations}
+                  enableSearch
+                  menuWidth="w-[300px]"
+                  openDropdown={openDropdown}
+                  setOpenDropdown={setOpenDropdown}
+                  pillBtn={pillBtn}
+                />
+
+                <CheckboxDropdown
+                  id="jobTitle"
+                  label="Job title"
+                  placeholder=""
+                  items={options.jobTitles}
+                  selected={selectedJobTitles}
+                  setSelected={setSelectedJobTitles}
+                  menuWidth="w-[300px]"
+                  openDropdown={openDropdown}
+                  setOpenDropdown={setOpenDropdown}
+                  pillBtn={pillBtn}
+                />
+
+                <CheckboxDropdown
+                  id="employmentType"
+                  label="Employment Type"
+                  placeholder=""
+                  items={options.employmentTypes}
+                  selected={selectedEmploymentTypes}
+                  setSelected={setSelectedEmploymentTypes}
+                  menuWidth="w-[300px]"
+                  openDropdown={openDropdown}
+                  setOpenDropdown={setOpenDropdown}
+                  pillBtn={pillBtn}
+                />
+
+                <CheckboxDropdown
+                  id="educationLevel"
+                  label="Education Level"
+                  placeholder=""
+                  items={options.educationLevels}
+                  selected={selectedEducationLevels}
+                  setSelected={setSelectedEducationLevels}
+                  menuWidth="w-[320px]"
+                  openDropdown={openDropdown}
+                  setOpenDropdown={setOpenDropdown}
+                  pillBtn={pillBtn}
+                />
+
+                <CheckboxDropdown
+                  id="company"
+                  label="Company"
+                  placeholder="Search companies"
+                  items={options.companies}
+                  selected={selectedCompanies}
+                  setSelected={setSelectedCompanies}
+                  enableSearch
+                  menuWidth="w-[300px]"
+                  openDropdown={openDropdown}
+                  setOpenDropdown={setOpenDropdown}
+                  pillBtn={pillBtn}
+                />
+
+                <SalaryDropdown
+                  id="salary"
+                  label="Salary"
+                  value={salaryMinInput}
+                  setValue={setSalaryMinInput}
+                  openDropdown={openDropdown}
+                  setOpenDropdown={setOpenDropdown}
+                  pillBtn={pillBtn}
+                />
+
+                <SortDropdown
+                  id="sortBy"
+                  label="Sort by"
+                  value={sortBy}
+                  setValue={setSortBy}
+                  openDropdown={openDropdown}
+                  setOpenDropdown={setOpenDropdown}
+                  pillBtn={pillBtn}
+                />
+
+                <FilterCheck
+                  label="With no Experience"
+                  checked={noExperience}
+                  onChange={(e) => setNoExperience(e.target.checked)}
+                />
+
+                <FilterCheck
+                  label="Open to Fresh graduates"
+                  checked={freshGraduate}
+                  onChange={(e) => setFreshGraduate(e.target.checked)}
+                />
+
+                <FilterCheck
+                  label="On-site"
+                  checked={selectedWorkModes.includes("On-site")}
+                  onChange={() => toggleWorkMode("On-site")}
+                />
+
+                <FilterCheck
+                  label="Blended"
+                  checked={selectedWorkModes.includes("Blended")}
+                  onChange={() => toggleWorkMode("Blended")}
+                />
+
+                <FilterCheck
+                  label="Remote"
+                  checked={selectedWorkModes.includes("Remote")}
+                  onChange={() => toggleWorkMode("Remote")}
+                />
+
+                <FilterCheck
+                  label="Work from Home"
+                  checked={selectedWorkModes.includes("Work from Home")}
+                  onChange={() => toggleWorkMode("Work from Home")}
+                />
+
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-2 h-[40px] px-4 rounded-xl border border-[#D7E2EE] bg-white text-[15px] font-medium text-black/60 hover:bg-[#F7FAFD] transition"
+                    onClick={clearFilters}
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
                     >
-                      Dismiss
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className={`${UI.card} ${UI.pad} mb-6`}>
-                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
-                  <div className="flex items-start gap-4 min-w-0 flex-1">
-                    <CompanyLogo src={job.companyLogo} name={job.companyName} />
-
-                    <div className="min-w-0 flex-1">
-                      {job?.isUrgent ? (
-                  <div className="mb-3 inline-flex items-center rounded-full bg-[#171717] px-4 text-xs font-bold text-white shadow-sm">
-                    Urgently Needed
-                  </div>
-                ) : null}
-                <h1
-                        className={`${UI.h1} overflow-hidden text-ellipsis sm:truncate`}
-                        style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2 }}
-                        title={job.title}
-                      >
-                        {job.title}
-                      </h1>
-
-                      <div className="mt-2">
-                        <div className={`inline-flex items-center gap-2 ${UI.meta} min-w-0`}>
-                          <span className="text-black/60">
-                            <SvgIcon name="building" className="w-4 h-4" />
-                          </span>
-                          <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap" title={job.companyName}>
-                            {job.companyName}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="mt-1">
-                        <div className={`inline-flex items-center gap-2 ${UI.caption}`}>
-                          <span className="text-black/60">
-                            <SvgIcon name="location" className="w-4 h-4" />
-                          </span>
-                          <span>{formatLocationDisplay(job.location)}</span>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {job.jobType && (
-                          <span className={UI.chip}>
-                            <span className="text-black/60">
-                              <SvgIcon name="briefcase" className="w-3.5 h-3.5" />
-                            </span>
-                            {job.jobType}
-                          </span>
-                        )}
-
-                        {job.workMode && (
-                          <span className={UI.chip}>
-                            <span className="text-black/60">
-                              <SvgIcon name="building" className="w-3.5 h-3.5" />
-                            </span>
-                            {job.workMode}
-                          </span>
-                        )}
-
-                        {job.vacancies && (
-                          <span className={UI.chip}>
-                            <span className="text-black/60">
-                              <SvgIcon name="users" className="w-3.5 h-3.5" />
-                            </span>
-                            {job.vacancies} Vacancies
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-black/80">
-                        <span className="text-black/60">
-                          <SvgIcon name="clock" className="w-4 h-4" />
-                        </span>
-                        <span>
-                          {formatPostedRelative(job.createdAt)}
-                          {job.applicationDeadline
-                            ? ` and deadline of application is on ${formatApplicationDeadline(job.applicationDeadline)}`
-                            : ''}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2 w-full lg:w-[260px] shrink-0">
-                    <button
-                      onClick={jobActive ? handleApplyClick : undefined}
-                      disabled={!jobActive}
-                      className={`${UI.btnBase} ${
-                        !jobActive ? 'bg-black/5 text-black/50 border border-black/10' : UI.btnPrimary
-                      } ${UI.ring} ${UI.btnLg} w-full`}
-                      type="button"
-                    >
-                      {primaryCtaLabel}
-                    </button>
-
-                    <div className="grid w-full grid-cols-2 gap-2">
-                      <button
-                        onClick={handleSaveClick}
-                        className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSecondary} ${UI.ring} w-full min-w-0`}
-                        type="button"
-                      >
-                        <SvgIcon name="bookmark" className="w-4 h-4" />
-                        Save
-                      </button>
-
-                      <button
-                        onClick={handleShareJob}
-                        className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSecondary} ${UI.ring} w-full min-w-0`}
-                        type="button"
-                      >
-                        <SvgIcon name="share" className="w-4 h-4" />
-                        Share
-                      </button>
-                    </div>
-
-                  </div>
-                </div>
-              </div>
-
-              <div className={UI.grid}>
-                <div className={UI.left}>
-                  <div className="space-y-5">
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                      <TopMetricCard
-                        icon="money"
-                        title="Salary"
-                        value={formatSalary(job.salaryMin, job.salaryMax, job.hideSalary)}
-                        isPeso
-                      />
-                      <TopMetricCard
-                        icon="clock"
-                        title="Experience"
-                        value={job.experienceLevel || 'No experience required'}
-                      />
-                      <TopMetricCard
-                        icon="graduation"
-                        title="Educational Requirements"
-                        value={job.educationLevel || 'Not specified'}
-                      />
-                    </div>
-
-                    <div className={UI.insetPanel}>
-                      <div className={`${UI.insetBody} space-y-8`}>
-                        <section>
-                          <div className="flex items-center gap-3 pt-2">
-                          <IconBadge icon="file" />
-                            <div className="min-w-0">
-                              <h3 className={UI.h3}>Job Description</h3>
-                            </div>
-                          </div>
-
-                          <div className="mt-4 text-sm sm:text-base text-black/70 leading-relaxed">
-                            <RichTextContent value={job.description} fallback="No description provided." />
-                          </div>
-                        </section>
-
-                        <div className={UI.divider} />
-
-                        <section>
-                          <div className="flex items-center gap-3 pt-2">
-                          <IconBadge icon="tools" />
-                            <div className="min-w-0 ">
-                              <h3 className={UI.h3}>Qualification</h3>
-                            </div>
-                          </div>
-
-                          <div className="mt-4 text-sm sm:text-base text-black/70 leading-relaxed">
-                            <RichTextContent value={job.requirements} fallback="No requirements provided." />
-                          </div>
-                        </section>
-                      </div>
-                    </div>
-
-                    {perksAndBenefitsList.length > 0 && (
-                      <div className={UI.insetPanel}>
-                        <div className={UI.insetHead}>
-                          <p className="text-sm font-semibold text-black">Perks and Benefits</p>
-                        </div>
-
-                        <div className={UI.insetBody}>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {perksAndBenefitsList.map((benefit, idx) => (
-                              <BenefitItem key={`${benefit}-${idx}`}>{benefit}</BenefitItem>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <aside className={`${UI.right} lg:sticky lg:top-24`}>
-                  <div className={UI.insetPanel}>
-                    <div className={UI.insetHead}>
-                      <p className="text-sm font-semibold text-black">Job Overview</p>
-                    </div>
-
-                    <div className={`${UI.insetBody} space-y-6`}>
-                      <div>
-                        <p className={UI.caption}>Willing to Relocate?</p>
-                        <p className={UI.meta}>{getRelocationDisplayLabel(job.willingToRelocate)}</p>
-                      </div>
-
-                      <div>
-                        <p className={UI.caption}>Website / Company URL</p>
-                        {companyInfo?.companyWebsite ? (
-                          <a
-                            href={companyInfo.companyWebsite}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={`inline-flex items-center gap-2 font-semibold text-[#2e66a6] hover:underline ${UI.ring} rounded mt-1`}
-                          >
-                            <span className="break-all">{companyInfo.companyWebsite}</span>
-                            <SvgIcon name="external" className="w-3.5 h-3.5" />
-                          </a>
-                        ) : (
-                          <p className={UI.meta}>N/A</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <p className={UI.caption}>Required Skills</p>
-                        {Array.isArray(job.skillsRequired) && job.skillsRequired.length > 0 ? (
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {job.skillsRequired.map((skill, idx) => (
-                              <span
-                                key={`${skill}-${idx}`}
-                                className="px-2.5 py-1 rounded-full text-[11px] font-medium border border-black/10 bg-white text-black/70"
-                              >
-                                {skill}
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className={UI.meta}>No required skills listed.</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <p className={UI.caption}>Work Location</p>
-                        <div className="mt-2 rounded-xl border border-black/10 overflow-hidden bg-white">
-                          {getJobCoordinates(job) ? (
-                            <StaticLocationMap job={job} heightClass="h-[130px]" />
-                          ) : job.locationImage ? (
-                            <img
-                              src={
-                                job.locationImage.startsWith('http')
-                                  ? job.locationImage
-                                  : `${apiOrigin}${job.locationImage}`
-                              }
-                              alt="Work location"
-                              className="w-full h-[130px] object-cover"
-                            />
-                          ) : (
-                            <div className="h-[130px] bg-black/5 flex items-center justify-center text-black/40">
-                              <SvgIcon name="location" className="w-6 h-6" />
-                            </div>
-                          )}
-                          <div className="px-3 py-2 border-t border-black/10">
-                            <p className="text-xs text-black/65">{formatLocationDisplay(job.location)}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="rounded-2xl bg-[#f7faff] border border-[#d8e2ee] p-5">
-                        <h3 className="text-sm font-bold text-black">Interested in this role?</h3>
-                        <p className="text-sm text-black/65 mt-1">
-                          Join {job.companyName || 'this company'} and be part of something amazing.
-                        </p>
-
-                        <button
-                          onClick={jobActive ? handleApplyClick : undefined}
-                          disabled={!jobActive}
-                          className={`${UI.btnBase} ${
-                            !jobActive ? 'bg-black/5 text-black/50 border border-black/10' : UI.btnPrimary
-                          } ${UI.ring} ${UI.btnLg} w-full mt-4`}
-                          type="button"
-                        >
-                          {primaryCtaLabel}
-                        </button>
-                      </div>
-
-                      {false && similarJobs.length > 0 && (
-                        <>
-                          <div className={UI.divider} />
-                          <div>
-                            <h3 className={UI.h3}>Similar Jobs</h3>
-
-                            <div className="mt-4 space-y-3">
-                              {similarJobs.map((sj) => (
-                                <button
-                                  key={sj._id}
-                                  onClick={() => navigate(`/jobs/${sj._id}`)}
-                                  className={`w-full text-left rounded-xl border border-black/10 bg-white hover:bg-black/5 transition p-4 ${UI.ring}`}
-                                  type="button"
-                                >
-                                  <p className="font-semibold text-black line-clamp-1">{sj.title}</p>
-                                  <p className="text-sm text-black/70 line-clamp-1">{sj.companyName}</p>
-                                  <p className="text-xs text-black/50 mt-1">
-                                    {formatLocationDisplay(sj.location)} • {sj.jobType}
-                                  </p>
-                                </button>
-                              ))}
-
-                              <button
-                                onClick={() => navigate('/jobs')}
-                                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSecondary} ${UI.ring} w-full`}
-                                type="button"
-                              >
-                                View More Jobs <span aria-hidden="true">→</span>
-                              </button>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </aside>
-              </div>
-
-              <div className={UI.srOnly} aria-live="polite" aria-atomic="true">
-                {toast.message}
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Clear All
+                  </button>
+                )}
               </div>
             </div>
           </div>
 
-          {showGuestApplyModal &&
-            ReactDOM.createPortal(
-              <div className="fixed inset-0 z-[80]">
-                <div className="absolute inset-0 bg-black/40" onClick={closeGuestApplyModal} aria-hidden="true" />
-
-                <div className="absolute inset-0 flex items-center justify-center px-4">
+          <div className="mt-6">
+            {loadingInitial ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5 xl:gap-6">
+                {[...Array(8)].map((_, index) => (
                   <div
-                    ref={modalRef}
-                    className="w-full max-w-[460px] bg-white border border-[#d8e2ee] shadow-2xl rounded-2xl"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="Access required"
-                    onClick={(e) => e.stopPropagation()}
+                    key={index}
+                    className="rounded-2xl p-7 animate-pulse"
+                    style={{ backgroundColor: COLORS.card, border: `1px solid ${COLORS.border}` }}
                   >
-                    <div className="flex items-start justify-end px-4 pt-4">
-                      <button
-                        onClick={closeGuestApplyModal}
-                        className="h-9 w-9 rounded-full border border-gray-200 hover:bg-gray-50 flex items-center justify-center
-                                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400 transition"
-                        aria-label="Close"
-                        title="Close"
-                        type="button"
-                      >
-                        <span className="text-lg leading-none text-gray-700">×</span>
-                      </button>
-                    </div>
-
-                    <div className="px-8 pb-8 -mt-1">
-                      <div className="flex justify-center">
-                        <img
-                          src="/images/agapaymo.png"
-                          alt="AGAPAY"
-                          className="h-14 w-auto object-contain select-none"
-                          draggable="false"
-                        />
-                      </div>
-
-                      <h3 className="mt-4 text-center text-3xl font-semibold text-gray-800 leading-snug">
-                        {gateReason?.title || 'Access required'}
-                      </h3>
-
-                      <p className="mt-3 text-center text-sm text-gray-600 leading-6">
-                        {gateReason?.body || 'Please login to continue.'}
-                      </p>
-
-                      <div className="mt-6 flex flex-col gap-3">
-                        {gateReason?.primaryAction === 'signup' ? (
-                          <>
-                            <button
-                              ref={firstBtnRef}
-                              type="button"
-                              onClick={openJoinAs}
-                              className="w-full h-11 rounded-lg text-sm font-semibold text-white
-                                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 transition bg-[#2e66a6] hover:bg-[#25578f]"
-                            >
-                              {gateReason?.primary || 'Sign Up'}
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={goLogin}
-                              className="w-full h-11 rounded-lg text-sm font-semibold text-gray-800
-                                         border border-gray-200 bg-gray-100 hover:bg-gray-200 transition
-                                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400"
-                            >
-                              {gateReason?.secondary || 'Login'}
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              ref={firstBtnRef}
-                              type="button"
-                              onClick={goLogin}
-                              className="w-full h-11 rounded-lg text-sm font-semibold text-white
-                                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 transition bg-[#2e66a6] hover:bg-[#25578f]"
-                            >
-                              {gateReason?.primary || 'Go to Login'}
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={closeGuestApplyModal}
-                              className="w-full h-11 rounded-lg text-sm font-semibold text-gray-800
-                                         border border-gray-200 bg-gray-100 hover:bg-gray-200 transition
-                                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400"
-                            >
-                              {gateReason?.secondary || 'Close'}
-                            </button>
-                          </>
-                        )}
-                      </div>
+                    <div className="h-6 w-3/4 rounded mb-4" style={{ backgroundColor: COLORS.mutedBox }} />
+                    <div className="h-4 w-1/2 rounded mb-5" style={{ backgroundColor: COLORS.mutedBox }} />
+                    <div className="h-24 rounded mb-5" style={{ backgroundColor: COLORS.mutedBox }} />
+                    <div className="h-9 w-2/3 rounded mb-5" style={{ backgroundColor: COLORS.mutedBox }} />
+                    <div className="flex items-center justify-between">
+                      <div className="h-4 w-24 rounded" style={{ backgroundColor: COLORS.mutedBox }} />
+                      <div className="h-10 w-28 rounded" style={{ backgroundColor: COLORS.mutedBox }} />
                     </div>
                   </div>
+                ))}
+              </div>
+            ) : errorMsg ? (
+              <div className="bg-white border border-[#D7E2EE] rounded-[24px] p-8 text-center shadow-[0_8px_24px_rgba(0,0,0,0.05)]">
+                            <h3 className="text-lg font-bold text-black">Something went wrong</h3>
+                <p className="mt-2 text-sm text-black/65">{errorMsg}</p>
+                <button
+                  className="mt-5 px-4 py-2 rounded-xl text-sm font-semibold border border-[#AFC6DD] text-black/75 hover:bg-[#F7FAFD]
+                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2e66a6] transition"
+                  onClick={fetchAllJobs}
+                >
+                  Try again
+                </button>
+              </div>
+            ) : filteredJobs.length === 0 ? (
+              <div className="bg-white border border-[#D7E2EE] rounded-[24px] p-8 text-center shadow-[0_8px_24px_rgba(0,0,0,0.05)]">
+                <h3 className="text-lg font-bold text-black">No results found</h3>
+                <p className="mt-2 text-sm text-black/65">Try adjusting your filters or search terms.</p>
+
+                <div className="mt-5 flex items-center justify-center gap-3">
+                  {hasActiveFilters && (
+                    <button
+                      className="px-4 py-2 rounded-xl text-sm font-semibold border border-[#AFC6DD] text-black/75 hover:bg-[#F7FAFD]
+                                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2e66a6] transition"
+                      onClick={clearFilters}
+                    >
+                      Clear filters
+                    </button>
+                  )}
+
+                  <button
+                    className="px-4 py-2 rounded-xl text-sm font-semibold border border-[#AFC6DD] text-black/75 hover:bg-[#F7FAFD]
+                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2e66a6] transition"
+                    onClick={fetchAllJobs}
+                  >
+                    Refresh
+                  </button>
                 </div>
-              </div>,
-              document.body
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5 xl:gap-6">
+                {filteredJobs.map((job) => {
+                  const jobId = job._id || job.id;
+
+                  const experienceBadgeLabel = getExperienceBadgeLabel(job.experienceLevel);
+                  const tagFreshGrad = isFreshGraduateJob(job);
+
+                  const wmLabel = normalizeWorkModeLabel(job.workMode);
+                  const tagBlended = wmLabel === "Blended";
+                  const tagOnsite = wmLabel === "On-site";
+                  const tagRemote = wmLabel === "Remote";
+                  const tagWorkFromHome = wmLabel === "Work from Home";
+
+                  const verified = isCompanyVerified(job) || job?.companyVerified == null;
+
+                  return (
+                    <div
+                      key={jobId}
+                      className="group rounded-[22px] p-5 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(46,102,166,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[372px]"
+                      style={{ border: `1px solid ${COLORS.border}` }}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-4 min-w-0 flex-1">
+                          <div className="w-12 h-12 rounded-[14px] overflow-hidden flex-shrink-0 border border-[#D7E2EE] bg-white shadow-sm">
+                            {job.companyLogo ? (
+                              <img
+                                src={job.companyLogo}
+                                alt={job.companyName || "Company logo"}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = "none";
+                                }}
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-[#EAF1F8]" />
+                            )}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            {job.isUrgent ? (
+                              <div className="mb-0.5 inline-flex w-fit items-center rounded-full bg-[#171717] px-3 py-1 text-xs font-bold leading-none text-white shadow-sm">
+                                Urgently Needed
+                              </div>
+                            ) : null}
+
+                            <h3 className="min-w-0 truncate whitespace-nowrap text-[17px] md:text-lg font-bold text-black leading-snug group-hover:text-[#2e66a6] transition">
+                              {String(job.title || "Job Title").replaceAll('"', "")}
+                            </h3>
+
+                            <div className="mt-1 flex items-center gap-2 min-w-0">
+                              <span className="text-sm font-medium text-black/65 truncate">
+                                {job.companyName || "Company"}
+                              </span>
+
+                              {verified && (
+                                <span
+                                  className="inline-flex items-center justify-center w-5 h-5 rounded-full flex-shrink-0"
+                                  title="Verified"
+                                  aria-label="Verified company"
+                                >
+                                  <img
+                                    src="/images/checkmo.png"
+                                    alt="Verified"
+                                    className="w-5 h-5 object-contain"
+                                    draggable="false"
+                                  />
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleSaveJob(job)}
+                          className="flex items-center justify-center w-10 h-10 rounded-xl text-black/65 hover:bg-[#F7FAFD] hover:text-[#2e66a6] transition flex-shrink-0"
+                          aria-label="Save job"
+                          title="Save job"
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M17 21l-5-3-5 3V5a2 2 0 012-2h6a2 2 0 012 2v16z"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+
+                      <div className="mt-4 rounded-2xl p-3.5" style={{ backgroundColor: COLORS.mutedBox }}>
+                        <div className="flex items-center gap-2 text-sm text-black/75 min-h-[20px] min-w-0">
+                          <svg
+                            className="w-4 h-4 text-black/65 flex-shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                          </svg>
+                          <span className="truncate min-w-0 flex-1">{formatLocationDisplay(job.location)}</span>
+                        </div>
+
+                        <div className="mt-2 flex items-center gap-2 text-sm text-black/75">
+                          <span className="w-4 h-4 text-black/65 flex items-center justify-center font-extrabold text-[14px] leading-none">
+                            ₱
+                          </span>
+                          <span className="truncate">{formatSalary(job.salaryMin, job.salaryMax, job.hideSalary)}</span>
+                        </div>
+
+                        <div className="mt-2 flex items-center gap-2 text-sm text-black/75">
+                          <svg
+                            className="w-4 h-4 text-black/65"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                            />
+                          </svg>
+                          <span className="truncate">{job.jobType || "Full Time Work"}</span>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex items-center gap-2 text-[13px] font-medium text-black/65">
+                        <svg
+                          className="w-4 h-4 text-black/55 flex-shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M8 7V3m8 4V3m-9 8h10m-11 9h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v11a2 2 0 002 2z"
+                          />
+                        </svg>
+                        <span className="truncate">{formatApplicationDeadline(job.applicationDeadline)}</span>
+                      </div>
+
+                      <div className="mt-4 flex flex-wrap items-center gap-1.5">
+                        {experienceBadgeLabel && (
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap bg-[#2e66a6]/10 text-[#2e66a6] border border-[#2e66a6]/25">
+                            {experienceBadgeLabel}
+                          </span>
+                        )}
+
+                        {tagBlended && (
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap bg-[#2e66a6]/10 text-[#2e66a6] border border-[#2e66a6]/25">
+                            Blended
+                          </span>
+                        )}
+                        {tagOnsite && (
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap bg-[#2e66a6]/10 text-[#2e66a6] border border-[#2e66a6]/25">
+                            On-site
+                          </span>
+                        )}
+                        {tagRemote && (
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap bg-[#2e66a6]/10 text-[#2e66a6] border border-[#2e66a6]/25">
+                            Remote
+                          </span>
+                        )}
+                        {tagWorkFromHome && (
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap bg-[#2e66a6]/10 text-[#2e66a6] border border-[#2e66a6]/25">
+                            Work from Home
+                          </span>
+                        )}
+
+                        {tagFreshGrad && (
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap bg-[#2e66a6]/10 text-[#2e66a6] border border-[#2e66a6]/25">
+                            Open to Fresh Graduate
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="mt-4 w-full h-px bg-[#D7E2EE]" />
+
+                      <div className="mt-auto pt-4 flex items-center justify-between gap-3">
+                        <button type="button" onClick={() => handleLearnMore(job)} className={ghostLink}>
+                          <span className="leading-none">View Details</span>
+                          <svg
+                            className="w-4 h-4 self-center shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleApply(job)}
+                          className={primaryBtn}
+                          style={{ backgroundColor: COLORS.primary }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = COLORS.primaryHover)}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = COLORS.primary)}
+                          onMouseDown={(e) => (e.currentTarget.style.backgroundColor = COLORS.primaryActive)}
+                          onMouseUp={(e) => (e.currentTarget.style.backgroundColor = COLORS.primaryHover)}
+                        >
+                          Apply Now
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
-        </>
+          </div>
+        </div>
       </div>
+
+      <MainFooter />
+
+      {showGuestModal && (
+        <div className="fixed inset-0 z-[80]">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" onClick={() => setShowGuestModal(false)} aria-hidden="true" />
+
+          <div className="absolute inset-0 flex items-center justify-center px-4">
+            <div
+              ref={modalRef}
+              className="w-full max-w-[460px] bg-white border border-[#D7E2EE] shadow-[0_24px_80px_rgba(0,0,0,0.24)] rounded-[24px]"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Access required"
+            >
+              <div className="flex items-start justify-end px-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowGuestModal(false)}
+                  className="h-9 w-9 rounded-full border border-[#D7E2EE] hover:bg-[#F7FAFD] flex items-center justify-center
+                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2e66a6] transition"
+                  aria-label="Close"
+                  title="Close"
+                >
+                  <span className="text-lg leading-none text-black/75">×</span>
+                </button>
+              </div>
+
+              <div className="px-8 pb-8 -mt-1">
+                <div className="flex justify-center">
+                  <img
+                    src="/images/agapaymo.png"
+                    alt="AGAPAY"
+                    className="h-14 w-auto object-contain select-none"
+                    draggable="false"
+                  />
+                </div>
+
+                <h3 className="mt-4 text-center text-2xl md:text-3xl font-bold text-black leading-snug">
+                  {gateReason?.title || "Access required"}
+                </h3>
+
+                <p className="mt-3 text-center text-sm text-black/65 leading-6">
+                  {gateReason?.body || "Please login to continue."}
+                </p>
+
+                <div className="mt-6 flex flex-col gap-3">
+                  <button
+                    ref={firstModalBtnRef}
+                    type="button"
+                    onClick={openJoinAs}
+                    className="w-full h-11 rounded-lg text-sm font-semibold text-white
+                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 transition"
+                    style={{ backgroundColor: COLORS.primary }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = COLORS.primaryHover)}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = COLORS.primary)}
+                    onMouseDown={(e) => (e.currentTarget.style.backgroundColor = COLORS.primaryActive)}
+                    onMouseUp={(e) => (e.currentTarget.style.backgroundColor = COLORS.primaryHover)}
+                  >
+                    {gateReason?.primary || "Sign Up"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={goLogin}
+                    className="w-full h-11 rounded-lg text-sm font-semibold text-black
+                               border border-[#D7E2EE] bg-[#F5F8FC] hover:bg-[#EAF1F8] transition
+                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2e66a6]"
+                  >
+                    {gateReason?.secondary || "Login"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default JobOfferDetails;
+export default JobOffers;
