@@ -64,6 +64,48 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
         </svg>
       );
+    case 'mail':
+      return (
+        <svg {...common}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6h16v12H4z M4 7l8 6 8-6" />
+        </svg>
+      );
+    case 'phone':
+      return (
+        <svg {...common}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 4h4l2 5-3 2a16 16 0 007 7l2-3 5 2v4a2 2 0 01-2 2C10 23 1 14 1 4a2 2 0 012-2h2z" />
+        </svg>
+      );
+    case 'calendar':
+      return (
+        <svg {...common}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3M5 11h14M6 5h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2z" />
+        </svg>
+      );
+    case 'arrow':
+      return (
+        <svg {...common}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 12h14m-5-5 5 5-5 5" />
+        </svg>
+      );
+    case 'sparkle':
+      return (
+        <svg {...common}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 3l1.2 3.8L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3z M5 14l.8 2.2L8 17l-2.2.8L5 20l-.8-2.2L2 17l2.2-.8L5 14z" />
+        </svg>
+      );
+    case 'chevron-left':
+      return (
+        <svg {...common}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+      );
+    case 'chevron-right':
+      return (
+        <svg {...common}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -619,6 +661,8 @@ const Applicants = () => {
 
   const [filterBy, setFilterBy] = useState('all');
   const [sortBy, setSortBy] = useState('most_recent');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
   const [updatingId, setUpdatingId] = useState(null);
 
   // Reject confirm modal state
@@ -901,6 +945,22 @@ const Applicants = () => {
     return sorted;
   }, [allApplications, buildApplicantName, debouncedQuery, filterBy, sortBy, statusFilter]);
 
+  const totalPages = Math.max(1, Math.ceil(filteredApplications.length / itemsPerPage));
+  const paginatedApplications = useMemo(
+    () => filteredApplications.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage),
+    [filteredApplications, currentPage]
+  );
+  const firstShown = filteredApplications.length ? (currentPage - 1) * itemsPerPage + 1 : 0;
+  const lastShown = Math.min(currentPage * itemsPerPage, filteredApplications.length);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedQuery, filterBy, selectedJob]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
   const hasActiveFilters = useMemo(() => {
     return (
       query.trim() !== '' ||
@@ -1023,6 +1083,7 @@ const Applicants = () => {
     setSortBy('most_recent');
     setSelectedJob('all');
     syncStatusToURL('pending');
+    setCurrentPage(1);
   };
 
   const selectBase =
@@ -1053,411 +1114,213 @@ const Applicants = () => {
         )}
 
         {/* Filters Bar */}
-        <div className="relative z-20 mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="p-5">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
-              {/* Search */}
-              <div className="min-w-0 lg:flex-1">
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-4 top-3.5 text-gray-400">
-                    <Icon name="search" className="h-5 w-5" />
-                  </span>
-
-                  <label className="sr-only" htmlFor="applicantSearch">
-                    Search applicants
-                  </label>
-                  <input
-                    id="applicantSearch"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    className={inputBase}
-                    placeholder="Search applicant, email, job title, company, location…"
-                    disabled={isLoading}
-                    autoComplete="off"
-                  />
-
-                  {query && (
-                    <button
-                      type="button"
-                      onClick={() => setQuery('')}
-                      className="absolute right-3 top-3.5 rounded-lg p-1 text-gray-500 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-                      aria-label="Clear search"
-                    >
-                      <Icon name="x" className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Job dropdown */}
-              <div className="lg:w-[300px] lg:shrink-0">
-                <label className="sr-only" htmlFor="jobFilter">
-                  Filter by job
-                </label>
-                <select
-                  id="jobFilter"
-                  value={selectedJob}
-                  onChange={(e) => setSelectedJob(e.target.value)}
-                  className={selectBase}
-                  disabled={jobsLoading}
+        <div className="relative z-20 mb-8 overflow-visible rounded-3xl border border-[#e3e5ef] bg-white p-5 shadow-sm">
+          <div className="grid gap-3 lg:grid-cols-[1.45fr_0.8fr_0.9fr]">
+            <div className="relative">
+              <Icon name="search" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              <input
+                id="applicantSearch"
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setCurrentPage(1);
+                }}
+                placeholder="Search applicant name, email..."
+                className="h-12 w-full rounded-xl border border-gray-200 bg-white pl-12 pr-10 text-sm text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+                disabled={isLoading}
+                autoComplete="off"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery('');
+                    setCurrentPage(1);
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-gray-500 hover:bg-gray-100"
+                  aria-label="Clear search"
                 >
-                  {jobOptions.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Filter By */}
-              <div className="lg:w-[112px] lg:shrink-0">
-                <AccessibleDropdown
-                  trigger={
-                    <Button
-                      variant="secondary"
-                      className="h-12 w-full whitespace-nowrap border-gray-300 px-3 font-medium"
-                      disabled={isLoading}
-                      aria-label="Filter applications by date"
-                    >
-                      Filter By
-                      <Icon name="chevron-down" className="h-4 w-4" />
-                    </Button>
-                  }
-                  align="right"
-                  width="w-44"
-                >
-                  {filterOptions.map((option) => (
-                    <DropdownItem
-                      key={option.value}
-                      onClick={() => setFilterBy(option.value)}
-                      variant={filterBy === option.value ? 'success' : 'default'}
-                    >
-                      {option.label}
-                    </DropdownItem>
-                  ))}
-                </AccessibleDropdown>
-              </div>
-
-              {/* Sort By */}
-              <div className="lg:w-[112px] lg:shrink-0">
-                <AccessibleDropdown
-                  trigger={
-                    <Button
-                      variant="secondary"
-                      className="h-12 w-full whitespace-nowrap border-gray-300 px-3 font-medium"
-                      disabled={isLoading}
-                      aria-label="Sort applications"
-                    >
-                      Sort By
-                      <Icon name="chevron-down" className="h-4 w-4" />
-                    </Button>
-                  }
-                  align="right"
-                  width="w-64"
-                >
-                  {sortOptions.map((option) => (
-                    <DropdownItem
-                      key={option.value}
-                      onClick={() => setSortBy(option.value)}
-                      variant={sortBy === option.value ? 'success' : 'default'}
-                    >
-                      {option.label}
-                    </DropdownItem>
-                  ))}
-                </AccessibleDropdown>
-              </div>
-
-              {/* Clear */}
-              {hasActiveFilters && (
-                <div className="lg:w-[88px] lg:shrink-0">
-                  <Button variant="secondary" className="w-full" onClick={clearFilters} disabled={isLoading}>
-                    Clear
-                  </Button>
-                </div>
+                  <Icon name="x" className="h-4 w-4" />
+                </button>
               )}
             </div>
 
-            <div className="mt-3 text-xs text-gray-500">
-              Showing <span className="font-semibold text-gray-700">{filteredApplications.length}</span> result(s)
-              {selectedJob === 'all' ? '' : ' for selected job'}.
+            <select
+              value="pending"
+              disabled
+              className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm font-medium text-gray-900 opacity-100"
+              aria-label="Application status"
+            >
+              <option value="pending">Pending Applicants</option>
+            </select>
+
+            <div className="relative">
+              <Icon name="calendar" className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
+              <select
+                value={filterBy}
+                onChange={(event) => {
+                  setFilterBy(event.target.value);
+                  setCurrentPage(1);
+                }}
+                className="h-12 w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 pr-12 text-sm font-medium text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+                disabled={isLoading}
+                aria-label="Filter applicants by date"
+              >
+                {filterOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label === 'Overall' ? 'All Time' : option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="p-6">
-            {isLoading ? (
-              <div className="py-14 text-center" role="status" aria-live="polite">
-                <div className="mx-auto inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-[#2e66a6]" />
-                <p className="mt-4 text-sm text-gray-600">Loading applicants…</p>
-              </div>
-            ) : filteredApplications.length === 0 ? (
-              <div className="py-14 text-center">
-                <h3 className="text-lg font-semibold text-gray-900">No applicants found</h3>
-                <p className="mt-2 text-sm text-gray-600">Try changing filters or clearing search.</p>
-                {jobs.length === 0 && (
-                  <div className="mt-6">
-                    <Button variant="primary" onClick={() => navigate('/employer/post-job')}>
-                      Post Your First Job
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <>
-                {/* Desktop table */}
-                <div className="hidden overflow-x-auto md:block">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Applicant
-                        </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Job applied
-                        </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Applied date
-                        </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                         Assessment Pending
-                        </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
+        {isLoading ? (
+          <div className="rounded-3xl border border-[#e3e5ef] bg-white p-12 text-center text-[#6b7280] shadow-sm">
+            Loading applicants...
+          </div>
+        ) : paginatedApplications.length ? (
+          <>
+            <div className="space-y-5">
+              {paginatedApplications.map((app) => {
+                const user = app.jobseeker || {};
+                const profile = user.jobSeekerProfile || {};
+                const name = buildApplicantName(user);
+                const email = user.email || 'Not provided';
+                const phone = profile.phoneNumber || profile.contactNumber || 'Not provided';
+                const level = profile.jobSeekerLevel || profile.level || 'Intermediate';
+                const matchValue = Number(
+                  app.matchScore ??
+                  app.matchPercentage ??
+                  app.compatibilityScore ??
+                  0
+                );
+                const matchScore = Number.isFinite(matchValue)
+                  ? Math.max(0, Math.min(100, Math.round(matchValue)))
+                  : 0;
 
-                    <tbody className="divide-y divide-gray-200 bg-white">
-                      {filteredApplications.map((app) => {
-                        const name = buildApplicantName(app.jobseeker);
-                        const email = app.jobseeker?.email || '—';
-                        const jobTitle = app.job?.title || 'Job Title';
-                        const companyName = app.job?.companyName || 'Company';
-                        const rowBusy = updatingId === app._id;
+                return (
+                  <article
+                    key={app._id}
+                    className="rounded-3xl border border-[#e3e5ef] bg-white p-6 shadow-sm"
+                  >
+                    <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                      <div className="flex min-w-0 items-center gap-5">
+                        <Avatar
+                          img={user.profileImage}
+                          name={name}
+                          size={80}
+                          altKey={`pending_applicant_${app._id}`}
+                        />
 
-                        return (
-                          <tr key={app._id} className="hover:bg-gray-50">
-                            {/* Applicant */}
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-4">
-                                <Avatar
-                                  img={app.jobseeker?.profileImage}
-                                  name={name}
-                                  size={48}
-                                  altKey={`applicant_${app._id}`}
-                                />
-
-                                <div className="min-w-0">
-                                  <div className="truncate text-sm font-semibold text-gray-900">{name}</div>
-                                  <div className="truncate text-sm text-gray-600">{email}</div>
-                                </div>
-                              </div>
-                            </td>
-
-                            {/* Job */}
-                            <td className="px-6 py-4">
-                              <div className="max-w-[18rem] truncate text-sm font-semibold text-gray-900" title={jobTitle}>
-                                {jobTitle}
-                              </div>
-                             
-                            </td>
-
-                            {/* Dates */}
-                            <td className="px-6 py-4">
-                              <div className="text-sm text-gray-900">{formatDate(app.appliedAt)}</div>
-                             
-                            </td>
-
-                            {/* Status */}
-                            <td className="px-6 py-4">
-                              <span
-                                className={cn('inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold', getStatusPill(app.status))}
-                                aria-label={`Status: ${getStatusDisplayLabel(app.status)}`}
-                              >
-                                {getStatusDisplayLabel(app.status)}
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <h2 className="text-xl font-bold text-[#111827]">{name}</h2>
+                            {app.alreadyEmployed && (
+                              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+                                Already Employed
                               </span>
-                            </td>
-
-                            {/* Actions */}
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-2">
-                                <Link
-                                  to={`/employer/application/${app._id}`}
-                                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-                                  aria-label={`View application of ${name}`}
-                                >
-                                  <Icon name="eye" className="h-4 w-4" />
-                                  <span className="sr-only">View</span>
-                                </Link>
-
-                                <AccessibleDropdown
-                                  trigger={
-                                    <Button
-                                      variant="secondary"
-                                      size="xs"
-                                      className="h-9 px-2 flex items-center justify-center gap-1"
-                                      disabled={rowBusy}
-                                      aria-label={`More actions for ${name}`}
-                                    >
-                                      <Icon name="more-vertical" className="h-4 w-4" />
-                                      <Icon name="chevron-down" className="h-3 w-3" />
-                                    </Button>
-                                  }
-                                  align="right"
-                                  width="w-48"
-                                >
-                                  {(app.status === 'pending' || app.status === 'hired' || app.status === 'declined') && (
-                                    <DropdownItem
-                                      onClick={() => handleStatusUpdate(app._id, 'for interview')}
-                                      icon={<Icon name="star" className="h-4 w-4 text-gray-600" />}
-                                      disabled={rowBusy}
-                                    >
-                                      Move to For Interview
-                                    </DropdownItem>
-                                  )}
-
-                                  {(app.status === 'pending' || app.status === 'for interview' || app.status === 'hired') && (
-                                    <DropdownItem
-                                      onClick={() => openDeclineModal({ id: app._id, name })}
-                                      icon={<Icon name="x" className="h-4 w-4 text-red-600" />}
-                                      disabled={rowBusy}
-                                      variant="danger"
-                                    >
-                                      Decline
-                                    </DropdownItem>
-                                  )}
-                                </AccessibleDropdown>
-
-                                {rowBusy && (
-                                  <span className="inline-flex items-center gap-2 text-xs font-semibold text-gray-500">
-                                    <span className="inline-block h-3 w-3 animate-spin rounded-full border-b-2 border-t-2 border-gray-400" />
-                                    Updating…
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Mobile cards */}
-                <div className="space-y-3 md:hidden">
-                  {filteredApplications.map((app) => {
-                    const name = buildApplicantName(app.jobseeker);
-                    const email = app.jobseeker?.email || '—';
-                    const jobTitle = app.job?.title || 'Job Title';
-                    const companyName = app.job?.companyName || 'Company';
-                    const rowBusy = updatingId === app._id;
-
-                    return (
-                      <div key={app._id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <Avatar
-                              img={app.jobseeker?.profileImage}
-                              name={name}
-                              size={44}
-                              altKey={`applicant_mobile_${app._id}`}
-                            />
-
-                            <div className="min-w-0">
-                              <div className="truncate text-sm font-semibold text-gray-900">{name}</div>
-                              <div className="truncate text-xs text-gray-600">{email}</div>
-                            </div>
-                          </div>
-
-                          <span
-                            className={cn('shrink-0 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold', getStatusPill(app.status))}
-                            aria-label={`Status: ${getStatusDisplayLabel(app.status)}`}
-                          >
-                            {getStatusDisplayLabel(app.status)}
-                          </span>
-                        </div>
-
-                        <div className="mt-3 rounded-xl bg-gray-50 p-3">
-                          <div className="truncate text-sm font-semibold text-gray-900" title={jobTitle}>
-                            {jobTitle}
-                          </div>
-                          {selectedJob === 'all' && (
-                            <div className="truncate text-xs text-gray-600" title={companyName}>
-                              {companyName}
-                            </div>
-                          )}
-                          <div className="mt-2 text-xs text-gray-600">
-                            Applied: <span className="font-semibold text-gray-800">{formatDate(app.appliedAt)}</span>
-                          </div>
-                          <div className="text-xs text-gray-600">
-                            {app.reviewedAt ? `Reviewed: ${formatDate(app.reviewedAt)}` : 'Not reviewed'}
-                          </div>
-                        </div>
-
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          <Link
-                            to={`/employer/application/${app._id}`}
-                            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-                          >
-                            <Icon name="eye" className="h-5 w-5" />
-                            View
-                          </Link>
-
-                          <AccessibleDropdown
-                            trigger={
-                              <Button
-                                variant="secondary"
-                                size="md"
-                                className="flex-1"
-                                disabled={rowBusy}
-                                aria-label={`More actions for ${name}`}
-                              >
-                                <Icon name="more-vertical" className="h-5 w-5" />
-                                <span className="sr-only">Actions</span>
-                              </Button>
-                            }
-                            align="center"
-                            width="w-56"
-                          >
-                            {(app.status === 'pending' || app.status === 'hired' || app.status === 'declined') && (
-                              <DropdownItem
-                                onClick={() => handleStatusUpdate(app._id, 'for interview')}
-                                icon={<Icon name="star" className="h-4 w-4 text-gray-600" />}
-                                disabled={rowBusy}
-                              >
-                                Move to For Interview
-                              </DropdownItem>
                             )}
+                          </div>
 
-                            {(app.status === 'pending' || app.status === 'for interview' || app.status === 'hired') && (
-                              <DropdownItem
-                                onClick={() => openDeclineModal({ id: app._id, name })}
-                                icon={<Icon name="x" className="h-4 w-4 text-red-600" />}
-                                disabled={rowBusy}
-                                variant="danger"
-                              >
-                                Decline
-                              </DropdownItem>
-                            )}
+                          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#7b8190]">
+                            <span className="inline-flex items-center gap-1.5">
+                              <Icon name="mail" className="h-4 w-4" />
+                              {email}
+                            </span>
+                            <span className="hidden text-[#c2c5ce] sm:inline">|</span>
+                            <span className="inline-flex items-center gap-1.5">
+                              <Icon name="phone" className="h-4 w-4" />
+                              {phone}
+                            </span>
+                          </div>
 
-                            {rowBusy && (
-                              <div className="px-4 py-2 text-xs text-gray-500">
-                                <span className="inline-block h-3 w-3 animate-spin rounded-full border-b-2 border-t-2 border-gray-400 mr-2" />
-                                Updating…
-                              </div>
-                            )}
-                          </AccessibleDropdown>
+                          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+                            <span className="rounded-full bg-[#e8edff] px-3 py-1 text-xs font-semibold text-[#2e66a6]">
+                              ★ {level}
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 text-[#7b8190]">
+                              <Icon name="calendar" className="h-4 w-4" />
+                              Applied {formatDate(app.appliedAt || app.createdAt)}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    );
-                  })}
+
+                      <div className="flex flex-row items-center gap-3 md:flex-col md:items-stretch">
+                        <div className="inline-flex items-center justify-center gap-2 rounded-full bg-[#eaf0ff] px-5 py-2 text-sm font-bold text-[#2e66a6]">
+                          <Icon name="sparkle" className="h-4 w-4" />
+                          {matchScore}% match
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/employer/application/${app._id}?from=applicants`)}
+                          className="inline-flex items-center justify-center gap-2 rounded-full bg-[#2e66a6] px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[#25578f]"
+                        >
+                          View profile
+                          <Icon name="arrow" className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-[#e3e5ef] bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-gray-500">
+                Showing {firstShown} to {lastShown} of {filteredApplications.length} pending applicants
+              </p>
+
+              <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
+                <button
+                  type="button"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                  className="inline-flex h-9 items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Icon name="chevron-left" className="h-4 w-4" />
+                  Previous
+                </button>
+
+                <div className="inline-flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
+                    <button
+                      key={pageNumber}
+                      type="button"
+                      onClick={() => setCurrentPage(pageNumber)}
+                      className={cn(
+                        'inline-flex h-9 min-w-[36px] items-center justify-center rounded-lg border px-3 text-sm font-semibold transition',
+                        pageNumber === currentPage
+                          ? 'border-[#2e66a6] bg-[#2e66a6] text-white'
+                          : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                      )}
+                    >
+                      {pageNumber}
+                    </button>
+                  ))}
                 </div>
-              </>
-            )}
+
+                <button
+                  type="button"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                  className="inline-flex h-9 items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Next
+                  <Icon name="chevron-right" className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="rounded-3xl border border-[#e3e5ef] bg-white p-12 text-center shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-900">No pending applicants found</h3>
+            <p className="mt-2 text-sm text-gray-600">Try changing the search or date filter.</p>
           </div>
-        </div>
+        )}
 
         <DeclineReasonModal
           open={!!rejectTarget}
