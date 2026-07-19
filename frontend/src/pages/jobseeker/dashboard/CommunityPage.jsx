@@ -20,6 +20,9 @@ import {
   faThumbsDown,
   faReply,
   faSliders,
+  faChevronDown,
+  faChevronUp,
+  faArrowUpRightFromSquare,
 } from '@fortawesome/free-solid-svg-icons';
 import api from '../../../services/api';
 
@@ -872,15 +875,15 @@ const CommunityPage = () => {
                       href={link.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-4 flex items-center justify-between gap-4 rounded-xl border border-[#e1e8f0] bg-[#fbfcfe] px-4 py-3 transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff]"
+                      className="mt-3 inline-flex max-w-full items-center gap-2 text-sm font-medium text-[#6f5bd3] transition hover:text-[#5140b5] hover:underline"
+                      title={link.url}
                     >
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-black/40">Source</p>
-                        <p className="mt-1 truncate text-sm font-semibold text-[#2e66a6]">{link.label}</p>
-                        <p className="mt-0.5 truncate text-xs text-black/45">{link.url}</p>
-                      </div>
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf3ff] text-[#2e66a6]">
-                        <span aria-hidden="true" className="text-lg">↗</span>
+                      <FontAwesomeIcon
+                        icon={faArrowUpRightFromSquare}
+                        className="shrink-0 text-sm"
+                      />
+                      <span className="min-w-0 truncate">
+                        Source: {link.label}
                       </span>
                     </a>
                   );
@@ -1148,12 +1151,17 @@ const CommunityPage = () => {
                               ...prev,
                               [comment._id]: !prev[comment._id],
                             }))}
-                            className="ml-2 mt-2 inline-flex items-center gap-2 text-xs font-semibold text-[#2e66a6] hover:underline"
+                            className="ml-2 mt-2 inline-flex min-h-8 items-center gap-2 rounded-lg px-2 text-sm font-semibold leading-none text-[#2e66a6] transition hover:bg-[#eef5fd]"
                           >
-                            <span aria-hidden="true">{repliesAreExpanded ? "⌃" : "⌄"}</span>
-                            {repliesAreExpanded
-                              ? 'Hide replies'
-                              : `View ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`}
+                            <FontAwesomeIcon
+                              icon={repliesAreExpanded ? faChevronUp : faChevronDown}
+                              className="w-4 shrink-0 text-base"
+                            />
+                            <span className="leading-none">
+                              {repliesAreExpanded
+                                ? 'Hide replies'
+                                : `View ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`}
+                            </span>
                           </button>
                         )}
 
