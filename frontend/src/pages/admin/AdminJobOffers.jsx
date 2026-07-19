@@ -625,18 +625,11 @@ const AdminJobOffers = () => {
           </section>
 
           <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
-              <div>
-                <h2 className="text-base font-bold text-black">Job Offer List</h2>
-                <p className="mt-0.5 text-xs text-gray-500">Showing {jobs.length ? (page - 1) * ITEMS_PER_PAGE + 1 : 0} to {Math.min(page * ITEMS_PER_PAGE, total)} of {total} results</p>
-              </div>
-            </div>
-
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    {['Company', 'Job Title', 'Applicant', 'Date Posted', 'Valid Until', 'Status', 'Actions'].map((header) => (
+                    {['Date Posted', 'Company', 'Job Title', 'Vacancy', 'Applicant', 'Status', 'Valid Until', 'Actions'].map((header) => (
                       <th key={header} className="whitespace-nowrap px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.14em] text-gray-500">
                         {header}
                       </th>
@@ -646,14 +639,14 @@ const AdminJobOffers = () => {
                 <tbody className="divide-y divide-gray-100 bg-white">
                   {loading ? (
                     <tr>
-                      <td colSpan="7" className="px-6 py-12 text-center text-sm text-gray-500">
+                      <td colSpan="8" className="px-6 py-12 text-center text-sm text-gray-500">
                         <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-[#2e66a6]" />
                         <p className="mt-3">Loading job offers...</p>
                       </td>
                     </tr>
                   ) : error ? (
                     <tr>
-                      <td colSpan="7" className="px-6 py-10">
+                      <td colSpan="8" className="px-6 py-10">
                         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-700">
                           {error}
                         </div>
@@ -661,7 +654,7 @@ const AdminJobOffers = () => {
                     </tr>
                   ) : jobs.length === 0 ? (
                     <tr>
-                      <td colSpan="7">
+                      <td colSpan="8">
                         <EmptyState />
                       </td>
                     </tr>
@@ -686,6 +679,7 @@ const AdminJobOffers = () => {
                           }}
                           className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
                         >
+                          <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">{formatDate(job.createdAt)}</td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#2e66a6]/15 bg-[#2e66a6]/10 text-[#2e66a6]">
@@ -705,14 +699,14 @@ const AdminJobOffers = () => {
                             <p className="whitespace-nowrap text-sm font-bold text-black">{job.title || 'N/A'}</p>
                             <p className="whitespace-nowrap text-xs text-gray-500">{[job.jobType, job.workMode].filter(Boolean).join(' • ') || 'N/A'}</p>
                           </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-center text-sm font-semibold text-black">{job.vacancies ?? 0}</td>
                           <td className="whitespace-nowrap px-6 py-4 text-center text-sm font-semibold text-black">{job.applicantCount || 0}</td>
-                          <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">{formatDate(job.createdAt)}</td>
-                          <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">{formatDate(job.applicationDeadline)}</td>
                           <td className="whitespace-nowrap px-6 py-4">
                             <span className={cn('inline-flex rounded-full border px-3 py-1 text-[11px] font-bold uppercase', status.className)}>
                               {status.label}
                             </span>
                           </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">{formatDate(job.applicationDeadline)}</td>
                           <td className="whitespace-nowrap px-6 py-4 text-center">
                             <button
                               type="button"
@@ -733,7 +727,7 @@ const AdminJobOffers = () => {
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-6 py-4">
-              <p className="text-xs text-gray-500">Page {page} of {totalPages}</p>
+              <p className="text-xs text-gray-500">Showing {jobs.length ? (page - 1) * ITEMS_PER_PAGE + 1 : 0} to {Math.min(page * ITEMS_PER_PAGE, total)} of {total} results</p>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
