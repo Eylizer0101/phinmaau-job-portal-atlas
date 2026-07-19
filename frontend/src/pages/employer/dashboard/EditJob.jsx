@@ -156,6 +156,7 @@ const RichTextEditor = ({
   disabled = false,
 }) => {
   const editorRef = useRef(null);
+  const savedRangeRef = useRef(null);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -180,17 +181,72 @@ const RichTextEditor = ({
     });
   };
 
+  const saveSelection = () => {
+    const editor = editorRef.current;
+    const selection = window.getSelection?.();
+
+    if (!editor || !selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    const commonContainer =
+      range.commonAncestorContainer.nodeType === Node.TEXT_NODE
+        ? range.commonAncestorContainer.parentNode
+        : range.commonAncestorContainer;
+
+    if (commonContainer && editor.contains(commonContainer)) {
+      savedRangeRef.current = range.cloneRange();
+    }
+  };
+
+  const placeCaretAtEnd = () => {
+    const editor = editorRef.current;
+    const selection = window.getSelection?.();
+    if (!editor || !selection) return;
+
+    const range = document.createRange();
+    range.selectNodeContents(editor);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    savedRangeRef.current = range.cloneRange();
+  };
+
+  const restoreSelection = () => {
+    const editor = editorRef.current;
+    const selection = window.getSelection?.();
+    if (!editor || !selection) return;
+
+    editor.focus();
+
+    const savedRange = savedRangeRef.current;
+    if (savedRange) {
+      try {
+        selection.removeAllRanges();
+        selection.addRange(savedRange);
+        return;
+      } catch (selectionError) {
+        // The saved DOM range may no longer exist after an external value update.
+      }
+    }
+
+    placeCaretAtEnd();
+  };
+
   const runCommand = (command, commandValue = null) => {
     if (disabled) return;
-    editorRef.current?.focus();
+
+    restoreSelection();
     document.execCommand(command, false, commandValue);
+    saveSelection();
     emitChange();
   };
 
   const formatHeading = (tagName) => {
     if (disabled) return;
-    editorRef.current?.focus();
-    document.execCommand('formatBlock', false, tagName);
+
+    restoreSelection();
+    document.execCommand('formatBlock', false, `<${String(tagName).toLowerCase()}>`);
+    saveSelection();
     emitChange();
   };
 
@@ -219,11 +275,11 @@ const RichTextEditor = ({
         <span className="mx-1 h-7 border-l border-gray-300" aria-hidden="true" />
 
         <RichTextToolbarButton title="Numbered list" onMouseDown={() => runCommand('insertOrderedList')}>
-          <span className="text-[17px]">⅓</span>
+          <span className="text-[17px] font-bold">1.</span>
         </RichTextToolbarButton>
 
         <RichTextToolbarButton title="Bullet list" onMouseDown={() => runCommand('insertUnorderedList')}>
-          <span className="text-[18px] leading-none">☷</span>
+          <span className="text-[20px] leading-none">•</span>
         </RichTextToolbarButton>
 
         <RichTextToolbarButton title="Align left" onMouseDown={() => runCommand('justifyLeft')}>
@@ -260,18 +316,30 @@ const RichTextEditor = ({
           role="textbox"
           aria-multiline="true"
           aria-invalid={error}
-          onInput={emitChange}
+          onInput={() => {
+            emitChange();
+            saveSelection();
+          }}
+          onFocus={saveSelection}
+          onKeyUp={saveSelection}
+          onMouseUp={saveSelection}
+          onSelect={saveSelection}
           onBlur={() => {
+            saveSelection();
             emitChange();
             onBlur?.();
           }}
           className={[
             'w-full overflow-y-auto rounded-b-xl border bg-white px-4 py-3 text-gray-900 outline-none',
             'focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:border-[#2e66a6]',
-            '[&_h1]:text-2xl [&_h1]:font-bold',
-            '[&_h2]:text-xl [&_h2]:font-bold',
-            '[&_ul]:list-disc [&_ul]:pl-6',
-            '[&_ol]:list-decimal [&_ol]:pl-6',
+            '[&_p]:my-1',
+            '[&_div]:my-1',
+            '[&_h1]:my-2 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:leading-tight',
+            '[&_h2]:my-2 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:leading-tight',
+            '[&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-7',
+            '[&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-7',
+            '[&_li]:my-1',
+            '[&_blockquote]:my-2 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4',
             error ? 'border-red-300' : 'border-gray-300',
             disabled ? 'cursor-not-allowed bg-gray-50' : '',
           ].join(' ')}

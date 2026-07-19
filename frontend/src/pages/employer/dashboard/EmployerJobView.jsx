@@ -50,18 +50,72 @@ const sanitizeRichTextHtml = (value = '') => {
   doc.body.querySelectorAll('*').forEach((element) => {
     [...element.attributes].forEach((attribute) => {
       const name = attribute.name.toLowerCase();
-      const valueText = String(attribute.value || '').trim().toLowerCase();
+      const rawValue = String(attribute.value || '').trim();
+      const valueText = rawValue.toLowerCase();
+
+      if (name === 'style') {
+        const safeStyles = rawValue
+          .split(';')
+          .map((rule) => rule.trim())
+          .filter(Boolean)
+          .map((rule) => {
+            const separatorIndex = rule.indexOf(':');
+            if (separatorIndex < 0) return '';
+
+            const property = rule.slice(0, separatorIndex).trim().toLowerCase();
+            const propertyValue = rule.slice(separatorIndex + 1).trim().toLowerCase();
+
+            if (
+              property === 'text-align' &&
+              ['left', 'center', 'right', 'justify'].includes(propertyValue)
+            ) {
+              return `text-align: ${propertyValue}`;
+            }
+
+            if (property === 'margin-left') {
+              const match = propertyValue.match(/^(\d+(?:\.\d+)?)(px|em|rem)$/);
+              if (!match) return '';
+
+              const amount = Number(match[1]);
+              const unit = match[2];
+              const maximum = unit === 'px' ? 160 : 10;
+
+              if (Number.isFinite(amount) && amount >= 0 && amount <= maximum) {
+                return `margin-left: ${amount}${unit}`;
+              }
+            }
+
+            return '';
+          })
+          .filter(Boolean);
+
+        if (safeStyles.length) {
+          element.setAttribute('style', safeStyles.join('; '));
+        } else {
+          element.removeAttribute('style');
+        }
+
+        return;
+      }
 
       if (
         name.startsWith('on') ||
-        name === 'style' ||
         name === 'srcdoc' ||
+        name === 'class' ||
         ((name === 'href' || name === 'src') &&
           (valueText.startsWith('javascript:') || valueText.startsWith('data:text/html')))
       ) {
         element.removeAttribute(attribute.name);
       }
     });
+
+    if (element.hasAttribute('align')) {
+      const alignment = String(element.getAttribute('align') || '').toLowerCase();
+      if (['left', 'center', 'right', 'justify'].includes(alignment)) {
+        element.style.textAlign = alignment;
+      }
+      element.removeAttribute('align');
+    }
 
     if (element.tagName === 'A') {
       element.setAttribute('target', '_blank');
