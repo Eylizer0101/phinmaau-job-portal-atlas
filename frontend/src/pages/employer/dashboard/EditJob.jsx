@@ -1705,10 +1705,26 @@ const EditJob = () => {
     }
 
     setSavingDraft(true);
+
     try {
       const payload = buildPayload({ mode: 'draft' });
-      await persist(payload);
-      setSuccess('Draft saved.');
+      const response = await persist(payload);
+      const savedJob = response?.data?.job;
+      const savedJobId = savedJob?._id || savedJob?.id || id;
+
+      setSuccess('Draft saved successfully.');
+      allowNavigationRef.current = true;
+
+      navigate('/employer/manage-jobs', {
+        replace: true,
+        state: {
+          jobDraftSaved: true,
+          jobEditSuccess: true,
+          successType: 'edit-draft',
+          savedJobId,
+          savedJobTitle: savedJob?.title || formData.title || 'Untitled Draft',
+        },
+      });
     } catch (err) {
       console.error(err);
       setError(getAxiosErrorMessage(err, 'Failed to save draft. Please try again.'));

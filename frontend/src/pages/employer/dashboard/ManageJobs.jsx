@@ -453,6 +453,7 @@ const ManageJobs = () => {
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(null);
+  const [recentlySavedDraftId, setRecentlySavedDraftId] = useState('');
 
   const [selectedJob, setSelectedJob] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -557,10 +558,30 @@ const ManageJobs = () => {
 
   useEffect(() => {
     const successType = location.state?.successType;
+    const draftWasSaved =
+      location.state?.jobDraftSaved ||
+      successType === 'post-draft' ||
+      successType === 'edit-draft';
 
-    if (!location.state?.jobPostSuccess && !location.state?.jobEditSuccess && !successType) return;
+    if (
+      !location.state?.jobPostSuccess &&
+      !location.state?.jobEditSuccess &&
+      !successType &&
+      !draftWasSaved
+    ) {
+      return;
+    }
 
-    if (location.state?.jobPostSuccess || successType === 'post') {
+    if (draftWasSaved) {
+      const savedJobTitle = String(location.state?.savedJobTitle || 'Your job').trim();
+
+      setRecentlySavedDraftId(String(location.state?.savedJobId || ''));
+      setSuccess({
+        type: 'draft',
+        title: 'Draft Saved Successfully',
+        message: `${savedJobTitle || 'Your job'} was saved as a draft. The saved job is highlighted below.`,
+      });
+    } else if (location.state?.jobPostSuccess || successType === 'post') {
       setSuccess({
         type: 'post',
         title: 'Job Posted Successfully',
@@ -582,6 +603,16 @@ const ManageJobs = () => {
 
     navigate(location.pathname, { replace: true, state: {} });
   }, [location.pathname, location.state, navigate]);
+
+  useEffect(() => {
+    if (!recentlySavedDraftId) return undefined;
+
+    const timer = window.setTimeout(() => {
+      setRecentlySavedDraftId('');
+    }, 10000);
+
+    return () => window.clearTimeout(timer);
+  }, [recentlySavedDraftId]);
 
   useEffect(() => {
     if (!error) return;
@@ -639,8 +670,10 @@ const ManageJobs = () => {
   };
 
   const getDerivedStatus = (job) => {
-    if (String(job?.status || '').toLowerCase() === 'filled') return 'filled';
-    if (job.isPublished === false) return 'draft';
+    const explicitStatus = String(job?.status || '').trim().toLowerCase();
+
+    if (explicitStatus === 'draft' || job.isPublished === false) return 'draft';
+    if (explicitStatus === 'filled') return 'filled';
     if (job.isActive && isExpired(job.applicationDeadline)) return 'expired';
     return job.isActive ? 'open' : 'closed';
   };
@@ -1168,7 +1201,15 @@ const ManageJobs = () => {
                     const derivedStatus = getDerivedStatus(job);
 
                     return (
-                      <div key={job._id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                      <div
+                        key={job._id}
+                        className={cn(
+                          'rounded-2xl border bg-white p-4 shadow-sm transition',
+                          String(job._id) === recentlySavedDraftId
+                            ? 'border-amber-300 bg-amber-50/40 ring-2 ring-amber-200'
+                            : 'border-gray-200'
+                        )}
+                      >
                         <div className="flex items-start gap-3">
                           <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-100">
                             {logoUrl && !badLogos[job._id] ? (
@@ -1196,9 +1237,18 @@ const ManageJobs = () => {
                               {title}
                             </Link>
                             <p className="truncate text-sm text-gray-600">{safeCompany(job)}</p>
-                            <span className={cn('mt-2 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold', getStatusPill(job))}>
-                              {getStatusText(job)}
-                            </span>
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                              <span className={cn('inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold', getStatusPill(job))}>
+                                {getStatusText(job)}
+                              </span>
+
+                              {String(job._id) === recentlySavedDraftId && derivedStatus === 'draft' && (
+                                <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
+                                  <Icon name="check" className="h-3.5 w-3.5" />
+                                  Just saved
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
 
@@ -1332,6 +1382,12 @@ const ManageJobs = () => {
                           <tr
                             key={job._id}
                             role="link"
+                            className={cn(
+                              'transition',
+                              String(job._id) === recentlySavedDraftId
+                                ? 'bg-amber-50 ring-2 ring-inset ring-amber-200'
+                                : 'hover:bg-gray-50'
+                            )}
                             tabIndex={0}
                             aria-label={`View ${title}`}
                             onClick={(event) => {
@@ -1404,7 +1460,18 @@ const ManageJobs = () => {
                             </td>
 
                             <td className="px-6 py-4 align-middle">
-                              <span className={cn('inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold', getStatusPill(job))}>{getStatusText(job)}</span>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className={cn('inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold', getStatusPill(job))}>
+                                  {getStatusText(job)}
+                                </span>
+
+                                {String(job._id) === recentlySavedDraftId && derivedStatus === 'draft' && (
+                                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
+                                    <Icon name="check" className="h-3.5 w-3.5" />
+                                    Just saved
+                                  </span>
+                                )}
+                              </div>
                             </td>
 
                             <td className="px-6 py-4 align-middle text-sm font-medium text-gray-600">
@@ -1598,7 +1665,12 @@ const ManageJobs = () => {
           >
             <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white text-center shadow-2xl">
               <div className="px-8 pb-6 pt-8">
-                <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full text-white bg-[#2e66a6]`}>
+                <div
+                  className={cn(
+                    'mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full text-white',
+                    success.type === 'draft' ? 'bg-amber-500' : 'bg-[#2e66a6]'
+                  )}
+                >
                   <svg className="h-10 w-10" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                     <path
                       fillRule="evenodd"

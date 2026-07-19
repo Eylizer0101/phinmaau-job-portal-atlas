@@ -1347,10 +1347,24 @@ const PostJob = () => {
     setSavingDraft(true);
     setError('');
     setSuccess('');
+
     try {
-      await postJob({ isDraft: true });
-      setSuccess('Draft saved!');
-      setTimeout(() => setSuccess(''), 1500);
+      const response = await postJob({ isDraft: true });
+      const savedJob = response?.data?.job;
+      const savedJobId = savedJob?._id || savedJob?.id || '';
+
+      setSuccess('Draft saved successfully.');
+      allowNavigationRef.current = true;
+
+      navigate('/employer/manage-jobs', {
+        replace: true,
+        state: {
+          jobDraftSaved: true,
+          successType: 'post-draft',
+          savedJobId,
+          savedJobTitle: savedJob?.title || formData.title || 'Untitled Draft',
+        },
+      });
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save draft. Please try again.');
     } finally {
