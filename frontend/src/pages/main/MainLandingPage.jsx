@@ -393,7 +393,7 @@ const MainLandingPage = () => {
                 </button>
               </div>
 
-              <div className="mt-10 flex justify-center">
+            <div className="mt-10 flex justify-center">
   <div
     className="inline-flex items-center gap-1 text-slate-600 select-none"
     aria-hidden="true"
@@ -411,7 +411,7 @@ const MainLandingPage = () => {
     >
       <path
         d="M6 9l6 6 6-6"
-        strokeWidth="3.5"
+        strokeWidth="3"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
