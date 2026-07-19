@@ -509,7 +509,7 @@ const JobCardLogo = ({ src, name }) => {
 
 const StarRating = ({ rating = 0, size = "w-5 h-5" }) => {
   const normalized = Math.max(0, Math.min(5, Number(rating) || 0));
-  const fullStars = Math.floor(normalized);
+  const fullStars = Math.round(normalized);
 
   return (
     <div className="flex items-center gap-1">
@@ -617,7 +617,6 @@ const CompanyViewDetails = () => {
   const [saveLoading, setSaveLoading] = useState(false);
 
   const [showReviewModal, setShowReviewModal] = useState(false);
-  const [reviewRating, setReviewRating] = useState(0);
   const [reviewProcessRating, setReviewProcessRating] = useState(0);
   const [reviewRoleAppliedFor, setReviewRoleAppliedFor] = useState("");
   const [reviewDaysToFirstResponse, setReviewDaysToFirstResponse] = useState("");
@@ -636,6 +635,7 @@ const CompanyViewDetails = () => {
   const [savingJobId, setSavingJobId] = useState("");
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
   const toastTimerRef = useRef(null);
+  const reviewsListRef = useRef(null);
 
   const apiOrigin = useMemo(() => {
     const base = api?.defaults?.baseURL || process.env.REACT_APP_API_URL || "https://phinmaau-job-portal-atlas.onrender.com/api";
@@ -1116,7 +1116,6 @@ const CompanyViewDetails = () => {
       .join(" ")
       .trim();
 
-    setReviewRating(0);
     setReviewProcessRating(0);
     setReviewRoleAppliedFor("");
     setReviewDaysToFirstResponse("");
@@ -1177,7 +1176,6 @@ const CompanyViewDetails = () => {
 
     const trimmedRoleAppliedFor = String(reviewRoleAppliedFor || "").trim();
     const trimmedMessage = String(reviewMessage || "").trim();
-    const trimmedReviewerName = String(reviewerName || "").trim();
     const daysToFirstResponse =
       reviewDaysToFirstResponse === "" ? 0 : Number(reviewDaysToFirstResponse);
     const totalProcessDays =
@@ -1185,11 +1183,6 @@ const CompanyViewDetails = () => {
 
     if (!trimmedRoleAppliedFor) {
       setReviewError("Please enter the role you applied for.");
-      return;
-    }
-
-    if (!reviewRating || reviewRating < 1 || reviewRating > 5) {
-      setReviewError("Please select an overall rating from 1 to 5.");
       return;
     }
 
@@ -1218,7 +1211,6 @@ const CompanyViewDetails = () => {
       setReviewError("");
 
       const response = await api.post(`/companies/verified/${id}/reviews`, {
-        rating: reviewRating,
         processRating: reviewProcessRating,
         roleAppliedFor: trimmedRoleAppliedFor,
         daysToFirstResponse,
@@ -1226,7 +1218,6 @@ const CompanyViewDetails = () => {
         outcome: reviewOutcome,
         wouldApplyAgain: reviewWouldApplyAgain,
         message: trimmedMessage,
-        reviewerName: trimmedReviewerName,
       });
 
       if (response?.data?.success) {
@@ -1922,14 +1913,14 @@ The company also values transparency, teamwork, and continuous improvement, crea
 
               <button
                 type="button"
-                onClick={handleWriteReview}
+                onClick={() => reviewsListRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
                 className="text-[15px] font-medium text-[#2e66a6] hover:text-[#25578f] inline-flex items-center gap-2"
               >
-                Write a review <span aria-hidden="true">→</span>
+                See all reviews <span aria-hidden="true">→</span>
               </button>
             </div>
 
-            <div className="mt-6 space-y-5">
+            <div ref={reviewsListRef} className="mt-6 space-y-5 scroll-mt-24">
               {reviews.length === 0 ? (
                 <EmptyTabState
                   icon="starOutline"
@@ -1970,8 +1961,8 @@ The company also values transparency, teamwork, and continuous improvement, crea
                         </span>
 
                         <div className="flex items-center gap-3 flex-wrap sm:justify-end">
-                          <StarRating rating={review.rating} size="w-6 h-6" />
-                          <span className="text-[15px] font-medium text-black/65">Overall</span>
+                          <StarRating rating={review.processRating ?? review.rating} size="w-6 h-6" />
+                          <span className="text-[15px] font-medium text-black/65">Application process</span>
                         </div>
                       </div>
                     </div>
@@ -2098,27 +2089,6 @@ The company also values transparency, teamwork, and continuous improvement, crea
                     />
                   </div>
 
-                  <div>
-                    <label className="block mb-2 text-sm font-semibold text-gray-900">
-                      Overall rating *
-                    </label>
-                    <ReviewStarInput
-                      rating={reviewRating}
-                      onChange={setReviewRating}
-                      disabled={reviewSubmitting}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block mb-2 text-sm font-semibold text-gray-900">
-                      Application process rating *
-                    </label>
-                    <ReviewStarInput
-                      rating={reviewProcessRating}
-                      onChange={setReviewProcessRating}
-                      disabled={reviewSubmitting}
-                    />
-                  </div>
                 </div>
 
                 <div className="mt-5 rounded-xl border border-[#dfe6ee] bg-[#fafbfd] p-4">
@@ -2165,20 +2135,13 @@ The company also values transparency, teamwork, and continuous improvement, crea
                 <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block mb-2 text-sm font-semibold text-gray-900">
-                      Outcome
+                      Application process rating *
                     </label>
-                    <select
-                      value={reviewOutcome}
-                      onChange={(e) => setReviewOutcome(e.target.value)}
+                    <ReviewStarInput
+                      rating={reviewProcessRating}
+                      onChange={setReviewProcessRating}
                       disabled={reviewSubmitting}
-                      className="w-full h-11 rounded-lg border border-gray-200 bg-white px-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
-                    >
-                      <option value="received_offer">Received offer</option>
-                      <option value="rejected">Rejected</option>
-                      <option value="ghosted">Ghosted</option>
-                      <option value="withdrew">Withdrew</option>
-                      <option value="still_in_process">Still in process</option>
-                    </select>
+                    />
                   </div>
 
                   <div>
@@ -2214,6 +2177,24 @@ The company also values transparency, teamwork, and continuous improvement, crea
 
                 <div className="mt-5">
                   <label className="block mb-2 text-sm font-semibold text-gray-900">
+                    Outcome
+                  </label>
+                  <select
+                    value={reviewOutcome}
+                    onChange={(e) => setReviewOutcome(e.target.value)}
+                    disabled={reviewSubmitting}
+                    className="w-full h-11 rounded-lg border border-gray-200 bg-white px-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                  >
+                    <option value="received_offer">Received offer</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="ghosted">Ghosted</option>
+                    <option value="withdrew">Withdrew</option>
+                    <option value="still_in_process">Still in process</option>
+                  </select>
+                </div>
+
+                <div className="mt-5">
+                  <label className="block mb-2 text-sm font-semibold text-gray-900">
                     Your review *
                   </label>
                   <textarea
@@ -2229,14 +2210,13 @@ The company also values transparency, teamwork, and continuous improvement, crea
 
                 <div className="mt-5">
                   <label className="block mb-2 text-sm font-semibold text-gray-900">
-                    Your name (optional)
+                    Your name
                   </label>
                   <input
                     value={reviewerName}
-                    onChange={(e) => setReviewerName(e.target.value)}
-                    placeholder="Anonymous"
-                    disabled={reviewSubmitting}
-                    className="w-full h-11 rounded-lg border border-gray-200 px-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                    readOnly
+                    aria-readonly="true"
+                    className="w-full h-11 cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 px-4 text-sm text-gray-700 outline-none"
                   />
                 </div>
 

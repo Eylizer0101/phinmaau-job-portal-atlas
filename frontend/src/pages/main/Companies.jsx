@@ -227,7 +227,7 @@ const Companies = () => {
 
   const StarRating = ({ rating = 0, size = "w-[15px] h-[15px]" }) => {
     const normalized = Math.max(0, Math.min(5, Number(rating) || 0));
-    const fullStars = Math.floor(normalized);
+    const fullStars = Math.round(normalized);
 
     return (
       <div className="flex items-center gap-[6px]">

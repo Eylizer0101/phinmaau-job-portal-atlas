@@ -44,7 +44,7 @@ const computeReviewSummary = (reviews = []) => {
     };
   }
 
-  const total = safeReviews.reduce((sum, review) => sum + (Number(review?.rating) || 0), 0);
+  const total = safeReviews.reduce((sum, review) => sum + (Number(review?.processRating ?? review?.rating) || 0), 0);
   const rating = total / reviewCount;
 
   return {
@@ -64,7 +64,7 @@ const computeRatingBreakdown = (reviews = []) => {
   };
 
   safeReviews.forEach((review) => {
-    const numericRating = Number(review?.rating) || 0;
+    const numericRating = Number(review?.processRating ?? review?.rating) || 0;
     const star = Math.max(1, Math.min(5, Math.round(numericRating)));
 
     if (breakdown[star] !== undefined) {
@@ -91,11 +91,8 @@ const mapCompanyFromUser = (user) => {
           reviewer: review.reviewer,
           reviewerName: review.reviewerName || 'Anonymous User',
           roleAppliedFor: String(review.roleAppliedFor || '').trim() || null,
-          rating: Number(review.rating) || 0,
-          processRating:
-            review.processRating === undefined || review.processRating === null
-              ? null
-              : Number(review.processRating),
+          rating: Number(review.processRating ?? review.rating) || 0,
+          processRating: Number(review.processRating ?? review.rating) || 0,
           daysToFirstResponse:
             review.daysToFirstResponse === undefined || review.daysToFirstResponse === null
               ? null
@@ -306,7 +303,6 @@ exports.submitCompanyReview = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      rating,
       processRating,
       roleAppliedFor,
       daysToFirstResponse,
@@ -314,23 +310,13 @@ exports.submitCompanyReview = async (req, res) => {
       outcome,
       wouldApplyAgain,
       message,
-      reviewerName,
     } = req.body;
 
-    const numericRating = Number(rating);
     const numericProcessRating = Number(processRating);
     const numericDaysToFirstResponse = Number(daysToFirstResponse ?? 0);
     const numericTotalProcessDays = Number(totalProcessDays ?? 0);
     const trimmedRoleAppliedFor = String(roleAppliedFor || '').trim();
     const trimmedMessage = String(message || '').trim();
-    const trimmedReviewerName = String(reviewerName || '').trim();
-
-    if (!numericRating || numericRating < 1 || numericRating > 5) {
-      return res.status(400).json({
-        success: false,
-        message: 'Overall rating must be between 1 and 5.',
-      });
-    }
 
     if (!numericProcessRating || numericProcessRating < 1 || numericProcessRating > 5) {
       return res.status(400).json({
@@ -424,9 +410,9 @@ exports.submitCompanyReview = async (req, res) => {
 
     company.employerProfile.reviews.push({
       reviewer: req.user._id,
-      reviewerName: trimmedReviewerName || buildReviewerName(req.user),
+      reviewerName: buildReviewerName(req.user),
       roleAppliedFor: trimmedRoleAppliedFor,
-      rating: numericRating,
+      rating: numericProcessRating,
       processRating: numericProcessRating,
       daysToFirstResponse: numericDaysToFirstResponse,
       totalProcessDays: numericTotalProcessDays,
