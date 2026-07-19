@@ -3235,6 +3235,25 @@ const hasMeaningfulListContent = (items = []) =>
     return Boolean(String(item || '').trim());
   });
 
+const isCompletedProfileValue = (value) => {
+  const clean = String(value ?? '').trim();
+
+  if (!clean) return false;
+
+  return !/^(not\s+provided|n\/?a|not\s+set|none|null|undefined|course\s+not\s+set\s+yet|year\s+not\s+set|educational\s+attainment)$/i.test(
+    clean
+  );
+};
+
+const isCompleteEducationEntry = (entry = {}) => {
+  const normalized = normalizeEducationEntry(entry);
+
+  return Boolean(
+    isCompletedProfileValue(normalized.level || normalized.educationalAttainment) &&
+    isCompletedProfileValue(normalized.school || normalized.campus)
+  );
+};
+
 const JobSeekerLevelCard = ({
   currentRank = 'First Time Job Seeker',
   nextTier = 'Intermediate',
@@ -3904,8 +3923,6 @@ const MyProfile = () => {
     return Array.isArray(formData.educationEntries) ? formData.educationEntries : [];
   }, [formData.educationEntries]);
 
-  const hasEducationEntries = educationEntries.length > 0;
-
   const todoProgress = useMemo(() => {
     const credentialWeights = {
       validId: 8,
@@ -3944,11 +3961,26 @@ const MyProfile = () => {
       String(formData.address || buildAddressString(formData) || '').trim()
     );
 
-    const availabilityComplete = Boolean(
-      String(formData.preferredWorkMode || '').trim() ||
-      String(formData.howSoonCanYouStart || '').trim() ||
-      String(formData.employmentType || '').trim() ||
-      String(formData.willingToRelocate || '').trim()
+    const personalInformationRequiredValues = [
+      formData.preferredWorkMode,
+      formData.employmentType,
+      formData.willingToRelocate,
+      formData.howSoonCanYouStart,
+      formData.experience,
+      formData.preferredLanguage,
+      formData.educationalAttainment,
+      formData.minimumSalary,
+      formData.maximumSalary,
+      formData.nationality,
+      formData.height,
+      formData.weight,
+      formData.gender,
+      formData.civilStatus,
+      formData.birthday,
+    ];
+
+    const availabilityComplete = personalInformationRequiredValues.every(
+      isCompletedProfileValue
     );
 
     const skillsComplete = Boolean(
@@ -3957,12 +3989,9 @@ const MyProfile = () => {
       normalizeSkillRows(formData.skillRows || []).some((item) => String(item.skill || '').trim())
     );
 
-    const educationComplete = Boolean(
-      hasEducationEntries ||
-      String(formData.campus || '').trim() ||
-      String(formData.course || '').trim() ||
-      String(formData.yearGraduated || '').trim()
-    );
+    const educationComplete =
+      educationEntries.length > 0 &&
+      educationEntries.some(isCompleteEducationEntry);
 
     const profileItems = [
       { key: 'basic', label: 'Basic Information', weight: 2, completed: basicInformationComplete },
@@ -3999,7 +4028,7 @@ const MyProfile = () => {
       profileItems,
       additionalItems,
     };
-  }, [formData, hasEducationEntries, verificationDocs, workExperiences]);
+  }, [formData, educationEntries, verificationDocs, workExperiences]);
 
   const jobSeekerLevel = useMemo(() => {
     const counts = {
