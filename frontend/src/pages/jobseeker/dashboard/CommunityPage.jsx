@@ -75,6 +75,27 @@ const normalizeUrl = (value) => {
   return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
 };
 
+const getLinkDetails = (value) => {
+  const normalized = normalizeUrl(value);
+  if (!normalized) return { url: '', host: '', label: '' };
+
+  try {
+    const parsed = new URL(normalized);
+    const host = parsed.hostname.replace(/^www\./i, '');
+    return {
+      url: normalized,
+      host,
+      label: host || normalized,
+    };
+  } catch {
+    return {
+      url: normalized,
+      host: normalized,
+      label: normalized,
+    };
+  }
+};
+
 const formatTime = (date) => {
   const value = new Date(date);
   if (Number.isNaN(value.getTime())) return '';
@@ -137,7 +158,7 @@ const CommunityPage = () => {
   const [commentDraft, setCommentDraft] = useState('');
   const [commentLoading, setCommentLoading] = useState(false);
   const [replyTarget, setReplyTarget] = useState(null);
-  const [replyDraft, setReplyDraft] = useState('');
+  const [expandedReplies, setExpandedReplies] = useState({});
   const [reactionLoading, setReactionLoading] = useState('');
 
   const [reportTarget, setReportTarget] = useState(null);
@@ -393,6 +414,8 @@ const CommunityPage = () => {
 
   const openCommentsModal = async (post) => {
     setCommentsPost(post);
+    setReplyTarget(null);
+    setCommentDraft('');
     try {
       const response = await api.get(`/community/posts/${post._id}/comments`);
       if (response.data?.success) {
@@ -411,6 +434,30 @@ const CommunityPage = () => {
 
     try {
       setCommentLoading(true);
+
+      if (replyTarget?.commentId) {
+        const response = await api.post(
+          `/community/posts/${commentsPost._id}/comments/${replyTarget.commentId}/replies`,
+          {
+            content,
+            parentReplyId: replyTarget.parentReplyId || '',
+          }
+        );
+
+        if (response.data?.success) {
+          const nextComments = (commentsPost.comments || []).map((comment) => (
+            comment._id === replyTarget.commentId ? response.data.data : comment
+          ));
+          const nextPost = { ...commentsPost, comments: nextComments };
+          setCommentsPost(nextPost);
+          setPosts((prev) => prev.map((post) => (post._id === nextPost._id ? nextPost : post)));
+          setExpandedReplies((prev) => ({ ...prev, [replyTarget.commentId]: true }));
+          setReplyTarget(null);
+          setCommentDraft('');
+        }
+        return;
+      }
+
       const response = await api.post(`/community/posts/${commentsPost._id}/comments`, { content });
       if (response.data?.success) {
         const nextComments = [...(commentsPost.comments || []), response.data.data];
@@ -420,7 +467,7 @@ const CommunityPage = () => {
         setCommentDraft('');
       }
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to add comment.');
+      alert(error.response?.data?.message || (replyTarget ? 'Failed to add reply.' : 'Failed to add comment.'));
     } finally {
       setCommentLoading(false);
     }
@@ -450,15 +497,16 @@ const CommunityPage = () => {
     }
   };
 
-  const submitReply = async (commentId) => {
-    const content = replyDraft.trim();
-    if (!content || !commentsPost) return;
+  const reactToReply = async (commentId, replyId, reaction) => {
+    if (!commentsPost || reactionLoading) return;
 
     try {
+      setReactionLoading(`${replyId}-${reaction}`);
       const response = await api.post(
-        `/community/posts/${commentsPost._id}/comments/${commentId}/replies`,
-        { content }
+        `/community/posts/${commentsPost._id}/comments/${commentId}/replies/${replyId}/reaction`,
+        { reaction }
       );
+
       if (response.data?.success) {
         const nextComments = (commentsPost.comments || []).map((comment) => (
           comment._id === commentId ? response.data.data : comment
@@ -466,11 +514,11 @@ const CommunityPage = () => {
         const nextPost = { ...commentsPost, comments: nextComments };
         setCommentsPost(nextPost);
         setPosts((prev) => prev.map((post) => (post._id === nextPost._id ? nextPost : post)));
-        setReplyTarget(null);
-        setReplyDraft('');
       }
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to add reply.');
+      alert(error.response?.data?.message || 'Failed to update reply reaction.');
+    } finally {
+      setReactionLoading('');
     }
   };
 
@@ -483,6 +531,7 @@ const CommunityPage = () => {
         targetType: reportTarget.type,
         postId: reportTarget.postId,
         commentId: reportTarget.commentId || '',
+        replyId: reportTarget.replyId || '',
         reason: reportReason,
       });
       if (response.data?.success) {
@@ -520,6 +569,81 @@ const CommunityPage = () => {
   useEffect(() => {
     fetchManagedContent();
   }, [fetchManagedContent]);
+
+  const startReply = (commentId, parentReplyId, name) => {
+    setReplyTarget({ commentId, parentReplyId: parentReplyId || '', name });
+    setCommentDraft('');
+    window.setTimeout(() => {
+      document.getElementById('community-comment-input')?.focus();
+    }, 0);
+  };
+
+  const renderReplyThread = (comment, parentReplyId = '', depth = 0) => {
+    const replies = (comment.replies || []).filter(
+      (reply) => String(reply.parentReplyId || '') === String(parentReplyId || '')
+    );
+
+    return replies.map((reply) => {
+      const replyAuthorName = getDisplayName(reply.author);
+      const isReplyOwner = getUserId(reply.author) === currentUserId;
+      const helpful = (reply.helpful || []).some((id) => String(id?._id || id) === currentUserId);
+      const notHelpful = (reply.notHelpful || []).some((id) => String(id?._id || id) === currentUserId);
+
+      return (
+        <div key={reply._id} className="mt-3" style={{ marginLeft: `${Math.min(depth + 1, 5) * 22}px` }}>
+          <div className="flex gap-2">
+            <Avatar user={reply.author} size="h-8 w-8" />
+            <div className="min-w-0 flex-1">
+              <div className="inline-block max-w-full rounded-xl bg-white px-3 py-2 shadow-sm ring-1 ring-[#e6edf5]">
+                <p className="text-xs font-bold">{replyAuthorName}{isReplyOwner ? ' (You)' : ''}</p>
+                <p className="mt-1 whitespace-pre-wrap text-sm text-black/70">{reply.content}</p>
+              </div>
+
+              <div className="mt-1 flex flex-wrap items-center gap-3 px-2 text-[11px] text-black/45">
+                <span>{formatTime(reply.createdAt)}</span>
+                <button
+                  type="button"
+                  onClick={() => reactToReply(comment._id, reply._id, 'helpful')}
+                  className={helpful ? 'font-semibold text-[#2e66a6]' : 'hover:text-[#2e66a6]'}
+                  aria-label="Helpful"
+                >
+                  <FontAwesomeIcon icon={faThumbsUp} className="mr-1" /> {reply.helpful?.length || 0}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => reactToReply(comment._id, reply._id, 'notHelpful')}
+                  className={notHelpful ? 'font-semibold text-red-500' : 'hover:text-red-500'}
+                  aria-label="Not helpful"
+                >
+                  <FontAwesomeIcon icon={faThumbsDown} className="mr-1" /> {reply.notHelpful?.length || 0}
+                </button>
+                <button type="button" onClick={() => startReply(comment._id, reply._id, replyAuthorName)} className="hover:text-[#2e66a6]">
+                  <FontAwesomeIcon icon={faReply} className="mr-1" /> Reply
+                </button>
+                {!isReplyOwner && (
+                  <button
+                    type="button"
+                    onClick={() => setReportTarget({
+                      type: 'reply',
+                      postId: commentsPost._id,
+                      commentId: comment._id,
+                      replyId: reply._id,
+                      name: replyAuthorName,
+                    })}
+                    className="hover:text-red-500"
+                  >
+                    <FontAwesomeIcon icon={faFlag} className="mr-1" /> Report
+                  </button>
+                )}
+              </div>
+
+              {renderReplyThread(comment, reply._id, depth + 1)}
+            </div>
+          </div>
+        </div>
+      );
+    });
+  };
 
   return (
     <div className="mx-auto w-full max-w-[1280px] px-4 pb-12 sm:px-6 lg:px-8">
@@ -712,14 +836,29 @@ const CommunityPage = () => {
                   </div>
                 )}
 
+                {post.linkUrl && (() => {
+                  const link = getLinkDetails(post.linkUrl);
+                  return (
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-4 flex items-center justify-between gap-4 rounded-xl border border-[#e1e8f0] bg-[#fbfcfe] px-4 py-3 transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff]"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-black/40">Source</p>
+                        <p className="mt-1 truncate text-sm font-semibold text-[#2e66a6]">{link.label}</p>
+                        <p className="mt-0.5 truncate text-xs text-black/45">{link.url}</p>
+                      </div>
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf3ff] text-[#2e66a6]">
+                        <span aria-hidden="true" className="text-lg">↗</span>
+                      </span>
+                    </a>
+                  );
+                })()}
+
                 {post.imageUrl && (
                   <img src={resolveMediaUrl(post.imageUrl)} alt="Community post" className="mt-4 max-h-[460px] w-full rounded-xl object-cover" />
-                )}
-
-                {post.linkUrl && (
-                  <a href={normalizeUrl(post.linkUrl)} target="_blank" rel="noreferrer" className="mt-3 block truncate text-sm font-semibold text-[#2e66a6] hover:underline">
-                    {post.linkUrl}
-                  </a>
                 )}
 
                 <div className="mt-4 flex items-center gap-6 border-t border-[#eef2f7] pt-4 text-sm text-black/50">
@@ -902,7 +1041,15 @@ const CommunityPage = () => {
           <div className="flex max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#e6edf5] px-5 py-4">
               <h2 className="font-bold">Comments ({commentsPost.commentsCount ?? commentsPost.comments?.length ?? 0})</h2>
-              <button type="button" onClick={() => setCommentsPost(null)} className="h-9 w-9 rounded-full hover:bg-[#f7faff]">
+              <button
+                type="button"
+                onClick={() => {
+                  setCommentsPost(null);
+                  setReplyTarget(null);
+                  setCommentDraft('');
+                }}
+                className="h-9 w-9 rounded-full hover:bg-[#f7faff]"
+              >
                 <FontAwesomeIcon icon={faXmark} />
               </button>
             </div>
@@ -916,6 +1063,8 @@ const CommunityPage = () => {
                   const isCommentOwner = getUserId(comment.author) === currentUserId;
                   const helpful = (comment.helpful || []).some((id) => String(id?._id || id) === currentUserId);
                   const notHelpful = (comment.notHelpful || []).some((id) => String(id?._id || id) === currentUserId);
+                  const replyCount = comment.replies?.length || 0;
+                  const repliesAreExpanded = Boolean(expandedReplies[comment._id]);
 
                   return (
                     <div key={comment._id} className="flex gap-3">
@@ -928,13 +1077,23 @@ const CommunityPage = () => {
 
                         <div className="mt-1 flex flex-wrap items-center gap-3 px-2 text-[11px] text-black/45">
                           <span>{formatTime(comment.createdAt)}</span>
-                          <button type="button" onClick={() => reactToComment(comment._id, 'helpful')} className={helpful ? 'font-semibold text-[#2e66a6]' : 'hover:text-[#2e66a6]'}>
-                            <FontAwesomeIcon icon={faThumbsUp} className="mr-1" /> Helpful ({comment.helpful?.length || 0})
+                          <button
+                            type="button"
+                            onClick={() => reactToComment(comment._id, 'helpful')}
+                            className={helpful ? 'font-semibold text-[#2e66a6]' : 'hover:text-[#2e66a6]'}
+                            aria-label="Helpful"
+                          >
+                            <FontAwesomeIcon icon={faThumbsUp} className="mr-1" /> {comment.helpful?.length || 0}
                           </button>
-                          <button type="button" onClick={() => reactToComment(comment._id, 'notHelpful')} className={notHelpful ? 'font-semibold text-red-500' : 'hover:text-red-500'}>
-                            <FontAwesomeIcon icon={faThumbsDown} className="mr-1" /> Not Helpful ({comment.notHelpful?.length || 0})
+                          <button
+                            type="button"
+                            onClick={() => reactToComment(comment._id, 'notHelpful')}
+                            className={notHelpful ? 'font-semibold text-red-500' : 'hover:text-red-500'}
+                            aria-label="Not helpful"
+                          >
+                            <FontAwesomeIcon icon={faThumbsDown} className="mr-1" /> {comment.notHelpful?.length || 0}
                           </button>
-                          <button type="button" onClick={() => setReplyTarget(replyTarget === comment._id ? null : comment._id)} className="hover:text-[#2e66a6]">
+                          <button type="button" onClick={() => startReply(comment._id, '', commentAuthorName)} className="hover:text-[#2e66a6]">
                             <FontAwesomeIcon icon={faReply} className="mr-1" /> Reply
                           </button>
                           {!isCommentOwner && (
@@ -953,29 +1112,23 @@ const CommunityPage = () => {
                           )}
                         </div>
 
-                        {(comment.replies || []).map((reply) => (
-                          <div key={reply._id} className="ml-6 mt-3 flex gap-2">
-                            <Avatar user={reply.author} size="h-8 w-8" />
-                            <div className="rounded-xl bg-white px-3 py-2 shadow-sm ring-1 ring-[#e6edf5]">
-                              <p className="text-xs font-bold">{getDisplayName(reply.author)}</p>
-                              <p className="mt-1 text-sm text-black/70">{reply.content}</p>
-                            </div>
-                          </div>
-                        ))}
-
-                        {replyTarget === comment._id && (
-                          <div className="ml-6 mt-3 flex gap-2">
-                            <input
-                              value={replyDraft}
-                              onChange={(event) => setReplyDraft(event.target.value)}
-                              placeholder={`Reply to ${commentAuthorName}...`}
-                              className="h-9 min-w-0 flex-1 rounded-full border border-[#d8e2ee] px-3 text-sm outline-none focus:border-[#2e66a6]"
-                            />
-                            <button type="button" onClick={() => submitReply(comment._id)} disabled={!replyDraft.trim()} className="h-9 rounded-full bg-[#2e66a6] px-4 text-xs font-semibold text-white disabled:opacity-50">
-                              Reply
-                            </button>
-                          </div>
+                        {replyCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setExpandedReplies((prev) => ({
+                              ...prev,
+                              [comment._id]: !prev[comment._id],
+                            }))}
+                            className="ml-2 mt-2 inline-flex items-center gap-2 text-xs font-semibold text-[#2e66a6] hover:underline"
+                          >
+                            <span aria-hidden="true">{repliesAreExpanded ? "⌃" : "⌄"}</span>
+                            {repliesAreExpanded
+                              ? 'Hide replies'
+                              : `View ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`}
+                          </button>
                         )}
+
+                        {repliesAreExpanded && renderReplyThread(comment)}
                       </div>
                     </div>
                   );
@@ -983,23 +1136,45 @@ const CommunityPage = () => {
               )}
             </div>
 
-            <div className="flex items-center gap-3 border-t border-[#e6edf5] p-4">
-              <Avatar user={currentUser} size="h-9 w-9" />
-              <input
-                value={commentDraft}
-                onChange={(event) => setCommentDraft(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' && !event.shiftKey) {
-                    event.preventDefault();
-                    submitComment();
-                  }
-                }}
-                placeholder="Write a comment..."
-                className="h-10 min-w-0 flex-1 rounded-full border border-[#d8e2ee] px-4 text-sm outline-none focus:border-[#2e66a6]"
-              />
-              <button type="button" onClick={submitComment} disabled={!commentDraft.trim() || commentLoading} className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2e66a6] text-white disabled:opacity-50">
-                <FontAwesomeIcon icon={commentLoading ? faSpinner : faPaperPlane} spin={commentLoading} />
-              </button>
+            <div className="border-t border-[#e6edf5] p-4">
+              {replyTarget && (
+                <div className="mb-2 flex items-center justify-between rounded-lg bg-[#f7faff] px-3 py-2 text-xs text-black/55">
+                  <span>
+                    Replying to <strong className="text-black/75">{replyTarget.name}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReplyTarget(null);
+                      setCommentDraft('');
+                    }}
+                    className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-white"
+                    aria-label="Cancel reply"
+                  >
+                    <FontAwesomeIcon icon={faXmark} />
+                  </button>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3">
+                <Avatar user={currentUser} size="h-9 w-9" />
+                <input
+                  id="community-comment-input"
+                  value={commentDraft}
+                  onChange={(event) => setCommentDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                      event.preventDefault();
+                      submitComment();
+                    }
+                  }}
+                  placeholder={replyTarget ? `Reply to ${replyTarget.name}...` : 'Write a comment...'}
+                  className="h-10 min-w-0 flex-1 rounded-full border border-[#d8e2ee] px-4 text-sm outline-none focus:border-[#2e66a6]"
+                />
+                <button type="button" onClick={submitComment} disabled={!commentDraft.trim() || commentLoading} className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2e66a6] text-white disabled:opacity-50">
+                  <FontAwesomeIcon icon={commentLoading ? faSpinner : faPaperPlane} spin={commentLoading} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1010,7 +1185,7 @@ const CommunityPage = () => {
           <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#e6edf5] px-5 py-4">
               <div>
-                <h2 className="font-bold">Report {reportTarget.type === 'post' ? 'Post' : 'Comment'}</h2>
+                <h2 className="font-bold">Report {reportTarget.type === 'post' ? 'Post' : reportTarget.type === 'reply' ? 'Reply' : 'Comment'}</h2>
                 <p className="mt-1 text-xs text-black/45">Why are you reporting this content by {reportTarget.name}?</p>
               </div>
               <button type="button" onClick={() => setReportTarget(null)} className="h-9 w-9 rounded-full hover:bg-[#f7faff]">

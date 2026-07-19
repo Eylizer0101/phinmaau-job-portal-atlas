@@ -11,6 +11,7 @@ const {
   getComments,
   addComment,
   reactToComment,
+  reactToReply,
   addReply,
   reportContent,
   getManagedContent,
@@ -28,6 +29,7 @@ router.get('/posts/:postId/comments', getComments);
 router.post('/posts/:postId/comments', addComment);
 router.post('/posts/:postId/comments/:commentId/reaction', reactToComment);
 router.post('/posts/:postId/comments/:commentId/replies', addReply);
+router.post('/posts/:postId/comments/:commentId/replies/:replyId/reaction', reactToReply);
 
 router.post('/reports', reportContent);
 router.get('/managed', getManagedContent);

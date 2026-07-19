@@ -365,9 +365,50 @@ exports.reactToComment = async (req, res) => {
   }
 };
 
+exports.reactToReply = async (req, res) => {
+  try {
+    const reaction = String(req.body.reaction || '');
+    if (!['helpful', 'notHelpful'].includes(reaction)) {
+      return res.status(400).json({ success: false, message: 'Invalid reaction' });
+    }
+
+    const post = await CommunityPost.findById(req.params.postId);
+    if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment) return res.status(404).json({ success: false, message: 'Comment not found' });
+
+    const reply = comment.replies.id(req.params.replyId);
+    if (!reply) return res.status(404).json({ success: false, message: 'Reply not found' });
+
+    const userId = String(req.user._id);
+    const selected = reaction === 'helpful' ? reply.helpful : reply.notHelpful;
+    const opposite = reaction === 'helpful' ? reply.notHelpful : reply.helpful;
+
+    const selectedIndex = selected.findIndex((id) => String(id) === userId);
+    if (selectedIndex >= 0) selected.splice(selectedIndex, 1);
+    else {
+      selected.push(req.user._id);
+      const oppositeIndex = opposite.findIndex((id) => String(id) === userId);
+      if (oppositeIndex >= 0) opposite.splice(oppositeIndex, 1);
+    }
+
+    await post.save();
+    const populatedPost = await populatePost(CommunityPost.findById(post._id));
+    const decorated = decoratePost(populatedPost, req.user._id);
+    const updatedComment = decorated.comments.find((item) => String(item._id) === String(comment._id));
+
+    res.json({ success: true, data: updatedComment });
+  } catch (error) {
+    console.error('Error reacting to reply:', error);
+    res.status(500).json({ success: false, message: 'Error updating reply reaction' });
+  }
+};
+
 exports.addReply = async (req, res) => {
   try {
     const content = String(req.body.content || '').trim();
+    const parentReplyId = String(req.body.parentReplyId || '').trim();
     if (!content) return res.status(400).json({ success: false, message: 'Reply is required' });
 
     const post = await CommunityPost.findById(req.params.postId);
@@ -376,7 +417,15 @@ exports.addReply = async (req, res) => {
     const comment = post.comments.id(req.params.commentId);
     if (!comment) return res.status(404).json({ success: false, message: 'Comment not found' });
 
-    comment.replies.push({ author: req.user._id, content });
+    if (parentReplyId && !comment.replies.id(parentReplyId)) {
+      return res.status(404).json({ success: false, message: 'Parent reply not found' });
+    }
+
+    comment.replies.push({
+      author: req.user._id,
+      content,
+      parentReplyId: parentReplyId || null,
+    });
     await post.save();
 
     const populatedPost = await populatePost(CommunityPost.findById(post._id));
@@ -395,9 +444,10 @@ exports.reportContent = async (req, res) => {
     const targetType = String(req.body.targetType || '');
     const postId = String(req.body.postId || '');
     const commentId = String(req.body.commentId || '');
+    const replyId = String(req.body.replyId || '');
     const reason = String(req.body.reason || '').trim();
 
-    if (!['post', 'comment'].includes(targetType) || !postId || !reason) {
+    if (!['post', 'comment', 'reply'].includes(targetType) || !postId || !reason) {
       return res.status(400).json({ success: false, message: 'Incomplete report details' });
     }
 
@@ -417,8 +467,16 @@ exports.reportContent = async (req, res) => {
     } else {
       const comment = post.comments.id(commentId);
       if (!comment) return res.status(404).json({ success: false, message: 'Comment not found' });
-      const alreadyReported = comment.reports.some((item) => String(item.reporter) === String(req.user._id));
-      if (!alreadyReported) comment.reports.push(report);
+
+      if (targetType === 'reply') {
+        const reply = comment.replies.id(replyId);
+        if (!reply) return res.status(404).json({ success: false, message: 'Reply not found' });
+        const alreadyReported = reply.reports.some((item) => String(item.reporter) === String(req.user._id));
+        if (!alreadyReported) reply.reports.push(report);
+      } else {
+        const alreadyReported = comment.reports.some((item) => String(item.reporter) === String(req.user._id));
+        if (!alreadyReported) comment.reports.push(report);
+      }
     }
 
     await post.save();

@@ -12,6 +12,10 @@ const reportSchema = new mongoose.Schema({
 const communityReplySchema = new mongoose.Schema({
   author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   content: { type: String, required: true, trim: true, maxlength: 2000 },
+  parentReplyId: { type: mongoose.Schema.Types.ObjectId, default: null },
+  helpful: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  notHelpful: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  reports: { type: [reportSchema], default: [] },
 }, { timestamps: true });
 
 const communityCommentSchema = new mongoose.Schema({
