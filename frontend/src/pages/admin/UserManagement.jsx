@@ -1463,6 +1463,14 @@ const UserManagement = () => {
                 <option value="employer">Employer</option>
               </select>
 
+              <DateFilterDropdown
+                value={dateFilter}
+                startDate={dateFrom}
+                endDate={dateTo}
+                disabled={loading}
+                onSelect={handleDateFilterChange}
+              />
+
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value)}
@@ -1476,14 +1484,6 @@ const UserManagement = () => {
                 <option value="name_asc">A to Z</option>
                 <option value="name_desc">Z to A</option>
               </select>
-
-              <DateFilterDropdown
-                value={dateFilter}
-                startDate={dateFrom}
-                endDate={dateTo}
-                disabled={loading}
-                onSelect={handleDateFilterChange}
-              />
 
               {(query.trim() !== '' || roleFilter !== 'all' || sort !== 'newest' || dateFilter !== 'all' || dateFrom !== '' || dateTo !== '') && (
                 <button

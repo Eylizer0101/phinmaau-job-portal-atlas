@@ -600,10 +600,10 @@ const AdminJobOffers = () => {
                 />
               </label>
 
-              <Select value={filters.status} onChange={(v) => updateFilter('status', v)} options={['All Status', 'Open', 'Closed', 'Expired']} />
+              <Select value={filters.jobTitle} onChange={(v) => updateFilter('jobTitle', v)} options={['All Job Title', ...options.jobTitles]} />
               <Select value={filters.company} onChange={(v) => updateFilter('company', v)} options={['All Company', ...options.companies]} />
               <Select value={filters.industry} onChange={(v) => updateFilter('industry', v)} options={['All Industry', ...options.industries]} />
-              <Select value={filters.jobTitle} onChange={(v) => updateFilter('jobTitle', v)} options={['All Job Title', ...options.jobTitles]} />
+              <Select value={filters.status} onChange={(v) => updateFilter('status', v)} options={['All Status', 'Open', 'Closed', 'Expired']} />
 
               <DateFilterDropdown
                 value={filters.date}
