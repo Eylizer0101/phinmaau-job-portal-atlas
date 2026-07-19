@@ -1962,7 +1962,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
 
                         <div className="flex items-center gap-3 flex-wrap sm:justify-end">
                           <StarRating rating={review.processRating ?? review.rating} size="w-6 h-6" />
-                          <span className="text-[15px] font-medium text-black/65">Application process</span>
+                          
                         </div>
                       </div>
                     </div>
