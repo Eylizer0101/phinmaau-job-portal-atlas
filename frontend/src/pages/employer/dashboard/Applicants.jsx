@@ -827,10 +827,7 @@ const Applicants = () => {
       (a) => (a.status || '').toLowerCase() === 'pending'
     );
 
-    const statusFiltered =
-      statusFilter === 'already_employed'
-        ? pendingOnly.filter((a) => Boolean(a.alreadyEmployed))
-        : pendingOnly.filter((a) => !a.alreadyEmployed);
+    const statusFiltered = pendingOnly.filter((a) => !a.alreadyEmployed);
 
     const searched = !q
       ? statusFiltered
@@ -971,10 +968,9 @@ const Applicants = () => {
       query.trim() !== '' ||
       filterBy !== 'all' ||
       sortBy !== 'most_recent' ||
-      selectedJob !== 'all' ||
-      statusFilter !== 'pending'
+      selectedJob !== 'all'
     );
-  }, [query, filterBy, sortBy, selectedJob, statusFilter]);
+  }, [query, filterBy, sortBy, selectedJob]);
 
   const handleStatusUpdate = async (applicationId, newStatus, extraPayload = {}) => {
     try {
@@ -1121,7 +1117,13 @@ const Applicants = () => {
 
         {/* Filters Bar */}
         <div className="relative z-20 mb-8 overflow-visible rounded-3xl border border-[#e3e5ef] bg-white p-5 shadow-sm">
-          <div className="grid gap-3 lg:grid-cols-[1.45fr_0.8fr_0.9fr]">
+          <div
+            className={
+              hasActiveFilters
+                ? 'grid gap-3 lg:grid-cols-[1.45fr_0.8fr_0.9fr_auto]'
+                : 'grid gap-3 lg:grid-cols-[1.45fr_0.8fr_0.9fr]'
+            }
+          >
             <div className="relative">
               <Icon name="search" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
               <input
@@ -1152,17 +1154,12 @@ const Applicants = () => {
             </div>
 
             <select
-              value={statusFilter}
-              onChange={(event) => {
-                setStatusFilter(event.target.value);
-                setCurrentPage(1);
-              }}
-              className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm font-medium text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+              value="pending"
+              disabled
+              className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm font-medium text-gray-900 opacity-100"
               aria-label="Application status"
-              disabled={isLoading}
             >
               <option value="pending">Pending Applicants</option>
-              <option value="already_employed">Already Employed</option>
             </select>
 
             <div className="relative">
@@ -1184,19 +1181,17 @@ const Applicants = () => {
                 ))}
               </select>
             </div>
-          </div>
 
-          {hasActiveFilters && (
-            <div className="mt-3 flex justify-end">
+            {hasActiveFilters && (
               <button
                 type="button"
                 onClick={clearFilters}
-                className="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
               >
                 Clear All
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {isLoading ? (

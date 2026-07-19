@@ -546,7 +546,13 @@ const JobApplicants = () => {
         </div>
 
         <div className="mt-8 rounded-3xl border border-[#e3e5ef] bg-white p-5 shadow-sm">
-          <div className="grid gap-3 lg:grid-cols-[1.45fr_0.8fr_0.9fr]">
+          <div
+            className={
+              hasActiveFilters
+                ? 'grid gap-3 lg:grid-cols-[1.45fr_0.8fr_0.9fr_auto]'
+                : 'grid gap-3 lg:grid-cols-[1.45fr_0.8fr_0.9fr]'
+            }
+          >
             <div className="relative">
               <SvgIcon name="search" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
               <input value={searchTerm} onChange={(event) => { setSearchTerm(event.target.value); setCurrentPage(1); }} placeholder="Search applicant name, email..." className="h-12 w-full rounded-xl border border-gray-200 bg-white pl-12 pr-4 text-sm text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20" />
@@ -565,19 +571,17 @@ const JobApplicants = () => {
                 {dateOptions.map((option) => <option key={option.value} value={option.value}>{option.value === dateFilter ? getDateOptionLabel(option.value, dateFrom, dateTo) : option.label}</option>)}
               </select>
             </div>
-          </div>
 
-          {hasActiveFilters && (
-            <div className="mt-3 flex justify-end">
+            {hasActiveFilters && (
               <button
                 type="button"
                 onClick={clearFilters}
-                className="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
               >
                 Clear All
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {loading ? (
