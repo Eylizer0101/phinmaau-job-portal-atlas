@@ -1886,7 +1886,7 @@ const PostJob = () => {
                                 onClick={() => removeRequiredSkill(index)}
                                 aria-label={`Remove ${skill}`}
                                 title={`Remove ${skill}`}
-                                className="inline-flex h-5 w-5 items-center justify-center rounded-full text-sm leading-none text-[#24558d] opacity-0 transition hover:bg-[#d9e9f8] hover:text-red-600 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
+                                className="inline-flex h-5 w-5 items-center justify-center rounded-full text-sm leading-none text-[#24558d] opacity-100 transition hover:bg-[#d9e9f8] hover:text-red-600"
                               >
                                 ×
                               </button>
