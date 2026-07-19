@@ -884,20 +884,19 @@ const ArchivedJobs = () => {
 
         <div className="relative z-20 mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="p-5">
-            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] xl:items-start">
-              <div className="relative min-w-0">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(300px,380px)_minmax(140px,1fr)_minmax(170px,1fr)_140px] xl:items-center">
+              <div className="relative min-w-0 sm:col-span-2 xl:col-span-1">
                 <svg className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
-              </svg>
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search archived job title, location, category..."
-                className="w-full rounded-xl border border-gray-300 py-2.5 pl-11 pr-10 text-gray-900 placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-              />
-            </div>
+                  <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+                </svg>
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Search archived job title, location, category..."
+                  className="h-11 w-full rounded-xl border border-gray-300 py-2.5 pl-11 pr-10 text-gray-900 placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                />
+              </div>
 
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-[minmax(140px,1fr)_minmax(170px,1fr)]">
               <select
                 value={jobFilter}
                 onChange={(e) => setJobFilter(e.target.value)}
@@ -928,20 +927,18 @@ const ArchivedJobs = () => {
                 }}
               />
 
-              </div>
-            </div>
-
-            {hasActiveFilters && (
-              <div className="mt-2 flex w-full justify-end">
+              {hasActiveFilters ? (
                 <button
                   type="button"
                   onClick={clearControls}
-                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 hover:bg-gray-50 sm:w-[220px]"
+                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 transition hover:bg-gray-50"
                 >
                   Clear
                 </button>
-              </div>
-            )}
+              ) : (
+                <div className="hidden xl:block" aria-hidden="true" />
+              )}
+            </div>
 
             <p className="mt-3 text-xs text-gray-500">
               Showing <span className="font-semibold text-gray-700">{filteredJobs.length}</span> result(s).
