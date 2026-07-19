@@ -909,7 +909,7 @@ const AdminJobView = () => {
                         {formatPostedRelative(job.createdAt)}
                         {job.applicationDeadline && (
                           <>
-                            {' • '}
+                            {' and '}
                             Application deadline is on {formatFullDate(job.applicationDeadline)}
                           </>
                         )}
