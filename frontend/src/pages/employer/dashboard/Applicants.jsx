@@ -1569,7 +1569,33 @@ const Applicants = () => {
   const [customDateEnd, setCustomDateEnd] = useState('');
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
   const [sortBy, setSortBy] = useState('most_recent');
+  const [openFilterMenu, setOpenFilterMenu] = useState(null);
+  const sortMenuRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    if (openFilterMenu !== 'sort') return undefined;
+
+    const handleOutsideClick = (event) => {
+      if (!sortMenuRef.current?.contains(event.target)) {
+        setOpenFilterMenu(null);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setOpenFilterMenu(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [openFilterMenu]);
   const itemsPerPage = 6;
   const [updatingId, setUpdatingId] = useState(null);
 
@@ -1885,7 +1911,7 @@ const Applicants = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [customDateEnd, customDateStart, debouncedQuery, filterBy, selectedJob]);
+  }, [customDateEnd, customDateStart, debouncedQuery, filterBy, selectedJob, sortBy]);
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
@@ -2014,6 +2040,7 @@ const Applicants = () => {
     setCustomDateEnd('');
     setShowCustomDateModal(false);
     setSortBy('most_recent');
+    setOpenFilterMenu(null);
     setSelectedJob('all');
     syncStatusToURL('pending');
     setCurrentPage(1);
@@ -2051,8 +2078,8 @@ const Applicants = () => {
           <div
             className={
               hasActiveFilters
-                ? 'grid gap-3 lg:grid-cols-[1.45fr_0.8fr_0.9fr_auto]'
-                : 'grid gap-3 lg:grid-cols-[1.45fr_0.8fr_0.9fr]'
+                ? 'grid gap-3 lg:grid-cols-[1.45fr_0.8fr_0.9fr_0.65fr_auto]'
+                : 'grid gap-3 lg:grid-cols-[1.45fr_0.8fr_0.9fr_0.65fr]'
             }
           >
             <div className="relative">
@@ -2110,6 +2137,54 @@ const Applicants = () => {
               disabled={isLoading}
               onSelect={handleDateFilterSelect}
             />
+
+            <div ref={sortMenuRef} className="relative">
+              <button
+                type="button"
+                disabled={isLoading}
+                onClick={() =>
+                  setOpenFilterMenu((current) => (current === 'sort' ? null : 'sort'))
+                }
+                className="inline-flex h-12 w-full items-center justify-between gap-2 whitespace-nowrap rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
+                aria-haspopup="menu"
+                aria-expanded={openFilterMenu === 'sort'}
+              >
+                <span>Sort By</span>
+                <Icon name="chevron-down" className="h-4 w-4 shrink-0 text-gray-500" />
+              </button>
+
+              {openFilterMenu === 'sort' && (
+                <div
+                  className="absolute right-0 top-[52px] z-50 w-64 overflow-hidden rounded-xl border border-gray-200 bg-white py-2 shadow-lg"
+                  role="menu"
+                >
+                  {[
+                    ['salary_high_to_low', 'Salary Highest to Lowest'],
+                    ['expiry_soonest', 'Expiry Date Soonest to Latest'],
+                    ['most_recent', 'Most Recent Newest to Oldest'],
+                  ].map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setSortBy(value);
+                        setOpenFilterMenu(null);
+                        setCurrentPage(1);
+                      }}
+                      className={cn(
+                        'block w-full px-4 py-2.5 text-left text-sm transition hover:bg-gray-50',
+                        sortBy === value
+                          ? 'font-semibold text-[#1154cc]'
+                          : 'text-gray-700'
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {hasActiveFilters && (
               <button
