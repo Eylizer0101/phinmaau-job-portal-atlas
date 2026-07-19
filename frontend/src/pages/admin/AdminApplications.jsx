@@ -4,6 +4,12 @@ import AdminLayout from '../../layouts/AdminLayout';
 import api from '../../services/api';
 
 const STATUS_OPTIONS = ['Pending', 'For Interview', 'Hired', 'Declined'];
+const SORT_OPTIONS = [
+  'Newest First',
+  'Oldest First',
+  'Applicant A-Z',
+  'Applicant Z-A',
+];
 const ITEMS_PER_PAGE = 10;
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
@@ -432,6 +438,61 @@ const getName = (user) => {
   return [user?.firstName, user?.middleName, user?.lastName].filter(Boolean).join(' ') || user?.email || 'Applicant';
 };
 
+
+const getJobseekerProfile = (application) =>
+  application?.jobseeker?.jobSeekerProfile || {};
+
+const getPrimaryEducation = (application) => {
+  const entries = getJobseekerProfile(application)?.educationEntries;
+  return Array.isArray(entries) && entries.length ? entries[0] : {};
+};
+
+const getCampus = (application) => {
+  const profile = getJobseekerProfile(application);
+  const education = getPrimaryEducation(application);
+
+  return String(
+    profile.campus ||
+    education.campus ||
+    education.school ||
+    ''
+  ).trim() || 'Not specified';
+};
+
+const getCourse = (application) => {
+  const profile = getJobseekerProfile(application);
+  const education = getPrimaryEducation(application);
+
+  return String(
+    profile.course ||
+    education.course ||
+    education.studyField ||
+    profile.studyField ||
+    ''
+  ).trim() || 'Not specified';
+};
+
+const getJobTitle = (application) =>
+  String(
+    application?.job?.title ||
+    application?.job?.jobTitle ||
+    ''
+  ).trim() || 'Untitled Job';
+
+const getCompany = (application) =>
+  String(
+    application?.job?.companyName ||
+    application?.employer?.employerProfile?.companyName ||
+    ''
+  ).trim() || 'Company';
+
+const getIndustry = (application) =>
+  String(
+    application?.job?.category ||
+    application?.employer?.employerProfile?.industry ||
+    ''
+  ).trim() || 'Not specified';
+
 const formatDate = (value) => {
   if (!value) return 'N/A';
   const date = new Date(value);
@@ -511,11 +572,14 @@ const AdminApplications = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All Status');
+  const [campusFilter, setCampusFilter] = useState('All Campus');
+  const [courseFilter, setCourseFilter] = useState('All Course');
+  const [jobTitleFilter, setJobTitleFilter] = useState('All Job Title');
   const [companyFilter, setCompanyFilter] = useState('All Company');
   const [industryFilter, setIndustryFilter] = useState('All Industry');
-  const [jobTitleFilter, setJobTitleFilter] = useState('All Job Title');
+  const [statusFilter, setStatusFilter] = useState('All Status');
   const [dateFilter, setDateFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('Newest First');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -543,35 +607,142 @@ const AdminApplications = () => {
     fetchApplications();
   }, [fetchApplications]);
 
-  const companies = useMemo(() => [...new Set(applications.map((app) => app.job?.companyName || app.employer?.employerProfile?.companyName).filter(Boolean))], [applications]);
-  const industries = useMemo(() => [...new Set(applications.map((app) => app.job?.category || app.employer?.employerProfile?.industry).filter(Boolean))], [applications]);
-  const jobTitles = useMemo(() => [...new Set(applications.map((app) => app.job?.title || app.job?.jobTitle).filter(Boolean))], [applications]);
+  const campuses = useMemo(
+    () =>
+      [...new Set(
+        applications
+          .map(getCampus)
+          .filter((value) => value && value !== 'Not specified')
+      )].sort((a, b) => a.localeCompare(b)),
+    [applications]
+  );
+
+  const courses = useMemo(
+    () =>
+      [...new Set(
+        applications
+          .map(getCourse)
+          .filter((value) => value && value !== 'Not specified')
+      )].sort((a, b) => a.localeCompare(b)),
+    [applications]
+  );
+
+  const jobTitles = useMemo(
+    () =>
+      [...new Set(
+        applications
+          .map(getJobTitle)
+          .filter(Boolean)
+      )].sort((a, b) => a.localeCompare(b)),
+    [applications]
+  );
+
+  const companies = useMemo(
+    () =>
+      [...new Set(
+        applications
+          .map(getCompany)
+          .filter(Boolean)
+      )].sort((a, b) => a.localeCompare(b)),
+    [applications]
+  );
+
+  const industries = useMemo(
+    () =>
+      [...new Set(
+        applications
+          .map(getIndustry)
+          .filter((value) => value && value !== 'Not specified')
+      )].sort((a, b) => a.localeCompare(b)),
+    [applications]
+  );
 
   const filteredApplications = useMemo(() => {
     const term = search.trim().toLowerCase();
 
-    return applications.filter((app) => {
+    const filtered = applications.filter((app) => {
       const applicant = getName(app.jobseeker);
       const email = app.jobseeker?.email || '';
-      const title = app.job?.title || app.job?.jobTitle || '';
-      const company = app.job?.companyName || app.employer?.employerProfile?.companyName || '';
-      const industry = app.job?.category || app.employer?.employerProfile?.industry || '';
+      const campus = getCampus(app);
+      const course = getCourse(app);
+      const title = getJobTitle(app);
+      const company = getCompany(app);
+      const industry = getIndustry(app);
       const status = toTitleStatus(app.status);
-      const haystack = [applicant, email, title, company, industry, status].join(' ').toLowerCase();
+
+      const haystack = [
+        applicant,
+        email,
+        campus,
+        course,
+        title,
+        company,
+        industry,
+        status,
+      ].join(' ').toLowerCase();
 
       if (term && !haystack.includes(term)) return false;
-      if (statusFilter !== 'All Status' && status !== statusFilter) return false;
+      if (campusFilter !== 'All Campus' && campus !== campusFilter) return false;
+      if (courseFilter !== 'All Course' && course !== courseFilter) return false;
+      if (jobTitleFilter !== 'All Job Title' && title !== jobTitleFilter) return false;
       if (companyFilter !== 'All Company' && company !== companyFilter) return false;
       if (industryFilter !== 'All Industry' && industry !== industryFilter) return false;
-      if (jobTitleFilter !== 'All Job Title' && title !== jobTitleFilter) return false;
+      if (statusFilter !== 'All Status' && status !== statusFilter) return false;
       if (!isDateInRange(app.appliedAt || app.createdAt, dateFrom, dateTo)) return false;
+
       return true;
     });
-  }, [applications, search, statusFilter, companyFilter, industryFilter, jobTitleFilter, dateFrom, dateTo]);
+
+    return [...filtered].sort((first, second) => {
+      if (sortBy === 'Oldest First') {
+        return (
+          new Date(first.appliedAt || first.createdAt || 0) -
+          new Date(second.appliedAt || second.createdAt || 0)
+        );
+      }
+
+      if (sortBy === 'Applicant A-Z') {
+        return getName(first.jobseeker).localeCompare(getName(second.jobseeker));
+      }
+
+      if (sortBy === 'Applicant Z-A') {
+        return getName(second.jobseeker).localeCompare(getName(first.jobseeker));
+      }
+
+      return (
+        new Date(second.appliedAt || second.createdAt || 0) -
+        new Date(first.appliedAt || first.createdAt || 0)
+      );
+    });
+  }, [
+    applications,
+    search,
+    campusFilter,
+    courseFilter,
+    jobTitleFilter,
+    companyFilter,
+    industryFilter,
+    statusFilter,
+    dateFrom,
+    dateTo,
+    sortBy,
+  ]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, statusFilter, companyFilter, industryFilter, jobTitleFilter, dateFilter, dateFrom, dateTo]);
+  }, [
+    search,
+    campusFilter,
+    courseFilter,
+    jobTitleFilter,
+    companyFilter,
+    industryFilter,
+    statusFilter,
+    dateFilter,
+    dateFrom,
+    dateTo,
+    sortBy,
+  ]);
 
   const totalPages = Math.max(Math.ceil(filteredApplications.length / ITEMS_PER_PAGE), 1);
 
@@ -585,17 +756,30 @@ const AdminApplications = () => {
 
   const clearFilters = () => {
     setSearch('');
-    setStatusFilter('All Status');
+    setCampusFilter('All Campus');
+    setCourseFilter('All Course');
+    setJobTitleFilter('All Job Title');
     setCompanyFilter('All Company');
     setIndustryFilter('All Industry');
-    setJobTitleFilter('All Job Title');
+    setStatusFilter('All Status');
     setDateFilter('all');
     setDateFrom('');
     setDateTo('');
+    setSortBy('Newest First');
   };
 
-
-  const hasActiveFilters = search || statusFilter !== 'All Status' || companyFilter !== 'All Company' || industryFilter !== 'All Industry' || jobTitleFilter !== 'All Job Title' || dateFilter !== 'all' || dateFrom || dateTo;
+  const hasActiveFilters =
+    search ||
+    campusFilter !== 'All Campus' ||
+    courseFilter !== 'All Course' ||
+    jobTitleFilter !== 'All Job Title' ||
+    companyFilter !== 'All Company' ||
+    industryFilter !== 'All Industry' ||
+    statusFilter !== 'All Status' ||
+    dateFilter !== 'all' ||
+    dateFrom ||
+    dateTo ||
+    sortBy !== 'Newest First';
 
   const handleDateFilterChange = (next) => {
     setDateFilter(next.date);
@@ -614,8 +798,8 @@ const AdminApplications = () => {
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-black/5">
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(260px,1.5fr)_repeat(4,minmax(150px,0.8fr))] xl:items-center">
-            <div className="relative min-w-0">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <div className="relative min-w-0 sm:col-span-2 xl:col-span-1">
               <Icon name="search" className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
               <input
                 value={search}
@@ -626,25 +810,63 @@ const AdminApplications = () => {
               />
             </div>
 
-            <FilterSelect value={statusFilter} onChange={setStatusFilter} options={['All Status', ...STATUS_OPTIONS]} />
-            <FilterSelect value={companyFilter} onChange={setCompanyFilter} options={['All Company', ...companies]} />
-            <FilterSelect value={industryFilter} onChange={setIndustryFilter} options={['All Industry', ...industries]} />
-            <FilterSelect value={jobTitleFilter} onChange={setJobTitleFilter} options={['All Job Title', ...jobTitles]} />
-          </div>
+            <FilterSelect
+              value={campusFilter}
+              onChange={setCampusFilter}
+              options={['All Campus', ...campuses]}
+            />
 
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <div className="w-full sm:w-[220px]">
-              <DateFilterDropdown
-                value={dateFilter}
-                dateFrom={dateFrom}
-                dateTo={dateTo}
-                onChange={handleDateFilterChange}
-              />
-            </div>
+            <FilterSelect
+              value={courseFilter}
+              onChange={setCourseFilter}
+              options={['All Course', ...courses]}
+            />
+
+            <FilterSelect
+              value={jobTitleFilter}
+              onChange={setJobTitleFilter}
+              options={['All Job Title', ...jobTitles]}
+            />
+
+            <FilterSelect
+              value={companyFilter}
+              onChange={setCompanyFilter}
+              options={['All Company', ...companies]}
+            />
+
+            <FilterSelect
+              value={industryFilter}
+              onChange={setIndustryFilter}
+              options={['All Industry', ...industries]}
+            />
+
+            <FilterSelect
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={['All Status', ...STATUS_OPTIONS]}
+            />
+
+            <DateFilterDropdown
+              value={dateFilter}
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+              onChange={handleDateFilterChange}
+            />
+
+            <FilterSelect
+              value={sortBy}
+              onChange={setSortBy}
+              options={SORT_OPTIONS}
+            />
 
             {hasActiveFilters ? (
-              <button onClick={clearFilters} type="button" className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 hover:bg-slate-50">
-                <Icon name="refresh" /> Clear All
+              <button
+                onClick={clearFilters}
+                type="button"
+                className="inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+              >
+                <Icon name="refresh" />
+                Clear
               </button>
             ) : null}
           </div>
@@ -661,20 +883,37 @@ const AdminApplications = () => {
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200 text-left">
+                <table className="min-w-[1450px] divide-y divide-slate-200 text-left">
                   <thead className="bg-slate-50">
                     <tr>
-                      {['Applicant', 'Job Title', 'Company', 'Address', 'Date Applied', 'Status', 'Actions'].map((head) => (
-                        <th key={head} className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-slate-500">{head}</th>
+                      {[
+                        'Date Applied',
+                        'Applicant',
+                        'Campus',
+                        'Course',
+                        'Job Title',
+                        'Company',
+                        'Industry',
+                        'Status',
+                        'Actions',
+                      ].map((head) => (
+                        <th
+                          key={head}
+                          className="whitespace-nowrap px-5 py-4 text-[11px] font-bold uppercase tracking-widest text-slate-500"
+                        >
+                          {head}
+                        </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
                     {paginatedApplications.length ? paginatedApplications.map((app) => {
                       const applicantName = getName(app.jobseeker);
-                      const jobTitle = app.job?.title || app.job?.jobTitle || 'Untitled Job';
-                      const company = app.job?.companyName || app.employer?.employerProfile?.companyName || 'Company';
-                      const address = app.job?.location || app.employer?.employerProfile?.companyAddress || '—';
+                      const campus = getCampus(app);
+                      const course = getCourse(app);
+                      const jobTitle = getJobTitle(app);
+                      const company = getCompany(app);
+                      const industry = getIndustry(app);
                       return (
                         <tr
                           key={app._id}
@@ -693,29 +932,62 @@ const AdminApplications = () => {
                           }}
                           className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
                         >
-                          <td className="px-6 py-4">
+                          <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-600">
+                            {formatDate(app.appliedAt || app.createdAt)}
+                          </td>
+
+                          <td className="min-w-[220px] px-5 py-4">
                             <div className="flex items-center gap-3">
                               <ApplicantAvatar user={app.jobseeker} />
                               <div className="min-w-0">
-                                <p className="truncate text-sm font-bold text-slate-900">{applicantName}</p>
-                                <p className="truncate text-xs text-slate-500">{app.jobseeker?.email || 'No email'}</p>
+                                <p className="truncate text-sm font-bold text-slate-900">
+                                  {applicantName}
+                                </p>
+                                <p className="truncate text-xs text-slate-500">
+                                  {app.jobseeker?.email || 'No email'}
+                                </p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <p className="text-sm font-bold text-slate-800">{truncate(jobTitle, 16)}</p>
-                            <p className="text-xs text-slate-500">{[app.job?.jobType, app.job?.workMode].filter(Boolean).join(' • ') || '—'}</p>
+
+                          <td className="min-w-[130px] px-5 py-4 text-sm text-slate-600">
+                            {campus}
                           </td>
-                          <td className="px-6 py-4">
-                            <p className="text-sm font-bold text-slate-800">{truncate(company, 18)}</p>
-                            <p className="text-xs text-slate-500">{truncate(app.job?.category || app.employer?.employerProfile?.industry || 'Information Tech...', 22)}</p>
+
+                          <td className="min-w-[190px] px-5 py-4 text-sm text-slate-600">
+                            {course}
                           </td>
-                          <td className="px-6 py-4 text-sm text-slate-600">{truncate(address, 18)}</td>
-                          <td className="px-6 py-4 text-sm text-slate-600">{formatDate(app.appliedAt || app.createdAt)}</td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${statusClass(app.status)}`}>{toTitleStatus(app.status)}</span>
+
+                          <td className="min-w-[180px] px-5 py-4">
+                            <p className="text-sm font-bold text-slate-800">
+                              {truncate(jobTitle, 22)}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {[app.job?.jobType, app.job?.workMode]
+                                .filter(Boolean)
+                                .join(' • ') || '—'}
+                            </p>
                           </td>
-                          <td className="px-6 py-4">
+
+                          <td className="min-w-[170px] px-5 py-4">
+                            <p className="text-sm font-bold text-slate-800">
+                              {truncate(company, 22)}
+                            </p>
+                          </td>
+
+                          <td className="min-w-[170px] px-5 py-4 text-sm text-slate-600">
+                            {truncate(industry, 25)}
+                          </td>
+
+                          <td className="whitespace-nowrap px-5 py-4">
+                            <span
+                              className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${statusClass(app.status)}`}
+                            >
+                              {toTitleStatus(app.status)}
+                            </span>
+                          </td>
+
+                          <td className="px-5 py-4">
                             <button
                               onClick={() => navigate(`/admin/applications/${app._id}`)}
                               type="button"
@@ -730,7 +1002,7 @@ const AdminApplications = () => {
                       );
                     }) : (
                       <tr>
-                        <td colSpan="7" className="px-6 py-12 text-center text-sm text-slate-500">No applications found.</td>
+                        <td colSpan="9" className="px-6 py-12 text-center text-sm text-slate-500">No applications found.</td>
                       </tr>
                     )}
                   </tbody>
@@ -783,7 +1055,7 @@ const AdminApplications = () => {
 };
 
 const FilterSelect = ({ value, onChange, options }) => (
-  <div className="relative w-full xl:w-44">
+  <div className="relative w-full">
     <select
       value={value}
       onChange={(event) => onChange(event.target.value)}

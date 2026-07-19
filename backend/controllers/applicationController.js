@@ -988,7 +988,7 @@ exports.getAdminApplications = async (req, res) => {
       })
       .populate({
         path: 'jobseeker',
-        select: 'fullName firstName middleName lastName email profileImage'
+        select: 'fullName firstName middleName lastName email profileImage jobSeekerProfile.campus jobSeekerProfile.course jobSeekerProfile.studyField jobSeekerProfile.educationalAttainment jobSeekerProfile.educationEntries'
       })
       .populate({
         path: 'employer',
