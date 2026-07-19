@@ -1342,7 +1342,7 @@ const JobSeekerDashboard = () => {
                   >
                     <div className="flex items-start gap-4">
                       <div className="w-12 h-12 rounded-full bg-gray-200"></div>
-                      <div className="relative flex-1">
+                      <div className="flex-1">
                         <div className="h-5 bg-gray-200 rounded w-3/4 mb-3"></div>
                         <div className="h-4 bg-gray-200 rounded w-1/2"></div>
                       </div>
@@ -1671,7 +1671,7 @@ const JobSeekerDashboard = () => {
                     return (
                       <div
                         key={jobId}
-                        className="group flex min-h-[138px] cursor-pointer items-center gap-3 py-3 transition-colors hover:bg-[#F8FAFC] sm:px-1"
+                        className="group relative flex min-h-[138px] cursor-pointer items-center gap-3 py-3 pr-12 transition-colors hover:bg-[#F8FAFC] sm:px-1 sm:pr-12"
                         onClick={() => handleViewJobDetails(job)}
                         role="button"
                         tabIndex={0}
@@ -1703,7 +1703,7 @@ const JobSeekerDashboard = () => {
 
                         <div className="min-w-0 flex-1">
                           <div className="flex min-w-0 items-start gap-2">
-                            <div className="min-w-0 flex-1">
+                            <div className="min-w-0">
                               <h3 className="truncate text-sm font-bold leading-snug text-black sm:text-base">
                                 {String(job.title || 'Job Title').replaceAll('"', '')}
                               </h3>
@@ -1736,7 +1736,7 @@ const JobSeekerDashboard = () => {
                                 event.stopPropagation();
                                 navigate('/jobseeker/bookmarks');
                               }}
-                              className="absolute right-0 top-0 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#D9E3F2] bg-white text-[#2e66a6] transition hover:bg-[#EAF2FB]"
+                              className="absolute right-2 top-3 z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#D9E3F2] bg-white text-[#2e66a6] shadow-sm transition hover:bg-[#EAF2FB] sm:right-3"
                               title="Open saved jobs"
                               aria-label="Open saved jobs"
                             >
