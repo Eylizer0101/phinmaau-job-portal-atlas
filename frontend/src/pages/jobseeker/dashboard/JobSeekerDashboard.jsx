@@ -120,6 +120,8 @@ const JobSeekerDashboard = () => {
 
   const [jobOffers, setJobOffers] = useState([]);
   const [jobOffersLoading, setJobOffersLoading] = useState(true);
+  const [savedJobIds, setSavedJobIds] = useState(() => new Set());
+  const [savingJobIds, setSavingJobIds] = useState(() => new Set());
 
   // ✅ FORCE CHANGE PASSWORD STATES
   const [mustChangePassword, setMustChangePassword] = useState(false);
@@ -316,6 +318,86 @@ const JobSeekerDashboard = () => {
     }
   };
 
+  const fetchSavedJobIds = async () => {
+    try {
+      const response = await api.get('/jobs/saved');
+      const savedJobs = Array.isArray(response?.data?.jobs)
+        ? response.data.jobs
+        : Array.isArray(response?.data?.savedJobs)
+        ? response.data.savedJobs
+        : Array.isArray(response?.data)
+        ? response.data
+        : [];
+
+      setSavedJobIds(
+        new Set(
+          savedJobs
+            .map((job) => String(job?._id || job?.id || job || '').trim())
+            .filter(Boolean)
+        )
+      );
+    } catch (error) {
+      console.error('Error fetching saved jobs for dashboard:', error);
+      setSavedJobIds(new Set());
+    }
+  };
+
+  const handleToggleSavedJob = async (event, job) => {
+    event.stopPropagation();
+
+    const jobId = String(job?._id || job?.id || '').trim();
+    if (!jobId || savingJobIds.has(jobId)) return;
+
+    const isSaved = savedJobIds.has(jobId);
+
+    setSavingJobIds((previous) => {
+      const next = new Set(previous);
+      next.add(jobId);
+      return next;
+    });
+
+    try {
+      if (isSaved) {
+        const response = await api.delete(`/jobs/saved/${jobId}`);
+
+        if (response?.data?.success === false) {
+          throw new Error(response?.data?.message || 'Unable to remove saved job.');
+        }
+
+        setSavedJobIds((previous) => {
+          const next = new Set(previous);
+          next.delete(jobId);
+          return next;
+        });
+      } else {
+        const response = await api.post(`/jobs/saved/${jobId}`);
+
+        if (response?.data?.success === false) {
+          throw new Error(response?.data?.message || 'Unable to save job.');
+        }
+
+        setSavedJobIds((previous) => {
+          const next = new Set(previous);
+          next.add(jobId);
+          return next;
+        });
+      }
+    } catch (error) {
+      console.error('Error updating saved job from dashboard:', error);
+      window.alert(
+        error?.response?.data?.message ||
+          error?.message ||
+          'Unable to update the saved job right now.'
+      );
+    } finally {
+      setSavingJobIds((previous) => {
+        const next = new Set(previous);
+        next.delete(jobId);
+        return next;
+      });
+    }
+  };
+
   const handleStatsCardClick = (filter) => {
     if (filter === 'total') {
       navigate('/jobseeker/my-applications');
@@ -507,6 +589,7 @@ const JobSeekerDashboard = () => {
     fetchUserData();
     fetchCompaniesPreview();
     fetchJobOffersPreview();
+    fetchSavedJobIds();
     syncMustChangePasswordState();
   }, []);
 
@@ -1667,6 +1750,8 @@ const JobSeekerDashboard = () => {
                     const companyInitials = getCompanyInitials(job.companyName || 'Company');
                     const tags = getJobOfferTags(job);
                     const verified = isCompanyVerified(job) || job?.companyVerified == null;
+                    const isSaved = savedJobIds.has(String(jobId));
+                    const isSaving = savingJobIds.has(String(jobId));
 
                     return (
                       <div
@@ -1732,28 +1817,32 @@ const JobSeekerDashboard = () => {
 
                             <button
                               type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                navigate('/jobseeker/bookmarks');
-                              }}
-                              className="absolute right-2 top-3 z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#D9E3F2] bg-white text-[#2e66a6] shadow-sm transition hover:bg-[#EAF2FB] sm:right-3"
-                              title="Open saved jobs"
-                              aria-label="Open saved jobs"
+                              onClick={(event) => handleToggleSavedJob(event, job)}
+                              disabled={isSaving}
+                              className={`absolute right-2 top-3 z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#D9E3F2] bg-white shadow-sm transition hover:bg-[#EAF2FB] disabled:cursor-not-allowed disabled:opacity-60 sm:right-3 ${
+                                isSaved ? 'text-[#2e66a6]' : 'text-gray-600'
+                              }`}
+                              title={isSaved ? 'Remove from saved jobs' : 'Save job'}
+                              aria-label={isSaved ? 'Remove from saved jobs' : 'Save job'}
                             >
-                              <svg
-                                className="h-4 w-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                aria-hidden="true"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="1.8"
-                                  d="M6 4.75A1.75 1.75 0 017.75 3h8.5A1.75 1.75 0 0118 4.75V21l-6-3.5L6 21V4.75z"
-                                />
-                              </svg>
+                              {isSaving ? (
+                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#2e66a6]/25 border-t-[#2e66a6]" />
+                              ) : (
+                                <svg
+                                  className="h-4 w-4"
+                                  fill={isSaved ? 'currentColor' : 'none'}
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                  aria-hidden="true"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="1.8"
+                                    d="M6 4.75A1.75 1.75 0 017.75 3h8.5A1.75 1.75 0 0118 4.75V21l-6-3.5L6 21V4.75z"
+                                  />
+                                </svg>
+                              )}
                             </button>
                           </div>
 
@@ -1834,7 +1923,7 @@ const JobSeekerDashboard = () => {
                             event.stopPropagation();
                             handleViewJobDetails(job);
                           }}
-                          className="hidden shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-semibold text-[#2e66a6] transition hover:bg-[#EAF2FB] sm:inline-flex"
+                          className="absolute bottom-3 right-2 inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-semibold text-[#2e66a6] transition hover:bg-[#EAF2FB] sm:right-3"
                         >
                           View Details
                           <svg
