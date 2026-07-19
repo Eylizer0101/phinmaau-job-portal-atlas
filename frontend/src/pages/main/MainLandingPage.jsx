@@ -376,23 +376,43 @@ const MainLandingPage = () => {
                   onMouseUp={(e) => (e.currentTarget.style.backgroundColor = BLUE.hover)}
                 >
                   <span>Find your job</span>
-                  <span className="flex items-center justify-center text-lg" aria-hidden="true">
-                    →
-                  </span>
-                </button>
-              </div>
-
-              <div className="mt-10 flex justify-center" aria-hidden="true">
-                <div className="flex items-center gap-1 text-slate-600">
-                  <span className="text-[13px] md:text-sm font-normal">
-                    Explore more
-                  </span>
-                  <div className="flex h-5 w-5 items-center justify-center">
                   <svg
-                    className="h-4 w-4"
+                    className="h-5 w-5 shrink-0"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M5 12h14M13 6l6 6-6 6"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="mt-10 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() =>
+                    document
+                      .getElementById("campuses-section")
+                      ?.scrollIntoView({ behavior: "smooth" })
+                  }
+                  className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900 transition-colors"
+                  aria-label="Explore more"
+                >
+                  <span className="text-[13px] md:text-sm font-normal">
+                    Explore more
+                  </span>
+                  <svg
+                    className="h-4 w-4 shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    aria-hidden="true"
                   >
                     <path
                       d="M6 9l6 6 6-6"
@@ -401,8 +421,7 @@ const MainLandingPage = () => {
                       strokeLinejoin="round"
                     />
                   </svg>
-                  </div>
-                </div>
+                </button>
               </div>
             </div>
           </div>
