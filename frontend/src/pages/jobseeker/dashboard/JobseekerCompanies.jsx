@@ -666,26 +666,28 @@ const JobseekerCompanies = () => {
                         <div className="mt-5 pt-4 border-t border-[#E8E8E8]">
                           <div className="space-y-[8px]">
                             {breakdownRows.map((row) => (
-                              <div key={row.star} className="flex items-center gap-[10px]">
-                                <div className="flex-1 h-[10px] bg-[#EFEFEF] overflow-hidden">
+                              <div
+                                key={row.star}
+                                className="flex items-center gap-[10px]"
+                                aria-label={`${row.star}.0 stars, ${row.count} ${row.count === 1 ? "review" : "reviews"}`}
+                              >
+                                <div className="w-[30px] shrink-0 text-[12px] font-medium text-black/70">
+                                  {row.star}.0
+                                </div>
+
+                                <div className="h-[10px] flex-1 overflow-hidden rounded-full bg-[#EFEFEF]">
                                   <div
-                                    className="h-full bg-[#2e66a6] transition-all duration-300"
+                                    className="h-full rounded-full bg-[#2e66a6] transition-all duration-300"
                                     style={{ width: `${row.percent}%` }}
                                   />
                                 </div>
 
-                               <div className="w-[26px] text-[12px] text-black/60 text-right shrink-0">
-                                  {row.star}.0
-                                </div>
-
-                                <svg
-                                  className="w-[13px] h-[13px] text-[#2e66a6] shrink-0"
-                                  viewBox="0 0 20 20"
-                                  fill="currentColor"
-                                  aria-hidden="true"
+                                <div
+                                  className="w-[28px] shrink-0 text-right text-[12px] font-semibold text-black/70"
+                                  title={`${row.count} ${row.count === 1 ? "review" : "reviews"}`}
                                 >
-                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.539 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.783.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81H7.03a1 1 0 00.95-.69l1.07-3.292z" />
-                                </svg>
+                                  {row.count}
+                                </div>
                               </div>
                             ))}
                           </div>
