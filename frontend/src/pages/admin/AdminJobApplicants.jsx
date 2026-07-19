@@ -3,6 +3,8 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import AdminLayout from '../../layouts/AdminLayout';
 import api from '../../services/api';
 
+const cn = (...classes) => classes.filter(Boolean).join(' ');
+
 const UI = {
   page: 'min-h-screen bg-[#f8fafc]',
   container: 'mx-auto max-w-7xl px-1 py-8',
@@ -259,6 +261,274 @@ const isDateWithinRange = (value, from, to) => {
   return true;
 };
 
+
+const addCalendarMonths = (date, amount) => {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + amount);
+  return next;
+};
+
+const monthNames = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+const getYearOptions = () => {
+  const startYear = 1950;
+  const endYear = new Date().getFullYear() + 10;
+  return Array.from({ length: endYear - startYear + 1 }, (_, index) => startYear + index);
+};
+
+const CalendarMonth = ({
+  monthDate,
+  startDate,
+  endDate,
+  onPickDate,
+  onChangeMonth,
+}) => {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const firstWeekday = firstDay.getDay();
+  const gridStart = new Date(year, month, 1 - firstWeekday);
+  const start = startDate ? new Date(`${startDate}T00:00:00`) : null;
+  const end = endDate ? new Date(`${endDate}T00:00:00`) : null;
+
+  const days = Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(gridStart);
+    date.setDate(gridStart.getDate() + index);
+    return date;
+  });
+
+  const isSameDay = (first, second) =>
+    first && second && first.toDateString() === second.toDateString();
+
+  const inRange = (date) => start && end && date >= start && date <= end;
+
+  const changeByMonth = (amount) =>
+    onChangeMonth(addCalendarMonths(monthDate, amount));
+
+  const changeMonthSelect = (nextMonth) =>
+    onChangeMonth(new Date(year, Number(nextMonth), 1));
+
+  const changeYearSelect = (nextYear) =>
+    onChangeMonth(new Date(Number(nextYear), month, 1));
+
+  return (
+    <div className="min-w-0 flex-1">
+      <div className="mb-4 grid grid-cols-[32px_1fr_32px] items-center gap-2">
+        <button
+          type="button"
+          onClick={() => changeByMonth(-1)}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-2xl leading-none text-slate-700 transition hover:bg-slate-100"
+          aria-label="Previous month"
+        >
+          ‹
+        </button>
+
+        <div className="grid grid-cols-[1fr_86px] gap-2">
+          <select
+            value={month}
+            onChange={(event) => changeMonthSelect(event.target.value)}
+            className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+            aria-label="Select month"
+          >
+            {monthNames.map((name, index) => (
+              <option key={name} value={index}>
+                {name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={year}
+            onChange={(event) => changeYearSelect(event.target.value)}
+            className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+            aria-label="Select year"
+          >
+            {getYearOptions().map((yearOption) => (
+              <option key={yearOption} value={yearOption}>
+                {yearOption}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => changeByMonth(1)}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-2xl leading-none text-slate-700 transition hover:bg-slate-100"
+          aria-label="Next month"
+        >
+          ›
+        </button>
+      </div>
+
+      <div className="grid grid-cols-7 gap-y-2 text-center text-xs font-bold text-slate-500">
+        {['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].map((day) => (
+          <div key={day}>{day}</div>
+        ))}
+      </div>
+
+      <div className="mt-3 grid grid-cols-7 gap-y-1 text-center text-sm text-slate-600">
+        {days.map((day) => {
+          const value = formatDateInput(day);
+          const outside = day.getMonth() !== month;
+          const selected = isSameDay(day, start) || isSameDay(day, end);
+          const ranged = inRange(day);
+
+          return (
+            <button
+              type="button"
+              key={`${value}-${month}`}
+              onClick={() => onPickDate(value)}
+              className={cn(
+                'mx-auto flex h-9 w-full items-center justify-center transition',
+                outside ? 'text-slate-300' : 'text-slate-700',
+                ranged ? 'bg-[#2e66a6]/10 text-[#2e66a6]' : '',
+                selected
+                  ? 'rounded-lg bg-[#2e66a6] font-extrabold text-white shadow-md'
+                  : 'hover:bg-[#2e66a6]/10'
+              )}
+            >
+              {day.getDate()}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const CustomDateRangeModal = ({
+  open,
+  startDate,
+  endDate,
+  onCancel,
+  onApply,
+}) => {
+  const today = new Date();
+  const initialStart = startDate || formatDateInput(today);
+  const initialEnd = endDate || formatDateInput(today);
+  const [draftStart, setDraftStart] = useState(initialStart);
+  const [draftEnd, setDraftEnd] = useState(initialEnd);
+  const [leftMonth, setLeftMonth] = useState(
+    new Date(`${initialStart}T00:00:00`)
+  );
+  const [rightMonth, setRightMonth] = useState(
+    new Date(`${initialEnd}T00:00:00`)
+  );
+
+  useEffect(() => {
+    if (!open) return;
+
+    const nextStart = startDate || formatDateInput(today);
+    const nextEnd = endDate || formatDateInput(today);
+
+    setDraftStart(nextStart);
+    setDraftEnd(nextEnd);
+    setLeftMonth(new Date(`${nextStart}T00:00:00`));
+    setRightMonth(new Date(`${nextEnd}T00:00:00`));
+  }, [open, startDate, endDate]);
+
+  if (!open) return null;
+
+  const pickDate = (value) => {
+    if (!draftStart || (draftStart && draftEnd)) {
+      setDraftStart(value);
+      setDraftEnd('');
+      return;
+    }
+
+    if (
+      new Date(`${value}T00:00:00`) <
+      new Date(`${draftStart}T00:00:00`)
+    ) {
+      setDraftEnd(draftStart);
+      setDraftStart(value);
+    } else {
+      setDraftEnd(value);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 px-4 py-6">
+      <div className="w-full max-w-4xl overflow-hidden rounded-xl bg-white shadow-2xl">
+        <div className="grid gap-5 px-6 pb-5 pt-5 md:grid-cols-[1fr_auto_1fr] md:items-end">
+          <div>
+            <div className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">
+              Start Date
+            </div>
+            <div className="flex h-12 items-center gap-3 rounded-xl bg-slate-100 px-4 text-lg font-bold text-[#2e66a6]">
+              <SvgIcon name="calendar" className="h-5 w-5" />
+              {formatFullDate(draftStart)}
+            </div>
+          </div>
+
+          <div className="hidden pb-3 text-3xl text-slate-500 md:block">→</div>
+
+          <div>
+            <div className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">
+              End Date
+            </div>
+            <div className="flex h-12 items-center gap-3 rounded-xl bg-slate-100 px-4 text-lg font-bold text-[#2e66a6]">
+              <SvgIcon name="calendar" className="h-5 w-5" />
+              {draftEnd ? formatFullDate(draftEnd) : 'Select date'}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-8 px-6 pb-5 md:grid-cols-2">
+          <CalendarMonth
+            monthDate={leftMonth}
+            startDate={draftStart}
+            endDate={draftEnd}
+            onPickDate={pickDate}
+            onChangeMonth={setLeftMonth}
+          />
+          <CalendarMonth
+            monthDate={rightMonth}
+            startDate={draftStart}
+            endDate={draftEnd}
+            onPickDate={pickDate}
+            onChangeMonth={setRightMonth}
+          />
+        </div>
+
+        <div className="flex items-center justify-end gap-5 border-t border-slate-100 px-6 py-5">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="text-base font-bold text-slate-600"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (draftStart && draftEnd) onApply(draftStart, draftEnd);
+            }}
+            disabled={!draftStart || !draftEnd}
+            className="h-11 rounded-xl bg-[#2e66a6] px-8 text-base font-extrabold text-white shadow-lg shadow-[#2e66a6]/25 transition hover:bg-[#255487] disabled:opacity-60"
+          >
+            Apply Range
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AdminJobApplicants = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
@@ -279,8 +549,10 @@ const AdminJobApplicants = () => {
   const [customDateOpen, setCustomDateOpen] = useState(false);
   const [customDateFrom, setCustomDateFrom] = useState('');
   const [customDateTo, setCustomDateTo] = useState('');
-  const [draftDateFrom, setDraftDateFrom] = useState('');
-  const [draftDateTo, setDraftDateTo] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const ITEMS_PER_PAGE = 6;
+  const MAX_VISIBLE_PAGES = 6;
 
   const backPath = location.state?.backPath || `/admin/jobs/${jobId}`;
   const backLabel = location.state?.backLabel || 'Job Details';
@@ -430,7 +702,7 @@ const AdminJobApplicants = () => {
     dateFilter !== 'all' ||
     sortBy !== 'newest';
 
-  const resetFilters = () => {
+  const clearFilters = () => {
     setSearch('');
     setCampusFilter('all');
     setCourseFilter('all');
@@ -439,29 +711,24 @@ const AdminJobApplicants = () => {
     setSortBy('newest');
     setCustomDateFrom('');
     setCustomDateTo('');
-    setDraftDateFrom('');
-    setDraftDateTo('');
+    setCurrentPage(1);
   };
 
   const handleDateFilterChange = (value) => {
     if (value === 'custom') {
-      setDraftDateFrom(customDateFrom);
-      setDraftDateTo(customDateTo);
       setCustomDateOpen(true);
       return;
     }
 
     setDateFilter(value);
+    setCurrentPage(1);
   };
 
-  const applyCustomDate = () => {
-    if (!draftDateFrom || !draftDateTo) return;
-
-    if (new Date(draftDateFrom) > new Date(draftDateTo)) return;
-
-    setCustomDateFrom(draftDateFrom);
-    setCustomDateTo(draftDateTo);
+  const applyCustomDate = (startDate, endDate) => {
+    setCustomDateFrom(startDate);
+    setCustomDateTo(endDate);
     setDateFilter('custom');
+    setCurrentPage(1);
     setCustomDateOpen(false);
   };
 
@@ -469,6 +736,59 @@ const AdminJobApplicants = () => {
     dateFilter === 'custom' && customDateFrom && customDateTo
       ? `${formatFullDate(customDateFrom)} - ${formatFullDate(customDateTo)}`
       : DATE_FILTER_OPTIONS.find((option) => option.value === dateFilter)?.label || 'All Time';
+
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredApplicants.length / ITEMS_PER_PAGE)
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    search,
+    campusFilter,
+    courseFilter,
+    statusFilter,
+    dateFilter,
+    customDateFrom,
+    customDateTo,
+    sortBy,
+  ]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  const paginatedApplicants = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredApplicants.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [currentPage, filteredApplicants]);
+
+  const firstShown =
+    filteredApplicants.length === 0
+      ? 0
+      : (currentPage - 1) * ITEMS_PER_PAGE + 1;
+
+  const lastShown = Math.min(
+    currentPage * ITEMS_PER_PAGE,
+    filteredApplicants.length
+  );
+
+  const pageWindowStart =
+    Math.floor((currentPage - 1) / MAX_VISIBLE_PAGES) *
+      MAX_VISIBLE_PAGES +
+    1;
+
+  const visiblePageNumbers = Array.from(
+    {
+      length: Math.min(
+        MAX_VISIBLE_PAGES,
+        totalPages - pageWindowStart + 1
+      ),
+    },
+    (_, index) => pageWindowStart + index
+  );
 
   return (
     <AdminLayout>
@@ -483,12 +803,14 @@ const AdminJobApplicants = () => {
             {backLabel}
           </button>
 
-          <div className={`${UI.card} overflow-hidden`}>
+          <div className={`${UI.card} overflow-visible`}>
             <div className="flex flex-col gap-3 border-b border-[#e5e7eb] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
               <div>
                 <div className="flex items-center gap-2">
                   <SvgIcon name="users" className="h-5 w-5 text-[#4b5563]" />
-                  <h1 className="text-lg font-bold text-[#111827]">Applicant List</h1>
+                  <h1 className="text-lg font-bold text-[#111827]">
+                    Applicant List
+                  </h1>
                 </div>
                 <p className="mt-1 text-sm text-[#6b7280]">
                   {job?.title || location.state?.jobTitle || 'Selected Job'}
@@ -502,98 +824,92 @@ const AdminJobApplicants = () => {
             </div>
 
             {!loading && !error && (
-              <div className="border-b border-[#e5e7eb] bg-white px-5 py-5 sm:px-6">
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
-                  <label className="relative md:col-span-2 xl:col-span-2">
-                    <span className="sr-only">Search applicants</span>
-                    <SvgIcon
-                      name="search"
-                      className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]"
-                    />
-                    <input
-                      type="search"
-                      value={search}
-                      onChange={(event) => setSearch(event.target.value)}
-                      placeholder="Search name or email"
-                      className={`h-11 w-full rounded-xl border border-[#d7e6f5] bg-white pl-10 pr-4 text-sm text-[#111827] outline-none transition placeholder:text-[#9ca3af] hover:border-[#b9d0e8] focus:border-[#2e66a6] ${UI.ring}`}
-                    />
-                  </label>
+              <div className="px-5 py-5 sm:px-6">
+                <div className="overflow-x-auto pb-1">
+                  <div className="flex min-w-[1320px] items-center gap-3">
+                    <label className="relative min-w-[290px] flex-1">
+                      <span className="sr-only">Search applicants</span>
+                      <SvgIcon
+                        name="search"
+                        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]"
+                      />
+                      <input
+                        type="search"
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                        placeholder="Search name or email"
+                        className={`h-11 w-full rounded-xl border border-[#d7e6f5] bg-white pl-10 pr-4 text-sm text-[#111827] outline-none transition placeholder:text-[#9ca3af] hover:border-[#b9d0e8] focus:border-[#2e66a6] ${UI.ring}`}
+                      />
+                    </label>
 
-                  <select
-                    value={campusFilter}
-                    onChange={(event) => setCampusFilter(event.target.value)}
-                    className={`h-11 w-full rounded-xl border border-[#d7e6f5] bg-white px-3 text-sm font-medium text-[#374151] outline-none transition hover:border-[#b9d0e8] focus:border-[#2e66a6] ${UI.ring}`}
-                    aria-label="Filter by campus"
-                  >
-                    <option value="all">All Campus</option>
-                    {campusOptions.map((campus) => (
-                      <option key={campus} value={campus}>
-                        {campus}
-                      </option>
-                    ))}
-                  </select>
+                    <select
+                      value={campusFilter}
+                      onChange={(event) => setCampusFilter(event.target.value)}
+                      className={`h-11 w-[155px] rounded-xl border border-[#d7e6f5] bg-white px-3 text-sm font-medium text-[#374151] outline-none transition hover:border-[#b9d0e8] focus:border-[#2e66a6] ${UI.ring}`}
+                      aria-label="Filter by campus"
+                    >
+                      <option value="all">All Campus</option>
+                      {campusOptions.map((campus) => (
+                        <option key={campus} value={campus}>
+                          {campus}
+                        </option>
+                      ))}
+                    </select>
 
-                  <select
-                    value={courseFilter}
-                    onChange={(event) => setCourseFilter(event.target.value)}
-                    className={`h-11 w-full rounded-xl border border-[#d7e6f5] bg-white px-3 text-sm font-medium text-[#374151] outline-none transition hover:border-[#b9d0e8] focus:border-[#2e66a6] ${UI.ring}`}
-                    aria-label="Filter by course"
-                  >
-                    <option value="all">All Course</option>
-                    {courseOptions.map((course) => (
-                      <option key={course} value={course}>
-                        {course}
-                      </option>
-                    ))}
-                  </select>
+                    <select
+                      value={courseFilter}
+                      onChange={(event) => setCourseFilter(event.target.value)}
+                      className={`h-11 w-[155px] rounded-xl border border-[#d7e6f5] bg-white px-3 text-sm font-medium text-[#374151] outline-none transition hover:border-[#b9d0e8] focus:border-[#2e66a6] ${UI.ring}`}
+                      aria-label="Filter by course"
+                    >
+                      <option value="all">All Course</option>
+                      {courseOptions.map((course) => (
+                        <option key={course} value={course}>
+                          {course}
+                        </option>
+                      ))}
+                    </select>
 
-                  <select
-                    value={statusFilter}
-                    onChange={(event) => setStatusFilter(event.target.value)}
-                    className={`h-11 w-full rounded-xl border border-[#d7e6f5] bg-white px-3 text-sm font-medium text-[#374151] outline-none transition hover:border-[#b9d0e8] focus:border-[#2e66a6] ${UI.ring}`}
-                    aria-label="Filter by status"
-                  >
-                    <option value="all">All Status</option>
-                    {statusOptions.map((status) => (
-                      <option key={status} value={status}>
-                        {getApplicantStatusMeta(status).label}
-                      </option>
-                    ))}
-                  </select>
+                    <select
+                      value={statusFilter}
+                      onChange={(event) => setStatusFilter(event.target.value)}
+                      className={`h-11 w-[145px] rounded-xl border border-[#d7e6f5] bg-white px-3 text-sm font-medium text-[#374151] outline-none transition hover:border-[#b9d0e8] focus:border-[#2e66a6] ${UI.ring}`}
+                      aria-label="Filter by status"
+                    >
+                      <option value="all">All Status</option>
+                      {statusOptions.map((status) => (
+                        <option key={status} value={status}>
+                          {getApplicantStatusMeta(status).label}
+                        </option>
+                      ))}
+                    </select>
 
-                  <select
-                    value={dateFilter}
-                    onChange={(event) => handleDateFilterChange(event.target.value)}
-                    className={`h-11 w-full rounded-xl border border-[#d7e6f5] bg-white px-3 text-sm font-medium text-[#374151] outline-none transition hover:border-[#b9d0e8] focus:border-[#2e66a6] ${UI.ring}`}
-                    aria-label="Filter by date applied"
-                  >
-                    {DATE_FILTER_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.value === 'custom' && dateFilter === 'custom'
-                          ? dateFilterLabel
-                          : option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    <select
+                      value={dateFilter}
+                      onChange={(event) =>
+                        handleDateFilterChange(event.target.value)
+                      }
+                      className={`h-11 w-[175px] rounded-xl border border-[#d7e6f5] bg-white px-3 text-sm font-medium text-[#374151] outline-none transition hover:border-[#b9d0e8] focus:border-[#2e66a6] ${UI.ring}`}
+                      aria-label="Filter by date applied"
+                    >
+                      {DATE_FILTER_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.value === 'custom' &&
+                          dateFilter === 'custom'
+                            ? dateFilterLabel
+                            : option.label}
+                        </option>
+                      ))}
+                    </select>
 
-                <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="text-xs text-[#6b7280]">
-                    Showing {filteredApplicants.length} of {applicants.length} applicants
-                    {dateFilter === 'custom' && customDateFrom && customDateTo
-                      ? ` from ${formatFullDate(customDateFrom)} to ${formatFullDate(customDateTo)}`
-                      : ''}
-                  </div>
-
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <label className="flex items-center gap-2">
-                      <span className="whitespace-nowrap text-xs font-semibold text-[#6b7280]">
+                    <label className="flex h-11 items-center gap-2 whitespace-nowrap rounded-xl border border-[#d7e6f5] bg-white px-3">
+                      <span className="text-xs font-semibold text-[#6b7280]">
                         Sort by
                       </span>
                       <select
                         value={sortBy}
                         onChange={(event) => setSortBy(event.target.value)}
-                        className={`h-10 rounded-xl border border-[#d7e6f5] bg-white px-3 text-sm font-medium text-[#374151] outline-none transition hover:border-[#b9d0e8] focus:border-[#2e66a6] ${UI.ring}`}
+                        className={`h-9 min-w-[125px] border-0 bg-transparent px-1 text-sm font-medium text-[#374151] outline-none ${UI.ring}`}
                       >
                         {SORT_OPTIONS.map((option) => (
                           <option key={option.value} value={option.value}>
@@ -603,21 +919,22 @@ const AdminJobApplicants = () => {
                       </select>
                     </label>
 
-                    {hasActiveFilters && (
-                      <button
-                        type="button"
-                        onClick={resetFilters}
-                        className={`inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#d7e6f5] bg-white px-3 text-xs font-semibold text-[#4b5563] transition hover:bg-[#eef5fc] hover:text-[#2e66a6] ${UI.ring}`}
-                      >
-                        <SvgIcon name="refresh" className="h-4 w-4" />
-                        Reset
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={clearFilters}
+                      disabled={!hasActiveFilters}
+                      className={`inline-flex h-11 min-w-[92px] items-center justify-center gap-2 rounded-xl border border-[#d7e6f5] bg-white px-4 text-xs font-semibold text-[#4b5563] transition hover:bg-[#eef5fc] hover:text-[#2e66a6] disabled:cursor-not-allowed disabled:opacity-45 ${UI.ring}`}
+                    >
+                      <SvgIcon name="refresh" className="h-4 w-4" />
+                      Clear
+                    </button>
                   </div>
                 </div>
               </div>
             )}
+          </div>
 
+          <div className={`${UI.card} mt-5 overflow-hidden`}>
             {loading ? (
               <div className="px-6 py-16 text-center text-sm text-[#6b7280]">
                 Loading applicants...
@@ -634,183 +951,140 @@ const AdminJobApplicants = () => {
                 </button>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-[#e5e7eb] text-left text-xs">
-                  <thead className="bg-[#f8fafc] text-[10px] font-bold uppercase tracking-widest text-[#6b7280]">
-                    <tr>
-                      <th className="px-5 py-4">Date Applied</th>
-                      <th className="px-5 py-4">Applicant</th>
-                      <th className="px-5 py-4">Campus</th>
-                      <th className="px-5 py-4">Course</th>
-                      <th className="px-5 py-4">Jobseeker Level</th>
-                      <th className="px-5 py-4">Status</th>
-                    </tr>
-                  </thead>
-
-                  <tbody className="divide-y divide-[#eef0f4] bg-white">
-                    {filteredApplicants.length > 0 ? (
-                      filteredApplicants.map((application) => {
-                        const statusMeta = getApplicantStatusMeta(application.status);
-
-                        return (
-                          <tr
-                            key={application._id}
-                            className="text-[#374151] transition hover:bg-[#f8fafc]"
-                          >
-                            <td className="whitespace-nowrap px-5 py-4 font-medium text-[#4b5563]">
-                              {formatFullDate(getApplicationDate(application))}
-                            </td>
-                            <td className="min-w-[220px] px-5 py-4">
-                              <p className="font-semibold text-[#111827]">
-                                {getApplicantName(application)}
-                              </p>
-                              <p className="mt-1 break-all text-[11px] text-[#6b7280]">
-                                {getApplicantEmail(application)}
-                              </p>
-                            </td>
-                            <td className="min-w-[130px] px-5 py-4">
-                              {getApplicantCampus(application)}
-                            </td>
-                            <td className="min-w-[180px] px-5 py-4">
-                              {getApplicantCourse(application)}
-                            </td>
-                            <td className="min-w-[170px] px-5 py-4">
-                              {getJobseekerLevel(application)}
-                            </td>
-                            <td className="whitespace-nowrap px-5 py-4">
-                              <span
-                                className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase ${statusMeta.className}`}
-                              >
-                                {statusMeta.label}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-[#e5e7eb] text-left text-xs">
+                    <thead className="bg-[#f8fafc] text-[10px] font-bold uppercase tracking-widest text-[#6b7280]">
                       <tr>
-                        <td colSpan="6" className="px-5 py-14 text-center text-sm text-[#6b7280]">
-                          {applicants.length
-                            ? 'No applicants match the selected filters.'
-                            : 'No applicants yet.'}
-                        </td>
+                        <th className="px-5 py-4">Date Applied</th>
+                        <th className="px-5 py-4">Applicant</th>
+                        <th className="px-5 py-4">Campus</th>
+                        <th className="px-5 py-4">Course</th>
+                        <th className="px-5 py-4">Jobseeker Level</th>
+                        <th className="px-5 py-4">Status</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+
+                    <tbody className="divide-y divide-[#eef0f4] bg-white">
+                      {paginatedApplicants.length > 0 ? (
+                        paginatedApplicants.map((application) => {
+                          const statusMeta = getApplicantStatusMeta(
+                            application.status
+                          );
+
+                          return (
+                            <tr
+                              key={application._id}
+                              className="text-[#374151] transition hover:bg-[#f8fafc]"
+                            >
+                              <td className="whitespace-nowrap px-5 py-4 font-medium text-[#4b5563]">
+                                {formatFullDate(
+                                  getApplicationDate(application)
+                                )}
+                              </td>
+                              <td className="min-w-[220px] px-5 py-4">
+                                <p className="font-semibold text-[#111827]">
+                                  {getApplicantName(application)}
+                                </p>
+                                <p className="mt-1 break-all text-[11px] text-[#6b7280]">
+                                  {getApplicantEmail(application)}
+                                </p>
+                              </td>
+                              <td className="min-w-[130px] px-5 py-4">
+                                {getApplicantCampus(application)}
+                              </td>
+                              <td className="min-w-[180px] px-5 py-4">
+                                {getApplicantCourse(application)}
+                              </td>
+                              <td className="min-w-[170px] px-5 py-4">
+                                {getJobseekerLevel(application)}
+                              </td>
+                              <td className="whitespace-nowrap px-5 py-4">
+                                <span
+                                  className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase ${statusMeta.className}`}
+                                >
+                                  {statusMeta.label}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan="6"
+                            className="px-5 py-14 text-center text-sm text-[#6b7280]"
+                          >
+                            {applicants.length
+                              ? 'No applicants match the selected filters.'
+                              : 'No applicants yet.'}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="flex flex-col gap-3 border-t border-[#e5e7eb] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs text-[#6b7280]">
+                    Showing {firstShown} to {lastShown} of{' '}
+                    {filteredApplicants.length} results
+                  </p>
+
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentPage((page) => Math.max(1, page - 1))
+                      }
+                      disabled={currentPage === 1}
+                      className={`h-9 rounded-lg border border-[#d7e6f5] bg-white px-4 text-xs font-semibold text-[#374151] transition hover:bg-[#eef5fc] disabled:cursor-not-allowed disabled:opacity-45 ${UI.ring}`}
+                    >
+                      Previous
+                    </button>
+
+                    {visiblePageNumbers.map((pageNumber) => (
+                      <button
+                        type="button"
+                        key={pageNumber}
+                        onClick={() => setCurrentPage(pageNumber)}
+                        className={`flex h-9 min-w-9 items-center justify-center rounded-lg border px-3 text-xs font-semibold transition ${
+                          currentPage === pageNumber
+                            ? 'border-[#2e66a6] bg-[#2e66a6] text-white'
+                            : 'border-[#d7e6f5] bg-white text-[#374151] hover:bg-[#eef5fc]'
+                        } ${UI.ring}`}
+                      >
+                        {pageNumber}
+                      </button>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentPage((page) =>
+                          Math.min(totalPages, page + 1)
+                        )
+                      }
+                      disabled={currentPage === totalPages}
+                      className={`h-9 rounded-lg border border-[#d7e6f5] bg-white px-4 text-xs font-semibold text-[#374151] transition hover:bg-[#eef5fc] disabled:cursor-not-allowed disabled:opacity-45 ${UI.ring}`}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>
       </div>
 
-      {customDateOpen && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4 py-6"
-          role="presentation"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setCustomDateOpen(false);
-          }}
-        >
-          <div
-            className="w-full max-w-md rounded-[22px] border border-[#e5e7eb] bg-white shadow-2xl"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="custom-date-title"
-          >
-            <div className="flex items-start justify-between border-b border-[#e5e7eb] px-5 py-4">
-              <div>
-                <h2 id="custom-date-title" className="text-base font-bold text-[#111827]">
-                  Custom Date Range
-                </h2>
-                <p className="mt-1 text-xs text-[#6b7280]">
-                  Filter applicants using their date applied.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setCustomDateOpen(false)}
-                className={`flex h-9 w-9 items-center justify-center rounded-xl text-[#6b7280] transition hover:bg-[#f3f4f6] hover:text-[#111827] ${UI.ring}`}
-                aria-label="Close custom date modal"
-              >
-                <SvgIcon name="x" className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="space-y-4 px-5 py-5">
-              <label className="block">
-                <span className="mb-2 block text-xs font-semibold text-[#374151]">
-                  Start Date
-                </span>
-                <div className="relative">
-                  <SvgIcon
-                    name="calendar"
-                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]"
-                  />
-                  <input
-                    type="date"
-                    value={draftDateFrom}
-                    max={draftDateTo || undefined}
-                    onChange={(event) => setDraftDateFrom(event.target.value)}
-                    className={`h-11 w-full rounded-xl border border-[#d7e6f5] bg-white pl-10 pr-3 text-sm text-[#111827] outline-none focus:border-[#2e66a6] ${UI.ring}`}
-                  />
-                </div>
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-xs font-semibold text-[#374151]">
-                  End Date
-                </span>
-                <div className="relative">
-                  <SvgIcon
-                    name="calendar"
-                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]"
-                  />
-                  <input
-                    type="date"
-                    value={draftDateTo}
-                    min={draftDateFrom || undefined}
-                    onChange={(event) => setDraftDateTo(event.target.value)}
-                    className={`h-11 w-full rounded-xl border border-[#d7e6f5] bg-white pl-10 pr-3 text-sm text-[#111827] outline-none focus:border-[#2e66a6] ${UI.ring}`}
-                  />
-                </div>
-              </label>
-
-              {draftDateFrom &&
-                draftDateTo &&
-                new Date(draftDateFrom) > new Date(draftDateTo) && (
-                  <p className="text-xs font-semibold text-red-600">
-                    End date must be the same as or later than the start date.
-                  </p>
-                )}
-            </div>
-
-            <div className="flex flex-col-reverse gap-2 border-t border-[#e5e7eb] px-5 py-4 sm:flex-row sm:justify-end">
-              <button
-                type="button"
-                onClick={() => setCustomDateOpen(false)}
-                className={`h-10 rounded-xl border border-[#d7e6f5] bg-white px-4 text-sm font-semibold text-[#4b5563] transition hover:bg-[#f8fafc] ${UI.ring}`}
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                onClick={applyCustomDate}
-                disabled={
-                  !draftDateFrom ||
-                  !draftDateTo ||
-                  new Date(draftDateFrom) > new Date(draftDateTo)
-                }
-                className={`h-10 rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white transition hover:bg-[#25598f] disabled:cursor-not-allowed disabled:opacity-50 ${UI.ring}`}
-              >
-                Apply Date
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CustomDateRangeModal
+        open={customDateOpen}
+        startDate={customDateFrom}
+        endDate={customDateTo}
+        onCancel={() => setCustomDateOpen(false)}
+        onApply={applyCustomDate}
+      />
     </AdminLayout>
   );
 };
