@@ -1502,7 +1502,7 @@ const Applicants = () => {
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">Applicants</h1>
-            <p className="mt-1 text-sm text-gray-600">Manage and review job applications</p>
+       
           </div>
         </div>
 
