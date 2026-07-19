@@ -355,7 +355,6 @@ const AdminApplicationView = () => {
   const jobseeker = application?.jobseeker || {};
   const companyName = job.companyName || employerProfile.companyName || employer.fullName || "Company";
   const location = job.location || job.address || employerProfile.companyAddress || employer.companyAddress || "—";
-  const status = statusMeta(application?.status);
   const requiredSkills = useMemo(() => getList(job.skillsRequired), [job.skillsRequired]);
   const perksAndBenefits = useMemo(() => {
     const list = getList(job.perksAndBenefits);
@@ -426,9 +425,6 @@ const AdminApplicationView = () => {
                       <h1 className="text-[28px] font-bold leading-tight tracking-[-0.02em] text-[#111827] sm:text-[32px]" title={job.title || job.jobTitle || "Untitled Job"}>
                         {job.title || job.jobTitle || "Untitled Job"}
                       </h1>
-                      <span className={cn("inline-flex rounded-full border px-3 py-1 text-[11px] font-bold uppercase", status.className)}>
-                        {status.label}
-                      </span>
                     </div>
 
                     <div className="mt-2 flex items-center gap-2 text-[#4b5563]">
@@ -439,29 +435,6 @@ const AdminApplicationView = () => {
                     <div className="mt-2 flex items-start gap-2 text-[#6b7280]">
                       <Icon name="mapPin" className="mt-0.5 h-4 w-4 shrink-0 text-[#2e66a6]" />
                       <span className="text-sm leading-6">{location}</span>
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {job.jobType && (
-                        <span className={UI.chip}>
-                          <Icon name="briefcase" className="h-3.5 w-3.5 text-[#2e66a6]" />
-                          {job.jobType}
-                        </span>
-                      )}
-
-                      {job.workMode && (
-                        <span className={UI.chip}>
-                          <Icon name="building" className="h-3.5 w-3.5 text-[#2e66a6]" />
-                          {job.workMode}
-                        </span>
-                      )}
-
-                      {application.appliedAt && (
-                        <span className={UI.chip}>
-                          <Icon name="calendar" className="h-3.5 w-3.5 text-[#2e66a6]" />
-                          Applied {formatDate(application.appliedAt)}
-                        </span>
-                      )}
                     </div>
 
                     <div className="mt-3 text-xs font-medium text-[#6b7280]">
