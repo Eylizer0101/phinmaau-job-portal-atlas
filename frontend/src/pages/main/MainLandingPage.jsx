@@ -55,7 +55,7 @@ const PartnersSection = ({ partners }) => {
           type="button"
           onClick={handlePrev}
           aria-label="Previous partners"
-          className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center text-[34px] font-bold leading-none text-[#2e66a6] hover:bg-slate-50 transition"
+          className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center text-2xl text-[#2e66a6] hover:bg-slate-50 transition"
         >
           ‹
         </button>
@@ -64,7 +64,7 @@ const PartnersSection = ({ partners }) => {
           type="button"
           onClick={handleNext}
           aria-label="Next partners"
-          className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center text-[34px] font-bold leading-none text-[#2e66a6] hover:bg-slate-50 transition"
+          className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center text-2xl text-[#2e66a6] hover:bg-slate-50 transition"
         >
           ›
         </button>
