@@ -830,7 +830,7 @@ const Applicants = () => {
     const statusFiltered =
       statusFilter === 'already_employed'
         ? pendingOnly.filter((a) => Boolean(a.alreadyEmployed))
-        : pendingOnly;
+        : pendingOnly.filter((a) => !a.alreadyEmployed);
 
     const searched = !q
       ? statusFiltered

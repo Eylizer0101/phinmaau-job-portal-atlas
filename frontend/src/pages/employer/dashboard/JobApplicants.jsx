@@ -471,6 +471,13 @@ const JobApplicants = () => {
 
       if (statusFilter === 'already_employed') {
         if (!application.alreadyEmployed) return false;
+      } else if (statusFilter === 'pending') {
+        if (
+          String(application.status || '').toLowerCase() !== 'pending' ||
+          application.alreadyEmployed
+        ) {
+          return false;
+        }
       } else if (
         statusFilter !== 'all' &&
         String(application.status || '').toLowerCase() !== statusFilter
