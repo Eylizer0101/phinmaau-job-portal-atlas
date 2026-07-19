@@ -1630,33 +1630,28 @@ const JobSeekerDashboard = () => {
               </button>
             </div>
 
-            <div className="p-6 flex-1">
+            <div className="flex-1 px-6 py-2">
               {jobOffersLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full">
+                <div className="h-full divide-y divide-[#D9E3F2]">
                   {[1, 2].map((item) => (
                     <div
                       key={item}
-                      className="rounded-2xl p-5 animate-pulse h-full min-h-[250px] bg-white border border-[#D9E3F2]"
+                      className="flex min-h-[160px] animate-pulse items-center gap-4 py-4"
                     >
-                      <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-full bg-gray-200"></div>
-                        <div className="flex-1">
-                          <div className="h-5 bg-gray-200 rounded w-3/4 mb-3"></div>
-                          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                      <div className="h-20 w-20 shrink-0 rounded-2xl bg-gray-200" />
+
+                      <div className="min-w-0 flex-1">
+                        <div className="h-5 w-3/5 rounded bg-gray-200" />
+                        <div className="mt-3 h-4 w-2/5 rounded bg-gray-200" />
+                        <div className="mt-4 h-4 w-4/5 rounded bg-gray-200" />
+                        <div className="mt-3 h-4 w-3/5 rounded bg-gray-200" />
+                        <div className="mt-4 flex gap-2">
+                          <div className="h-6 w-24 rounded-full bg-gray-200" />
+                          <div className="h-6 w-20 rounded-full bg-gray-200" />
                         </div>
                       </div>
 
-                      <div className="mt-4 rounded-xl bg-[#F8FAFC] p-4">
-                        <div className="h-4 bg-gray-200 rounded w-2/3 mb-3"></div>
-                        <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
-                        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                      </div>
-
-                      <div className="mt-4 flex flex-nowrap items-center gap-2 overflow-hidden">
-                        <div className="h-5 w-24 rounded-full bg-[#F8FAFC]"></div>
-                        <div className="h-5 w-20 rounded-full bg-[#F8FAFC]"></div>
-                        <div className="h-5 w-28 rounded-full bg-[#F8FAFC]"></div>
-                      </div>
+                      <div className="hidden h-10 w-28 rounded-xl bg-gray-200 sm:block" />
                     </div>
                   ))}
                 </div>
@@ -1665,7 +1660,7 @@ const JobSeekerDashboard = () => {
                   <p className="text-sm text-gray-500">No job offers available right now</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
+                <div className="h-full divide-y divide-[#D9E3F2]">
                   {jobOffers.map((job) => {
                     const jobId = job._id || job.id;
                     const logoUrl = resolveLogoUrl(job.companyLogo);
@@ -1676,127 +1671,187 @@ const JobSeekerDashboard = () => {
                     return (
                       <div
                         key={jobId}
-                        className="rounded-2xl p-5 bg-white shadow-sm hover:shadow-lg transition flex flex-col cursor-pointer h-full border border-[#D9E3F2]"
+                        className="group flex min-h-[160px] cursor-pointer items-center gap-4 py-4 transition-colors hover:bg-[#F8FAFC] sm:gap-5 sm:px-1"
                         onClick={() => handleViewJobDetails(job)}
                         role="button"
                         tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
                             handleViewJobDetails(job);
                           }
                         }}
                       >
-                        <div className="flex items-start gap-4">
-                          <div className="w-12 h-12 rounded-[14px] overflow-hidden flex-shrink-0 border border-[#D9E3F2] bg-white">
-                            {logoUrl ? (
-                              <img
-                                src={logoUrl}
-                                alt={job.companyName || 'Company logo'}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-[#F8FAFC]">
-                                <span className="font-bold text-base text-[#2e66a6]">{companyInitials}</span>
+                        <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-[#D9E3F2] bg-white sm:h-24 sm:w-24">
+                          {logoUrl ? (
+                            <img
+                              src={logoUrl}
+                              alt={job.companyName || 'Company logo'}
+                              className="h-full w-full object-cover"
+                              onError={(event) => {
+                                event.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-[#F8FAFC]">
+                              <span className="text-xl font-bold text-[#2e66a6]">
+                                {companyInitials}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex min-w-0 items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <h3 className="truncate text-base font-bold leading-snug text-black sm:text-lg">
+                                {String(job.title || 'Job Title').replaceAll('"', '')}
+                              </h3>
+
+                              <div className="mt-1 flex min-w-0 items-center gap-2">
+                                <span className="truncate text-sm font-medium text-gray-600">
+                                  {job.companyName || 'Company'}
+                                </span>
+
+                                {verified && (
+                                  <span
+                                    className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
+                                    title="Verified"
+                                    aria-label="Verified company"
+                                  >
+                                    <img
+                                      src="/images/checkmo.png"
+                                      alt="Verified"
+                                      className="h-5 w-5 object-contain"
+                                      draggable="false"
+                                    />
+                                  </span>
+                                )}
                               </div>
-                            )}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                navigate('/jobseeker/bookmarks');
+                              }}
+                              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D9E3F2] bg-white text-[#2e66a6] transition hover:bg-[#EAF2FB]"
+                              title="Open saved jobs"
+                              aria-label="Open saved jobs"
+                            >
+                              <svg
+                                className="h-5 w-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="1.8"
+                                  d="M6 4.75A1.75 1.75 0 017.75 3h8.5A1.75 1.75 0 0118 4.75V21l-6-3.5L6 21V4.75z"
+                                />
+                              </svg>
+                            </button>
                           </div>
 
-                          <div className="min-w-0 flex-1">
-                            <h3 className="min-w-0 truncate whitespace-nowrap text-lg font-bold text-black leading-snug">
-                              {String(job.title || 'Job Title').replaceAll('"', '')}
-                            </h3>
-
-                            <div className="mt-1 flex items-center gap-2 min-w-0">
-                              <span className="text-sm font-medium text-gray-600 truncate">
-                                {job.companyName || 'Company'}
+                          <div className="mt-3 space-y-2 text-sm text-black">
+                            <div className="flex min-w-0 items-center gap-2">
+                              <svg
+                                className="h-4 w-4 shrink-0 text-gray-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                              </svg>
+                              <span className="truncate">
+                                {formatLocationDisplay(job.location)}
                               </span>
+                            </div>
 
-                              {verified && (
-                                <span
-                                  className="inline-flex items-center justify-center w-5 h-5 rounded-full flex-shrink-0"
-                                  title="Verified"
-                                  aria-label="Verified company"
-                                >
-                                  <img
-                                    src="/images/checkmo.png"
-                                    alt="Verified"
-                                    className="w-5 h-5 object-contain"
-                                    draggable="false"
-                                  />
-                                </span>
-                              )}
+                            <div className="flex items-center gap-2">
+                              <span className="flex h-4 w-4 shrink-0 items-center justify-center text-sm font-extrabold text-gray-600">
+                                ₱
+                              </span>
+                              <span className="truncate">
+                                {formatSalary(job.salaryMin, job.salaryMax)}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <svg
+                                className="h-4 w-4 shrink-0 text-gray-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                />
+                              </svg>
+                              <span className="truncate">
+                                {job.jobType || 'Full Time Work'}
+                              </span>
                             </div>
                           </div>
-                        </div>
 
-                        <div className="mt-4 rounded-xl p-4 bg-[#F8FAFC]">
-                          <div className="flex items-center gap-2 text-sm text-black min-w-0">
-                            <svg
-                              className="w-4 h-4 text-gray-600 flex-shrink-0"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              aria-hidden="true"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                              />
-                            </svg>
-                            <span className="truncate min-w-0">{formatLocationDisplay(job.location)}</span>
-                          </div>
-
-                          <div className="mt-2 flex items-center gap-2 text-sm text-black">
-                            <span className="w-4 h-4 text-gray-600 flex items-center justify-center font-extrabold text-[14px] leading-none">
-                              ₱
-                            </span>
-                            <span className="truncate">{formatSalary(job.salaryMin, job.salaryMax)}</span>
-                          </div>
-
-                          <div className="mt-2 flex items-center gap-2 text-sm text-black">
-                            <svg
-                              className="w-4 h-4 text-gray-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              aria-hidden="true"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                              />
-                            </svg>
-                            <span className="truncate">{job.jobType || 'Full Time Work'}</span>
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            {tags.length > 0
+                              ? tags.map((tag, index) => (
+                                  <span
+                                    key={`${jobId}-tag-${index}`}
+                                    className={`rounded-full px-2.5 py-1 text-[10px] font-semibold whitespace-nowrap ${tag.className}`}
+                                  >
+                                    {tag.label}
+                                  </span>
+                                ))
+                              : null}
                           </div>
                         </div>
 
-                        <div className="mt-4 flex flex-wrap items-center gap-2">
-
-                          {tags.length > 0
-                            ? tags.map((tag, index) => (
-                                <span
-                                  key={`${jobId}-tag-${index}`}
-                                  className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap ${tag.className}`}
-                                >
-                                  {tag.label}
-                                </span>
-                              ))
-                            : null}
-                        </div>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleViewJobDetails(job);
+                          }}
+                          className="hidden shrink-0 items-center gap-3 whitespace-nowrap rounded-xl px-3 py-2 text-sm font-semibold text-[#2e66a6] transition hover:bg-[#EAF2FB] sm:inline-flex"
+                        >
+                          View Details
+                          <svg
+                            className="h-5 w-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M9 5l7 7-7 7"
+                            />
+                          </svg>
+                        </button>
                       </div>
                     );
                   })}
