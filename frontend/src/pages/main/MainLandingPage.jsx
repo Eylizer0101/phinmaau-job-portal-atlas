@@ -382,39 +382,28 @@ const MainLandingPage = () => {
                 </button>
               </div>
 
-             <div className="mt-10 flex justify-center" aria-hidden="true">
-  <div className="flex flex-col items-center text-slate-700">
-    <span
-      className="
-        text-[15px]
-        md:text-[16px]
-        font-semibold
-        tracking-[-0.01em]
-        leading-none
-      "
-      style={{
-        fontFamily:
-          'Helvetica Neue, Helvetica, Arial, "Segoe UI", sans-serif',
-      }}
-    >
-      Explore more
-    </span>
-
-    <svg
-      className="mt-1 h-[18px] w-[18px]"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-    >
-      <path
-        d="M6 9l6 6 6-6"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  </div>
-</div>
+              <div className="mt-10 flex justify-center" aria-hidden="true">
+                <div className="flex items-center gap-1 text-slate-600">
+                  <span className="text-[13px] md:text-sm font-normal">
+                    Explore more
+                  </span>
+                  <div className="flex h-5 w-5 items-center justify-center">
+                  <svg
+                    className="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <path
+                      d="M6 9l6 6 6-6"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
