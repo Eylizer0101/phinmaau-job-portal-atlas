@@ -823,6 +823,11 @@ const PostJob = () => {
     locationLongitude: '',
   });
 
+  const [skillInput, setSkillInput] = useState('');
+
+  const [locationImageFile, setLocationImageFile] = useState(null);
+  const [locationImagePreview, setLocationImagePreview] = useState('');
+
   const hasJobPostProgress = useMemo(() => {
     return Boolean(
       String(formData.title || '').trim() ||
@@ -834,7 +839,6 @@ const PostJob = () => {
       String(formData.applicationDeadline || '').trim() ||
       String(formData.skillsRequired || '').trim() ||
       String(formData.otherBenefits || '').trim() ||
-      String(formData.locationImage || '').trim() ||
       String(formData.locationLatitude || '').trim() ||
       String(formData.locationLongitude || '').trim() ||
       formData.hideSalary ||
@@ -850,11 +854,6 @@ const PostJob = () => {
       Boolean(locationImageFile)
     );
   }, [formData, locationImageFile]);
-
-  const [skillInput, setSkillInput] = useState('');
-
-  const [locationImageFile, setLocationImageFile] = useState(null);
-  const [locationImagePreview, setLocationImagePreview] = useState('');
 
   const jobTypes = JOB_TYPES;
   const workModes = ['On-site', 'Remote', 'Blended', 'Work from Home'];
