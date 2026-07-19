@@ -383,13 +383,13 @@ const MainLandingPage = () => {
               </div>
 
               <div className="mt-10 flex justify-center" aria-hidden="true">
-                <div className="flex items-center gap-3 text-slate-700">
-                  <span className="text-sm md:text-base font-medium tracking-wide">
+                <div className="flex items-center gap-1 text-slate-600">
+                  <span className="text-[13px] md:text-sm font-normal">
                     Explore more
                   </span>
-                  <div className="flex h-10 w-10 items-center justify-center">
+                  <div className="flex h-5 w-5 items-center justify-center">
                   <svg
-                    className="h-7 w-7"
+                    className="h-4 w-4"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
