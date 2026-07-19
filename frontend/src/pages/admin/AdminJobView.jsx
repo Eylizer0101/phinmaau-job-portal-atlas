@@ -629,38 +629,6 @@ const AdminJobView = () => {
   const [error, setError] = useState('');
   const [applicants, setApplicants] = useState([]);
 
-  const applicantPreview = useMemo(() => applicants.slice(0, 3), [applicants]);
-
-  const getApplicantImage = useCallback((application) => {
-    const value =
-      application?.jobseeker?.profileImage ||
-      application?.jobseeker?.jobSeekerProfile?.profileImage ||
-      '';
-
-    if (!value) return '';
-
-    const cleanValue = String(value).trim();
-    if (/^https?:\/\//i.test(cleanValue) || cleanValue.startsWith('data:') || cleanValue.startsWith('blob:')) {
-      return cleanValue;
-    }
-
-    return cleanValue.startsWith('/')
-      ? `https://phinmaau-job-portal-atlas.onrender.com${cleanValue}`
-      : `https://phinmaau-job-portal-atlas.onrender.com/${cleanValue}`;
-  }, []);
-
-  const getApplicantName = useCallback((application) => {
-    const person = application?.jobseeker || {};
-    return (
-      person.fullName ||
-      [person.firstName, person.middleName, person.lastName]
-        .map((part) => String(part || '').trim())
-        .filter(Boolean)
-        .join(' ') ||
-      'Applicant'
-    );
-  }, []);
-
   const formatSalary = useCallback((min, max) => {
     const hasMin = typeof min === 'number';
     const hasMax = typeof max === 'number';
@@ -917,65 +885,6 @@ const AdminJobView = () => {
                     </div>
                   </div>
                 </div>
-
-                <div className="flex w-full justify-start lg:w-auto lg:self-center lg:justify-end">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      navigate(`/admin/jobs/${jobId}/applicants`, {
-                        state: {
-                          jobTitle: job.title,
-                          backPath: `/admin/jobs/${jobId}`,
-                          backLabel: 'Job Details',
-                        },
-                      })
-                    }
-                    className={`group flex w-full max-w-[285px] items-center gap-3 rounded-xl bg-[#2e66a6] px-4 py-3 text-left text-white shadow-md transition hover:bg-[#25598f] sm:w-auto ${UI.ring}`}
-                    aria-label={`View ${applicants.length} ${applicants.length === 1 ? 'applicant' : 'applicants'}`}
-                  >
-                    <div className="flex -space-x-2">
-                      {applicantPreview.length > 0 ? (
-                        applicantPreview.map((application, index) => {
-                          const image = getApplicantImage(application);
-                          const applicantName = getApplicantName(application);
-
-                          return image ? (
-                            <img
-                              key={application._id || index}
-                              src={image}
-                              alt={applicantName}
-                              className="h-8 w-8 rounded-full border-2 border-white object-cover"
-                            />
-                          ) : (
-                            <span
-                              key={application._id || index}
-                              className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#dbeafe] text-[10px] font-bold text-[#1d4ed8]"
-                            >
-                              {applicantName.charAt(0).toUpperCase()}
-                            </span>
-                          );
-                        })
-                      ) : (
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-white/20">
-                          <SvgIcon name="users" className="h-4 w-4" />
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold">
-                        {applicants.length} {applicants.length === 1 ? 'Applicant' : 'Applicants'}
-                      </p>
-                      <p className="truncate text-[10px] text-blue-100">View submitted applications</p>
-                    </div>
-
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-white transition group-hover:translate-x-0.5">
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </span>
-                  </button>
-                </div>
               </div>
             </div>
           </div>
@@ -1080,6 +989,41 @@ const AdminJobView = () => {
             </div>
           </div>
 
+          <div className="mt-5">
+            <button
+              type="button"
+              onClick={() =>
+                navigate(`/admin/jobs/${jobId}/applicants`, {
+                  state: {
+                    jobTitle: job.title,
+                    backPath: `/admin/jobs/${jobId}`,
+                    backLabel: 'Job Details',
+                  },
+                })
+              }
+              className={`group flex w-full items-center justify-between gap-4 rounded-[22px] border border-[#d7e6f5] bg-white p-4 text-left shadow-sm transition hover:border-[#b9d0e8] hover:bg-[#f8fbff] sm:p-5 ${UI.ring}`}
+              aria-label={`View ${applicants.length} ${applicants.length === 1 ? 'applicant' : 'applicants'}`}
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#eef5fc] text-[#2e66a6]">
+                  <SvgIcon name="users" className="h-5 w-5" />
+                </span>
+
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-[#111827]">
+                    {applicants.length} {applicants.length === 1 ? 'Applicant' : 'Applicants'}
+                  </p>
+                  <p className="mt-0.5 text-xs text-[#6b7280]">Review candidates who applied.</p>
+                </div>
+              </div>
+
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#2e66a6] text-white transition group-hover:translate-x-0.5">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5l7 7-7 7" />
+                </svg>
+              </span>
+            </button>
+          </div>
         </div>
       </div>
     </AdminLayout>
