@@ -1137,6 +1137,38 @@ const ApplicationDetails = () => {
     education,
   });
   const salary = [profile.minimumSalary, profile.maximumSalary].filter(Boolean).join(' - ');
+  const meaningfulWork = work.filter(hasMeaningfulObjectValue);
+  const meaningfulEducation = education.filter(hasMeaningfulObjectValue);
+  const meaningfulProfileSections = [
+    ['Certifications', profile.certifications || []],
+    ['Projects', profile.projects || []],
+    ['Seminars and Trainings', profile.seminars || []],
+    ['Awards and Achievements', profile.awards || []],
+    ['Affiliations', profile.affiliations || []],
+    ['Co-Curricular Activities', profile.cocurricular || []],
+  ].map(([title, items]) => [
+    title,
+    (Array.isArray(items) ? items : []).filter(hasMeaningfulObjectValue),
+  ]).filter(([, items]) => items.length > 0);
+  const meaningfulReferences = (Array.isArray(profile.references) ? profile.references : [])
+    .filter(hasMeaningfulObjectValue);
+  const personalInformationRows = [
+    ['Preferred Work Mode', profile.preferredWorkMode],
+    ['Employment Type', profile.employmentType],
+    ['Willing to Relocate', profile.willingToRelocate],
+    ['How Soon Can Start', profile.howSoonCanYouStart],
+    ['Experience', profile.experience || profile.whatHaveYouDone],
+    ['Preferred Language', profile.preferredLanguage],
+    ['Educational Attainment', profile.educationalAttainment],
+    ['Double Degree', profile.studyField || profile.course],
+    ['Salary', salary],
+    ['Nationality', profile.nationality],
+    ['Height', profile.height],
+    ['Weight', profile.weight],
+    ['Gender', profile.gender],
+    ['Civil Status', profile.civilStatus],
+    ['Birthday', profile.birthday],
+  ].filter(([, value]) => String(value || '').trim());
   const activities = Array.isArray(application.activityHistory) && application.activityHistory.length
     ? [...application.activityHistory].sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt))
     : [
@@ -1239,63 +1271,55 @@ const ApplicationDetails = () => {
                   ) : null}
                 </header>
 
-                <section className="pt-2">
-                  <h3 className="border-b border-black text-[11px] font-bold uppercase">Objective</h3>
-                  <div className="pt-1 text-justify">
-                    {profile.aboutMe ? richText(profile.aboutMe) : 'No objective added yet.'}
-                  </div>
-                </section>
+                {String(profile.aboutMe || '').trim() ? (
+                  <section className="pt-2">
+                    <h3 className="border-b border-black text-[11px] font-bold uppercase">Objective</h3>
+                    <div className="pt-1 text-justify">{richText(profile.aboutMe)}</div>
+                  </section>
+                ) : null}
 
-                <section className="pt-2">
-                  <h3 className="border-b border-black text-[11px] font-bold uppercase">Personal Information</h3>
-                  <div className="grid grid-cols-1 gap-x-7 gap-y-0.5 pt-1 sm:grid-cols-3">
-                    <div>
-                      <div><b>Preferred Work Mode:</b> {profile.preferredWorkMode || 'Not provided'}</div>
-                      <div><b>Employment Type:</b> {profile.employmentType || 'Not provided'}</div>
-                      <div><b>Willing to Relocate:</b> {profile.willingToRelocate || 'Not provided'}</div>
-                      <div><b>How Soon Can Start:</b> {profile.howSoonCanYouStart || 'Not provided'}</div>
-                      <div><b>Experience:</b> {profile.experience || profile.whatHaveYouDone || 'Not provided'}</div>
-                    </div>
-
-                    <div>
-                      <div><b>Preferred Language:</b> {profile.preferredLanguage || 'Not provided'}</div>
-                      <div><b>Educational Attainment:</b> {profile.educationalAttainment || 'Not provided'}</div>
-                      <div><b>Double Degree:</b> {profile.studyField || profile.course || 'Not provided'}</div>
-                      <div><b>Salary:</b> {salary || 'Not provided'}</div>
-                      <div><b>Nationality:</b> {profile.nationality || 'Not provided'}</div>
-                    </div>
-
-                    <div>
-                      <div><b>Height:</b> {profile.height || 'Not provided'}</div>
-                      <div><b>Weight:</b> {profile.weight || 'Not provided'}</div>
-                      <div><b>Gender:</b> {profile.gender || 'Not provided'}</div>
-                      <div><b>Civil Status:</b> {profile.civilStatus || 'Not provided'}</div>
-                      <div><b>Birthday:</b> {profile.birthday || 'Not provided'}</div>
-                    </div>
-                  </div>
-                </section>
-
-                <section className="pt-2">
-                  <h3 className="border-b border-black text-[11px] font-bold uppercase">Work Experience</h3>
-                  <div className="space-y-1 pt-1">
-                    {work.length ? work.map((item, index) => (
-                      <div key={item._id || index}>
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="min-w-0">
-                            <div className="font-bold">{item.positionTitle || item.title || 'Position'}</div>
-                            <div className="italic">{item.companyName || item.company || 'Company'}</div>
-                          </div>
-                          <div className="shrink-0 whitespace-nowrap italic">{entryDate(item)}</div>
+                {personalInformationRows.length ? (
+                  <section className="pt-2">
+                    <h3 className="border-b border-black text-[11px] font-bold uppercase">Personal Information</h3>
+                    <div className="grid grid-cols-1 gap-x-7 gap-y-0.5 pt-1 sm:grid-cols-3">
+                      {personalInformationRows.map(([label, value]) => (
+                        <div key={label}>
+                          <b>{label}:</b> {value}
                         </div>
-                        {item.description ? <div className="mt-0.5 text-justify">{richText(item.description)}</div> : null}
-                      </div>
-                    )) : <div className="italic">No work experience added yet.</div>}
-                  </div>
-                </section>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
 
-                <section className="pt-2">
-                  <h3 className="border-b border-black text-[11px] font-bold uppercase">Skills</h3>
-                  {skills.length ? (
+                {meaningfulWork.length ? (
+                  <section className="pt-2">
+                    <h3 className="border-b border-black text-[11px] font-bold uppercase">Work Experience</h3>
+                    <div className="space-y-1 pt-1">
+                      {meaningfulWork.map((item, index) => (
+                        <div key={item._id || index}>
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0">
+                              {item.positionTitle || item.title ? (
+                                <div className="font-bold">{item.positionTitle || item.title}</div>
+                              ) : null}
+                              {item.companyName || item.company ? (
+                                <div className="italic">{item.companyName || item.company}</div>
+                              ) : null}
+                            </div>
+                            {entryDate(item) ? (
+                              <div className="shrink-0 whitespace-nowrap italic">{entryDate(item)}</div>
+                            ) : null}
+                          </div>
+                          {item.description ? <div className="mt-0.5 text-justify">{richText(item.description)}</div> : null}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
+
+                {skills.length ? (
+                  <section className="pt-2">
+                    <h3 className="border-b border-black text-[11px] font-bold uppercase">Skills</h3>
                     <ul className="grid list-disc grid-cols-1 gap-x-8 gap-y-0 pl-4 pt-1 sm:grid-cols-3">
                       {skills.map((item, index) => (
                         <li key={`${item.skill}-${index}`}>
@@ -1303,46 +1327,49 @@ const ApplicationDetails = () => {
                         </li>
                       ))}
                     </ul>
-                  ) : <div className="pt-1 italic">No skills added yet.</div>}
-                </section>
+                  </section>
+                ) : null}
 
-                <section className="pt-2">
-                  <h3 className="border-b border-black text-[11px] font-bold uppercase">Education</h3>
-                  <div className="space-y-1 pt-1">
-                    {education.length ? education.map((item, index) => (
-                      <div key={item._id || index} className="flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <div className="font-bold">
-                            {item.educationalAttainment || item.level || item.course || 'Educational Attainment'}
+                {meaningfulEducation.length ? (
+                  <section className="pt-2">
+                    <h3 className="border-b border-black text-[11px] font-bold uppercase">Education</h3>
+                    <div className="space-y-1 pt-1">
+                      {meaningfulEducation.map((item, index) => (
+                        <div key={item._id || index} className="flex items-start justify-between gap-4">
+                          <div className="min-w-0">
+                            {item.educationalAttainment || item.level || item.course ? (
+                              <div className="font-bold">
+                                {item.educationalAttainment || item.level || item.course}
+                              </div>
+                            ) : null}
+                            {item.school || item.campus ? (
+                              <div className="italic">{item.school || item.campus}</div>
+                            ) : null}
+                            {item.description ? <div>{richText(item.description)}</div> : null}
                           </div>
-                          <div className="italic">{item.school || item.campus || 'School / University'}</div>
-                          {item.description ? <div>{richText(item.description)}</div> : null}
+                          {entryDate(item) ? (
+                            <div className="shrink-0 whitespace-nowrap italic">{entryDate(item)}</div>
+                          ) : null}
                         </div>
-                        <div className="shrink-0 whitespace-nowrap italic">{entryDate(item)}</div>
-                      </div>
-                    )) : <div className="italic">No education added yet.</div>}
-                  </div>
-                </section>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
 
-                {[
-                  ['Certifications', profile.certifications || []],
-                  ['Projects', profile.projects || []],
-                  ['Seminars and Trainings', profile.seminars || []],
-                  ['Awards and Achievements', profile.awards || []],
-                  ['Affiliations', profile.affiliations || []],
-                  ['Co-Curricular Activities', profile.cocurricular || []],
-                ].map(([sectionTitle, items]) => (
+                {meaningfulProfileSections.map(([sectionTitle, items]) => (
                   <section key={sectionTitle} className="pt-2">
                     <h3 className="border-b border-black text-[11px] font-bold uppercase">{sectionTitle}</h3>
                     <div className="space-y-1 pt-1">
-                      {items.length ? items.map((item, index) => (
+                      {items.map((item, index) => (
                         <div key={item._id || `${sectionTitle}-${index}`}>
                           <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0">
-                              <div className="font-bold">
-                                {item.title || item.name || item.organization || 'Untitled'}
-                              </div>
-                              {(item.issuer || item.role || item.company || item.organization) ? (
+                              {item.title || item.name || item.organization ? (
+                                <div className="font-bold">
+                                  {item.title || item.name || item.organization}
+                                </div>
+                              ) : null}
+                              {item.issuer || item.role || item.company || item.organization ? (
                                 <div className="italic">
                                   {item.issuer || item.role || item.company || item.organization}
                                 </div>
@@ -1354,25 +1381,27 @@ const ApplicationDetails = () => {
                           </div>
                           {item.description ? <div className="mt-0.5 text-justify">{richText(item.description)}</div> : null}
                         </div>
-                      )) : <div className="italic">No information added yet.</div>}
+                      ))}
                     </div>
                   </section>
                 ))}
 
-                <section className="pt-2">
-                  <h3 className="border-b border-black text-[11px] font-bold uppercase">References</h3>
-                  <div className="grid grid-cols-1 gap-x-8 gap-y-2 pt-1 sm:grid-cols-2">
-                    {(profile.references || []).length ? (profile.references || []).map((item, index) => (
-                      <div key={item._id || index}>
-                        <div className="font-bold">{item.name || item.title || 'Reference'}</div>
-                        {item.position ? <div className="italic">{item.position}</div> : null}
-                        {item.company ? <div>{item.company}</div> : null}
-                        {item.phone ? <div>{item.phone}</div> : null}
-                        {item.email ? <div className="break-all text-blue-700 underline">{item.email}</div> : null}
-                      </div>
-                    )) : <div className="italic">No references added yet.</div>}
-                  </div>
-                </section>
+                {meaningfulReferences.length ? (
+                  <section className="pt-2">
+                    <h3 className="border-b border-black text-[11px] font-bold uppercase">References</h3>
+                    <div className="grid grid-cols-1 gap-x-8 gap-y-2 pt-1 sm:grid-cols-2">
+                      {meaningfulReferences.map((item, index) => (
+                        <div key={item._id || index}>
+                          {item.name || item.title ? <div className="font-bold">{item.name || item.title}</div> : null}
+                          {item.position ? <div className="italic">{item.position}</div> : null}
+                          {item.company ? <div>{item.company}</div> : null}
+                          {item.phone ? <div>{item.phone}</div> : null}
+                          {item.email ? <div className="break-all text-blue-700 underline">{item.email}</div> : null}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
               </article>
             </div>
           ) : <div className="border-t border-[#d8e2ee] px-6 py-8 sm:px-10"><div className="relative ml-3 border-l-2 border-gray-200 pl-8">{activities.map((item, index) => { const dt = formatDateTime(item.occurredAt || item.createdAt); return <div key={item._id || `${item.type}-${index}`} className="relative pb-10 last:pb-0"><div className="absolute -left-[43px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-4 border-white bg-[#2e66a6] shadow"><SvgIcon name={item.type === 'message' ? 'message' : item.type === 'submitted' ? 'resume' : 'activity'} className="h-3 w-3 text-white" /></div><h3 className="text-lg font-semibold text-gray-900">{item.title || 'Application updated'}</h3><p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">{item.description || 'The application record was updated.'}</p><div className="mt-2 text-xs font-bold tracking-wide text-gray-500">{dt.date}{dt.time ? ` · ${dt.time}` : ''}</div></div>; })}</div></div>}
