@@ -471,18 +471,13 @@ const JobApplicants = () => {
 
       if (statusFilter === 'already_employed') {
         if (!application.alreadyEmployed) return false;
-      } else if (statusFilter === 'pending') {
+      } else if (statusFilter !== 'all') {
         if (
-          String(application.status || '').toLowerCase() !== 'pending' ||
+          String(application.status || '').toLowerCase() !== statusFilter ||
           application.alreadyEmployed
         ) {
           return false;
         }
-      } else if (
-        statusFilter !== 'all' &&
-        String(application.status || '').toLowerCase() !== statusFilter
-      ) {
-        return false;
       }
 
       if (dateFrom && dateTo) {
