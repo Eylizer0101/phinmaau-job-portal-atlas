@@ -999,7 +999,7 @@ const ManageJobs = () => {
   return (
     <EmployerLayout>
       <div className="mx-auto max-w-7xl px-1 py-8">
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(240px,auto)_minmax(320px,1fr)_auto] xl:items-start">
           <div>
             <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Manage Jobs</h1>
             <p className="mt-1 text-sm text-gray-600">View, edit, and manage your job postings</p>
@@ -1013,15 +1013,17 @@ const ManageJobs = () => {
               </div>
             )}
           </div>
-          <div>{headerRight}</div>
+
+          <div className="min-w-0 xl:pt-1 [&>div]:mb-0">
+            {error && (
+              <Alert type="error" onClose={() => setError('')}>
+                {error}
+              </Alert>
+            )}
+          </div>
+
+          <div className="xl:pt-1">{headerRight}</div>
         </div>
-
-        {error && (
-          <Alert type="error" onClose={() => setError('')}>
-{error}
-          </Alert>
-        )}
-
 
 
         <div className="relative z-20 mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
