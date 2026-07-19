@@ -659,19 +659,19 @@ const JOB_FORM_STEPS = [
   },
 ];
 
-const JobFormProgress = ({ activeStep, onStepChange }) => (
-  <div className="mb-5 overflow-x-auto rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm sm:px-6">
-    <div className="flex min-w-[720px] items-center justify-center gap-2">
+const JobFormProgress = ({ activeStep, onStepChange, canOpenStep }) => (
+  <div className="mb-6 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+    <div className="flex flex-wrap items-center justify-center gap-2">
       {JOB_FORM_STEPS.map((step, index) => {
         const completed = step.id < activeStep;
         const active = step.id === activeStep;
-        const canOpen = step.id <= activeStep;
+        const canOpen = canOpenStep(step.id);
 
         return (
           <React.Fragment key={step.id}>
             <button
               type="button"
-              onClick={() => canOpen && onStepChange(step.id)}
+              onClick={() => onStepChange(step.id)}
               disabled={!canOpen}
               className={[
                 'inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition',
@@ -679,9 +679,16 @@ const JobFormProgress = ({ activeStep, onStepChange }) => (
                   ? 'bg-[#e8f2ff] text-[#075fc8]'
                   : completed
                   ? 'text-emerald-700 hover:bg-emerald-50'
-                  : 'text-gray-500',
-                !canOpen ? 'cursor-default' : '',
+                  : canOpen
+                  ? 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  : 'cursor-not-allowed text-gray-400 opacity-60',
               ].join(' ')}
+              aria-current={active ? 'step' : undefined}
+              title={
+                canOpen
+                  ? `Go to ${step.title}`
+                  : 'Complete the required fields in the previous step first.'
+              }
             >
               <span
                 className={[
@@ -690,7 +697,9 @@ const JobFormProgress = ({ activeStep, onStepChange }) => (
                     ? 'bg-emerald-600 text-white'
                     : active
                     ? 'bg-[#075fc8] text-white'
-                    : 'bg-gray-100 text-gray-500',
+                    : canOpen
+                    ? 'bg-gray-200 text-gray-700'
+                    : 'bg-gray-100 text-gray-400',
                 ].join(' ')}
               >
                 {completed ? '✓' : step.id}
@@ -730,6 +739,8 @@ const PostJob = () => {
   const [activeStep, setActiveStep] = useState(1);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [savingCancelDraft, setSavingCancelDraft] = useState(false);
+  const [pendingLeavePath, setPendingLeavePath] = useState('/employer/manage-jobs');
+  const allowNavigationRef = useRef(false);
 
   const getStoredUser = useCallback(() => {
     try {
@@ -811,6 +822,34 @@ const PostJob = () => {
     locationLatitude: '',
     locationLongitude: '',
   });
+
+  const hasJobPostProgress = useMemo(() => {
+    return Boolean(
+      String(formData.title || '').trim() ||
+      String(formData.location || '').trim() ||
+      getRichTextPlainText(formData.description) ||
+      getRichTextPlainText(formData.requirements) ||
+      String(formData.salaryMin || '').trim() ||
+      String(formData.salaryMax || '').trim() ||
+      String(formData.applicationDeadline || '').trim() ||
+      String(formData.skillsRequired || '').trim() ||
+      String(formData.otherBenefits || '').trim() ||
+      String(formData.locationImage || '').trim() ||
+      String(formData.locationLatitude || '').trim() ||
+      String(formData.locationLongitude || '').trim() ||
+      formData.hideSalary ||
+      formData.isUrgent ||
+      formData.openToFreshGraduates ||
+      (Array.isArray(formData.perksAndBenefits) && formData.perksAndBenefits.length > 0) ||
+      formData.jobType !== 'Full-time' ||
+      formData.workMode !== 'On-site' ||
+      formData.vacancies !== '1' ||
+      formData.experienceLevel !== 'No experience required' ||
+      formData.educationLevel !== "Bachelor / College degree graduate's" ||
+      formData.willingToRelocate !== 'No - position is fixed location' ||
+      Boolean(locationImageFile)
+    );
+  }, [formData, locationImageFile]);
 
   const [skillInput, setSkillInput] = useState('');
 
@@ -1025,15 +1064,52 @@ const PostJob = () => {
 
   const currentStep = JOB_FORM_STEPS[activeStep - 1];
 
+  const canOpenStep = useCallback(
+    (targetStep) => {
+      if (targetStep <= 1) return true;
+
+      for (let step = 1; step < targetStep; step += 1) {
+        if (!stepReady[step]) return false;
+      }
+
+      return true;
+    },
+    [stepReady]
+  );
+
+  const handleStepChange = useCallback(
+    (targetStep) => {
+      if (targetStep === activeStep) return;
+
+      if (!canOpenStep(targetStep)) {
+        const blockedStep = JOB_FORM_STEPS.find(
+          (step) => step.id < targetStep && !stepReady[step.id]
+        );
+
+        setSubmitted(true);
+        setActiveStep(blockedStep?.id || activeStep);
+        setError(
+          blockedStep
+            ? `Please complete all required fields in ${blockedStep.title} before continuing.`
+            : 'Please complete the required fields before continuing.'
+        );
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      setError('');
+      setActiveStep(targetStep);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    [activeStep, canOpenStep, stepReady]
+  );
+
   const goToNextStep = () => {
-    if (!stepReady[activeStep]) return;
-    setActiveStep((step) => Math.min(JOB_FORM_STEPS.length, step + 1));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    handleStepChange(Math.min(JOB_FORM_STEPS.length, activeStep + 1));
   };
 
   const goToPreviousStep = () => {
-    setActiveStep((step) => Math.max(1, step - 1));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    handleStepChange(Math.max(1, activeStep - 1));
   };
 
   useEffect(() => {
@@ -1193,6 +1269,80 @@ const PostJob = () => {
     });
   };
 
+  const requestLeaveJobPosting = useCallback(
+    (destination = '/employer/manage-jobs') => {
+      if (!hasJobPostProgress || allowNavigationRef.current) {
+        allowNavigationRef.current = true;
+        navigate(destination);
+        return;
+      }
+
+      setPendingLeavePath(destination);
+      setShowCancelModal(true);
+    },
+    [hasJobPostProgress, navigate]
+  );
+
+  useEffect(() => {
+    const handleDocumentClick = (event) => {
+      if (!hasJobPostProgress || allowNavigationRef.current) return;
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+      const anchor = event.target.closest?.('a[href]');
+      if (!anchor) return;
+      if (anchor.target === '_blank' || anchor.hasAttribute('download')) return;
+
+      const href = anchor.getAttribute('href');
+      if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) {
+        return;
+      }
+
+      const destination = new URL(anchor.href, window.location.href);
+      if (destination.origin !== window.location.origin) return;
+
+      const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      const nextPath = `${destination.pathname}${destination.search}${destination.hash}`;
+      if (nextPath === currentPath) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      setPendingLeavePath(nextPath);
+      setShowCancelModal(true);
+    };
+
+    document.addEventListener('click', handleDocumentClick, true);
+    return () => document.removeEventListener('click', handleDocumentClick, true);
+  }, [hasJobPostProgress]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      if (!hasJobPostProgress || allowNavigationRef.current) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasJobPostProgress]);
+
+  useEffect(() => {
+    if (!hasJobPostProgress) return undefined;
+
+    window.history.pushState({ agapayJobPostGuard: true }, '', window.location.href);
+
+    const handlePopState = () => {
+      if (allowNavigationRef.current) return;
+
+      window.history.pushState({ agapayJobPostGuard: true }, '', window.location.href);
+      setPendingLeavePath('__browser_back__');
+      setShowCancelModal(true);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [hasJobPostProgress]);
+
   const handleSaveDraft = async () => {
     setSavingDraft(true);
     setError('');
@@ -1216,7 +1366,13 @@ const PostJob = () => {
     try {
       await postJob({ isDraft: true });
       setShowCancelModal(false);
-      navigate('/employer/manage-jobs');
+      allowNavigationRef.current = true;
+
+      if (pendingLeavePath === '__browser_back__') {
+        window.history.go(-2);
+      } else {
+        navigate(pendingLeavePath || '/employer/manage-jobs');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save the job as draft. Please try again.');
       setShowCancelModal(false);
@@ -1338,7 +1494,7 @@ const PostJob = () => {
           {error && <Alert type="error">{error}</Alert>}
           {success && <Alert type="success">{success}</Alert>}
 
-          <JobFormProgress activeStep={activeStep} onStepChange={setActiveStep} />
+          <JobFormProgress activeStep={activeStep} onStepChange={handleStepChange} canOpenStep={canOpenStep} />
 
           <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-12">
             <div className="lg:col-span-12">
@@ -1869,7 +2025,7 @@ const PostJob = () => {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setShowCancelModal(true)}
+                    onClick={() => requestLeaveJobPosting('/employer/manage-jobs')}
                     className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
                   >
                     Cancel
@@ -1936,7 +2092,7 @@ const PostJob = () => {
                 !
               </div>
               <h2 id="cancel-post-title" className="text-xl font-bold text-gray-900">
-                Cancel creating this job?
+                Leave Job Posting?
               </h2>
               <p className="mt-2 text-sm leading-6 text-gray-600">
                 Your current job post will be saved as a draft before you leave. You can continue editing it later from Manage Jobs.
@@ -1945,7 +2101,10 @@ const PostJob = () => {
               <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <button
                   type="button"
-                  onClick={() => setShowCancelModal(false)}
+                  onClick={() => {
+                    setShowCancelModal(false);
+                    setPendingLeavePath('/employer/manage-jobs');
+                  }}
                   disabled={savingCancelDraft}
                   className="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-50"
                 >
