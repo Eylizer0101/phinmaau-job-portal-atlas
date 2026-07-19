@@ -2362,18 +2362,20 @@ const selectBase =
 
                             {openMenuId === app._id && (
                               <div className="absolute right-0 top-14 z-30 w-44 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    handleStatusUpdate(app._id, 'hired');
-                                    setOpenMenuId(null);
-                                  }}
-                                  disabled={rowBusy}
-                                  className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-[#2e66a6] hover:bg-blue-50 disabled:opacity-60"
-                                >
-                                  <Icon name="check" className="h-4 w-4" />
-                                  Hired
-                                </button>
+                                {!app.alreadyEmployed && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleStatusUpdate(app._id, 'hired');
+                                      setOpenMenuId(null);
+                                    }}
+                                    disabled={rowBusy}
+                                    className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-[#2e66a6] hover:bg-blue-50 disabled:opacity-60"
+                                  >
+                                    <Icon name="check" className="h-4 w-4" />
+                                    Hired
+                                  </button>
+                                )}
 
                                 <button
                                   type="button"

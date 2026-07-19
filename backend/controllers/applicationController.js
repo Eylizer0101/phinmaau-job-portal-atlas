@@ -27,6 +27,77 @@ const VALID_DECLINE_REASONS = [
 
 const VALID_DECLINED_FROM = ['applicants', 'forInterview'];
 
+const attachEmploymentStatus = async (applications = []) => {
+  const list = Array.isArray(applications) ? applications : [applications];
+  const jobseekerIds = [
+    ...new Set(
+      list
+        .map((application) => String(application?.jobseeker?._id || application?.jobseeker || ''))
+        .filter(Boolean)
+    ),
+  ];
+
+  if (!jobseekerIds.length) {
+    return list.map((application) => {
+      const plain = application?.toObject ? application.toObject() : application;
+      return { ...plain, alreadyEmployed: false, employedApplication: null };
+    });
+  }
+
+  const hiredApplications = await Application.find({
+    jobseeker: { $in: jobseekerIds },
+    status: 'hired',
+  })
+    .populate({
+      path: 'job',
+      select: 'title companyName employer',
+    })
+    .select('_id job jobseeker employer status hiredAt reviewedAt updatedAt')
+    .sort({ reviewedAt: -1, updatedAt: -1 })
+    .lean();
+
+  const hiredByJobseeker = new Map();
+
+  hiredApplications.forEach((hiredApplication) => {
+    const key = String(hiredApplication.jobseeker || '');
+    if (!key) return;
+    if (!hiredByJobseeker.has(key)) hiredByJobseeker.set(key, []);
+    hiredByJobseeker.get(key).push(hiredApplication);
+  });
+
+  return list.map((application) => {
+    const plain = application?.toObject ? application.toObject() : application;
+    const jobseekerId = String(plain?.jobseeker?._id || plain?.jobseeker || '');
+    const currentApplicationId = String(plain?._id || '');
+    const currentJobId = String(plain?.job?._id || plain?.job || '');
+
+    const otherHiredApplication = (hiredByJobseeker.get(jobseekerId) || []).find((hiredApplication) => {
+      const hiredApplicationId = String(hiredApplication?._id || '');
+      const hiredJobId = String(hiredApplication?.job?._id || hiredApplication?.job || '');
+
+      return (
+        hiredApplicationId !== currentApplicationId &&
+        hiredJobId !== currentJobId
+      );
+    });
+
+    return {
+      ...plain,
+      alreadyEmployed: Boolean(otherHiredApplication),
+      employedApplication: otherHiredApplication
+        ? {
+            applicationId: otherHiredApplication._id,
+            jobId: otherHiredApplication.job?._id || otherHiredApplication.job || null,
+            jobTitle: otherHiredApplication.job?.title || '',
+            companyName: otherHiredApplication.job?.companyName || '',
+            employerId: otherHiredApplication.employer || otherHiredApplication.job?.employer || null,
+          }
+        : null,
+    };
+  });
+};
+
+
 const buildConversationId = (userA, userB) => {
   return [userA.toString(), userB.toString()].sort().join('_');
 };
@@ -968,7 +1039,7 @@ exports.getEmployerApplications = async (req, res) => {
       success: true,
       count: applications.length,
       stats,
-      applications
+      applications: await attachEmploymentStatus(applications)
     });
 
   } catch (error) {
@@ -1072,7 +1143,7 @@ exports.getEmployerForInterviewApplications = async (req, res) => {
     res.status(200).json({
       success: true,
       count: applications.length,
-      applications
+      applications: await attachEmploymentStatus(applications)
     });
   } catch (error) {
     console.error('Error fetching for interview applications:', error);
@@ -1814,7 +1885,7 @@ exports.getJobApplications = async (req, res) => {
         description: job.description,
         requirements: job.requirements,
       },
-      applications
+      applications: await attachEmploymentStatus(applications)
     });
 
   } catch (error) {
@@ -1859,6 +1930,23 @@ exports.updateApplicationStatus = async (req, res) => {
         success: false,
         message: 'Invalid application status'
       });
+    }
+
+    if (nextStatus !== 'declined') {
+      const otherHiredApplication = await Application.findOne({
+        _id: { $ne: application._id },
+        jobseeker: application.jobseeker,
+        job: { $ne: application.job?._id || application.job },
+        status: 'hired'
+      }).select('_id job employer');
+
+      if (otherHiredApplication) {
+        return res.status(409).json({
+          success: false,
+          code: 'APPLICANT_ALREADY_EMPLOYED',
+          message: 'This applicant is already employed through another job application. You may only decline this application.'
+        });
+      }
     }
 
     if (nextStatus === 'declined') {
@@ -2150,9 +2238,11 @@ exports.getApplicationDetails = async (req, res) => {
       }
     }
 
+    const [applicationWithEmploymentStatus] = await attachEmploymentStatus([application]);
+
     res.status(200).json({
       success: true,
-      application
+      application: applicationWithEmploymentStatus
     });
 
   } catch (error) {
