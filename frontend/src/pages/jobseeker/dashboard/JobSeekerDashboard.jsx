@@ -1636,9 +1636,9 @@ const JobSeekerDashboard = () => {
                   {[1, 2].map((item) => (
                     <div
                       key={item}
-                      className="flex min-h-[160px] animate-pulse items-center gap-4 py-4"
+                      className="flex min-h-[138px] animate-pulse items-center gap-3 py-3"
                     >
-                      <div className="h-20 w-20 shrink-0 rounded-2xl bg-gray-200" />
+                      <div className="h-16 w-16 shrink-0 rounded-xl bg-gray-200" />
 
                       <div className="min-w-0 flex-1">
                         <div className="h-5 w-3/5 rounded bg-gray-200" />
@@ -1671,7 +1671,7 @@ const JobSeekerDashboard = () => {
                     return (
                       <div
                         key={jobId}
-                        className="group flex min-h-[160px] cursor-pointer items-center gap-4 py-4 transition-colors hover:bg-[#F8FAFC] sm:gap-5 sm:px-1"
+                        className="group flex min-h-[138px] cursor-pointer items-center gap-3 py-3 transition-colors hover:bg-[#F8FAFC] sm:px-1"
                         onClick={() => handleViewJobDetails(job)}
                         role="button"
                         tabIndex={0}
@@ -1682,7 +1682,7 @@ const JobSeekerDashboard = () => {
                           }
                         }}
                       >
-                        <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-[#D9E3F2] bg-white sm:h-24 sm:w-24">
+                        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-[#D9E3F2] bg-white sm:h-[68px] sm:w-[68px]">
                           {logoUrl ? (
                             <img
                               src={logoUrl}
@@ -1694,7 +1694,7 @@ const JobSeekerDashboard = () => {
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center bg-[#F8FAFC]">
-                              <span className="text-xl font-bold text-[#2e66a6]">
+                              <span className="text-lg font-bold text-[#2e66a6]">
                                 {companyInitials}
                               </span>
                             </div>
@@ -1702,27 +1702,27 @@ const JobSeekerDashboard = () => {
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <div className="flex min-w-0 items-start justify-between gap-3">
+                          <div className="flex min-w-0 items-start justify-between gap-2">
                             <div className="min-w-0">
-                              <h3 className="truncate text-base font-bold leading-snug text-black sm:text-lg">
+                              <h3 className="truncate text-sm font-bold leading-snug text-black sm:text-base">
                                 {String(job.title || 'Job Title').replaceAll('"', '')}
                               </h3>
 
-                              <div className="mt-1 flex min-w-0 items-center gap-2">
-                                <span className="truncate text-sm font-medium text-gray-600">
+                              <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
+                                <span className="truncate text-xs font-medium text-gray-600 sm:text-sm">
                                   {job.companyName || 'Company'}
                                 </span>
 
                                 {verified && (
                                   <span
-                                    className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
+                                    className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
                                     title="Verified"
                                     aria-label="Verified company"
                                   >
                                     <img
                                       src="/images/checkmo.png"
                                       alt="Verified"
-                                      className="h-5 w-5 object-contain"
+                                      className="h-4 w-4 object-contain"
                                       draggable="false"
                                     />
                                   </span>
@@ -1736,12 +1736,12 @@ const JobSeekerDashboard = () => {
                                 event.stopPropagation();
                                 navigate('/jobseeker/bookmarks');
                               }}
-                              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D9E3F2] bg-white text-[#2e66a6] transition hover:bg-[#EAF2FB]"
+                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#D9E3F2] bg-white text-[#2e66a6] transition hover:bg-[#EAF2FB]"
                               title="Open saved jobs"
                               aria-label="Open saved jobs"
                             >
                               <svg
-                                className="h-5 w-5"
+                                className="h-4 w-4"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -1757,10 +1757,10 @@ const JobSeekerDashboard = () => {
                             </button>
                           </div>
 
-                          <div className="mt-3 space-y-2 text-sm text-black">
+                          <div className="mt-2 space-y-1.5 text-xs text-black sm:text-[13px]">
                             <div className="flex min-w-0 items-center gap-2">
                               <svg
-                                className="h-4 w-4 shrink-0 text-gray-600"
+                                className="h-3.5 w-3.5 shrink-0 text-gray-600"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -1785,7 +1785,7 @@ const JobSeekerDashboard = () => {
                             </div>
 
                             <div className="flex items-center gap-2">
-                              <span className="flex h-4 w-4 shrink-0 items-center justify-center text-sm font-extrabold text-gray-600">
+                              <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center text-xs font-extrabold text-gray-600">
                                 ₱
                               </span>
                               <span className="truncate">
@@ -1814,12 +1814,12 @@ const JobSeekerDashboard = () => {
                             </div>
                           </div>
 
-                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5">
                             {tags.length > 0
                               ? tags.map((tag, index) => (
                                   <span
                                     key={`${jobId}-tag-${index}`}
-                                    className={`rounded-full px-2.5 py-1 text-[10px] font-semibold whitespace-nowrap ${tag.className}`}
+                                    className={`rounded-full px-2 py-0.5 text-[9px] font-semibold whitespace-nowrap ${tag.className}`}
                                   >
                                     {tag.label}
                                   </span>
@@ -1834,11 +1834,11 @@ const JobSeekerDashboard = () => {
                             event.stopPropagation();
                             handleViewJobDetails(job);
                           }}
-                          className="hidden shrink-0 items-center gap-3 whitespace-nowrap rounded-xl px-3 py-2 text-sm font-semibold text-[#2e66a6] transition hover:bg-[#EAF2FB] sm:inline-flex"
+                          className="hidden shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-semibold text-[#2e66a6] transition hover:bg-[#EAF2FB] sm:inline-flex"
                         >
                           View Details
                           <svg
-                            className="h-5 w-5"
+                            className="h-4 w-4"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
