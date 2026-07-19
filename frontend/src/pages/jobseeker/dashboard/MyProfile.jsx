@@ -833,6 +833,7 @@ const sanitizeRichText = (value = '') => {
     'LI',
     'H1',
     'H2',
+    'BLOCKQUOTE',
   ]);
 
   const parser = new window.DOMParser();
@@ -876,6 +877,7 @@ const RichTextDisplay = ({ value, className = '' }) => {
         '[&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-1',
         '[&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-1',
         '[&_li]:my-0.5',
+        '[&_blockquote]:ml-6 [&_blockquote]:border-l-2 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4',
         className,
       ].join(' ')}
       dangerouslySetInnerHTML={{ __html: html }}
@@ -972,7 +974,20 @@ const BulletTextArea = ({
             <span className="text-[18px]">≡</span>
           </RichTextToolbarButton>
 
-          <RichTextToolbarButton title="Indent" onMouseDown={() => runCommand('indent')}>
+          <RichTextToolbarButton
+            title="Indent"
+            onMouseDown={() => {
+              const selection = window.getSelection?.();
+              const anchorElement = selection?.anchorNode?.parentElement;
+              const isInsideList = Boolean(anchorElement?.closest?.('ul, ol'));
+
+              if (isInsideList) {
+                runCommand('indent');
+              } else {
+                formatHeading('BLOCKQUOTE');
+              }
+            }}
+          >
             <span className="text-[18px]">⇥</span>
           </RichTextToolbarButton>
 
@@ -1011,6 +1026,7 @@ const BulletTextArea = ({
             '[&_h2]:text-xl [&_h2]:font-bold',
             '[&_ul]:list-disc [&_ul]:pl-6',
             '[&_ol]:list-decimal [&_ol]:pl-6',
+            '[&_blockquote]:ml-6 [&_blockquote]:border-l-2 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4',
             className,
           ].join(' ')}
           style={{ minHeight }}
@@ -1909,6 +1925,15 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
           singleDateChecked={Boolean(item.isSingleDate)}
           onSingleDateCheckedChange={(checked) => change('isSingleDate', checked)}
         />
+        <div>
+          <FormLabel>Description (optional)</FormLabel>
+          <BulletTextArea
+            rows={5}
+            value={item.description}
+            onChange={(e) => change('description', e.target.value)}
+            className="rounded-b-[5px]"
+          />
+        </div>
       </>
     );
   }
@@ -1930,7 +1955,12 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
         </div>
         <div>
           <FormLabel>Description (optional)</FormLabel>
-          <PlainTextArea value={item.description} onChange={(e) => change('description', e.target.value)} />
+          <BulletTextArea
+            rows={5}
+            value={item.description}
+            onChange={(e) => change('description', e.target.value)}
+            className="rounded-b-[5px]"
+          />
         </div>
       </>
     );
@@ -1950,7 +1980,12 @@ const MoreSectionFieldSet = ({ sectionKey, item, index, onChangeItem }) => {
         <DatePickerRow value={item.date} onChange={(value) => change('date', value)} allowPresent yearOptions={CERTIFICATION_YEAR_OPTIONS} />
         <div>
           <FormLabel>Description (optional)</FormLabel>
-          <PlainTextArea value={item.description} onChange={(e) => change('description', e.target.value)} />
+          <BulletTextArea
+            rows={5}
+            value={item.description}
+            onChange={(e) => change('description', e.target.value)}
+            className="rounded-b-[5px]"
+          />
         </div>
       </>
     );

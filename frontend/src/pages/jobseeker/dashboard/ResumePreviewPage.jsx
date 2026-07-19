@@ -23,7 +23,7 @@ const sanitizeResumeRichText = (value = '') => {
   if (!raw) return '';
   if (!/<\/?[a-z][\s\S]*>/i.test(raw)) return escapeResumeHtml(raw).replace(/\n/g, '<br>');
   if (typeof window === 'undefined' || typeof window.DOMParser === 'undefined') return escapeResumeHtml(raw);
-  const allowedTags = new Set(['B','STRONG','I','EM','U','P','DIV','BR','UL','OL','LI','H1','H2']);
+  const allowedTags = new Set(['B','STRONG','I','EM','U','P','DIV','BR','UL','OL','LI','H1','H2','BLOCKQUOTE']);
   const parser = new window.DOMParser();
   const doc = parser.parseFromString(`<div>${raw}</div>`, 'text/html');
   const wrapper = doc.body.firstElementChild;
@@ -584,6 +584,7 @@ const ResumePreviewPage = () => {
         .resume-rich-text ul { list-style-type: disc !important; list-style-position: outside !important; }
         .resume-rich-text ol { list-style-type: decimal !important; list-style-position: outside !important; }
         .resume-rich-text li { display: list-item !important; margin: 0; padding-left: 1px; }
+        .resume-rich-text blockquote { margin: 2px 0 2px 14px; padding-left: 8px; border-left: 2px solid #b8b8b8; }
         .resume-rich-text h1, .resume-rich-text h2 { margin: 2px 0 1px; border: 0; padding: 0; text-transform: none; letter-spacing: 0; line-height: 1.15; }
         .resume-rich-text h1 { font-size: 11px; }
         .resume-rich-text h2 { font-size: 10px; }

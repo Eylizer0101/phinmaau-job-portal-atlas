@@ -186,6 +186,9 @@ const sanitizeProfileRichText = (value = '') => {
     'UL',
     'OL',
     'LI',
+    'H1',
+    'H2',
+    'BLOCKQUOTE',
   ]);
 
   const cleanNode = (node) => {
@@ -240,7 +243,10 @@ const richText = (value) => {
         '[&_p]:my-1 [&_div]:my-1',
         '[&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5',
         '[&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5',
-        '[&_li]:my-0.5'
+        '[&_li]:my-0.5',
+        '[&_h1]:my-1 [&_h1]:text-[13px] [&_h1]:font-bold',
+        '[&_h2]:my-1 [&_h2]:text-[11px] [&_h2]:font-bold',
+        '[&_blockquote]:ml-5 [&_blockquote]:border-l-2 [&_blockquote]:border-gray-300 [&_blockquote]:pl-3'
       )}
       dangerouslySetInnerHTML={{ __html: html }}
     />
