@@ -679,7 +679,17 @@ exports.getJobseekerApplications = async (req, res) => {
       })
       .populate({
         path: 'jobseeker',
-        select: 'fullName firstName middleName lastName email profileImage jobSeekerProfile.skills jobSeekerProfile.resumeUrl jobSeekerProfile.experience jobSeekerProfile.education'
+        select: [
+          'fullName',
+          'firstName',
+          'middleName',
+          'lastName',
+          'extensionName',
+          'email',
+          'profileImage',
+          'phoneNumber',
+          'jobSeekerProfile'
+        ].join(' ')
       })
       .populate({
         path: 'employer',
@@ -1007,7 +1017,27 @@ exports.getEmployerApplications = async (req, res) => {
     const applications = await Application.find({ employer: req.user._id })
       .populate({
         path: 'job',
-        select: 'title companyName companyLogo salaryMin salaryMax'
+        select: [
+          'title',
+          'jobTitle',
+          'companyName',
+          'companyLogo',
+          'salaryMin',
+          'salaryMax',
+          'location',
+          'address',
+          'jobType',
+          'workMode',
+          'experienceLevel',
+          'requirements',
+          'qualification',
+          'description',
+          'educationLevel',
+          'educationalRequirements',
+          'skillsRequired',
+          'openToFreshGraduates',
+          'category'
+        ].join(' ')
       })
       .populate({
         path: 'jobseeker',

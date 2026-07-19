@@ -962,6 +962,535 @@ const useDebouncedValue = (value, delay = 250) => {
 /* =======================
    Page
 ======================= */
+const parseSkills = (value) => {
+  const raw = Array.isArray(value) ? value : String(value || '').split(/\|\||,|\n/);
+  return raw.map((item) => {
+    if (item && typeof item === 'object') return { skill: item.skill || item.name || '', proficiency: item.proficiency || 'Basic' };
+    const clean = String(item || '').trim();
+    const match = clean.match(/^(.*?)\s+[—-]\s+(Basic|Novice|Intermediate|Advanced|Expert)$/i);
+    return match ? { skill: match[1].trim(), proficiency: match[2][0].toUpperCase() + match[2].slice(1).toLowerCase() } : { skill: clean, proficiency: 'Basic' };
+  }).filter((item) => item.skill);
+};
+
+const decodeHtmlEntities = (value = '') => {
+  const text = String(value || '');
+  if (!text) return '';
+
+  if (typeof window === 'undefined' || typeof window.DOMParser === 'undefined') {
+    return text
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&amp;/gi, '&')
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'");
+  }
+
+  const parser = new window.DOMParser();
+  return parser.parseFromString(text, 'text/html').documentElement.textContent || '';
+};
+
+const sanitizeProfileRichText = (value = '') => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  if (typeof window === 'undefined' || typeof window.DOMParser === 'undefined') {
+    return raw
+      .replace(/<\/li>\s*<li>/gi, '\n• ')
+      .replace(/<li[^>]*>/gi, '• ')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>|<\/div>|<\/ul>|<\/ol>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&amp;/gi, '&')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  const parser = new window.DOMParser();
+  const doc = parser.parseFromString(`<div>${raw}</div>`, 'text/html');
+  const wrapper = doc.body.firstElementChild;
+  if (!wrapper) return '';
+
+  const allowedTags = new Set([
+    'B',
+    'STRONG',
+    'I',
+    'EM',
+    'U',
+    'P',
+    'DIV',
+    'BR',
+    'UL',
+    'OL',
+    'LI',
+    'H1',
+    'H2',
+    'BLOCKQUOTE',
+  ]);
+
+  const cleanNode = (node) => {
+    Array.from(node.childNodes).forEach((child) => {
+      if (child.nodeType === window.Node.ELEMENT_NODE) {
+        if (!allowedTags.has(child.tagName)) {
+          child.replaceWith(...Array.from(child.childNodes));
+          return;
+        }
+
+        Array.from(child.attributes).forEach((attribute) => {
+          child.removeAttribute(attribute.name);
+        });
+
+        cleanNode(child);
+      }
+    });
+  };
+
+  cleanNode(wrapper);
+  return wrapper.innerHTML;
+};
+
+const richText = (value) => {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+
+  const containsHtml = /<\/?[a-z][\s\S]*>/i.test(raw) || /&(?:lt|gt|nbsp|amp);/i.test(raw);
+
+  if (!containsHtml) {
+    const lines = raw
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    return (
+      <div className="space-y-1">
+        {lines.map((line, index) => (
+          <p key={`${line}-${index}`}>{line}</p>
+        ))}
+      </div>
+    );
+  }
+
+  const decoded = decodeHtmlEntities(raw);
+  const html = sanitizeProfileRichText(decoded);
+
+  return (
+    <div
+      className={cn(
+        'space-y-1',
+        '[&_p]:my-1 [&_div]:my-1',
+        '[&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5',
+        '[&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5',
+        '[&_li]:my-0.5',
+        '[&_h1]:my-1 [&_h1]:text-[13px] [&_h1]:font-bold',
+        '[&_h2]:my-1 [&_h2]:text-[11px] [&_h2]:font-bold',
+        '[&_blockquote]:ml-5 [&_blockquote]:border-l-2 [&_blockquote]:border-gray-300 [&_blockquote]:pl-3'
+      )}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+};
+
+const hasMeaningfulObjectValue = (item = {}) =>
+  Boolean(
+    item &&
+    typeof item === 'object' &&
+    Object.entries(item).some(([key, value]) => {
+      if (['_id', 'id', 'createdAt', 'updatedAt', '__v'].includes(key)) return false;
+      if (Array.isArray(value)) return value.length > 0;
+      if (value && typeof value === 'object') return hasMeaningfulObjectValue(value);
+      return Boolean(String(value ?? '').trim());
+    })
+  );
+
+const calculateJobSeekerLevel = ({
+  skills = [],
+  certifications = [],
+  projects = [],
+  seminars = [],
+  awards = [],
+  workExperiences = [],
+}) => {
+  const counts = {
+    skills: Array.isArray(skills) ? skills.filter(Boolean).length : 0,
+    certifications: Array.isArray(certifications)
+      ? certifications.filter(hasMeaningfulObjectValue).length
+      : 0,
+    projects: Array.isArray(projects)
+      ? projects.filter(hasMeaningfulObjectValue).length
+      : 0,
+    seminars: Array.isArray(seminars)
+      ? seminars.filter(hasMeaningfulObjectValue).length
+      : 0,
+    awards: Array.isArray(awards)
+      ? awards.filter(hasMeaningfulObjectValue).length
+      : 0,
+    work: Array.isArray(workExperiences) ? workExperiences.length : 0,
+  };
+
+  const tiers = [
+    {
+      name: 'First Time Job Seeker',
+      requirements: {
+        skills: 0,
+        certifications: 0,
+        projects: 0,
+        seminars: 0,
+        awards: 0,
+        work: 0,
+      },
+    },
+    {
+      name: 'Intermediate',
+      requirements: {
+        skills: 5,
+        certifications: 1,
+        projects: 1,
+        seminars: 1,
+        awards: 1,
+        work: 0,
+      },
+    },
+    {
+      name: 'Expert',
+      requirements: {
+        skills: 9,
+        certifications: 2,
+        projects: 2,
+        seminars: 2,
+        awards: 2,
+        work: 1,
+      },
+    },
+    {
+      name: 'Pro',
+      requirements: {
+        skills: 13,
+        certifications: 5,
+        projects: 5,
+        seminars: 5,
+        awards: 5,
+        work: 2,
+      },
+    },
+    {
+      name: 'Legend',
+      requirements: {
+        skills: 17,
+        certifications: 7,
+        projects: 7,
+        seminars: 7,
+        awards: 7,
+        work: 3,
+      },
+    },
+  ];
+
+  const meetsRequirements = (requirements) =>
+    Object.entries(requirements).every(([key, required]) => counts[key] >= required);
+
+  let currentTierIndex = 0;
+  tiers.forEach((tier, index) => {
+    if (meetsRequirements(tier.requirements)) currentTierIndex = index;
+  });
+
+  const currentTier = tiers[currentTierIndex];
+  const nextTier = tiers[currentTierIndex + 1];
+
+  if (!nextTier) {
+    return {
+      currentRank: currentTier.name,
+      nextTier: 'Completed',
+      percentage: 100,
+    };
+  }
+
+  const requirementEntries = Object.entries(nextTier.requirements).filter(
+    ([, required]) => required > 0
+  );
+
+  const ratios = requirementEntries.map(([key, required]) =>
+    Math.min(1, counts[key] / required)
+  );
+
+  const percentage = ratios.length
+    ? Math.round(
+        (ratios.reduce((total, ratio) => total + ratio, 0) / ratios.length) * 100
+      )
+    : 0;
+
+  return {
+    currentRank: currentTier.name,
+    nextTier: nextTier.name,
+    percentage,
+  };
+};
+
+
+const stripHtml = (value = '') =>
+  String(value || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const normalizeMatchText = (value = '') =>
+  stripHtml(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9+#.\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const normalizeSkillName = (value = '') =>
+  normalizeMatchText(value)
+    .replace(/\s[—-]\s(?:basic|novice|intermediate|advanced|expert)$/i, '')
+    .trim();
+
+const getRequiredExperienceYears = (value = '') => {
+  const normalized = normalizeMatchText(value);
+  if (!normalized || normalized.includes('no experience')) return 0;
+  const match = normalized.match(/(\d+)/);
+  return match ? Number(match[1]) : 0;
+};
+
+const getApplicantExperienceYears = (workExperiences = [], profileExperience = '') => {
+  const dateBasedYears = (Array.isArray(workExperiences) ? workExperiences : []).reduce(
+    (total, item) => {
+      const start = new Date(item?.startDate);
+      const end = item?.isPresent ? new Date() : new Date(item?.endDate);
+
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
+        return total;
+      }
+
+      return total + (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
+    },
+    0
+  );
+
+  if (dateBasedYears > 0) return dateBasedYears;
+
+  const normalized = normalizeMatchText(profileExperience);
+  if (!normalized || normalized.includes('no experience')) return 0;
+  if (normalized.includes('less than 1')) return 0.5;
+
+  const rangeMatch = normalized.match(/(\d+)\s*[-–]\s*(\d+)/);
+  if (rangeMatch) return Number(rangeMatch[2]);
+
+  const numberMatch = normalized.match(/(\d+)/);
+  return numberMatch ? Number(numberMatch[1]) : 0;
+};
+
+const getEducationRank = (value = '') => {
+  const normalized = normalizeMatchText(value);
+  if (!normalized) return 0;
+  if (normalized.includes('doctor')) return 5;
+  if (normalized.includes('master')) return 4;
+  if (
+    normalized.includes('bachelor') ||
+    normalized.includes('college') ||
+    normalized.includes('degree graduate')
+  ) return 3;
+  if (normalized.includes('associate') || normalized.includes('vocational')) return 2;
+  if (normalized.includes('high school')) return 1;
+  return 0;
+};
+
+const getMatchLabel = (score) => {
+  if (score >= 90) return 'Highly Matched';
+  if (score >= 75) return 'Strong Match';
+  if (score >= 50) return 'Good Match';
+  return 'Low Match';
+};
+
+const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work = [], education = [] }) => {
+  const applicantSkills = skills
+    .map((item) => normalizeSkillName(item?.skill || item))
+    .filter(Boolean);
+
+  const requiredSkills = (Array.isArray(job?.skillsRequired)
+    ? job.skillsRequired
+    : String(job?.skillsRequired || '').split(',')
+  )
+    .map(normalizeSkillName)
+    .filter(Boolean);
+
+  const matchedSkills = requiredSkills.filter((requiredSkill) =>
+    applicantSkills.some(
+      (applicantSkill) =>
+        applicantSkill === requiredSkill ||
+        applicantSkill.includes(requiredSkill) ||
+        requiredSkill.includes(applicantSkill)
+    )
+  );
+
+  const skillRatio = requiredSkills.length
+    ? matchedSkills.length / requiredSkills.length
+    : applicantSkills.length
+      ? 0.75
+      : 0;
+
+  const latestEducation = Array.isArray(education) && education.length
+    ? education[education.length - 1]
+    : {};
+
+  const applicantEducation =
+    latestEducation.educationalAttainment ||
+    latestEducation.level ||
+    profile.educationalAttainment ||
+    profile.course ||
+    '';
+
+  const requiredEducation = job.educationLevel || job.educationalRequirements || '';
+  const applicantEducationRank = getEducationRank(applicantEducation);
+  const requiredEducationRank = getEducationRank(requiredEducation);
+  const educationRatio = requiredEducationRank
+    ? Math.min(1, applicantEducationRank / requiredEducationRank)
+    : applicantEducationRank
+      ? 0.75
+      : 0;
+
+  const applicantYears = getApplicantExperienceYears(
+    work,
+    profile.experience || profile.whatHaveYouDone
+  );
+  const requiredYears = getRequiredExperienceYears(job.experienceLevel);
+  const experienceRatio = requiredYears
+    ? Math.min(1, applicantYears / requiredYears)
+    : job.openToFreshGraduates || applicantYears >= 0
+      ? 1
+      : 0;
+
+  const applicantCourseText = normalizeMatchText(
+    [
+      profile.course,
+      profile.studyField,
+      profile.educationalAttainment,
+      latestEducation.course,
+      latestEducation.studyField,
+      latestEducation.educationalAttainment,
+      latestEducation.level,
+    ]
+      .filter(Boolean)
+      .join(' ')
+  );
+
+  const jobContextText = normalizeMatchText(
+    [
+      job.title,
+      job.category,
+      job.description,
+      job.requirements,
+      job.qualification,
+      job.educationalRequirements,
+    ]
+      .filter(Boolean)
+      .join(' ')
+  );
+
+  const courseWords = applicantCourseText
+    .split(' ')
+    .filter((word) => word.length >= 4);
+
+  const courseHits = courseWords.filter((word) => jobContextText.includes(word));
+  const courseRatio = courseWords.length
+    ? Math.min(1, courseHits.length / Math.min(courseWords.length, 4))
+    : 0;
+
+  const score = Math.round(
+    skillRatio * 45 +
+    educationRatio * 20 +
+    experienceRatio * 20 +
+    courseRatio * 15
+  );
+
+  const missingSkills = requiredSkills.filter((requiredSkill) => !matchedSkills.includes(requiredSkill));
+  const educationMatched = requiredEducationRank
+    ? applicantEducationRank >= requiredEducationRank
+    : Boolean(applicantEducationRank);
+  const experienceMatched = requiredYears ? applicantYears >= requiredYears : true;
+  const courseMatched = courseWords.length ? courseHits.length > 0 : false;
+
+  const formatYears = (years) => {
+    if (years >= 1) {
+      const value = Number.isInteger(years) ? Math.round(years) : Number(years.toFixed(1));
+      return `${value} year${value === 1 ? '' : 's'}`;
+    }
+    if (years > 0) return 'Less than 1 year';
+    return 'No experience';
+  };
+
+  return {
+    score: Math.max(0, Math.min(100, score)),
+    label: getMatchLabel(score),
+    skillsLabel: getMatchLabel(Math.round(skillRatio * 100)),
+    matchedSkillsCount: matchedSkills.length,
+    requiredSkillsCount: requiredSkills.length,
+    matchedSkills,
+    missingSkills,
+    applicantSkills,
+    requiredSkills,
+    educationDisplay:
+      profile.course ||
+      latestEducation.course ||
+      latestEducation.studyField ||
+      profile.studyField ||
+      applicantEducation ||
+      'Not provided',
+    applicantEducationDisplay: applicantEducation || 'Not provided',
+    requiredEducationDisplay: requiredEducation || 'Not specified',
+    educationMatched,
+    experienceDisplay:
+      applicantYears >= 1
+        ? `${Number.isInteger(applicantYears) ? Math.round(applicantYears) : applicantYears.toFixed(1)} year${applicantYears >= 2 ? 's' : ''}`
+        : applicantYears > 0
+          ? 'Less than 1 year'
+          : profile.experience || profile.whatHaveYouDone || 'No experience',
+    applicantExperienceDisplay: formatYears(applicantYears),
+    requiredExperienceDisplay: requiredYears ? formatYears(requiredYears) : 'No experience required',
+    experienceMatched,
+    courseMatched,
+    applicantCourseDisplay:
+      profile.course ||
+      latestEducation.course ||
+      latestEducation.studyField ||
+      profile.studyField ||
+      'Not provided',
+    matchedCourseKeywords: [...new Set(courseHits)],
+    missingCourseKeywords: [...new Set(courseWords.filter((word) => !courseHits.includes(word)))],
+    applicantWorkModeDisplay: profile.preferredWorkMode || 'Not provided',
+    requiredWorkModeDisplay: job.workMode || job.workArrangement || job.workSetup || 'Not specified',
+    workModeMatched:
+      Boolean(profile.preferredWorkMode && (job.workMode || job.workArrangement || job.workSetup)) &&
+      normalizeMatchText(profile.preferredWorkMode) ===
+        normalizeMatchText(job.workMode || job.workArrangement || job.workSetup),
+    applicantEmploymentTypeDisplay: profile.employmentType || 'Not provided',
+    requiredEmploymentTypeDisplay: job.jobType || 'Not specified',
+    employmentTypeMatched:
+      Boolean(profile.employmentType && job.jobType) &&
+      normalizeMatchText(profile.employmentType) === normalizeMatchText(job.jobType),
+    applicantLocationDisplay: profile.address || profile.currentAddress || 'Not provided',
+    requiredLocationDisplay: job.location || 'Not specified',
+    locationMatched:
+      Boolean((profile.address || profile.currentAddress) && job.location) &&
+      (
+        normalizeMatchText(profile.address || profile.currentAddress).includes(normalizeMatchText(job.location)) ||
+        normalizeMatchText(job.location).includes(normalizeMatchText(profile.address || profile.currentAddress))
+      ),
+    willingToRelocateDisplay: profile.willingToRelocate || 'Not provided',
+    isWillingToRelocate: ['yes', 'open', 'willing'].some((word) =>
+      normalizeMatchText(profile.willingToRelocate).includes(word)
+    ),
+    acceptsFreshGraduates: Boolean(job.openToFreshGraduates),
+    applicantHasExperience: applicantYears > 0,
+    hasEducation: Boolean(applicantEducation),
+    hasExperience: Boolean(applicantYears > 0 || profile.experience || profile.whatHaveYouDone),
+    hasSkills: Boolean(applicantSkills.length),
+  };
+};
+
 const Applicants = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -1606,17 +2135,43 @@ const Applicants = () => {
                 const profile = user.jobSeekerProfile || {};
                 const name = buildApplicantName(user);
                 const email = user.email || 'Not provided';
-                const phone = profile.phoneNumber || profile.contactNumber || 'Not provided';
-                const level = profile.jobSeekerLevel || profile.level || 'Intermediate';
-                const matchValue = Number(
-                  app.matchScore ??
-                  app.matchPercentage ??
-                  app.compatibilityScore ??
-                  0
-                );
-                const matchScore = Number.isFinite(matchValue)
-                  ? Math.max(0, Math.min(100, Math.round(matchValue)))
-                  : 0;
+                const phone =
+                  profile.phoneNumber ||
+                  profile.contactNumber ||
+                  profile.mobileNumber ||
+                  user.phoneNumber ||
+                  'Not provided';
+
+                const education = Array.isArray(profile.educationEntries)
+                  ? profile.educationEntries
+                  : [];
+                const work = Array.isArray(profile.workExperiences)
+                  ? profile.workExperiences
+                  : [];
+                const skills = [
+                  ...parseSkills(profile.technicalSkills),
+                  ...parseSkills(profile.softSkills),
+                ];
+
+                const jobSeekerLevel = calculateJobSeekerLevel({
+                  skills,
+                  certifications: profile.certifications || [],
+                  projects: profile.projects || [],
+                  seminars: profile.seminars || [],
+                  awards: profile.awards || [],
+                  workExperiences: work,
+                });
+
+                const matchSummary = calculateApplicationMatch({
+                  job: app.job || {},
+                  profile,
+                  skills,
+                  work,
+                  education,
+                });
+
+                const level = jobSeekerLevel.currentRank;
+                const matchScore = matchSummary.score;
 
                 return (
                   <article
