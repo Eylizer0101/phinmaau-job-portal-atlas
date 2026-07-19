@@ -1,25 +1,55 @@
 const express = require('express');
 const router = express.Router();
 
-const communityController = require('../controllers/communityController');
+const companyController = require('../controllers/companyController');
 const { protect, authorize } = require('../middleware/authMiddleware');
-const { uploadCommunityImage } = require('../middleware/uploadMiddleware');
 
-router.use(protect);
-router.use(authorize('jobseeker', 'employer'));
+// Public verified-company routes
+router.get('/verified', companyController.getVerifiedCompanies);
+router.get('/verified/:id', companyController.getVerifiedCompanyDetails);
 
-router.get('/posts', communityController.getPosts);
-router.post('/posts', uploadCommunityImage.single('image'), communityController.createPost);
-router.put('/posts/:postId', uploadCommunityImage.single('image'), communityController.updatePost);
-router.delete('/posts/:postId', communityController.deletePost);
+// Job seeker review route
+router.post(
+  '/verified/:id/reviews',
+  protect,
+  authorize('jobseeker'),
+  companyController.submitCompanyReview
+);
 
-router.post('/posts/:postId/like', communityController.toggleLike);
-router.get('/posts/:postId/comments', communityController.getComments);
-router.post('/posts/:postId/comments', communityController.addComment);
-router.post('/posts/:postId/comments/:commentId/reaction', communityController.reactToComment);
-router.post('/posts/:postId/comments/:commentId/replies', communityController.addReply);
+// Saved-company routes for authenticated job seekers
+router.get(
+  '/saved',
+  protect,
+  authorize('jobseeker'),
+  companyController.getSavedCompanies
+);
 
-router.post('/reports', communityController.reportContent);
-router.get('/managed', communityController.getManagedContent);
+router.delete(
+  '/saved',
+  protect,
+  authorize('jobseeker'),
+  companyController.removeAllSavedCompanies
+);
+
+router.get(
+  '/saved/check/:companyId',
+  protect,
+  authorize('jobseeker'),
+  companyController.checkSavedCompany
+);
+
+router.post(
+  '/saved/:companyId',
+  protect,
+  authorize('jobseeker'),
+  companyController.saveCompany
+);
+
+router.delete(
+  '/saved/:companyId',
+  protect,
+  authorize('jobseeker'),
+  companyController.removeSavedCompany
+);
 
 module.exports = router;
