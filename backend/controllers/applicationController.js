@@ -740,7 +740,16 @@ exports.getMyApplications = async (req, res) => {
       })
       .populate({
         path: 'jobseeker',
-        select: 'fullName firstName middleName lastName email profileImage jobSeekerProfile.skills jobSeekerProfile.resumeUrl jobSeekerProfile.experience jobSeekerProfile.education'
+        select: [
+          'fullName',
+          'firstName',
+          'middleName',
+          'lastName',
+          'extensionName',
+          'email',
+          'profileImage',
+          'jobSeekerProfile'
+        ].join(' ')
       })
       .populate({
         path: 'employer',
