@@ -578,48 +578,79 @@ const CommunityPage = () => {
     }, 0);
   };
 
-  const renderReplyThread = (comment, parentReplyId = '', depth = 0) => {
-    const replies = (comment.replies || []).filter(
-      (reply) => String(reply.parentReplyId || '') === String(parentReplyId || '')
-    );
+  const renderReplyThread = (comment) => {
+    const allReplies = comment.replies || [];
+    const flattenedReplies = [];
 
-    return replies.map((reply) => {
+    const collectReplies = (parentReplyId = '', depth = 0) => {
+      allReplies
+        .filter((reply) => String(reply.parentReplyId || '') === String(parentReplyId || ''))
+        .forEach((reply) => {
+          flattenedReplies.push({ reply, depth });
+          collectReplies(reply._id, depth + 1);
+        });
+    };
+
+    collectReplies();
+
+    return flattenedReplies.map(({ reply, depth }) => {
       const replyAuthorName = getDisplayName(reply.author);
       const isReplyOwner = getUserId(reply.author) === currentUserId;
       const helpful = (reply.helpful || []).some((id) => String(id?._id || id) === currentUserId);
       const notHelpful = (reply.notHelpful || []).some((id) => String(id?._id || id) === currentUserId);
+      const indentation = Math.min(depth, 2) * 18;
 
       return (
-        <div key={reply._id} className="mt-3" style={{ marginLeft: `${Math.min(depth + 1, 5) * 22}px` }}>
-          <div className="flex gap-2">
+        <div
+          key={reply._id}
+          className="mt-3 min-w-0"
+          style={{
+            marginLeft: `${indentation}px`,
+            width: `calc(100% - ${indentation}px)`,
+          }}
+        >
+          <div className={`flex min-w-0 gap-2 ${depth > 0 ? 'border-l-2 border-[#e6edf5] pl-3' : ''}`}>
             <Avatar user={reply.author} size="h-8 w-8" />
+
             <div className="min-w-0 flex-1">
-              <div className="inline-block max-w-full rounded-xl bg-white px-3 py-2 shadow-sm ring-1 ring-[#e6edf5]">
-                <p className="text-xs font-bold">{replyAuthorName}{isReplyOwner ? ' (You)' : ''}</p>
-                <p className="mt-1 whitespace-pre-wrap text-sm text-black/70">{reply.content}</p>
+              <div className="w-fit max-w-full rounded-xl bg-white px-3 py-2 shadow-sm ring-1 ring-[#e6edf5]">
+                <p className="break-words text-xs font-bold">
+                  {replyAuthorName}{isReplyOwner ? ' (You)' : ''}
+                </p>
+                <p className="mt-1 whitespace-pre-wrap break-words text-sm text-black/70">
+                  {reply.content}
+                </p>
               </div>
 
-              <div className="mt-1 flex flex-wrap items-center gap-3 px-2 text-[11px] text-black/45">
-                <span>{formatTime(reply.createdAt)}</span>
+              <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 px-2 text-[11px] text-black/45">
+                <span className="shrink-0">{formatTime(reply.createdAt)}</span>
+
                 <button
                   type="button"
                   onClick={() => reactToReply(comment._id, reply._id, 'helpful')}
-                  className={helpful ? 'font-semibold text-[#2e66a6]' : 'hover:text-[#2e66a6]'}
+                  className={`shrink-0 ${helpful ? 'font-semibold text-[#2e66a6]' : 'hover:text-[#2e66a6]'}`}
                   aria-label="Helpful"
                 >
                   <FontAwesomeIcon icon={faThumbsUp} className="mr-1" /> {reply.helpful?.length || 0}
                 </button>
+
                 <button
                   type="button"
                   onClick={() => reactToReply(comment._id, reply._id, 'notHelpful')}
-                  className={notHelpful ? 'font-semibold text-red-500' : 'hover:text-red-500'}
+                  className={`shrink-0 ${notHelpful ? 'font-semibold text-red-500' : 'hover:text-red-500'}`}
                   aria-label="Not helpful"
                 >
                   <FontAwesomeIcon icon={faThumbsDown} className="mr-1" /> {reply.notHelpful?.length || 0}
                 </button>
-                <button type="button" onClick={() => startReply(comment._id, reply._id, replyAuthorName)} className="hover:text-[#2e66a6]">
+
+                <button
+                  type="button"
+                  onClick={() => startReply(comment._id, reply._id, replyAuthorName)}
+                  className="shrink-0 hover:text-[#2e66a6]"
+                >
                   <FontAwesomeIcon icon={faReply} className="mr-1" /> Reply
                 </button>
+
                 {!isReplyOwner && (
                   <button
                     type="button"
@@ -630,14 +661,12 @@ const CommunityPage = () => {
                       replyId: reply._id,
                       name: replyAuthorName,
                     })}
-                    className="hover:text-red-500"
+                    className="shrink-0 hover:text-red-500"
                   >
                     <FontAwesomeIcon icon={faFlag} className="mr-1" /> Report
                   </button>
                 )}
               </div>
-
-              {renderReplyThread(comment, reply._id, depth + 1)}
             </div>
           </div>
         </div>
