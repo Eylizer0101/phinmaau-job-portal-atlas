@@ -2252,7 +2252,7 @@ exports.getApplicationDetails = async (req, res) => {
       })
       .populate({
         path: 'employer',
-        select: 'fullName employerProfile.companyName employerProfile.companyWebsite employerProfile.companyLogo employerProfile.companyAddress companyAddress'
+        select: 'fullName employerProfile.companyName employerProfile.companyWebsiteUrl employerProfile.companyWebsite employerProfile.companyLogo employerProfile.companyAddress companyAddress'
       })
       .populate({
         path: 'interviewSchedule.interviewer',

@@ -66,6 +66,44 @@ const formatDate = (value) => {
   });
 };
 
+
+const formatPostedTime = (value) => {
+  if (!value) return "Posted date unavailable";
+
+  const postedDate = new Date(value);
+  if (Number.isNaN(postedDate.getTime())) return "Posted date unavailable";
+
+  const now = new Date();
+  const differenceMs = Math.max(0, now.getTime() - postedDate.getTime());
+  const differenceDays = Math.floor(differenceMs / (1000 * 60 * 60 * 24));
+
+  if (differenceDays === 0) return "Posted today";
+  if (differenceDays === 1) return "Posted 1 day ago";
+  if (differenceDays < 7) return `Posted ${differenceDays} days ago`;
+
+  const differenceWeeks = Math.floor(differenceDays / 7);
+  if (differenceDays < 30) {
+    return `Posted ${differenceWeeks} ${differenceWeeks === 1 ? "week" : "weeks"} ago`;
+  }
+
+  const differenceMonths = Math.floor(differenceDays / 30);
+  if (differenceDays < 365) {
+    return `Posted ${differenceMonths} ${differenceMonths === 1 ? "month" : "months"} ago`;
+  }
+
+  const differenceYears = Math.floor(differenceDays / 365);
+  return `Posted ${differenceYears} ${differenceYears === 1 ? "year" : "years"} ago`;
+};
+
+const normalizeWebsiteUrl = (value) => {
+  const website = String(value || "").trim();
+  if (!website || website === "N/A") return "";
+
+  return /^https?:\/\//i.test(website)
+    ? website
+    : `https://${website}`;
+};
+
 const getList = (value) => {
   if (Array.isArray(value)) return value.filter(Boolean);
   return String(value || "")
@@ -325,18 +363,14 @@ const AdminApplicationView = () => {
     return other ? [...list, other] : list;
   }, [job.perksAndBenefits, job.otherBenefits]);
 
-  const applicantName =
-    jobseeker.fullName ||
-    [jobseeker.firstName, jobseeker.middleName, jobseeker.lastName, jobseeker.extensionName].filter(Boolean).join(" ") ||
-    jobseeker.email ||
-    "—";
-
   const companyWebsite =
     employerProfile.companyWebsiteUrl ||
     employerProfile.companyWebsite ||
     employer.companyWebsite ||
     job.companyWebsite ||
     "N/A";
+
+  const companyWebsiteUrl = normalizeWebsiteUrl(companyWebsite);
 
   if (loading) return <LoadingState />;
 
@@ -430,9 +464,13 @@ const AdminApplicationView = () => {
                       )}
                     </div>
 
-                    <div className="mt-3 space-y-1 text-xs font-medium text-[#6b7280]">
-                      <p>Date applied: {formatDate(application.appliedAt || application.createdAt)}</p>
-                      {job.applicationDeadline && <p>Application deadline is on {formatDate(job.applicationDeadline)}</p>}
+                    <div className="mt-3 text-xs font-medium text-[#6b7280]">
+                      <p>
+                        {formatPostedTime(application.appliedAt || application.createdAt)}
+                        {job.applicationDeadline
+                          ? ` and Application deadline is on ${formatDate(job.applicationDeadline)}`
+                          : ""}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -444,7 +482,25 @@ const AdminApplicationView = () => {
             <MetricCard icon="money" title="Salary" value={formatSalary(job.salaryMin, job.salaryMax)} />
             <MetricCard icon="clock" title="Experience" value={job.experienceLevel || "No experience required"} />
             <MetricCard icon="graduation" title="Educational Requirements" value={job.educationLevel || job.educationalRequirements || "Not specified"} />
-            <MetricCard icon="user" title="Applicant" value={applicantName} />
+            <MetricCard
+              icon="external"
+              title="Website Company URL"
+              value={
+                companyWebsiteUrl ? (
+                  <a
+                    href={companyWebsiteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="break-all text-[#2e66a6] underline decoration-[#2e66a6]/30 underline-offset-2 transition hover:text-[#255487]"
+                    title={companyWebsite}
+                  >
+                    {companyWebsite}
+                  </a>
+                ) : (
+                  "N/A"
+                )
+              }
+            />
           </div>
 
           <div className="mb-5">
