@@ -827,9 +827,14 @@ const Applicants = () => {
       (a) => (a.status || '').toLowerCase() === 'pending'
     );
 
+    const statusFiltered =
+      statusFilter === 'already_employed'
+        ? pendingOnly.filter((a) => Boolean(a.alreadyEmployed))
+        : pendingOnly;
+
     const searched = !q
-      ? pendingOnly
-      : pendingOnly.filter((a) => {
+      ? statusFiltered
+      : statusFiltered.filter((a) => {
           const u = a.jobseeker || {};
           const name = buildApplicantName(u).toLowerCase();
           const email = (u.email || '').toLowerCase();
@@ -966,9 +971,10 @@ const Applicants = () => {
       query.trim() !== '' ||
       filterBy !== 'all' ||
       sortBy !== 'most_recent' ||
-      selectedJob !== 'all'
+      selectedJob !== 'all' ||
+      statusFilter !== 'pending'
     );
-  }, [query, filterBy, sortBy, selectedJob]);
+  }, [query, filterBy, sortBy, selectedJob, statusFilter]);
 
   const handleStatusUpdate = async (applicationId, newStatus, extraPayload = {}) => {
     try {
@@ -1146,12 +1152,17 @@ const Applicants = () => {
             </div>
 
             <select
-              value="pending"
-              disabled
-              className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm font-medium text-gray-900 opacity-100"
+              value={statusFilter}
+              onChange={(event) => {
+                setStatusFilter(event.target.value);
+                setCurrentPage(1);
+              }}
+              className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm font-medium text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
               aria-label="Application status"
+              disabled={isLoading}
             >
               <option value="pending">Pending Applicants</option>
+              <option value="already_employed">Already Employed</option>
             </select>
 
             <div className="relative">
@@ -1174,6 +1185,18 @@ const Applicants = () => {
               </select>
             </div>
           </div>
+
+          {hasActiveFilters && (
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+              >
+                Clear All
+              </button>
+            </div>
+          )}
         </div>
 
         {isLoading ? (

@@ -468,7 +468,16 @@ const JobApplicants = () => {
       const name = user.fullName || [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' ');
       const searchableText = [name, user.email, profile.phoneNumber, profile.contactNumber, job?.title].filter(Boolean).join(' ').toLowerCase();
       if (query && !searchableText.includes(query)) return false;
-      if (statusFilter !== 'all' && String(application.status || '').toLowerCase() !== statusFilter) return false;
+
+      if (statusFilter === 'already_employed') {
+        if (!application.alreadyEmployed) return false;
+      } else if (
+        statusFilter !== 'all' &&
+        String(application.status || '').toLowerCase() !== statusFilter
+      ) {
+        return false;
+      }
+
       if (dateFrom && dateTo) {
         const appliedDate = new Date(application.appliedAt || application.createdAt);
         const start = new Date(`${dateFrom}T00:00:00`);
@@ -507,6 +516,20 @@ const JobApplicants = () => {
 
   const openPositions = Math.max(0, Number(job?.vacancies || 0) - applications.filter((item) => item.status === 'hired').length);
 
+  const hasActiveFilters =
+    searchTerm.trim() !== '' ||
+    statusFilter !== 'all' ||
+    dateFilter !== 'all';
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setDateFilter('all');
+    setDateFrom('');
+    setDateTo('');
+    setCurrentPage(1);
+  };
+
   return (
     <EmployerLayout>
       <div className="mmx-auto max-w-7xl px-1 py-8">
@@ -527,7 +550,12 @@ const JobApplicants = () => {
               <input value={searchTerm} onChange={(event) => { setSearchTerm(event.target.value); setCurrentPage(1); }} placeholder="Search applicant name, email..." className="h-12 w-full rounded-xl border border-gray-200 bg-white pl-12 pr-4 text-sm text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20" />
             </div>
             <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setCurrentPage(1); }} className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
-              <option value="all">All Status</option><option value="pending">Pending</option><option value="for interview">For Interview</option><option value="hired">Hired</option><option value="declined">Declined</option>
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="for interview">For Interview</option>
+              <option value="hired">Hired</option>
+              <option value="declined">Declined</option>
+              <option value="already_employed">Already Employed</option>
             </select>
             <div className="relative">
               <SvgIcon name="calendar" className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
@@ -536,6 +564,18 @@ const JobApplicants = () => {
               </select>
             </div>
           </div>
+
+          {hasActiveFilters && (
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+              >
+                Clear All
+              </button>
+            </div>
+          )}
         </div>
 
         {loading ? (
