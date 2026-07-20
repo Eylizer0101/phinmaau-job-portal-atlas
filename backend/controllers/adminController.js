@@ -887,7 +887,7 @@ exports.getUserById = async (req, res) => {
       user.role === 'employer'
         ? await Job.find({ employer: user._id })
             .select(
-              'title jobTitle jobType workMode experienceLevel openToFreshGraduates salaryMin salaryMax hideSalary location companyName companyLogo isUrgent createdAt validUntil deadline applicationDeadline status isActive isPublished isArchived'
+              'title jobTitle jobType workMode experienceLevel openToFreshGraduates salaryMin salaryMax hideSalary location companyName companyLogo isUrgent vacancies createdAt validUntil deadline applicationDeadline status isActive isPublished isArchived'
             )
             .sort({ createdAt: -1 })
             .lean()

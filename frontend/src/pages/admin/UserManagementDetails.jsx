@@ -1177,32 +1177,30 @@ const UserManagementDetails = () => {
 
                   <button
                     type="button"
-                    onClick={() => setActiveEmployerTab("postingHistory")}
+                    onClick={() => navigate(`/admin/users/${userId}/posting-history`)}
                     className={cn(
                       "group flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 lg:w-[310px]",
-                      activeEmployerTab === "postingHistory"
-                        ? "border-[#2e66a6] bg-[#2e66a6] text-white shadow-[0_12px_28px_rgba(46,102,166,0.25)]"
-                        : "border-[#2e66a6]/25 bg-[#edf4fb] text-[#2e66a6] hover:border-[#2e66a6]/45 hover:bg-[#e4effa]"
+                      "border-[#2e66a6]/25 bg-[#edf4fb] text-[#2e66a6] hover:border-[#2e66a6]/45 hover:bg-[#e4effa]"
                     )}
                   >
                     <span
                       className={cn(
                         "flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
-                        activeEmployerTab === "postingHistory" ? "bg-white/15" : "bg-white"
+                        "bg-white"
                       )}
                     >
                       <Icon name="history" className="h-5 w-5" />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-bold">Posting History</span>
-                      <span className={cn("mt-0.5 block text-xs", activeEmployerTab === "postingHistory" ? "text-white/75" : "text-[#2e66a6]/70")}>
+                      <span className="mt-0.5 block text-xs text-[#2e66a6]/70">
                         {jobPosts.length} posts • {totalApplicants} applicants
                       </span>
                     </span>
                     <span
                       className={cn(
                         "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg transition group-hover:translate-x-0.5",
-                        activeEmployerTab === "postingHistory" ? "bg-white/15" : "bg-[#2e66a6] text-white"
+                        "bg-[#2e66a6] text-white"
                       )}
                       aria-hidden="true"
                     >
