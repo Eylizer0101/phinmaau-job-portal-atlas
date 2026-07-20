@@ -1736,41 +1736,47 @@ const CommunityPage = () => {
                   </button>
                 </div>
               ) : (
-                <div className="flex flex-wrap items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setManagedView('active')}
-                    className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 text-sm font-semibold text-black/75 shadow-sm transition hover:border-[#2e66a6]/35 hover:bg-[#f7faff]"
-                  >
-                    <FontAwesomeIcon icon={faArrowLeft} />
-                    Back to Active Posts
-                  </button>
+                <div className="space-y-3">
+  {/* First Row */}
+  <div className="flex items-center">
+    <button
+      type="button"
+      onClick={() => setManagedView('active')}
+      className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 text-sm font-semibold text-black/75 shadow-sm transition hover:border-[#2e66a6]/35 hover:bg-[#f7faff]"
+    >
+      <FontAwesomeIcon icon={faArrowLeft} />
+      Back to Active Posts
+    </button>
+  </div>
 
-                  <label className="flex items-center gap-2 text-xs text-black/45">
-                    <span>Sort by</span>
-                    <select
-                      value={managedSort}
-                      onChange={(event) => setManagedSort(event.target.value)}
-                      className="h-10 rounded-xl border border-[#d8e2ee] bg-white px-3 text-sm font-semibold text-black/70 outline-none focus:border-[#2e66a6]"
-                    >
-                      <option value="newest">Newest first</option>
-                      <option value="oldest">Oldest first</option>
-                    </select>
-                  </label>
+  {/* Second Row */}
+  <div className="flex flex-wrap items-center justify-end gap-3">
+    <label className="flex items-center gap-2 text-xs text-black/45">
+      <span>Sort by</span>
+      <select
+        value={managedSort}
+        onChange={(event) => setManagedSort(event.target.value)}
+        className="h-10 rounded-xl border border-[#d8e2ee] bg-white px-3 text-sm font-semibold text-black/70 outline-none focus:border-[#2e66a6]"
+      >
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+      </select>
+    </label>
 
-                  <label className="flex items-center gap-2 text-xs text-black/45">
-                    <span>Filter by</span>
-                    <select
-                      value={archivedTypeFilter}
-                      onChange={(event) => setArchivedTypeFilter(event.target.value)}
-                      className="h-10 rounded-xl border border-[#d8e2ee] bg-white px-3 text-sm font-semibold text-black/70 outline-none focus:border-[#2e66a6]"
-                    >
-                      <option value="all">All</option>
-                      <option value="posts">Posts</option>
-                      <option value="comments">Comments</option>
-                    </select>
-                  </label>
-                </div>
+    <label className="flex items-center gap-2 text-xs text-black/45">
+      <span>Filter by</span>
+      <select
+        value={archivedTypeFilter}
+        onChange={(event) => setArchivedTypeFilter(event.target.value)}
+        className="h-10 rounded-xl border border-[#d8e2ee] bg-white px-3 text-sm font-semibold text-black/70 outline-none focus:border-[#2e66a6]"
+      >
+        <option value="all">All</option>
+        <option value="posts">Posts</option>
+        <option value="comments">Comments</option>
+      </select>
+    </label>
+  </div>
+</div>
               )}
             </div>
 
