@@ -213,6 +213,40 @@ const Companies = () => {
     return jobsData || [];
   };
 
+  const getAccurateRatingSummary = (company) => {
+    const breakdown = company?.ratingBreakdown || {};
+
+    const counts = {
+      5: Number(breakdown?.[5] || 0),
+      4: Number(breakdown?.[4] || 0),
+      3: Number(breakdown?.[3] || 0),
+      2: Number(breakdown?.[2] || 0),
+      1: Number(breakdown?.[1] || 0),
+    };
+
+    const totalReviews =
+      counts[5] + counts[4] + counts[3] + counts[2] + counts[1];
+
+    if (totalReviews > 0) {
+      const totalPoints =
+        counts[5] * 5 +
+        counts[4] * 4 +
+        counts[3] * 3 +
+        counts[2] * 2 +
+        counts[1] * 1;
+
+      return {
+        rating: totalPoints / totalReviews,
+        reviewCount: totalReviews,
+      };
+    }
+
+    return {
+      rating: Number(company?.rating) || 0,
+      reviewCount: Number(company?.reviewCount) || 0,
+    };
+  };
+
   const formatRatingValue = (value) => {
     const numeric = Number(value);
     if (!Number.isFinite(numeric)) return "0.0";
@@ -621,8 +655,9 @@ const Companies = () => {
                   const logoUrl = resolveLogoUrl(c.companyLogo);
                   const employerId = c?._id || c?.id;
                   const jobCount = employerId ? Number(jobCountByEmployerId?.[employerId] || 0) : 0;
-                  const averageRating = Number(c?.rating) || 0;
-                  const reviewCount = Number(c?.reviewCount) || 0;
+                  const accurateRatingSummary = getAccurateRatingSummary(c);
+                  const averageRating = accurateRatingSummary.rating;
+                  const reviewCount = accurateRatingSummary.reviewCount;
                   const isExpanded = expandedCardId === employerId;
                   const breakdownRows = getBreakdownRows(c);
 

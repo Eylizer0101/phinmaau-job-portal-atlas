@@ -4,6 +4,28 @@ import { useNavigate, useParams } from "react-router-dom";
 import api from "../../../services/api";
 import ApplyJobModal from "../../../components/jobseeker/ApplyJobModal";
 
+const calculateAccurateReviewSummary = (reviews = [], fallbackRating = 0, fallbackCount = 0) => {
+  const safeReviews = Array.isArray(reviews) ? reviews : [];
+
+  const validRatings = safeReviews
+    .map((review) => Number(review?.processRating ?? review?.rating))
+    .filter((rating) => Number.isFinite(rating) && rating >= 1 && rating <= 5);
+
+  if (!validRatings.length) {
+    return {
+      rating: Number(fallbackRating) || 0,
+      reviewCount: Number(fallbackCount) || 0,
+    };
+  }
+
+  const totalPoints = validRatings.reduce((sum, rating) => sum + rating, 0);
+
+  return {
+    rating: totalPoints / validRatings.length,
+    reviewCount: validRatings.length,
+  };
+};
+
 const UI = {
   container:
     "relative left-1/2 right-1/2 w-[min(94vw,1280px)] max-w-none -translate-x-1/2 px-4 sm:px-6 lg:px-8 pb-12",
@@ -728,8 +750,16 @@ const CompanyViewDetails = () => {
         companyLogo: resolveLogoUrl(companyData.companyLogo || ""),
         companyWebsite: companyData.companyWebsite || companyData.website || companyData.link || "",
         about: companyData.about || companyData.companyDescription || "",
-        rating: Number(companyData.rating) || 0,
-        reviewCount: Number(companyData.reviewCount) || 0,
+        rating: calculateAccurateReviewSummary(
+          normalizedReviews,
+          companyData.rating,
+          companyData.reviewCount
+        ).rating,
+        reviewCount: calculateAccurateReviewSummary(
+          normalizedReviews,
+          companyData.rating,
+          companyData.reviewCount
+        ).reviewCount,
         reviews: normalizedReviews,
         jobs: normalizedJobs,
         createdAt: companyData.createdAt || new Date().toISOString(),
@@ -853,8 +883,16 @@ const CompanyViewDetails = () => {
         ...companyData,
         companyLogo: resolveLogoUrl(companyData.companyLogo),
         companyWebsite: website,
-        rating: Number(companyData.rating) || 0,
-        reviewCount: Number(companyData.reviewCount) || 0,
+        rating: calculateAccurateReviewSummary(
+          normalizedReviews,
+          companyData.rating,
+          companyData.reviewCount
+        ).rating,
+        reviewCount: calculateAccurateReviewSummary(
+          normalizedReviews,
+          companyData.rating,
+          companyData.reviewCount
+        ).reviewCount,
         reviews: normalizedReviews,
         facebookUrl: companyData.facebookUrl || "",
         instagramUrl: companyData.instagramUrl || "",
@@ -1317,8 +1355,13 @@ const CompanyViewDetails = () => {
 
   const reviews = company?.reviews || [];
   const jobsCount = companyJobs.length;
-  const ratingValue = Number(company?.rating) || 0;
-  const reviewCount = Number(company?.reviewCount) || 0;
+  const accurateReviewSummary = calculateAccurateReviewSummary(
+    reviews,
+    company?.rating,
+    company?.reviewCount
+  );
+  const ratingValue = accurateReviewSummary.rating;
+  const reviewCount = accurateReviewSummary.reviewCount;
 
   const socialLinks = useMemo(() => {
     if (!company) return [];
