@@ -1090,18 +1090,16 @@ const UserManagementDetails = () => {
                   </button>
                 </div>
 
-                <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-[#edf2f7] pt-4 text-xs text-black/55">
-                  <span>
-                    <span className="font-semibold text-black">Contact person:</span>{" "}
-                    {[user.firstName, user.lastName].filter(Boolean).join(" ") || employerProfile.position || "—"}
-                  </span>
-                  <span>
-                    <span className="font-semibold text-black">Registered:</span> {formatDate(user.createdAt)}
-                  </span>
-                  <span>
-                    <span className="font-semibold text-black">Last profile update:</span> {formatDate(user.updatedAt, true)}
-                  </span>
-                </div>
+               <div className="mt-3 flex justify-end">
+  <div className="rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-2 text-xs text-black/60 shadow-sm">
+    <span className="font-semibold text-black">
+      Last profile update:
+    </span>{" "}
+    {formatDate(user.updatedAt, true)}
+  </div>
+</div>
+
+
               </div>
 
               <div className="border-t border-[#e2e8f0] px-4 sm:px-6">
