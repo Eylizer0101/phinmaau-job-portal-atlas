@@ -25,6 +25,7 @@ import {
   faArrowUpRightFromSquare,
   faRotateLeft,
   faBoxArchive,
+  faTriangleExclamation,
 } from '@fortawesome/free-solid-svg-icons';
 import api from '../../../services/api';
 
@@ -184,6 +185,9 @@ const CommunityPage = () => {
   const [managedCategory, setManagedCategory] = useState('all');
   const [managedCommentPage, setManagedCommentPage] = useState(1);
   const [archivedComments, setArchivedComments] = useState([]);
+  const [editTextModal, setEditTextModal] = useState(null);
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState(null);
+  const [modalActionLoading, setModalActionLoading] = useState(false);
 
   const [likeLoading, setLikeLoading] = useState({});
   const [notice, setNotice] = useState('');
@@ -416,26 +420,15 @@ const CommunityPage = () => {
     }
   };
 
-  const deletePost = async (post) => {
-    const confirmed = window.confirm('Are you sure you want to delete this post? It will be moved to the admin archive.');
-    if (!confirmed) return;
-
-    try {
-      const response = await api.delete(`/community/posts/${post._id}`);
-      if (response.data?.success) {
-        setPosts((prev) => prev.filter((item) => item._id !== post._id));
-        setManagedData((prev) => ({
-          ...prev,
-          posts: prev.posts.filter((item) => item._id !== post._id),
-        }));
-        if (commentsPost?._id === post._id) setCommentsPost(null);
-        setNotice('Post moved to archive successfully.');
-      }
-    } catch (error) {
-      alert(error.response?.data?.message || 'Failed to delete post.');
-    } finally {
-      setActiveMenu('');
-    }
+  const deletePost = (post) => {
+    setActiveMenu('');
+    setDeleteConfirmModal({
+      type: 'post',
+      title: 'Delete Post?',
+      message: 'This post will be moved to Archived and hidden from the Community Feed.',
+      confirmLabel: 'Move to Archived',
+      post,
+    });
   };
 
   const toggleLike = async (postId) => {
@@ -519,27 +512,17 @@ const CommunityPage = () => {
   };
 
 
-  const deleteComment = async (commentId) => {
+  const deleteComment = (commentId) => {
     if (!commentsPost) return;
-    const confirmed = window.confirm('Are you sure you want to delete this comment? It will be moved to the admin archive.');
-    if (!confirmed) return;
-
-    try {
-      const response = await api.delete(`/community/posts/${commentsPost._id}/comments/${commentId}`);
-      if (response.data?.success) {
-        const nextComments = (commentsPost.comments || []).filter((comment) => comment._id !== commentId);
-        const nextPost = {
-          ...commentsPost,
-          comments: nextComments,
-          commentsCount: response.data.commentsCount ?? nextComments.length,
-        };
-        setCommentsPost(nextPost);
-        setPosts((prev) => prev.map((post) => (post._id === nextPost._id ? nextPost : post)));
-        setNotice('Comment moved to archive successfully.');
-      }
-    } catch (error) {
-      alert(error.response?.data?.message || 'Failed to delete comment.');
-    }
+    setCommentActionMenu('');
+    setDeleteConfirmModal({
+      type: 'comment',
+      title: 'Delete Comment?',
+      message: 'This comment will be moved to Archived. You can restore it later.',
+      confirmLabel: 'Move to Archived',
+      commentId,
+      postId: commentsPost._id,
+    });
   };
 
   const reactToComment = async (commentId, reaction) => {
@@ -657,52 +640,24 @@ const CommunityPage = () => {
 
 
 
-  const editManagedComment = async (item) => {
-    const content = window.prompt('Edit your comment:', item.comment.content);
-    if (content === null || !content.trim()) return;
-
-    try {
-      const response = await api.put(
-        `/community/posts/${item.postId}/comments/${item.comment._id}`,
-        { content: content.trim() }
-      );
-
-      if (response.data?.success) {
-        setManagedData((prev) => ({
-          ...prev,
-          comments: prev.comments.map((entry) => (
-            entry.postId === item.postId && entry.comment._id === item.comment._id
-              ? { ...entry, comment: response.data.data }
-              : entry
-          )),
-        }));
-        setNotice('Comment updated successfully.');
-      }
-    } catch (error) {
-      alert(error.response?.data?.message || 'Failed to update comment.');
-    }
+  const editManagedComment = (item) => {
+    setEditTextModal({
+      type: 'managed-comment',
+      title: 'Edit Comment',
+      label: 'Comment',
+      value: item.comment.content || '',
+      item,
+    });
   };
 
-  const deleteManagedComment = async (item) => {
-    if (!window.confirm('Delete this comment? It will be moved to Archived.')) return;
-
-    try {
-      const response = await api.delete(
-        `/community/posts/${item.postId}/comments/${item.comment._id}`
-      );
-
-      if (response.data?.success) {
-        setManagedData((prev) => ({
-          ...prev,
-          comments: prev.comments.filter((entry) => (
-            !(entry.postId === item.postId && entry.comment._id === item.comment._id)
-          )),
-        }));
-        setNotice('Comment moved to Archived successfully.');
-      }
-    } catch (error) {
-      alert(error.response?.data?.message || 'Failed to delete comment.');
-    }
+  const deleteManagedComment = (item) => {
+    setDeleteConfirmModal({
+      type: 'managed-comment',
+      title: 'Delete Comment?',
+      message: 'This comment will be moved to Archived. You can restore it later.',
+      confirmLabel: 'Move to Archived',
+      item,
+    });
   };
 
   const restoreArchivedComment = async (item) => {
@@ -722,102 +677,55 @@ const CommunityPage = () => {
     }
   };
 
-  const permanentlyDeleteArchivedComment = async (item) => {
-    if (!window.confirm('Delete this comment permanently? This cannot be undone.')) return;
-
-    try {
-      const response = await api.delete(
-        `/community/managed/archived/comments/${item.postId}/${item.comment._id}`
-      );
-
-      if (response.data?.success) {
-        setArchivedComments((prev) => prev.filter((entry) => (
-          !(entry.postId === item.postId && entry.comment._id === item.comment._id)
-        )));
-        setNotice('Comment permanently deleted.');
-      }
-    } catch (error) {
-      alert(error.response?.data?.message || 'Failed to permanently delete comment.');
-    }
+  const permanentlyDeleteArchivedComment = (item) => {
+    setDeleteConfirmModal({
+      type: 'permanent-comment',
+      title: 'Delete Comment Permanently?',
+      message: 'This action cannot be undone. The comment will be removed forever.',
+      confirmLabel: 'Delete Permanently',
+      item,
+    });
   };
 
-  const editComment = async (commentId, currentContent) => {
+  const editComment = (commentId, currentContent) => {
     if (!commentsPost) return;
-    const content = window.prompt('Edit your comment:', currentContent);
-    if (content === null || !content.trim()) return;
-
-    try {
-      const response = await api.put(
-        `/community/posts/${commentsPost._id}/comments/${commentId}`,
-        { content: content.trim() }
-      );
-
-      if (response.data?.success) {
-        const nextComments = (commentsPost.comments || []).map((comment) => (
-          comment._id === commentId ? response.data.data : comment
-        ));
-        const nextPost = { ...commentsPost, comments: nextComments };
-        setCommentsPost(nextPost);
-        setPosts((prev) => prev.map((post) => (post._id === nextPost._id ? nextPost : post)));
-        setNotice('Comment updated successfully.');
-      }
-    } catch (error) {
-      alert(error.response?.data?.message || 'Failed to update comment.');
-    } finally {
-      setCommentActionMenu('');
-    }
+    setCommentActionMenu('');
+    setEditTextModal({
+      type: 'comment',
+      title: 'Edit Comment',
+      label: 'Comment',
+      value: currentContent || '',
+      commentId,
+      postId: commentsPost._id,
+    });
   };
 
-  const editReply = async (commentId, replyId, currentContent) => {
+  const editReply = (commentId, replyId, currentContent) => {
     if (!commentsPost) return;
-    const content = window.prompt('Edit your reply:', currentContent);
-    if (content === null || !content.trim()) return;
-
-    try {
-      const response = await api.put(
-        `/community/posts/${commentsPost._id}/comments/${commentId}/replies/${replyId}`,
-        { content: content.trim() }
-      );
-
-      if (response.data?.success) {
-        const nextComments = (commentsPost.comments || []).map((comment) => (
-          comment._id === commentId ? response.data.data : comment
-        ));
-        const nextPost = { ...commentsPost, comments: nextComments };
-        setCommentsPost(nextPost);
-        setPosts((prev) => prev.map((post) => (post._id === nextPost._id ? nextPost : post)));
-        setNotice('Reply updated successfully.');
-      }
-    } catch (error) {
-      alert(error.response?.data?.message || 'Failed to update reply.');
-    } finally {
-      setCommentActionMenu('');
-    }
+    setCommentActionMenu('');
+    setEditTextModal({
+      type: 'reply',
+      title: 'Edit Reply',
+      label: 'Reply',
+      value: currentContent || '',
+      commentId,
+      replyId,
+      postId: commentsPost._id,
+    });
   };
 
-  const deleteReply = async (commentId, replyId) => {
+  const deleteReply = (commentId, replyId) => {
     if (!commentsPost) return;
-    if (!window.confirm('Delete this reply?')) return;
-
-    try {
-      const response = await api.delete(
-        `/community/posts/${commentsPost._id}/comments/${commentId}/replies/${replyId}`
-      );
-
-      if (response.data?.success) {
-        const nextComments = (commentsPost.comments || []).map((comment) => (
-          comment._id === commentId ? response.data.data : comment
-        ));
-        const nextPost = { ...commentsPost, comments: nextComments };
-        setCommentsPost(nextPost);
-        setPosts((prev) => prev.map((post) => (post._id === nextPost._id ? nextPost : post)));
-        setNotice('Reply deleted successfully.');
-      }
-    } catch (error) {
-      alert(error.response?.data?.message || 'Failed to delete reply.');
-    } finally {
-      setCommentActionMenu('');
-    }
+    setCommentActionMenu('');
+    setDeleteConfirmModal({
+      type: 'reply',
+      title: 'Delete Reply?',
+      message: 'This reply will be removed from the conversation.',
+      confirmLabel: 'Delete Reply',
+      commentId,
+      replyId,
+      postId: commentsPost._id,
+    });
   };
 
   const restoreArchivedPost = async (postId) => {
@@ -833,17 +741,192 @@ const CommunityPage = () => {
     }
   };
 
-  const permanentlyDeleteArchivedPost = async (postId) => {
-    if (!window.confirm('Delete this post permanently? This cannot be undone.')) return;
+  const permanentlyDeleteArchivedPost = (postId) => {
+    setDeleteConfirmModal({
+      type: 'permanent-post',
+      title: 'Delete Post Permanently?',
+      message: 'This action cannot be undone. The post will be removed forever.',
+      confirmLabel: 'Delete Permanently',
+      postId,
+    });
+  };
+
+
+  const saveEditTextModal = async () => {
+    if (!editTextModal || !String(editTextModal.value || '').trim() || modalActionLoading) return;
 
     try {
-      const response = await api.delete(`/community/managed/archived/${postId}`);
-      if (response.data?.success) {
-        setArchivedPosts((prev) => prev.filter((post) => post._id !== postId));
-        setNotice('Post permanently deleted.');
+      setModalActionLoading(true);
+      const content = String(editTextModal.value).trim();
+
+      if (editTextModal.type === 'managed-comment') {
+        const { item } = editTextModal;
+        const response = await api.put(
+          `/community/posts/${item.postId}/comments/${item.comment._id}`,
+          { content }
+        );
+
+        if (response.data?.success) {
+          setManagedData((prev) => ({
+            ...prev,
+            comments: prev.comments.map((entry) => (
+              entry.postId === item.postId && entry.comment._id === item.comment._id
+                ? { ...entry, comment: response.data.data }
+                : entry
+            )),
+          }));
+          setNotice('Comment updated successfully.');
+        }
       }
+
+      if (editTextModal.type === 'comment') {
+        const response = await api.put(
+          `/community/posts/${editTextModal.postId}/comments/${editTextModal.commentId}`,
+          { content }
+        );
+
+        if (response.data?.success && commentsPost) {
+          const nextComments = (commentsPost.comments || []).map((comment) => (
+            comment._id === editTextModal.commentId ? response.data.data : comment
+          ));
+          const nextPost = { ...commentsPost, comments: nextComments };
+          setCommentsPost(nextPost);
+          setPosts((prev) => prev.map((post) => (post._id === nextPost._id ? nextPost : post)));
+          setNotice('Comment updated successfully.');
+        }
+      }
+
+      if (editTextModal.type === 'reply') {
+        const response = await api.put(
+          `/community/posts/${editTextModal.postId}/comments/${editTextModal.commentId}/replies/${editTextModal.replyId}`,
+          { content }
+        );
+
+        if (response.data?.success && commentsPost) {
+          const nextComments = (commentsPost.comments || []).map((comment) => (
+            comment._id === editTextModal.commentId ? response.data.data : comment
+          ));
+          const nextPost = { ...commentsPost, comments: nextComments };
+          setCommentsPost(nextPost);
+          setPosts((prev) => prev.map((post) => (post._id === nextPost._id ? nextPost : post)));
+          setNotice('Reply updated successfully.');
+        }
+      }
+
+      setEditTextModal(null);
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to permanently delete post.');
+      alert(error.response?.data?.message || 'Failed to save changes.');
+    } finally {
+      setModalActionLoading(false);
+    }
+  };
+
+  const confirmDeleteAction = async () => {
+    if (!deleteConfirmModal || modalActionLoading) return;
+
+    try {
+      setModalActionLoading(true);
+
+      if (deleteConfirmModal.type === 'managed-comment') {
+        const { item } = deleteConfirmModal;
+        const response = await api.delete(
+          `/community/posts/${item.postId}/comments/${item.comment._id}`
+        );
+
+        if (response.data?.success) {
+          setManagedData((prev) => ({
+            ...prev,
+            comments: prev.comments.filter((entry) => (
+              !(entry.postId === item.postId && entry.comment._id === item.comment._id)
+            )),
+          }));
+          setNotice('Comment moved to Archived successfully.');
+        }
+      }
+
+      if (deleteConfirmModal.type === 'comment') {
+        const response = await api.delete(
+          `/community/posts/${deleteConfirmModal.postId}/comments/${deleteConfirmModal.commentId}`
+        );
+
+        if (response.data?.success && commentsPost) {
+          const nextComments = (commentsPost.comments || []).filter(
+            (comment) => comment._id !== deleteConfirmModal.commentId
+          );
+          const nextPost = {
+            ...commentsPost,
+            comments: nextComments,
+            commentsCount: response.data.commentsCount ?? nextComments.length,
+          };
+          setCommentsPost(nextPost);
+          setPosts((prev) => prev.map((post) => (post._id === nextPost._id ? nextPost : post)));
+          setNotice('Comment moved to Archived successfully.');
+        }
+      }
+
+      if (deleteConfirmModal.type === 'reply') {
+        const response = await api.delete(
+          `/community/posts/${deleteConfirmModal.postId}/comments/${deleteConfirmModal.commentId}/replies/${deleteConfirmModal.replyId}`
+        );
+
+        if (response.data?.success && commentsPost) {
+          const nextComments = (commentsPost.comments || []).map((comment) => (
+            comment._id === deleteConfirmModal.commentId ? response.data.data : comment
+          ));
+          const nextPost = { ...commentsPost, comments: nextComments };
+          setCommentsPost(nextPost);
+          setPosts((prev) => prev.map((post) => (post._id === nextPost._id ? nextPost : post)));
+          setNotice('Reply deleted successfully.');
+        }
+      }
+
+      if (deleteConfirmModal.type === 'post') {
+        const { post } = deleteConfirmModal;
+        const response = await api.delete(`/community/posts/${post._id}`);
+
+        if (response.data?.success) {
+          setPosts((prev) => prev.filter((item) => item._id !== post._id));
+          setManagedData((prev) => ({
+            ...prev,
+            posts: prev.posts.filter((item) => item._id !== post._id),
+          }));
+          if (commentsPost?._id === post._id) setCommentsPost(null);
+          setNotice('Post moved to Archived successfully.');
+        }
+      }
+
+      if (deleteConfirmModal.type === 'permanent-post') {
+        const response = await api.delete(
+          `/community/managed/archived/${deleteConfirmModal.postId}`
+        );
+
+        if (response.data?.success) {
+          setArchivedPosts((prev) => prev.filter(
+            (post) => post._id !== deleteConfirmModal.postId
+          ));
+          setNotice('Post permanently deleted.');
+        }
+      }
+
+      if (deleteConfirmModal.type === 'permanent-comment') {
+        const { item } = deleteConfirmModal;
+        const response = await api.delete(
+          `/community/managed/archived/comments/${item.postId}/${item.comment._id}`
+        );
+
+        if (response.data?.success) {
+          setArchivedComments((prev) => prev.filter((entry) => (
+            !(entry.postId === item.postId && entry.comment._id === item.comment._id)
+          )));
+          setNotice('Comment permanently deleted.');
+        }
+      }
+
+      setDeleteConfirmModal(null);
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to complete delete action.');
+    } finally {
+      setModalActionLoading(false);
     }
   };
 
@@ -1818,6 +1901,107 @@ const CommunityPage = () => {
                   })()}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editTextModal && (
+        <div className="fixed inset-0 z-[220] flex items-center justify-center bg-black/55 p-4">
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#e6edf5] px-6 py-5">
+              <div>
+                <h2 className="text-xl font-bold text-black">{editTextModal.title}</h2>
+                <p className="mt-1 text-sm text-black/45">Update your text, then save the changes.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => !modalActionLoading && setEditTextModal(null)}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-black/55 hover:bg-[#f7faff]"
+                aria-label="Close edit modal"
+              >
+                <FontAwesomeIcon icon={faXmark} />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <label className="mb-2 block text-sm font-semibold text-black/75">
+                {editTextModal.label}
+              </label>
+              <textarea
+                value={editTextModal.value}
+                onChange={(event) => setEditTextModal((prev) => ({
+                  ...prev,
+                  value: event.target.value,
+                }))}
+                rows={5}
+                autoFocus
+                maxLength={2000}
+                className="w-full resize-none rounded-xl border border-[#d8e2ee] p-4 text-sm text-black outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+                placeholder={`Write your ${String(editTextModal.label || 'text').toLowerCase()}...`}
+              />
+              <div className="mt-2 text-right text-xs text-black/40">
+                {String(editTextModal.value || '').length}/2000
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 border-t border-[#e6edf5] bg-[#fbfdff] px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setEditTextModal(null)}
+                disabled={modalActionLoading}
+                className="h-10 rounded-xl border border-[#d8e2ee] bg-white px-5 text-sm font-semibold text-black/65 hover:bg-[#f7faff] disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={saveEditTextModal}
+                disabled={modalActionLoading || !String(editTextModal.value || '').trim()}
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#2e66a6] px-5 text-sm font-semibold text-white hover:bg-[#285b94] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <FontAwesomeIcon icon={modalActionLoading ? faSpinner : faPaperPlane} spin={modalActionLoading} />
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteConfirmModal && (
+        <div className="fixed inset-0 z-[230] flex items-center justify-center bg-black/55 p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="p-6 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-2xl text-red-500">
+                <FontAwesomeIcon icon={faTriangleExclamation} />
+              </div>
+
+              <h2 className="mt-5 text-xl font-bold text-black">
+                {deleteConfirmModal.title}
+              </h2>
+              <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-black/55">
+                {deleteConfirmModal.message}
+              </p>
+            </div>
+
+            <div className="flex justify-center gap-3 border-t border-[#e6edf5] bg-[#fbfdff] px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmModal(null)}
+                disabled={modalActionLoading}
+                className="h-10 min-w-28 rounded-xl border border-[#d8e2ee] bg-white px-5 text-sm font-semibold text-black/65 hover:bg-[#f7faff] disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteAction}
+                disabled={modalActionLoading}
+                className="inline-flex h-10 min-w-36 items-center justify-center gap-2 rounded-xl bg-red-500 px-5 text-sm font-semibold text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <FontAwesomeIcon icon={modalActionLoading ? faSpinner : faTrash} spin={modalActionLoading} />
+                {deleteConfirmModal.confirmLabel || 'Delete'}
+              </button>
             </div>
           </div>
         </div>
