@@ -719,8 +719,7 @@ const AdminJobView = () => {
     const d = new Date(dateString);
     if (Number.isNaN(d.getTime())) return 'N/A';
     return d.toLocaleDateString('en-PH', {
-      year: 'numeric',
-      month: 'short',
+      month: 'long',
       day: 'numeric',
     });
   }, []);
@@ -910,7 +909,7 @@ const AdminJobView = () => {
                         {job.applicationDeadline && (
                           <>
                             {' and '}
-                            Application deadline is on {formatFullDate(job.applicationDeadline)}
+                            deadline of application is on {formatFullDate(job.applicationDeadline)}
                           </>
                         )}
                       </p>
