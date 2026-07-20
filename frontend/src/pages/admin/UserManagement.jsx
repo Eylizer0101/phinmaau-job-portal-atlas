@@ -1497,9 +1497,7 @@ const UserManagement = () => {
               )}
             </div>
 
-            <p className="mt-3 text-xs text-gray-500">
-              Showing <span className="font-semibold text-gray-700">{filteredUsers.length}</span> result(s).
-            </p>
+           
           </div>
         </div>
 
