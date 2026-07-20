@@ -534,6 +534,36 @@ const JobSeekerDashboard = () => {
     return Boolean(job?.companyVerified ?? job?.isCompanyVerified ?? job?.isVerified ?? job?.verified);
   };
 
+  const isApplicationCompanyVerified = (application = {}) => {
+    const job = application?.job || {};
+    const employer = application?.employer || {};
+    const employerProfile = employer?.employerProfile || {};
+
+    const booleanValues = [
+      job?.companyVerified,
+      job?.isCompanyVerified,
+      job?.isVerified,
+      job?.verified,
+      employer?.isVerified,
+      employer?.verified,
+      employerProfile?.isVerified,
+      employerProfile?.verified,
+    ];
+
+    if (booleanValues.some((value) => normalizeBoolean(value))) return true;
+
+    const verificationStatus = String(
+      employerProfile?.verificationStatus ||
+        employer?.verificationStatus ||
+        employer?.status ||
+        ''
+    )
+      .trim()
+      .toLowerCase();
+
+    return verificationStatus === 'verified' || verificationStatus === 'approved';
+  };
+
   const getJobOfferTags = (job) => {
     const tags = [];
     const wmLabel = normalizeWorkModeLabel(job?.workMode);
@@ -972,6 +1002,27 @@ const JobSeekerDashboard = () => {
     if (!dateString) return 'Recently';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const formatAppliedDateTime = (dateString) => {
+    if (!dateString) return 'Recently';
+
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return 'Recently';
+
+    const datePart = date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+
+    const timePart = date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+
+    return `${datePart} at ${timePart}`;
   };
 
   // ✅ PASSWORD VALIDATION
@@ -1608,6 +1659,9 @@ const JobSeekerDashboard = () => {
                     const logoUrl = getCompanyLogo(app);
                     const companyName = app.job?.companyName || app.employer?.employerProfile?.companyName || 'Company';
                     const companyInitials = getCompanyInitials(companyName);
+                    const companyVerified = isApplicationCompanyVerified(app);
+                    const recentWorkMode = normalizeWorkModeLabel(app.job?.workMode);
+                    const recentEmploymentType = normalizeEmploymentTypeLabel(app.job?.jobType);
 
                     return (
                       <div
@@ -1646,7 +1700,23 @@ const JobSeekerDashboard = () => {
                                 <h4 className="font-semibold text-black text-base leading-snug mb-1 line-clamp-1">
                                   {app.job?.title}
                                 </h4>
-                                <p className="text-sm text-gray-600 line-clamp-1">{companyName}</p>
+                                <div className="flex min-w-0 items-center gap-1.5">
+                                  <p className="min-w-0 truncate text-sm text-gray-600">{companyName}</p>
+                                  {companyVerified && (
+                                    <span
+                                      className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
+                                      title="Verified"
+                                      aria-label="Verified company"
+                                    >
+                                      <img
+                                        src="/images/checkmo.png"
+                                        alt="Verified"
+                                        className="h-4 w-4 object-contain"
+                                        draggable="false"
+                                      />
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                               <div className="flex-shrink-0">
                                 <span
@@ -1668,11 +1738,35 @@ const JobSeekerDashboard = () => {
                                 </div>
                               )}
 
-                              {getRecentApplicationJobSummary(app.job) && (
-                                <div className="flex min-w-0 items-center gap-2">
-                                  <span className="ml-1 block min-w-0 truncate font-semibold leading-none text-[#2e66a6]">
-                                    {getRecentApplicationJobSummary(app.job)}
-                                  </span>
+                              {(app.job?.salaryMin || app.job?.salaryMax || recentWorkMode || recentEmploymentType) && (
+                                <div className="ml-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-semibold leading-none text-[#2e66a6]">
+                                  {(app.job?.salaryMin || app.job?.salaryMax) && (
+                                    <span>{formatSalary(app.job?.salaryMin, app.job?.salaryMax)}</span>
+                                  )}
+
+                                  {recentWorkMode && (
+                                    <>
+                                      {(app.job?.salaryMin || app.job?.salaryMax) && <span aria-hidden="true">|</span>}
+                                      <span className="inline-flex items-center gap-1.5">
+                                        <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 21h16M6 21V7a2 2 0 012-2h8a2 2 0 012 2v14M9 9h.01M9 13h.01M12 9h.01M12 13h.01M15 9h.01M15 13h.01" />
+                                        </svg>
+                                        {recentWorkMode}
+                                      </span>
+                                    </>
+                                  )}
+
+                                  {recentEmploymentType && (
+                                    <>
+                                      {(app.job?.salaryMin || app.job?.salaryMax || recentWorkMode) && <span aria-hidden="true">|</span>}
+                                      <span className="inline-flex items-center gap-1.5">
+                                        <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 7V5a2 2 0 012-2h4a2 2 0 012 2v2m-9 0h12a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2V9a2 2 0 012-2zm0 5h12" />
+                                        </svg>
+                                        {recentEmploymentType}
+                                      </span>
+                                    </>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -1687,7 +1781,7 @@ const JobSeekerDashboard = () => {
                                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                                   />
                                 </svg>
-                                <span>Applied {formatDate(app.appliedAt)}</span>
+                                <span>Applied on {formatAppliedDateTime(app.appliedAt || app.createdAt)}</span>
                               </div>
 
                               {getEffectiveApplicationStatus(app) === 'for interview' && app.interviewDate && (
@@ -1741,9 +1835,12 @@ const JobSeekerDashboard = () => {
               <button
                 type="button"
                 onClick={() => navigate('/jobseeker/job-search')}
-                className="text-sm font-medium text-[#2e66a6] hover:text-[#245387] transition-colors"
+                className="flex items-center gap-1 text-sm font-medium text-[#2e66a6] transition-colors hover:text-[#245387]"
               >
                 Explore more
+                <svg className="h-4 w-4 transition-transform duration-300 hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </button>
             </div>
 
