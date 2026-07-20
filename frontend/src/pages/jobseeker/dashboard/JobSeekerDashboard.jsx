@@ -1659,7 +1659,9 @@ const JobSeekerDashboard = () => {
                     const logoUrl = getCompanyLogo(app);
                     const companyName = app.job?.companyName || app.employer?.employerProfile?.companyName || 'Company';
                     const companyInitials = getCompanyInitials(companyName);
-                    const companyVerified = isApplicationCompanyVerified(app);
+                    const companyVerified =
+                      isApplicationCompanyVerified(app) ||
+                      app.job?.companyVerified == null;
                     const recentWorkMode = normalizeWorkModeLabel(app.job?.workMode);
                     const recentEmploymentType = normalizeEmploymentTypeLabel(app.job?.jobType);
 
