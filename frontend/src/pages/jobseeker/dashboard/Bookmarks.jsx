@@ -932,6 +932,41 @@ const normalizeGalleryItems = (galleryImages) => {
   return [];
 };
 
+
+const calculateAccurateReviewSummary = (
+  reviews = [],
+  fallbackRating = 0,
+  fallbackCount = 0
+) => {
+  const safeReviews = Array.isArray(reviews) ? reviews : [];
+
+  const validRatings = safeReviews
+    .map((review) => Number(review?.processRating ?? review?.rating))
+    .filter(
+      (rating) =>
+        Number.isFinite(rating) &&
+        rating >= 1 &&
+        rating <= 5
+    );
+
+  if (!validRatings.length) {
+    return {
+      rating: Number(fallbackRating) || 0,
+      reviewCount: Number(fallbackCount) || 0,
+    };
+  }
+
+  const totalPoints = validRatings.reduce(
+    (sum, rating) => sum + rating,
+    0
+  );
+
+  return {
+    rating: totalPoints / validRatings.length,
+    reviewCount: validRatings.length,
+  };
+};
+
 const normalizeCompanyFromAny = (company) => {
   if (!company) return null;
 
@@ -940,7 +975,12 @@ const normalizeCompanyFromAny = (company) => {
         id: review?._id || review?.id || `review-${index}`,
         reviewerName: review?.reviewerName || 'Anonymous User',
         date: formatReviewDate(review?.createdAt || review?.date),
-        rating: Number(review?.rating) || 0,
+        rating: Number(review?.processRating ?? review?.rating) || 0,
+        processRating:
+          review?.processRating === undefined ||
+          review?.processRating === null
+            ? null
+            : Number(review.processRating),
         message: review?.message || '',
       }))
     : [];
@@ -958,6 +998,12 @@ const normalizeCompanyFromAny = (company) => {
     company.galleryImages || company.gallery || company.employerProfile?.galleryImages || []
   );
 
+  const accurateReviewSummary = calculateAccurateReviewSummary(
+    reviews,
+    company.rating,
+    company.reviewCount
+  );
+
   return {
     _id: company._id || company.id || '',
     companyName: company.companyName || 'Company',
@@ -967,8 +1013,8 @@ const normalizeCompanyFromAny = (company) => {
     companyLogo: company.companyLogo || '',
     companyWebsite: company.companyWebsite || company.website || '',
     about: company.about || company.companyDescription || 'No company description provided.',
-    rating: Number(company.rating) || 0,
-    reviewCount: Number(company.reviewCount) || reviews.length || 0,
+    rating: accurateReviewSummary.rating,
+    reviewCount: accurateReviewSummary.reviewCount,
     reviews,
     jobs,
     createdAt: company.createdAt || '',
@@ -1103,7 +1149,7 @@ const SavedCompanyCard = ({ company, selected, onClick, onRemove, removing }) =>
 
 const StarRating = ({ rating = 0, size = 'w-5 h-5' }) => {
   const normalized = Math.max(0, Math.min(5, Number(rating) || 0));
-  const fullStars = Math.round(normalized);
+  const fullStars = Math.floor(normalized);
 
   return (
     <div className="flex items-center gap-1">
