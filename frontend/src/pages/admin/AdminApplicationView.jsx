@@ -10,7 +10,7 @@ const UI = {
   metricCard: "rounded-[22px] border border-gray-200 bg-white px-5 py-5 shadow-sm",
   label: "text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500",
   value: "mt-1.5 text-sm font-bold leading-6 text-black",
-  chip: "inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700",
+  chip: "inline-flex items-center gap-2 rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#2e66a6]",
   skillChip: "rounded-xl border border-[#d7e6f5] bg-[#eef5fc] px-3 py-2 text-xs font-semibold text-[#2e66a6]",
   ring: "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2",
 };
@@ -39,6 +39,7 @@ const Icon = ({ name, className = "h-4 w-4", ...props }) => {
     file: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />,
     tools: <path strokeLinecap="round" strokeLinejoin="round" d="M14.7 6.3a4 4 0 01-5.657 5.657l-5.04 5.04a2 2 0 102.829 2.828l5.04-5.04A4 4 0 0114.7 6.3zM19 7l-3 3" />,
     user: <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM5 21a7 7 0 0114 0" />,
+    users: <><path strokeLinecap="round" strokeLinejoin="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path strokeLinecap="round" strokeLinejoin="round" d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" /></>,
     external: <><path strokeLinecap="round" strokeLinejoin="round" d="M14 3h7v7" /><path strokeLinecap="round" strokeLinejoin="round" d="M10 14L21 3" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 14v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6" /></>,
   };
 
@@ -93,6 +94,16 @@ const formatPostedTime = (value) => {
 
   const differenceYears = Math.floor(differenceDays / 365);
   return `Posted ${differenceYears} ${differenceYears === 1 ? "year" : "years"} ago`;
+};
+
+const getRelocationDisplayLabel = (value) => {
+  const normalized = String(value || "").trim().toLowerCase();
+
+  if (normalized === "yes - willing to relocate") return "Willing to relocate";
+  if (normalized === "no - position is fixed location") return "Fixed location";
+  if (normalized === "open to relocation if necessary") return "Possible to relocate";
+
+  return String(value || "").trim() || "Fixed location";
 };
 
 const normalizeWebsiteUrl = (value) => {
@@ -435,6 +446,36 @@ const AdminApplicationView = () => {
                     <div className="mt-2 flex items-start gap-2 text-[#6b7280]">
                       <Icon name="mapPin" className="mt-0.5 h-4 w-4 shrink-0 text-[#2e66a6]" />
                       <span className="text-sm leading-6">{location}</span>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {job.jobType ? (
+                        <span className={UI.chip}>
+                          <Icon name="briefcase" className="h-3.5 w-3.5" />
+                          {job.jobType}
+                        </span>
+                      ) : null}
+
+                      {job.workMode ? (
+                        <span className={UI.chip}>
+                          <Icon name="building" className="h-3.5 w-3.5" />
+                          {job.workMode}
+                        </span>
+                      ) : null}
+
+                      {job.vacancies ? (
+                        <span className={UI.chip}>
+                          <Icon name="users" className="h-3.5 w-3.5" />
+                          {job.vacancies} {Number(job.vacancies) === 1 ? "Vacancy" : "Vacancies"}
+                        </span>
+                      ) : null}
+
+                      {job.willingToRelocate ? (
+                        <span className={UI.chip}>
+                          <Icon name="mapPin" className="h-3.5 w-3.5" />
+                          {getRelocationDisplayLabel(job.willingToRelocate)}
+                        </span>
+                      ) : null}
                     </div>
 
                     <div className="mt-3 text-xs font-medium text-[#6b7280]">

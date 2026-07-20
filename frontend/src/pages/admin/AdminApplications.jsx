@@ -576,12 +576,7 @@ const AdminApplications = () => {
   const [courseFilter, setCourseFilter] = useState('All Course');
   const [jobTitleFilter, setJobTitleFilter] = useState('All Job Title');
   const [companyFilter, setCompanyFilter] = useState('All Company');
-  const [industryFilter, setIndustryFilter] = useState('All Industry');
   const [statusFilter, setStatusFilter] = useState('All Status');
-  const [dateFilter, setDateFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('Newest First');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
   const fetchApplications = useCallback(async () => {
@@ -647,16 +642,6 @@ const AdminApplications = () => {
     [applications]
   );
 
-  const industries = useMemo(
-    () =>
-      [...new Set(
-        applications
-          .map(getIndustry)
-          .filter((value) => value && value !== 'Not specified')
-      )].sort((a, b) => a.localeCompare(b)),
-    [applications]
-  );
-
   const filteredApplications = useMemo(() => {
     const term = search.trim().toLowerCase();
 
@@ -667,7 +652,6 @@ const AdminApplications = () => {
       const course = getCourse(app);
       const title = getJobTitle(app);
       const company = getCompany(app);
-      const industry = getIndustry(app);
       const status = toTitleStatus(app.status);
 
       const haystack = [
@@ -677,7 +661,6 @@ const AdminApplications = () => {
         course,
         title,
         company,
-        industry,
         status,
       ].join(' ').toLowerCase();
 
@@ -686,34 +669,16 @@ const AdminApplications = () => {
       if (courseFilter !== 'All Course' && course !== courseFilter) return false;
       if (jobTitleFilter !== 'All Job Title' && title !== jobTitleFilter) return false;
       if (companyFilter !== 'All Company' && company !== companyFilter) return false;
-      if (industryFilter !== 'All Industry' && industry !== industryFilter) return false;
       if (statusFilter !== 'All Status' && status !== statusFilter) return false;
-      if (!isDateInRange(app.appliedAt || app.createdAt, dateFrom, dateTo)) return false;
 
       return true;
     });
 
-    return [...filtered].sort((first, second) => {
-      if (sortBy === 'Oldest First') {
-        return (
-          new Date(first.appliedAt || first.createdAt || 0) -
-          new Date(second.appliedAt || second.createdAt || 0)
-        );
-      }
-
-      if (sortBy === 'Applicant A-Z') {
-        return getName(first.jobseeker).localeCompare(getName(second.jobseeker));
-      }
-
-      if (sortBy === 'Applicant Z-A') {
-        return getName(second.jobseeker).localeCompare(getName(first.jobseeker));
-      }
-
-      return (
+    return [...filtered].sort(
+      (first, second) =>
         new Date(second.appliedAt || second.createdAt || 0) -
         new Date(first.appliedAt || first.createdAt || 0)
-      );
-    });
+    );
   }, [
     applications,
     search,
@@ -721,11 +686,7 @@ const AdminApplications = () => {
     courseFilter,
     jobTitleFilter,
     companyFilter,
-    industryFilter,
     statusFilter,
-    dateFrom,
-    dateTo,
-    sortBy,
   ]);
 
   useEffect(() => {
@@ -736,12 +697,7 @@ const AdminApplications = () => {
     courseFilter,
     jobTitleFilter,
     companyFilter,
-    industryFilter,
     statusFilter,
-    dateFilter,
-    dateFrom,
-    dateTo,
-    sortBy,
   ]);
 
   const totalPages = Math.max(Math.ceil(filteredApplications.length / ITEMS_PER_PAGE), 1);
@@ -760,12 +716,7 @@ const AdminApplications = () => {
     setCourseFilter('All Course');
     setJobTitleFilter('All Job Title');
     setCompanyFilter('All Company');
-    setIndustryFilter('All Industry');
     setStatusFilter('All Status');
-    setDateFilter('all');
-    setDateFrom('');
-    setDateTo('');
-    setSortBy('Newest First');
   };
 
   const hasActiveFilters =
@@ -774,18 +725,7 @@ const AdminApplications = () => {
     courseFilter !== 'All Course' ||
     jobTitleFilter !== 'All Job Title' ||
     companyFilter !== 'All Company' ||
-    industryFilter !== 'All Industry' ||
-    statusFilter !== 'All Status' ||
-    dateFilter !== 'all' ||
-    dateFrom ||
-    dateTo ||
-    sortBy !== 'Newest First';
-
-  const handleDateFilterChange = (next) => {
-    setDateFilter(next.date);
-    setDateFrom(next.dateFrom);
-    setDateTo(next.dateTo);
-  };
+    statusFilter !== 'All Status';
 
   return (
     <AdminLayout>
@@ -835,28 +775,9 @@ const AdminApplications = () => {
             />
 
             <FilterSelect
-              value={industryFilter}
-              onChange={setIndustryFilter}
-              options={['All Industry', ...industries]}
-            />
-
-            <FilterSelect
               value={statusFilter}
               onChange={setStatusFilter}
               options={['All Status', ...STATUS_OPTIONS]}
-            />
-
-            <DateFilterDropdown
-              value={dateFilter}
-              dateFrom={dateFrom}
-              dateTo={dateTo}
-              onChange={handleDateFilterChange}
-            />
-
-            <FilterSelect
-              value={sortBy}
-              onChange={setSortBy}
-              options={SORT_OPTIONS}
             />
 
             {hasActiveFilters ? (
@@ -883,17 +804,15 @@ const AdminApplications = () => {
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="min-w-[1450px] divide-y divide-slate-200 text-left">
+                <table className="w-full min-w-[1050px] divide-y divide-slate-200 text-left">
                   <thead className="bg-slate-50">
                     <tr>
                       {[
-                        'Date Applied',
                         'Applicant',
                         'Campus',
                         'Course',
                         'Job Title',
                         'Company',
-                        'Industry',
                         'Status',
                         'Actions',
                       ].map((head) => (
@@ -913,8 +832,7 @@ const AdminApplications = () => {
                       const course = getCourse(app);
                       const jobTitle = getJobTitle(app);
                       const company = getCompany(app);
-                      const industry = getIndustry(app);
-                      return (
+                                      return (
                         <tr
                           key={app._id}
                           role="link"
@@ -932,10 +850,6 @@ const AdminApplications = () => {
                           }}
                           className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
                         >
-                          <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-600">
-                            {formatDate(app.appliedAt || app.createdAt)}
-                          </td>
-
                           <td className="min-w-[220px] px-5 py-4">
                             <div className="flex items-center gap-3">
                               <ApplicantAvatar user={app.jobseeker} />
@@ -975,10 +889,6 @@ const AdminApplications = () => {
                             </p>
                           </td>
 
-                          <td className="min-w-[170px] px-5 py-4 text-sm text-slate-600">
-                            {truncate(industry, 25)}
-                          </td>
-
                           <td className="whitespace-nowrap px-5 py-4">
                             <span
                               className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${statusClass(app.status)}`}
@@ -1002,7 +912,7 @@ const AdminApplications = () => {
                       );
                     }) : (
                       <tr>
-                        <td colSpan="9" className="px-6 py-12 text-center text-sm text-slate-500">No applications found.</td>
+                        <td colSpan="7" className="px-6 py-12 text-center text-sm text-slate-500">No applications found.</td>
                       </tr>
                     )}
                   </tbody>
