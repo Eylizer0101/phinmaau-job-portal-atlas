@@ -1742,10 +1742,7 @@ const CommunityPage = () => {
                     Back to Active Posts
                   </button>
 
-                  <div>
-                    <h3 className="text-lg font-bold">Archived</h3>
-                    <p className="mt-0.5 text-xs text-black/45">Restore or permanently delete archived posts and comments.</p>
-                  </div>
+                 
                 </div>
               )}
             </div>
