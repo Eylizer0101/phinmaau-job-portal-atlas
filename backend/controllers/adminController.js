@@ -2635,8 +2635,10 @@ exports.getAdminArchive = async (req, res) => {
       };
 
       const { start, end } = getDateBounds();
+
       const isWithinDate = (value) => {
         if (!start && dateFilter === 'all') return true;
+
         const date = new Date(value || 0);
         if (Number.isNaN(date.getTime())) return false;
         if (start && date < start) return false;
@@ -2644,44 +2646,80 @@ exports.getAdminArchive = async (req, res) => {
         return true;
       };
 
+      /*
+       * Get ALL declined applications first.
+       *
+       * The previous query loaded closed/expired jobs first and then searched
+       * declined applicants only inside those jobs. Because of that, an active
+       * job with declined applicants could never appear in the Jobs tab.
+       */
+      const declinedApplications = await Application.find({
+        status: 'declined',
+      })
+        .populate(
+          'jobseeker',
+          'email firstName middleName lastName fullName jobSeekerProfile'
+        )
+        .select(
+          'job jobseeker status lastActiveStatus declinedFrom declineReason declineComment appliedAt reviewedAt updatedAt isDeclinedArchived declinedArchivedAt'
+        )
+        .sort({ reviewedAt: -1, updatedAt: -1 })
+        .lean();
+
+      const declinedJobIds = [
+        ...new Set(
+          declinedApplications
+            .map((application) => String(application.job || ''))
+            .filter(Boolean)
+        ),
+      ];
+
+      /*
+       * A job belongs in the archive when at least one condition is true:
+       * - its status is closed;
+       * - it is published but inactive;
+       * - it was archived by the employer;
+       * - its application deadline has passed;
+       * - it has one or more declined applicants.
+       *
+       * This also fixes employer-archived jobs that remain status="published"
+       * but have isArchived=true and isActive=false.
+       */
       const jobs = await Job.find({
         $or: [
           { status: 'closed' },
+          {
+            isPublished: true,
+            isActive: false,
+          },
+          {
+            isPublished: true,
+            isArchived: true,
+          },
           { applicationDeadline: { $lt: now } },
+          ...(declinedJobIds.length
+            ? [{ _id: { $in: declinedJobIds } }]
+            : []),
         ],
       })
         .select(
-          'title companyName companyLogo employer status applicationDeadline location workMode jobType isActive isArchived archivedAt createdAt updatedAt'
+          'title companyName companyLogo employer status applicationDeadline location workMode jobType isActive isPublished isArchived archivedAt createdAt updatedAt'
         )
         .sort({ updatedAt: -1 })
         .lean();
 
-      const jobIds = jobs.map((job) => job._id);
-
-      const declinedApplications = jobIds.length
-        ? await Application.find({
-            job: { $in: jobIds },
-            status: 'declined',
-          })
-            .populate(
-              'jobseeker',
-              'email firstName middleName lastName fullName jobSeekerProfile'
-            )
-            .select(
-              'job jobseeker status declinedFrom declineReason declineComment appliedAt reviewedAt updatedAt isDeclinedArchived declinedArchivedAt'
-            )
-            .sort({ reviewedAt: -1, updatedAt: -1 })
-            .lean()
-        : [];
-
+      const jobIdSet = new Set(jobs.map((job) => String(job._id)));
       const applicationsByJob = new Map();
 
       declinedApplications.forEach((application) => {
         const jobId = String(application.job || '');
+
+        if (!jobId || !jobIdSet.has(jobId)) return;
         if (!applicationsByJob.has(jobId)) applicationsByJob.set(jobId, []);
 
         const jobseeker = application.jobseeker || {};
         const profile = jobseeker.jobSeekerProfile || {};
+
         const applicantName =
           jobseeker.fullName ||
           [jobseeker.firstName, jobseeker.middleName, jobseeker.lastName]
@@ -2723,13 +2761,20 @@ exports.getAdminArchive = async (req, res) => {
       let jobArchives = jobs.map((job) => {
         if (job.companyName) jobCompanies.add(job.companyName);
 
+        const isExpired =
+          Boolean(job.applicationDeadline) &&
+          new Date(job.applicationDeadline) < now;
+
+        const isClosed =
+          job.status === 'closed' ||
+          (job.isPublished === true && job.isActive === false) ||
+          (job.isPublished === true && job.isArchived === true);
+
         return {
           jobId: String(job._id),
           job,
-          isClosed: job.status === 'closed',
-          isExpired:
-            Boolean(job.applicationDeadline) &&
-            new Date(job.applicationDeadline) < now,
+          isClosed,
+          isExpired,
           declinedApplicants: applicationsByJob.get(String(job._id)) || [],
         };
       });
@@ -2768,13 +2813,53 @@ exports.getAdminArchive = async (req, res) => {
         });
       }
 
-      jobArchives = jobArchives.filter((entry) =>
-        isWithinDate(
-          entry.isExpired
-            ? entry.job.applicationDeadline
-            : entry.job.archivedAt || entry.job.updatedAt
-        )
-      );
+      jobArchives = jobArchives.filter((entry) => {
+        /*
+         * For declined-only records, use the latest declined date so the date
+         * filter does not incorrectly depend only on the job's updated date.
+         */
+        const latestDeclinedAt = entry.declinedApplicants.reduce(
+          (latest, application) => {
+            const candidate =
+              application.declinedAt || application.appliedAt || null;
+
+            if (!candidate) return latest;
+            if (!latest) return candidate;
+
+            return new Date(candidate) > new Date(latest)
+              ? candidate
+              : latest;
+          },
+          null
+        );
+
+        const relevantDate = entry.isExpired
+          ? entry.job.applicationDeadline
+          : entry.isClosed
+            ? entry.job.archivedAt || entry.job.updatedAt
+            : latestDeclinedAt || entry.job.updatedAt;
+
+        return isWithinDate(relevantDate);
+      });
+
+      jobArchives.sort((a, b) => {
+        const getLatestDate = (entry) => {
+          const declinedDates = entry.declinedApplicants
+            .map((application) => application.declinedAt || application.appliedAt)
+            .filter(Boolean)
+            .map((value) => new Date(value).getTime())
+            .filter(Number.isFinite);
+
+          return Math.max(
+            new Date(entry.job.archivedAt || 0).getTime() || 0,
+            new Date(entry.job.updatedAt || 0).getTime() || 0,
+            new Date(entry.job.applicationDeadline || 0).getTime() || 0,
+            declinedDates.length ? Math.max(...declinedDates) : 0
+          );
+        };
+
+        return getLatestDate(b) - getLatestDate(a);
+      });
 
       return res.json({
         success: true,
@@ -3124,7 +3209,7 @@ exports.getAdminArchiveDetails = async (req, res) => {
     if (type === 'job') {
       const job = await Job.findById(id)
         .select(
-          'title companyName companyLogo employer status description requirements applicationDeadline location workMode jobType educationLevel category vacancies isActive isArchived archivedAt createdAt updatedAt'
+          'title companyName companyLogo employer status description requirements applicationDeadline location workMode jobType educationLevel category vacancies isActive isPublished isArchived archivedAt createdAt updatedAt'
         )
         .lean();
 
@@ -3132,19 +3217,6 @@ exports.getAdminArchiveDetails = async (req, res) => {
         return res.status(404).json({
           success: false,
           message: 'Archived job not found',
-        });
-      }
-
-      const now = new Date();
-      const isClosed = job.status === 'closed';
-      const isExpired =
-        Boolean(job.applicationDeadline) &&
-        new Date(job.applicationDeadline) < now;
-
-      if (!isClosed && !isExpired) {
-        return res.status(404).json({
-          success: false,
-          message: 'This job is not closed or expired',
         });
       }
 
@@ -3157,10 +3229,32 @@ exports.getAdminArchiveDetails = async (req, res) => {
           'email firstName middleName lastName fullName jobSeekerProfile'
         )
         .select(
-          'jobseeker declinedFrom declineReason declineComment appliedAt reviewedAt updatedAt isDeclinedArchived declinedArchivedAt'
+          'jobseeker lastActiveStatus declinedFrom declineReason declineComment appliedAt reviewedAt updatedAt isDeclinedArchived declinedArchivedAt'
         )
         .sort({ reviewedAt: -1, updatedAt: -1 })
         .lean();
+
+      const now = new Date();
+
+      const isExpired =
+        Boolean(job.applicationDeadline) &&
+        new Date(job.applicationDeadline) < now;
+
+      const isClosed =
+        job.status === 'closed' ||
+        (job.isPublished === true && job.isActive === false) ||
+        (job.isPublished === true && job.isArchived === true);
+
+      /*
+       * A job with declined applicants must remain viewable even when the job
+       * itself is still active and has not yet expired.
+       */
+      if (!isClosed && !isExpired && applications.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'This job is not part of the Jobs archive',
+        });
+      }
 
       const declinedApplicants = applications.map((application) => {
         const jobseeker = application.jobseeker || {};
@@ -3186,7 +3280,9 @@ exports.getAdminArchiveDetails = async (req, res) => {
               ? 'For Interview'
               : application.declinedFrom === 'applicants'
                 ? 'Initial Screening'
-                : 'Application Review',
+                : application.lastActiveStatus === 'for interview'
+                  ? 'For Interview'
+                  : 'Application Review',
           declineReason: application.declineReason || '',
           declineComment: application.declineComment || '',
           appliedAt: application.appliedAt,
