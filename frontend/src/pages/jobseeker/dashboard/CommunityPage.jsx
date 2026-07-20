@@ -116,6 +116,25 @@ const formatTime = (date) => {
   return value.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
+const formatArchivedDate = (date) => {
+  const value = new Date(date);
+  if (Number.isNaN(value.getTime())) return 'Date unavailable';
+
+  const datePart = value.toLocaleDateString('en-PH', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  const timePart = value.toLocaleTimeString('en-PH', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  return `${datePart} • ${timePart}`;
+};
+
 const getUserId = (user = {}) => String(user._id || user.id || '');
 
 const Avatar = ({ user, size = 'h-11 w-11' }) => {
@@ -1713,15 +1732,20 @@ const CommunityPage = () => {
                   </button>
                 </div>
               ) : (
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h3 className="font-bold">Archived</h3>
-                    <p className="text-xs text-black/45">Restore or permanently delete archived posts and comments.</p>
-                  </div>
-                  <button type="button" onClick={() => setManagedView('active')} className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#d8e2ee] px-4 text-sm font-semibold">
+                <div className="flex flex-col items-start gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setManagedView('active')}
+                    className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 text-sm font-semibold text-black/75 shadow-sm transition hover:border-[#2e66a6]/35 hover:bg-[#f7faff]"
+                  >
                     <FontAwesomeIcon icon={faArrowLeft} />
                     Back to Active Posts
                   </button>
+
+                  <div>
+                    <h3 className="text-lg font-bold">Archived</h3>
+                    <p className="mt-0.5 text-xs text-black/45">Restore or permanently delete archived posts and comments.</p>
+                  </div>
                 </div>
               )}
             </div>
@@ -1739,25 +1763,47 @@ const CommunityPage = () => {
                     {archivedPosts.length === 0 ? (
                       <p className="rounded-xl bg-[#f7faff] p-4 text-sm text-black/45">No archived posts found.</p>
                     ) : archivedPosts.map((post) => (
-                      <div key={post._id} className="relative rounded-xl border border-[#e6edf5] p-4">
-                        <button type="button" className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-black/45">
+                      <div key={post._id} className="relative overflow-hidden rounded-2xl border border-[#dfe7f1] bg-white px-5 py-5 shadow-sm">
+                        <button
+                          type="button"
+                          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-black/45 transition hover:bg-[#f7faff] hover:text-black/70"
+                          aria-label="Archived post options"
+                        >
                           <FontAwesomeIcon icon={faEllipsisVertical} />
                         </button>
 
-                        <div className="grid gap-4 pr-10 md:grid-cols-[1fr_180px] md:items-center">
-                          <div>
-                            <p className="whitespace-pre-wrap text-sm text-black/75">{post.content}</p>
-                            <p className="mt-2 text-xs text-black/40">
-                              Archived {formatTime(post.deletedAt)} · {post.category}
-                            </p>
+                        <div className="grid gap-4 pr-8 md:grid-cols-[72px_minmax(0,1fr)_150px_170px] md:items-center">
+                          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#f1edff] text-xl text-[#6f5bd3]">
+                            <FontAwesomeIcon icon={faBoxArchive} />
+                          </div>
+
+                          <div className="min-w-0">
+                            <p className="whitespace-pre-wrap text-sm leading-6 text-black/75">{post.content}</p>
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                              <span className="rounded-full bg-[#eef5fd] px-2.5 py-1 text-[11px] font-semibold text-[#2e66a6]">{post.category}</span>
+                              <span className="rounded-full bg-[#f3f5f8] px-2.5 py-1 text-[11px] font-semibold text-black/45">archived</span>
+                            </div>
+                          </div>
+
+                          <div className="border-l border-[#e6edf5] pl-4 text-xs text-black/45">
+                            <p>Archived on</p>
+                            <p className="mt-1 font-medium leading-5 text-black/55">{formatArchivedDate(post.deletedAt)}</p>
                           </div>
 
                           <div className="flex flex-col gap-2">
-                            <button type="button" onClick={() => restoreArchivedPost(post._id)} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] text-sm font-semibold hover:bg-[#f7faff]">
+                            <button
+                              type="button"
+                              onClick={() => restoreArchivedPost(post._id)}
+                              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 text-sm font-semibold text-black/70 transition hover:bg-[#f7faff]"
+                            >
                               <FontAwesomeIcon icon={faRotateLeft} />
                               Restore
                             </button>
-                            <button type="button" onClick={() => permanentlyDeleteArchivedPost(post._id)} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-red-200 text-sm font-semibold text-red-600 hover:bg-red-50">
+                            <button
+                              type="button"
+                              onClick={() => permanentlyDeleteArchivedPost(post._id)}
+                              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                            >
                               <FontAwesomeIcon icon={faTrash} />
                               Delete permanently
                             </button>
@@ -1776,20 +1822,47 @@ const CommunityPage = () => {
                     {archivedComments.length === 0 ? (
                       <p className="rounded-xl bg-[#f7faff] p-4 text-sm text-black/45">No archived comments found.</p>
                     ) : archivedComments.map((item) => (
-                      <div key={`${item.postId}-${item.comment._id}`} className="rounded-xl border border-[#e6edf5] p-4">
-                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                          <div className="min-w-0">
-                            <p className="text-sm text-black/75">{item.comment.content}</p>
-                            <p className="mt-1 truncate text-xs text-black/40">
-                              On post: {item.postContent} · Deleted {formatTime(item.comment.deletedAt)}
-                            </p>
+                      <div key={`${item.postId}-${item.comment._id}`} className="relative overflow-hidden rounded-2xl border border-[#dfe7f1] bg-white px-5 py-5 shadow-sm">
+                        <button
+                          type="button"
+                          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-black/45 transition hover:bg-[#f7faff] hover:text-black/70"
+                          aria-label="Archived comment options"
+                        >
+                          <FontAwesomeIcon icon={faEllipsisVertical} />
+                        </button>
+
+                        <div className="grid gap-4 pr-8 md:grid-cols-[72px_minmax(0,1fr)_150px_170px] md:items-center">
+                          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf3ff] text-xl text-[#2e66a6]">
+                            <FontAwesomeIcon icon={faComment} />
                           </div>
-                          <div className="flex shrink-0 gap-2">
-                            <button type="button" onClick={() => restoreArchivedComment(item)} className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#d8e2ee] px-3 text-xs font-semibold hover:bg-[#f7faff]">
-                              <FontAwesomeIcon icon={faRotateLeft} /> Restore
+
+                          <div className="min-w-0">
+                            <p className="text-sm leading-6 text-black/75">{item.comment.content}</p>
+                            <p className="mt-2 line-clamp-2 text-xs italic text-black/40">On post: {item.postContent}</p>
+                            <span className="mt-3 inline-flex rounded-full bg-[#f3f5f8] px-2.5 py-1 text-[11px] font-semibold text-black/45">archived</span>
+                          </div>
+
+                          <div className="border-l border-[#e6edf5] pl-4 text-xs text-black/45">
+                            <p>Archived on</p>
+                            <p className="mt-1 font-medium leading-5 text-black/55">{formatArchivedDate(item.comment.deletedAt)}</p>
+                          </div>
+
+                          <div className="flex flex-col gap-2">
+                            <button
+                              type="button"
+                              onClick={() => restoreArchivedComment(item)}
+                              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 text-sm font-semibold text-black/70 transition hover:bg-[#f7faff]"
+                            >
+                              <FontAwesomeIcon icon={faRotateLeft} />
+                              Restore
                             </button>
-                            <button type="button" onClick={() => permanentlyDeleteArchivedComment(item)} className="inline-flex h-9 items-center gap-2 rounded-lg border border-red-200 px-3 text-xs font-semibold text-red-600 hover:bg-red-50">
-                              <FontAwesomeIcon icon={faTrash} /> Delete permanently
+                            <button
+                              type="button"
+                              onClick={() => permanentlyDeleteArchivedComment(item)}
+                              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                            >
+                              <FontAwesomeIcon icon={faTrash} />
+                              Delete permanently
                             </button>
                           </div>
                         </div>
