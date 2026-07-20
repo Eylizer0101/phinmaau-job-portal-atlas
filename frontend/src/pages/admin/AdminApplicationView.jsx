@@ -61,8 +61,7 @@ const formatDate = (value) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "N/A";
   return date.toLocaleDateString("en-PH", {
-    year: "numeric",
-    month: "short",
+    month: "long",
     day: "numeric",
   });
 };
@@ -346,8 +345,37 @@ const AdminApplicationView = () => {
       setLoading(true);
       setError("");
       const response = await api.get(`/applications/${applicationId}`);
-      if (response.data?.success) setApplication(response.data.application || null);
-      else setError("Application not found.");
+      if (response.data?.success) {
+        const applicationData = response.data.application || null;
+        const jobId =
+          applicationData?.job?._id ||
+          applicationData?.job?.id ||
+          applicationData?.jobId?._id ||
+          applicationData?.jobId;
+
+        if (applicationData && jobId) {
+          try {
+            const jobResponse = await api.get(`/jobs/${jobId}`);
+            const completeJob = jobResponse.data?.job;
+
+            if (jobResponse.data?.success && completeJob) {
+              setApplication({
+                ...applicationData,
+                job: {
+                  ...(applicationData.job || {}),
+                  ...completeJob,
+                },
+              });
+            } else {
+              setApplication(applicationData);
+            }
+          } catch {
+            setApplication(applicationData);
+          }
+        } else {
+          setApplication(applicationData);
+        }
+      } else setError("Application not found.");
     } catch (err) {
       console.error("Error fetching application:", err);
       setError(err.response?.data?.message || "Failed to load application details.");
@@ -480,9 +508,9 @@ const AdminApplicationView = () => {
 
                     <div className="mt-3 text-xs font-medium text-[#6b7280]">
                       <p>
-                        {formatPostedTime(application.appliedAt || application.createdAt)}
+                        {formatPostedTime(job.createdAt || application.appliedAt || application.createdAt)}
                         {job.applicationDeadline
-                          ? ` and Application deadline is on ${formatDate(job.applicationDeadline)}`
+                          ? ` and deadline of application is on ${formatDate(job.applicationDeadline)}`
                           : ""}
                       </p>
                     </div>
