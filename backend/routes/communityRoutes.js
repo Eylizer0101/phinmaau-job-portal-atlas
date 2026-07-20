@@ -22,6 +22,8 @@ const {
   getArchivedPosts,
   restoreArchivedPost,
   permanentlyDeleteArchivedPost,
+  restoreArchivedComment,
+  permanentlyDeleteArchivedComment,
 } = require('../controllers/communityController');
 
 router.use(protect);
@@ -45,6 +47,8 @@ router.post('/posts/:postId/comments/:commentId/replies/:replyId/reaction', reac
 router.post('/reports', reportContent);
 router.get('/managed', getManagedContent);
 router.get('/managed/archived', getArchivedPosts);
+router.patch('/managed/archived/comments/:postId/:commentId/restore', restoreArchivedComment);
+router.delete('/managed/archived/comments/:postId/:commentId', permanentlyDeleteArchivedComment);
 router.patch('/managed/archived/:postId/restore', restoreArchivedPost);
 router.delete('/managed/archived/:postId', permanentlyDeleteArchivedPost);
 

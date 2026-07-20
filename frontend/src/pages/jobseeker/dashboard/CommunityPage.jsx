@@ -181,6 +181,9 @@ const CommunityPage = () => {
   const [editingComment, setEditingComment] = useState(null);
   const [editingReply, setEditingReply] = useState(null);
   const [editingPostFromManaged, setEditingPostFromManaged] = useState(false);
+  const [managedCategory, setManagedCategory] = useState('all');
+  const [managedCommentPage, setManagedCommentPage] = useState(1);
+  const [archivedComments, setArchivedComments] = useState([]);
 
   const [likeLoading, setLikeLoading] = useState({});
   const [notice, setNotice] = useState('');
@@ -623,6 +626,7 @@ const CommunityPage = () => {
         });
         if (response.data?.success) {
           setArchivedPosts(response.data.posts || []);
+          setArchivedComments(response.data.comments || []);
         }
         return;
       }
@@ -647,6 +651,95 @@ const CommunityPage = () => {
     fetchManagedContent();
   }, [fetchManagedContent]);
 
+  useEffect(() => {
+    setManagedCommentPage(1);
+  }, [managedSort, managedType, showManaged]);
+
+
+
+  const editManagedComment = async (item) => {
+    const content = window.prompt('Edit your comment:', item.comment.content);
+    if (content === null || !content.trim()) return;
+
+    try {
+      const response = await api.put(
+        `/community/posts/${item.postId}/comments/${item.comment._id}`,
+        { content: content.trim() }
+      );
+
+      if (response.data?.success) {
+        setManagedData((prev) => ({
+          ...prev,
+          comments: prev.comments.map((entry) => (
+            entry.postId === item.postId && entry.comment._id === item.comment._id
+              ? { ...entry, comment: response.data.data }
+              : entry
+          )),
+        }));
+        setNotice('Comment updated successfully.');
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to update comment.');
+    }
+  };
+
+  const deleteManagedComment = async (item) => {
+    if (!window.confirm('Delete this comment? It will be moved to Archived.')) return;
+
+    try {
+      const response = await api.delete(
+        `/community/posts/${item.postId}/comments/${item.comment._id}`
+      );
+
+      if (response.data?.success) {
+        setManagedData((prev) => ({
+          ...prev,
+          comments: prev.comments.filter((entry) => (
+            !(entry.postId === item.postId && entry.comment._id === item.comment._id)
+          )),
+        }));
+        setNotice('Comment moved to Archived successfully.');
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to delete comment.');
+    }
+  };
+
+  const restoreArchivedComment = async (item) => {
+    try {
+      const response = await api.patch(
+        `/community/managed/archived/comments/${item.postId}/${item.comment._id}/restore`
+      );
+
+      if (response.data?.success) {
+        setArchivedComments((prev) => prev.filter((entry) => (
+          !(entry.postId === item.postId && entry.comment._id === item.comment._id)
+        )));
+        setNotice('Comment restored successfully.');
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to restore comment.');
+    }
+  };
+
+  const permanentlyDeleteArchivedComment = async (item) => {
+    if (!window.confirm('Delete this comment permanently? This cannot be undone.')) return;
+
+    try {
+      const response = await api.delete(
+        `/community/managed/archived/comments/${item.postId}/${item.comment._id}`
+      );
+
+      if (response.data?.success) {
+        setArchivedComments((prev) => prev.filter((entry) => (
+          !(entry.postId === item.postId && entry.comment._id === item.comment._id)
+        )));
+        setNotice('Comment permanently deleted.');
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to permanently delete comment.');
+    }
+  };
 
   const editComment = async (commentId, currentContent) => {
     if (!commentsPost) return;
@@ -1496,54 +1589,65 @@ const CommunityPage = () => {
               </button>
             </div>
 
-            <div className="border-b border-[#e6edf5]">
-              <div className="flex items-center gap-2 px-4 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setManagedView('active')}
-                  className={`rounded-t-xl px-4 py-2 text-sm font-semibold ${managedView === 'active' ? 'border border-b-white border-[#d8e2ee] bg-white text-[#2e66a6]' : 'text-black/50'}`}
-                >
-                  Active
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setManagedView('archived')}
-                  className={`rounded-t-xl px-4 py-2 text-sm font-semibold ${managedView === 'archived' ? 'border border-b-white border-[#d8e2ee] bg-[#f5f0ff] text-[#6f5bd3]' : 'text-black/50'}`}
-                >
-                  <FontAwesomeIcon icon={faBoxArchive} className="mr-2" />
-                  Archived
-                </button>
-              </div>
+            <div className="border-b border-[#e6edf5] px-5 py-4">
+              {managedView === 'active' ? (
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="flex items-center gap-2 text-xs text-black/45">
+                    <span>Sort by</span>
+                    <select value={managedSort} onChange={(event) => setManagedSort(event.target.value)} className="h-10 rounded-lg border border-[#d8e2ee] bg-white px-3 text-sm font-semibold">
+                      <option value="newest">Newest first</option>
+                      <option value="oldest">Oldest first</option>
+                    </select>
+                  </label>
 
-              <div className="flex flex-wrap items-center justify-between gap-3 p-4">
-                <div className="flex flex-wrap gap-3">
-                  <select value={managedSort} onChange={(event) => setManagedSort(event.target.value)} className="h-10 rounded-xl border border-[#d8e2ee] px-3 text-sm">
-                    <option value="newest">Newest first</option>
-                    <option value="oldest">Oldest first</option>
-                  </select>
-
-                  {managedView === 'active' && (
-                    <select value={managedType} onChange={(event) => setManagedType(event.target.value)} className="h-10 rounded-xl border border-[#d8e2ee] px-3 text-sm">
+                  <label className="flex items-center gap-2 text-xs text-black/45">
+                    <span>Filter by</span>
+                    <select value={managedType} onChange={(event) => setManagedType(event.target.value)} className="h-10 rounded-lg border border-[#d8e2ee] bg-white px-3 text-sm font-semibold">
                       <option value="all">All</option>
                       <option value="posts">Posts</option>
                       <option value="comments">Comments</option>
                     </select>
-                  )}
-                </div>
+                  </label>
 
-                {managedView === 'archived' && (
-                  <button type="button" onClick={() => setManagedView('active')} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#d8e2ee] px-4 text-sm font-semibold">
+                  <label className="flex items-center gap-2 text-xs text-black/45">
+                    <span>Category</span>
+                    <select value={managedCategory} onChange={(event) => setManagedCategory(event.target.value)} className="h-10 rounded-lg border border-[#d8e2ee] bg-white px-3 text-sm font-semibold">
+                      <option value="all">All</option>
+                      <option value="insight">Insight</option>
+                      <option value="skill">Skill</option>
+                      <option value="question">Question</option>
+                      <option value="resource">Resource</option>
+                    </select>
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => setManagedView('archived')}
+                    className="ml-auto inline-flex h-10 items-center gap-2 rounded-lg border border-[#d8e2ee] bg-white px-4 text-sm font-semibold hover:bg-[#f7faff]"
+                  >
+                    <FontAwesomeIcon icon={faBoxArchive} />
+                    Archived
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-bold">Archived</h3>
+                    <p className="text-xs text-black/45">Restore or permanently delete archived posts and comments.</p>
+                  </div>
+                  <button type="button" onClick={() => setManagedView('active')} className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#d8e2ee] px-4 text-sm font-semibold">
                     <FontAwesomeIcon icon={faArrowLeft} />
                     Back to Active Posts
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             <div className="flex-1 overflow-y-auto p-5">
               {managedLoading ? (
                 <div className="py-16 text-center text-black/45"><FontAwesomeIcon icon={faSpinner} spin className="mr-2" /> Loading...</div>
               ) : managedView === 'archived' ? (
+                <div className="space-y-6">
                 <section>
                   <h3 className="mb-1 text-lg font-bold">Your Archived Posts ({archivedPosts.length})</h3>
                   <p className="mb-4 text-sm text-black/45">These posts are archived and hidden from your active list.</p>
@@ -1580,90 +1684,138 @@ const CommunityPage = () => {
                     ))}
                   </div>
                 </section>
+
+                <section className="mt-6">
+                  <h3 className="mb-1 text-lg font-bold">Your Archived Comments ({archivedComments.length})</h3>
+                  <p className="mb-4 text-sm text-black/45">Deleted comments are kept here until restored or permanently deleted.</p>
+
+                  <div className="space-y-3">
+                    {archivedComments.length === 0 ? (
+                      <p className="rounded-xl bg-[#f7faff] p-4 text-sm text-black/45">No archived comments found.</p>
+                    ) : archivedComments.map((item) => (
+                      <div key={`${item.postId}-${item.comment._id}`} className="rounded-xl border border-[#e6edf5] p-4">
+                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                          <div className="min-w-0">
+                            <p className="text-sm text-black/75">{item.comment.content}</p>
+                            <p className="mt-1 truncate text-xs text-black/40">
+                              On post: {item.postContent} · Deleted {formatTime(item.comment.deletedAt)}
+                            </p>
+                          </div>
+                          <div className="flex shrink-0 gap-2">
+                            <button type="button" onClick={() => restoreArchivedComment(item)} className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#d8e2ee] px-3 text-xs font-semibold hover:bg-[#f7faff]">
+                              <FontAwesomeIcon icon={faRotateLeft} /> Restore
+                            </button>
+                            <button type="button" onClick={() => permanentlyDeleteArchivedComment(item)} className="inline-flex h-9 items-center gap-2 rounded-lg border border-red-200 px-3 text-xs font-semibold text-red-600 hover:bg-red-50">
+                              <FontAwesomeIcon icon={faTrash} /> Delete permanently
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+                </div>
               ) : (
                 <div className="space-y-5">
                   {(managedType === 'all' || managedType === 'posts') && (
                     <section>
-                      <h3 className="mb-3 font-bold">Your Posts ({managedData.posts.length})</h3>
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <h3 className="font-bold">
+                          Your Posts ({managedData.posts.filter((post) => managedCategory === 'all' || post.category === managedCategory).length})
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowManaged(false);
+                            openCreateWith('content');
+                          }}
+                          className="text-sm font-semibold text-[#2e66a6] hover:underline"
+                        >
+                          + Create New Post
+                        </button>
+                      </div>
+
                       <div className="space-y-3">
-                        {managedData.posts.length === 0 ? (
+                        {managedData.posts.filter((post) => managedCategory === 'all' || post.category === managedCategory).length === 0 ? (
                           <p className="rounded-xl bg-[#f7faff] p-4 text-sm text-black/45">No posts found.</p>
-                        ) : managedData.posts.map((post) => (
-                          <div key={post._id} className="rounded-xl border border-[#e6edf5] p-4">
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <p className="whitespace-pre-wrap text-sm text-black/75">{post.content}</p>
-                                <p className="mt-2 text-xs text-black/40">{formatTime(post.createdAt)} · {post.category}</p>
-                              </div>
-                              <div className="flex gap-2">
-                                <button type="button" onClick={() => openEditPost(post, true)} className="h-9 w-9 rounded-lg hover:bg-[#f7faff]"><FontAwesomeIcon icon={faPen} /></button>
-                                <button type="button" onClick={() => deletePost(post)} className="h-9 w-9 rounded-lg text-red-500 hover:bg-red-50"><FontAwesomeIcon icon={faTrash} /></button>
+                        ) : managedData.posts
+                          .filter((post) => managedCategory === 'all' || post.category === managedCategory)
+                          .map((post) => (
+                            <div key={post._id} className="rounded-xl border border-[#e6edf5] bg-white p-4">
+                              <div className="grid gap-4 sm:grid-cols-[1fr_120px] sm:items-center">
+                                <div className="min-w-0">
+                                  <p className="whitespace-pre-wrap text-sm leading-5 text-black/75">{post.content}</p>
+                                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-black/40">
+                                    <span>{formatTime(post.createdAt)}</span>
+                                    <span className="rounded-full bg-[#f1edff] px-2 py-0.5 text-[#6350a8]">{post.category}</span>
+                                  </div>
+                                </div>
+                                <div className="flex flex-col border-l border-[#eef2f7] pl-4">
+                                  <button type="button" onClick={() => openEditPost(post, true)} className="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-sm hover:bg-[#f7faff]">
+                                    <FontAwesomeIcon icon={faPen} /> Edit
+                                  </button>
+                                  <button type="button" onClick={() => deletePost(post)} className="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-sm text-red-500 hover:bg-red-50">
+                                    <FontAwesomeIcon icon={faTrash} /> Delete
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
                       </div>
                     </section>
                   )}
 
-                  {(managedType === 'all' || managedType === 'comments') && (
-                    <section>
-                      <h3 className="mb-3 font-bold">Your Comments ({managedData.comments.length})</h3>
-                      <div className="space-y-3">
-                        {managedData.comments.length === 0 ? (
-                          <p className="rounded-xl bg-[#f7faff] p-4 text-sm text-black/45">No comments found.</p>
-                        ) : managedData.comments.map((item) => (
-                          <div key={`${item.postId}-${item.comment._id}`} className="rounded-xl border border-[#e6edf5] p-4">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <p className="text-sm text-black/75">{item.comment.content}</p>
-                                <p className="mt-2 text-xs text-black/40">On post: {item.postContent} · {formatTime(item.comment.createdAt)}</p>
-                              </div>
-                              <div className="flex shrink-0 gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setShowManaged(false);
-                                    const managedPost = managedData.posts.find((post) => post._id === item.postId);
-                                    if (managedPost) {
-                                      openCommentsModal(managedPost);
-                                      window.setTimeout(() => editComment(item.comment._id, item.comment.content), 250);
-                                    }
-                                  }}
-                                  className="h-9 w-9 rounded-lg hover:bg-[#f7faff]"
-                                  aria-label="Edit comment"
-                                >
-                                  <FontAwesomeIcon icon={faPen} />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={async () => {
-                                    if (!window.confirm('Delete this comment?')) return;
-                                    try {
-                                      const response = await api.delete(`/community/posts/${item.postId}/comments/${item.comment._id}`);
-                                      if (response.data?.success) {
-                                        setManagedData((prev) => ({
-                                          ...prev,
-                                          comments: prev.comments.filter((entry) => entry.comment._id !== item.comment._id),
-                                        }));
-                                        setNotice('Comment moved to archive successfully.');
-                                      }
-                                    } catch (error) {
-                                      alert(error.response?.data?.message || 'Failed to delete comment.');
-                                    }
-                                  }}
-                                  className="h-9 w-9 rounded-lg text-red-500 hover:bg-red-50"
-                                  aria-label="Delete comment"
-                                >
-                                  <FontAwesomeIcon icon={faTrash} />
-                                </button>
+                  {(managedType === 'all' || managedType === 'comments') && (() => {
+                    const commentsPerPage = 7;
+                    const pageCount = Math.max(1, Math.ceil(managedData.comments.length / commentsPerPage));
+                    const safePage = Math.min(managedCommentPage, pageCount);
+                    const visibleComments = managedData.comments.slice(
+                      (safePage - 1) * commentsPerPage,
+                      safePage * commentsPerPage
+                    );
+
+                    return (
+                      <section>
+                        <h3 className="mb-3 font-bold">Your Comments ({managedData.comments.length})</h3>
+                        <div className="space-y-2">
+                          {visibleComments.length === 0 ? (
+                            <p className="rounded-xl bg-[#f7faff] p-4 text-sm text-black/45">No comments found.</p>
+                          ) : visibleComments.map((item) => (
+                            <div key={`${item.postId}-${item.comment._id}`} className="rounded-xl border border-[#e6edf5] bg-white px-4 py-3">
+                              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="min-w-0">
+                                  <p className="text-sm text-black/75">{item.comment.content}</p>
+                                  <p className="mt-1 truncate text-xs italic text-black/40">
+                                    On post: <span className="text-[#2e66a6]">{item.postContent}</span> · {formatTime(item.comment.createdAt)}
+                                  </p>
+                                </div>
+                                <div className="flex shrink-0 items-center gap-1">
+                                  <button type="button" onClick={() => editManagedComment(item)} className="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-xs font-semibold hover:bg-[#f7faff]">
+                                    <FontAwesomeIcon icon={faPen} /> Edit
+                                  </button>
+                                  <button type="button" onClick={() => deleteManagedComment(item)} className="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-xs font-semibold text-red-500 hover:bg-red-50">
+                                    <FontAwesomeIcon icon={faTrash} /> Delete
+                                  </button>
+                                </div>
                               </div>
                             </div>
+                          ))}
+                        </div>
+
+                        {pageCount > 1 && (
+                          <div className="mt-4 flex items-center justify-center gap-2">
+                            <button type="button" disabled={safePage === 1} onClick={() => setManagedCommentPage((page) => Math.max(1, page - 1))} className="h-8 min-w-8 rounded-lg border border-[#d8e2ee] px-2 text-xs disabled:opacity-40">&lt;</button>
+                            {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => (
+                              <button key={page} type="button" onClick={() => setManagedCommentPage(page)} className={`h-8 min-w-8 rounded-lg px-2 text-xs font-semibold ${safePage === page ? 'bg-[#2e66a6] text-white' : 'border border-[#d8e2ee]'}`}>
+                                {page}
+                              </button>
+                            ))}
+                            <button type="button" disabled={safePage === pageCount} onClick={() => setManagedCommentPage((page) => Math.min(pageCount, page + 1))} className="h-8 min-w-8 rounded-lg border border-[#d8e2ee] px-2 text-xs disabled:opacity-40">&gt;</button>
                           </div>
-                        ))}
-                      </div>
-                    </section>
-                  )}
+                        )}
+                      </section>
+                    );
+                  })()}
                 </div>
               )}
             </div>

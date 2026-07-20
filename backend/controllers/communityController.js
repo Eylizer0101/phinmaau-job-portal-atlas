@@ -593,13 +593,98 @@ exports.getArchivedPosts = async (req, res) => {
       CommunityPost.find({ author: req.user._id, isDeleted: true }).sort({ deletedAt: direction })
     );
 
+    const postsWithArchivedComments = await populatePost(
+      CommunityPost.find({
+        comments: {
+          $elemMatch: {
+            author: req.user._id,
+            isDeleted: true,
+          },
+        },
+      })
+    );
+
+    const comments = postsWithArchivedComments.flatMap((post) => {
+      const item = post?.toObject ? post.toObject() : post;
+      return (item.comments || [])
+        .filter((comment) => (
+          String(comment.author?._id || comment.author) === String(req.user._id) &&
+          comment.isDeleted === true
+        ))
+        .map((comment) => ({
+          postId: item._id,
+          postContent: item.content,
+          comment,
+        }));
+    });
+
+    comments.sort((a, b) => {
+      const left = new Date(a.comment.deletedAt || a.comment.updatedAt).getTime();
+      const right = new Date(b.comment.deletedAt || b.comment.updatedAt).getTime();
+      return sort === 'oldest' ? left - right : right - left;
+    });
+
     return res.json({
       success: true,
       posts: posts.map((post) => decoratePost(post, req.user._id)),
+      comments,
     });
   } catch (error) {
     console.error('Error fetching archived community posts:', error);
     return res.status(500).json({ success: false, message: 'Error fetching archived posts' });
+  }
+};
+
+
+exports.restoreArchivedComment = async (req, res) => {
+  try {
+    const post = await CommunityPost.findById(req.params.postId);
+    if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment || comment.isDeleted !== true) {
+      return res.status(404).json({ success: false, message: 'Archived comment not found' });
+    }
+
+    if (String(comment.author) !== String(req.user._id)) {
+      return res.status(403).json({ success: false, message: 'You can only restore your own comment' });
+    }
+
+    comment.isDeleted = false;
+    comment.deletedAt = null;
+    comment.deletedBy = null;
+    post.commentsCount = post.comments.filter((item) => item.isDeleted !== true).length;
+    await post.save({ validateBeforeSave: false });
+
+    return res.json({ success: true, message: 'Comment restored successfully' });
+  } catch (error) {
+    console.error('Error restoring archived community comment:', error);
+    return res.status(500).json({ success: false, message: 'Error restoring comment' });
+  }
+};
+
+exports.permanentlyDeleteArchivedComment = async (req, res) => {
+  try {
+    const post = await CommunityPost.findById(req.params.postId);
+    if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment || comment.isDeleted !== true) {
+      return res.status(404).json({ success: false, message: 'Archived comment not found' });
+    }
+
+    if (String(comment.author) !== String(req.user._id)) {
+      return res.status(403).json({ success: false, message: 'You can only permanently delete your own comment' });
+    }
+
+    comment.deleteOne();
+    post.commentsCount = post.comments.filter((item) => item.isDeleted !== true).length;
+    await post.save({ validateBeforeSave: false });
+
+    return res.json({ success: true, message: 'Comment permanently deleted' });
+  } catch (error) {
+    console.error('Error permanently deleting archived community comment:', error);
+    return res.status(500).json({ success: false, message: 'Error permanently deleting comment' });
   }
 };
 
