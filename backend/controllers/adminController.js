@@ -2589,14 +2589,163 @@ exports.getAdminArchive = async (req, res) => {
   try {
     const tab = String(req.query.tab || 'community').toLowerCase();
 
-    if (tab !== 'community') {
+    if (!['community', 'dormant'].includes(tab)) {
       return res.status(400).json({
         success: false,
-        message: 'Only the Community archive is available at this time',
+        message: 'Unsupported archive tab',
       });
     }
 
     const q = String(req.query.q || '').trim().toLowerCase();
+
+    if (tab === 'dormant') {
+      const roleFilter = String(req.query.role || 'all').toLowerCase();
+      const industryFilter = String(req.query.industry || 'all').trim();
+      const inactivityFilter = String(req.query.inactivity || '6-12').toLowerCase();
+
+      const now = new Date();
+      const sixMonthsAgo = new Date(now);
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+      const twelveMonthsAgo = new Date(now);
+      twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+      const candidateUsers = await User.find({
+        role: { $in: ['jobseeker', 'employer'] },
+        status: { $nin: ['deleted'] },
+        isActive: { $ne: false },
+        $or: [
+          { lastLogin: { $gte: twelveMonthsAgo, $lte: sixMonthsAgo } },
+          {
+            $and: [
+              { $or: [{ lastLogin: null }, { lastLogin: { $exists: false } }] },
+              { createdAt: { $gte: twelveMonthsAgo, $lte: sixMonthsAgo } },
+            ],
+          },
+        ],
+      })
+        .select(
+          'email username firstName middleName lastName fullName profileImage role status isActive lastLogin createdAt jobSeekerProfile employerProfile'
+        )
+        .sort({ lastLogin: 1, createdAt: 1 })
+        .lean();
+
+      const getMonthsInactive = (dateValue) => {
+        const date = new Date(dateValue);
+        if (Number.isNaN(date.getTime())) return 0;
+
+        let months =
+          (now.getFullYear() - date.getFullYear()) * 12 +
+          (now.getMonth() - date.getMonth());
+
+        if (now.getDate() < date.getDate()) months -= 1;
+        return Math.max(0, months);
+      };
+
+      const getCourse = (user = {}) => {
+        const profile = user.jobSeekerProfile || {};
+        const education = Array.isArray(profile.educationEntries)
+          ? profile.educationEntries
+          : [];
+        const entry = education.find(
+          (item) => item?.course || item?.program || item?.degree
+        );
+
+        return (
+          profile.course ||
+          profile.program ||
+          entry?.course ||
+          entry?.program ||
+          entry?.degree ||
+          'Unspecified'
+        );
+      };
+
+      const getIndustry = (user = {}) =>
+        user?.employerProfile?.industry ||
+        user?.employerProfile?.businessType ||
+        'Unspecified';
+
+      const dormantIndustries = new Set();
+
+      let dormantUsers = candidateUsers.map((user) => {
+        const lastActive = user.lastLogin || user.createdAt;
+        const inactivityMonths = getMonthsInactive(lastActive);
+        const industryOrCourse =
+          user.role === 'employer' ? getIndustry(user) : getCourse(user);
+
+        if (industryOrCourse && industryOrCourse !== 'Unspecified') {
+          dormantIndustries.add(industryOrCourse);
+        }
+
+        return {
+          userId: String(user._id),
+          user,
+          lastActive,
+          inactivityMonths,
+          industryOrCourse,
+          dormantStatus: 'Dormant Account',
+        };
+      });
+
+      if (roleFilter !== 'all') {
+        dormantUsers = dormantUsers.filter(
+          (entry) => String(entry.user?.role || '').toLowerCase() === roleFilter
+        );
+      }
+
+      if (industryFilter !== 'all') {
+        dormantUsers = dormantUsers.filter(
+          (entry) => entry.industryOrCourse === industryFilter
+        );
+      }
+
+      if (inactivityFilter === '6-8') {
+        dormantUsers = dormantUsers.filter(
+          (entry) => entry.inactivityMonths >= 6 && entry.inactivityMonths <= 8
+        );
+      } else if (inactivityFilter === '9-12') {
+        dormantUsers = dormantUsers.filter(
+          (entry) => entry.inactivityMonths >= 9 && entry.inactivityMonths <= 12
+        );
+      } else {
+        dormantUsers = dormantUsers.filter(
+          (entry) => entry.inactivityMonths >= 6 && entry.inactivityMonths <= 12
+        );
+      }
+
+      if (q) {
+        dormantUsers = dormantUsers.filter((entry) => {
+          const searchable = [
+            getArchiveUserName(entry.user),
+            entry.user?.email,
+            entry.industryOrCourse,
+            entry.user?.role,
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+
+          return searchable.includes(q);
+        });
+      }
+
+      dormantUsers.sort(
+        (a, b) =>
+          b.inactivityMonths - a.inactivityMonths ||
+          new Date(a.lastActive || 0) - new Date(b.lastActive || 0)
+      );
+
+      return res.json({
+        success: true,
+        dormantUsers,
+        options: {
+          dormantRoles: ['jobseeker', 'employer'],
+          dormantIndustries: Array.from(dormantIndustries).sort(),
+        },
+      });
+    }
+
     const status = String(req.query.status || 'all').toLowerCase();
     const campusFilter = String(req.query.campus || 'all').trim();
     const courseFilter = String(req.query.course || 'all').trim();
@@ -2771,10 +2920,10 @@ exports.getAdminArchive = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error loading community archive:', error);
+    console.error('Error loading admin archive:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to load community archive',
+      message: 'Failed to load admin archive',
     });
   }
 };
@@ -2784,10 +2933,97 @@ exports.getAdminArchiveDetails = async (req, res) => {
     const type = String(req.params.type || '').toLowerCase();
     const { id } = req.params;
 
+    if (type === 'dormant-user') {
+      const user = await User.findById(id)
+        .select(
+          'email username firstName middleName lastName fullName profileImage role status isActive lastLogin createdAt jobSeekerProfile employerProfile'
+        )
+        .lean();
+
+      if (!user || user.role === 'admin') {
+        return res.status(404).json({
+          success: false,
+          message: 'Dormant account not found',
+        });
+      }
+
+      const now = new Date();
+      const lastActive = user.lastLogin || user.createdAt;
+      const activityDate = new Date(lastActive);
+
+      let inactivityMonths =
+        (now.getFullYear() - activityDate.getFullYear()) * 12 +
+        (now.getMonth() - activityDate.getMonth());
+
+      if (now.getDate() < activityDate.getDate()) inactivityMonths -= 1;
+      inactivityMonths = Math.max(0, inactivityMonths);
+
+      if (inactivityMonths < 6 || inactivityMonths > 12) {
+        return res.status(404).json({
+          success: false,
+          message: 'This account is no longer within the 6–12 month dormant period',
+        });
+      }
+
+      const jobSeekerProfile = user.jobSeekerProfile || {};
+      const employerProfile = user.employerProfile || {};
+      const educationEntries = Array.isArray(jobSeekerProfile.educationEntries)
+        ? jobSeekerProfile.educationEntries
+        : [];
+      const educationItem = educationEntries.find(
+        (entry) => entry?.course || entry?.program || entry?.degree
+      );
+
+      const industryOrCourse =
+        user.role === 'employer'
+          ? employerProfile.industry ||
+            employerProfile.businessType ||
+            'Unspecified'
+          : jobSeekerProfile.course ||
+            jobSeekerProfile.program ||
+            educationItem?.course ||
+            educationItem?.program ||
+            educationItem?.degree ||
+            'Unspecified';
+
+      const location =
+        user.role === 'employer'
+          ? employerProfile.companyAddress ||
+            employerProfile.regionCity ||
+            employerProfile.address ||
+            'Unspecified'
+          : jobSeekerProfile.campus ||
+            educationEntries.find((entry) => entry?.campus)?.campus ||
+            jobSeekerProfile.address ||
+            'Unspecified';
+
+      const phoneNumber =
+        user.role === 'employer'
+          ? employerProfile.mobileNumber ||
+            employerProfile.phoneNumber ||
+            employerProfile.contactNumber ||
+            '—'
+          : jobSeekerProfile.mobileNumber ||
+            jobSeekerProfile.phoneNumber ||
+            user.phoneNumber ||
+            '—';
+
+      return res.json({
+        success: true,
+        user,
+        lastActive,
+        inactivityMonths,
+        industryOrCourse,
+        location,
+        phoneNumber,
+        dormantStatus: 'Dormant Account',
+      });
+    }
+
     if (type !== 'community-author') {
       return res.status(400).json({
         success: false,
-        message: 'Only Community author history is available at this time',
+        message: 'Unsupported archive detail type',
       });
     }
 
@@ -2875,10 +3111,10 @@ exports.getAdminArchiveDetails = async (req, res) => {
       items,
     });
   } catch (error) {
-    console.error('Error loading community author archive history:', error);
+    console.error('Error loading admin archive details:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to load community deletion history',
+      message: 'Failed to load archive details',
     });
   }
 };

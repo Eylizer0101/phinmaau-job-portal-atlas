@@ -4,9 +4,11 @@ import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
 
 const getName = (user = {}) =>
-  user.fullName ||
-  [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ") ||
-  user.email ||
+  user?.employerProfile?.companyName ||
+  user?.companyName ||
+  user?.fullName ||
+  [user?.firstName, user?.middleName, user?.lastName].filter(Boolean).join(" ") ||
+  user?.email ||
   "Community Member";
 
 const getInitials = (name) => {
@@ -44,7 +46,37 @@ const Icon = ({ name, className = "h-4 w-4" }) => {
     ),
     calendar: (
       <>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6 3v3m12-3v3M4 9h16M5 5h14a1 1 0 011 1v14H4V6a1 1 0 011-1z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 3v3m12-3v3M4 9h16M5 5h14a1 1 0 011-1v14H4V6a1 1 0 011-1z" />
+      </>
+    ),
+    user: (
+      <>
+        <circle cx="12" cy="8" r="3" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 20a7 7 0 0114 0" />
+      </>
+    ),
+    building: (
+      <>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 21V4h14v17M3 21h18M9 8h2m2 0h2M9 12h2m2 0h2M9 16h2m2 0h2" />
+      </>
+    ),
+    mail: (
+      <>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18v12H3z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="m3 7 9 6 9-6" />
+      </>
+    ),
+    phone: <path strokeLinecap="round" strokeLinejoin="round" d="M5 4h3l2 5-2 1a14 14 0 006 6l1-2 5 2v3a2 2 0 01-2 2C10 21 3 14 3 6a2 2 0 012-2z" />,
+    location: (
+      <>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s7-6 7-12a7 7 0 10-14 0c0 6 7 12 7 12z" />
+        <circle cx="12" cy="9" r="2" />
+      </>
+    ),
+    clock: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 7v5l3 2" />
       </>
     ),
   };
@@ -93,21 +125,103 @@ const ConfirmModal = ({ target, action, loading, onCancel, onConfirm }) => {
   );
 };
 
+const InfoCard = ({ icon, label, value, full = false }) => (
+  <div className={`rounded-xl border border-slate-200 bg-slate-50 p-4 ${full ? "sm:col-span-2" : ""}`}>
+    <div className="flex items-start gap-3">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-[#2e66a6] shadow-sm">
+        <Icon name={icon} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">{label}</p>
+        <p className="mt-1 break-words text-sm font-semibold text-slate-900">{value || "—"}</p>
+      </div>
+    </div>
+  </div>
+);
+
+const DormantDetails = ({ data, loading, errorMessage, onBack }) => {
+  if (loading) {
+    return <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500">Loading dormant account details...</div>;
+  }
+
+  if (errorMessage || !data) {
+    return <div className="flex min-h-[320px] items-center justify-center px-6 text-center text-sm text-red-600">{errorMessage || "Dormant account not found."}</div>;
+  }
+
+  const user = data.user || {};
+  const name = getName(user);
+  const isEmployer = user.role === "employer";
+
+  return (
+    <div className="px-5 pb-6 pt-4">
+      <button
+        type="button"
+        onClick={onBack}
+        className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 hover:text-[#2e66a6]"
+      >
+        <Icon name="arrowLeft" />
+        Back to Dormant
+      </button>
+
+      <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-[#2e66a6] shadow-sm">
+              {isEmployer ? <Icon name="building" className="h-8 w-8" /> : <span className="text-lg font-bold">{getInitials(name)}</span>}
+            </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="truncate text-xl font-bold text-slate-950">{name}</h1>
+                <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">
+                  Dormant Account
+                </span>
+              </div>
+              <p className="mt-2 text-sm capitalize text-slate-500">{user.role || "user"} account</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 text-center">
+            <p className="text-2xl font-bold text-amber-700">{data.inactivityMonths}</p>
+            <p className="text-xs font-semibold text-amber-700">months inactive</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <InfoCard icon="mail" label="Email Address" value={user.email} />
+        <InfoCard icon="phone" label="Contact Number" value={data.phoneNumber} />
+        <InfoCard icon="calendar" label="Date Registered" value={formatDate(user.createdAt)} />
+        <InfoCard icon="clock" label="Last Login / Activity" value={formatDate(data.lastActive)} />
+        <InfoCard icon={isEmployer ? "building" : "user"} label={isEmployer ? "Industry" : "Course"} value={data.industryOrCourse} />
+        <InfoCard icon="user" label="Account Status" value={user.status || "active"} />
+        <InfoCard icon="location" label={isEmployer ? "Company Address" : "Campus / Address"} value={data.location} full />
+      </div>
+
+      <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50 px-5 py-4 text-sm leading-6 text-blue-800">
+        This account appears automatically in Dormant because its last login, or registration date when no login exists, is between 6 and 12 months ago.
+      </div>
+    </div>
+  );
+};
+
 const AdminArchiveDetails = () => {
   const navigate = useNavigate();
   const { type, id } = useParams();
 
   const [author, setAuthor] = useState(null);
   const [items, setItems] = useState([]);
+  const [dormantData, setDormantData] = useState(null);
   const [filterType, setFilterType] = useState("all");
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [confirmState, setConfirmState] = useState({ target: null, action: "" });
   const [actionLoading, setActionLoading] = useState(false);
 
-  const loadHistory = useCallback(async () => {
-    if (type !== "community-author") {
-      setErrorMessage("This archive detail page is only available for Community history.");
+  const isDormantView = type === "dormant-user";
+
+  const loadDetails = useCallback(async () => {
+    if (!["community-author", "dormant-user"].includes(type)) {
+      setErrorMessage("Unsupported archive detail type.");
       setLoading(false);
       return;
     }
@@ -116,22 +230,28 @@ const AdminArchiveDetails = () => {
     setErrorMessage("");
 
     try {
-      const response = await api.get(`/admin/archive/community-author/${id}`);
-      setAuthor(response.data?.author || null);
-      setItems(response.data?.items || []);
+      const response = await api.get(`/admin/archive/${type}/${id}`);
+
+      if (type === "dormant-user") {
+        setDormantData(response.data || null);
+      } else {
+        setAuthor(response.data?.author || null);
+        setItems(response.data?.items || []);
+      }
     } catch (error) {
-      console.error("Failed to load community history:", error);
+      console.error("Failed to load archive details:", error);
       setAuthor(null);
       setItems([]);
-      setErrorMessage(error?.response?.data?.message || "Failed to load deletion history.");
+      setDormantData(null);
+      setErrorMessage(error?.response?.data?.message || "Failed to load archive details.");
     } finally {
       setLoading(false);
     }
   }, [id, type]);
 
   useEffect(() => {
-    loadHistory();
-  }, [loadHistory]);
+    loadDetails();
+  }, [loadDetails]);
 
   const visibleItems = useMemo(() => {
     if (filterType === "all") return items;
@@ -153,7 +273,7 @@ const AdminArchiveDetails = () => {
       }
 
       setConfirmState({ target: null, action: "" });
-      await loadHistory();
+      await loadDetails();
     } catch (error) {
       console.error("Community archive action failed:", error);
       window.alert(error?.response?.data?.message || "The requested action failed.");
@@ -161,6 +281,29 @@ const AdminArchiveDetails = () => {
       setActionLoading(false);
     }
   };
+
+  if (isDormantView) {
+    return (
+      <AdminLayout>
+        <main className="mx-auto w-full max-w-[1120px] px-4 py-8 sm:px-6 lg:px-8">
+          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-200 px-5 py-4">
+              <h1 className="text-sm font-bold text-slate-950">Dormant Account Details</h1>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Review the profile and inactivity information of this account.
+              </p>
+            </div>
+            <DormantDetails
+              data={dormantData}
+              loading={loading}
+              errorMessage={errorMessage}
+              onBack={() => navigate("/admin/archive?tab=dormant")}
+            />
+          </section>
+        </main>
+      </AdminLayout>
+    );
+  }
 
   const authorName = getName(author || {});
 

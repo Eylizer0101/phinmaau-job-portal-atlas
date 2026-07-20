@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
 
@@ -12,6 +12,16 @@ const formatDateInput = (date) => {
   const month = String(value.getMonth() + 1).padStart(2, "0");
   const day = String(value.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+};
+
+const formatDate = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-PH", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  });
 };
 
 const getPresetRange = (value) => {
@@ -43,9 +53,11 @@ const getPresetRange = (value) => {
 };
 
 const getName = (user = {}) =>
-  user.fullName ||
-  [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ") ||
-  user.email ||
+  user?.employerProfile?.companyName ||
+  user?.companyName ||
+  user?.fullName ||
+  [user?.firstName, user?.middleName, user?.lastName].filter(Boolean).join(" ") ||
+  user?.email ||
   "Community Member";
 
 const getInitials = (name) => {
@@ -83,7 +95,7 @@ const Icon = ({ name, className = "h-4 w-4" }) => {
     ),
     calendar: (
       <>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6 3v3m12-3v3M4 9h16M5 5h14a1 1 0 011 1v14H4V6a1 1 0 011-1z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 3v3m12-3v3M4 9h16M5 5h14a1 1 0 011-1v14H4V6a1 1 0 011-1z" />
       </>
     ),
     campus: (
@@ -98,6 +110,17 @@ const Icon = ({ name, className = "h-4 w-4" }) => {
         <path strokeLinecap="round" d="M8 9h8M8 13h6" />
       </>
     ),
+    dormant: (
+      <>
+        <circle cx="12" cy="8" r="3" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 20a7 7 0 0114 0M18 4v4m-2-2h4" />
+      </>
+    ),
+    building: (
+      <>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 21V4h14v17M3 21h18M9 8h2m2 0h2M9 12h2m2 0h2M9 16h2m2 0h2" />
+      </>
+    ),
   };
 
   return <svg {...common}>{icons[name]}</svg>;
@@ -105,9 +128,19 @@ const Icon = ({ name, className = "h-4 w-4" }) => {
 
 const AdminArchive = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const initialTab = requestedTab === "dormant" ? "dormant" : "community";
 
-  const [authors, setAuthors] = useState([]);
-  const [options, setOptions] = useState({ campuses: [], courses: [] });
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const [communityAuthors, setCommunityAuthors] = useState([]);
+  const [dormantUsers, setDormantUsers] = useState([]);
+  const [options, setOptions] = useState({
+    campuses: [],
+    courses: [],
+    dormantRoles: [],
+    dormantIndustries: [],
+  });
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -117,6 +150,9 @@ const AdminArchive = () => {
     type: "all",
     campus: "all",
     course: "all",
+    role: "all",
+    industry: "all",
+    inactivity: "6-12",
     date: "all",
     dateFrom: "",
     dateTo: "",
@@ -127,29 +163,47 @@ const AdminArchive = () => {
     setErrorMessage("");
 
     try {
-      const response = await api.get("/admin/archive", {
-        params: {
-          tab: "community",
-          q: filters.search,
-          status: filters.type,
-          campus: filters.campus,
-          course: filters.course,
-          date: filters.date,
-          dateFrom: filters.dateFrom,
-          dateTo: filters.dateTo,
-        },
-      });
+      const params =
+        activeTab === "community"
+          ? {
+              tab: "community",
+              q: filters.search,
+              status: filters.type,
+              campus: filters.campus,
+              course: filters.course,
+              date: filters.date,
+              dateFrom: filters.dateFrom,
+              dateTo: filters.dateTo,
+            }
+          : {
+              tab: "dormant",
+              q: filters.search,
+              role: filters.role,
+              industry: filters.industry,
+              inactivity: filters.inactivity,
+            };
 
-      setAuthors(response.data?.communityAuthors || []);
-      setOptions(response.data?.options || { campuses: [], courses: [] });
+      const response = await api.get("/admin/archive", { params });
+
+      if (activeTab === "community") {
+        setCommunityAuthors(response.data?.communityAuthors || []);
+      } else {
+        setDormantUsers(response.data?.dormantUsers || []);
+      }
+
+      setOptions((previous) => ({
+        ...previous,
+        ...(response.data?.options || {}),
+      }));
     } catch (error) {
-      console.error("Failed to load community archive:", error);
-      setAuthors([]);
-      setErrorMessage(error?.response?.data?.message || "Failed to load the community archive.");
+      console.error("Failed to load admin archive:", error);
+      if (activeTab === "community") setCommunityAuthors([]);
+      else setDormantUsers([]);
+      setErrorMessage(error?.response?.data?.message || "Failed to load archive records.");
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [activeTab, filters]);
 
   useEffect(() => {
     const timer = setTimeout(loadArchive, 250);
@@ -158,14 +212,12 @@ const AdminArchive = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters]);
+  }, [activeTab, filters]);
 
-  const pageCount = Math.max(1, Math.ceil(authors.length / ITEMS_PER_PAGE));
-  const safePage = Math.min(currentPage, pageCount);
-  const paginatedAuthors = useMemo(() => {
-    const start = (safePage - 1) * ITEMS_PER_PAGE;
-    return authors.slice(start, start + ITEMS_PER_PAGE);
-  }, [authors, safePage]);
+  const changeTab = (tab) => {
+    setActiveTab(tab);
+    setSearchParams(tab === "community" ? {} : { tab });
+  };
 
   const updateFilter = (key, value) => {
     if (key === "date") {
@@ -177,8 +229,21 @@ const AdminArchive = () => {
     setFilters((previous) => ({ ...previous, [key]: value }));
   };
 
-  const openHistory = (authorId) => {
+  const activeItems = activeTab === "community" ? communityAuthors : dormantUsers;
+  const pageCount = Math.max(1, Math.ceil(activeItems.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(currentPage, pageCount);
+
+  const paginatedItems = useMemo(() => {
+    const start = (safePage - 1) * ITEMS_PER_PAGE;
+    return activeItems.slice(start, start + ITEMS_PER_PAGE);
+  }, [activeItems, safePage]);
+
+  const openCommunityHistory = (authorId) => {
     navigate(`/admin/archive/community-author/${authorId}`);
+  };
+
+  const openDormantDetails = (userId) => {
+    navigate(`/admin/archive/dormant-user/${userId}`);
   };
 
   return (
@@ -191,7 +256,7 @@ const AdminArchive = () => {
           <div>
             <h1 className="text-3xl font-bold tracking-[-0.02em] text-slate-950">Archived</h1>
             <p className="mt-1 text-sm text-slate-500">
-              Review and manage deleted community posts and comments.
+              Review deleted community content and accounts inactive for 6–12 months.
             </p>
           </div>
         </header>
@@ -201,41 +266,43 @@ const AdminArchive = () => {
             <div>
               <h2 className="text-sm font-bold text-slate-950">Archive Manager</h2>
               <p className="mt-0.5 text-xs text-slate-500">
-                Filter, restore, or permanently delete archived community records.
+                Search and review archived Community and Dormant account records.
               </p>
             </div>
 
-            <div className="grid w-full gap-3 sm:grid-cols-2 lg:w-auto lg:grid-cols-[280px_180px]">
+            <div className={`grid w-full gap-3 sm:grid-cols-2 lg:w-auto ${activeTab === "community" ? "lg:grid-cols-[280px_180px]" : "lg:grid-cols-[360px]"}`}>
               <label className="relative block">
                 <Icon name="search" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   type="search"
                   value={filters.search}
                   onChange={(event) => updateFilter("search", event.target.value)}
-                  placeholder="Search archives..."
+                  placeholder={activeTab === "community" ? "Search archives..." : "Search dormant accounts..."}
                   className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
                 />
               </label>
 
-              <label className="relative block">
-                <select
-                  value={filters.date}
-                  onChange={(event) => updateFilter("date", event.target.value)}
-                  className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 pr-10 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
-                >
-                  <option value="all">All Time</option>
-                  <option value="today">Today</option>
-                  <option value="7days">Last 7 days</option>
-                  <option value="30days">Last 30 days</option>
-                  <option value="thisMonth">This Month</option>
-                  <option value="custom">Custom Range</option>
-                </select>
-                <Icon name="calendar" className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-              </label>
+              {activeTab === "community" ? (
+                <label className="relative block">
+                  <select
+                    value={filters.date}
+                    onChange={(event) => updateFilter("date", event.target.value)}
+                    className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 pr-10 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                  >
+                    <option value="all">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="7days">Last 7 days</option>
+                    <option value="30days">Last 30 days</option>
+                    <option value="thisMonth">This Month</option>
+                    <option value="custom">Custom Range</option>
+                  </select>
+                  <Icon name="calendar" className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                </label>
+              ) : null}
             </div>
           </div>
 
-          {filters.date === "custom" ? (
+          {activeTab === "community" && filters.date === "custom" ? (
             <div className="grid gap-3 border-b border-slate-200 bg-slate-50 px-5 py-3 sm:grid-cols-2">
               <label className="text-xs font-semibold text-slate-600">
                 Start date
@@ -259,130 +326,263 @@ const AdminArchive = () => {
           ) : null}
 
           <div className="px-5 pb-5 pt-4">
-            <div className="mb-4">
-              <div className="inline-flex h-10 items-center rounded-lg border border-slate-200 bg-slate-50 px-5 text-sm font-bold text-slate-900 shadow-sm">
+            <div className="mb-5 grid max-w-[520px] grid-cols-2 rounded-xl bg-slate-100 p-1">
+              <button
+                type="button"
+                onClick={() => changeTab("community")}
+                className={`inline-flex h-10 items-center justify-center gap-2 rounded-lg text-sm font-bold transition ${
+                  activeTab === "community"
+                    ? "bg-white text-slate-950 shadow-sm ring-1 ring-slate-200"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                <Icon name="course" />
                 Community
-              </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => changeTab("dormant")}
+                className={`inline-flex h-10 items-center justify-center gap-2 rounded-lg text-sm font-bold transition ${
+                  activeTab === "dormant"
+                    ? "bg-white text-slate-950 shadow-sm ring-1 ring-slate-200"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                <Icon name="dormant" />
+                Dormant
+              </button>
             </div>
 
-            <div className="mb-4">
-              <h3 className="text-sm font-bold text-slate-950">Jobseeker community — deleted</h3>
-              <p className="mt-1 text-xs text-slate-500">
-                Grouped by jobseeker. Select an author to view the complete deletion history.
-              </p>
-            </div>
-
-            <div className="mb-4 grid gap-3 md:grid-cols-3">
-              <select
-                value={filters.type}
-                onChange={(event) => updateFilter("type", event.target.value)}
-                className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#2e66a6]"
-              >
-                <option value="all">All types</option>
-                <option value="post">Deleted posts</option>
-                <option value="comment">Deleted comments</option>
-              </select>
-
-              <select
-                value={filters.campus}
-                onChange={(event) => updateFilter("campus", event.target.value)}
-                className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#2e66a6]"
-              >
-                <option value="all">All campuses</option>
-                {(options.campuses || []).map((campus) => (
-                  <option key={campus} value={campus}>{campus}</option>
-                ))}
-              </select>
-
-              <select
-                value={filters.course}
-                onChange={(event) => updateFilter("course", event.target.value)}
-                className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#2e66a6]"
-              >
-                <option value="all">All courses</option>
-                {(options.courses || []).map((course) => (
-                  <option key={course} value={course}>{course}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="overflow-hidden rounded-xl border border-slate-200">
-              <div className="hidden grid-cols-[1.25fr_0.9fr_1.3fr_1fr_150px] gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500 md:grid">
-                <span>Author</span>
-                <span className="inline-flex items-center gap-1"><Icon name="campus" /> Campus</span>
-                <span className="inline-flex items-center gap-1"><Icon name="course" /> Course</span>
-                <span>Deleted items</span>
-                <span className="text-right">Actions</span>
-              </div>
-
-              {loading ? (
-                <div className="flex min-h-[180px] items-center justify-center text-sm text-slate-500">
-                  Loading archived community records...
+            {activeTab === "community" ? (
+              <>
+                <div className="mb-4">
+                  <h3 className="text-sm font-bold text-slate-950">Jobseeker community — deleted</h3>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Grouped by jobseeker. Select an author to view the complete deletion history.
+                  </p>
                 </div>
-              ) : errorMessage ? (
-                <div className="flex min-h-[180px] items-center justify-center px-6 text-center text-sm text-red-600">
-                  {errorMessage}
+
+                <div className="mb-4 grid gap-3 md:grid-cols-3">
+                  <select
+                    value={filters.type}
+                    onChange={(event) => updateFilter("type", event.target.value)}
+                    className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#2e66a6]"
+                  >
+                    <option value="all">All types</option>
+                    <option value="post">Deleted posts</option>
+                    <option value="comment">Deleted comments</option>
+                  </select>
+
+                  <select
+                    value={filters.campus}
+                    onChange={(event) => updateFilter("campus", event.target.value)}
+                    className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#2e66a6]"
+                  >
+                    <option value="all">All campuses</option>
+                    {(options.campuses || []).map((campus) => (
+                      <option key={campus} value={campus}>{campus}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={filters.course}
+                    onChange={(event) => updateFilter("course", event.target.value)}
+                    className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#2e66a6]"
+                  >
+                    <option value="all">All courses</option>
+                    {(options.courses || []).map((course) => (
+                      <option key={course} value={course}>{course}</option>
+                    ))}
+                  </select>
                 </div>
-              ) : paginatedAuthors.length === 0 ? (
-                <div className="flex min-h-[180px] items-center justify-center text-sm text-slate-500">
-                  No archived community records found.
-                </div>
-              ) : (
-                paginatedAuthors.map((entry) => {
-                  const author = entry.author || {};
-                  const authorName = getName(author);
 
-                  return (
-                    <div
-                      key={entry.authorId}
-                      className="grid gap-3 border-b border-slate-100 px-4 py-3 last:border-b-0 md:grid-cols-[1.25fr_0.9fr_1.3fr_1fr_150px] md:items-center md:gap-4"
-                    >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-700">
-                          {getInitials(authorName)}
-                        </div>
-                        <span className="truncate text-sm font-semibold text-slate-900">{authorName}</span>
-                      </div>
+                <div className="overflow-hidden rounded-xl border border-slate-200">
+                  <div className="hidden grid-cols-[1.25fr_0.9fr_1.3fr_1fr_150px] gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500 md:grid">
+                    <span>Author</span>
+                    <span className="inline-flex items-center gap-1"><Icon name="campus" /> Campus</span>
+                    <span className="inline-flex items-center gap-1"><Icon name="course" /> Course</span>
+                    <span>Deleted items</span>
+                    <span className="text-right">Actions</span>
+                  </div>
 
-                      <div className="text-sm text-slate-500">
-                        <span className="mr-2 text-xs font-semibold text-slate-400 md:hidden">Campus:</span>
-                        {entry.campus || "Unspecified"}
-                      </div>
-
-                      <div className="text-sm text-slate-500">
-                        <span className="mr-2 text-xs font-semibold text-slate-400 md:hidden">Course:</span>
-                        {entry.course || "Unspecified"}
-                      </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700">
-                          {entry.postCount || 0} {Number(entry.postCount) === 1 ? "post" : "posts"}
-                        </span>
-                        <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700">
-                          {entry.commentCount || 0} {Number(entry.commentCount) === 1 ? "comment" : "comments"}
-                        </span>
-                      </div>
-
-                      <div className="flex justify-start md:justify-end">
-                        <button
-                          type="button"
-                          onClick={() => openHistory(entry.authorId)}
-                          className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-800 shadow-sm transition hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/5"
-                        >
-                          <Icon name="eye" />
-                          View history
-                        </button>
-                      </div>
+                  {loading ? (
+                    <div className="flex min-h-[180px] items-center justify-center text-sm text-slate-500">
+                      Loading archived community records...
                     </div>
-                  );
-                })
-              )}
-            </div>
+                  ) : errorMessage ? (
+                    <div className="flex min-h-[180px] items-center justify-center px-6 text-center text-sm text-red-600">
+                      {errorMessage}
+                    </div>
+                  ) : paginatedItems.length === 0 ? (
+                    <div className="flex min-h-[180px] items-center justify-center text-sm text-slate-500">
+                      No archived community records found.
+                    </div>
+                  ) : (
+                    paginatedItems.map((entry) => {
+                      const author = entry.author || {};
+                      const authorName = getName(author);
+
+                      return (
+                        <div
+                          key={entry.authorId}
+                          className="grid gap-3 border-b border-slate-100 px-4 py-3 last:border-b-0 md:grid-cols-[1.25fr_0.9fr_1.3fr_1fr_150px] md:items-center md:gap-4"
+                        >
+                          <div className="flex min-w-0 items-center gap-3">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-700">
+                              {getInitials(authorName)}
+                            </div>
+                            <span className="truncate text-sm font-semibold text-slate-900">{authorName}</span>
+                          </div>
+
+                          <div className="text-sm text-slate-500">{entry.campus || "Unspecified"}</div>
+                          <div className="text-sm text-slate-500">{entry.course || "Unspecified"}</div>
+
+                          <div className="flex flex-wrap gap-2">
+                            <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700">
+                              {entry.postCount || 0} {Number(entry.postCount) === 1 ? "post" : "posts"}
+                            </span>
+                            <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700">
+                              {entry.commentCount || 0} {Number(entry.commentCount) === 1 ? "comment" : "comments"}
+                            </span>
+                          </div>
+
+                          <div className="flex justify-start md:justify-end">
+                            <button
+                              type="button"
+                              onClick={() => openCommunityHistory(entry.authorId)}
+                              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-800 shadow-sm transition hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/5"
+                            >
+                              <Icon name="eye" />
+                              View history
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="mb-4">
+                  <h3 className="text-sm font-bold text-slate-950">Users and employers — dormant accounts</h3>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Accounts whose last login or registration activity is between 6 and 12 months ago.
+                  </p>
+                </div>
+
+                <div className="mb-4 grid gap-3 md:grid-cols-3">
+                  <select
+                    value={filters.role}
+                    onChange={(event) => updateFilter("role", event.target.value)}
+                    className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#2e66a6]"
+                  >
+                    <option value="all">All account types</option>
+                    <option value="jobseeker">Jobseekers</option>
+                    <option value="employer">Employers</option>
+                  </select>
+
+                  <select
+                    value={filters.industry}
+                    onChange={(event) => updateFilter("industry", event.target.value)}
+                    className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#2e66a6]"
+                  >
+                    <option value="all">All industries / courses</option>
+                    {(options.dormantIndustries || []).map((industry) => (
+                      <option key={industry} value={industry}>{industry}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={filters.inactivity}
+                    onChange={(event) => updateFilter("inactivity", event.target.value)}
+                    className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#2e66a6]"
+                  >
+                    <option value="6-12">Inactive for 6–12 months</option>
+                    <option value="6-8">Inactive for 6–8 months</option>
+                    <option value="9-12">Inactive for 9–12 months</option>
+                  </select>
+                </div>
+
+                <div className="overflow-hidden rounded-xl border border-slate-200">
+                  <div className="hidden grid-cols-[1.4fr_1fr_0.9fr_0.8fr_1fr_130px] gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500 md:grid">
+                    <span>Account</span>
+                    <span>Industry / Course</span>
+                    <span>Last active</span>
+                    <span>Inactivity</span>
+                    <span>Status</span>
+                    <span className="text-right">Actions</span>
+                  </div>
+
+                  {loading ? (
+                    <div className="flex min-h-[180px] items-center justify-center text-sm text-slate-500">
+                      Loading dormant accounts...
+                    </div>
+                  ) : errorMessage ? (
+                    <div className="flex min-h-[180px] items-center justify-center px-6 text-center text-sm text-red-600">
+                      {errorMessage}
+                    </div>
+                  ) : paginatedItems.length === 0 ? (
+                    <div className="flex min-h-[180px] items-center justify-center text-sm text-slate-500">
+                      No accounts currently match the 6–12 month dormant rule.
+                    </div>
+                  ) : (
+                    paginatedItems.map((entry) => {
+                      const account = entry.user || {};
+                      const accountName = getName(account);
+
+                      return (
+                        <div
+                          key={entry.userId}
+                          className="grid gap-3 border-b border-slate-100 px-4 py-3 last:border-b-0 md:grid-cols-[1.4fr_1fr_0.9fr_0.8fr_1fr_130px] md:items-center md:gap-4"
+                        >
+                          <div className="flex min-w-0 items-center gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                              {account.role === "employer" ? (
+                                <Icon name="building" className="h-4 w-4" />
+                              ) : (
+                                <span className="text-[11px] font-bold">{getInitials(accountName)}</span>
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-slate-900">{accountName}</p>
+                              <p className="truncate text-[11px] text-slate-500">{account.email || "—"}</p>
+                            </div>
+                          </div>
+
+                          <div className="text-sm text-slate-600">{entry.industryOrCourse || "Unspecified"}</div>
+                          <div className="text-sm text-slate-500">{formatDate(entry.lastActive)}</div>
+                          <div className="text-sm font-semibold text-slate-700">
+                            {entry.inactivityMonths} {Number(entry.inactivityMonths) === 1 ? "month" : "months"}
+                          </div>
+                          <div>
+                            <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">
+                              Dormant Account
+                            </span>
+                          </div>
+
+                          <div className="flex justify-start md:justify-end">
+                            <button
+                              type="button"
+                              onClick={() => openDormantDetails(entry.userId)}
+                              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-800 shadow-sm transition hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/5"
+                            >
+                              <Icon name="eye" />
+                              View
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </>
+            )}
 
             <div className="mt-4 flex flex-col gap-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
               <span>
-                Showing {authors.length === 0 ? 0 : (safePage - 1) * ITEMS_PER_PAGE + 1} to{" "}
-                {Math.min(safePage * ITEMS_PER_PAGE, authors.length)} of {authors.length} results
+                Showing {activeItems.length === 0 ? 0 : (safePage - 1) * ITEMS_PER_PAGE + 1} to{" "}
+                {Math.min(safePage * ITEMS_PER_PAGE, activeItems.length)} of {activeItems.length} results
               </span>
 
               <div className="flex items-center gap-2">
