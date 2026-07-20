@@ -845,7 +845,28 @@ const AdminEmployerPostingHistory = () => {
                           return (
                             <tr
                               key={job._id}
-                              className="transition hover:bg-[#f8fbff]"
+                              role="button"
+                              tabIndex={0}
+                              onClick={() =>
+                                navigate(`/admin/jobs/${job._id}`, {
+                                  state: {
+                                    backPath: `/admin/users/${userId}/posting-history`,
+                                    backLabel: "Back to Posting History",
+                                  },
+                                })
+                              }
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter" || event.key === " ") {
+                                  event.preventDefault();
+                                  navigate(`/admin/jobs/${job._id}`, {
+                                    state: {
+                                      backPath: `/admin/users/${userId}/posting-history`,
+                                      backLabel: "Back to Posting History",
+                                    },
+                                  });
+                                }
+                              }}
+                              className="cursor-pointer transition hover:bg-[#f8fbff] focus-within:bg-[#f8fbff] focus:outline-none"
                             >
                               <td className="whitespace-nowrap px-5 py-5 font-medium text-black/75">
                                 {formatDate(job?.createdAt)}
@@ -889,14 +910,15 @@ const AdminEmployerPostingHistory = () => {
                               <td className="px-5 py-5 text-center">
                                 <button
                                   type="button"
-                                  onClick={() =>
+                                  onClick={(event) => {
+                                    event.stopPropagation();
                                     navigate(`/admin/jobs/${job._id}`, {
                                       state: {
                                         backPath: `/admin/users/${userId}/posting-history`,
                                         backLabel: "Back to Posting History",
                                       },
-                                    })
-                                  }
+                                    });
+                                  }}
                                   className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[#dfe5ec] bg-white text-black transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
                                   title="View job"
                                   aria-label={`View ${
