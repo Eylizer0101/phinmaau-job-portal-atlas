@@ -584,102 +584,213 @@ const UserManagementDetails = () => {
     const coverUrl = getFileUrl(employerProfile.coverPhoto);
     const employerVerified =
       String(employerDocs.overallStatus || "").toLowerCase() === "verified" || user?.isVerified;
+
     const socialLinks = [
       { key: "facebookUrl", label: "Facebook", url: employerProfile.facebookUrl },
       { key: "instagramUrl", label: "Instagram", url: employerProfile.instagramUrl },
       { key: "linkedinUrl", label: "LinkedIn", url: employerProfile.linkedinUrl },
       { key: "xUrl", label: "X / Twitter", url: employerProfile.xUrl },
     ].filter((item) => String(item.url || "").trim());
+
     const galleryItems = Array.isArray(employerProfile.galleryImages)
       ? employerProfile.galleryImages.filter(Boolean)
       : [];
 
+    const reviewItems = Array.isArray(employerProfile.reviews)
+      ? [...employerProfile.reviews].sort(
+          (a, b) => new Date(b?.createdAt || 0) - new Date(a?.createdAt || 0)
+        )
+      : [];
+
+    const getJobStatus = (job) => {
+      const storedStatus = String(job?.status || "").toLowerCase();
+      const deadline = new Date(job?.applicationDeadline || job?.validUntil || job?.deadline || "");
+      const isExpired = !Number.isNaN(deadline.getTime()) && deadline.getTime() < Date.now();
+
+      if (job?.isArchived || storedStatus === "closed" || storedStatus === "filled") {
+        return storedStatus === "filled" ? "filled" : "closed";
+      }
+
+      if (isExpired) return "expired";
+      if (job?.isActive === false || job?.isPublished === false || storedStatus === "draft") return "inactive";
+      return "open";
+    };
+
+    const activeJobs = jobPosts.filter((job) => getJobStatus(job) === "open");
+    const totalApplicants = jobPosts.reduce(
+      (total, job) => total + Number(job?.applicantCount ?? job?.applicantsCount ?? 0),
+      0
+    );
+
+    const averageReview =
+      reviewItems.length > 0
+        ? reviewItems.reduce(
+            (total, review) => total + (Number(review?.processRating ?? review?.rating) || 0),
+            0
+          ) / reviewItems.length
+        : 0;
+
     const EmployerEmptyState = ({ icon = "document", title, subtitle }) => (
-      <div className="flex min-h-[120px] flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 px-5 py-6 text-center">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-400 shadow-sm">
+      <div className="flex min-h-[180px] flex-col items-center justify-center rounded-2xl border border-dashed border-[#d8e2ee] bg-[#f8fbff] px-6 py-10 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#2e66a6] shadow-sm ring-1 ring-[#d8e2ee]">
           <Icon name={icon} className="h-5 w-5" />
         </div>
-        <p className="mt-3 text-sm font-semibold text-gray-800">{title}</p>
-        {subtitle && <p className="mt-1 text-xs leading-relaxed text-gray-500">{subtitle}</p>}
+        <p className="mt-4 text-sm font-bold text-black">{title}</p>
+        {subtitle && <p className="mt-1 max-w-md text-xs leading-relaxed text-black/50">{subtitle}</p>}
       </div>
     );
 
-    const EmployerCredentials = () => (
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="text-lg font-bold text-slate-900">Business Credentials</h3>
-        <p className="mt-1 text-xs text-slate-500">Submitted during account creation</p>
-        <div className="mt-5 space-y-3">
-          {Object.keys(EMPLOYER_DOC_LABELS).map((key) => {
-            const doc = employerDocs[key] || {};
-            const url = getFileUrl(doc.url);
-            return (
-              <div key={key} className="flex items-center justify-between gap-3 rounded-xl border border-indigo-100 bg-indigo-50/50 px-4 py-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-indigo-700">
-                    <Icon name="document" />
-                  </div>
+    const JobStatusBadge = ({ status }) => {
+      const styles = {
+        open: "border-[#2e66a6]/20 bg-[#2e66a6]/10 text-[#2e66a6]",
+        filled: "border-emerald-200 bg-emerald-50 text-emerald-700",
+        closed: "border-slate-200 bg-slate-100 text-slate-600",
+        expired: "border-amber-200 bg-amber-50 text-amber-700",
+        inactive: "border-slate-200 bg-slate-50 text-slate-500",
+      };
+
+      return (
+        <span
+          className={cn(
+            "inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide",
+            styles[status] || styles.inactive
+          )}
+        >
+          {status}
+        </span>
+      );
+    };
+
+    const EmployerJobs = () => (
+      <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-2 border-b border-[#edf2f7] pb-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e66a6]">Current opportunities</p>
+            <h3 className="mt-1 text-xl font-bold text-black">Jobs</h3>
+            <p className="mt-1 text-sm text-black/50">Active job openings published by this company.</p>
+          </div>
+          <span className="w-fit rounded-full bg-[#f1f6fc] px-3 py-1.5 text-xs font-bold text-[#2e66a6]">
+            {activeJobs.length} active
+          </span>
+        </div>
+
+        {activeJobs.length ? (
+          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+            {activeJobs.map((job) => (
+              <article
+                key={job._id}
+                className="group rounded-2xl border border-[#e2e8f0] bg-white p-5 transition hover:-translate-y-0.5 hover:border-[#2e66a6]/35 hover:shadow-[0_12px_30px_rgba(46,102,166,0.10)]"
+              >
+                <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-slate-800">{EMPLOYER_DOC_LABELS[key]}</p>
-                    <p className="truncate text-xs text-slate-500">{doc.filename || doc.originalName || doc.status || "Document file"}</p>
+                    <h4 className="truncate text-base font-bold text-black">{job.title || job.jobTitle || "Untitled job"}</h4>
+                    <p className="mt-1 text-xs text-black/50">
+                      {[job.jobType, job.workMode].filter(Boolean).join(" • ") || "Employment details unavailable"}
+                    </p>
+                  </div>
+                  <JobStatusBadge status="open" />
+                </div>
+
+                <div className="mt-5 grid grid-cols-2 gap-3 text-xs">
+                  <div className="rounded-xl bg-[#f8fbff] p-3">
+                    <p className="text-black/45">Applicants</p>
+                    <p className="mt-1 text-base font-bold text-black">{job.applicantCount ?? job.applicantsCount ?? 0}</p>
+                  </div>
+                  <div className="rounded-xl bg-[#f8fbff] p-3">
+                    <p className="text-black/45">Posted</p>
+                    <p className="mt-1 font-bold text-black">{formatDate(job.createdAt)}</p>
                   </div>
                 </div>
-                {url ? (
-                  <div className="flex items-center gap-1">
-                    <button type="button" onClick={() => handleViewCredential(key)} className="rounded-lg p-1.5 text-slate-600 hover:bg-white hover:text-blue-700" title="View"><Icon name="eye" /></button>
-                    <button type="button" onClick={() => handleDownloadCredential(key, EMPLOYER_DOC_LABELS[key])} className="rounded-lg p-1.5 text-slate-600 hover:bg-white hover:text-blue-700" title="Download"><Icon name="download" /></button>
-                  </div>
-                ) : <span className="text-xs font-semibold text-slate-400">No file</span>}
-              </div>
-            );
-          })}
-        </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigate(`/admin/jobs/${job._id}`, {
+                      state: {
+                        backPath: `/admin/users/${userId}`,
+                        backLabel: "Back to Employer Profile",
+                      },
+                    })
+                  }
+                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                >
+                  <Icon name="eye" className="h-4 w-4" />
+                  View job
+                </button>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-5">
+            <EmployerEmptyState
+              icon="briefcase"
+              title="No active job openings"
+              subtitle="This company's current and previous job posts remain available through Posting History."
+            />
+          </div>
+        )}
       </section>
     );
 
     const EmployerPostingHistory = () => (
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="text-lg font-bold text-slate-900">Posting History</h3>
+      <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-2 border-b border-[#edf2f7] pb-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e66a6]">Company activity</p>
+            <h3 className="mt-1 text-xl font-bold text-black">Posting History</h3>
+            <p className="mt-1 text-sm text-black/50">Complete record of current and previous job postings.</p>
+          </div>
+          <span className="w-fit rounded-full bg-[#f1f6fc] px-3 py-1.5 text-xs font-bold text-[#2e66a6]">
+            {jobPosts.length} total
+          </span>
+        </div>
+
         {jobPosts.length ? (
-          <div className="mt-5 overflow-hidden rounded-xl border border-slate-200">
-            <table className="min-w-full divide-y divide-slate-200 text-left text-xs">
-              <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+          <div className="mt-5 overflow-x-auto rounded-2xl border border-[#e2e8f0]">
+            <table className="min-w-[820px] w-full text-left text-sm">
+              <thead className="bg-[#f8fbff] text-[11px] font-bold uppercase tracking-wider text-black/50">
                 <tr>
-                  <th className="px-4 py-3">Job Title</th>
-                  <th className="px-4 py-3">Applicant</th>
-                  <th className="px-4 py-3">Date Posted</th>
-                  <th className="px-4 py-3">Valid Until</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 text-center">Actions</th>
+                  <th className="px-5 py-3.5">Job Title</th>
+                  <th className="px-5 py-3.5">Applicants</th>
+                  <th className="px-5 py-3.5">Date Posted</th>
+                  <th className="px-5 py-3.5">Valid Until</th>
+                  <th className="px-5 py-3.5">Status</th>
+                  <th className="px-5 py-3.5 text-center">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
+              <tbody className="divide-y divide-[#edf2f7] bg-white">
                 {jobPosts.map((job) => {
-                  const status = job.isArchived ? "closed" : job.isActive === false || job.isPublished === false ? "closed" : "open";
+                  const status = getJobStatus(job);
                   return (
-                    <tr key={job._id} className="text-slate-700">
-                      <td className="px-4 py-3">
-                        <p className="font-bold text-slate-900">{job.title || job.jobTitle || "—"}</p>
-                        <p className="text-[11px] text-slate-500">{[job.jobType, job.workMode].filter(Boolean).join(" • ") || "—"}</p>
+                    <tr key={job._id} className="text-black/70 transition hover:bg-[#fbfdff]">
+                      <td className="px-5 py-4">
+                        <p className="font-bold text-black">{job.title || job.jobTitle || "—"}</p>
+                        <p className="mt-0.5 text-xs text-black/45">
+                          {[job.jobType, job.workMode].filter(Boolean).join(" • ") || "—"}
+                        </p>
                       </td>
-                      <td className="px-4 py-3">{job.applicantCount ?? job.applicantsCount ?? 0}</td>
-                      <td className="px-4 py-3">{formatDate(job.createdAt)}</td>
-                      <td className="px-4 py-3">{formatDate(job.validUntil || job.deadline || job.applicationDeadline)}</td>
-                      <td className="px-4 py-3">
-                        <span className={cn(
-                          "rounded-full px-2.5 py-1 text-[10px] font-bold uppercase",
-                          status === "open" ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"
-                        )}>{status}</span>
+                      <td className="px-5 py-4 font-semibold text-black">
+                        {job.applicantCount ?? job.applicantsCount ?? 0}
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-5 py-4">{formatDate(job.createdAt)}</td>
+                      <td className="px-5 py-4">
+                        {formatDate(job.validUntil || job.deadline || job.applicationDeadline)}
+                      </td>
+                      <td className="px-5 py-4">
+                        <JobStatusBadge status={status} />
+                      </td>
+                      <td className="px-5 py-4 text-center">
                         <button
                           type="button"
-                          onClick={() => navigate(`/admin/jobs/${job._id}`, {
-                            state: {
-                              backPath: `/admin/users/${userId}`,
-                              backLabel: "Back to Employer Profile",
-                            },
-                          })}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-blue-50 hover:text-blue-700"
+                          onClick={() =>
+                            navigate(`/admin/jobs/${job._id}`, {
+                              state: {
+                                backPath: `/admin/users/${userId}`,
+                                backLabel: "Back to Employer Profile",
+                              },
+                            })
+                          }
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-black/55 transition hover:border-[#d8e2ee] hover:bg-[#f7faff] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
                           title="View job post"
                           aria-label="View job post"
                         >
@@ -692,162 +803,325 @@ const UserManagementDetails = () => {
               </tbody>
             </table>
           </div>
-        ) : <EmployerEmptyState icon="briefcase" title="No job posts yet." />}
+        ) : (
+          <div className="mt-5">
+            <EmployerEmptyState icon="briefcase" title="No job posts yet" />
+          </div>
+        )}
       </section>
     );
 
     const employerActiveContent = {
       about: (
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-bold text-slate-900">About</h3>
-          {String(employerProfile.companyDescription || employerProfile.aboutCompany || employerProfile.description || "").trim() ? (
-            <p className="mt-4 text-sm leading-relaxed text-slate-600">{employerProfile.companyDescription || employerProfile.aboutCompany || employerProfile.description}</p>
-          ) : <EmployerEmptyState title="No description added yet." />}
+        <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6">
+          <div className="border-b border-[#edf2f7] pb-5">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e66a6]">Company overview</p>
+            <h3 className="mt-1 text-xl font-bold text-black">About</h3>
+          </div>
+
+          {String(
+            employerProfile.companyDescription ||
+              employerProfile.aboutCompany ||
+              employerProfile.description ||
+              ""
+          ).trim() ? (
+            <div className="mt-5 space-y-5">
+              <p className="whitespace-pre-line text-sm leading-7 text-black/65">
+                {employerProfile.companyDescription ||
+                  employerProfile.aboutCompany ||
+                  employerProfile.description}
+              </p>
+
+              <div className="grid gap-3 border-t border-[#edf2f7] pt-5 sm:grid-cols-2 xl:grid-cols-3">
+                {[
+                  { label: "Industry", value: employerProfile.industry },
+                  { label: "Location", value: employerProfile.companyAddress || employerProfile.regionCity },
+                  { label: "Business email", value: employerProfile.businessEmail || user.email },
+                  { label: "Contact number", value: employerProfile.mobileNumber || user.mobileNumber },
+                  { label: "Contact person", value: [user.firstName, user.lastName].filter(Boolean).join(" ") },
+                  { label: "Member since", value: formatDate(user.createdAt) },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-xl bg-[#f8fbff] px-4 py-3">
+                    <p className="text-xs font-medium text-black/45">{item.label}</p>
+                    <p className="mt-1 break-words text-sm font-semibold text-black">{item.value || "Not provided"}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="mt-5">
+              <EmployerEmptyState title="No company description added yet" />
+            </div>
+          )}
         </section>
       ),
-      credentials: <EmployerCredentials />,
+      jobs: <EmployerJobs />,
       social: (
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-bold text-slate-900">Linked Accounts</h3>
+        <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6">
+          <div className="border-b border-[#edf2f7] pb-5">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e66a6]">Online presence</p>
+            <h3 className="mt-1 text-xl font-bold text-black">Social Media</h3>
+            <p className="mt-1 text-sm text-black/50">Official social accounts linked to this company.</p>
+          </div>
+
           {socialLinks.length ? (
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {socialLinks.map((item) => (
-                <a key={item.key} href={normalizeUrl(item.url)} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-blue-700 hover:bg-blue-50">
-                  {item.label}: <span className="font-medium text-slate-600">{item.url}</span>
+                <a
+                  key={item.key}
+                  href={normalizeUrl(item.url)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group flex items-center justify-between gap-4 rounded-2xl border border-[#e2e8f0] bg-white p-4 transition hover:border-[#2e66a6]/35 hover:bg-[#f8fbff]"
+                >
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold uppercase tracking-wide text-[#2e66a6]">{item.label}</p>
+                    <p className="mt-1 truncate text-sm text-black/60">{item.url}</p>
+                  </div>
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#edf4fb] text-[#2e66a6] transition group-hover:bg-[#2e66a6] group-hover:text-white">
+                    ↗
+                  </span>
                 </a>
               ))}
             </div>
-          ) : <EmployerEmptyState icon="mail" title="No social accounts linked yet." />}
+          ) : (
+            <div className="mt-5">
+              <EmployerEmptyState icon="mail" title="No social accounts linked yet" />
+            </div>
+          )}
         </section>
       ),
       gallery: (
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-bold text-slate-900">Gallery</h3>
+        <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6">
+          <div className="border-b border-[#edf2f7] pb-5">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e66a6]">Workplace preview</p>
+            <h3 className="mt-1 text-xl font-bold text-black">Gallery</h3>
+            <p className="mt-1 text-sm text-black/50">Photos shared through the company's profile.</p>
+          </div>
+
           {galleryItems.length ? (
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {galleryItems.map((item, index) => {
-                const imgUrl = getFileUrl(item.url || item.imageUrl || item.path || item);
-                return imgUrl ? <img key={item._id || index} src={imgUrl} alt={`Company gallery ${index + 1}`} className="h-52 w-full rounded-xl object-cover" /> : null;
+                const imgUrl = getFileUrl(item?.url || item?.imageUrl || item?.path || item);
+                if (!imgUrl) return null;
+
+                return (
+                  <figure
+                    key={item?._id || index}
+                    className="group overflow-hidden rounded-2xl border border-[#e2e8f0] bg-[#f8fbff]"
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={item?.caption || `Company gallery ${index + 1}`}
+                      className="h-56 w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                    />
+                    {item?.caption && (
+                      <figcaption className="border-t border-[#edf2f7] bg-white px-4 py-3 text-sm text-black/60">
+                        {item.caption}
+                      </figcaption>
+                    )}
+                  </figure>
+                );
               })}
             </div>
-          ) : <EmployerEmptyState icon="document" title="No photos added yet." />}
+          ) : (
+            <div className="mt-5">
+              <EmployerEmptyState icon="document" title="No company photos added yet" />
+            </div>
+          )}
         </section>
       ),
-      posts: <EmployerPostingHistory />,
+      reviews: (
+        <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex flex-col gap-4 border-b border-[#edf2f7] pb-5 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e66a6]">Candidate feedback</p>
+              <h3 className="mt-1 text-xl font-bold text-black">Reviews</h3>
+              <p className="mt-1 text-sm text-black/50">Feedback submitted by job seekers.</p>
+            </div>
+            {reviewItems.length > 0 && (
+              <div className="rounded-2xl bg-[#f8fbff] px-4 py-3 text-right">
+                <p className="text-xl font-bold text-black">{averageReview.toFixed(1)} <span className="text-amber-500">★</span></p>
+                <p className="text-xs text-black/45">{reviewItems.length} review{reviewItems.length === 1 ? "" : "s"}</p>
+              </div>
+            )}
+          </div>
+
+          {reviewItems.length ? (
+            <div className="mt-5 space-y-4">
+              {reviewItems.map((review, index) => {
+                const rating = Math.max(0, Math.min(5, Number(review?.processRating ?? review?.rating) || 0));
+                return (
+                  <article key={review?._id || index} className="rounded-2xl border border-[#e2e8f0] p-5">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="font-bold text-black">{review?.reviewerName || "Anonymous User"}</p>
+                        <p className="mt-1 text-xs text-black/45">
+                          {review?.roleAppliedFor || "Role not specified"} • {formatDate(review?.createdAt)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 text-sm" aria-label={`${rating} out of 5 stars`}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <span key={star} className={star <= Math.round(rating) ? "text-amber-500" : "text-slate-300"}>★</span>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="mt-4 whitespace-pre-line text-sm leading-6 text-black/65">
+                      {review?.message || review?.review || review?.comment || "No written feedback provided."}
+                    </p>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="mt-5">
+              <EmployerEmptyState icon="document" title="No reviews yet" subtitle="Candidate feedback will appear here once submitted." />
+            </div>
+          )}
+        </section>
+      ),
     }[activeEmployerTab];
 
     return (
       <AdminLayout>
-        <div className="min-h-screen bg-gray-50 px-0 py-8">
+        <div className="min-h-screen bg-[#f7f9fc] px-0 py-8">
           <div className="w-full space-y-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <button
-                type="button"
-                onClick={() => navigate("/admin/users")}
-                className="inline-flex w-fit items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-              >
-                <Icon name="arrowLeft" className="h-4 w-4" />
-                Back to Users
-              </button>
+            <button
+              type="button"
+              onClick={() => navigate("/admin/users")}
+              className="inline-flex w-fit items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-black shadow-sm transition hover:border-[#2e66a6]/35 hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+            >
+              <Icon name="arrowLeft" className="h-4 w-4" />
+              Back to Users
+            </button>
 
-             
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-sm text-gray-700 shadow-sm">
-                <Icon name="history" className="h-4 w-4 text-[#2e66a6]" />
-                <span>Last profile update:</span>
-                <span className="font-semibold text-black">{formatDate(user.updatedAt, true)}</span>
+            <section className="overflow-hidden rounded-2xl border border-[#dfe7f0] bg-white shadow-[0_16px_40px_rgba(46,102,166,0.08)]">
+              <div className="h-44 overflow-hidden bg-[#eaf2fb] sm:h-56 lg:h-64">
+                {coverUrl ? (
+                  <img src={coverUrl} alt={`${companyName} cover`} className="h-full w-full object-cover" />
+                ) : (
+                  <img src="/images/company_9.png" alt="Company cover" className="h-full w-full object-cover" />
+                )}
               </div>
-              <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-sm text-gray-700 shadow-sm">
-                <Icon name="user" className="h-4 w-4 text-[#2e66a6]" />
-                <span>Verified by</span>
-                <span className="font-semibold text-black">Admin</span>
-              </div>
-            </div>
-
-            <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <div className="h-44 overflow-hidden bg-[#eaf2fb] sm:h-56">
-  {coverUrl ? (
-    <img
-      src={coverUrl}
-      alt={`${companyName} cover`}
-      className="h-full w-full object-cover"
-    />
-  ) : (
-    <img
-      src="/images/company_9.png"
-      alt="Company Cover"
-      className="h-full w-full object-cover"
-    />
-  )}
-</div>
 
               <div className="px-5 pb-5 sm:px-7">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-                  <div className="-mt-10 flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white bg-white text-[#2e66a6] shadow-md">
-                    {logoUrl && !brokenAvatar ? (
-                      <img src={logoUrl} alt={`${companyName} logo`} className="h-full w-full object-cover" onError={() => setBrokenAvatar(true)} />
-                    ) : (
-                      <Icon name="building" className="h-9 w-9" />
-                    )}
-                  </div>
-
-                  <div className="min-w-0 flex-1 pt-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h1 className="truncate text-2xl font-bold leading-tight text-black sm:text-3xl">{companyName}</h1>
-                      {employerVerified && <span className="rounded-full border border-green-200 bg-green-50 px-3 py-1 text-[11px] font-bold uppercase text-green-700">Verified</span>}
-                      <span className="rounded-full border border-[#2e66a6]/20 bg-[#2e66a6]/10 px-3 py-1 text-[11px] font-bold uppercase text-[#2e66a6]">Employer</span>
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                  <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end">
+                    <div className="-mt-10 flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white bg-white text-[#2e66a6] shadow-md sm:h-28 sm:w-28">
+                      {logoUrl && !brokenAvatar ? (
+                        <img
+                          src={logoUrl}
+                          alt={`${companyName} logo`}
+                          className="h-full w-full object-cover"
+                          onError={() => setBrokenAvatar(true)}
+                        />
+                      ) : (
+                        <Icon name="building" className="h-10 w-10" />
+                      )}
                     </div>
 
-                    <div className="mt-3 flex flex-col gap-2 text-sm text-gray-600">
-                      <span className="inline-flex min-w-0 items-center gap-2">
-                        <Icon name="building" className="h-4 w-4 shrink-0 text-[#2e66a6]" />
-                        <span className="truncate">{employerProfile.industry || "Industry not specified"}</span>
-                      </span>
+                    <div className="min-w-0 pb-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h1 className="break-words text-2xl font-bold leading-tight text-black sm:text-3xl">{companyName}</h1>
+                        {employerVerified && (
+                          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
+                            Verified
+                          </span>
+                        )}
+                      </div>
 
-                      {employerProfile.companyWebsiteUrl && (
-                        <a
-                          href={normalizeUrl(employerProfile.companyWebsiteUrl)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex min-w-0 items-center gap-2 font-medium text-[#2e66a6] hover:underline"
-                        >
-                          <Icon name="mail" className="h-4 w-4 shrink-0" />
-                          <span className="truncate">{employerProfile.companyWebsiteUrl}</span>
-                        </a>
-                      )}
-
-                      <span className="inline-flex min-w-0 items-start gap-2">
-                        <Icon name="mapPin" className="mt-0.5 h-4 w-4 shrink-0 text-[#2e66a6]" />
-                        <span className="leading-relaxed">{employerProfile.companyAddress || employerProfile.regionCity || "Location not provided"}</span>
-                      </span>
-
-                      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-1 text-xs text-gray-600">
-                        <span>
-                          <span className="font-semibold text-black">Contact Person:</span>{" "}
-                          {[user.firstName, user.lastName].filter(Boolean).join(" ") || employerProfile.position || "—"}
-                        </span>
-                        <span>
-                          <span className="font-semibold text-black">Date Registered:</span>{" "}
-                          {formatDate(user.createdAt)}
-                        </span>
+                      <div className="mt-3 space-y-2 text-sm text-black/60">
+                        <p className="flex items-start gap-2">
+                          <Icon name="building" className="mt-0.5 h-4 w-4 shrink-0 text-[#2e66a6]" />
+                          <span>{employerProfile.industry || "Industry not specified"}</span>
+                        </p>
+                        <p className="flex items-start gap-2">
+                          <Icon name="mapPin" className="mt-0.5 h-4 w-4 shrink-0 text-[#2e66a6]" />
+                          <span>{employerProfile.companyAddress || employerProfile.regionCity || "Location not provided"}</span>
+                        </p>
+                        {employerProfile.companyWebsiteUrl && (
+                          <a
+                            href={normalizeUrl(employerProfile.companyWebsiteUrl)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex min-w-0 items-center gap-2 font-medium text-[#2e66a6] hover:underline"
+                          >
+                            <Icon name="mail" className="h-4 w-4 shrink-0" />
+                            <span className="truncate">{employerProfile.companyWebsiteUrl}</span>
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveEmployerTab("postingHistory")}
+                    className={cn(
+                      "group flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 lg:w-[310px]",
+                      activeEmployerTab === "postingHistory"
+                        ? "border-[#2e66a6] bg-[#2e66a6] text-white shadow-[0_12px_28px_rgba(46,102,166,0.25)]"
+                        : "border-[#2e66a6]/25 bg-[#edf4fb] text-[#2e66a6] hover:border-[#2e66a6]/45 hover:bg-[#e4effa]"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
+                        activeEmployerTab === "postingHistory" ? "bg-white/15" : "bg-white"
+                      )}
+                    >
+                      <Icon name="history" className="h-5 w-5" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-bold">Posting History</span>
+                      <span className={cn("mt-0.5 block text-xs", activeEmployerTab === "postingHistory" ? "text-white/75" : "text-[#2e66a6]/70")}>
+                        {jobPosts.length} posts • {totalApplicants} applicants
+                      </span>
+                    </span>
+                    <span
+                      className={cn(
+                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg transition group-hover:translate-x-0.5",
+                        activeEmployerTab === "postingHistory" ? "bg-white/15" : "bg-[#2e66a6] text-white"
+                      )}
+                      aria-hidden="true"
+                    >
+                      ›
+                    </span>
+                  </button>
+                </div>
+
+                <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-[#edf2f7] pt-4 text-xs text-black/55">
+                  <span>
+                    <span className="font-semibold text-black">Contact person:</span>{" "}
+                    {[user.firstName, user.lastName].filter(Boolean).join(" ") || employerProfile.position || "—"}
+                  </span>
+                  <span>
+                    <span className="font-semibold text-black">Registered:</span> {formatDate(user.createdAt)}
+                  </span>
+                  <span>
+                    <span className="font-semibold text-black">Last profile update:</span> {formatDate(user.updatedAt, true)}
+                  </span>
                 </div>
               </div>
 
-              <div className="border-t border-gray-200 px-4 sm:px-6">
+              <div className="border-t border-[#e2e8f0] px-4 sm:px-6">
                 <div className="flex gap-5 overflow-x-auto">
-                  {EMPLOYER_TABS.map((tab) => (
+                  {[
+                    { key: "about", label: "About" },
+                    { key: "jobs", label: "Jobs" },
+                    { key: "social", label: "Social Media" },
+                    { key: "gallery", label: "Gallery" },
+                    { key: "reviews", label: "Reviews" },
+                  ].map((tab) => (
                     <button
                       key={tab.key}
                       type="button"
                       onClick={() => setActiveEmployerTab(tab.key)}
                       className={cn(
                         "shrink-0 border-b-2 px-1 py-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2",
-                        activeEmployerTab === tab.key ? "border-[#2e66a6] text-[#2e66a6]" : "border-transparent text-gray-500 hover:text-black"
+                        activeEmployerTab === tab.key
+                          ? "border-[#2e66a6] text-[#2e66a6]"
+                          : "border-transparent text-black/50 hover:text-black"
                       )}
                     >
                       {tab.label}
@@ -857,7 +1131,9 @@ const UserManagementDetails = () => {
               </div>
             </section>
 
-            <div className="pb-4">{employerActiveContent}</div>
+            <div className="pb-4">
+              {activeEmployerTab === "postingHistory" ? <EmployerPostingHistory /> : employerActiveContent}
+            </div>
           </div>
         </div>
       </AdminLayout>
