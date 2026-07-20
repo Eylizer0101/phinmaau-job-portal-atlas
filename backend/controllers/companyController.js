@@ -33,24 +33,8 @@ const buildReviewerName = (user) => {
   return 'Anonymous User';
 };
 
-const getValidReviewRating = (review) => {
-  const numericRating = Number(review?.processRating ?? review?.rating);
-
-  if (!Number.isFinite(numericRating) || numericRating < 1 || numericRating > 5) {
-    return null;
-  }
-
-  return numericRating;
-};
-
-const getValidReviews = (reviews = []) => {
-  return (Array.isArray(reviews) ? reviews : []).filter(
-    (review) => getValidReviewRating(review) !== null
-  );
-};
-
 const computeReviewSummary = (reviews = []) => {
-  const safeReviews = getValidReviews(reviews);
+  const safeReviews = Array.isArray(reviews) ? reviews : [];
   const reviewCount = safeReviews.length;
 
   if (!reviewCount) {
@@ -60,10 +44,7 @@ const computeReviewSummary = (reviews = []) => {
     };
   }
 
-  const total = safeReviews.reduce(
-    (sum, review) => sum + getValidReviewRating(review),
-    0
-  );
+  const total = safeReviews.reduce((sum, review) => sum + (Number(review?.processRating ?? review?.rating) || 0), 0);
   const rating = total / reviewCount;
 
   return {
@@ -73,7 +54,7 @@ const computeReviewSummary = (reviews = []) => {
 };
 
 const computeRatingBreakdown = (reviews = []) => {
-  const safeReviews = getValidReviews(reviews);
+  const safeReviews = Array.isArray(reviews) ? reviews : [];
   const breakdown = {
     5: 0,
     4: 0,
@@ -83,8 +64,8 @@ const computeRatingBreakdown = (reviews = []) => {
   };
 
   safeReviews.forEach((review) => {
-    const numericRating = getValidReviewRating(review);
-    const star = Math.round(numericRating);
+    const numericRating = Number(review?.processRating ?? review?.rating) || 0;
+    const star = Math.max(1, Math.min(5, Math.round(numericRating)));
 
     if (breakdown[star] !== undefined) {
       breakdown[star] += 1;
@@ -103,7 +84,7 @@ const mapCompanyFromUser = (user) => {
     '';
 
   const reviews = Array.isArray(ep.reviews)
-    ? getValidReviews(ep.reviews)
+    ? [...ep.reviews]
         .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
         .map((review) => ({
           _id: review._id,
