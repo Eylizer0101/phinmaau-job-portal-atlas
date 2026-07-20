@@ -669,15 +669,12 @@ const UserManagementDetails = () => {
       job?.freshGraduate === true ||
       job?.freshGraduate === "true";
 
-    const validReviewRatings = reviewItems
-      .map((review) => Number(review?.processRating ?? review?.rating))
-      .filter((rating) => Number.isFinite(rating) && rating >= 1 && rating <= 5);
-
-    const accurateReviewCount = validReviewRatings.length;
-
     const averageReview =
-      accurateReviewCount > 0
-        ? validReviewRatings.reduce((total, rating) => total + rating, 0) / accurateReviewCount
+      reviewItems.length > 0
+        ? reviewItems.reduce(
+            (total, review) => total + (Number(review?.processRating ?? review?.rating) || 0),
+            0
+          ) / reviewItems.length
         : 0;
 
     const EmployerEmptyState = ({ icon = "document", title, subtitle }) => (
@@ -717,7 +714,7 @@ const UserManagementDetails = () => {
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e66a6]">Current opportunities</p>
             <h3 className="mt-1 text-xl font-bold text-black">Jobs</h3>
-            <p className="mt-1 text-sm text-black/50">Active job openings published by this company.</p>
+           
           </div>
           <span className="w-fit rounded-full bg-[#f1f6fc] px-3 py-1.5 text-xs font-bold text-[#2e66a6]">
             {activeJobs.length} active
@@ -982,7 +979,7 @@ const UserManagementDetails = () => {
           <div className="border-b border-[#edf2f7] pb-5">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e66a6]">Online presence</p>
             <h3 className="mt-1 text-xl font-bold text-black">Social Media</h3>
-            <p className="mt-1 text-sm text-black/50">Official social accounts linked to this company.</p>
+        
           </div>
 
           {socialLinks.length ? (
@@ -1017,7 +1014,7 @@ const UserManagementDetails = () => {
           <div className="border-b border-[#edf2f7] pb-5">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e66a6]">Workplace preview</p>
             <h3 className="mt-1 text-xl font-bold text-black">Gallery</h3>
-            <p className="mt-1 text-sm text-black/50">Photos shared through the company's profile.</p>
+     
           </div>
 
           {galleryItems.length ? (
@@ -1058,12 +1055,12 @@ const UserManagementDetails = () => {
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e66a6]">Candidate feedback</p>
               <h3 className="mt-1 text-xl font-bold text-black">Reviews</h3>
-              <p className="mt-1 text-sm text-black/50">Feedback submitted by job seekers.</p>
+              
             </div>
-            {accurateReviewCount > 0 && (
+            {reviewItems.length > 0 && (
               <div className="rounded-2xl bg-[#f8fbff] px-4 py-3 text-right">
                 <p className="text-xl font-bold text-black">{averageReview.toFixed(1)} <span className="text-amber-500">★</span></p>
-                <p className="text-xs text-black/45">{accurateReviewCount} review{accurateReviewCount === 1 ? "" : "s"}</p>
+                <p className="text-xs text-black/45">{reviewItems.length} review{reviewItems.length === 1 ? "" : "s"}</p>
               </div>
             )}
           </div>
