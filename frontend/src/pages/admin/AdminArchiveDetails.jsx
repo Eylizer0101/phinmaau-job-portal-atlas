@@ -204,6 +204,92 @@ const DormantDetails = ({ data, loading, errorMessage, onBack }) => {
   );
 };
 
+
+const JobArchiveDetails = ({ data, loading, errorMessage, onBack }) => {
+  if (loading) {
+    return <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500">Loading archived job details...</div>;
+  }
+
+  if (errorMessage || !data?.job) {
+    return <div className="flex min-h-[320px] items-center justify-center px-6 text-center text-sm text-red-600">{errorMessage || "Archived job not found."}</div>;
+  }
+
+  const job = data.job;
+  const applicants = data.declinedApplicants || [];
+
+  return (
+    <div className="px-5 pb-6 pt-4">
+      <button
+        type="button"
+        onClick={onBack}
+        className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 hover:text-[#2e66a6]"
+      >
+        <Icon name="arrowLeft" />
+        Back to Jobs
+      </button>
+
+      <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl font-bold text-slate-950">{job.title || "Untitled job"}</h1>
+              {data.isClosed ? <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-700">Closed</span> : null}
+              {data.isExpired ? <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Expired</span> : null}
+            </div>
+            <p className="mt-2 text-sm font-semibold text-slate-600">{job.companyName || "Unspecified company"}</p>
+            <p className="mt-1 text-xs text-slate-500">{job.location || "Location not specified"} · {job.workMode || "Work mode not specified"}</p>
+          </div>
+
+          <div className="rounded-xl border border-rose-200 bg-rose-50 px-5 py-3 text-center">
+            <p className="text-2xl font-bold text-rose-700">{applicants.length}</p>
+            <p className="text-xs font-semibold text-rose-700">declined applicants</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <InfoCard icon="calendar" label="Application Deadline" value={formatDate(job.applicationDeadline)} />
+        <InfoCard icon="clock" label="Last Updated" value={formatDate(job.updatedAt)} />
+        <InfoCard icon="building" label="Employment Type" value={job.jobType} />
+        <InfoCard icon="location" label="Work Location" value={job.location} />
+      </div>
+
+      <div className="mt-6">
+        <h2 className="text-sm font-bold text-slate-950">Declined applicants</h2>
+        <p className="mt-1 text-xs text-slate-500">Applicants are shown with the stage where the employer declined them.</p>
+
+        {applicants.length === 0 ? (
+          <div className="mt-4 flex min-h-[140px] items-center justify-center rounded-xl border border-slate-200 text-sm text-slate-500">
+            No declined applicants were found for this job.
+          </div>
+        ) : (
+          <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
+            <div className="grid min-w-[760px] grid-cols-[1.3fr_0.9fr_1fr_0.9fr_0.9fr] gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-500">
+              <span>Applicant</span>
+              <span>Jobseeker level</span>
+              <span>Declined stage</span>
+              <span>Date applied</span>
+              <span>Date declined</span>
+            </div>
+            {applicants.map((application) => (
+              <div
+                key={application._id}
+                className="grid min-w-[760px] grid-cols-[1.3fr_0.9fr_1fr_0.9fr_0.9fr] gap-3 border-b border-slate-100 px-4 py-3 text-xs last:border-b-0"
+              >
+                <span className="font-semibold text-slate-900">{application.applicantName}</span>
+                <span className="text-slate-600">{application.jobseekerLevel || "Not specified"}</span>
+                <span><span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-1 font-semibold text-rose-700">{application.declinedStage}</span></span>
+                <span className="text-slate-500">{formatDate(application.appliedAt)}</span>
+                <span className="text-slate-500">{formatDate(application.declinedAt)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const AdminArchiveDetails = () => {
   const navigate = useNavigate();
   const { type, id } = useParams();
@@ -211,6 +297,7 @@ const AdminArchiveDetails = () => {
   const [author, setAuthor] = useState(null);
   const [items, setItems] = useState([]);
   const [dormantData, setDormantData] = useState(null);
+  const [jobData, setJobData] = useState(null);
   const [filterType, setFilterType] = useState("all");
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -218,9 +305,10 @@ const AdminArchiveDetails = () => {
   const [actionLoading, setActionLoading] = useState(false);
 
   const isDormantView = type === "dormant-user";
+  const isJobView = type === "job";
 
   const loadDetails = useCallback(async () => {
-    if (!["community-author", "dormant-user"].includes(type)) {
+    if (!["community-author", "dormant-user", "job"].includes(type)) {
       setErrorMessage("Unsupported archive detail type.");
       setLoading(false);
       return;
@@ -234,6 +322,8 @@ const AdminArchiveDetails = () => {
 
       if (type === "dormant-user") {
         setDormantData(response.data || null);
+      } else if (type === "job") {
+        setJobData(response.data || null);
       } else {
         setAuthor(response.data?.author || null);
         setItems(response.data?.items || []);
@@ -243,6 +333,7 @@ const AdminArchiveDetails = () => {
       setAuthor(null);
       setItems([]);
       setDormantData(null);
+      setJobData(null);
       setErrorMessage(error?.response?.data?.message || "Failed to load archive details.");
     } finally {
       setLoading(false);
@@ -281,6 +372,29 @@ const AdminArchiveDetails = () => {
       setActionLoading(false);
     }
   };
+
+  if (isJobView) {
+    return (
+      <AdminLayout>
+        <main className="mx-auto w-full max-w-[1120px] px-4 py-8 sm:px-6 lg:px-8">
+          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-200 px-5 py-4">
+              <h1 className="text-sm font-bold text-slate-950">Archived Job Details</h1>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Review the closed or expired job and its declined applicants.
+              </p>
+            </div>
+            <JobArchiveDetails
+              data={jobData}
+              loading={loading}
+              errorMessage={errorMessage}
+              onBack={() => navigate("/admin/archive?tab=jobs")}
+            />
+          </section>
+        </main>
+      </AdminLayout>
+    );
+  }
 
   if (isDormantView) {
     return (

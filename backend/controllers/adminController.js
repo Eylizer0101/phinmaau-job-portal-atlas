@@ -2589,7 +2589,7 @@ exports.getAdminArchive = async (req, res) => {
   try {
     const tab = String(req.query.tab || 'community').toLowerCase();
 
-    if (!['community', 'dormant'].includes(tab)) {
+    if (!['community', 'dormant', 'jobs'].includes(tab)) {
       return res.status(400).json({
         success: false,
         message: 'Unsupported archive tab',
@@ -2597,6 +2597,193 @@ exports.getAdminArchive = async (req, res) => {
     }
 
     const q = String(req.query.q || '').trim().toLowerCase();
+
+
+    if (tab === 'jobs') {
+      const statusFilter = String(req.query.status || 'all').toLowerCase();
+      const companyFilter = String(req.query.company || 'all').trim();
+      const dateFilter = String(req.query.date || 'all').toLowerCase();
+      const customFrom = String(req.query.dateFrom || '').trim();
+      const customTo = String(req.query.dateTo || '').trim();
+      const now = new Date();
+
+      const getDateBounds = () => {
+        let start = null;
+        let end = new Date(now);
+        end.setHours(23, 59, 59, 999);
+
+        if (dateFilter === 'today') {
+          start = new Date(now);
+          start.setHours(0, 0, 0, 0);
+        } else if (dateFilter === '7days') {
+          start = new Date(now);
+          start.setDate(start.getDate() - 6);
+          start.setHours(0, 0, 0, 0);
+        } else if (dateFilter === '30days') {
+          start = new Date(now);
+          start.setDate(start.getDate() - 29);
+          start.setHours(0, 0, 0, 0);
+        } else if (dateFilter === 'thismonth') {
+          start = new Date(now.getFullYear(), now.getMonth(), 1);
+          start.setHours(0, 0, 0, 0);
+        } else if (dateFilter === 'custom') {
+          start = customFrom ? new Date(`${customFrom}T00:00:00`) : null;
+          end = customTo ? new Date(`${customTo}T23:59:59.999`) : end;
+        }
+
+        return { start, end };
+      };
+
+      const { start, end } = getDateBounds();
+      const isWithinDate = (value) => {
+        if (!start && dateFilter === 'all') return true;
+        const date = new Date(value || 0);
+        if (Number.isNaN(date.getTime())) return false;
+        if (start && date < start) return false;
+        if (end && date > end) return false;
+        return true;
+      };
+
+      const jobs = await Job.find({
+        $or: [
+          { status: 'closed' },
+          { applicationDeadline: { $lt: now } },
+        ],
+      })
+        .select(
+          'title companyName companyLogo employer status applicationDeadline location workMode jobType isActive isArchived archivedAt createdAt updatedAt'
+        )
+        .sort({ updatedAt: -1 })
+        .lean();
+
+      const jobIds = jobs.map((job) => job._id);
+
+      const declinedApplications = jobIds.length
+        ? await Application.find({
+            job: { $in: jobIds },
+            status: 'declined',
+          })
+            .populate(
+              'jobseeker',
+              'email firstName middleName lastName fullName jobSeekerProfile'
+            )
+            .select(
+              'job jobseeker status declinedFrom declineReason declineComment appliedAt reviewedAt updatedAt isDeclinedArchived declinedArchivedAt'
+            )
+            .sort({ reviewedAt: -1, updatedAt: -1 })
+            .lean()
+        : [];
+
+      const applicationsByJob = new Map();
+
+      declinedApplications.forEach((application) => {
+        const jobId = String(application.job || '');
+        if (!applicationsByJob.has(jobId)) applicationsByJob.set(jobId, []);
+
+        const jobseeker = application.jobseeker || {};
+        const profile = jobseeker.jobSeekerProfile || {};
+        const applicantName =
+          jobseeker.fullName ||
+          [jobseeker.firstName, jobseeker.middleName, jobseeker.lastName]
+            .filter(Boolean)
+            .join(' ') ||
+          jobseeker.email ||
+          'Jobseeker';
+
+        const declinedStage =
+          application.declinedFrom === 'forInterview'
+            ? 'For Interview'
+            : application.declinedFrom === 'applicants'
+              ? 'Initial Screening'
+              : application.lastActiveStatus === 'for interview'
+                ? 'For Interview'
+                : 'Application Review';
+
+        applicationsByJob.get(jobId).push({
+          _id: application._id,
+          applicantName,
+          jobseekerLevel:
+            profile.jobseekerLevel ||
+            profile.jobSeekerLevel ||
+            profile.experienceLevel ||
+            profile.careerLevel ||
+            'Not specified',
+          declinedStage,
+          declineReason: application.declineReason || '',
+          declineComment: application.declineComment || '',
+          appliedAt: application.appliedAt,
+          declinedAt: application.reviewedAt || application.updatedAt,
+          isDeclinedArchived: Boolean(application.isDeclinedArchived),
+          declinedArchivedAt: application.declinedArchivedAt,
+        });
+      });
+
+      const jobCompanies = new Set();
+
+      let jobArchives = jobs.map((job) => {
+        if (job.companyName) jobCompanies.add(job.companyName);
+
+        return {
+          jobId: String(job._id),
+          job,
+          isClosed: job.status === 'closed',
+          isExpired:
+            Boolean(job.applicationDeadline) &&
+            new Date(job.applicationDeadline) < now,
+          declinedApplicants: applicationsByJob.get(String(job._id)) || [],
+        };
+      });
+
+      if (statusFilter === 'closed') {
+        jobArchives = jobArchives.filter((entry) => entry.isClosed);
+      } else if (statusFilter === 'expired') {
+        jobArchives = jobArchives.filter((entry) => entry.isExpired);
+      } else if (statusFilter === 'declined') {
+        jobArchives = jobArchives.filter(
+          (entry) => entry.declinedApplicants.length > 0
+        );
+      }
+
+      if (companyFilter !== 'all') {
+        jobArchives = jobArchives.filter(
+          (entry) => entry.job.companyName === companyFilter
+        );
+      }
+
+      if (q) {
+        jobArchives = jobArchives.filter((entry) => {
+          const applicantNames = entry.declinedApplicants
+            .map((application) => application.applicantName)
+            .join(' ');
+
+          return [
+            entry.job.title,
+            entry.job.companyName,
+            applicantNames,
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase()
+            .includes(q);
+        });
+      }
+
+      jobArchives = jobArchives.filter((entry) =>
+        isWithinDate(
+          entry.isExpired
+            ? entry.job.applicationDeadline
+            : entry.job.archivedAt || entry.job.updatedAt
+        )
+      );
+
+      return res.json({
+        success: true,
+        jobArchives,
+        options: {
+          jobCompanies: Array.from(jobCompanies).sort(),
+        },
+      });
+    }
 
     if (tab === 'dormant') {
       const roleFilter = String(req.query.role || 'all').toLowerCase();
@@ -2932,6 +3119,91 @@ exports.getAdminArchiveDetails = async (req, res) => {
   try {
     const type = String(req.params.type || '').toLowerCase();
     const { id } = req.params;
+
+
+    if (type === 'job') {
+      const job = await Job.findById(id)
+        .select(
+          'title companyName companyLogo employer status description requirements applicationDeadline location workMode jobType educationLevel category vacancies isActive isArchived archivedAt createdAt updatedAt'
+        )
+        .lean();
+
+      if (!job) {
+        return res.status(404).json({
+          success: false,
+          message: 'Archived job not found',
+        });
+      }
+
+      const now = new Date();
+      const isClosed = job.status === 'closed';
+      const isExpired =
+        Boolean(job.applicationDeadline) &&
+        new Date(job.applicationDeadline) < now;
+
+      if (!isClosed && !isExpired) {
+        return res.status(404).json({
+          success: false,
+          message: 'This job is not closed or expired',
+        });
+      }
+
+      const applications = await Application.find({
+        job: id,
+        status: 'declined',
+      })
+        .populate(
+          'jobseeker',
+          'email firstName middleName lastName fullName jobSeekerProfile'
+        )
+        .select(
+          'jobseeker declinedFrom declineReason declineComment appliedAt reviewedAt updatedAt isDeclinedArchived declinedArchivedAt'
+        )
+        .sort({ reviewedAt: -1, updatedAt: -1 })
+        .lean();
+
+      const declinedApplicants = applications.map((application) => {
+        const jobseeker = application.jobseeker || {};
+        const profile = jobseeker.jobSeekerProfile || {};
+
+        return {
+          _id: application._id,
+          applicantName:
+            jobseeker.fullName ||
+            [jobseeker.firstName, jobseeker.middleName, jobseeker.lastName]
+              .filter(Boolean)
+              .join(' ') ||
+            jobseeker.email ||
+            'Jobseeker',
+          jobseekerLevel:
+            profile.jobseekerLevel ||
+            profile.jobSeekerLevel ||
+            profile.experienceLevel ||
+            profile.careerLevel ||
+            'Not specified',
+          declinedStage:
+            application.declinedFrom === 'forInterview'
+              ? 'For Interview'
+              : application.declinedFrom === 'applicants'
+                ? 'Initial Screening'
+                : 'Application Review',
+          declineReason: application.declineReason || '',
+          declineComment: application.declineComment || '',
+          appliedAt: application.appliedAt,
+          declinedAt: application.reviewedAt || application.updatedAt,
+          isDeclinedArchived: Boolean(application.isDeclinedArchived),
+          declinedArchivedAt: application.declinedArchivedAt,
+        };
+      });
+
+      return res.json({
+        success: true,
+        job,
+        isClosed,
+        isExpired,
+        declinedApplicants,
+      });
+    }
 
     if (type === 'dormant-user') {
       const user = await User.findById(id)

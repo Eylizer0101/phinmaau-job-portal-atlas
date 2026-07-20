@@ -130,16 +130,18 @@ const AdminArchive = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedTab = searchParams.get("tab");
-  const initialTab = requestedTab === "dormant" ? "dormant" : "community";
+  const initialTab = ["community", "dormant", "jobs"].includes(requestedTab) ? requestedTab : "community";
 
   const [activeTab, setActiveTab] = useState(initialTab);
   const [communityAuthors, setCommunityAuthors] = useState([]);
   const [dormantUsers, setDormantUsers] = useState([]);
+  const [jobArchives, setJobArchives] = useState([]);
   const [options, setOptions] = useState({
     campuses: [],
     courses: [],
     dormantRoles: [],
     dormantIndustries: [],
+    jobCompanies: [],
   });
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -153,6 +155,8 @@ const AdminArchive = () => {
     role: "all",
     industry: "all",
     inactivity: "6-12",
+    jobStatus: "all",
+    company: "all",
     date: "all",
     dateFrom: "",
     dateTo: "",
@@ -175,20 +179,32 @@ const AdminArchive = () => {
               dateFrom: filters.dateFrom,
               dateTo: filters.dateTo,
             }
-          : {
-              tab: "dormant",
-              q: filters.search,
-              role: filters.role,
-              industry: filters.industry,
-              inactivity: filters.inactivity,
-            };
+          : activeTab === "dormant"
+            ? {
+                tab: "dormant",
+                q: filters.search,
+                role: filters.role,
+                industry: filters.industry,
+                inactivity: filters.inactivity,
+              }
+            : {
+                tab: "jobs",
+                q: filters.search,
+                status: filters.jobStatus,
+                company: filters.company,
+                date: filters.date,
+                dateFrom: filters.dateFrom,
+                dateTo: filters.dateTo,
+              };
 
       const response = await api.get("/admin/archive", { params });
 
       if (activeTab === "community") {
         setCommunityAuthors(response.data?.communityAuthors || []);
-      } else {
+      } else if (activeTab === "dormant") {
         setDormantUsers(response.data?.dormantUsers || []);
+      } else {
+        setJobArchives(response.data?.jobArchives || []);
       }
 
       setOptions((previous) => ({
@@ -198,7 +214,8 @@ const AdminArchive = () => {
     } catch (error) {
       console.error("Failed to load admin archive:", error);
       if (activeTab === "community") setCommunityAuthors([]);
-      else setDormantUsers([]);
+      else if (activeTab === "dormant") setDormantUsers([]);
+      else setJobArchives([]);
       setErrorMessage(error?.response?.data?.message || "Failed to load archive records.");
     } finally {
       setLoading(false);
@@ -229,7 +246,7 @@ const AdminArchive = () => {
     setFilters((previous) => ({ ...previous, [key]: value }));
   };
 
-  const activeItems = activeTab === "community" ? communityAuthors : dormantUsers;
+  const activeItems = activeTab === "community" ? communityAuthors : activeTab === "dormant" ? dormantUsers : jobArchives;
   const pageCount = Math.max(1, Math.ceil(activeItems.length / ITEMS_PER_PAGE));
   const safePage = Math.min(currentPage, pageCount);
 
@@ -246,6 +263,10 @@ const AdminArchive = () => {
     navigate(`/admin/archive/dormant-user/${userId}`);
   };
 
+  const openJobDetails = (jobId) => {
+    navigate(`/admin/archive/job/${jobId}`);
+  };
+
   return (
     <AdminLayout>
       <main className="mx-auto w-full max-w-[1280px] px-4 py-8 sm:px-6 lg:px-8">
@@ -256,7 +277,7 @@ const AdminArchive = () => {
           <div>
             <h1 className="text-3xl font-bold tracking-[-0.02em] text-slate-950">Archived</h1>
             <p className="mt-1 text-sm text-slate-500">
-              Review deleted community content and accounts inactive for 6–12 months.
+              Review deleted community content, dormant accounts, closed jobs, expired jobs, and declined applicants.
             </p>
           </div>
         </header>
@@ -266,23 +287,23 @@ const AdminArchive = () => {
             <div>
               <h2 className="text-sm font-bold text-slate-950">Archive Manager</h2>
               <p className="mt-0.5 text-xs text-slate-500">
-                Search and review archived Community and Dormant account records.
+                Search and review Community, Dormant, and Jobs archive records.
               </p>
             </div>
 
-            <div className={`grid w-full gap-3 sm:grid-cols-2 lg:w-auto ${activeTab === "community" ? "lg:grid-cols-[280px_180px]" : "lg:grid-cols-[360px]"}`}>
+            <div className={`grid w-full gap-3 sm:grid-cols-2 lg:w-auto ${activeTab === "dormant" ? "lg:grid-cols-[360px]" : "lg:grid-cols-[280px_180px]"}`}>
               <label className="relative block">
                 <Icon name="search" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   type="search"
                   value={filters.search}
                   onChange={(event) => updateFilter("search", event.target.value)}
-                  placeholder={activeTab === "community" ? "Search archives..." : "Search dormant accounts..."}
+                  placeholder={activeTab === "community" ? "Search archives..." : activeTab === "dormant" ? "Search dormant accounts..." : "Search job title, company, or applicant..."}
                   className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
                 />
               </label>
 
-              {activeTab === "community" ? (
+              {activeTab !== "dormant" ? (
                 <label className="relative block">
                   <select
                     value={filters.date}
@@ -302,7 +323,7 @@ const AdminArchive = () => {
             </div>
           </div>
 
-          {activeTab === "community" && filters.date === "custom" ? (
+          {activeTab !== "dormant" && filters.date === "custom" ? (
             <div className="grid gap-3 border-b border-slate-200 bg-slate-50 px-5 py-3 sm:grid-cols-2">
               <label className="text-xs font-semibold text-slate-600">
                 Start date
@@ -326,7 +347,7 @@ const AdminArchive = () => {
           ) : null}
 
           <div className="px-5 pb-5 pt-4">
-            <div className="mb-5 grid max-w-[520px] grid-cols-2 rounded-xl bg-slate-100 p-1">
+            <div className="mb-5 grid max-w-[720px] grid-cols-3 rounded-xl bg-slate-100 p-1">
               <button
                 type="button"
                 onClick={() => changeTab("community")}
@@ -350,6 +371,18 @@ const AdminArchive = () => {
               >
                 <Icon name="dormant" />
                 Dormant
+              </button>
+              <button
+                type="button"
+                onClick={() => changeTab("jobs")}
+                className={`inline-flex h-10 items-center justify-center gap-2 rounded-lg text-sm font-bold transition ${
+                  activeTab === "jobs"
+                    ? "bg-white text-slate-950 shadow-sm ring-1 ring-slate-200"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                <Icon name="building" />
+                Jobs
               </button>
             </div>
 
@@ -462,7 +495,7 @@ const AdminArchive = () => {
                   )}
                 </div>
               </>
-            ) : (
+            ) : activeTab === "dormant" ? (
               <>
                 <div className="mb-4">
                   <h3 className="text-sm font-bold text-slate-950">Users and employers — dormant accounts</h3>
@@ -576,6 +609,129 @@ const AdminArchive = () => {
                     })
                   )}
                 </div>
+              </>
+            ) : (
+              <>
+                <div className="mb-4">
+                  <h3 className="text-sm font-bold text-slate-950">Managed jobs — archived postings</h3>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Closed and expired job posts, including applicants declined from each job.
+                  </p>
+                </div>
+
+                <div className="mb-4 grid gap-3 md:grid-cols-2">
+                  <select
+                    value={filters.jobStatus}
+                    onChange={(event) => updateFilter("jobStatus", event.target.value)}
+                    className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#2e66a6]"
+                  >
+                    <option value="all">All job records</option>
+                    <option value="closed">Closed jobs</option>
+                    <option value="expired">Expired jobs</option>
+                    <option value="declined">Jobs with declined applicants</option>
+                  </select>
+
+                  <select
+                    value={filters.company}
+                    onChange={(event) => updateFilter("company", event.target.value)}
+                    className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#2e66a6]"
+                  >
+                    <option value="all">All companies</option>
+                    {(options.jobCompanies || []).map((company) => (
+                      <option key={company} value={company}>{company}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {loading ? (
+                  <div className="flex min-h-[220px] items-center justify-center rounded-xl border border-slate-200 text-sm text-slate-500">
+                    Loading archived job records...
+                  </div>
+                ) : errorMessage ? (
+                  <div className="flex min-h-[220px] items-center justify-center rounded-xl border border-slate-200 px-6 text-center text-sm text-red-600">
+                    {errorMessage}
+                  </div>
+                ) : paginatedItems.length === 0 ? (
+                  <div className="flex min-h-[220px] items-center justify-center rounded-xl border border-slate-200 text-sm text-slate-500">
+                    No closed, expired, or declined-applicant job records found.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {paginatedItems.map((entry) => (
+                      <article
+                        key={entry.jobId}
+                        className="overflow-hidden rounded-xl border border-slate-200 bg-white"
+                      >
+                        <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="flex min-w-0 gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                              <Icon name="building" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h4 className="text-sm font-bold text-slate-950">{entry.job?.title || "Untitled job"}</h4>
+                                {entry.isClosed ? (
+                                  <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-700">Closed</span>
+                                ) : null}
+                                {entry.isExpired ? (
+                                  <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-700">Expired</span>
+                                ) : null}
+                                {entry.declinedApplicants?.length ? (
+                                  <span className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[10px] font-bold text-rose-700">
+                                    {entry.declinedApplicants.length} declined
+                                  </span>
+                                ) : null}
+                              </div>
+                              <p className="mt-1 text-xs font-medium text-slate-500">{entry.job?.companyName || "Unspecified company"}</p>
+                              <p className="mt-1 text-[11px] text-slate-400">
+                                {entry.isExpired
+                                  ? `Deadline: ${formatDate(entry.job?.applicationDeadline)}`
+                                  : `Updated: ${formatDate(entry.job?.updatedAt)}`}
+                              </p>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => openJobDetails(entry.jobId)}
+                            className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-800 shadow-sm transition hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/5"
+                          >
+                            <Icon name="eye" />
+                            View
+                          </button>
+                        </div>
+
+                        {entry.declinedApplicants?.length ? (
+                          <div className="border-t border-slate-200 bg-slate-50/60 p-3">
+                            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+                              <div className="grid min-w-[680px] grid-cols-[1.3fr_0.9fr_1fr_0.9fr] gap-3 border-b border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-500">
+                                <span>Applicant</span>
+                                <span>Jobseeker level</span>
+                                <span>Declined at stage</span>
+                                <span>Date applied</span>
+                              </div>
+                              {entry.declinedApplicants.map((application) => (
+                                <div
+                                  key={application._id}
+                                  className="grid min-w-[680px] grid-cols-[1.3fr_0.9fr_1fr_0.9fr] gap-3 border-b border-slate-100 px-3 py-2.5 text-xs last:border-b-0"
+                                >
+                                  <span className="font-semibold text-slate-900">{application.applicantName}</span>
+                                  <span className="text-slate-600">{application.jobseekerLevel || "Not specified"}</span>
+                                  <span>
+                                    <span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-1 font-semibold text-rose-700">
+                                      {application.declinedStage}
+                                    </span>
+                                  </span>
+                                  <span className="text-slate-500">{formatDate(application.appliedAt)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                      </article>
+                    ))}
+                  </div>
+                )}
               </>
             )}
 
