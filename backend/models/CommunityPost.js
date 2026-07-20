@@ -25,6 +25,9 @@ const communityCommentSchema = new mongoose.Schema({
   notHelpful: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   replies: { type: [communityReplySchema], default: [] },
   reports: { type: [reportSchema], default: [] },
+  isDeleted: { type: Boolean, default: false, index: true },
+  deletedAt: { type: Date, default: null },
+  deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
 }, { timestamps: true });
 
 const communityPostSchema = new mongoose.Schema({
@@ -48,6 +51,9 @@ const communityPostSchema = new mongoose.Schema({
   comments: { type: [communityCommentSchema], default: [] },
   commentsCount: { type: Number, default: 0 },
   reports: { type: [reportSchema], default: [] },
+  isDeleted: { type: Boolean, default: false, index: true },
+  deletedAt: { type: Date, default: null },
+  deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
 }, { timestamps: true });
 
 communityPostSchema.index({ createdAt: -1 });

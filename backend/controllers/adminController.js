@@ -2,6 +2,7 @@
 const User = require('../models/User');
 const Job = require('../models/Job');
 const Application = require('../models/Application');
+const CommunityPost = require('../models/CommunityPost');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { v2: cloudinary } = require('cloudinary');
@@ -2595,6 +2596,99 @@ exports.getAdminArchive = async (req, res) => {
 
     const searchRegex = q ? new RegExp(escapeArchiveRegex(q), 'i') : null;
 
+    if (tab === 'community') {
+      const communityPosts = await CommunityPost.find({
+        $or: [
+          { isDeleted: true },
+          { comments: { $elemMatch: { isDeleted: true } } },
+        ],
+      })
+        .populate('author', 'email firstName middleName lastName fullName profileImage role jobSeekerProfile.campus jobSeekerProfile.course')
+        .populate('comments.author', 'email firstName middleName lastName fullName profileImage role jobSeekerProfile.campus jobSeekerProfile.course')
+        .sort({ deletedAt: -1, updatedAt: -1 })
+        .lean();
+
+      let community = [];
+      communityPosts.forEach((post) => {
+        if (post.isDeleted === true) {
+          community.push({
+            _id: post._id,
+            archiveType: 'post',
+            author: post.author,
+            content: post.content,
+            category: post.category,
+            topics: post.topics || [],
+            imageUrl: post.imageUrl || '',
+            linkUrl: post.linkUrl || '',
+            deletedAt: post.deletedAt || post.updatedAt,
+            dateArchived: post.deletedAt || post.updatedAt,
+            archiveStatus: 'Deleted Post',
+            postId: post._id,
+          });
+        }
+
+        (post.comments || []).forEach((comment) => {
+          if (comment.isDeleted === true) {
+            community.push({
+              _id: comment._id,
+              archiveType: 'comment',
+              author: comment.author,
+              content: comment.content,
+              postContent: post.content,
+              deletedAt: comment.deletedAt || comment.updatedAt,
+              dateArchived: comment.deletedAt || comment.updatedAt,
+              archiveStatus: 'Deleted Comment',
+              postId: post._id,
+              commentId: comment._id,
+            });
+          }
+        });
+      });
+
+      if (q) {
+        const lower = q.toLowerCase();
+        community = community.filter((item) => {
+          const authorName = getArchiveUserName(item.author).toLowerCase();
+          return authorName.includes(lower) || String(item.content || '').toLowerCase().includes(lower) || String(item.postContent || '').toLowerCase().includes(lower);
+        });
+      }
+
+      if (status !== 'all') {
+        community = community.filter((item) => item.archiveType === status || String(item.archiveStatus || '').toLowerCase() === status);
+      }
+
+      const campus = String(req.query.campus || 'all').trim();
+      const course = String(req.query.course || 'all').trim();
+      if (campus !== 'all') {
+        community = community.filter((item) => String(item?.author?.jobSeekerProfile?.campus || '') === campus);
+      }
+      if (course !== 'all') {
+        community = community.filter((item) => String(item?.author?.jobSeekerProfile?.course || '') === course);
+      }
+
+      community = community.filter((item) => {
+        const date = new Date(item.dateArchived || 0);
+        const match = buildArchiveDateMatch(req.query.date, 'dateArchived').dateArchived;
+        if (!match || Number.isNaN(date.getTime())) return true;
+        return (!match.$gte || date >= match.$gte) && (!match.$lte || date <= match.$lte);
+      });
+
+      community.sort((a, b) => new Date(b.dateArchived || 0) - new Date(a.dateArchived || 0));
+
+      const campuses = [...new Set(community.map((item) => item?.author?.jobSeekerProfile?.campus).filter(Boolean))].sort();
+      const courses = [...new Set(community.map((item) => item?.author?.jobSeekerProfile?.course).filter(Boolean))].sort();
+
+      return res.json({
+        success: true,
+        community,
+        users: [],
+        jobs: [],
+        applications: [],
+        options: { companies: [], industries: [], campuses, courses },
+      });
+    }
+
+
     const userQuery = {
       role: { $in: ['jobseeker', 'employer'] },
       $or: [
@@ -2830,6 +2924,29 @@ exports.restoreAdminArchiveItem = async (req, res) => {
     const type = String(req.params.type || '').toLowerCase();
     const { id } = req.params;
 
+
+    if (type === 'community-post') {
+      const post = await CommunityPost.findById(id);
+      if (!post) return res.status(404).json({ success: false, message: 'Community post not found' });
+      post.isDeleted = false;
+      post.deletedAt = null;
+      post.deletedBy = null;
+      await post.save({ validateBeforeSave: false });
+      return res.json({ success: true, message: 'Community post restored successfully', item: post });
+    }
+
+    if (type === 'community-comment') {
+      const post = await CommunityPost.findOne({ 'comments._id': id });
+      if (!post) return res.status(404).json({ success: false, message: 'Community comment not found' });
+      const comment = post.comments.id(id);
+      comment.isDeleted = false;
+      comment.deletedAt = null;
+      comment.deletedBy = null;
+      post.commentsCount = post.comments.filter((item) => item.isDeleted !== true).length;
+      await post.save({ validateBeforeSave: false });
+      return res.json({ success: true, message: 'Community comment restored successfully', item: comment });
+    }
+
     if (type === 'user') {
       const user = await User.findById(id);
       if (!user) return res.status(404).json({ success: false, message: 'User not found' });
@@ -2894,5 +3011,38 @@ exports.restoreAdminArchiveItem = async (req, res) => {
   } catch (error) {
     console.error('Error restoring archive item:', error);
     return res.status(500).json({ success: false, message: 'Failed to restore archive item' });
+  }
+};
+
+
+exports.permanentlyDeleteAdminArchiveItem = async (req, res) => {
+  try {
+    const type = String(req.params.type || '').toLowerCase();
+    const { id } = req.params;
+
+    if (type === 'community-post') {
+      const post = await CommunityPost.findOne({ _id: id, isDeleted: true });
+      if (!post) return res.status(404).json({ success: false, message: 'Archived community post not found' });
+      await post.deleteOne();
+      return res.json({ success: true, message: 'Community post permanently deleted' });
+    }
+
+    if (type === 'community-comment') {
+      const post = await CommunityPost.findOne({ 'comments._id': id });
+      if (!post) return res.status(404).json({ success: false, message: 'Archived community comment not found' });
+      const comment = post.comments.id(id);
+      if (!comment || comment.isDeleted !== true) {
+        return res.status(404).json({ success: false, message: 'Archived community comment not found' });
+      }
+      post.comments.pull(id);
+      post.commentsCount = post.comments.filter((item) => item.isDeleted !== true).length;
+      await post.save({ validateBeforeSave: false });
+      return res.json({ success: true, message: 'Community comment permanently deleted' });
+    }
+
+    return res.status(400).json({ success: false, message: 'Permanent deletion is only available for archived community content' });
+  } catch (error) {
+    console.error('Error permanently deleting archive item:', error);
+    return res.status(500).json({ success: false, message: 'Failed to permanently delete archive item' });
   }
 };

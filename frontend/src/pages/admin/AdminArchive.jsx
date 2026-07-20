@@ -8,13 +8,16 @@ const cn = (...classes) => classes.filter(Boolean).join(" ");
 const ITEMS_PER_PAGE = 10;
 
 const tabs = [
+  { key: "community", label: "Community" },
   { key: "users", label: "Users" },
   { key: "jobs", label: "Jobs" },
   { key: "applications", label: "Applications" },
 ];
 
 const statusOptions = [
-  { value: "all", label: "All Status" },
+  { value: "all", label: "All Types" },
+  { value: "post", label: "Deleted Posts" },
+  { value: "comment", label: "Deleted Comments" },
   { value: "declined", label: "Declined" },
   { value: "closed", label: "Closed" },
   { value: "expired", label: "Expired" },
@@ -555,9 +558,11 @@ const Icon = ({ name, className = "h-4 w-4" }) => {
 const RestoreModal = ({ item, type, onCancel, onConfirm, loading }) => {
   if (!item) return null;
 
-  const title = type === "job" ? "Restore Job" : type === "application" ? "Restore Application" : "Restore User";
+  const title = type === "community-post" ? "Restore Post" : type === "community-comment" ? "Restore Comment" : type === "job" ? "Restore Job" : type === "application" ? "Restore Application" : "Restore User";
   const name =
-    type === "job"
+    type === "community-post" || type === "community-comment"
+      ? (item?.content || "this community item")
+      : type === "job"
       ? item?.title || "this job"
       : type === "application"
       ? getName(item?.jobseeker)
@@ -573,7 +578,7 @@ const RestoreModal = ({ item, type, onCancel, onConfirm, loading }) => {
         <p className="mx-auto mt-4 max-w-[420px] text-base leading-7 text-slate-600">
           Are you sure you want to restore {type === "job" ? "the" : "the"}{" "}
           <span className="font-semibold text-slate-900">{name}</span>
-          {type === "job" ? " job post" : type === "application" ? " application" : " account"}?
+          {type === "community-post" ? " post" : type === "community-comment" ? " comment" : type === "job" ? " job post" : type === "application" ? " application" : " account"}?
         </p>
         <div className="my-7 h-px bg-slate-200" />
         <div className="grid grid-cols-2 gap-4">
@@ -602,9 +607,9 @@ const RestoreModal = ({ item, type, onCancel, onConfirm, loading }) => {
 const AdminArchive = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = searchParams.get("tab") || "users";
+  const initialTab = searchParams.get("tab") || "community";
 
-  const [activeTab, setActiveTab] = useState(tabs.some((t) => t.key === initialTab) ? initialTab : "users");
+  const [activeTab, setActiveTab] = useState(tabs.some((t) => t.key === initialTab) ? initialTab : "community");
   const [filters, setFilters] = useState({
     search: "",
     status: "all",
@@ -615,8 +620,8 @@ const AdminArchive = () => {
     dateFrom: "",
     dateTo: "",
   });
-  const [data, setData] = useState({ users: [], jobs: [], applications: [] });
-  const [options, setOptions] = useState({ companies: [], industries: [] });
+  const [data, setData] = useState({ community: [], users: [], jobs: [], applications: [] });
+  const [options, setOptions] = useState({ companies: [], industries: [], campuses: [], courses: [] });
   const [loading, setLoading] = useState(false);
   const [restoreTarget, setRestoreTarget] = useState(null);
   const [restoreLoading, setRestoreLoading] = useState(false);
@@ -629,8 +634,10 @@ const AdminArchive = () => {
         tab: activeTab,
         q: filters.search,
         status: filters.status,
-        role: filters.role,
-        company: filters.company,
+        role: activeTab === "community" ? "all" : filters.role,
+        campus: activeTab === "community" ? filters.role : "all",
+        company: activeTab === "community" ? "all" : filters.company,
+        course: activeTab === "community" ? filters.company : "all",
         industry: filters.industry,
         date: filters.date,
         dateFrom: filters.dateFrom,
@@ -639,14 +646,15 @@ const AdminArchive = () => {
       const res = await api.get("/admin/archive", { params });
       const payload = res.data || {};
       setData({
+        community: payload.community || [],
         users: payload.users || [],
         jobs: payload.jobs || [],
         applications: payload.applications || [],
       });
-      setOptions(payload.options || { companies: [], industries: [] });
+      setOptions(payload.options || { companies: [], industries: [], campuses: [], courses: [] });
     } catch (err) {
       console.error("Archive load error:", err);
-      setData({ users: [], jobs: [], applications: [] });
+      setData({ community: [], users: [], jobs: [], applications: [] });
     } finally {
       setLoading(false);
     }
@@ -671,12 +679,14 @@ const AdminArchive = () => {
   const showingEnd = Math.min(currentPage * ITEMS_PER_PAGE, rows.length);
 
   const tabCounts = {
+    community: data.community?.length || 0,
     users: data.users?.length || 0,
     jobs: data.jobs?.length || 0,
     applications: data.applications?.length || 0,
   };
 
   const tableHeaders = useMemo(() => {
+    if (activeTab === "community") return ["Author", "Type", "Deleted Content", "Campus / Course", "Date Deleted", "Actions"];
     if (activeTab === "jobs") return ["Company", "Job Title", "Address", "Date Archived", "Status", "Actions"];
     if (activeTab === "applications") return ["Applicant", "Job Title", "Company", "Address", "Date Archived", "Status", "Actions"];
     return ["Name", "Role", "Address", "Date Archived", "Status", "Actions"];
@@ -694,6 +704,10 @@ const AdminArchive = () => {
   };
 
   const openDetails = (row) => {
+    if (activeTab === "community") {
+      window.alert(`${row.archiveType === "comment" ? "Deleted Comment" : "Deleted Post"}\n\n${row.content || "No content"}${row.postContent ? `\n\nOriginal post: ${row.postContent}` : ""}`);
+      return;
+    }
     if (activeTab === "jobs") navigate(`/admin/archive/jobs/${row._id}`);
     else if (activeTab === "applications") navigate(`/admin/archive/applications/${row._id}`);
     else navigate(`/admin/archive/users/${row._id}`);
@@ -711,6 +725,20 @@ const AdminArchive = () => {
       alert(err?.response?.data?.message || "Failed to restore item.");
     } finally {
       setRestoreLoading(false);
+    }
+  };
+
+  const permanentlyDeleteCommunityItem = async (row) => {
+    const type = row.archiveType === "comment" ? "community-comment" : "community-post";
+    const confirmed = window.confirm("Permanently delete this archived community content? This action cannot be undone.");
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/admin/archive/${type}/${row._id}`);
+      await loadArchive();
+    } catch (err) {
+      console.error("Permanent delete error:", err);
+      alert(err?.response?.data?.message || "Unable to permanently delete this item.");
     }
   };
 
@@ -746,6 +774,59 @@ const AdminArchive = () => {
     return paginatedRows.map((row) => {
       const status = row.archiveStatus || row.statusLabel || row.status || "Archived";
       const archiveDate = row.archivedAt || row.dateArchived || row.updatedAt || row.createdAt;
+
+      if (activeTab === "community") {
+        const author = row.author || {};
+        const campus = author?.jobSeekerProfile?.campus || "—";
+        const course = author?.jobSeekerProfile?.course || "—";
+        const restoreType = row.archiveType === "comment" ? "community-comment" : "community-post";
+        return (
+          <tr
+            key={`${row.archiveType}-${row._id}`}
+            tabIndex={0}
+            onDoubleClick={() => openDetails(row)}
+            className="border-b border-slate-100 transition-colors last:border-b-0 hover:bg-[#2e66a6]/5"
+          >
+            <td className="px-6 py-4">
+              <div className="flex items-center gap-3">
+                {renderAvatar(author, "user")}
+                <div>
+                  <p className="font-semibold text-slate-800">{getName(author)}</p>
+                  <p className="text-xs text-slate-500">{author.email || "—"}</p>
+                </div>
+              </div>
+            </td>
+            <td className="px-6 py-4">
+              <span className={cn(
+                "rounded-full px-3 py-1 text-[11px] font-semibold uppercase ring-1",
+                row.archiveType === "comment"
+                  ? "bg-violet-50 text-violet-700 ring-violet-100"
+                  : "bg-blue-50 text-blue-700 ring-blue-100"
+              )}>
+                {row.archiveType === "comment" ? "Comment" : "Post"}
+              </span>
+            </td>
+            <td className="max-w-[360px] px-6 py-4">
+              <p className="line-clamp-2 font-medium text-slate-700">{row.content || "—"}</p>
+              {row.postContent ? <p className="mt-1 line-clamp-1 text-xs text-slate-500">From post: {row.postContent}</p> : null}
+            </td>
+            <td className="px-6 py-4 text-slate-600">
+              <p>{campus}</p>
+              <p className="text-xs text-slate-500">{course}</p>
+            </td>
+            <td className="px-6 py-4 text-slate-600">{formatArchiveDate(archiveDate)}</td>
+            <td className="px-6 py-4">
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={() => openDetails(row)} title="View" className="rounded-lg p-1 text-slate-500 transition hover:bg-[#2e66a6]/10 hover:text-[#2e66a6]"><Icon name="eye" /></button>
+                <button type="button" onClick={() => setRestoreTarget({ type: restoreType, item: row })} title="Restore" className="rounded-lg p-1 text-slate-500 transition hover:bg-[#2e66a6]/10 hover:text-[#2e66a6]"><Icon name="restore" /></button>
+                <button type="button" onClick={() => permanentlyDeleteCommunityItem(row)} title="Delete permanently" className="rounded-lg p-1 text-red-500 transition hover:bg-red-50 hover:text-red-700">
+                  <span className="text-lg leading-none">×</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        );
+      }
 
       if (activeTab === "jobs") {
         return (
@@ -896,7 +977,7 @@ const AdminArchive = () => {
         <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Archive</h1>
-            <p className="mt-1 text-sm text-gray-600">View, filter, and restore archived users, jobs, and applications.</p>
+            <p className="mt-1 text-sm text-gray-600">Review deleted community posts and comments, then restore or permanently delete them.</p>
           </div>
         </div>
 
@@ -908,24 +989,40 @@ const AdminArchive = () => {
                 <input
                   value={filters.search}
                   onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
-                  placeholder={activeTab === "jobs" ? "Search company, job title..." : activeTab === "applications" ? "Search applicant, job title..." : "Search name, email..."}
+                  placeholder={activeTab === "community" ? "Search author or deleted content..." : activeTab === "jobs" ? "Search company, job title..." : activeTab === "applications" ? "Search applicant, job title..." : "Search name, email..."}
                   className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 text-sm text-slate-700 outline-none shadow-sm transition hover:border-slate-300 focus:border-[#2e66a6] focus:bg-white focus:ring-2 focus:ring-[#2e66a6]/20"
                 />
               </div>
               <select value={filters.status} onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none shadow-sm transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
-                {statusOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                {(activeTab === "community" ? statusOptions.slice(0, 3) : statusOptions.filter((o) => !["post", "comment"].includes(o.value))).map((o) => <option key={o.value} value={o.value}>{o.value === "all" && activeTab !== "community" ? "All Status" : o.label}</option>)}
               </select>
-              <select value={filters.role} onChange={(e) => setFilters((f) => ({ ...f, role: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none shadow-sm transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
-                {roleOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-              <select value={filters.company} onChange={(e) => setFilters((f) => ({ ...f, company: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none shadow-sm transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
-                <option value="all">All Company</option>
-                {(options.companies || []).map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-              <select value={filters.industry} onChange={(e) => setFilters((f) => ({ ...f, industry: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none shadow-sm transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
-                <option value="all">All Industry</option>
-                {(options.industries || []).map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
+              {activeTab === "community" ? (
+                <>
+                  <select value={filters.role} onChange={(e) => setFilters((f) => ({ ...f, role: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none shadow-sm transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
+                    <option value="all">All Campuses</option>
+                    {(options.campuses || []).map((value) => <option key={value} value={value}>{value}</option>)}
+                  </select>
+                  <select value={filters.company} onChange={(e) => setFilters((f) => ({ ...f, company: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none shadow-sm transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
+                    <option value="all">All Courses</option>
+                    {(options.courses || []).map((value) => <option key={value} value={value}>{value}</option>)}
+                  </select>
+                  <div className="hidden xl:block" />
+                </>
+              ) : (
+                <>
+                  <select value={filters.role} onChange={(e) => setFilters((f) => ({ ...f, role: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none shadow-sm transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
+                    {roleOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                  <select value={filters.company} onChange={(e) => setFilters((f) => ({ ...f, company: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none shadow-sm transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
+                    <option value="all">All Company</option>
+                    {(options.companies || []).map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <select value={filters.industry} onChange={(e) => setFilters((f) => ({ ...f, industry: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none shadow-sm transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
+                    <option value="all">All Industry</option>
+                    {(options.industries || []).map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </>
+              )}
 
               <DateFilterDropdown
                 value={filters.date}
@@ -948,7 +1045,7 @@ const AdminArchive = () => {
                 <button
                   key={tab.key}
                   type="button"
-                  onClick={() => setActiveTab(tab.key)}
+                  onClick={() => { setActiveTab(tab.key); setFilters((f) => ({ ...f, status: "all", role: "all", company: "all", industry: "all" })); }}
                   className={`border-b-2 px-2 py-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20 ${
                     activeTab === tab.key ? "border-[#2e66a6] text-[#2e66a6]" : "border-transparent text-slate-500 hover:text-slate-800"
                   }`}

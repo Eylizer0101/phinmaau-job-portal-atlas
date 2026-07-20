@@ -379,7 +379,7 @@ const CommunityPage = () => {
   };
 
   const deletePost = async (post) => {
-    const confirmed = window.confirm('Are you sure you want to delete this post? You will not be able to recover it.');
+    const confirmed = window.confirm('Are you sure you want to delete this post? It will be moved to the admin archive.');
     if (!confirmed) return;
 
     try {
@@ -387,7 +387,7 @@ const CommunityPage = () => {
       if (response.data?.success) {
         setPosts((prev) => prev.filter((item) => item._id !== post._id));
         if (commentsPost?._id === post._id) setCommentsPost(null);
-        setNotice('Post deleted successfully.');
+        setNotice('Post moved to archive successfully.');
       }
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to delete post.');
@@ -473,6 +473,30 @@ const CommunityPage = () => {
       alert(error.response?.data?.message || (replyTarget ? 'Failed to add reply.' : 'Failed to add comment.'));
     } finally {
       setCommentLoading(false);
+    }
+  };
+
+
+  const deleteComment = async (commentId) => {
+    if (!commentsPost) return;
+    const confirmed = window.confirm('Are you sure you want to delete this comment? It will be moved to the admin archive.');
+    if (!confirmed) return;
+
+    try {
+      const response = await api.delete(`/community/posts/${commentsPost._id}/comments/${commentId}`);
+      if (response.data?.success) {
+        const nextComments = (commentsPost.comments || []).filter((comment) => comment._id !== commentId);
+        const nextPost = {
+          ...commentsPost,
+          comments: nextComments,
+          commentsCount: response.data.commentsCount ?? nextComments.length,
+        };
+        setCommentsPost(nextPost);
+        setPosts((prev) => prev.map((post) => (post._id === nextPost._id ? nextPost : post)));
+        setNotice('Comment moved to archive successfully.');
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to delete comment.');
     }
   };
 
@@ -1128,7 +1152,15 @@ const CommunityPage = () => {
                           <button type="button" onClick={() => startReply(comment._id, '', commentAuthorName)} className="hover:text-[#2e66a6]">
                             <FontAwesomeIcon icon={faReply} className="mr-1" /> Reply
                           </button>
-                          {!isCommentOwner && (
+                          {isCommentOwner ? (
+                            <button
+                              type="button"
+                              onClick={() => deleteComment(comment._id)}
+                              className="hover:text-red-500"
+                            >
+                              <FontAwesomeIcon icon={faTrash} className="mr-1" /> Delete
+                            </button>
+                          ) : (
                             <button
                               type="button"
                               onClick={() => setReportTarget({

@@ -82,7 +82,8 @@ const decoratePost = (post, currentUserId) => {
   const item = post?.toObject ? post.toObject() : post;
   if (!item) return item;
 
-  item.commentsCount = Array.isArray(item.comments) ? item.comments.length : Number(item.commentsCount || 0);
+  item.comments = (item.comments || []).filter((comment) => comment?.isDeleted !== true);
+  item.commentsCount = item.comments.length;
   item.likedByCurrentUser = (item.likes || []).some((id) => String(id) === String(currentUserId || ''));
 
   if (item.author && typeof item.author === 'object') {
@@ -109,7 +110,7 @@ exports.getPosts = async (req, res) => {
   try {
     const category = String(req.query.category || 'all').toLowerCase();
     const search = String(req.query.search || '').trim();
-    const query = {};
+    const query = { isDeleted: { $ne: true } };
 
     if (category === 'you') {
       query.author = req.user._id;
@@ -257,8 +258,11 @@ exports.deletePost = async (req, res) => {
       return res.status(403).json({ success: false, message: 'You can only delete your own post' });
     }
 
-    await post.deleteOne();
-    res.json({ success: true, message: 'Post deleted successfully' });
+    post.isDeleted = true;
+    post.deletedAt = new Date();
+    post.deletedBy = req.user._id;
+    await post.save({ validateBeforeSave: false });
+    res.json({ success: true, message: 'Post moved to archive successfully' });
   } catch (error) {
     console.error('Error deleting community post:', error);
     res.status(500).json({ success: false, message: 'Error deleting community post' });
@@ -325,6 +329,38 @@ exports.addComment = async (req, res) => {
   } catch (error) {
     console.error('Error adding community post comment:', error);
     res.status(500).json({ success: false, message: 'Error adding comment' });
+  }
+};
+
+
+exports.deleteComment = async (req, res) => {
+  try {
+    const post = await CommunityPost.findOne({ _id: req.params.postId, isDeleted: { $ne: true } });
+    if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment || comment.isDeleted === true) {
+      return res.status(404).json({ success: false, message: 'Comment not found' });
+    }
+
+    if (String(comment.author) !== String(req.user._id)) {
+      return res.status(403).json({ success: false, message: 'You can only delete your own comment' });
+    }
+
+    comment.isDeleted = true;
+    comment.deletedAt = new Date();
+    comment.deletedBy = req.user._id;
+    post.commentsCount = post.comments.filter((item) => item.isDeleted !== true).length;
+    await post.save({ validateBeforeSave: false });
+
+    return res.json({
+      success: true,
+      message: 'Comment moved to archive successfully',
+      commentsCount: post.commentsCount,
+    });
+  } catch (error) {
+    console.error('Error deleting community comment:', error);
+    return res.status(500).json({ success: false, message: 'Error deleting comment' });
   }
 };
 
@@ -499,14 +535,14 @@ exports.getManagedContent = async (req, res) => {
 
     if (type === 'all' || type === 'posts') {
       const ownedPosts = await populatePost(
-        CommunityPost.find({ author: req.user._id }).sort({ createdAt: direction })
+        CommunityPost.find({ author: req.user._id, isDeleted: { $ne: true } }).sort({ createdAt: direction })
       );
       posts = ownedPosts.map((post) => decoratePost(post, req.user._id));
     }
 
     if (type === 'all' || type === 'comments') {
       const postsWithComments = await populatePost(
-        CommunityPost.find({ 'comments.author': req.user._id })
+        CommunityPost.find({ isDeleted: { $ne: true }, 'comments.author': req.user._id })
       );
 
       comments = postsWithComments.flatMap((post) => {

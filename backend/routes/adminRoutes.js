@@ -18,6 +18,7 @@ router.get('/job-offers', adminController.getAdminJobOffers);
 router.get('/archive', adminController.getAdminArchive);
 router.get('/archive/:type/:id', adminController.getAdminArchiveDetails);
 router.patch('/archive/:type/:id/restore', adminController.restoreAdminArchiveItem);
+router.delete('/archive/:type/:id', adminController.permanentlyDeleteAdminArchiveItem);
 
 // User management routes
 router.get('/users', adminController.getAllUsers);
