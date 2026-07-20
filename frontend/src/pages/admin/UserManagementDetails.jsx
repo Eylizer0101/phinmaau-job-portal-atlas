@@ -665,6 +665,7 @@ const UserManagementDetails = () => {
       <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-2 border-b border-[#edf2f7] pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e66a6]">Current opportunities</p>
             <h3 className="mt-1 text-xl font-bold text-black">Jobs</h3>
             <p className="mt-1 text-sm text-black/50">Active job openings published by this company.</p>
           </div>
@@ -814,6 +815,7 @@ const UserManagementDetails = () => {
       about: (
         <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6">
           <div className="border-b border-[#edf2f7] pb-5">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e66a6]">Company overview</p>
             <h3 className="mt-1 text-xl font-bold text-black">About</h3>
           </div>
 
@@ -830,6 +832,21 @@ const UserManagementDetails = () => {
                   employerProfile.description}
               </p>
 
+              <div className="grid gap-3 border-t border-[#edf2f7] pt-5 sm:grid-cols-2 xl:grid-cols-3">
+                {[
+                  { label: "Industry", value: employerProfile.industry },
+                  { label: "Location", value: employerProfile.companyAddress || employerProfile.regionCity },
+                  { label: "Business email", value: employerProfile.businessEmail || user.email },
+                  { label: "Contact number", value: employerProfile.mobileNumber || user.mobileNumber },
+                  { label: "Contact person", value: [user.firstName, user.lastName].filter(Boolean).join(" ") },
+                  { label: "Member since", value: formatDate(user.createdAt) },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-xl bg-[#f8fbff] px-4 py-3">
+                    <p className="text-xs font-medium text-black/45">{item.label}</p>
+                    <p className="mt-1 break-words text-sm font-semibold text-black">{item.value || "Not provided"}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="mt-5">
@@ -918,6 +935,7 @@ const UserManagementDetails = () => {
         <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6">
           <div className="flex flex-col gap-4 border-b border-[#edf2f7] pb-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e66a6]">Candidate feedback</p>
               <h3 className="mt-1 text-xl font-bold text-black">Reviews</h3>
               <p className="mt-1 text-sm text-black/50">Feedback submitted by job seekers.</p>
             </div>
@@ -1072,38 +1090,43 @@ const UserManagementDetails = () => {
                   </button>
                 </div>
 
-                <div className="mt-5 flex flex-col gap-3 border-t border-[#edf2f7] pt-4 lg:flex-row lg:items-center lg:justify-between">
-                  <span className="shrink-0 text-xs text-black/55">
-                    <span className="font-semibold text-black">Last profile update:</span>{" "}
-                    {formatDate(user.updatedAt, true)}
+                <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-[#edf2f7] pt-4 text-xs text-black/55">
+                  <span>
+                    <span className="font-semibold text-black">Contact person:</span>{" "}
+                    {[user.firstName, user.lastName].filter(Boolean).join(" ") || employerProfile.position || "—"}
                   </span>
+                  <span>
+                    <span className="font-semibold text-black">Registered:</span> {formatDate(user.createdAt)}
+                  </span>
+                  <span>
+                    <span className="font-semibold text-black">Last profile update:</span> {formatDate(user.updatedAt, true)}
+                  </span>
+                </div>
+              </div>
 
-                  <nav
-                    className="flex min-w-0 gap-5 overflow-x-auto"
-                    aria-label="Company profile sections"
-                  >
-                    {[
-                      { key: "about", label: "About" },
-                      { key: "jobs", label: "Jobs" },
-                      { key: "social", label: "Social Media" },
-                      { key: "gallery", label: "Gallery" },
-                      { key: "reviews", label: "Reviews" },
-                    ].map((tab) => (
-                      <button
-                        key={tab.key}
-                        type="button"
-                        onClick={() => setActiveEmployerTab(tab.key)}
-                        className={cn(
-                          "shrink-0 border-b-2 px-1 pb-2 pt-1 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2",
-                          activeEmployerTab === tab.key
-                            ? "border-[#2e66a6] text-[#2e66a6]"
-                            : "border-transparent text-black/50 hover:text-black"
-                        )}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
-                  </nav>
+              <div className="border-t border-[#e2e8f0] px-4 sm:px-6">
+                <div className="flex gap-5 overflow-x-auto">
+                  {[
+                    { key: "about", label: "About" },
+                    { key: "jobs", label: "Jobs" },
+                    { key: "social", label: "Social Media" },
+                    { key: "gallery", label: "Gallery" },
+                    { key: "reviews", label: "Reviews" },
+                  ].map((tab) => (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => setActiveEmployerTab(tab.key)}
+                      className={cn(
+                        "shrink-0 border-b-2 px-1 py-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2",
+                        activeEmployerTab === tab.key
+                          ? "border-[#2e66a6] text-[#2e66a6]"
+                          : "border-transparent text-black/50 hover:text-black"
+                      )}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
               </div>
             </section>
