@@ -622,6 +622,53 @@ const UserManagementDetails = () => {
       0
     );
 
+    const formatJobSalary = (job) => {
+      if (job?.hideSalary) return "Salary not specified";
+
+      const min = Number(job?.salaryMin);
+      const max = Number(job?.salaryMax);
+      const hasMin = Number.isFinite(min) && min > 0;
+      const hasMax = Number.isFinite(max) && max > 0;
+
+      if (hasMin && hasMax) return `₱${min.toLocaleString()} - ₱${max.toLocaleString()}`;
+      if (hasMin) return `From ₱${min.toLocaleString()}`;
+      if (hasMax) return `Up to ₱${max.toLocaleString()}`;
+      return "Salary not specified";
+    };
+
+    const normalizeWorkModeLabel = (value) => {
+      const normalized = String(value || "").trim().toLowerCase();
+      if (!normalized) return "";
+      if (normalized.includes("hybrid") || normalized.includes("blended")) return "Blended";
+      if (normalized.includes("work from home") || normalized.includes("wfh")) return "Work from Home";
+      if (normalized.includes("remote")) return "Remote";
+      if (normalized.includes("on-site") || normalized.includes("onsite") || normalized.includes("on site")) return "On-site";
+      return String(value || "").trim();
+    };
+
+    const formatExperienceBadge = (value) => {
+      const raw = String(value || "").trim();
+      const normalized = raw.toLowerCase();
+
+      if (!raw) return "";
+      if (normalized.includes("no experience")) return "No Experience Required";
+
+      const yearMatch = normalized.match(/(\d+)\s*\+?\s*year/);
+      if (yearMatch) {
+        const years = yearMatch[1];
+        return `${years} ${years === "1" ? "Year" : "Years"} Experience`;
+      }
+
+      if (normalized.includes("6+")) return "6+ Years Experience";
+      return raw;
+    };
+
+    const isOpenToFreshGraduate = (job) =>
+      job?.openToFreshGraduates === true ||
+      job?.openToFreshGraduates === "true" ||
+      job?.freshGraduate === true ||
+      job?.freshGraduate === "true";
+
     const averageReview =
       reviewItems.length > 0
         ? reviewItems.reduce(
@@ -675,50 +722,136 @@ const UserManagementDetails = () => {
         </div>
 
         {activeJobs.length ? (
-          <div className="mt-5 grid gap-4 lg:grid-cols-2">
-            {activeJobs.map((job) => (
-              <article
-                key={job._id}
-                className="group rounded-2xl border border-[#e2e8f0] bg-white p-5 transition hover:-translate-y-0.5 hover:border-[#2e66a6]/35 hover:shadow-[0_12px_30px_rgba(46,102,166,0.10)]"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <h4 className="truncate text-base font-bold text-black">{job.title || job.jobTitle || "Untitled job"}</h4>
-                    <p className="mt-1 text-xs text-black/50">
-                      {[job.jobType, job.workMode].filter(Boolean).join(" • ") || "Employment details unavailable"}
-                    </p>
-                  </div>
-                  <JobStatusBadge status="open" />
-                </div>
+          <div className="mt-5 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {activeJobs.map((job) => {
+              const experienceBadge = formatExperienceBadge(job?.experienceLevel);
+              const workModeBadge = normalizeWorkModeLabel(job?.workMode);
+              const badges = [
+                experienceBadge,
+                workModeBadge,
+                isOpenToFreshGraduate(job) ? "Open to Fresh Graduate" : "",
+              ]
+                .map((badge) => String(badge || "").trim())
+                .filter(Boolean)
+                .filter(
+                  (badge, index, items) =>
+                    items.findIndex((item) => item.toLowerCase() === badge.toLowerCase()) === index
+                )
+                .slice(0, 3);
 
-                <div className="mt-5 grid grid-cols-2 gap-3 text-xs">
-                  <div className="rounded-xl bg-[#f8fbff] p-3">
-                    <p className="text-black/45">Applicants</p>
-                    <p className="mt-1 text-base font-bold text-black">{job.applicantCount ?? job.applicantsCount ?? 0}</p>
-                  </div>
-                  <div className="rounded-xl bg-[#f8fbff] p-3">
-                    <p className="text-black/45">Posted</p>
-                    <p className="mt-1 font-bold text-black">{formatDate(job.createdAt)}</p>
-                  </div>
-                </div>
+              const jobLogo = getFileUrl(job?.companyLogo) || logoUrl;
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigate(`/admin/jobs/${job._id}`, {
-                      state: {
-                        backPath: `/admin/users/${userId}`,
-                        backLabel: "Back to Employer Profile",
-                      },
-                    })
-                  }
-                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+              return (
+                <article
+                  key={job._id}
+                  className="group flex min-h-[320px] flex-col rounded-2xl border border-[#e5e7eb] bg-white p-7 shadow-sm transition hover:shadow-md"
                 >
-                  <Icon name="eye" className="h-4 w-4" />
-                  View job
-                </button>
-              </article>
-            ))}
+                  {job?.isUrgent && (
+                    <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full bg-[#171717] pr-4 text-sm font-bold leading-none text-white shadow-sm">
+                      <span className="flex h-9 w-12 items-center justify-center overflow-visible">
+                        <img src="/images/fire.png" alt="" className="h-14 w-14 max-w-none object-contain" />
+                      </span>
+                      Urgently Needed
+                    </div>
+                  )}
+
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-start gap-4">
+                      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border border-gray-200 bg-white">
+                        {jobLogo ? (
+                          <img
+                            src={jobLogo}
+                            alt={`${job?.companyName || companyName} logo`}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-gray-100 text-[#2e66a6]">
+                            <Icon name="building" className="h-5 w-5" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <h4 className="line-clamp-2 text-lg font-bold leading-snug text-black transition-colors group-hover:text-[#2e66a6]">
+                          {String(job?.title || job?.jobTitle || "Job Title").replaceAll('"', "")}
+                        </h4>
+
+                        <div className="mt-1 flex min-w-0 items-center gap-2">
+                          <span className="truncate text-sm font-medium text-gray-700">
+                            {job?.companyName || companyName}
+                          </span>
+
+                          {employerVerified && (
+                            <span
+                              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
+                              title="Verified"
+                              aria-label="Verified company"
+                            >
+                              <img
+                                src="/images/checkmo.png"
+                                alt="Verified"
+                                className="h-5 w-5 object-contain"
+                                draggable="false"
+                              />
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <JobStatusBadge status="open" />
+                  </div>
+
+                  <div className="mt-4 rounded-xl bg-gray-100 p-4">
+                    <div className="flex min-w-0 items-center gap-2 text-sm text-gray-700">
+                      <Icon name="mapPin" className="h-4 w-4 shrink-0 text-gray-600" />
+                      <span className="truncate">{job?.location || "Location not specified"}</span>
+                    </div>
+
+                    <div className="mt-2 flex items-center gap-2 text-sm text-gray-700">
+                      <span className="flex h-4 w-4 shrink-0 items-center justify-center text-[14px] font-extrabold leading-none text-gray-600">
+                        ₱
+                      </span>
+                      <span className="truncate">{formatJobSalary(job)}</span>
+                    </div>
+
+                    <div className="mt-2 flex items-center gap-2 text-sm text-gray-700">
+                      <Icon name="briefcase" className="h-4 w-4 shrink-0 text-gray-600" />
+                      <span className="truncate">{job?.jobType || "Full-time"}</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex min-h-[28px] flex-wrap items-center gap-2">
+                    {badges.map((badge) => (
+                      <span
+                        key={badge}
+                        className="whitespace-nowrap rounded-full border border-[#2e66a6]/30 bg-white px-2.5 py-1 text-[10px] font-semibold text-[#2e66a6] shadow-sm"
+                      >
+                        {badge}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 h-px w-full bg-gray-300/80" />
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(`/admin/jobs/${job._id}`, {
+                        state: {
+                          backPath: `/admin/users/${userId}`,
+                          backLabel: "Back to Employer Profile",
+                        },
+                      })
+                    }
+                    className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                  >
+                    <Icon name="eye" className="h-4 w-4" />
+                    View Job
+                  </button>
+                </article>
+              );
+            })}
           </div>
         ) : (
           <div className="mt-5">
