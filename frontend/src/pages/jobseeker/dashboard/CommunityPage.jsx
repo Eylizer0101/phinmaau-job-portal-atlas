@@ -204,6 +204,7 @@ const CommunityPage = () => {
   const [managedCategory, setManagedCategory] = useState('all');
   const [managedCommentPage, setManagedCommentPage] = useState(1);
   const [archivedComments, setArchivedComments] = useState([]);
+  const [archivedTypeFilter, setArchivedTypeFilter] = useState('all');
   const [editTextModal, setEditTextModal] = useState(null);
   const [deleteConfirmModal, setDeleteConfirmModal] = useState(null);
   const [modalActionLoading, setModalActionLoading] = useState(false);
@@ -1079,6 +1080,9 @@ const CommunityPage = () => {
     });
   };
 
+  const filteredArchivedPosts = archivedTypeFilter === 'comments' ? [] : archivedPosts;
+  const filteredArchivedComments = archivedTypeFilter === 'posts' ? [] : archivedComments;
+
   return (
     <div className="mx-auto w-full max-w-[1280px] px-4 pb-12 sm:px-6 lg:px-8">
       {notice && (
@@ -1732,7 +1736,7 @@ const CommunityPage = () => {
                   </button>
                 </div>
               ) : (
-                <div className="flex flex-col items-start gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <button
                     type="button"
                     onClick={() => setManagedView('active')}
@@ -1742,7 +1746,30 @@ const CommunityPage = () => {
                     Back to Active Posts
                   </button>
 
-                 
+                  <label className="flex items-center gap-2 text-xs text-black/45">
+                    <span>Sort by</span>
+                    <select
+                      value={managedSort}
+                      onChange={(event) => setManagedSort(event.target.value)}
+                      className="h-10 rounded-xl border border-[#d8e2ee] bg-white px-3 text-sm font-semibold text-black/70 outline-none focus:border-[#2e66a6]"
+                    >
+                      <option value="newest">Newest first</option>
+                      <option value="oldest">Oldest first</option>
+                    </select>
+                  </label>
+
+                  <label className="flex items-center gap-2 text-xs text-black/45">
+                    <span>Filter by</span>
+                    <select
+                      value={archivedTypeFilter}
+                      onChange={(event) => setArchivedTypeFilter(event.target.value)}
+                      className="h-10 rounded-xl border border-[#d8e2ee] bg-white px-3 text-sm font-semibold text-black/70 outline-none focus:border-[#2e66a6]"
+                    >
+                      <option value="all">All</option>
+                      <option value="posts">Posts</option>
+                      <option value="comments">Comments</option>
+                    </select>
+                  </label>
                 </div>
               )}
             </div>
@@ -1753,23 +1780,17 @@ const CommunityPage = () => {
               ) : managedView === 'archived' ? (
                 <div className="space-y-6">
                 <section>
-                  <h3 className="mb-1 text-lg font-bold">Your Archived Posts ({archivedPosts.length})</h3>
+                  <h3 className="mb-1 text-lg font-bold">Your Archived Posts ({filteredArchivedPosts.length})</h3>
                   <p className="mb-4 text-sm text-black/45">These posts are archived and hidden from your active list.</p>
 
                   <div className="space-y-3">
-                    {archivedPosts.length === 0 ? (
+                    {filteredArchivedPosts.length === 0 ? (
                       <p className="rounded-xl bg-[#f7faff] p-4 text-sm text-black/45">No archived posts found.</p>
-                    ) : archivedPosts.map((post) => (
+                    ) : filteredArchivedPosts.map((post) => (
                       <div key={post._id} className="relative overflow-hidden rounded-2xl border border-[#dfe7f1] bg-white px-5 py-5 shadow-sm">
-                        <button
-                          type="button"
-                          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-black/45 transition hover:bg-[#f7faff] hover:text-black/70"
-                          aria-label="Archived post options"
-                        >
-                          <FontAwesomeIcon icon={faEllipsisVertical} />
-                        </button>
+                        
 
-                        <div className="grid gap-4 pr-8 md:grid-cols-[72px_minmax(0,1fr)_150px_170px] md:items-center">
+                        <div className="grid gap-4 md:grid-cols-[72px_minmax(0,1fr)_150px_170px] md:items-center">
                           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#f1edff] text-xl text-[#6f5bd3]">
                             <FontAwesomeIcon icon={faBoxArchive} />
                           </div>
@@ -1812,23 +1833,17 @@ const CommunityPage = () => {
                 </section>
 
                 <section className="mt-6">
-                  <h3 className="mb-1 text-lg font-bold">Your Archived Comments ({archivedComments.length})</h3>
+                  <h3 className="mb-1 text-lg font-bold">Your Archived Comments ({filteredArchivedComments.length})</h3>
                   <p className="mb-4 text-sm text-black/45">Deleted comments are kept here until restored or permanently deleted.</p>
 
                   <div className="space-y-3">
-                    {archivedComments.length === 0 ? (
+                    {filteredArchivedComments.length === 0 ? (
                       <p className="rounded-xl bg-[#f7faff] p-4 text-sm text-black/45">No archived comments found.</p>
-                    ) : archivedComments.map((item) => (
+                    ) : filteredArchivedComments.map((item) => (
                       <div key={`${item.postId}-${item.comment._id}`} className="relative overflow-hidden rounded-2xl border border-[#dfe7f1] bg-white px-5 py-5 shadow-sm">
-                        <button
-                          type="button"
-                          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-black/45 transition hover:bg-[#f7faff] hover:text-black/70"
-                          aria-label="Archived comment options"
-                        >
-                          <FontAwesomeIcon icon={faEllipsisVertical} />
-                        </button>
+                        
 
-                        <div className="grid gap-4 pr-8 md:grid-cols-[72px_minmax(0,1fr)_150px_170px] md:items-center">
+                        <div className="grid gap-4 md:grid-cols-[72px_minmax(0,1fr)_150px_170px] md:items-center">
                           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf3ff] text-xl text-[#2e66a6]">
                             <FontAwesomeIcon icon={faComment} />
                           </div>
