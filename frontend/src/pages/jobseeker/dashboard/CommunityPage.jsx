@@ -1754,7 +1754,17 @@ const CommunityPage = () => {
                 <div className="py-16 text-center text-black/45"><FontAwesomeIcon icon={faSpinner} spin className="mr-2" /> Loading...</div>
               ) : managedView === 'archived' ? (
                 <div className="space-y-6">
-                  <div className="flex flex-wrap items-center justify-end gap-3">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="text-2xl font-bold text-black">
+                        Your Archived Posts ({filteredArchivedPosts.length})
+                      </h3>
+                      <p className="mt-1 text-sm text-black/50">
+                        These posts are archived and hidden from your active list.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
                     <label className="flex items-center gap-2 text-xs text-black/45">
                       <span>Sort by</span>
                       <select
