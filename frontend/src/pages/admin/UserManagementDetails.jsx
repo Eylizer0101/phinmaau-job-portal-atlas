@@ -772,7 +772,10 @@ const UserManagementDetails = () => {
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <h4 className="line-clamp-2 text-lg font-bold leading-snug text-black transition-colors group-hover:text-[#2e66a6]">
+                        <h4
+                          className="max-w-[150px] truncate whitespace-nowrap text-lg font-bold leading-snug text-black transition-colors group-hover:text-[#2e66a6]"
+                          title={String(job?.title || job?.jobTitle || "Job Title").replaceAll('"', "")}
+                        >
                           {String(job?.title || job?.jobTitle || "Job Title").replaceAll('"', "")}
                         </h4>
 
