@@ -886,7 +886,9 @@ exports.getUserById = async (req, res) => {
     const jobPosts =
       user.role === 'employer'
         ? await Job.find({ employer: user._id })
-            .select('title jobTitle jobType workMode createdAt validUntil deadline applicationDeadline status isActive isPublished isArchived')
+            .select(
+              'title jobTitle jobType workMode experienceLevel openToFreshGraduates salaryMin salaryMax hideSalary location companyName companyLogo isUrgent createdAt validUntil deadline applicationDeadline status isActive isPublished isArchived'
+            )
             .sort({ createdAt: -1 })
             .lean()
         : [];

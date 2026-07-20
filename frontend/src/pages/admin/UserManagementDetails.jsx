@@ -729,7 +729,7 @@ const UserManagementDetails = () => {
               const badges = [
                 experienceBadge,
                 workModeBadge,
-                isOpenToFreshGraduate(job) ? "Open to Fresh Graduate" : "",
+                isOpenToFreshGraduate(job) ? "Open to Fresh Grads" : "",
               ]
                 .map((badge) => String(badge || "").trim())
                 .filter(Boolean)
@@ -832,7 +832,7 @@ const UserManagementDetails = () => {
                     ))}
                   </div>
 
-                  <div className="mt-4 h-px w-full bg-gray-300/80" />
+                  <div className="mt-4 mb-5 h-px w-full bg-gray-300/80" />
 
                   <button
                     type="button"
