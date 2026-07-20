@@ -2587,281 +2587,195 @@ const buildArchiveDateMatch = (dateFilter, field = 'updatedAt') => {
 
 exports.getAdminArchive = async (req, res) => {
   try {
-    const tab = String(req.query.tab || 'users').toLowerCase();
-    const q = String(req.query.q || '').trim();
+    const tab = String(req.query.tab || 'community').toLowerCase();
+
+    if (tab !== 'community') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only the Community archive is available at this time',
+      });
+    }
+
+    const q = String(req.query.q || '').trim().toLowerCase();
     const status = String(req.query.status || 'all').toLowerCase();
-    const role = String(req.query.role || 'all').toLowerCase();
-    const company = String(req.query.company || 'all').trim();
-    const industry = String(req.query.industry || 'all').trim();
+    const campusFilter = String(req.query.campus || 'all').trim();
+    const courseFilter = String(req.query.course || 'all').trim();
+    const dateFilter = String(req.query.date || 'all').toLowerCase();
+    const customFrom = String(req.query.dateFrom || '').trim();
+    const customTo = String(req.query.dateTo || '').trim();
 
-    const searchRegex = q ? new RegExp(escapeArchiveRegex(q), 'i') : null;
+    const getDateBounds = () => {
+      const now = new Date();
+      let start = null;
+      let end = new Date(now);
+      end.setHours(23, 59, 59, 999);
 
-    if (tab === 'community') {
-      const communityPosts = await CommunityPost.find({
-        $or: [
-          { isDeleted: true },
-          { comments: { $elemMatch: { isDeleted: true } } },
-        ],
-      })
-        .populate('author', 'email firstName middleName lastName fullName profileImage role jobSeekerProfile.campus jobSeekerProfile.course')
-        .populate('comments.author', 'email firstName middleName lastName fullName profileImage role jobSeekerProfile.campus jobSeekerProfile.course')
-        .sort({ deletedAt: -1, updatedAt: -1 })
-        .lean();
+      if (dateFilter === 'today') {
+        start = new Date(now);
+        start.setHours(0, 0, 0, 0);
+      } else if (dateFilter === '7days') {
+        start = new Date(now);
+        start.setDate(start.getDate() - 6);
+        start.setHours(0, 0, 0, 0);
+      } else if (dateFilter === '30days') {
+        start = new Date(now);
+        start.setDate(start.getDate() - 29);
+        start.setHours(0, 0, 0, 0);
+      } else if (dateFilter === 'thismonth') {
+        start = new Date(now.getFullYear(), now.getMonth(), 1);
+        start.setHours(0, 0, 0, 0);
+      } else if (dateFilter === 'custom') {
+        start = customFrom ? new Date(`${customFrom}T00:00:00`) : null;
+        end = customTo ? new Date(`${customTo}T23:59:59.999`) : end;
+      }
 
-      let community = [];
-      communityPosts.forEach((post) => {
-        if (post.isDeleted === true) {
-          community.push({
-            _id: post._id,
-            archiveType: 'post',
-            author: post.author,
-            content: post.content,
-            category: post.category,
-            topics: post.topics || [],
-            imageUrl: post.imageUrl || '',
-            linkUrl: post.linkUrl || '',
-            deletedAt: post.deletedAt || post.updatedAt,
-            dateArchived: post.deletedAt || post.updatedAt,
-            archiveStatus: 'Deleted Post',
-            postId: post._id,
-          });
-        }
+      return { start, end };
+    };
 
-        (post.comments || []).forEach((comment) => {
-          if (comment.isDeleted === true) {
-            community.push({
-              _id: comment._id,
-              archiveType: 'comment',
-              author: comment.author,
-              content: comment.content,
-              postContent: post.content,
-              deletedAt: comment.deletedAt || comment.updatedAt,
-              dateArchived: comment.deletedAt || comment.updatedAt,
-              archiveStatus: 'Deleted Comment',
-              postId: post._id,
-              commentId: comment._id,
-            });
+    const { start, end } = getDateBounds();
+    const isWithinDate = (value) => {
+      if (!start && dateFilter === 'all') return true;
+      const date = new Date(value || 0);
+      if (Number.isNaN(date.getTime())) return false;
+      if (start && date < start) return false;
+      if (end && date > end) return false;
+      return true;
+    };
+
+    const posts = await CommunityPost.find({
+      $or: [
+        { isDeleted: true },
+        { comments: { $elemMatch: { isDeleted: true } } },
+      ],
+    })
+      .populate(
+        'author',
+        'email firstName middleName lastName fullName profileImage role jobSeekerProfile.campus jobSeekerProfile.course jobSeekerProfile.program jobSeekerProfile.educationEntries'
+      )
+      .populate(
+        'comments.author',
+        'email firstName middleName lastName fullName profileImage role jobSeekerProfile.campus jobSeekerProfile.course jobSeekerProfile.program jobSeekerProfile.educationEntries'
+      )
+      .sort({ deletedAt: -1, updatedAt: -1 })
+      .lean();
+
+    const getCampus = (user = {}) => {
+      const profile = user.jobSeekerProfile || {};
+      const education = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
+      return (
+        profile.campus ||
+        education.find((entry) => entry?.campus)?.campus ||
+        'Unspecified'
+      );
+    };
+
+    const getCourse = (user = {}) => {
+      const profile = user.jobSeekerProfile || {};
+      const education = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
+      const educationItem = education.find((entry) => entry?.course || entry?.program || entry?.degree);
+      return (
+        profile.course ||
+        profile.program ||
+        educationItem?.course ||
+        educationItem?.program ||
+        educationItem?.degree ||
+        'Unspecified'
+      );
+    };
+
+    const grouped = new Map();
+    const allCampuses = new Set();
+    const allCourses = new Set();
+
+    const ensureAuthor = (author) => {
+      if (!author?._id) return null;
+      const authorId = String(author._id);
+      if (!grouped.has(authorId)) {
+        const campus = getCampus(author);
+        const course = getCourse(author);
+        grouped.set(authorId, {
+          authorId,
+          author,
+          campus,
+          course,
+          postCount: 0,
+          commentCount: 0,
+          latestDeletedAt: null,
+          searchableContent: [],
+        });
+        if (campus && campus !== 'Unspecified') allCampuses.add(campus);
+        if (course && course !== 'Unspecified') allCourses.add(course);
+      }
+      return grouped.get(authorId);
+    };
+
+    posts.forEach((post) => {
+      if (post.isDeleted === true && status !== 'comment' && isWithinDate(post.deletedAt || post.updatedAt)) {
+        const entry = ensureAuthor(post.author);
+        if (entry) {
+          entry.postCount += 1;
+          entry.searchableContent.push(String(post.content || ''));
+          const deletedAt = post.deletedAt || post.updatedAt;
+          if (!entry.latestDeletedAt || new Date(deletedAt) > new Date(entry.latestDeletedAt)) {
+            entry.latestDeletedAt = deletedAt;
           }
-        });
-      });
-
-      if (q) {
-        const lower = q.toLowerCase();
-        community = community.filter((item) => {
-          const authorName = getArchiveUserName(item.author).toLowerCase();
-          return authorName.includes(lower) || String(item.content || '').toLowerCase().includes(lower) || String(item.postContent || '').toLowerCase().includes(lower);
-        });
+        }
       }
 
-      if (status !== 'all') {
-        community = community.filter((item) => item.archiveType === status || String(item.archiveStatus || '').toLowerCase() === status);
-      }
-
-      const campus = String(req.query.campus || 'all').trim();
-      const course = String(req.query.course || 'all').trim();
-      if (campus !== 'all') {
-        community = community.filter((item) => String(item?.author?.jobSeekerProfile?.campus || '') === campus);
-      }
-      if (course !== 'all') {
-        community = community.filter((item) => String(item?.author?.jobSeekerProfile?.course || '') === course);
-      }
-
-      community = community.filter((item) => {
-        const date = new Date(item.dateArchived || 0);
-        const match = buildArchiveDateMatch(req.query.date, 'dateArchived').dateArchived;
-        if (!match || Number.isNaN(date.getTime())) return true;
-        return (!match.$gte || date >= match.$gte) && (!match.$lte || date <= match.$lte);
+      (post.comments || []).forEach((comment) => {
+        if (comment.isDeleted !== true || status === 'post' || !isWithinDate(comment.deletedAt || comment.updatedAt)) return;
+        const entry = ensureAuthor(comment.author);
+        if (entry) {
+          entry.commentCount += 1;
+          entry.searchableContent.push(String(comment.content || ''));
+          const deletedAt = comment.deletedAt || comment.updatedAt;
+          if (!entry.latestDeletedAt || new Date(deletedAt) > new Date(entry.latestDeletedAt)) {
+            entry.latestDeletedAt = deletedAt;
+          }
+        }
       });
-
-      community.sort((a, b) => new Date(b.dateArchived || 0) - new Date(a.dateArchived || 0));
-
-      const campuses = [...new Set(community.map((item) => item?.author?.jobSeekerProfile?.campus).filter(Boolean))].sort();
-      const courses = [...new Set(community.map((item) => item?.author?.jobSeekerProfile?.course).filter(Boolean))].sort();
-
-      return res.json({
-        success: true,
-        community,
-        users: [],
-        jobs: [],
-        applications: [],
-        options: { companies: [], industries: [], campuses, courses },
-      });
-    }
-
-
-    const userQuery = {
-      role: { $in: ['jobseeker', 'employer'] },
-      $or: [
-        { status: { $in: ['deleted', 'suspended'] } },
-        { 'jobSeekerProfile.verificationDocs.overallStatus': { $in: ['rejected', 'declined'] } },
-        { 'jobSeekerProfile.verificationStatus': { $in: ['rejected', 'declined'] } },
-        { 'employerProfile.verificationDocs.overallStatus': { $in: ['rejected', 'declined'] } },
-      ],
-      ...buildArchiveDateMatch(req.query.date, 'updatedAt'),
-    };
-
-    if (role !== 'all') userQuery.role = role;
-
-    if (searchRegex) {
-      userQuery.$and = [
-        {
-          $or: [
-            { firstName: searchRegex },
-            { middleName: searchRegex },
-            { lastName: searchRegex },
-            { fullName: searchRegex },
-            { email: searchRegex },
-            { 'employerProfile.companyName': searchRegex },
-            { companyName: searchRegex },
-          ],
-        },
-      ];
-    }
-
-    if (industry !== 'all') {
-      userQuery['employerProfile.industry'] = industry;
-    }
-
-    if (company !== 'all') {
-      userQuery.$and = [
-        ...(userQuery.$and || []),
-        {
-          $or: [
-            { 'employerProfile.companyName': company },
-            { companyName: company },
-          ],
-        },
-      ];
-    }
-
-    const jobQuery = {
-      $or: [
-        { isArchived: true },
-        { isActive: false },
-        { applicationDeadline: { $lt: new Date() } },
-      ],
-      ...buildArchiveDateMatch(req.query.date, 'archivedAt'),
-    };
-
-    if (searchRegex) {
-      jobQuery.$and = [
-        {
-          $or: [
-            { title: searchRegex },
-            { companyName: searchRegex },
-            { location: searchRegex },
-            { category: searchRegex },
-          ],
-        },
-      ];
-    }
-
-    if (company !== 'all') jobQuery.companyName = company;
-    if (industry !== 'all') jobQuery.category = industry;
-
-    const applicationQuery = {
-      status: 'declined',
-      ...buildArchiveDateMatch(req.query.date, 'updatedAt'),
-    };
-
-    if (searchRegex) {
-      // Search text fields that exist directly; populated applicant/job search is also filtered after populate below.
-      applicationQuery.$or = [{ coverLetter: searchRegex }, { declineReason: searchRegex }, { declineComment: searchRegex }];
-    }
-
-    const [usersRaw, jobsRaw, applicationsRaw] = await Promise.all([
-      tab === 'users' || tab === 'all'
-        ? User.find(userQuery).select('-password').sort({ updatedAt: -1 }).limit(500).lean()
-        : Promise.resolve([]),
-      tab === 'jobs' || tab === 'all'
-        ? Job.find(jobQuery).populate('employer', 'email firstName lastName fullName companyName employerProfile').sort({ archivedAt: -1, updatedAt: -1 }).limit(500).lean()
-        : Promise.resolve([]),
-      tab === 'applications' || tab === 'all'
-        ? Application.find(applicationQuery)
-            .populate('job')
-            .populate('jobseeker', 'email firstName middleName lastName fullName profileImage avatar photoUrl image jobSeekerProfile')
-            .populate('employer', 'email firstName lastName fullName companyName employerProfile')
-            .sort({ updatedAt: -1 })
-            .limit(500)
-            .lean()
-        : Promise.resolve([]),
-    ]);
-
-    let users = usersRaw.map((user) => ({
-      ...user,
-      archiveStatus: getArchiveUserStatus(user),
-      dateArchived: user.updatedAt || user.createdAt,
-      archiveMeta: {
-        archivedByName: 'Admin',
-        reason: user.role === 'employer' ? 'Employer verification declined' : 'Job seeker verification declined',
-      },
-    }));
-
-    let jobs = jobsRaw.map((job) => ({
-      ...job,
-      archiveStatus: getArchiveJobStatus(job),
-      dateArchived: job.archivedAt || job.updatedAt || job.applicationDeadline,
-      archiveMeta: {
-        archivedByName: 'Admin',
-        reason: getArchiveJobStatus(job) === 'Expired' ? 'Job deadline expired' : 'Job post closed',
-      },
-    }));
-
-    let applications = applicationsRaw.map((application) => ({
-      ...application,
-      archiveStatus: 'Declined',
-      dateArchived: application.reviewedAt || application.updatedAt || application.appliedAt,
-      archiveMeta: {
-        archivedByName: 'Admin',
-        reason: application.declineReason || application.declineComment || 'Application declined',
-      },
-    }));
-
-    if (status !== 'all') {
-      const wanted = status;
-      users = users.filter((item) => String(item.archiveStatus || '').toLowerCase() === wanted);
-      jobs = jobs.filter((item) => String(item.archiveStatus || '').toLowerCase() === wanted);
-      applications = applications.filter((item) => String(item.archiveStatus || '').toLowerCase() === wanted);
-    }
-
-    if (q && tab === 'applications') {
-      const lower = q.toLowerCase();
-      applications = applications.filter((application) => {
-        const applicantName = getArchiveUserName(application.jobseeker).toLowerCase();
-        const jobTitle = String(application?.job?.title || '').toLowerCase();
-        const compName = getArchiveCompanyName(application).toLowerCase();
-        return applicantName.includes(lower) || jobTitle.includes(lower) || compName.includes(lower);
-      });
-    }
-
-    const allCompanies = new Set();
-    const allIndustries = new Set();
-
-    [...usersRaw, ...jobsRaw, ...applicationsRaw].forEach((item) => {
-      const companyName = getArchiveCompanyName(item);
-      const industryValue =
-        item?.employerProfile?.industry ||
-        item?.employer?.employerProfile?.industry ||
-        item?.job?.category ||
-        item?.category ||
-        '';
-      if (companyName && companyName !== 'User') allCompanies.add(companyName);
-      if (industryValue) allIndustries.add(industryValue);
     });
+
+    let communityAuthors = Array.from(grouped.values()).filter(
+      (entry) => entry.postCount > 0 || entry.commentCount > 0
+    );
+
+    if (q) {
+      communityAuthors = communityAuthors.filter((entry) => {
+        const authorName = getArchiveUserName(entry.author).toLowerCase();
+        const content = entry.searchableContent.join(' ').toLowerCase();
+        return authorName.includes(q) || content.includes(q);
+      });
+    }
+
+    if (campusFilter !== 'all') {
+      communityAuthors = communityAuthors.filter((entry) => entry.campus === campusFilter);
+    }
+
+    if (courseFilter !== 'all') {
+      communityAuthors = communityAuthors.filter((entry) => entry.course === courseFilter);
+    }
+
+    communityAuthors.sort(
+      (a, b) => new Date(b.latestDeletedAt || 0) - new Date(a.latestDeletedAt || 0)
+    );
+
+    communityAuthors = communityAuthors.map(({ searchableContent, ...entry }) => entry);
 
     return res.json({
       success: true,
-      users,
-      jobs,
-      applications,
+      communityAuthors,
       options: {
-        companies: Array.from(allCompanies).sort(),
-        industries: Array.from(allIndustries).sort(),
+        campuses: Array.from(allCampuses).sort(),
+        courses: Array.from(allCourses).sort(),
       },
     });
   } catch (error) {
-    console.error('Error loading admin archive:', error);
-    return res.status(500).json({ success: false, message: 'Failed to load archive data' });
+    console.error('Error loading community archive:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to load community archive',
+    });
   }
 };
 
@@ -2869,53 +2783,103 @@ exports.getAdminArchiveDetails = async (req, res) => {
   try {
     const type = String(req.params.type || '').toLowerCase();
     const { id } = req.params;
-    let item = null;
 
-    if (type === 'users') {
-      item = await User.findById(id).select('-password').lean();
-      if (item) {
-        item.archiveStatus = getArchiveUserStatus(item);
-        item.dateArchived = item.updatedAt || item.createdAt;
-        item.archiveMeta = {
-          archivedByName: 'Admin',
-          reason: item.role === 'employer' ? 'Employer verification declined' : 'Job seeker verification declined',
-        };
-      }
-    } else if (type === 'jobs') {
-      item = await Job.findById(id).populate('employer', 'email firstName lastName fullName companyName employerProfile').lean();
-      if (item) {
-        item.archiveStatus = getArchiveJobStatus(item);
-        item.dateArchived = item.archivedAt || item.updatedAt || item.applicationDeadline;
-        item.archiveMeta = {
-          archivedByName: 'Admin',
-          reason: getArchiveJobStatus(item) === 'Expired' ? 'Job deadline expired' : 'Job post closed',
-        };
-      }
-    } else if (type === 'applications') {
-      item = await Application.findById(id)
-        .populate('job')
-        .populate('jobseeker', 'email firstName middleName lastName fullName profileImage avatar photoUrl image jobSeekerProfile')
-        .populate('employer', 'email firstName lastName fullName companyName employerProfile')
-        .lean();
-
-      if (item) {
-        item.archiveStatus = 'Declined';
-        item.dateArchived = item.reviewedAt || item.updatedAt || item.appliedAt;
-        item.archiveMeta = {
-          archivedByName: 'Admin',
-          reason: item.declineReason || item.declineComment || 'Application declined',
-        };
-      }
+    if (type !== 'community-author') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only Community author history is available at this time',
+      });
     }
 
-    if (!item) {
-      return res.status(404).json({ success: false, message: 'Archived data not found' });
+    const author = await User.findById(id)
+      .select('email firstName middleName lastName fullName profileImage role jobSeekerProfile')
+      .lean();
+
+    if (!author) {
+      return res.status(404).json({
+        success: false,
+        message: 'Community author not found',
+      });
     }
 
-    return res.json({ success: true, item });
+    const posts = await CommunityPost.find({
+      $or: [
+        { author: id, isDeleted: true },
+        { comments: { $elemMatch: { author: id, isDeleted: true } } },
+      ],
+    })
+      .populate('deletedBy', 'email firstName middleName lastName fullName')
+      .populate('comments.deletedBy', 'email firstName middleName lastName fullName')
+      .sort({ deletedAt: -1, updatedAt: -1 })
+      .lean();
+
+    const items = [];
+
+    posts.forEach((post) => {
+      if (String(post.author) === String(id) && post.isDeleted === true) {
+        items.push({
+          _id: post._id,
+          archiveType: 'post',
+          content: post.content,
+          category: post.category,
+          topics: post.topics || [],
+          imageUrl: post.imageUrl || '',
+          linkUrl: post.linkUrl || '',
+          deletedAt: post.deletedAt || post.updatedAt,
+          deletedByName: getArchiveUserName(post.deletedBy || {}),
+          postId: post._id,
+        });
+      }
+
+      (post.comments || []).forEach((comment) => {
+        if (String(comment.author) !== String(id) || comment.isDeleted !== true) return;
+        items.push({
+          _id: comment._id,
+          archiveType: 'comment',
+          content: comment.content,
+          postContent: post.content,
+          deletedAt: comment.deletedAt || comment.updatedAt,
+          deletedByName: getArchiveUserName(comment.deletedBy || {}),
+          postId: post._id,
+          commentId: comment._id,
+        });
+      });
+    });
+
+    items.sort((a, b) => new Date(b.deletedAt || 0) - new Date(a.deletedAt || 0));
+
+    const profile = author.jobSeekerProfile || {};
+    const educationEntries = Array.isArray(profile.educationEntries)
+      ? profile.educationEntries
+      : [];
+    const educationItem = educationEntries.find(
+      (entry) => entry?.course || entry?.program || entry?.degree
+    );
+
+    return res.json({
+      success: true,
+      author: {
+        ...author,
+        campus:
+          profile.campus ||
+          educationEntries.find((entry) => entry?.campus)?.campus ||
+          'Unspecified',
+        course:
+          profile.course ||
+          profile.program ||
+          educationItem?.course ||
+          educationItem?.program ||
+          educationItem?.degree ||
+          'Unspecified',
+      },
+      items,
+    });
   } catch (error) {
-    console.error('Error loading archive details:', error);
-    return res.status(500).json({ success: false, message: 'Failed to load archive details' });
+    console.error('Error loading community author archive history:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to load community deletion history',
+    });
   }
 };
 
