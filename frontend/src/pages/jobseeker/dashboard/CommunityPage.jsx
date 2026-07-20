@@ -180,6 +180,7 @@ const CommunityPage = () => {
   const [commentActionMenu, setCommentActionMenu] = useState('');
   const [editingComment, setEditingComment] = useState(null);
   const [editingReply, setEditingReply] = useState(null);
+  const [editingPostFromManaged, setEditingPostFromManaged] = useState(false);
 
   const [likeLoading, setLikeLoading] = useState({});
   const [notice, setNotice] = useState('');
@@ -237,8 +238,15 @@ const CommunityPage = () => {
 
   const closeCreateModal = () => {
     if (submitting) return;
+
+    const shouldReturnToManaged = editingPostFromManaged;
     resetCreateForm();
+    setEditingPostFromManaged(false);
     setShowCreate(false);
+
+    if (shouldReturnToManaged) {
+      setShowManaged(true);
+    }
   };
 
   const openCreateWith = (type = 'content') => {
@@ -265,7 +273,10 @@ const CommunityPage = () => {
     }, 100);
   };
 
-  const openEditPost = (post) => {
+  const openEditPost = (post, fromManaged = false) => {
+    setEditingPostFromManaged(fromManaged);
+    if (fromManaged) setShowManaged(false);
+
     setEditingPost(post);
     setForm({
       content: post.content || '',
@@ -369,14 +380,31 @@ const CommunityPage = () => {
 
       if (response.data?.success) {
         const savedPost = response.data.data;
+        const shouldReturnToManaged = Boolean(editingPost && editingPostFromManaged);
+
         setPosts((prev) => (
           editingPost
             ? prev.map((post) => (post._id === savedPost._id ? savedPost : post))
             : [savedPost, ...prev]
         ));
+
+        if (editingPost) {
+          setManagedData((prev) => ({
+            ...prev,
+            posts: prev.posts.map((post) => (
+              post._id === savedPost._id ? savedPost : post
+            )),
+          }));
+        }
+
         setNotice(editingPost ? 'Post updated successfully.' : 'Post created successfully.');
         resetCreateForm();
+        setEditingPostFromManaged(false);
         setShowCreate(false);
+
+        if (shouldReturnToManaged) {
+          setShowManaged(true);
+        }
       }
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to save post.');
@@ -393,6 +421,10 @@ const CommunityPage = () => {
       const response = await api.delete(`/community/posts/${post._id}`);
       if (response.data?.success) {
         setPosts((prev) => prev.filter((item) => item._id !== post._id));
+        setManagedData((prev) => ({
+          ...prev,
+          posts: prev.posts.filter((item) => item._id !== post._id),
+        }));
         if (commentsPost?._id === post._id) setCommentsPost(null);
         setNotice('Post moved to archive successfully.');
       }
@@ -1564,7 +1596,7 @@ const CommunityPage = () => {
                                 <p className="mt-2 text-xs text-black/40">{formatTime(post.createdAt)} · {post.category}</p>
                               </div>
                               <div className="flex gap-2">
-                                <button type="button" onClick={() => { setShowManaged(false); openEditPost(post); }} className="h-9 w-9 rounded-lg hover:bg-[#f7faff]"><FontAwesomeIcon icon={faPen} /></button>
+                                <button type="button" onClick={() => openEditPost(post, true)} className="h-9 w-9 rounded-lg hover:bg-[#f7faff]"><FontAwesomeIcon icon={faPen} /></button>
                                 <button type="button" onClick={() => deletePost(post)} className="h-9 w-9 rounded-lg text-red-500 hover:bg-red-50"><FontAwesomeIcon icon={faTrash} /></button>
                               </div>
                             </div>
