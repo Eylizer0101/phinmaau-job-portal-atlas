@@ -4,25 +4,53 @@ import { useNavigate, useParams } from "react-router-dom";
 import api from "../../../services/api";
 import ApplyJobModal from "../../../components/jobseeker/ApplyJobModal";
 
-const calculateAccurateReviewSummary = (reviews = [], fallbackRating = 0, fallbackCount = 0) => {
-  const safeReviews = Array.isArray(reviews) ? reviews : [];
+const calculateAccurateReviewSummary = ({
+  reviews = [],
+  ratingBreakdown = {},
+  fallbackRating = 0,
+  fallbackCount = 0,
+} = {}) => {
+  const counts = {
+    5: Number(ratingBreakdown?.[5] || 0),
+    4: Number(ratingBreakdown?.[4] || 0),
+    3: Number(ratingBreakdown?.[3] || 0),
+    2: Number(ratingBreakdown?.[2] || 0),
+    1: Number(ratingBreakdown?.[1] || 0),
+  };
 
-  const validRatings = safeReviews
-    .map((review) => Number(review?.processRating ?? review?.rating))
-    .filter((rating) => Number.isFinite(rating) && rating >= 1 && rating <= 5);
+  const breakdownReviewCount =
+    counts[5] + counts[4] + counts[3] + counts[2] + counts[1];
 
-  if (!validRatings.length) {
+  if (breakdownReviewCount > 0) {
+    const totalPoints =
+      counts[5] * 5 +
+      counts[4] * 4 +
+      counts[3] * 3 +
+      counts[2] * 2 +
+      counts[1] * 1;
+
     return {
-      rating: Number(fallbackRating) || 0,
-      reviewCount: Number(fallbackCount) || 0,
+      rating: totalPoints / breakdownReviewCount,
+      reviewCount: breakdownReviewCount,
     };
   }
 
-  const totalPoints = validRatings.reduce((sum, rating) => sum + rating, 0);
+  const validRatings = (Array.isArray(reviews) ? reviews : [])
+    .map((review) => Number(review?.processRating ?? review?.rating))
+    .filter((rating) => Number.isFinite(rating) && rating >= 1 && rating <= 5);
+
+  if (validRatings.length > 0) {
+    const totalPoints = validRatings.reduce((sum, rating) => sum + rating, 0);
+
+    return {
+      rating: totalPoints / validRatings.length,
+      reviewCount: validRatings.length,
+    };
+  }
 
   return {
-    rating: totalPoints / validRatings.length,
-    reviewCount: validRatings.length,
+    rating: Number(fallbackRating) || 0,
+    reviewCount: Number(fallbackCount) || 0,
   };
 };
 
@@ -750,16 +778,19 @@ const CompanyViewDetails = () => {
         companyLogo: resolveLogoUrl(companyData.companyLogo || ""),
         companyWebsite: companyData.companyWebsite || companyData.website || companyData.link || "",
         about: companyData.about || companyData.companyDescription || "",
-        rating: calculateAccurateReviewSummary(
-          normalizedReviews,
-          companyData.rating,
-          companyData.reviewCount
-        ).rating,
-        reviewCount: calculateAccurateReviewSummary(
-          normalizedReviews,
-          companyData.rating,
-          companyData.reviewCount
-        ).reviewCount,
+        rating: calculateAccurateReviewSummary({
+          reviews: normalizedReviews,
+          ratingBreakdown: companyData.ratingBreakdown,
+          fallbackRating: companyData.rating,
+          fallbackCount: companyData.reviewCount,
+        }).rating,
+        reviewCount: calculateAccurateReviewSummary({
+          reviews: normalizedReviews,
+          ratingBreakdown: companyData.ratingBreakdown,
+          fallbackRating: companyData.rating,
+          fallbackCount: companyData.reviewCount,
+        }).reviewCount,
+        ratingBreakdown: companyData.ratingBreakdown || {},
         reviews: normalizedReviews,
         jobs: normalizedJobs,
         createdAt: companyData.createdAt || new Date().toISOString(),
@@ -883,16 +914,18 @@ const CompanyViewDetails = () => {
         ...companyData,
         companyLogo: resolveLogoUrl(companyData.companyLogo),
         companyWebsite: website,
-        rating: calculateAccurateReviewSummary(
-          normalizedReviews,
-          companyData.rating,
-          companyData.reviewCount
-        ).rating,
-        reviewCount: calculateAccurateReviewSummary(
-          normalizedReviews,
-          companyData.rating,
-          companyData.reviewCount
-        ).reviewCount,
+        rating: calculateAccurateReviewSummary({
+          reviews: normalizedReviews,
+          ratingBreakdown: companyData.ratingBreakdown,
+          fallbackRating: companyData.rating,
+          fallbackCount: companyData.reviewCount,
+        }).rating,
+        reviewCount: calculateAccurateReviewSummary({
+          reviews: normalizedReviews,
+          ratingBreakdown: companyData.ratingBreakdown,
+          fallbackRating: companyData.rating,
+          fallbackCount: companyData.reviewCount,
+        }).reviewCount,
         reviews: normalizedReviews,
         facebookUrl: companyData.facebookUrl || "",
         instagramUrl: companyData.instagramUrl || "",
@@ -1355,11 +1388,12 @@ const CompanyViewDetails = () => {
 
   const reviews = company?.reviews || [];
   const jobsCount = companyJobs.length;
-  const accurateReviewSummary = calculateAccurateReviewSummary(
+  const accurateReviewSummary = calculateAccurateReviewSummary({
     reviews,
-    company?.rating,
-    company?.reviewCount
-  );
+    ratingBreakdown: company?.ratingBreakdown,
+    fallbackRating: company?.rating,
+    fallbackCount: company?.reviewCount,
+  });
   const ratingValue = accurateReviewSummary.rating;
   const reviewCount = accurateReviewSummary.reviewCount;
 

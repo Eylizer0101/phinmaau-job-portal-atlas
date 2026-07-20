@@ -932,38 +932,49 @@ const normalizeGalleryItems = (galleryImages) => {
   return [];
 };
 
+const calculateAccurateCompanyRating = (company = {}, reviews = []) => {
+  const breakdown = company?.ratingBreakdown || {};
+  const counts = {
+    5: Number(breakdown?.[5] || 0),
+    4: Number(breakdown?.[4] || 0),
+    3: Number(breakdown?.[3] || 0),
+    2: Number(breakdown?.[2] || 0),
+    1: Number(breakdown?.[1] || 0),
+  };
 
-const calculateAccurateReviewSummary = (
-  reviews = [],
-  fallbackRating = 0,
-  fallbackCount = 0
-) => {
-  const safeReviews = Array.isArray(reviews) ? reviews : [];
+  const breakdownReviewCount =
+    counts[5] + counts[4] + counts[3] + counts[2] + counts[1];
 
-  const validRatings = safeReviews
-    .map((review) => Number(review?.processRating ?? review?.rating))
-    .filter(
-      (rating) =>
-        Number.isFinite(rating) &&
-        rating >= 1 &&
-        rating <= 5
-    );
+  if (breakdownReviewCount > 0) {
+    const totalPoints =
+      counts[5] * 5 +
+      counts[4] * 4 +
+      counts[3] * 3 +
+      counts[2] * 2 +
+      counts[1] * 1;
 
-  if (!validRatings.length) {
     return {
-      rating: Number(fallbackRating) || 0,
-      reviewCount: Number(fallbackCount) || 0,
+      rating: totalPoints / breakdownReviewCount,
+      reviewCount: breakdownReviewCount,
     };
   }
 
-  const totalPoints = validRatings.reduce(
-    (sum, rating) => sum + rating,
-    0
-  );
+  const validRatings = (Array.isArray(reviews) ? reviews : [])
+    .map((review) => Number(review?.processRating ?? review?.rating))
+    .filter((rating) => Number.isFinite(rating) && rating >= 1 && rating <= 5);
+
+  if (validRatings.length > 0) {
+    const totalPoints = validRatings.reduce((sum, rating) => sum + rating, 0);
+
+    return {
+      rating: totalPoints / validRatings.length,
+      reviewCount: validRatings.length,
+    };
+  }
 
   return {
-    rating: totalPoints / validRatings.length,
-    reviewCount: validRatings.length,
+    rating: Number(company?.rating) || 0,
+    reviewCount: Number(company?.reviewCount) || 0,
   };
 };
 
@@ -977,8 +988,7 @@ const normalizeCompanyFromAny = (company) => {
         date: formatReviewDate(review?.createdAt || review?.date),
         rating: Number(review?.processRating ?? review?.rating) || 0,
         processRating:
-          review?.processRating === undefined ||
-          review?.processRating === null
+          review?.processRating === undefined || review?.processRating === null
             ? null
             : Number(review.processRating),
         message: review?.message || '',
@@ -998,11 +1008,7 @@ const normalizeCompanyFromAny = (company) => {
     company.galleryImages || company.gallery || company.employerProfile?.galleryImages || []
   );
 
-  const accurateReviewSummary = calculateAccurateReviewSummary(
-    reviews,
-    company.rating,
-    company.reviewCount
-  );
+  const accurateRatingSummary = calculateAccurateCompanyRating(company, reviews);
 
   return {
     _id: company._id || company.id || '',
@@ -1013,8 +1019,9 @@ const normalizeCompanyFromAny = (company) => {
     companyLogo: company.companyLogo || '',
     companyWebsite: company.companyWebsite || company.website || '',
     about: company.about || company.companyDescription || 'No company description provided.',
-    rating: accurateReviewSummary.rating,
-    reviewCount: accurateReviewSummary.reviewCount,
+    rating: accurateRatingSummary.rating,
+    reviewCount: accurateRatingSummary.reviewCount,
+    ratingBreakdown: company.ratingBreakdown || {},
     reviews,
     jobs,
     createdAt: company.createdAt || '',
