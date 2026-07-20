@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
 import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
 
@@ -7,12 +6,6 @@ const cn = (...classes) => classes.filter(Boolean).join(" ");
 
 const ITEMS_PER_PAGE = 10;
 
-const tabs = [
-  { key: "community", label: "Community" },
-  { key: "users", label: "Users" },
-  { key: "jobs", label: "Jobs" },
-  { key: "applications", label: "Applications" },
-];
 
 const statusOptions = [
   { value: "all", label: "All Types" },
@@ -23,11 +16,6 @@ const statusOptions = [
   { value: "expired", label: "Expired" },
 ];
 
-const roleOptions = [
-  { value: "all", label: "All Roles" },
-  { value: "jobseeker", label: "Job Seeker" },
-  { value: "employer", label: "Employer" },
-];
 
 function formatArchiveDate(value) {
   if (!value) return "—";
@@ -605,11 +593,6 @@ const RestoreModal = ({ item, type, onCancel, onConfirm, loading }) => {
 };
 
 const AdminArchive = () => {
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = searchParams.get("tab") || "community";
-
-  const [activeTab, setActiveTab] = useState(tabs.some((t) => t.key === initialTab) ? initialTab : "community");
   const [filters, setFilters] = useState({
     search: "",
     status: "all",
@@ -620,8 +603,8 @@ const AdminArchive = () => {
     dateFrom: "",
     dateTo: "",
   });
-  const [data, setData] = useState({ community: [], users: [], jobs: [], applications: [] });
-  const [options, setOptions] = useState({ companies: [], industries: [], campuses: [], courses: [] });
+  const [data, setData] = useState([]);
+  const [options, setOptions] = useState({ campuses: [], courses: [] });
   const [loading, setLoading] = useState(false);
   const [restoreTarget, setRestoreTarget] = useState(null);
   const [restoreLoading, setRestoreLoading] = useState(false);
@@ -631,38 +614,26 @@ const AdminArchive = () => {
     setLoading(true);
     try {
       const params = {
-        tab: activeTab,
+        tab: "community",
         q: filters.search,
         status: filters.status,
-        role: activeTab === "community" ? "all" : filters.role,
-        campus: activeTab === "community" ? filters.role : "all",
-        company: activeTab === "community" ? "all" : filters.company,
-        course: activeTab === "community" ? filters.company : "all",
-        industry: filters.industry,
+        campus: filters.role,
+        course: filters.company,
         date: filters.date,
         dateFrom: filters.dateFrom,
         dateTo: filters.dateTo,
       };
       const res = await api.get("/admin/archive", { params });
       const payload = res.data || {};
-      setData({
-        community: payload.community || [],
-        users: payload.users || [],
-        jobs: payload.jobs || [],
-        applications: payload.applications || [],
-      });
-      setOptions(payload.options || { companies: [], industries: [], campuses: [], courses: [] });
+      setData(payload.community || []);
+      setOptions(payload.options || { campuses: [], courses: [] });
     } catch (err) {
       console.error("Archive load error:", err);
-      setData({ community: [], users: [], jobs: [], applications: [] });
+      setData([]);
     } finally {
       setLoading(false);
     }
-  }, [activeTab, filters]);
-
-  useEffect(() => {
-    setSearchParams({ tab: activeTab }, { replace: true });
-  }, [activeTab, setSearchParams]);
+  }, [filters]);
 
   useEffect(() => {
     loadArchive();
@@ -670,27 +641,15 @@ const AdminArchive = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, filters.search, filters.status, filters.role, filters.company, filters.industry, filters.date, filters.dateFrom, filters.dateTo]);
+  }, [filters.search, filters.status, filters.role, filters.company, filters.date, filters.dateFrom, filters.dateTo]);
 
-  const rows = (data[activeTab] || []).filter((item) => isDateInRange(item.archivedAt || item.dateArchived || item.updatedAt || item.createdAt, filters.dateFrom, filters.dateTo));
+  const rows = data.filter((item) => isDateInRange(item.archivedAt || item.dateArchived || item.updatedAt || item.createdAt, filters.dateFrom, filters.dateTo));
   const totalPages = Math.max(Math.ceil(rows.length / ITEMS_PER_PAGE), 1);
   const paginatedRows = rows.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
   const showingStart = rows.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
   const showingEnd = Math.min(currentPage * ITEMS_PER_PAGE, rows.length);
 
-  const tabCounts = {
-    community: data.community?.length || 0,
-    users: data.users?.length || 0,
-    jobs: data.jobs?.length || 0,
-    applications: data.applications?.length || 0,
-  };
-
-  const tableHeaders = useMemo(() => {
-    if (activeTab === "community") return ["Author", "Type", "Deleted Content", "Campus / Course", "Date Deleted", "Actions"];
-    if (activeTab === "jobs") return ["Company", "Job Title", "Address", "Date Archived", "Status", "Actions"];
-    if (activeTab === "applications") return ["Applicant", "Job Title", "Company", "Address", "Date Archived", "Status", "Actions"];
-    return ["Name", "Role", "Address", "Date Archived", "Status", "Actions"];
-  }, [activeTab]);
+  const tableHeaders = useMemo(() => ["Author", "Type", "Deleted Content", "Campus / Course", "Date Deleted", "Actions"], []);
 
 
   const hasActiveFilters = filters.search || filters.status !== "all" || filters.role !== "all" || filters.company !== "all" || filters.industry !== "all" || filters.date !== "all" || filters.dateFrom || filters.dateTo;
@@ -704,13 +663,11 @@ const AdminArchive = () => {
   };
 
   const openDetails = (row) => {
-    if (activeTab === "community") {
-      window.alert(`${row.archiveType === "comment" ? "Deleted Comment" : "Deleted Post"}\n\n${row.content || "No content"}${row.postContent ? `\n\nOriginal post: ${row.postContent}` : ""}`);
-      return;
-    }
-    if (activeTab === "jobs") navigate(`/admin/archive/jobs/${row._id}`);
-    else if (activeTab === "applications") navigate(`/admin/archive/applications/${row._id}`);
-    else navigate(`/admin/archive/users/${row._id}`);
+    window.alert(`${row.archiveType === "comment" ? "Deleted Comment" : "Deleted Post"}
+
+${row.content || "No content"}${row.postContent ? `
+
+Original post: ${row.postContent}` : ""}`);
   };
 
   const confirmRestore = async () => {
@@ -775,8 +732,7 @@ const AdminArchive = () => {
       const status = row.archiveStatus || row.statusLabel || row.status || "Archived";
       const archiveDate = row.archivedAt || row.dateArchived || row.updatedAt || row.createdAt;
 
-      if (activeTab === "community") {
-        const author = row.author || {};
+      const author = row.author || {};
         const campus = author?.jobSeekerProfile?.campus || "—";
         const course = author?.jobSeekerProfile?.course || "—";
         const restoreType = row.archiveType === "comment" ? "community-comment" : "community-post";
@@ -826,148 +782,6 @@ const AdminArchive = () => {
             </td>
           </tr>
         );
-      }
-
-      if (activeTab === "jobs") {
-        return (
-          <tr
-            key={row._id}
-            role="link"
-            tabIndex={0}
-            onClick={(event) => {
-              if (event.target.closest("button, a, input, select, textarea, label")) return;
-              openDetails(row);
-            }}
-            onKeyDown={(event) => {
-              if (event.target !== event.currentTarget) return;
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                openDetails(row);
-              }
-            }}
-            className="cursor-pointer border-b border-slate-100 transition-colors last:border-b-0 hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
-          >
-            <td className="px-6 py-4">
-              <div className="flex items-center gap-3">
-                {renderAvatar(row, "company")}
-                <div>
-                  <p className="font-semibold text-slate-800">{getCompanyName(row)}</p>
-                  <p className="max-w-[150px] truncate text-xs text-slate-500">{row?.employer?.employerProfile?.industry || "Information Technology"}</p>
-                </div>
-              </div>
-            </td>
-            <td className="px-6 py-4">
-              <p className="max-w-[170px] truncate font-semibold text-slate-800">{row.title || "Untitled Job"}</p>
-              <p className="text-xs text-slate-500">{[row.jobType, row.workMode].filter(Boolean).join(" • ") || "—"}</p>
-            </td>
-            <td className="px-6 py-4 text-slate-600">{getAddress(row)}</td>
-            <td className="px-6 py-4 text-slate-600">{formatArchiveDate(archiveDate)}</td>
-            <td className="px-6 py-4">
-              <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase ${getStatusClass(status)}`}>{status}</span>
-            </td>
-            <td className="px-6 py-4">
-              <div className="flex items-center gap-4 text-slate-600">
-                <button type="button" onClick={() => openDetails(row)} title="View Details" className="rounded-lg p-1 text-slate-500 transition hover:bg-[#2e66a6]/10 hover:text-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"><Icon name="eye" /></button>
-                <button type="button" onClick={() => setRestoreTarget({ type: "job", item: row })} title="Restore" className="rounded-lg p-1 text-slate-500 transition hover:bg-[#2e66a6]/10 hover:text-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"><Icon name="restore" /></button>
-              </div>
-            </td>
-          </tr>
-        );
-      }
-
-      if (activeTab === "applications") {
-        return (
-          <tr
-            key={row._id}
-            role="link"
-            tabIndex={0}
-            onClick={(event) => {
-              if (event.target.closest("button, a, input, select, textarea, label")) return;
-              openDetails(row);
-            }}
-            onKeyDown={(event) => {
-              if (event.target !== event.currentTarget) return;
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                openDetails(row);
-              }
-            }}
-            className="cursor-pointer border-b border-slate-100 transition-colors last:border-b-0 hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
-          >
-            <td className="px-6 py-4">
-              <div className="flex items-center gap-3">
-                {renderAvatar(row.jobseeker, "user")}
-                <div>
-                  <p className="font-semibold text-slate-800">{getName(row.jobseeker)}</p>
-                  <p className="text-xs text-slate-500">{row?.jobseeker?.email || "—"}</p>
-                </div>
-              </div>
-            </td>
-            <td className="px-6 py-4">
-              <p className="max-w-[150px] truncate font-semibold text-slate-800">{row?.job?.title || "—"}</p>
-              <p className="text-xs text-slate-500">{[row?.job?.jobType, row?.job?.workMode].filter(Boolean).join(" • ") || "—"}</p>
-            </td>
-            <td className="px-6 py-4">
-              <p className="font-semibold text-slate-800">{getCompanyName(row)}</p>
-              <p className="max-w-[150px] truncate text-xs text-slate-500">{row?.employer?.employerProfile?.industry || "Information Tech..."}</p>
-            </td>
-            <td className="px-6 py-4 text-slate-600">{getAddress(row)}</td>
-            <td className="px-6 py-4 text-slate-600">{formatArchiveDate(archiveDate)}</td>
-            <td className="px-6 py-4"><span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase ${getStatusClass(status)}`}>{status}</span></td>
-            <td className="px-6 py-4">
-              <div className="flex items-center gap-4 text-slate-600">
-                <button type="button" onClick={() => openDetails(row)} title="View Details" className="rounded-lg p-1 text-slate-500 transition hover:bg-[#2e66a6]/10 hover:text-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"><Icon name="eye" /></button>
-                <button type="button" onClick={() => setRestoreTarget({ type: "application", item: row })} title="Restore" className="rounded-lg p-1 text-slate-500 transition hover:bg-[#2e66a6]/10 hover:text-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"><Icon name="restore" /></button>
-              </div>
-            </td>
-          </tr>
-        );
-      }
-
-      return (
-        <tr
-            key={row._id}
-            role="link"
-            tabIndex={0}
-            onClick={(event) => {
-              if (event.target.closest("button, a, input, select, textarea, label")) return;
-              openDetails(row);
-            }}
-            onKeyDown={(event) => {
-              if (event.target !== event.currentTarget) return;
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                openDetails(row);
-              }
-            }}
-            className="cursor-pointer border-b border-slate-100 transition-colors last:border-b-0 hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
-          >
-          <td className="px-6 py-4">
-            <div className="flex items-center gap-3">
-              {renderAvatar(row, "user")}
-              <div>
-                <p className="font-semibold text-slate-800">{getName(row)}</p>
-                <p className="text-xs text-slate-500">{row.email || "—"}</p>
-              </div>
-            </div>
-          </td>
-          <td className="px-6 py-4 text-slate-700">
-            <span className="inline-flex items-center gap-2 capitalize">
-              <Icon name={row.role === "employer" ? "briefcase" : "user"} className="h-4 w-4" />
-              {row.role === "employer" ? "Employer" : "Job Seeker"}
-            </span>
-          </td>
-          <td className="px-6 py-4 text-slate-600">{getAddress(row)}</td>
-          <td className="px-6 py-4 text-slate-600">{formatArchiveDate(archiveDate)}</td>
-          <td className="px-6 py-4"><span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase ${getStatusClass(status)}`}>{status}</span></td>
-          <td className="px-6 py-4">
-            <div className="flex items-center gap-4 text-slate-600">
-              <button type="button" onClick={() => openDetails(row)} title="View Details" className="rounded-lg p-1 text-slate-500 transition hover:bg-[#2e66a6]/10 hover:text-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"><Icon name="eye" /></button>
-              <button type="button" onClick={() => setRestoreTarget({ type: "user", item: row })} title="Restore" className="rounded-lg p-1 text-slate-500 transition hover:bg-[#2e66a6]/10 hover:text-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"><Icon name="restore" /></button>
-            </div>
-          </td>
-        </tr>
-      );
     });
   };
 
@@ -989,40 +803,22 @@ const AdminArchive = () => {
                 <input
                   value={filters.search}
                   onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
-                  placeholder={activeTab === "community" ? "Search author or deleted content..." : activeTab === "jobs" ? "Search company, job title..." : activeTab === "applications" ? "Search applicant, job title..." : "Search name, email..."}
+                  placeholder="Search author or deleted content..."
                   className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 text-sm text-slate-700 outline-none shadow-sm transition hover:border-slate-300 focus:border-[#2e66a6] focus:bg-white focus:ring-2 focus:ring-[#2e66a6]/20"
                 />
               </div>
               <select value={filters.status} onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none shadow-sm transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
-                {(activeTab === "community" ? statusOptions.slice(0, 3) : statusOptions.filter((o) => !["post", "comment"].includes(o.value))).map((o) => <option key={o.value} value={o.value}>{o.value === "all" && activeTab !== "community" ? "All Status" : o.label}</option>)}
+                {statusOptions.slice(0, 3).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
-              {activeTab === "community" ? (
-                <>
-                  <select value={filters.role} onChange={(e) => setFilters((f) => ({ ...f, role: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none shadow-sm transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
-                    <option value="all">All Campuses</option>
-                    {(options.campuses || []).map((value) => <option key={value} value={value}>{value}</option>)}
-                  </select>
-                  <select value={filters.company} onChange={(e) => setFilters((f) => ({ ...f, company: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none shadow-sm transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
-                    <option value="all">All Courses</option>
-                    {(options.courses || []).map((value) => <option key={value} value={value}>{value}</option>)}
-                  </select>
-                  <div className="hidden xl:block" />
-                </>
-              ) : (
-                <>
-                  <select value={filters.role} onChange={(e) => setFilters((f) => ({ ...f, role: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none shadow-sm transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
-                    {roleOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </select>
-                  <select value={filters.company} onChange={(e) => setFilters((f) => ({ ...f, company: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none shadow-sm transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
-                    <option value="all">All Company</option>
-                    {(options.companies || []).map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                  <select value={filters.industry} onChange={(e) => setFilters((f) => ({ ...f, industry: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none shadow-sm transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
-                    <option value="all">All Industry</option>
-                    {(options.industries || []).map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </>
-              )}
+              <select value={filters.role} onChange={(e) => setFilters((f) => ({ ...f, role: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none shadow-sm transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
+                <option value="all">All Campuses</option>
+                {(options.campuses || []).map((value) => <option key={value} value={value}>{value}</option>)}
+              </select>
+              <select value={filters.company} onChange={(e) => setFilters((f) => ({ ...f, company: e.target.value }))} className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none shadow-sm transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
+                <option value="all">All Courses</option>
+                {(options.courses || []).map((value) => <option key={value} value={value}>{value}</option>)}
+              </select>
+              <div className="hidden xl:block" />
 
               <DateFilterDropdown
                 value={filters.date}
@@ -1039,23 +835,6 @@ const AdminArchive = () => {
             </div>
           </div>
 
-          <div className="border-b border-slate-200">
-            <div className="flex gap-7">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => { setActiveTab(tab.key); setFilters((f) => ({ ...f, status: "all", role: "all", company: "all", industry: "all" })); }}
-                  className={`border-b-2 px-2 py-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20 ${
-                    activeTab === tab.key ? "border-[#2e66a6] text-[#2e66a6]" : "border-transparent text-slate-500 hover:text-slate-800"
-                  }`}
-                >
-                  {tab.label}
-                  <span className="ml-2 text-xs text-slate-400">{tabCounts[tab.key] || ""}</span>
-                </button>
-              ))}
-            </div>
-          </div>
 
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-black/5">
             <div className="overflow-x-auto">
