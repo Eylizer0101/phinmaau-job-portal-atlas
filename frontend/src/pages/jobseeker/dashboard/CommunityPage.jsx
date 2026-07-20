@@ -1789,11 +1789,10 @@ const CommunityPage = () => {
                         <option value="comments">Comments</option>
                       </select>
                     </label>
+                    </div>
                   </div>
 
                 <section>
-                  <h3 className="mb-1 text-lg font-bold">Your Archived Posts ({filteredArchivedPosts.length})</h3>
-                  <p className="mb-4 text-sm text-black/45">These posts are archived and hidden from your active list.</p>
 
                   <div className="space-y-3">
                     {filteredArchivedPosts.length === 0 ? (
