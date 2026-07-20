@@ -2037,10 +2037,6 @@ The company also values transparency, teamwork, and continuous improvement, crea
                           {review.outcome ? getOutcomeLabel(review.outcome) : "Outcome not provided"}
                         </span>
 
-                        <div className="flex items-center gap-3 flex-wrap sm:justify-end">
-                          <StarRating rating={review.processRating ?? review.rating} size="w-6 h-6" />
-                          
-                        </div>
                       </div>
                     </div>
 
