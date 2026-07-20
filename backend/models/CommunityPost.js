@@ -16,6 +16,9 @@ const communityReplySchema = new mongoose.Schema({
   helpful: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   notHelpful: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   reports: { type: [reportSchema], default: [] },
+  isDeleted: { type: Boolean, default: false, index: true },
+  deletedAt: { type: Date, default: null },
+  deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
 }, { timestamps: true });
 
 const communityCommentSchema = new mongoose.Schema({

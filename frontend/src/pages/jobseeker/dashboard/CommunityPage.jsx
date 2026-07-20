@@ -23,6 +23,8 @@ import {
   faChevronDown,
   faChevronUp,
   faArrowUpRightFromSquare,
+  faRotateLeft,
+  faBoxArchive,
 } from '@fortawesome/free-solid-svg-icons';
 import api from '../../../services/api';
 
@@ -173,6 +175,11 @@ const CommunityPage = () => {
   const [managedSort, setManagedSort] = useState('newest');
   const [managedData, setManagedData] = useState({ posts: [], comments: [] });
   const [managedLoading, setManagedLoading] = useState(false);
+  const [managedView, setManagedView] = useState('active');
+  const [archivedPosts, setArchivedPosts] = useState([]);
+  const [commentActionMenu, setCommentActionMenu] = useState('');
+  const [editingComment, setEditingComment] = useState(null);
+  const [editingReply, setEditingReply] = useState(null);
 
   const [likeLoading, setLikeLoading] = useState({});
   const [notice, setNotice] = useState('');
@@ -577,6 +584,17 @@ const CommunityPage = () => {
     if (!showManaged) return;
     try {
       setManagedLoading(true);
+
+      if (managedView === 'archived') {
+        const response = await api.get('/community/managed/archived', {
+          params: { sort: managedSort },
+        });
+        if (response.data?.success) {
+          setArchivedPosts(response.data.posts || []);
+        }
+        return;
+      }
+
       const response = await api.get('/community/managed', {
         params: { type: managedType, sort: managedSort },
       });
@@ -591,11 +609,118 @@ const CommunityPage = () => {
     } finally {
       setManagedLoading(false);
     }
-  }, [showManaged, managedType, managedSort]);
+  }, [showManaged, managedType, managedSort, managedView]);
 
   useEffect(() => {
     fetchManagedContent();
   }, [fetchManagedContent]);
+
+
+  const editComment = async (commentId, currentContent) => {
+    if (!commentsPost) return;
+    const content = window.prompt('Edit your comment:', currentContent);
+    if (content === null || !content.trim()) return;
+
+    try {
+      const response = await api.put(
+        `/community/posts/${commentsPost._id}/comments/${commentId}`,
+        { content: content.trim() }
+      );
+
+      if (response.data?.success) {
+        const nextComments = (commentsPost.comments || []).map((comment) => (
+          comment._id === commentId ? response.data.data : comment
+        ));
+        const nextPost = { ...commentsPost, comments: nextComments };
+        setCommentsPost(nextPost);
+        setPosts((prev) => prev.map((post) => (post._id === nextPost._id ? nextPost : post)));
+        setNotice('Comment updated successfully.');
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to update comment.');
+    } finally {
+      setCommentActionMenu('');
+    }
+  };
+
+  const editReply = async (commentId, replyId, currentContent) => {
+    if (!commentsPost) return;
+    const content = window.prompt('Edit your reply:', currentContent);
+    if (content === null || !content.trim()) return;
+
+    try {
+      const response = await api.put(
+        `/community/posts/${commentsPost._id}/comments/${commentId}/replies/${replyId}`,
+        { content: content.trim() }
+      );
+
+      if (response.data?.success) {
+        const nextComments = (commentsPost.comments || []).map((comment) => (
+          comment._id === commentId ? response.data.data : comment
+        ));
+        const nextPost = { ...commentsPost, comments: nextComments };
+        setCommentsPost(nextPost);
+        setPosts((prev) => prev.map((post) => (post._id === nextPost._id ? nextPost : post)));
+        setNotice('Reply updated successfully.');
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to update reply.');
+    } finally {
+      setCommentActionMenu('');
+    }
+  };
+
+  const deleteReply = async (commentId, replyId) => {
+    if (!commentsPost) return;
+    if (!window.confirm('Delete this reply?')) return;
+
+    try {
+      const response = await api.delete(
+        `/community/posts/${commentsPost._id}/comments/${commentId}/replies/${replyId}`
+      );
+
+      if (response.data?.success) {
+        const nextComments = (commentsPost.comments || []).map((comment) => (
+          comment._id === commentId ? response.data.data : comment
+        ));
+        const nextPost = { ...commentsPost, comments: nextComments };
+        setCommentsPost(nextPost);
+        setPosts((prev) => prev.map((post) => (post._id === nextPost._id ? nextPost : post)));
+        setNotice('Reply deleted successfully.');
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to delete reply.');
+    } finally {
+      setCommentActionMenu('');
+    }
+  };
+
+  const restoreArchivedPost = async (postId) => {
+    try {
+      const response = await api.patch(`/community/managed/archived/${postId}/restore`);
+      if (response.data?.success) {
+        setArchivedPosts((prev) => prev.filter((post) => post._id !== postId));
+        setNotice('Post restored successfully.');
+        fetchPosts();
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to restore post.');
+    }
+  };
+
+  const permanentlyDeleteArchivedPost = async (postId) => {
+    if (!window.confirm('Delete this post permanently? This cannot be undone.')) return;
+
+    try {
+      const response = await api.delete(`/community/managed/archived/${postId}`);
+      if (response.data?.success) {
+        setArchivedPosts((prev) => prev.filter((post) => post._id !== postId));
+        setNotice('Post permanently deleted.');
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to permanently delete post.');
+    }
+  };
 
   const startReply = (commentId, parentReplyId, name) => {
     setReplyTarget({ commentId, parentReplyId: parentReplyId || '', name });
@@ -640,13 +765,39 @@ const CommunityPage = () => {
             <Avatar user={reply.author} size="h-8 w-8" />
 
             <div className="min-w-0 flex-1">
-              <div className="w-fit max-w-full rounded-xl bg-white px-3 py-2 shadow-sm ring-1 ring-[#e6edf5]">
+              <div className="relative w-fit max-w-full rounded-xl bg-white px-3 py-2 pr-10 shadow-sm ring-1 ring-[#e6edf5]">
                 <p className="break-words text-xs font-bold">
                   {replyAuthorName}{isReplyOwner ? ' (You)' : ''}
                 </p>
                 <p className="mt-1 whitespace-pre-wrap break-words text-sm text-black/70">
                   {reply.content}
                 </p>
+
+                {isReplyOwner && (
+                  <div className="absolute right-1 top-1">
+                    <button
+                      type="button"
+                      onClick={() => setCommentActionMenu((value) => (
+                        value === `reply-${reply._id}` ? '' : `reply-${reply._id}`
+                      ))}
+                      className="flex h-7 w-7 items-center justify-center rounded-full text-black/40 hover:bg-[#f7faff]"
+                      aria-label="Reply actions"
+                    >
+                      <FontAwesomeIcon icon={faEllipsisVertical} />
+                    </button>
+
+                    {commentActionMenu === `reply-${reply._id}` && (
+                      <div className="absolute right-0 top-8 z-40 w-36 rounded-xl border border-[#e6edf5] bg-white p-1.5 shadow-xl">
+                        <button type="button" onClick={() => editReply(comment._id, reply._id, reply.content)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs hover:bg-[#f7faff]">
+                          <FontAwesomeIcon icon={faPen} /> Edit
+                        </button>
+                        <button type="button" onClick={() => deleteReply(comment._id, reply._id)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50">
+                          <FontAwesomeIcon icon={faTrash} /> Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 px-2 text-[11px] text-black/45">
@@ -1153,13 +1304,29 @@ const CommunityPage = () => {
                             <FontAwesomeIcon icon={faReply} className="mr-1" /> Reply
                           </button>
                           {isCommentOwner ? (
-                            <button
-                              type="button"
-                              onClick={() => deleteComment(comment._id)}
-                              className="hover:text-red-500"
-                            >
-                              <FontAwesomeIcon icon={faTrash} className="mr-1" /> Delete
-                            </button>
+                            <div className="relative">
+                              <button
+                                type="button"
+                                onClick={() => setCommentActionMenu((value) => (
+                                  value === `comment-${comment._id}` ? '' : `comment-${comment._id}`
+                                ))}
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-full hover:bg-[#f7faff]"
+                                aria-label="Comment actions"
+                              >
+                                <FontAwesomeIcon icon={faEllipsisVertical} />
+                              </button>
+
+                              {commentActionMenu === `comment-${comment._id}` && (
+                                <div className="absolute right-0 top-8 z-40 w-36 rounded-xl border border-[#e6edf5] bg-white p-1.5 shadow-xl">
+                                  <button type="button" onClick={() => editComment(comment._id, comment.content)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs hover:bg-[#f7faff]">
+                                    <FontAwesomeIcon icon={faPen} /> Edit
+                                  </button>
+                                  <button type="button" onClick={() => deleteComment(comment._id)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50">
+                                    <FontAwesomeIcon icon={faTrash} /> Delete
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           ) : (
                             <button
                               type="button"
@@ -1297,21 +1464,90 @@ const CommunityPage = () => {
               </button>
             </div>
 
-            <div className="flex flex-wrap gap-3 border-b border-[#e6edf5] p-4">
-              <select value={managedSort} onChange={(event) => setManagedSort(event.target.value)} className="h-10 rounded-xl border border-[#d8e2ee] px-3 text-sm">
-                <option value="newest">Newest first</option>
-                <option value="oldest">Oldest first</option>
-              </select>
-              <select value={managedType} onChange={(event) => setManagedType(event.target.value)} className="h-10 rounded-xl border border-[#d8e2ee] px-3 text-sm">
-                <option value="all">All</option>
-                <option value="posts">Posts</option>
-                <option value="comments">Comments</option>
-              </select>
+            <div className="border-b border-[#e6edf5]">
+              <div className="flex items-center gap-2 px-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setManagedView('active')}
+                  className={`rounded-t-xl px-4 py-2 text-sm font-semibold ${managedView === 'active' ? 'border border-b-white border-[#d8e2ee] bg-white text-[#2e66a6]' : 'text-black/50'}`}
+                >
+                  Active
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setManagedView('archived')}
+                  className={`rounded-t-xl px-4 py-2 text-sm font-semibold ${managedView === 'archived' ? 'border border-b-white border-[#d8e2ee] bg-[#f5f0ff] text-[#6f5bd3]' : 'text-black/50'}`}
+                >
+                  <FontAwesomeIcon icon={faBoxArchive} className="mr-2" />
+                  Archived
+                </button>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 p-4">
+                <div className="flex flex-wrap gap-3">
+                  <select value={managedSort} onChange={(event) => setManagedSort(event.target.value)} className="h-10 rounded-xl border border-[#d8e2ee] px-3 text-sm">
+                    <option value="newest">Newest first</option>
+                    <option value="oldest">Oldest first</option>
+                  </select>
+
+                  {managedView === 'active' && (
+                    <select value={managedType} onChange={(event) => setManagedType(event.target.value)} className="h-10 rounded-xl border border-[#d8e2ee] px-3 text-sm">
+                      <option value="all">All</option>
+                      <option value="posts">Posts</option>
+                      <option value="comments">Comments</option>
+                    </select>
+                  )}
+                </div>
+
+                {managedView === 'archived' && (
+                  <button type="button" onClick={() => setManagedView('active')} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#d8e2ee] px-4 text-sm font-semibold">
+                    <FontAwesomeIcon icon={faArrowLeft} />
+                    Back to Active Posts
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-5">
               {managedLoading ? (
                 <div className="py-16 text-center text-black/45"><FontAwesomeIcon icon={faSpinner} spin className="mr-2" /> Loading...</div>
+              ) : managedView === 'archived' ? (
+                <section>
+                  <h3 className="mb-1 text-lg font-bold">Your Archived Posts ({archivedPosts.length})</h3>
+                  <p className="mb-4 text-sm text-black/45">These posts are archived and hidden from your active list.</p>
+
+                  <div className="space-y-3">
+                    {archivedPosts.length === 0 ? (
+                      <p className="rounded-xl bg-[#f7faff] p-4 text-sm text-black/45">No archived posts found.</p>
+                    ) : archivedPosts.map((post) => (
+                      <div key={post._id} className="relative rounded-xl border border-[#e6edf5] p-4">
+                        <button type="button" className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-black/45">
+                          <FontAwesomeIcon icon={faEllipsisVertical} />
+                        </button>
+
+                        <div className="grid gap-4 pr-10 md:grid-cols-[1fr_180px] md:items-center">
+                          <div>
+                            <p className="whitespace-pre-wrap text-sm text-black/75">{post.content}</p>
+                            <p className="mt-2 text-xs text-black/40">
+                              Archived {formatTime(post.deletedAt)} · {post.category}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-col gap-2">
+                            <button type="button" onClick={() => restoreArchivedPost(post._id)} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] text-sm font-semibold hover:bg-[#f7faff]">
+                              <FontAwesomeIcon icon={faRotateLeft} />
+                              Restore
+                            </button>
+                            <button type="button" onClick={() => permanentlyDeleteArchivedPost(post._id)} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-red-200 text-sm font-semibold text-red-600 hover:bg-red-50">
+                              <FontAwesomeIcon icon={faTrash} />
+                              Delete permanently
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
               ) : (
                 <div className="space-y-5">
                   {(managedType === 'all' || managedType === 'posts') && (
@@ -1346,8 +1582,51 @@ const CommunityPage = () => {
                           <p className="rounded-xl bg-[#f7faff] p-4 text-sm text-black/45">No comments found.</p>
                         ) : managedData.comments.map((item) => (
                           <div key={`${item.postId}-${item.comment._id}`} className="rounded-xl border border-[#e6edf5] p-4">
-                            <p className="text-sm text-black/75">{item.comment.content}</p>
-                            <p className="mt-2 text-xs text-black/40">On post: {item.postContent} · {formatTime(item.comment.createdAt)}</p>
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="text-sm text-black/75">{item.comment.content}</p>
+                                <p className="mt-2 text-xs text-black/40">On post: {item.postContent} · {formatTime(item.comment.createdAt)}</p>
+                              </div>
+                              <div className="flex shrink-0 gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setShowManaged(false);
+                                    const managedPost = managedData.posts.find((post) => post._id === item.postId);
+                                    if (managedPost) {
+                                      openCommentsModal(managedPost);
+                                      window.setTimeout(() => editComment(item.comment._id, item.comment.content), 250);
+                                    }
+                                  }}
+                                  className="h-9 w-9 rounded-lg hover:bg-[#f7faff]"
+                                  aria-label="Edit comment"
+                                >
+                                  <FontAwesomeIcon icon={faPen} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (!window.confirm('Delete this comment?')) return;
+                                    try {
+                                      const response = await api.delete(`/community/posts/${item.postId}/comments/${item.comment._id}`);
+                                      if (response.data?.success) {
+                                        setManagedData((prev) => ({
+                                          ...prev,
+                                          comments: prev.comments.filter((entry) => entry.comment._id !== item.comment._id),
+                                        }));
+                                        setNotice('Comment moved to archive successfully.');
+                                      }
+                                    } catch (error) {
+                                      alert(error.response?.data?.message || 'Failed to delete comment.');
+                                    }
+                                  }}
+                                  className="h-9 w-9 rounded-lg text-red-500 hover:bg-red-50"
+                                  aria-label="Delete comment"
+                                >
+                                  <FontAwesomeIcon icon={faTrash} />
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>

@@ -94,7 +94,9 @@ const decoratePost = (post, currentUserId) => {
     if (comment.author && typeof comment.author === 'object') {
       comment.author.jobSeekerLevel = getJobSeekerLevel(comment.author);
     }
-    comment.replies = (comment.replies || []).map((reply) => {
+    comment.replies = (comment.replies || [])
+      .filter((reply) => reply?.isDeleted !== true)
+      .map((reply) => {
       if (reply.author && typeof reply.author === 'object') {
         reply.author.jobSeekerLevel = getJobSeekerLevel(reply.author);
       }
@@ -472,6 +474,176 @@ exports.addReply = async (req, res) => {
   } catch (error) {
     console.error('Error adding comment reply:', error);
     res.status(500).json({ success: false, message: 'Error adding reply' });
+  }
+};
+
+
+exports.updateComment = async (req, res) => {
+  try {
+    const content = String(req.body.content || '').trim();
+    if (!content) return res.status(400).json({ success: false, message: 'Comment is required' });
+
+    const post = await CommunityPost.findOne({ _id: req.params.postId, isDeleted: { $ne: true } });
+    if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment || comment.isDeleted === true) {
+      return res.status(404).json({ success: false, message: 'Comment not found' });
+    }
+
+    if (String(comment.author) !== String(req.user._id)) {
+      return res.status(403).json({ success: false, message: 'You can only edit your own comment' });
+    }
+
+    comment.content = content;
+    await post.save({ validateBeforeSave: false });
+
+    const populatedPost = await populatePost(CommunityPost.findById(post._id));
+    const decorated = decoratePost(populatedPost, req.user._id);
+    const updatedComment = decorated.comments.find((item) => String(item._id) === String(comment._id));
+
+    return res.json({ success: true, data: updatedComment });
+  } catch (error) {
+    console.error('Error updating community comment:', error);
+    return res.status(500).json({ success: false, message: 'Error updating comment' });
+  }
+};
+
+exports.updateReply = async (req, res) => {
+  try {
+    const content = String(req.body.content || '').trim();
+    if (!content) return res.status(400).json({ success: false, message: 'Reply is required' });
+
+    const post = await CommunityPost.findOne({ _id: req.params.postId, isDeleted: { $ne: true } });
+    if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment || comment.isDeleted === true) {
+      return res.status(404).json({ success: false, message: 'Comment not found' });
+    }
+
+    const reply = comment.replies.id(req.params.replyId);
+    if (!reply || reply.isDeleted === true) {
+      return res.status(404).json({ success: false, message: 'Reply not found' });
+    }
+
+    if (String(reply.author) !== String(req.user._id)) {
+      return res.status(403).json({ success: false, message: 'You can only edit your own reply' });
+    }
+
+    reply.content = content;
+    await post.save({ validateBeforeSave: false });
+
+    const populatedPost = await populatePost(CommunityPost.findById(post._id));
+    const decorated = decoratePost(populatedPost, req.user._id);
+    const updatedComment = decorated.comments.find((item) => String(item._id) === String(comment._id));
+
+    return res.json({ success: true, data: updatedComment });
+  } catch (error) {
+    console.error('Error updating community reply:', error);
+    return res.status(500).json({ success: false, message: 'Error updating reply' });
+  }
+};
+
+exports.deleteReply = async (req, res) => {
+  try {
+    const post = await CommunityPost.findOne({ _id: req.params.postId, isDeleted: { $ne: true } });
+    if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment || comment.isDeleted === true) {
+      return res.status(404).json({ success: false, message: 'Comment not found' });
+    }
+
+    const reply = comment.replies.id(req.params.replyId);
+    if (!reply || reply.isDeleted === true) {
+      return res.status(404).json({ success: false, message: 'Reply not found' });
+    }
+
+    if (String(reply.author) !== String(req.user._id)) {
+      return res.status(403).json({ success: false, message: 'You can only delete your own reply' });
+    }
+
+    reply.isDeleted = true;
+    reply.deletedAt = new Date();
+    reply.deletedBy = req.user._id;
+    await post.save({ validateBeforeSave: false });
+
+    const populatedPost = await populatePost(CommunityPost.findById(post._id));
+    const decorated = decoratePost(populatedPost, req.user._id);
+    const updatedComment = decorated.comments.find((item) => String(item._id) === String(comment._id));
+
+    return res.json({
+      success: true,
+      message: 'Reply deleted successfully',
+      data: updatedComment,
+    });
+  } catch (error) {
+    console.error('Error deleting community reply:', error);
+    return res.status(500).json({ success: false, message: 'Error deleting reply' });
+  }
+};
+
+exports.getArchivedPosts = async (req, res) => {
+  try {
+    const sort = String(req.query.sort || 'newest');
+    const direction = sort === 'oldest' ? 1 : -1;
+
+    const posts = await populatePost(
+      CommunityPost.find({ author: req.user._id, isDeleted: true }).sort({ deletedAt: direction })
+    );
+
+    return res.json({
+      success: true,
+      posts: posts.map((post) => decoratePost(post, req.user._id)),
+    });
+  } catch (error) {
+    console.error('Error fetching archived community posts:', error);
+    return res.status(500).json({ success: false, message: 'Error fetching archived posts' });
+  }
+};
+
+exports.restoreArchivedPost = async (req, res) => {
+  try {
+    const post = await CommunityPost.findOne({
+      _id: req.params.postId,
+      author: req.user._id,
+      isDeleted: true,
+    });
+
+    if (!post) return res.status(404).json({ success: false, message: 'Archived post not found' });
+
+    post.isDeleted = false;
+    post.deletedAt = null;
+    post.deletedBy = null;
+    await post.save({ validateBeforeSave: false });
+
+    const populatedPost = await populatePost(CommunityPost.findById(post._id));
+    return res.json({
+      success: true,
+      message: 'Post restored successfully',
+      data: decoratePost(populatedPost, req.user._id),
+    });
+  } catch (error) {
+    console.error('Error restoring archived community post:', error);
+    return res.status(500).json({ success: false, message: 'Error restoring post' });
+  }
+};
+
+exports.permanentlyDeleteArchivedPost = async (req, res) => {
+  try {
+    const deleted = await CommunityPost.findOneAndDelete({
+      _id: req.params.postId,
+      author: req.user._id,
+      isDeleted: true,
+    });
+
+    if (!deleted) return res.status(404).json({ success: false, message: 'Archived post not found' });
+
+    return res.json({ success: true, message: 'Post permanently deleted' });
+  } catch (error) {
+    console.error('Error permanently deleting archived community post:', error);
+    return res.status(500).json({ success: false, message: 'Error permanently deleting post' });
   }
 };
 
