@@ -832,21 +832,6 @@ const UserManagementDetails = () => {
                   employerProfile.description}
               </p>
 
-              <div className="grid gap-3 border-t border-[#edf2f7] pt-5 sm:grid-cols-2 xl:grid-cols-3">
-                {[
-                  { label: "Industry", value: employerProfile.industry },
-                  { label: "Location", value: employerProfile.companyAddress || employerProfile.regionCity },
-                  { label: "Business email", value: employerProfile.businessEmail || user.email },
-                  { label: "Contact number", value: employerProfile.mobileNumber || user.mobileNumber },
-                  { label: "Contact person", value: [user.firstName, user.lastName].filter(Boolean).join(" ") },
-                  { label: "Member since", value: formatDate(user.createdAt) },
-                ].map((item) => (
-                  <div key={item.label} className="rounded-xl bg-[#f8fbff] px-4 py-3">
-                    <p className="text-xs font-medium text-black/45">{item.label}</p>
-                    <p className="mt-1 break-words text-sm font-semibold text-black">{item.value || "Not provided"}</p>
-                  </div>
-                ))}
-              </div>
             </div>
           ) : (
             <div className="mt-5">
