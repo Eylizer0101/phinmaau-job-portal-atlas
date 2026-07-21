@@ -777,7 +777,6 @@ const AdminEmployerPostingHistory = () => {
                     <option value="all">All Status</option>
                     <option value="open">Open</option>
                     <option value="draft">Draft</option>
-                    <option value="filled">Filled</option>
                     <option value="closed">Closed</option>
                     <option value="expired">Expired</option>
                     <option value="archived">Archived</option>
@@ -950,7 +949,7 @@ const AdminEmployerPostingHistory = () => {
                 <div className="flex flex-col gap-4 border-t border-[#e5e7eb] bg-[#fbfcfe] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-black/55">
                     Showing {startResult} to {endResult} of{" "}
-                    {filteredJobs.length} result(s)
+                    {filteredJobs.length} results
                   </p>
 
                   <div className="flex items-center justify-end gap-2">

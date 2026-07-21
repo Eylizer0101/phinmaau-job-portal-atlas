@@ -508,7 +508,7 @@ const UserManagementDetails = () => {
           {applications.length > APPLICATIONS_PER_PAGE && (
             <div className="flex flex-col gap-3 border-t border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs font-medium text-slate-500">
-                Showing {(applicationPage - 1) * APPLICATIONS_PER_PAGE + 1} to {Math.min(applicationPage * APPLICATIONS_PER_PAGE, applications.length)} of {applications.length} applications
+                Showing {(applicationPage - 1) * APPLICATIONS_PER_PAGE + 1} to {Math.min(applicationPage * APPLICATIONS_PER_PAGE, applications.length)} of {applications.length} results
               </p>
 
               <div className="flex items-center justify-end gap-2">
@@ -1144,11 +1144,6 @@ const UserManagementDetails = () => {
                     <div className="min-w-0 pb-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <h1 className="break-words text-2xl font-bold leading-tight text-black sm:text-3xl">{companyName}</h1>
-                        {employerVerified && (
-                          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
-                            Verified
-                          </span>
-                        )}
                       </div>
 
                       <div className="mt-3 space-y-2 text-sm text-black/60">
@@ -1209,7 +1204,7 @@ const UserManagementDetails = () => {
                   </button>
                 </div>
 
-               <div className="mt-3 flex justify-end">
+               <div className="mt-3 flex justify-center">
   <div className="rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-2 text-xs text-black/60 shadow-sm">
     <span className="font-semibold text-black">
       Last profile update:
@@ -1281,7 +1276,7 @@ const UserManagementDetails = () => {
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
-            <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-sm text-gray-700 shadow-sm">
+            <div className="flex items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-center text-sm text-gray-700 shadow-sm">
               <Icon name="history" className="h-4 w-4 text-[#2e66a6]" />
               <span>Last profile update:</span>
               <span className="font-semibold text-black">{formatDate(user.updatedAt, true)}</span>
