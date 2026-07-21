@@ -1173,7 +1173,7 @@ const UserManagementDetails = () => {
                   <button
                     type="button"
                     onClick={() => navigate(`/admin/users/${userId}/posting-history`)}
-                    className="group flex w-full items-center gap-3 rounded-2xl bg-[#2e66a6] px-4 py-3 text-left text-white shadow-sm transition hover:bg-[#285c96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 lg:w-[285px]"
+                    className="group flex w-full items-center gap-3 rounded-2xl bg-[#2e66a6] px-4 py-3 text-left text-white shadow-sm transition hover:bg-[#285c96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 lg:w-[245px]"
                   >
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/95 text-[#2e66a6]">
                       <Icon name="history" className="h-5 w-5" />
