@@ -789,8 +789,8 @@ const UserManagementDetails = () => {
       <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-3 border-b border-[#edf2f7] pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e66a6]">Current opportunities</p>
-            <h3 className="mt-1 text-xl font-bold text-black">Jobs</h3>
+    
+            <h3 className="text-2xl font-bold text-black">Jobs</h3>
           </div>
 
           <button
