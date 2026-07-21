@@ -1483,7 +1483,7 @@ const UserManagementDetails = () => {
                   </div>
                 ) : (
                   <p className="mt-3 rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-4 text-sm text-gray-500">
-                    No work experience added yet.
+                    No work experience added .
                   </p>
                 )}
               </section>
