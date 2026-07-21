@@ -799,7 +799,12 @@ const UserManagementDetails = () => {
             className="inline-flex w-fit items-center gap-2 rounded-lg px-2 py-2 text-sm font-semibold text-black/70 transition hover:bg-[#f7faff] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
           >
             View all jobs
-            <span aria-hidden="true">→</span>
+            <span
+              aria-hidden="true"
+              className="text-[18px] font-black leading-none"
+            >
+              →
+            </span>
           </button>
         </div>
 
@@ -1153,7 +1158,12 @@ const UserManagementDetails = () => {
               onClick={() => navigate(`/admin/users/${userId}/reviews`)}
               className="inline-flex items-center gap-2 rounded-lg px-2 py-2 text-[15px] font-medium text-[#2e66a6] transition hover:bg-[#f7faff] hover:text-[#25578f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
             >
-              See all reviews <span aria-hidden="true">→</span>
+              See all reviews <span
+              aria-hidden="true"
+              className="text-[18px] font-black leading-none"
+            >
+              →
+            </span>
             </button>
           </div>
 
@@ -1333,7 +1343,7 @@ const UserManagementDetails = () => {
                       </span>
 
                       <span
-                        className="ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-lg text-white transition group-hover:translate-x-0.5 group-hover:bg-white/20"
+                        className="ml-1 text-[20px] font-black leading-none text-white transition group-hover:translate-x-0.5"
                         aria-hidden="true"
                       >
                         ›
