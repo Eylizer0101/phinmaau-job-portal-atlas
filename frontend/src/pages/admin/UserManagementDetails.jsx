@@ -729,15 +729,20 @@ const UserManagementDetails = () => {
 
     const EmployerJobs = () => (
       <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6">
-        <div className="flex flex-col gap-2 border-b border-[#edf2f7] pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-3 border-b border-[#edf2f7] pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e66a6]">Current opportunities</p>
             <h3 className="mt-1 text-xl font-bold text-black">Jobs</h3>
-           
           </div>
-          <span className="w-fit rounded-full bg-[#f1f6fc] px-3 py-1.5 text-xs font-bold text-[#2e66a6]">
-            {activeJobs.length} active
-          </span>
+
+          <button
+            type="button"
+            onClick={() => navigate(`/admin/users/${userId}/posting-history`)}
+            className="inline-flex w-fit items-center gap-2 rounded-lg px-2 py-2 text-sm font-semibold text-black/70 transition hover:bg-[#f7faff] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+          >
+            View all jobs
+            <span aria-hidden="true">→</span>
+          </button>
         </div>
 
         {activeJobs.length ? (
