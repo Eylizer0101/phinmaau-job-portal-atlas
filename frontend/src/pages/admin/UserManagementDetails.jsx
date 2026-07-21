@@ -919,7 +919,7 @@ const UserManagementDetails = () => {
                     <span className="truncate">{formatApplicationDeadline(job)}</span>
                   </div>
 
-                  <div className="mt-4 flex min-h-[28px] flex-nowrap items-center gap-2 overflow-x-auto scrollbar-hide">
+                  <div className="mt-4 flex min-h-[28px] flex-wrap items-center gap-2">
                     {badges.map((badge) => (
                       <span
                         key={badge}

@@ -598,6 +598,7 @@ const AdminEmployerPostingHistory = () => {
   const titleOptions = useMemo(() => {
     return [...new Set(
       jobs
+        .filter((job) => getJobStatus(job) !== "archived")
         .map((job) =>
           String(job?.title || job?.jobTitle || "").trim()
         )
@@ -613,6 +614,8 @@ const AdminEmployerPostingHistory = () => {
       const company = String(job?.companyName || companyName).trim();
       const location = String(job?.location || "").trim();
       const jobStatus = getJobStatus(job);
+
+      if (jobStatus === "archived") return false;
 
       const matchesSearch =
         !query ||
@@ -773,7 +776,6 @@ const AdminEmployerPostingHistory = () => {
                     <option value="draft">Draft</option>
                     <option value="closed">Closed</option>
                     <option value="expired">Expired</option>
-                    <option value="archived">Archived</option>
                   </select>
 
                   <DateFilterDropdown
