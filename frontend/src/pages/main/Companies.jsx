@@ -650,7 +650,7 @@ const Companies = () => {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5 xl:gap-6">
+              <div className="grid grid-cols-1 items-start md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5 xl:gap-6">
                 {companies.map((c) => {
                   const logoUrl = resolveLogoUrl(c.companyLogo);
                   const employerId = c?._id || c?.id;
@@ -664,7 +664,7 @@ const Companies = () => {
                   return (
                     <div
                       key={c._id}
-                      className={`group rounded-[22px] bg-white border shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(46,102,166,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col px-6 pt-6 pb-7 ${
+                      className={`group self-start rounded-[22px] bg-white border shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(46,102,166,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col px-6 pt-6 pb-7 ${
                         isExpanded ? "min-h-[470px]" : "min-h-[342px]"
                       }`}
                       style={{ borderColor: COLORS.border }}
