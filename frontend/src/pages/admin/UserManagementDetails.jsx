@@ -31,6 +31,14 @@ const Icon = ({ name, className = "h-4 w-4", ...props }) => {
     download: <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />,
     
     building: <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1" />,
+    link: <><path strokeLinecap="round" strokeLinejoin="round" d="M10 13a5 5 0 007.07 0l2.12-2.12a5 5 0 00-7.07-7.07L10.7 5.22" /><path strokeLinecap="round" strokeLinejoin="round" d="M14 11a5 5 0 00-7.07 0L4.81 13.12a5 5 0 107.07 7.07l1.41-1.41" /></>,
+    external: <><path strokeLinecap="round" strokeLinejoin="round" d="M14 3h7v7" /><path strokeLinecap="round" strokeLinejoin="round" d="M10 14L21 3" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 14v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6" /></>,
+    clock: <><circle cx="12" cy="12" r="9" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 7v5l3 2" /></>,
+    starOutline: <path strokeLinecap="round" strokeLinejoin="round" d="M12 3.5l2.65 5.37 5.93.86-4.29 4.18 1.01 5.9L12 17.02 6.7 19.81l1.01-5.9-4.29-4.18 5.93-.86L12 3.5z" />,
+    facebook: <path fill="currentColor" stroke="none" d="M13.5 21v-7h2.4l.4-3h-2.8V9.1c0-.9.3-1.5 1.6-1.5H16V4.9c-.2 0-.9-.1-1.8-.1-1.8 0-3.1 1.1-3.1 3.2V11H9v3h2.3v7h2.2z" />,
+    instagram: <><rect x="3.5" y="3.5" width="17" height="17" rx="4.5" /><circle cx="12" cy="12" r="3.75" /><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none" /></>,
+    linkedin: <path fill="currentColor" stroke="none" d="M6.94 8.5a1.44 1.44 0 110-2.88 1.44 1.44 0 010 2.88zM5.7 18.5h2.47v-8H5.7v8zm4.03-8h2.37v1.1h.03c.33-.63 1.14-1.3 2.35-1.3 2.52 0 2.99 1.66 2.99 3.81v4.39H15v-3.89c0-.93-.02-2.12-1.29-2.12-1.3 0-1.49 1.01-1.49 2.06v3.95H9.73v-8z" />,
+    twitter: <path fill="currentColor" stroke="none" d="M18.9 5H16.5l-3.1 3.5L10.9 5H5l5.3 6.8L5.2 19h2.4l3.8-4.3 3.3 4.3H20l-5.5-7L18.9 5z" />,
   };
 
   return <svg {...common}>{icons[name] || null}</svg>;
@@ -586,10 +594,10 @@ const UserManagementDetails = () => {
       String(employerDocs.overallStatus || "").toLowerCase() === "verified" || user?.isVerified;
 
     const socialLinks = [
-      { key: "facebookUrl", label: "Facebook", url: employerProfile.facebookUrl },
-      { key: "instagramUrl", label: "Instagram", url: employerProfile.instagramUrl },
-      { key: "linkedinUrl", label: "LinkedIn", url: employerProfile.linkedinUrl },
-      { key: "xUrl", label: "X / Twitter", url: employerProfile.xUrl },
+      { key: "facebookUrl", label: "Facebook", icon: "facebook", url: employerProfile.facebookUrl },
+      { key: "instagramUrl", label: "Instagram", icon: "instagram", url: employerProfile.instagramUrl },
+      { key: "linkedinUrl", label: "LinkedIn", icon: "linkedin", url: employerProfile.linkedinUrl },
+      { key: "xUrl", label: "X / Twitter", icon: "twitter", url: employerProfile.xUrl },
     ].filter((item) => String(item.url || "").trim());
 
     const galleryItems = Array.isArray(employerProfile.galleryImages)
@@ -695,6 +703,28 @@ const UserManagementDetails = () => {
             0
           ) / reviewItems.length
         : 0;
+
+    const getOutcomeLabel = (value) => {
+      const labels = {
+        received_offer: "Received offer",
+        rejected: "Rejected",
+        ghosted: "Ghosted",
+        withdrew: "Withdrew",
+        still_in_process: "Still in process",
+      };
+      return labels[String(value || "").trim()] || "Outcome not provided";
+    };
+
+    const getOutcomeBadgeClass = (value) => {
+      const classes = {
+        received_offer: "border-emerald-200 bg-emerald-50 text-emerald-700",
+        rejected: "border-red-200 bg-red-50 text-red-700",
+        ghosted: "border-amber-200 bg-amber-50 text-amber-700",
+        withdrew: "border-gray-200 bg-gray-100 text-gray-700",
+        still_in_process: "border-blue-200 bg-blue-50 text-blue-700",
+      };
+      return classes[String(value || "").trim()] || classes.still_in_process;
+    };
 
     const EmployerEmptyState = ({ icon = "document", title, subtitle }) => (
       <div className="flex min-h-[180px] flex-col items-center justify-center rounded-2xl border border-dashed border-[#d8e2ee] bg-[#f8fbff] px-6 py-10 text-center">
@@ -1007,50 +1037,49 @@ const UserManagementDetails = () => {
       ),
       jobs: <EmployerJobs />,
       social: (
-        <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6">
-          <div className="border-b border-[#edf2f7] pb-5">
-          
-            <h3 className="mt-1 text-xl font-bold text-black">SOCIAL MEDIA</h3>
-        
+        <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-7">
+          <div>
+            <h3 className="text-2xl font-bold text-black">Social Media</h3>
+            <p className="mt-1 text-base text-black/65">Official company links and online presence</p>
           </div>
 
           {socialLinks.length ? (
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
               {socialLinks.map((item) => (
                 <a
                   key={item.key}
                   href={normalizeUrl(item.url)}
                   target="_blank"
                   rel="noreferrer"
-                  className="group flex items-center justify-between gap-4 rounded-2xl border border-[#e2e8f0] bg-white p-4 transition hover:border-[#2e66a6]/35 hover:bg-[#f8fbff]"
+                  className="group flex min-w-0 items-center gap-4 rounded-2xl border border-[#dfe7f0] bg-white p-4 transition hover:border-[#2e66a6]/35 hover:bg-[#f8fbff]"
                 >
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold uppercase tracking-wide text-[#2e66a6]">{item.label}</p>
-                    <p className="mt-1 truncate text-sm text-black/60">{item.url}</p>
-                  </div>
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#edf4fb] text-[#2e66a6] transition group-hover:bg-[#2e66a6] group-hover:text-white">
-                    ↗
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#dfe7f0] bg-[#f8fbff] text-[#2e66a6]">
+                    <Icon name={item.icon} className="h-5 w-5" />
                   </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-base font-semibold text-black">{item.label}</span>
+                    <span className="mt-0.5 block truncate text-sm text-black/55">{item.url}</span>
+                  </span>
+                  <Icon name="external" className="h-5 w-5 shrink-0 text-[#2e66a6]" />
                 </a>
               ))}
             </div>
           ) : (
-            <div className="mt-5">
-              <EmployerEmptyState icon="mail" title="No social accounts linked yet" />
+            <div className="mt-6">
+              <EmployerEmptyState icon="link" title="No social accounts linked yet" />
             </div>
           )}
         </section>
       ),
       gallery: (
-        <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6">
-          <div className="border-b border-[#edf2f7] pb-5">
-           
-            <h3 className="mt-1 text-xl font-bold text-black">GALLERY</h3>
-     
+        <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-7">
+          <div>
+            <h3 className="text-2xl font-bold text-black">Gallery</h3>
+            <p className="mt-1 text-base text-black/65">Photos and visual highlights from {companyName}</p>
           </div>
 
           {galleryItems.length ? (
-            <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
               {galleryItems.map((item, index) => {
                 const imgUrl = getFileUrl(item?.url || item?.imageUrl || item?.path || item);
                 if (!imgUrl) return null;
@@ -1075,56 +1104,109 @@ const UserManagementDetails = () => {
               })}
             </div>
           ) : (
-            <div className="mt-5">
+            <div className="mt-6">
               <EmployerEmptyState icon="document" title="No company photos added yet" />
             </div>
           )}
         </section>
       ),
       reviews: (
-        <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6">
-          <div className="flex flex-col gap-4 border-b border-[#edf2f7] pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-7">
+          <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-      
-              <h3 className="mt-1 text-xl font-bold text-black">REVIEWS</h3>
-              
+              <h3 className="text-2xl font-bold text-black">Application process at {companyName}</h3>
+              <p className="mt-1 text-base text-black/65">
+                {reviewItems.length} review{reviewItems.length === 1 ? "" : "s"}
+              </p>
             </div>
-            {reviewItems.length > 0 && (
-              <div className="rounded-2xl bg-[#f8fbff] px-4 py-3 text-right">
-                <p className="text-xl font-bold text-black">{averageReview.toFixed(1)} <span className="text-amber-500">★</span></p>
-                <p className="text-xs text-black/45">{reviewItems.length} review{reviewItems.length === 1 ? "" : "s"}</p>
-              </div>
-            )}
+
+            <button
+              type="button"
+              onClick={() => navigate(`/admin/users/${userId}/reviews`)}
+              className="inline-flex items-center gap-2 rounded-lg px-2 py-2 text-[15px] font-medium text-[#2e66a6] transition hover:bg-[#f7faff] hover:text-[#25578f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+            >
+              See all reviews <span aria-hidden="true">→</span>
+            </button>
           </div>
 
           {reviewItems.length ? (
-            <div className="mt-5 space-y-4">
-              {reviewItems.map((review, index) => {
-                const rating = Math.max(0, Math.min(5, Number(review?.processRating ?? review?.rating) || 0));
-                return (
-                  <article key={review?._id || index} className="rounded-2xl border border-[#e2e8f0] p-5">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <p className="font-bold text-black">{review?.reviewerName || "Anonymous User"}</p>
-                        <p className="mt-1 text-xs text-black/45">
-                          {review?.roleAppliedFor || "Role not specified"} • {formatDate(review?.createdAt)}
+            <div className="mt-6 space-y-5">
+              {reviewItems.slice(0, 3).map((review, index) => (
+                <article
+                  key={review?._id || index}
+                  className="rounded-2xl border border-[#dfe7f0] bg-white px-5 py-5 shadow-[0_10px_28px_rgba(46,102,166,0.06)] sm:px-6 sm:py-6"
+                >
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#e1e8f0] bg-[#f0f4f8]">
+                        <Icon name="building" className="h-5 w-5 text-[#60758a]" />
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-[17px] font-bold text-black">{review?.reviewerName || "Anonymous User"}</h4>
+                        <p className="mt-0.5 text-sm text-black/55">
+                          {review?.roleAppliedFor || "Role not provided"} · {formatDate(review?.createdAt)}
                         </p>
                       </div>
-                      <div className="flex items-center gap-1 text-sm" aria-label={`${rating} out of 5 stars`}>
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <span key={star} className={star <= Math.round(rating) ? "text-amber-500" : "text-slate-300"}>★</span>
-                        ))}
-                      </div>
                     </div>
-                    <p className="mt-4 whitespace-pre-line text-sm leading-6 text-black/65">
-                      {review?.message || review?.review || review?.comment || "No written feedback provided."}
-                    </p>
-                  </article>
-                );
-              })}
+
+                    <span className={cn(
+                      "inline-flex w-fit items-center rounded-full border px-3 py-1 text-xs font-semibold",
+                      getOutcomeBadgeClass(review?.outcome)
+                    )}>
+                      {getOutcomeLabel(review?.outcome)}
+                    </span>
+                  </div>
+
+                  <p className="mt-5 whitespace-pre-line text-base leading-7 text-black/80">
+                    {review?.message || review?.review || review?.comment || "No written feedback provided."}
+                  </p>
+
+                  <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="rounded-xl border border-[#dfe7f0] bg-[#fbfcfe] px-4 py-3">
+                      <div className="flex items-center gap-2 text-black/50">
+                        <Icon name="clock" className="h-5 w-5" />
+                        <span className="text-sm">First reply</span>
+                      </div>
+                      <p className="mt-1 text-lg font-bold text-black">
+                        {review?.daysToFirstResponse == null ? "Not provided" : `${Number(review.daysToFirstResponse) || 0}d`}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-[#dfe7f0] bg-[#fbfcfe] px-4 py-3">
+                      <div className="flex items-center gap-2 text-black/50">
+                        <Icon name="clock" className="h-5 w-5" />
+                        <span className="text-sm">Total length</span>
+                      </div>
+                      <p className="mt-1 text-lg font-bold text-black">
+                        {review?.totalProcessDays == null ? "Not provided" : `${Number(review.totalProcessDays) || 0}d`}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-[#dfe7f0] bg-[#fbfcfe] px-4 py-3">
+                      <div className="flex items-center gap-2 text-black/50">
+                        <Icon name="starOutline" className="h-5 w-5" />
+                        <span className="text-sm">Process</span>
+                      </div>
+                      <p className="mt-1 text-lg font-bold text-black">
+                        {review?.processRating == null ? "Not provided" : `${Number(review.processRating) || 0}/5`}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-[#dfe7f0] bg-[#fbfcfe] px-4 py-3">
+                      <div className="flex items-center gap-2 text-black/50">
+                        <span className="text-lg leading-none">♧</span>
+                        <span className="text-sm">Apply again?</span>
+                      </div>
+                      <p className="mt-1 text-lg font-bold text-black">
+                        {review?.wouldApplyAgain == null ? "Not provided" : review.wouldApplyAgain ? "Yes" : "No"}
+                      </p>
+                    </div>
+                  </div>
+                </article>
+              ))}
             </div>
           ) : (
-            <div className="mt-5">
+            <div className="mt-6">
               <EmployerEmptyState icon="document" title="No reviews yet" subtitle="Candidate feedback will appear here once submitted." />
             </div>
           )}
@@ -1191,7 +1273,7 @@ const UserManagementDetails = () => {
                             rel="noreferrer"
                             className="flex min-w-0 items-center gap-2 font-medium text-[#2e66a6] hover:underline"
                           >
-                            <Icon name="mail" className="h-4 w-4 shrink-0" />
+                            <Icon name="link" className="h-4 w-4 shrink-0" />
                             <span className="truncate">{employerProfile.companyWebsiteUrl}</span>
                           </a>
                         )}
