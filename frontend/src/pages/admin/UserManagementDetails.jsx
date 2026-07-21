@@ -1313,41 +1313,41 @@ const UserManagementDetails = () => {
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/admin/users/${userId}/posting-history`)}
-                    className="group flex w-full items-center gap-3 rounded-2xl bg-[#2e66a6] px-4 py-3 text-left text-white shadow-sm transition hover:bg-[#285c96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 lg:w-[245px]"
-                  >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/95 text-[#2e66a6]">
-                      <Icon name="history" className="h-5 w-5" />
-                    </span>
-
-                    <span className="min-w-0">
-                      <span className="block whitespace-nowrap text-[15px] font-semibold leading-tight">
-                        Posting History
-                      </span>
-                      <span className="mt-0.5 block whitespace-nowrap text-xs text-white/75">
-                        View job postings
-                      </span>
-                    </span>
-
-                    <span
-                      className="ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-lg text-white transition group-hover:translate-x-0.5 group-hover:bg-white/20"
-                      aria-hidden="true"
+                  <div className="flex w-full flex-col items-center gap-3 lg:w-[245px]">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/admin/users/${userId}/posting-history`)}
+                      className="group flex w-full items-center gap-3 rounded-2xl bg-[#2e66a6] px-4 py-3 text-left text-white shadow-sm transition hover:bg-[#285c96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                     >
-                      ›
-                    </span>
-                  </button>
-                </div>
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/95 text-[#2e66a6]">
+                        <Icon name="history" className="h-5 w-5" />
+                      </span>
 
-               <div className="mt-3 flex justify-center">
-  <div className="rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-2 text-xs text-black/60 shadow-sm">
-    <span className="font-semibold text-black">
-      Last profile update:
-    </span>{" "}
-    {formatDate(user.updatedAt, true)}
-  </div>
-</div>
+                      <span className="min-w-0">
+                        <span className="block whitespace-nowrap text-[15px] font-semibold leading-tight">
+                          Posting History
+                        </span>
+                        <span className="mt-0.5 block whitespace-nowrap text-xs text-white/75">
+                          View job postings
+                        </span>
+                      </span>
+
+                      <span
+                        className="ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-lg text-white transition group-hover:translate-x-0.5 group-hover:bg-white/20"
+                        aria-hidden="true"
+                      >
+                        ›
+                      </span>
+                    </button>
+
+                    <div className="w-full rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-2 text-center text-xs text-black/60 shadow-sm">
+                      <span className="font-semibold text-black">
+                        Last profile update:
+                      </span>{" "}
+                      {formatDate(user.updatedAt, true)}
+                    </div>
+                  </div>
+                </div>
 
 
               </div>
