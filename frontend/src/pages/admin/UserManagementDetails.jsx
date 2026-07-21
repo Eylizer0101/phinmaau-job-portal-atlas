@@ -44,6 +44,34 @@ const Icon = ({ name, className = "h-4 w-4", ...props }) => {
   return <svg {...common}>{icons[name] || null}</svg>;
 };
 
+const ReviewStars = ({ rating }) => {
+  const numericRating = Number(rating);
+  const safeRating = Number.isFinite(numericRating)
+    ? Math.min(5, Math.max(0, Math.round(numericRating)))
+    : 0;
+
+  return (
+    <div
+      className="flex items-center gap-1"
+      aria-label={`${safeRating} out of 5 stars`}
+      title={`${safeRating} out of 5 stars`}
+    >
+      {[1, 2, 3, 4, 5].map((star) => (
+        <span
+          key={star}
+          className={cn(
+            "text-xl leading-none",
+            star <= safeRating ? "text-[#e5a900]" : "text-[#d7dee8]"
+          )}
+          aria-hidden="true"
+        >
+          ★
+        </span>
+      ))}
+    </div>
+  );
+};
+
 const EMPLOYER_DOC_LABELS = {
   secRegistration: "SEC Registration",
   birRegistration: "BIR Registration",
@@ -1149,12 +1177,16 @@ const UserManagementDetails = () => {
                       </div>
                     </div>
 
-                    <span className={cn(
-                      "inline-flex w-fit items-center rounded-full border px-3 py-1 text-xs font-semibold",
-                      getOutcomeBadgeClass(review?.outcome)
-                    )}>
-                      {getOutcomeLabel(review?.outcome)}
-                    </span>
+                    <div className="flex shrink-0 flex-col items-end gap-3">
+                      <span className={cn(
+                        "inline-flex w-fit items-center rounded-full border px-3 py-1 text-xs font-semibold",
+                        getOutcomeBadgeClass(review?.outcome)
+                      )}>
+                        {getOutcomeLabel(review?.outcome)}
+                      </span>
+
+                      <ReviewStars rating={review?.processRating ?? review?.rating} />
+                    </div>
                   </div>
 
                   <p className="mt-5 whitespace-pre-line text-base leading-7 text-black/80">
