@@ -819,7 +819,7 @@ const UserManagementDetails = () => {
               const badges = [
                 experienceBadge,
                 workModeBadge,
-                isOpenToFreshGraduate(job) ? "Open to Fresh Grads" : "",
+                isOpenToFreshGraduate(job) ? "Open Fresh Grads" : "",
               ]
                 .map((badge) => String(badge || "").trim())
                 .filter(Boolean)
