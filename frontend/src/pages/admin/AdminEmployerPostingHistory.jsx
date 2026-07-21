@@ -819,13 +819,13 @@ const AdminEmployerPostingHistory = () => {
                 <div className="overflow-x-auto">
                   <table className="min-w-[920px] w-full table-fixed text-left text-[15px]">
                     <colgroup>
-                      <col className="w-[15%]" />
-                      <col className="w-[20%]" />
-                      <col className="w-[11%]" />
-                      <col className="w-[11%]" />
-                      <col className="w-[14%]" />
+                      <col className="w-[16%]" />
                       <col className="w-[17%]" />
-                      <col className="w-[12%]" />
+                      <col className="w-[11%]" />
+                      <col className="w-[11%]" />
+                      <col className="w-[15%]" />
+                      <col className="w-[17%]" />
+                      <col className="w-[13%]" />
                     </colgroup>
                     <thead className="border-y border-[#e5e7eb] bg-[#f8fafc] text-xs font-semibold uppercase tracking-wide text-black/60">
                       <tr>
@@ -835,7 +835,7 @@ const AdminEmployerPostingHistory = () => {
                         <th className="px-3 py-4 text-center">Applicant</th>
                         <th className="px-3 py-4">Status</th>
                         <th className="px-3 py-4">Valid Until</th>
-                        <th className="px-3 py-4 text-center">Actions</th>
+                        <th className="px-2 py-4 text-left">Actions</th>
                       </tr>
                     </thead>
 
@@ -885,11 +885,11 @@ const AdminEmployerPostingHistory = () => {
                                 </p>
                               </td>
 
-                              <td className="px-3 py-5 text-center text-[16px] font-medium text-black">
+                              <td className="px-2 py-5 text-center text-[16px] font-medium text-black">
                                 {Number(job?.vacancies || 0)}
                               </td>
 
-                              <td className="px-3 py-5 text-center text-[16px] font-medium text-black">
+                              <td className="px-2 py-5 text-center text-[16px] font-medium text-black">
                                 {Number(
                                   job?.applicantCount ??
                                     job?.applicantsCount ??
@@ -909,7 +909,7 @@ const AdminEmployerPostingHistory = () => {
                                 )}
                               </td>
 
-                              <td className="px-3 py-5 text-center">
+                              <td className="px-2 py-5 text-left">
                                 <button
                                   type="button"
                                   onClick={(event) => {
