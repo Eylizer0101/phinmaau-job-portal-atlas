@@ -460,6 +460,7 @@ const ManageJobs = () => {
   const [selectedJob, setSelectedJob] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [openStatusMenuId, setOpenStatusMenuId] = useState('');
+  const [statusConfirmationJob, setStatusConfirmationJob] = useState(null);
 
   const [action, setAction] = useState({ type: '', jobId: '' });
 
@@ -536,6 +537,26 @@ const ManageJobs = () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [openStatusMenuId]);
+
+  useEffect(() => {
+    if (!statusConfirmationJob) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape' && !action.jobId) {
+        setStatusConfirmationJob(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [statusConfirmationJob, action.jobId]);
 
   useEffect(() => {
     if (!showDeleteModal) return;
@@ -826,6 +847,7 @@ const ManageJobs = () => {
           ? 'The job is visible in Job Offers again and jobseekers can apply.'
           : 'The job is no longer visible in Job Offers, but its existing applicants are still available for review.',
       });
+      setStatusConfirmationJob(null);
     } catch (err) {
       console.error(`Error ${shouldOpen ? 'opening' : 'closing'} job:`, err);
       setError(
@@ -1400,7 +1422,10 @@ const ManageJobs = () => {
                                   <button
                                     type="button"
                                     role="menuitem"
-                                    onClick={() => handleToggleJobStatus(job)}
+                                    onClick={() => {
+                                      setOpenStatusMenuId('');
+                                      setStatusConfirmationJob(job);
+                                    }}
                                     disabled={busyThisRow}
                                     className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-gray-800 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
                                   >
@@ -1658,7 +1683,10 @@ const ManageJobs = () => {
                                         <button
                                           type="button"
                                           role="menuitem"
-                                          onClick={() => handleToggleJobStatus(job)}
+                                          onClick={() => {
+                                      setOpenStatusMenuId('');
+                                      setStatusConfirmationJob(job);
+                                    }}
                                           disabled={busyThisRow}
                                           className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-gray-800 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
                                         >
@@ -1744,6 +1772,120 @@ const ManageJobs = () => {
             )}
           </div>
         </div>
+
+        {statusConfirmationJob && (() => {
+          const status = getDerivedStatus(statusConfirmationJob);
+          const isReopening = status === 'closed';
+          const busy =
+            action.jobId === statusConfirmationJob._id &&
+            ['open', 'close'].includes(action.type);
+
+          return (
+            <div
+              className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 p-4"
+              onMouseDown={(event) => {
+                if (event.target === event.currentTarget && !busy) {
+                  setStatusConfirmationJob(null);
+                }
+              }}
+            >
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="status-confirmation-title"
+                aria-describedby="status-confirmation-description"
+                className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
+              >
+                <div className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div
+                      className={cn(
+                        'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl',
+                        isReopening
+                          ? 'bg-blue-100 text-[#2e66a6]'
+                          : 'bg-amber-100 text-amber-700'
+                      )}
+                    >
+                      {isReopening ? (
+                        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12a8 8 0 0114.93-4M20 4v5h-5M20 12a8 8 0 01-14.93 4M4 20v-5h5" />
+                        </svg>
+                      ) : (
+                        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6M5 12a7 7 0 1014 0 7 7 0 00-14 0z" />
+                        </svg>
+                      )}
+                    </div>
+
+                    <div className="min-w-0">
+                      <h2 id="status-confirmation-title" className="text-xl font-bold text-gray-900">
+                        {isReopening ? 'Open Job' : 'Close Job'}
+                      </h2>
+                      <p className="mt-1 truncate text-sm font-semibold text-gray-600">
+                        {safeTitle(statusConfirmationJob)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div
+                    id="status-confirmation-description"
+                    className={cn(
+                      'mt-5 rounded-xl border p-4',
+                      isReopening
+                        ? 'border-blue-200 bg-blue-50'
+                        : 'border-amber-200 bg-amber-50'
+                    )}
+                  >
+                    <p className={cn(
+                      'text-sm font-semibold',
+                      isReopening ? 'text-blue-900' : 'text-amber-900'
+                    )}>
+                      {isReopening
+                        ? 'Are you sure you want to reopen this job post?'
+                        : 'Are you sure you want to close this job post?'}
+                    </p>
+                    <p className={cn(
+                      'mt-2 text-sm leading-6',
+                      isReopening ? 'text-blue-800' : 'text-amber-800'
+                    )}>
+                      {isReopening
+                        ? 'It will start accepting new applications again.'
+                        : 'It will no longer be visible to job seekers or accept new applications.'}
+                    </p>
+                  </div>
+
+                  <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setStatusConfirmationJob(null)}
+                      disabled={busy}
+                      className="rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleToggleJobStatus(statusConfirmationJob)}
+                      disabled={busy}
+                      className={cn(
+                        'inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60',
+                        isReopening
+                          ? 'bg-[#2e66a6] hover:bg-[#255487] focus-visible:ring-[#2e66a6]'
+                          : 'bg-amber-600 hover:bg-amber-700 focus-visible:ring-amber-600'
+                      )}
+                    >
+                      {busy && (
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                      )}
+                      {isReopening ? 'Open Job' : 'Close Job'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {showDeleteModal && selectedJob && (
           <div
