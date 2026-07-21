@@ -2755,16 +2755,23 @@ const Bookmarks = () => {
                             <CompanyLogo src={selectedCompany.companyLogo} name={selectedCompany.companyName} size="xl" />
 
                             <div className="min-w-0 flex-1">
-                              <h1 className="text-[28px] sm:text-[32px] leading-tight font-bold text-black">
-                                {selectedCompany.companyName || 'Company'}
-                              </h1>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <h1 className="min-w-0 truncate text-[28px] sm:text-[32px] leading-tight font-bold text-black">
+                                  {selectedCompany.companyName || 'Company'}
+                                </h1>
+                                <img
+                                  src="/images/checkmo.png"
+                                  alt="Verified"
+                                  className="w-5 h-5 object-contain flex-shrink-0"
+                                  draggable="false"
+                                />
+                              </div>
 
                               <div className="mt-2 flex items-center gap-2 text-[15px] text-black/60">
                                 <span className="text-black/50">
                                   <SvgIcon name="industry" className="w-4 h-4" />
                                 </span>
                                 <span>{selectedCompany.industry || 'Industry not specified'}</span>
-                                <img src="/images/checkmo.png" alt="Verified" className="w-5 h-5 object-contain" draggable="false" />
                               </div>
 
                               <div className="mt-2 flex items-center gap-2 text-[15px] text-black/65">
