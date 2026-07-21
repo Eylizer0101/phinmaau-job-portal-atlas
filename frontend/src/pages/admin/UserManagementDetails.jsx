@@ -951,8 +951,8 @@ const UserManagementDetails = () => {
       about: (
         <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6">
           <div className="border-b border-[#edf2f7] pb-5">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e66a6]">Company overview</p>
-            <h3 className="mt-1 text-xl font-bold text-black">About</h3>
+         
+            <h3 className="mt-1 text-xl font-bold text-black">ABOUT</h3>
           </div>
 
           {String(
@@ -980,8 +980,8 @@ const UserManagementDetails = () => {
       social: (
         <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6">
           <div className="border-b border-[#edf2f7] pb-5">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e66a6]">Online presence</p>
-            <h3 className="mt-1 text-xl font-bold text-black">Social Media</h3>
+          
+            <h3 className="mt-1 text-xl font-bold text-black">SOCIAL MEDIA</h3>
         
           </div>
 
@@ -1015,8 +1015,8 @@ const UserManagementDetails = () => {
       gallery: (
         <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6">
           <div className="border-b border-[#edf2f7] pb-5">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e66a6]">Workplace preview</p>
-            <h3 className="mt-1 text-xl font-bold text-black">Gallery</h3>
+           
+            <h3 className="mt-1 text-xl font-bold text-black">GALLERY</h3>
      
           </div>
 
@@ -1056,8 +1056,8 @@ const UserManagementDetails = () => {
         <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6">
           <div className="flex flex-col gap-4 border-b border-[#edf2f7] pb-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2e66a6]">Candidate feedback</p>
-              <h3 className="mt-1 text-xl font-bold text-black">Reviews</h3>
+      
+              <h3 className="mt-1 text-xl font-bold text-black">REVIEWS</h3>
               
             </div>
             {reviewItems.length > 0 && (
