@@ -595,25 +595,25 @@ const JobseekerCompanies = () => {
                             )}
                           </div>
 
-                          <div className="min-w-0 flex-1">
-                            <h3 className="text-[19px] leading-[1.2] font-semibold text-black truncate">
+                          <div className="min-w-0 flex items-center gap-1.5 max-w-full">
+                            <h3 className="min-w-0 truncate text-[19px] leading-[1.2] font-semibold text-black">
                               {c.companyName || "Company"}
                             </h3>
+
+                            <span
+                              className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white shrink-0"
+                              title="Verified"
+                              aria-label="Verified company"
+                            >
+                              <img
+                                src="/images/checkmo.png"
+                                alt="Verified"
+                                className="w-7 h-7 object-contain"
+                                draggable="false"
+                              />
+                            </span>
                           </div>
                         </div>
-
-                        <span
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white shrink-0"
-                          title="Verified"
-                          aria-label="Verified company"
-                        >
-                          <img
-                            src="/images/checkmo.png"
-                            alt="Verified"
-                            className="w-7 h-7 object-contain"
-                            draggable="false"
-                          />
-                        </span>
                       </div>
 
                       <div

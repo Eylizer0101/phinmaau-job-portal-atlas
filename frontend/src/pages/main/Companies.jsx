@@ -686,25 +686,25 @@ const Companies = () => {
                             )}
                           </div>
 
-                          <div className="min-w-0 flex-1">
-                            <h3 className="text-[18px] md:text-[19px] leading-[1.25] font-bold text-black truncate group-hover:text-[#2e66a6] transition">
+                          <div className="min-w-0 flex items-center gap-1.5 max-w-full">
+                            <h3 className="min-w-0 truncate text-[18px] md:text-[19px] leading-[1.25] font-bold text-black group-hover:text-[#2e66a6] transition">
                               {c.companyName || "Company"}
                             </h3>
+
+                            <span
+                              className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white border border-[#D7E2EE] shadow-sm shrink-0"
+                              title="Verified"
+                              aria-label="Verified company"
+                            >
+                              <img
+                                src="/images/checkmo.png"
+                                alt="Verified"
+                                className="w-7 h-7 object-contain"
+                                draggable="false"
+                              />
+                            </span>
                           </div>
                         </div>
-
-                        <span
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white border border-[#D7E2EE] shadow-sm shrink-0"
-                          title="Verified"
-                          aria-label="Verified company"
-                        >
-                          <img
-                            src="/images/checkmo.png"
-                            alt="Verified"
-                            className="w-7 h-7 object-contain"
-                            draggable="false"
-                          />
-                        </span>
                       </div>
 
                       <div
