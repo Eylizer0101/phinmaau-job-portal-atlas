@@ -1313,7 +1313,7 @@ const UserManagementDetails = () => {
                     </div>
                   </div>
 
-                  <div className="flex w-full flex-col items-center gap-3 lg:w-[245px]">
+                  <div className="mt-5 flex w-full flex-col items-center gap-3 lg:mt-7 lg:w-[320px]">
                     <button
                       type="button"
                       onClick={() => navigate(`/admin/users/${userId}/posting-history`)}
@@ -1340,7 +1340,7 @@ const UserManagementDetails = () => {
                       </span>
                     </button>
 
-                    <div className="w-full rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-2 text-center text-xs text-black/60 shadow-sm">
+                    <div className="w-full whitespace-nowrap rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-2.5 text-center text-xs text-black/60 shadow-sm">
                       <span className="font-semibold text-black">
                         Last profile update:
                       </span>{" "}
