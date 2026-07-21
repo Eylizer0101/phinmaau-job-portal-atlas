@@ -1313,7 +1313,7 @@ const UserManagementDetails = () => {
                     </div>
                   </div>
 
-                  <div className="mt-5 flex w-full flex-col items-center gap-3 lg:mt-7 lg:w-[320px]">
+                  <div className="mt-5 flex w-full flex-col items-center gap-3 lg:mt-7 lg:w-[290px]">
                     <button
                       type="button"
                       onClick={() => navigate(`/admin/users/${userId}/posting-history`)}
