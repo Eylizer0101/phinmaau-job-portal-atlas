@@ -790,7 +790,10 @@ const UserManagementDetails = () => {
         <div className="flex flex-col gap-3 border-b border-[#edf2f7] pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
     
-            <h3 className="text-2xl font-bold text-black">Jobs</h3>
+            <h3 className="text-2xl font-bold text-black">Jobs at {companyName}</h3>
+            <p className="mt-1 text-base text-black/65">
+              {activeJobs.length} Open position{activeJobs.length === 1 ? "" : "s"}
+            </p>
           </div>
 
           <button
@@ -1044,7 +1047,7 @@ const UserManagementDetails = () => {
         <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6">
           <div className="border-b border-[#edf2f7] pb-5">
          
-            <h3 className="mt-1 text-xl font-bold text-black">ABOUT</h3>
+            <h3 className="mt-1 text-xl font-bold text-black">About {companyName}</h3>
           </div>
 
           {String(
@@ -1072,7 +1075,7 @@ const UserManagementDetails = () => {
       social: (
         <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-7">
           <div>
-            <h3 className="text-2xl font-bold text-black">Social Media</h3>
+            <h3 className="text-2xl font-bold text-black">Social Media of {companyName}</h3>
             <p className="mt-1 text-base text-black/65">Official company links and online presence</p>
           </div>
 
@@ -1107,7 +1110,7 @@ const UserManagementDetails = () => {
       gallery: (
         <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-7">
           <div>
-            <h3 className="text-2xl font-bold text-black">Gallery</h3>
+            <h3 className="text-2xl font-bold text-black">Gallery of {companyName}</h3>
             <p className="mt-1 text-base text-black/65">Photos and visual highlights from {companyName}</p>
           </div>
 
