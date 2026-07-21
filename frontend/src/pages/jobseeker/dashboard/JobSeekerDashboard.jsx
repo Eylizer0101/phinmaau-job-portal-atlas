@@ -2163,42 +2163,44 @@ const JobSeekerDashboard = () => {
                         }
                       }}
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="w-12 h-12 rounded-[14px] overflow-hidden border border-[#E5E7EB] bg-[#F8FAFC] shrink-0">
-                            {logoUrl ? (
-                              <img
-                                src={logoUrl}
-                                alt={c.companyName || 'Company logo'}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-gray-200" />
-                            )}
-                          </div>
-
-                          <div className="min-w-0 flex-1">
-                            <h3 className="text-[19px] leading-[1.2] font-semibold text-black truncate">
-                              {c.companyName || 'Company'}
-                            </h3>
-                          </div>
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="w-12 h-12 rounded-[14px] overflow-hidden border border-[#E5E7EB] bg-[#F8FAFC] shrink-0">
+                          {logoUrl ? (
+                            <img
+                              src={logoUrl}
+                              alt={c.companyName || 'Company logo'}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-200" />
+                          )}
                         </div>
 
-                        <span
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white shrink-0"
-                          title="Verified"
-                          aria-label="Verified company"
-                        >
-                          <img
-                            src="/images/checkmo.png"
-                            alt="Verified"
-                            className="w-7 h-7 object-contain"
-                            draggable="false"
-                          />
-                        </span>
+                        <div className="flex min-w-0 items-center gap-1.5">
+                          <h3
+                            className="min-w-0 truncate text-[19px] leading-[1.2] font-semibold text-black"
+                            title={c.companyName || 'Company'}
+                          >
+                            {c.companyName || 'Company'}
+                          </h3>
+
+                          <span
+                            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white"
+                            title="Verified"
+                            aria-label="Verified company"
+                          >
+                            <img
+                              src="/images/checkmo.png"
+                              alt=""
+                              className="h-6 w-6 object-contain"
+                              draggable="false"
+                              aria-hidden="true"
+                            />
+                          </span>
+                        </div>
                       </div>
 
                       <div className="mt-4 rounded-[16px] px-4 py-4 bg-[#F8FAFC]">
