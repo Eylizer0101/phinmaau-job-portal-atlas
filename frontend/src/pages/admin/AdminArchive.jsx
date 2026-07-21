@@ -346,57 +346,61 @@ const AdminArchive = () => {
             </div>
           ) : null}
 
-          <div className="px-5 pb-5 pt-4">
-            <div
-              className="mb-6 flex w-full items-center gap-1 overflow-x-auto border-b border-slate-200"
-              role="tablist"
-              aria-label="Archive categories"
-            >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "community"}
-                onClick={() => changeTab("community")}
-                className={`relative inline-flex min-h-11 shrink-0 items-center justify-center gap-2 px-4 pb-3 pt-2 text-sm font-semibold outline-none transition-colors duration-200 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30 ${
-                  activeTab === "community"
-                    ? "text-[#2e66a6] after:absolute after:bottom-[-1px] after:left-4 after:right-4 after:h-0.5 after:rounded-full after:bg-[#2e66a6]"
-                    : "text-slate-500 hover:text-slate-800"
-                }`}
-              >
-                <Icon name="course" />
-                Community
-              </button>
+        </section>
 
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "dormant"}
-                onClick={() => changeTab("dormant")}
-                className={`relative inline-flex min-h-11 shrink-0 items-center justify-center gap-2 px-4 pb-3 pt-2 text-sm font-semibold outline-none transition-colors duration-200 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30 ${
-                  activeTab === "dormant"
-                    ? "text-[#2e66a6] after:absolute after:bottom-[-1px] after:left-4 after:right-4 after:h-0.5 after:rounded-full after:bg-[#2e66a6]"
-                    : "text-slate-500 hover:text-slate-800"
-                }`}
-              >
-                <Icon name="dormant" />
-                Dormant
-              </button>
+        <div
+          className="mb-7 flex w-full items-center gap-1 overflow-x-auto border-b border-slate-200"
+          role="tablist"
+          aria-label="Archive categories"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "community"}
+            onClick={() => changeTab("community")}
+            className={`relative inline-flex min-h-11 shrink-0 items-center justify-center gap-2 px-4 pb-3 pt-2 text-sm font-semibold outline-none transition-colors duration-200 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30 ${
+              activeTab === "community"
+                ? "text-[#2e66a6] after:absolute after:bottom-[-1px] after:left-4 after:right-4 after:h-0.5 after:rounded-full after:bg-[#2e66a6]"
+                : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <Icon name="course" />
+            Community
+          </button>
 
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "jobs"}
-                onClick={() => changeTab("jobs")}
-                className={`relative inline-flex min-h-11 shrink-0 items-center justify-center gap-2 px-4 pb-3 pt-2 text-sm font-semibold outline-none transition-colors duration-200 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30 ${
-                  activeTab === "jobs"
-                    ? "text-[#2e66a6] after:absolute after:bottom-[-1px] after:left-4 after:right-4 after:h-0.5 after:rounded-full after:bg-[#2e66a6]"
-                    : "text-slate-500 hover:text-slate-800"
-                }`}
-              >
-                <Icon name="building" />
-                Jobs
-              </button>
-            </div>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "dormant"}
+            onClick={() => changeTab("dormant")}
+            className={`relative inline-flex min-h-11 shrink-0 items-center justify-center gap-2 px-4 pb-3 pt-2 text-sm font-semibold outline-none transition-colors duration-200 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30 ${
+              activeTab === "dormant"
+                ? "text-[#2e66a6] after:absolute after:bottom-[-1px] after:left-4 after:right-4 after:h-0.5 after:rounded-full after:bg-[#2e66a6]"
+                : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <Icon name="dormant" />
+            Dormant
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "jobs"}
+            onClick={() => changeTab("jobs")}
+            className={`relative inline-flex min-h-11 shrink-0 items-center justify-center gap-2 px-4 pb-3 pt-2 text-sm font-semibold outline-none transition-colors duration-200 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30 ${
+              activeTab === "jobs"
+                ? "text-[#2e66a6] after:absolute after:bottom-[-1px] after:left-4 after:right-4 after:h-0.5 after:rounded-full after:bg-[#2e66a6]"
+                : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <Icon name="building" />
+            Jobs
+          </button>
+        </div>
+
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="px-5 pb-5 pt-5">
 
             {activeTab === "community" ? (
               <>
