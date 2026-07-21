@@ -752,10 +752,10 @@ const JobseekerVerification = () => {
   };
 
   const pageLabel = useMemo(() => {
-    if (!pagination.totalItems) return "Showing 0 entries";
+    if (!pagination.totalItems) return "Showing 0 to 0 of 0 results";
     const start = (pagination.page - 1) * pagination.limit + 1;
     const end = Math.min(pagination.page * pagination.limit, pagination.totalItems);
-    return `Showing ${start} to ${end} of ${pagination.totalItems} entries`;
+    return `Showing ${start} to ${end} of ${pagination.totalItems} results`;
   }, [pagination]);
 
   // Alisin sa listing ang verified at declined/rejected

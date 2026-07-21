@@ -616,7 +616,7 @@ const JobApplicants = () => {
               })}
             </div>
             <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-[#e3e5ef] bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-gray-500">Showing {firstShown} to {lastShown} of {filteredApplicants.length} entries</p>
+              <p className="text-sm text-gray-500">Showing {firstShown} to {lastShown} of {filteredApplicants.length} results</p>
               <div className="flex items-center gap-2 self-end sm:self-auto">
                 <button type="button" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => page - 1)} className="inline-flex h-9 items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"><SvgIcon name="chevronLeft" />Previous</button>
                 <div className="inline-flex items-center gap-1">

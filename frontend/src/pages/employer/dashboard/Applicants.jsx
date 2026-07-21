@@ -2319,7 +2319,7 @@ const Applicants = () => {
 
             <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-[#e3e5ef] bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-gray-500">
-                Showing {firstShown} to {lastShown} of {filteredApplications.length} pending applicants
+                Showing {firstShown} to {lastShown} of {filteredApplications.length} results
               </p>
 
               <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">

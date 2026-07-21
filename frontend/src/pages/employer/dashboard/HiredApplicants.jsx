@@ -1090,7 +1090,7 @@ const selectBase =
 
               <div className="flex flex-col gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4 text-sm text-gray-600 sm:flex-row sm:items-center sm:justify-between">
                 <span>
-                  Showing {showingStart} to {showingEnd} of {totalItems} result(s)
+                  Showing {showingStart} to {showingEnd} of {totalItems} results
                 </span>
                 <div className="flex items-center gap-2">
                   <button
