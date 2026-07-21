@@ -803,10 +803,12 @@ const UserManagementDetails = () => {
           >
             View all jobs
             <span
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-[28px] font-extrabold leading-none"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10"
               aria-hidden="true"
             >
-              →
+              <span className="relative left-[2px] flex items-center justify-center text-[28px] font-extrabold leading-none">
+                →
+              </span>
             </span>
           </button>
         </div>
