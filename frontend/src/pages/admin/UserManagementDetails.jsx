@@ -636,6 +636,25 @@ const UserManagementDetails = () => {
       return "Salary not specified";
     };
 
+    const formatApplicationDeadline = (job) => {
+      const value =
+        job?.applicationDeadline ||
+        job?.validUntil ||
+        job?.deadline;
+
+      if (!value) return "Application deadline not specified";
+
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) {
+        return "Application deadline not specified";
+      }
+
+      return `Deadline of application: ${date.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+      })}`;
+    };
+
     const normalizeWorkModeLabel = (value) => {
       const normalized = String(value || "").trim().toLowerCase();
       if (!normalized) return "";
@@ -822,6 +841,11 @@ const UserManagementDetails = () => {
                       <Icon name="briefcase" className="h-4 w-4 shrink-0 text-gray-600" />
                       <span className="truncate">{job?.jobType || "Full-time"}</span>
                     </div>
+                  </div>
+
+                  <div className="mt-4 flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <Icon name="calendar" className="h-4 w-4 shrink-0 text-gray-600" />
+                    <span className="truncate">{formatApplicationDeadline(job)}</span>
                   </div>
 
                   <div className="mt-4 flex min-h-[28px] flex-wrap items-center gap-2">
