@@ -298,7 +298,7 @@ const AdminArchive = () => {
 
   return (
     <AdminLayout>
-      <main className="mx-auto w-full max-w-[1280px] px-2 py-5 sm:px-4 sm:py-6 lg:px-6">
+      <main className="mx-auto max-w-7xl px-1 py-8">
         <header className="mb-5 flex items-center gap-3">
         
           <div>
