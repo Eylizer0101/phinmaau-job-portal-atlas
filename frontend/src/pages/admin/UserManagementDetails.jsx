@@ -1322,6 +1322,16 @@ const UserManagementDetails = () => {
                             <span className="truncate">{employerProfile.companyWebsiteUrl}</span>
                           </a>
                         )}
+
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <ReviewStars rating={averageReview} />
+                          <span className="text-sm font-medium text-black/70">
+                            {averageReview.toFixed(1)}
+                          </span>
+                          <span className="text-sm text-black/45">
+                            ({reviewItems.length} review{reviewItems.length === 1 ? "" : "s"})
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
