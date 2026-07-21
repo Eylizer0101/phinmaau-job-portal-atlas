@@ -246,6 +246,35 @@ const AdminArchive = () => {
     setFilters((previous) => ({ ...previous, [key]: value }));
   };
 
+  const resetFilters = () => {
+    setFilters({
+      search: "",
+      type: "all",
+      campus: "all",
+      course: "all",
+      role: "all",
+      industry: "all",
+      inactivity: "6-12",
+      jobStatus: "all",
+      company: "all",
+      date: "all",
+      dateFrom: "",
+      dateTo: "",
+    });
+  };
+
+  const hasActiveFilters =
+    filters.search.trim() !== "" ||
+    filters.type !== "all" ||
+    filters.campus !== "all" ||
+    filters.course !== "all" ||
+    filters.role !== "all" ||
+    filters.industry !== "all" ||
+    filters.inactivity !== "6-12" ||
+    filters.jobStatus !== "all" ||
+    filters.company !== "all" ||
+    filters.date !== "all";
+
   const activeItems = activeTab === "community" ? communityAuthors : activeTab === "dormant" ? dormantUsers : jobArchives;
   const pageCount = Math.max(1, Math.ceil(activeItems.length / ITEMS_PER_PAGE));
   const safePage = Math.min(currentPage, pageCount);
@@ -269,69 +298,77 @@ const AdminArchive = () => {
 
   return (
     <AdminLayout>
-      <main className="mx-auto w-full max-w-[1280px] px-4 py-8 sm:px-6 lg:px-8">
-        <header className="mb-7 flex items-start gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-slate-700">
+      <main className="mx-auto w-full max-w-[1280px] px-2 py-5 sm:px-4 sm:py-6 lg:px-6">
+        <header className="mb-5 flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#2e66a6] shadow-sm">
             <Icon name="archive" className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-[-0.02em] text-slate-950">Archived</h1>
+            <h1 className="text-2xl font-bold tracking-[-0.02em] text-slate-950 sm:text-3xl">Archive</h1>
             <p className="mt-1 text-sm text-slate-500">
-              Review deleted community content, dormant accounts, closed jobs, expired jobs, and declined applicants.
+              Review archived records across the platform.
             </p>
           </div>
         </header>
 
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <h2 className="text-sm font-bold text-slate-950">Archive Manager</h2>
-              <p className="mt-0.5 text-xs text-slate-500">
-                Search and review Community, Dormant, and Jobs archive records.
-              </p>
-            </div>
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <div className={`grid gap-3 ${activeTab === "dormant" ? "lg:grid-cols-[minmax(0,1fr)_auto]" : "sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_180px_auto]"}`}>
+            <label className="relative block">
+              <span className="sr-only">Search archive records</span>
+              <Icon name="search" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="search"
+                value={filters.search}
+                onChange={(event) => updateFilter("search", event.target.value)}
+                placeholder={
+                  activeTab === "community"
+                    ? "Search community records"
+                    : activeTab === "dormant"
+                    ? "Search dormant accounts"
+                    : "Search jobs or applicants"
+                }
+                className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50/60 pl-10 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#2e66a6] focus:bg-white focus:ring-2 focus:ring-[#2e66a6]/15"
+              />
+            </label>
 
-            <div className={`grid w-full gap-3 sm:grid-cols-2 lg:w-auto ${activeTab === "dormant" ? "lg:grid-cols-[360px]" : "lg:grid-cols-[280px_180px]"}`}>
+            {activeTab !== "dormant" ? (
               <label className="relative block">
-                <Icon name="search" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="search"
-                  value={filters.search}
-                  onChange={(event) => updateFilter("search", event.target.value)}
-                  placeholder={activeTab === "community" ? "Search archives..." : activeTab === "dormant" ? "Search dormant accounts..." : "Search job title, company, or applicant..."}
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
-                />
+                <span className="sr-only">Filter by archived date</span>
+                <select
+                  value={filters.date}
+                  onChange={(event) => updateFilter("date", event.target.value)}
+                  className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 pr-10 text-sm font-medium text-slate-700 outline-none transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                >
+                  <option value="all">All time</option>
+                  <option value="today">Today</option>
+                  <option value="7days">Last 7 days</option>
+                  <option value="30days">Last 30 days</option>
+                  <option value="thisMonth">This month</option>
+                  <option value="custom">Custom range</option>
+                </select>
+                <Icon name="calendar" className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
               </label>
+            ) : null}
 
-              {activeTab !== "dormant" ? (
-                <label className="relative block">
-                  <select
-                    value={filters.date}
-                    onChange={(event) => updateFilter("date", event.target.value)}
-                    className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 pr-10 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
-                  >
-                    <option value="all">All Time</option>
-                    <option value="today">Today</option>
-                    <option value="7days">Last 7 days</option>
-                    <option value="30days">Last 30 days</option>
-                    <option value="thisMonth">This Month</option>
-                    <option value="custom">Custom Range</option>
-                  </select>
-                  <Icon name="calendar" className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                </label>
-              ) : null}
-            </div>
+            <button
+              type="button"
+              onClick={resetFilters}
+              disabled={!hasActiveFilters}
+              className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/5 hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/25 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Clear
+            </button>
           </div>
 
           {activeTab !== "dormant" && filters.date === "custom" ? (
-            <div className="grid gap-3 border-b border-slate-200 bg-slate-50 px-5 py-3 sm:grid-cols-2">
+            <div className="mt-3 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2">
               <label className="text-xs font-semibold text-slate-600">
                 Start date
                 <input
                   type="date"
                   value={filters.dateFrom}
                   onChange={(event) => updateFilter("dateFrom", event.target.value)}
-                  className="mt-1 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"
+                  className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
                 />
               </label>
               <label className="text-xs font-semibold text-slate-600">
@@ -340,74 +377,49 @@ const AdminArchive = () => {
                   type="date"
                   value={filters.dateTo}
                   onChange={(event) => updateFilter("dateTo", event.target.value)}
-                  className="mt-1 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"
+                  className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
                 />
               </label>
             </div>
           ) : null}
-
         </section>
 
         <div
-          className="mb-7 flex w-full items-center gap-1 overflow-x-auto border-b border-slate-200"
+          className="mb-5 mt-4 flex w-full items-center gap-6 overflow-x-auto border-b border-slate-200 px-1"
           role="tablist"
           aria-label="Archive categories"
         >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "community"}
-            onClick={() => changeTab("community")}
-            className={`relative inline-flex min-h-11 shrink-0 items-center justify-center gap-2 px-4 pb-3 pt-2 text-sm font-semibold outline-none transition-colors duration-200 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30 ${
-              activeTab === "community"
-                ? "text-[#2e66a6] after:absolute after:bottom-[-1px] after:left-4 after:right-4 after:h-0.5 after:rounded-full after:bg-[#2e66a6]"
-                : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <Icon name="course" />
-            Community
-          </button>
-
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "dormant"}
-            onClick={() => changeTab("dormant")}
-            className={`relative inline-flex min-h-11 shrink-0 items-center justify-center gap-2 px-4 pb-3 pt-2 text-sm font-semibold outline-none transition-colors duration-200 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30 ${
-              activeTab === "dormant"
-                ? "text-[#2e66a6] after:absolute after:bottom-[-1px] after:left-4 after:right-4 after:h-0.5 after:rounded-full after:bg-[#2e66a6]"
-                : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <Icon name="dormant" />
-            Dormant
-          </button>
-
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "jobs"}
-            onClick={() => changeTab("jobs")}
-            className={`relative inline-flex min-h-11 shrink-0 items-center justify-center gap-2 px-4 pb-3 pt-2 text-sm font-semibold outline-none transition-colors duration-200 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30 ${
-              activeTab === "jobs"
-                ? "text-[#2e66a6] after:absolute after:bottom-[-1px] after:left-4 after:right-4 after:h-0.5 after:rounded-full after:bg-[#2e66a6]"
-                : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <Icon name="building" />
-            Jobs
-          </button>
+          {[
+            { id: "community", label: "Community" },
+            { id: "dormant", label: "Dormant" },
+            { id: "jobs", label: "Jobs" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              onClick={() => changeTab(tab.id)}
+              className={`relative min-h-11 shrink-0 px-1 pb-3 pt-2 text-sm font-semibold outline-none transition-colors duration-200 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-[#2e66a6]/25 ${
+                activeTab === tab.id
+                  ? "text-[#2e66a6] after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-[#2e66a6]"
+                  : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="px-5 pb-5 pt-5">
+          <div className="p-4 sm:p-5">
 
             {activeTab === "community" ? (
               <>
                 <div className="mb-4">
-                  <h3 className="text-sm font-bold text-slate-950">Jobseeker community — deleted</h3>
+                  <h3 className="text-sm font-bold text-slate-950">Deleted community content</h3>
                   <p className="mt-1 text-xs text-slate-500">
-                    Grouped by jobseeker. Select an author to view the complete deletion history.
+                    Grouped by author.
                   </p>
                 </div>
 
@@ -415,7 +427,7 @@ const AdminArchive = () => {
                   <select
                     value={filters.type}
                     onChange={(event) => updateFilter("type", event.target.value)}
-                    className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#2e66a6]"
+                    className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
                   >
                     <option value="all">All types</option>
                     <option value="post">Deleted posts</option>
@@ -425,7 +437,7 @@ const AdminArchive = () => {
                   <select
                     value={filters.campus}
                     onChange={(event) => updateFilter("campus", event.target.value)}
-                    className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#2e66a6]"
+                    className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
                   >
                     <option value="all">All campuses</option>
                     {(options.campuses || []).map((campus) => (
@@ -436,7 +448,7 @@ const AdminArchive = () => {
                   <select
                     value={filters.course}
                     onChange={(event) => updateFilter("course", event.target.value)}
-                    className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#2e66a6]"
+                    className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
                   >
                     <option value="all">All courses</option>
                     {(options.courses || []).map((course) => (
@@ -445,8 +457,8 @@ const AdminArchive = () => {
                   </select>
                 </div>
 
-                <div className="overflow-hidden rounded-xl border border-slate-200">
-                  <div className="hidden grid-cols-[1.25fr_0.9fr_1.3fr_1fr_150px] gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500 md:grid">
+                <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                  <div className="hidden grid-cols-[1.25fr_0.9fr_1.3fr_1fr_150px] gap-4 border-b border-slate-200 bg-slate-50/80 px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500 md:grid">
                     <span>Author</span>
                     <span className="inline-flex items-center gap-1"><Icon name="campus" /> Campus</span>
                     <span className="inline-flex items-center gap-1"><Icon name="course" /> Course</span>
@@ -455,15 +467,15 @@ const AdminArchive = () => {
                   </div>
 
                   {loading ? (
-                    <div className="flex min-h-[180px] items-center justify-center text-sm text-slate-500">
+                    <div className="flex min-h-[180px] items-center justify-center px-6 text-center text-sm text-slate-500">
                       Loading archived community records...
                     </div>
                   ) : errorMessage ? (
-                    <div className="flex min-h-[180px] items-center justify-center px-6 text-center text-sm text-red-600">
+                    <div className="flex min-h-[180px] items-center justify-center px-6 text-center text-sm font-medium text-red-600">
                       {errorMessage}
                     </div>
                   ) : paginatedItems.length === 0 ? (
-                    <div className="flex min-h-[180px] items-center justify-center text-sm text-slate-500">
+                    <div className="flex min-h-[180px] items-center justify-center px-6 text-center text-sm text-slate-500">
                       No archived community records found.
                     </div>
                   ) : (
@@ -474,7 +486,7 @@ const AdminArchive = () => {
                       return (
                         <div
                           key={entry.authorId}
-                          className="grid gap-3 border-b border-slate-100 px-4 py-3 last:border-b-0 md:grid-cols-[1.25fr_0.9fr_1.3fr_1fr_150px] md:items-center md:gap-4"
+                          className="grid gap-3 border-b border-slate-100 px-4 py-3.5 transition hover:bg-slate-50/60 last:border-b-0 md:grid-cols-[1.25fr_0.9fr_1.3fr_1fr_150px] md:items-center md:gap-4"
                         >
                           <div className="flex min-w-0 items-center gap-3">
                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-700">
@@ -514,9 +526,9 @@ const AdminArchive = () => {
             ) : activeTab === "dormant" ? (
               <>
                 <div className="mb-4">
-                  <h3 className="text-sm font-bold text-slate-950">Users and employers — dormant accounts</h3>
+                  <h3 className="text-sm font-bold text-slate-950">Dormant accounts</h3>
                   <p className="mt-1 text-xs text-slate-500">
-                    Accounts whose last login or registration activity is between 6 and 12 months ago.
+                    Accounts inactive for 6–12 months.
                   </p>
                 </div>
 
@@ -524,7 +536,7 @@ const AdminArchive = () => {
                   <select
                     value={filters.role}
                     onChange={(event) => updateFilter("role", event.target.value)}
-                    className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#2e66a6]"
+                    className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
                   >
                     <option value="all">All account types</option>
                     <option value="jobseeker">Jobseekers</option>
@@ -534,7 +546,7 @@ const AdminArchive = () => {
                   <select
                     value={filters.industry}
                     onChange={(event) => updateFilter("industry", event.target.value)}
-                    className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#2e66a6]"
+                    className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
                   >
                     <option value="all">All industries / courses</option>
                     {(options.dormantIndustries || []).map((industry) => (
@@ -545,7 +557,7 @@ const AdminArchive = () => {
                   <select
                     value={filters.inactivity}
                     onChange={(event) => updateFilter("inactivity", event.target.value)}
-                    className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#2e66a6]"
+                    className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
                   >
                     <option value="6-12">Inactive for 6–12 months</option>
                     <option value="6-8">Inactive for 6–8 months</option>
@@ -553,8 +565,8 @@ const AdminArchive = () => {
                   </select>
                 </div>
 
-                <div className="overflow-hidden rounded-xl border border-slate-200">
-                  <div className="hidden grid-cols-[1.4fr_1fr_0.9fr_0.8fr_1fr_130px] gap-4 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500 md:grid">
+                <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                  <div className="hidden grid-cols-[1.4fr_1fr_0.9fr_0.8fr_1fr_130px] gap-4 border-b border-slate-200 bg-slate-50/80 px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500 md:grid">
                     <span>Account</span>
                     <span>Industry / Course</span>
                     <span>Last active</span>
@@ -564,15 +576,15 @@ const AdminArchive = () => {
                   </div>
 
                   {loading ? (
-                    <div className="flex min-h-[180px] items-center justify-center text-sm text-slate-500">
+                    <div className="flex min-h-[180px] items-center justify-center px-6 text-center text-sm text-slate-500">
                       Loading dormant accounts...
                     </div>
                   ) : errorMessage ? (
-                    <div className="flex min-h-[180px] items-center justify-center px-6 text-center text-sm text-red-600">
+                    <div className="flex min-h-[180px] items-center justify-center px-6 text-center text-sm font-medium text-red-600">
                       {errorMessage}
                     </div>
                   ) : paginatedItems.length === 0 ? (
-                    <div className="flex min-h-[180px] items-center justify-center text-sm text-slate-500">
+                    <div className="flex min-h-[180px] items-center justify-center px-6 text-center text-sm text-slate-500">
                       No accounts currently match the 6–12 month dormant rule.
                     </div>
                   ) : (
@@ -583,7 +595,7 @@ const AdminArchive = () => {
                       return (
                         <div
                           key={entry.userId}
-                          className="grid gap-3 border-b border-slate-100 px-4 py-3 last:border-b-0 md:grid-cols-[1.4fr_1fr_0.9fr_0.8fr_1fr_130px] md:items-center md:gap-4"
+                          className="grid gap-3 border-b border-slate-100 px-4 py-3.5 transition hover:bg-slate-50/60 last:border-b-0 md:grid-cols-[1.4fr_1fr_0.9fr_0.8fr_1fr_130px] md:items-center md:gap-4"
                         >
                           <div className="flex min-w-0 items-center gap-3">
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
@@ -629,9 +641,9 @@ const AdminArchive = () => {
             ) : (
               <>
                 <div className="mb-4">
-                  <h3 className="text-sm font-bold text-slate-950">Managed jobs — archived postings</h3>
+                  <h3 className="text-sm font-bold text-slate-950">Archived jobs</h3>
                   <p className="mt-1 text-xs text-slate-500">
-                    Closed and expired job posts, including applicants declined from each job.
+                    Closed, expired, and declined-applicant records.
                   </p>
                 </div>
 
@@ -639,7 +651,7 @@ const AdminArchive = () => {
                   <select
                     value={filters.jobStatus}
                     onChange={(event) => updateFilter("jobStatus", event.target.value)}
-                    className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#2e66a6]"
+                    className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
                   >
                     <option value="all">All job records</option>
                     <option value="closed">Closed jobs</option>
@@ -650,7 +662,7 @@ const AdminArchive = () => {
                   <select
                     value={filters.company}
                     onChange={(event) => updateFilter("company", event.target.value)}
-                    className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#2e66a6]"
+                    className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition hover:border-slate-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
                   >
                     <option value="all">All companies</option>
                     {(options.jobCompanies || []).map((company) => (
@@ -751,7 +763,7 @@ const AdminArchive = () => {
               </>
             )}
 
-            <div className="mt-4 flex flex-col gap-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-4 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
               <span>
                 Showing {activeItems.length === 0 ? 0 : (safePage - 1) * ITEMS_PER_PAGE + 1} to{" "}
                 {Math.min(safePage * ITEMS_PER_PAGE, activeItems.length)} of {activeItems.length} results
@@ -762,7 +774,7 @@ const AdminArchive = () => {
                   type="button"
                   disabled={safePage <= 1}
                   onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                  className="h-9 rounded-lg border border-slate-200 bg-white px-3 font-semibold text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="h-9 rounded-lg border border-slate-200 bg-white px-3 font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Previous
                 </button>
@@ -773,7 +785,7 @@ const AdminArchive = () => {
                   type="button"
                   disabled={safePage >= pageCount}
                   onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))}
-                  className="h-9 rounded-lg border border-slate-200 bg-white px-3 font-semibold text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="h-9 rounded-lg border border-slate-200 bg-white px-3 font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/20 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Next
                 </button>
