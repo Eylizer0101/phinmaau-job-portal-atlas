@@ -1983,7 +1983,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
                 <h2 className="text-[24px] font-bold text-black">
-                  Working at {company.companyName || "Company"}
+              Application process at {company.companyName || "Company"}
                 </h2>
                 <p className="mt-1 text-black/65 text-[16px]">
                   {reviewCount} review{reviewCount === 1 ? "" : "s"}

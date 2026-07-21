@@ -3017,7 +3017,7 @@ const Bookmarks = () => {
                         <div className={`${UI.card} ${UI.pad}`}>
                           <div className="flex items-start justify-between gap-4 flex-wrap">
                             <div>
-                              <h2 className="text-[24px] font-bold text-black">Working at {selectedCompany.companyName || 'Company'}</h2>
+                              <h2 className="text-[24px] font-bold text-black">Application process at {selectedCompany.companyName || 'Company'}</h2>
                               <p className="mt-1 text-black/65 text-[16px]">
                                 {selectedCompanyReviewCount} Open review{selectedCompanyReviewCount === 1 ? '' : 's'}
                               </p>
