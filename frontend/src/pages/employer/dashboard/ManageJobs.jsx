@@ -27,6 +27,8 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>;
     case 'trash':
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14M10 11v5m4-5v5" /></svg>;
+    case 'more':
+      return <svg {...common}><circle cx="12" cy="5" r="1.5" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" /><circle cx="12" cy="19" r="1.5" fill="currentColor" stroke="none" /></svg>;
     default:
       return null;
   }
@@ -457,6 +459,7 @@ const ManageJobs = () => {
 
   const [selectedJob, setSelectedJob] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [openStatusMenuId, setOpenStatusMenuId] = useState('');
 
   const [action, setAction] = useState({ type: '', jobId: '' });
 
@@ -511,6 +514,28 @@ const ManageJobs = () => {
     setShowDeleteModal(false);
     setSelectedJob(null);
   };
+
+  useEffect(() => {
+    if (!openStatusMenuId) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!event.target.closest?.('[data-job-status-menu]')) {
+        setOpenStatusMenuId('');
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setOpenStatusMenuId('');
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [openStatusMenuId]);
 
   useEffect(() => {
     if (!showDeleteModal) return;
@@ -753,6 +778,60 @@ const ManageJobs = () => {
       } else {
         setError('Failed to publish job. Please complete required fields and try again.');
       }
+    } finally {
+      setAction({ type: '', jobId: '' });
+    }
+  };
+
+  const handleToggleJobStatus = async (job) => {
+    const jobId = job?._id;
+    const currentStatus = getDerivedStatus(job);
+
+    if (!jobId || !['open', 'closed'].includes(currentStatus) || action.jobId) return;
+
+    const shouldOpen = currentStatus === 'closed';
+
+    try {
+      setOpenStatusMenuId('');
+      setError('');
+      setAction({ type: shouldOpen ? 'open' : 'close', jobId });
+
+      const token = localStorage.getItem('token');
+      const response = await axios.patch(
+        `https://phinmaau-job-portal-atlas.onrender.com/api/jobs/${jobId}/status`,
+        { isActive: shouldOpen },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const updatedJob = response.data?.job || {
+        ...job,
+        isActive: shouldOpen,
+        isPublished: true,
+        status: shouldOpen ? 'published' : 'closed',
+      };
+
+      setJobs((prev) =>
+        prev.map((item) => (item._id === jobId ? { ...item, ...updatedJob } : item))
+      );
+
+      setSuccess({
+        type: shouldOpen ? 'open' : 'close',
+        title: shouldOpen ? 'Job Opened Successfully' : 'Job Closed Successfully',
+        message: shouldOpen
+          ? 'The job is visible in Job Offers again and jobseekers can apply.'
+          : 'The job is no longer visible in Job Offers, but its existing applicants are still available for review.',
+      });
+    } catch (err) {
+      console.error(`Error ${shouldOpen ? 'opening' : 'closing'} job:`, err);
+      setError(
+        err.response?.data?.message ||
+          `Failed to ${shouldOpen ? 'open' : 'close'} the job. Please try again.`
+      );
     } finally {
       setAction({ type: '', jobId: '' });
     }
@@ -1294,6 +1373,47 @@ const ManageJobs = () => {
                             <Icon name="edit" className="h-4 w-4" />
                           </Link>
 
+                          {['open', 'closed'].includes(derivedStatus) && (
+                            <div className="relative col-span-2" data-job-status-menu>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setOpenStatusMenuId((current) =>
+                                    current === job._id ? '' : job._id
+                                  )
+                                }
+                                disabled={busyThisRow}
+                                className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                aria-label={`More actions for ${title}`}
+                                aria-haspopup="menu"
+                                aria-expanded={openStatusMenuId === job._id}
+                                title="More actions"
+                              >
+                                <Icon name="more" className="h-5 w-5" />
+                              </button>
+
+                              {openStatusMenuId === job._id && (
+                                <div
+                                  role="menu"
+                                  className="absolute right-0 top-12 z-50 w-full min-w-[180px] rounded-xl border border-gray-200 bg-white p-1.5 shadow-xl ring-1 ring-black/5"
+                                >
+                                  <button
+                                    type="button"
+                                    role="menuitem"
+                                    onClick={() => handleToggleJobStatus(job)}
+                                    disabled={busyThisRow}
+                                    className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-gray-800 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
+                                  >
+                                    <span>{derivedStatus === 'open' ? 'Close Job' : 'Open Job'}</span>
+                                    {busyThisRow && ['open', 'close'].includes(action.type) && (
+                                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#2e66a6]" />
+                                    )}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
                           {derivedStatus === 'draft' && (
                             <button
                               onClick={() => handlePublish(job._id)}
@@ -1510,6 +1630,47 @@ const ManageJobs = () => {
                                 >
                                   <Icon name="edit" className="h-4 w-4" />
                                 </Link>
+
+                                {['open', 'closed'].includes(derivedStatus) && (
+                                  <div className="relative shrink-0" data-job-status-menu>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setOpenStatusMenuId((current) =>
+                                          current === job._id ? '' : job._id
+                                        )
+                                      }
+                                      disabled={busyThisRow}
+                                      className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                      aria-label={`More actions for ${title}`}
+                                      aria-haspopup="menu"
+                                      aria-expanded={openStatusMenuId === job._id}
+                                      title="More actions"
+                                    >
+                                      <Icon name="more" className="h-5 w-5" />
+                                    </button>
+
+                                    {openStatusMenuId === job._id && (
+                                      <div
+                                        role="menu"
+                                        className="absolute right-0 top-12 z-50 w-44 rounded-xl border border-gray-200 bg-white p-1.5 shadow-xl ring-1 ring-black/5"
+                                      >
+                                        <button
+                                          type="button"
+                                          role="menuitem"
+                                          onClick={() => handleToggleJobStatus(job)}
+                                          disabled={busyThisRow}
+                                          className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-gray-800 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
+                                        >
+                                          <span>{derivedStatus === 'open' ? 'Close Job' : 'Open Job'}</span>
+                                          {busyThisRow && ['open', 'close'].includes(action.type) && (
+                                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#2e66a6]" />
+                                          )}
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
 
                                 {derivedStatus === 'draft' && (
                                   <button
