@@ -717,19 +717,13 @@ const AdminEmployerPostingHistory = () => {
               Back to Employer Profile
             </button>
 
-            <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-black">
-                  Posting History
-                </h1>
-                <p className="mt-1 text-sm text-black/55">
-                  View all job postings of {companyName}.
-                </p>
-              </div>
-
-              <span className="w-fit rounded-full bg-[#edf4fb] px-3 py-1.5 text-xs font-bold text-[#2e66a6]">
-                {jobs.length} total
-              </span>
+            <div className="mt-6">
+              <h1 className="text-3xl font-bold text-black">
+                Posting History
+              </h1>
+              <p className="mt-1 text-sm text-black/55">
+                View all job postings of {companyName}.
+              </p>
             </div>
           </div>
 
@@ -823,16 +817,25 @@ const AdminEmployerPostingHistory = () => {
 
               <section className="overflow-hidden rounded-2xl border border-[#dfe5ec] bg-white p-5 shadow-sm">
                 <div className="overflow-x-auto">
-                  <table className="min-w-[980px] w-full text-left text-sm">
-                    <thead className="border-y border-[#e5e7eb] bg-[#f8fafc] text-[11px] font-bold uppercase tracking-wider text-black/60">
+                  <table className="min-w-[980px] w-full table-fixed text-left text-sm">
+                    <colgroup>
+                      <col className="w-[14%]" />
+                      <col className="w-[25%]" />
+                      <col className="w-[10%]" />
+                      <col className="w-[10%]" />
+                      <col className="w-[13%]" />
+                      <col className="w-[16%]" />
+                      <col className="w-[12%]" />
+                    </colgroup>
+                    <thead className="border-y border-[#e5e7eb] bg-[#f8fafc] text-[11px] font-semibold uppercase tracking-wider text-black/60">
                       <tr>
-                        <th className="px-5 py-4">Date Posted</th>
-                        <th className="px-5 py-4">Job Title</th>
-                        <th className="px-5 py-4 text-center">Vacancy</th>
-                        <th className="px-5 py-4 text-center">Applicant</th>
-                        <th className="px-5 py-4">Status</th>
-                        <th className="px-5 py-4">Valid Until</th>
-                        <th className="px-5 py-4 text-center">Actions</th>
+                        <th className="px-4 py-4">Date Posted</th>
+                        <th className="px-4 py-4">Job Title</th>
+                        <th className="px-4 py-4 text-center">Vacancy</th>
+                        <th className="px-4 py-4 text-center">Applicant</th>
+                        <th className="px-4 py-4">Status</th>
+                        <th className="px-4 py-4">Valid Until</th>
+                        <th className="px-4 py-4 text-center">Actions</th>
                       </tr>
                     </thead>
 
@@ -867,26 +870,26 @@ const AdminEmployerPostingHistory = () => {
                               }}
                               className="cursor-pointer transition hover:bg-[#f8fbff] focus-within:bg-[#f8fbff] focus:outline-none"
                             >
-                              <td className="whitespace-nowrap px-5 py-5 font-medium text-black/75">
+                              <td className="whitespace-nowrap px-4 py-5 font-normal text-black/70">
                                 {formatDate(job?.createdAt)}
                               </td>
 
-                              <td className="px-5 py-5">
-                                <p className="max-w-[260px] truncate font-bold text-black">
+                              <td className="px-4 py-5">
+                                <p className="truncate font-semibold text-black">
                                   {job?.title ||
                                     job?.jobTitle ||
                                     "Untitled Job"}
                                 </p>
-                                <p className="mt-1 max-w-[260px] truncate text-xs text-black/50">
+                                <p className="mt-1 truncate text-xs font-normal text-black/50">
                                   {job?.companyName || companyName}
                                 </p>
                               </td>
 
-                              <td className="px-5 py-5 text-center font-semibold text-black">
+                              <td className="px-4 py-5 text-center font-medium text-black">
                                 {Number(job?.vacancies || 0)}
                               </td>
 
-                              <td className="px-5 py-5 text-center font-semibold text-black">
+                              <td className="px-4 py-5 text-center font-medium text-black">
                                 {Number(
                                   job?.applicantCount ??
                                     job?.applicantsCount ??
@@ -894,11 +897,11 @@ const AdminEmployerPostingHistory = () => {
                                 )}
                               </td>
 
-                              <td className="px-5 py-5">
+                              <td className="px-4 py-5">
                                 <StatusBadge status={jobStatus} />
                               </td>
 
-                              <td className="whitespace-nowrap px-5 py-5 text-black/75">
+                              <td className="whitespace-nowrap px-4 py-5 font-normal text-black/70">
                                 {formatDate(
                                   job?.applicationDeadline ||
                                     job?.validUntil ||
@@ -906,7 +909,7 @@ const AdminEmployerPostingHistory = () => {
                                 )}
                               </td>
 
-                              <td className="px-5 py-5 text-center">
+                              <td className="px-4 py-5 text-center">
                                 <button
                                   type="button"
                                   onClick={(event) => {

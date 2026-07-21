@@ -1174,28 +1174,27 @@ const UserManagementDetails = () => {
                     type="button"
                     onClick={() => navigate(`/admin/users/${userId}/posting-history`)}
                     className={cn(
-                      "group flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 lg:w-[310px]",
-                      "border-[#2e66a6]/25 bg-[#edf4fb] text-[#2e66a6] hover:border-[#2e66a6]/45 hover:bg-[#e4effa]"
+                      "group flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/40 focus-visible:ring-offset-2 lg:w-[310px]",
+                      "border-[#d8e2ee] bg-[#f8fbff] text-[#214f82] hover:border-[#b9cde2] hover:bg-[#f2f7fc]"
                     )}
                   >
                     <span
                       className={cn(
-                        "flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
-                        "bg-white"
+                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d8e2ee]",
+                        "bg-white text-[#2e66a6]"
                       )}
                     >
                       <Icon name="history" className="h-5 w-5" />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-bold">Posting History</span>
-                      <span className="mt-0.5 block text-xs text-[#2e66a6]/70">
+                      <span className="block text-sm font-semibold text-[#214f82]">Posting History</span>
+                      <span className="mt-0.5 block text-xs text-black/50">
                         {jobPosts.length} posts • {totalApplicants} applicants
                       </span>
                     </span>
                     <span
                       className={cn(
-                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg transition group-hover:translate-x-0.5",
-                        "bg-[#2e66a6] text-white"
+                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#d8e2ee] bg-white text-base text-[#2e66a6] transition group-hover:translate-x-0.5 group-hover:border-[#b9cde2] group-hover:bg-[#eef5fb]"
                       )}
                       aria-hidden="true"
                     >
