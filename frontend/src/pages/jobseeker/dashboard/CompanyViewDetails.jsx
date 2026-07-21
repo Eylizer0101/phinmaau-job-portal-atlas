@@ -677,7 +677,6 @@ const CompanyViewDetails = () => {
   const [reviewerName, setReviewerName] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewError, setReviewError] = useState("");
-  const [deletingReviewId, setDeletingReviewId] = useState("");
 
   const [applyingJob, setApplyingJob] = useState(null);
   const [showApplyModal, setShowApplyModal] = useState(false);
@@ -737,7 +736,6 @@ const CompanyViewDetails = () => {
       const normalizedReviews = Array.isArray(companyData.reviews)
         ? companyData.reviews.map((review, index) => ({
             _id: review?._id || review?.id || `review-${index}`,
-            reviewer: review?.reviewer?._id || review?.reviewer?.id || review?.reviewer || null,
             reviewerName: review?.reviewerName || "Anonymous User",
             roleAppliedFor: String(review?.roleAppliedFor || "").trim() || null,
             rating: Number(review?.rating) || 0,
@@ -882,7 +880,6 @@ const CompanyViewDetails = () => {
       const normalizedReviews = Array.isArray(companyData.reviews)
         ? companyData.reviews.map((review, index) => ({
             id: review?._id || review?.id || `review-${index}`,
-            reviewer: review?.reviewer?._id || review?.reviewer?.id || review?.reviewer || null,
             reviewerName: review?.reviewerName || "Anonymous User",
             roleAppliedFor: String(review?.roleAppliedFor || "").trim() || null,
             date: formatReviewDate(review?.createdAt || review?.date),
@@ -1329,69 +1326,6 @@ const CompanyViewDetails = () => {
       }
     } finally {
       setReviewSubmitting(false);
-    }
-  };
-
-  const handleDeleteReview = async (review) => {
-    const token = localStorage.getItem("token");
-    const user = getStoredUser();
-    const reviewId = review?.id || review?._id;
-
-    if (!token || !user) {
-      alert("Please login to delete your review.");
-      navigate("/login");
-      return;
-    }
-
-    if (user.role !== "jobseeker") {
-      showToast("Only job seekers can delete their own reviews.", "error");
-      return;
-    }
-
-    if (!reviewId) {
-      showToast("Review not found.", "error");
-      return;
-    }
-
-    const confirmed = window.confirm(
-      "Are you sure you want to permanently delete this review? This action cannot be undone."
-    );
-
-    if (!confirmed) return;
-
-    try {
-      setDeletingReviewId(String(reviewId));
-
-      const response = await api.delete(
-        `/companies/verified/${id}/reviews/${reviewId}`
-      );
-
-      if (response?.data?.success) {
-        showToast(
-          response.data.message || "Review permanently deleted.",
-          "success"
-        );
-
-        await fetchCompanyDetails();
-      }
-    } catch (err) {
-      console.error("Error deleting review:", err);
-
-      if (err.response?.status === 401) {
-        showToast("Session expired. Please login again.", "error");
-      } else if (err.response?.status === 403) {
-        showToast("You can only delete your own review.", "error");
-      } else if (err.response?.status === 404) {
-        showToast("Review not found.", "error");
-      } else {
-        showToast(
-          err.response?.data?.message ||
-            "Failed to permanently delete the review. Please try again.",
-          "error"
-        );
-      }
-    } finally {
-      setDeletingReviewId("");
     }
   };
 
@@ -2103,21 +2037,6 @@ The company also values transparency, teamwork, and continuous improvement, crea
                           {review.outcome ? getOutcomeLabel(review.outcome) : "Outcome not provided"}
                         </span>
 
-                        {String(review.reviewer || "") ===
-                          String(getStoredUser()?._id || getStoredUser()?.id || "") && (
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteReview(review)}
-                            disabled={
-                              deletingReviewId === String(review.id || review._id)
-                            }
-                            className="inline-flex h-9 items-center justify-center rounded-lg border border-red-200 bg-white px-3.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            {deletingReviewId === String(review.id || review._id)
-                              ? "Deleting..."
-                              : "Delete Permanently"}
-                          </button>
-                        )}
                       </div>
                     </div>
 

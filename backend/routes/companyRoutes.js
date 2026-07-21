@@ -16,13 +16,6 @@ router.post(
   companyController.submitCompanyReview
 );
 
-router.delete(
-  '/verified/:id/reviews/:reviewId',
-  protect,
-  authorize('jobseeker'),
-  companyController.deleteCompanyReview
-);
-
 // Saved-company routes for authenticated job seekers
 router.get(
   '/saved',
