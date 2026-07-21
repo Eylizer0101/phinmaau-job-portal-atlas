@@ -393,11 +393,25 @@ const MyApplications = () => {
     };
   }, [location.search]);
 
-  const formatDate = (dateString) => {
+  const formatAppliedDateTime = (dateString) => {
     if (!dateString) return 'N/A';
+
     const date = new Date(dateString);
     if (Number.isNaN(date.getTime())) return 'N/A';
-    return date.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' });
+
+    const formattedDate = date.toLocaleDateString('en-PH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+
+    const formattedTime = date.toLocaleTimeString('en-PH', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+
+    return `${formattedDate} at ${formattedTime}`;
   };
 
   const formatPesoRange = (min, max) => {
@@ -1021,7 +1035,7 @@ const MyApplications = () => {
                   const jobId = application.job?._id;
                   const jobTitle = application.job?.title || 'Job Title Not Available';
                   const companyName = application.job?.companyName || 'Company Not Specified';
-                  const appliedAt = formatDate(application.appliedAt);
+                  const appliedAt = formatAppliedDateTime(application.appliedAt);
 
                   const locationText = application.job?.location || null;
                   const workModeText = application.job?.workMode || null;
@@ -1066,7 +1080,7 @@ const MyApplications = () => {
                                     <span className="text-gray-500">
                                       <SvgIcon name="calendar" className="w-4 h-4" />
                                     </span>
-                                    <span>Applied {appliedAt}</span>
+                                    <span>Applied on {appliedAt}</span>
                                   </div>
                                 </div>
                               </div>
