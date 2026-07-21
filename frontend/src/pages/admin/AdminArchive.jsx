@@ -300,9 +300,7 @@ const AdminArchive = () => {
     <AdminLayout>
       <main className="mx-auto w-full max-w-[1280px] px-2 py-5 sm:px-4 sm:py-6 lg:px-6">
         <header className="mb-5 flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#2e66a6] shadow-sm">
-            <Icon name="archive" className="h-5 w-5" />
-          </div>
+        
           <div>
             <h1 className="text-2xl font-bold tracking-[-0.02em] text-slate-950 sm:text-3xl">Archive</h1>
             <p className="mt-1 text-sm text-slate-500">
@@ -418,9 +416,7 @@ const AdminArchive = () => {
               <>
                 <div className="mb-4">
                   <h3 className="text-sm font-bold text-slate-950">Deleted community content</h3>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Grouped by author.
-                  </p>
+               
                 </div>
 
                 <div className="mb-4 grid gap-3 md:grid-cols-3">
@@ -527,9 +523,7 @@ const AdminArchive = () => {
               <>
                 <div className="mb-4">
                   <h3 className="text-sm font-bold text-slate-950">Dormant accounts</h3>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Accounts inactive for 6–12 months.
-                  </p>
+                
                 </div>
 
                 <div className="mb-4 grid gap-3 md:grid-cols-3">
@@ -642,9 +636,7 @@ const AdminArchive = () => {
               <>
                 <div className="mb-4">
                   <h3 className="text-sm font-bold text-slate-950">Archived jobs</h3>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Closed, expired, and declined-applicant records.
-                  </p>
+                 
                 </div>
 
                 <div className="mb-4 grid gap-3 md:grid-cols-2">
