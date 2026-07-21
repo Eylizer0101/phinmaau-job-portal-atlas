@@ -1342,7 +1342,7 @@ const UserManagementDetails = () => {
 
                     <div className="w-full whitespace-nowrap rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-2.5 text-center text-xs text-black/60 shadow-sm">
                       <span className="font-semibold text-black">
-                        
+                        Last profile update:
                       </span>{" "}
                       {formatDate(user.updatedAt, true)}
                     </div>
