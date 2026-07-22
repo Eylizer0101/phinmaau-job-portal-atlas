@@ -607,7 +607,7 @@ const JobSeekerDashboard = () => {
 
     if (freshGraduate) {
       tags.push({
-        label: 'Open to Fresh Graduate',
+        label: 'Open Fresh Grads',
         className: 'px-2 bg-[#EAF2FB] text-[#2e66a6] border border-[#BFD4EA]',
       });
     }

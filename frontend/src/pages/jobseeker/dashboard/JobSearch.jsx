@@ -1465,7 +1465,7 @@ const JobSearch = () => {
 
                           {tagFreshGrad && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-blue-50 text-[#2e66a6] border border-blue-200">
-                              Open to Fresh Grads
+                              Open Fresh Grads
                             </span>
                           )}
                         </div>
