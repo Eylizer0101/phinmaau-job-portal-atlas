@@ -1352,19 +1352,16 @@ const UserManagementDetails = () => {
                         <span className="block whitespace-nowrap text-[15px] font-semibold leading-tight">
                           Posting History
                         </span>
-                         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-white transition group-hover:translate-x-0.5">
+                        <span className="mt-0.5 block whitespace-nowrap text-xs text-white/75">
+                          View job postings
+                        </span>
+                      </span>
+
+                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-white transition group-hover:translate-x-0.5">
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 5l7 7-7 7" />
                       </svg>
                     </span>
-                      </span>
-
-                      <span
-                        className="ml-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 text-2xl font-extrabold leading-none text-white transition group-hover:translate-x-0.5 group-hover:bg-white/20"
-                        aria-hidden="true"
-                      >
-                        ›
-                      </span>
                     </button>
 
                     <div className="w-full whitespace-nowrap rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-2.5 text-center text-xs text-black/60 shadow-sm">
