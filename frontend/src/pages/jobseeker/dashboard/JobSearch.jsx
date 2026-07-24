@@ -2,11 +2,16 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import JobSeekerLayout from '../../../layouts/JobSeekerLayout';
-import { JOB_TYPES, EXPERIENCE_LEVELS } from '../../../constants/postJobDropdownOptions';
+import { JOB_TYPES, EXPERIENCE_LEVELS, EDUCATION_LEVELS } from '../../../constants/postJobDropdownOptions';
 import api from '../../../services/api';
 import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
 
 const normalizeAmount = (value) => String(value || '').replace(/[^\d]/g, '');
+
+const formatAmountInput = (value) => {
+  const digits = normalizeAmount(value);
+  return digits ? Number(digits).toLocaleString('en-PH') : '';
+};
 
 const normalizeBoolean = (value) => {
   if (typeof value === 'boolean') return value;
@@ -30,16 +35,14 @@ const getExperienceBadgeLabel = (experienceLevel) => {
 
   const normalized = normalizeExperienceLevelValue(raw);
 
-  if (normalized === 'no experience required') {
-    return 'No experience required';
-  }
-
-  if (normalized === '1 year') return '1 Year Experience';
-  if (normalized === '2 years') return '2 Years Experience';
-  if (normalized === '3 years') return '3 Years Experience';
-  if (normalized === '4 years') return '4 Years Experience';
-  if (normalized === '5 years') return '5 Years Experience';
-  if (normalized === '6+ years') return '6+ Years Experience';
+  if (normalized === 'no experience required') return 'No Experience';
+  if (normalized === 'less than 1 yr' || normalized === 'less than 1 year') return 'Less than 1 Yr';
+  if (normalized === '1 year') return '1 Year Exp';
+  if (normalized === '2 year' || normalized === '2 years') return '2 Years Exp';
+  if (normalized === '3 year' || normalized === '3 years') return '3 Years Exp';
+  if (normalized === '4 year' || normalized === '4 years') return '4 Years Exp';
+  if (normalized === '5 year' || normalized === '5 years') return '5 Years Exp';
+  if (normalized === '6+ year' || normalized === '6+ years') return '6+ Yrs Exp';
 
   return raw;
 };
@@ -193,7 +196,7 @@ const SalaryDropdown = ({ id, label, value, setValue, openDropdown, setOpenDropd
               <input
                 type="text"
                 inputMode="numeric"
-                value={value}
+                value={formatAmountInput(value)}
                 onChange={(e) => setValue(normalizeAmount(e.target.value))}
                 placeholder="Indicate minimum salary"
                 className="w-full px-4 py-3 outline-none text-sm text-gray-700 bg-white"
@@ -584,8 +587,6 @@ const JobSearch = () => {
       if (filters.jobType) params.append('jobType', filters.jobType);
       if (filters.industry) params.append('industry', filters.industry);
       if (filters.workMode) params.append('workMode', filters.workMode);
-      if (safeSalaryRange.minSalary) params.append('minSalary', safeSalaryRange.minSalary);
-      if (safeSalaryRange.maxSalary) params.append('maxSalary', safeSalaryRange.maxSalary);
       if (filters.experienceLevel) params.append('experienceLevel', filters.experienceLevel);
 
       let response;
@@ -670,10 +671,6 @@ const JobSearch = () => {
   }, [selectedEmploymentTypes]);
 
   useEffect(() => {
-    handleFilterChange('experienceLevel', selectedEducationLevels[0] || '');
-  }, [selectedEducationLevels]);
-
-  useEffect(() => {
     handleFilterChange('minSalary', salaryMinInput);
   }, [salaryMinInput]);
 
@@ -696,29 +693,44 @@ const JobSearch = () => {
       a.localeCompare(b)
     );
 
-    const educationLevels = uniq(
-      jobs.map((j) => String(j?.experienceLevel || '').trim()).filter(Boolean)
-    ).sort((a, b) => a.localeCompare(b));
+    const educationLevels = EDUCATION_LEVELS;
 
     return { locations, jobTitles, employmentTypes, companies, educationLevels };
   }, [jobs]);
 
   const filteredJobs = useMemo(() => {
-    const filtered = jobs.filter((job) => {
-      if (!freshGraduate && !noExperience) return true;
+    const salaryMinValue = Number(normalizeAmount(salaryMinInput));
 
-      const matchesFreshGraduate = freshGraduate ? isFreshGraduateJob(job) : false;
-      const matchesNoExperience = noExperience ? isNoExperienceJob(job?.experienceLevel) : false;
+    const filtered = jobs
+      .filter((job) =>
+        selectedEducationLevels.length
+          ? selectedEducationLevels.includes(String(job?.educationLevel || '').trim())
+          : true
+      )
+      .filter((job) => {
+        if (!salaryMinInput.trim() || Number.isNaN(salaryMinValue)) return true;
+        const jobMin = Number(job?.salaryMin);
+        return Number.isFinite(jobMin) && jobMin >= salaryMinValue;
+      })
+      .filter((job) => {
+        if (!freshGraduate && !noExperience) return true;
 
-      if (freshGraduate && noExperience) return matchesFreshGraduate || matchesNoExperience;
-      if (freshGraduate) return matchesFreshGraduate;
-      return matchesNoExperience;
-    });
+        const matchesFreshGraduate = freshGraduate ? isFreshGraduateJob(job) : false;
+        const matchesNoExperience = noExperience ? isNoExperienceJob(job?.experienceLevel) : false;
 
-    const getSalaryComparable = (job) => {
+        if (freshGraduate && noExperience) return matchesFreshGraduate || matchesNoExperience;
+        if (freshGraduate) return matchesFreshGraduate;
+        return matchesNoExperience;
+      });
+
+    const getSalaryMinComparable = (job) => {
+      const min = Number(job?.salaryMin);
+      return Number.isFinite(min) ? min : Number.MAX_SAFE_INTEGER;
+    };
+
+    const getSalaryMaxComparable = (job) => {
       const max = Number(job?.salaryMax);
       const min = Number(job?.salaryMin);
-
       if (Number.isFinite(max)) return max;
       if (Number.isFinite(min)) return min;
       return -1;
@@ -737,11 +749,13 @@ const JobSearch = () => {
     const sorted = [...filtered];
 
     if (sortBy === 'salary_desc') {
-      sorted.sort((a, b) => getSalaryComparable(b) - getSalaryComparable(a));
+      sorted.sort((a, b) => getSalaryMaxComparable(b) - getSalaryMaxComparable(a));
     } else if (sortBy === 'expiry_asc') {
       sorted.sort((a, b) => getExpiryComparable(a) - getExpiryComparable(b));
     } else if (sortBy === 'newest') {
       sorted.sort((a, b) => getFreshnessComparable(b) - getFreshnessComparable(a));
+    } else if (salaryMinInput.trim()) {
+      sorted.sort((a, b) => getSalaryMinComparable(a) - getSalaryMinComparable(b));
     } else {
       sorted.sort((a, b) => {
         const matchDiff = Number(b?.matchScore || 0) - Number(a?.matchScore || 0);
@@ -751,7 +765,7 @@ const JobSearch = () => {
     }
 
     return sorted;
-  }, [jobs, freshGraduate, noExperience, sortBy]);
+  }, [jobs, selectedEducationLevels, salaryMinInput, freshGraduate, noExperience, sortBy]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -1161,7 +1175,7 @@ const JobSearch = () => {
                     />
 
                     <FilterCheck
-                      label="No experience required"
+                      label="With no Experience"
                       checked={noExperience}
                       onChange={(e) => setNoExperience(e.target.checked)}
                       light

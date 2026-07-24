@@ -3,8 +3,14 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainNavbar from "../../components/shared/MainNavbar";
 import api from "../../services/api";
+import { EDUCATION_LEVELS } from "../../constants/postJobDropdownOptions";
 
 const normalizeAmount = (value) => String(value || "").replace(/[^\d]/g, "");
+
+const formatAmountInput = (value) => {
+  const digits = normalizeAmount(value);
+  return digits ? Number(digits).toLocaleString("en-PH") : "";
+};
 
 const normalizeBoolean = (value) => {
   if (typeof value === "boolean") return value;
@@ -28,16 +34,14 @@ const getExperienceBadgeLabel = (experienceLevel) => {
 
   const normalized = normalizeExperienceLevel(raw);
 
-  if (normalized === "no experience required") {
-    return "No experience required";
-  }
-
-  if (normalized === "1 year") return "1 Year Experience";
-  if (normalized === "2 years") return "2 Years Experience";
-  if (normalized === "3 years") return "3 Years Experience";
-  if (normalized === "4 years") return "4 Years Experience";
-  if (normalized === "5 years") return "5 Years Experience";
-  if (normalized === "6+ years") return "6+ Years Experience";
+  if (normalized === "no experience required") return "No Experience";
+  if (normalized === "less than 1 yr" || normalized === "less than 1 year") return "Less than 1 Yr";
+  if (normalized === "1 year") return "1 Year Exp";
+  if (normalized === "2 year" || normalized === "2 years") return "2 Years Exp";
+  if (normalized === "3 year" || normalized === "3 years") return "3 Years Exp";
+  if (normalized === "4 year" || normalized === "4 years") return "4 Years Exp";
+  if (normalized === "5 year" || normalized === "5 years") return "5 Years Exp";
+  if (normalized === "6+ year" || normalized === "6+ years") return "6+ Yrs Exp";
 
   return raw;
 };
@@ -199,7 +203,7 @@ const SalaryDropdown = ({
               <input
                 type="text"
                 inputMode="numeric"
-                value={value}
+                value={formatAmountInput(value)}
                 onChange={(e) => setValue(normalizeAmount(e.target.value))}
                 placeholder="Indicate minimum salary"
                 className="w-full px-4 py-3 outline-none text-sm text-black/75 bg-white"
@@ -344,13 +348,17 @@ const SortDropdown = ({
   );
 };
 
-const FilterCheck = ({ label, checked, onChange }) => (
-  <label className="inline-flex items-center gap-2 min-h-[42px] px-2.5 rounded-xl text-[14px] font-semibold text-black whitespace-nowrap cursor-pointer select-none hover:bg-white/80 transition">
+const FilterCheck = ({ label, checked, onChange, light = false }) => (
+  <label
+    className={`inline-flex items-center gap-2 h-[40px] px-2 text-[15px] font-semibold whitespace-nowrap cursor-pointer select-none ${
+      light ? "text-white" : "text-[#1F2937]"
+    }`}
+  >
     <input
       type="checkbox"
       checked={checked}
       onChange={onChange}
-      className="h-[16px] w-[16px] rounded border border-[#AFC6DD] accent-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
+      className="h-[16px] w-[16px] rounded border border-[#BFC3C9]"
     />
     <span>{label}</span>
   </label>
@@ -690,9 +698,7 @@ const JobOffers = () => {
       (a, b) => a.localeCompare(b)
     );
 
-    const educationLevels = uniq(
-      allJobs.map((j) => String(j?.educationLevel || "").trim()).filter(Boolean)
-    ).sort((a, b) => a.localeCompare(b));
+    const educationLevels = EDUCATION_LEVELS;
 
     const companies = uniq(allJobs.map((j) => String(j?.companyName || "").trim()).filter(Boolean)).sort(
       (a, b) => a.localeCompare(b)
@@ -765,12 +771,7 @@ const JobOffers = () => {
         if (!salaryMinInput.trim() || Number.isNaN(salaryMinValue)) return true;
 
         const jobMin = Number(job?.salaryMin);
-        const jobMax = Number(job?.salaryMax);
-
-        if (Number.isFinite(jobMax)) return jobMax >= salaryMinValue;
-        if (Number.isFinite(jobMin)) return jobMin >= salaryMinValue;
-
-        return false;
+        return Number.isFinite(jobMin) && jobMin >= salaryMinValue;
       })
       .filter((job) => {
         if (!freshGraduate && !noExperience) return true;
@@ -782,6 +783,11 @@ const JobOffers = () => {
         if (freshGraduate) return matchesFreshGraduate;
         return matchesNoExperience;
       });
+
+    const getSalaryMinComparable = (job) => {
+      const min = Number(job?.salaryMin);
+      return Number.isFinite(min) ? min : Number.MAX_SAFE_INTEGER;
+    };
 
     const getSalaryComparable = (job) => {
       const max = Number(job?.salaryMax);
@@ -810,6 +816,8 @@ const JobOffers = () => {
       sorted.sort((a, b) => getExpiryComparable(a) - getExpiryComparable(b));
     } else if (sortBy === "newest") {
       sorted.sort((a, b) => getFreshnessComparable(b) - getFreshnessComparable(a));
+    } else if (salaryMinInput.trim()) {
+      sorted.sort((a, b) => getSalaryMinComparable(a) - getSalaryMinComparable(b));
     }
 
     return sorted;
@@ -935,16 +943,10 @@ const JobOffers = () => {
     "inline-flex items-center gap-2 transition-colors";
 
   const pillBtn =
-    "h-[42px] rounded-xl px-4 bg-white border border-[#C9D8E8] text-sm font-semibold text-black/75 shadow-[0_1px_2px_rgba(0,0,0,0.04)] " +
-    "flex items-center gap-2 hover:border-[#2e66a6]/55 hover:bg-[#F7FAFD] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 transition-all flex-shrink-0";
+    "h-[44px] rounded-xl px-4 bg-white/95 border border-white/30 text-sm font-medium text-gray-700 flex items-center gap-2 hover:bg-white transition flex-shrink-0";
 
-  const searchBox = `
-    ${searchFocused ? "w-full lg:w-[410px]" : "w-full lg:w-[410px]"}
-    h-[46px] bg-white border border-[#C9D8E8] rounded-xl px-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]
-    flex items-center gap-3 flex-shrink-0
-    transition-all duration-200 ease-in-out
-    focus-within:border-[#2e66a6] focus-within:ring-2 focus-within:ring-[#2e66a6]/18
-  `;
+  const searchBox =
+    "w-full lg:w-[370px] h-[44px] bg-white/95 border border-white/30 rounded-xl px-4 flex items-center gap-3 flex-shrink-0 transition-all duration-300 ease-in-out focus-within:ring-2 focus-within:ring-blue-200";
 
   const filterRowClass = "flex flex-wrap items-center gap-3";
 
@@ -970,17 +972,17 @@ const JobOffers = () => {
           <div className="bg-transparent">
             <div
               ref={filterBoxRef}
-              className="rounded-[24px] border border-[#D7E2EE] bg-[#F7FAFD] px-5 py-5 md:px-6 md:py-5 shadow-[0_8px_24px_rgba(46,102,166,0.06)]"
+              className="relative rounded-[26px] border border-gray-200 p-6 md:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.08)] overflow-visible text-white bg-gradient-to-br from-[#061e4e] via-[#244e7f] to-[#52b2db] transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]"
             >
-              <div className="mb-5 flex flex-col gap-1">
-                <h1 className="text-[28px] md:text-[32px] font-bold tracking-tight text-black leading-tight">Job Offers</h1>
-                <p className="text-[15px] text-black/65 leading-relaxed">Browse available jobs and apply immediately.</p>
+              <div className="mb-6">
+                <h1 className="text-[28px] md:text-[30px] font-semibold leading-tight text-white">Job Offers</h1>
+                <p className="mt-2 text-[16px] text-blue-100/90">Browse available jobs and apply immediately.</p>
               </div>
 
               <div className={filterRowClass}>
                 <div className={searchBox}>
                   <svg
-                    className="w-5 h-5 text-black/55"
+                    className="w-5 h-5 text-gray-500"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -997,7 +999,7 @@ const JobOffers = () => {
                   <input
                     type="text"
                     placeholder="Find a Job or Company..."
-                    className="w-full h-full outline-none text-sm text-black/75 bg-transparent"
+                    className="w-full h-full outline-none text-sm text-gray-700 bg-transparent placeholder:text-gray-400"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     onFocus={() => setSearchFocused(true)}
@@ -1097,36 +1099,42 @@ const JobOffers = () => {
                   label="With no Experience"
                   checked={noExperience}
                   onChange={(e) => setNoExperience(e.target.checked)}
+                light
                 />
 
                 <FilterCheck
                   label="Open to Fresh graduates"
                   checked={freshGraduate}
                   onChange={(e) => setFreshGraduate(e.target.checked)}
+                light
                 />
 
                 <FilterCheck
                   label="On-site"
                   checked={selectedWorkModes.includes("On-site")}
                   onChange={() => toggleWorkMode("On-site")}
+                light
                 />
 
                 <FilterCheck
                   label="Blended"
                   checked={selectedWorkModes.includes("Blended")}
                   onChange={() => toggleWorkMode("Blended")}
+                light
                 />
 
                 <FilterCheck
                   label="Remote"
                   checked={selectedWorkModes.includes("Remote")}
                   onChange={() => toggleWorkMode("Remote")}
+                light
                 />
 
                 <FilterCheck
                   label="Work from Home"
                   checked={selectedWorkModes.includes("Work from Home")}
                   onChange={() => toggleWorkMode("Work from Home")}
+                light
                 />
 
                 {hasActiveFilters && (

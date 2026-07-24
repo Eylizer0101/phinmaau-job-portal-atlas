@@ -9,18 +9,19 @@ export const JOB_TYPES = [
 
 export const EXPERIENCE_LEVELS = [
   'No experience required',
+  'Less than 1 Yr',
   '1 year',
-  '2 years',
-  '3 years',
-  '4 years',
-  '5 years',
-  '6+ years',
+  '2 year',
+  '3 year',
+  '4 year',
+  '5 year',
+  '6+ year',
 ];
 
 export const EDUCATION_LEVELS = [
-  "Bachelor / College degree graduate's",
-  'Master degree',
-  'Doctorate degree',
+  "Bachelor’s / College degree graduate's",
+  'Master’s degree',
+  'Doctorate Degree',
 ];
 
 // ✅ NEW
