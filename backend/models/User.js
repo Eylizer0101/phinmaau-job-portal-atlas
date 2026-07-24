@@ -2,6 +2,19 @@
 const mongoose = require('mongoose');
 const crypto = require('crypto');
 
+const normalizeCourseValue = (value) => {
+  const clean = String(value || '').trim();
+
+  if (
+    clean === 'BS Information Technology (Business Informatics)' ||
+    clean === 'BS Information Technology (System Development)'
+  ) {
+    return 'BS Information Technology';
+  }
+
+  return clean;
+};
+
 const normalizeCampusValue = (value) => {
   const text = String(value || '').trim();
   if (!text) return '';
@@ -235,7 +248,7 @@ const educationEntrySchema = new mongoose.Schema(
     educationalAttainment: { type: String, default: '', trim: true },
     school: { type: String, default: '', trim: true },
     campus: { type: String, default: '', trim: true, set: normalizeCampusValue },
-    course: { type: String, default: '', trim: true },
+    course: { type: String, default: '', trim: true, set: normalizeCourseValue },
     studyField: { type: String, default: '', trim: true },
     startMonth: { type: String, default: '', trim: true },
     startYear: { type: String, default: '', trim: true },
@@ -393,7 +406,7 @@ const userSchema = new mongoose.Schema(
     // Jobseeker profile
     // ---------------------------
     jobSeekerProfile: {
-      course: { type: String, default: '', trim: true },
+      course: { type: String, default: '', trim: true, set: normalizeCourseValue },
       campus: { type: String, default: '', trim: true, set: normalizeCampusValue },
       yearGraduated: { type: String, default: '', trim: true },
       preferredWorkMode: { type: String, default: '', trim: true },

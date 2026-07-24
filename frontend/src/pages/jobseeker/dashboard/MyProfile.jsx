@@ -381,6 +381,19 @@ const cleanEducationEntriesForSave = (entries = []) =>
     })
     .filter(hasEducationEntryValue);
 
+const normalizeCourseValue = (value) => {
+  const clean = String(value || '').trim();
+
+  if (
+    clean === 'BS Information Technology (Business Informatics)' ||
+    clean === 'BS Information Technology (System Development)'
+  ) {
+    return 'BS Information Technology';
+  }
+
+  return clean;
+};
+
 const normalizeExtensionName = (value) => {
   const clean = String(value || '').trim();
   return clean.toLowerCase() === 'none' ? '' : clean;
@@ -3882,7 +3895,7 @@ const MyProfile = () => {
       .join(' ');
   }, [formData.firstName, formData.middleName, formData.lastName, formData.extensionName]);
 
-  const courseText = useMemo(() => formData.course || 'Course not set yet', [formData.course]);
+  const courseText = useMemo(() => normalizeCourseValue(formData.course) || 'Course not set yet', [formData.course]);
 
   const classOfText = useMemo(() => {
     return formData.yearGraduated ? `CLASS OF ${formData.yearGraduated}` : 'YEAR NOT SET';
@@ -4511,7 +4524,7 @@ const MyProfile = () => {
           preferredLanguage: profile.preferredLanguage || '',
 
           campus: profile.campus || '',
-          course: profile.course || '',
+          course: normalizeCourseValue(profile.course),
           yearGraduated: profile.yearGraduated || '',
           preferredWorkMode: profile.preferredWorkMode || '',
           technicalSkills: parseSkills(profile.technicalSkills),
@@ -4714,7 +4727,7 @@ const MyProfile = () => {
             phoneNumber: activeDrafts.phoneNumber,
             address: buildAddressString(activeDrafts),
             campus: activeDrafts.campus,
-            course: activeDrafts.course,
+            course: normalizeCourseValue(activeDrafts.course),
             yearGraduated: activeDrafts.yearGraduated,
           },
         };
@@ -4807,7 +4820,7 @@ const MyProfile = () => {
           jobSeekerProfile: {
             educationEntries: nextEducationEntries,
             campus: primaryEducation.school || primaryEducation.campus || activeDrafts.campus,
-            course: activeDrafts.course,
+            course: normalizeCourseValue(activeDrafts.course),
             yearGraduated: primaryEducation.endYear || primaryEducation.yearGraduated || activeDrafts.yearGraduated,
             educationalAttainment: primaryEducation.educationalAttainment || primaryEducation.level || activeDrafts.educationalAttainment,
           },
@@ -4852,7 +4865,7 @@ const MyProfile = () => {
             ...formData,
             educationEntries: nextEducationEntries,
             campus: updatedProfile.campus || payload.jobSeekerProfile?.campus || formData.campus,
-            course: updatedProfile.course || payload.jobSeekerProfile?.course || formData.course,
+            course: normalizeCourseValue(updatedProfile.course || payload.jobSeekerProfile?.course || formData.course),
             yearGraduated: updatedProfile.yearGraduated || payload.jobSeekerProfile?.yearGraduated || formData.yearGraduated,
             educationalAttainment: updatedProfile.educationalAttainment || payload.jobSeekerProfile?.educationalAttainment || formData.educationalAttainment,
             studyField: updatedProfile.studyField || payload.jobSeekerProfile?.studyField || formData.studyField,

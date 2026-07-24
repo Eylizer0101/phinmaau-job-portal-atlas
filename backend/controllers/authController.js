@@ -72,6 +72,19 @@ const normalizePhoneNumber = (phoneNumber) => {
   return clean;
 };
 
+const normalizeCourseValue = (value) => {
+  const clean = String(value || '').trim();
+
+  if (
+    clean === 'BS Information Technology (Business Informatics)' ||
+    clean === 'BS Information Technology (System Development)'
+  ) {
+    return 'BS Information Technology';
+  }
+
+  return clean;
+};
+
 const normalizeExtensionName = (value) => {
   const clean = String(value || '').trim();
   return clean.toLowerCase() === 'none' ? '' : clean;
@@ -732,7 +745,7 @@ exports.register = async (req, res) => {
       profileImage,
 
       jobSeekerProfile: {
-        course: String(course || '').trim(),
+        course: normalizeCourseValue(course),
         campus: String(campus || '').trim(),
         yearGraduated: String(yearGraduated || '').trim(),
         preferredWorkMode: String(preferredWorkMode || '').trim(),
@@ -1207,6 +1220,10 @@ exports.updateProfile = async (req, res) => {
         ...(existingProfile.toObject?.() || existingProfile),
         ...updateData.jobSeekerProfile,
       };
+
+      if (Object.prototype.hasOwnProperty.call(updateData.jobSeekerProfile, 'course')) {
+        updateData.jobSeekerProfile.course = normalizeCourseValue(updateData.jobSeekerProfile.course);
+      }
 
       if (!updateData.jobSeekerProfile.salaryCurrency) {
         updateData.jobSeekerProfile.salaryCurrency = existingProfile.salaryCurrency || 'PHP';

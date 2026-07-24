@@ -35,8 +35,6 @@ export const MAJOR_COURSE_OPTIONS = [
     "BS Civil Engineering",
     "BS Electrical Engineering",
     "BS Information Technology",
-    "BS Information Technology (Business Informatics)",
-    "BS Information Technology (System Development)",
     "BS Nursing",
     "BS Pharmacy",
     "BS Medical Laboratory Science",
