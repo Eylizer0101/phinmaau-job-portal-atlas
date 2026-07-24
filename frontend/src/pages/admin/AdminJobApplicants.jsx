@@ -108,18 +108,83 @@ const getEducationEntry = (application) => {
   return Array.isArray(entries) && entries.length ? entries[0] : {};
 };
 
+const normalizeFilterKey = (value) =>
+  String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+
+const normalizeCampusValue = (value) => {
+  const text = String(value || '').trim();
+  if (!text) return '';
+
+  const compact = text
+    .toLowerCase()
+    .replace(/phinma/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (compact.includes('san jose') || compact.includes('sanjose')) return 'AU San Jose';
+  if (compact.includes('south')) return 'AU South';
+  if (compact.includes('main')) return 'AU Main';
+
+  return text.replace(/\s+/g, ' ');
+};
+
+const normalizeCourseValue = (value) => {
+  const text = String(value || '').trim().replace(/\s+/g, ' ');
+
+  if (
+    text.toLowerCase() === 'bs information technology (business informatics)' ||
+    text.toLowerCase() === 'bs information technology (system development)'
+  ) {
+    return 'BS Information Technology';
+  }
+
+  return text;
+};
+
+const uniqueNormalizedOptions = (
+  values,
+  normalizeDisplay = (value) => String(value || '').trim()
+) => {
+  const optionMap = new Map();
+
+  (values || []).forEach((value) => {
+    const displayValue = normalizeDisplay(value);
+    const key = normalizeFilterKey(displayValue);
+
+    if (!key || key === 'not specified') return;
+    if (!optionMap.has(key)) optionMap.set(key, displayValue);
+  });
+
+  return Array.from(optionMap.values()).sort((a, b) => a.localeCompare(b));
+};
+
 const getApplicantCampus = (application) => {
   const profile = getProfile(application);
   const education = getEducationEntry(application);
 
-  return String(profile.campus || education.campus || education.school || '').trim() || 'Not specified';
+  return normalizeCampusValue(
+    profile.campus ||
+    education.campus ||
+    education.school ||
+    ''
+  ) || 'Not specified';
 };
 
 const getApplicantCourse = (application) => {
   const profile = getProfile(application);
   const education = getEducationEntry(application);
 
-  return String(profile.course || education.course || education.studyField || profile.studyField || '').trim() || 'Not specified';
+  return normalizeCourseValue(
+    profile.course ||
+    education.course ||
+    education.studyField ||
+    profile.studyField ||
+    ''
+  ) || 'Not specified';
 };
 
 const hasMeaningfulProfileEntry = (entry) => {
@@ -839,16 +904,12 @@ const AdminJobApplicants = () => {
 
 
   const campusOptions = useMemo(
-    () =>
-      [...new Set(applicants.map(getApplicantCampus).filter((value) => value !== 'Not specified'))]
-        .sort((a, b) => a.localeCompare(b)),
+    () => uniqueNormalizedOptions(applicants.map(getApplicantCampus), normalizeCampusValue),
     [applicants]
   );
 
   const courseOptions = useMemo(
-    () =>
-      [...new Set(applicants.map(getApplicantCourse).filter((value) => value !== 'Not specified'))]
-        .sort((a, b) => a.localeCompare(b)),
+    () => uniqueNormalizedOptions(applicants.map(getApplicantCourse), normalizeCourseValue),
     [applicants]
   );
 
@@ -883,10 +944,12 @@ const AdminJobApplicants = () => {
         email.includes(normalizedSearch);
 
       const matchesCampus =
-        campusFilter === 'all' || campus.toLowerCase() === campusFilter.toLowerCase();
+        campusFilter === 'all' ||
+        normalizeFilterKey(campus) === normalizeFilterKey(campusFilter);
 
       const matchesCourse =
-        courseFilter === 'all' || course.toLowerCase() === courseFilter.toLowerCase();
+        courseFilter === 'all' ||
+        normalizeFilterKey(course) === normalizeFilterKey(courseFilter);
 
       const matchesStatus =
         statusFilter === 'all' || status === statusFilter.toLowerCase();
