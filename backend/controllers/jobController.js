@@ -285,6 +285,8 @@ exports.createJob = async (req, res) => {
       experienceLevel,
       status,
       location,
+      locationProvince,
+      locationCity,
       educationLevel,
       category,
       openToFreshGraduates,
@@ -329,6 +331,8 @@ exports.createJob = async (req, res) => {
     }
 
     const manualLocation = String(location || '').trim();
+    const provinceValue = String(locationProvince || '').trim();
+    const cityValue = String(locationCity || '').trim();
     if (!isDraft && !manualLocation) {
       return res.status(400).json({
         success: false,
@@ -336,8 +340,18 @@ exports.createJob = async (req, res) => {
       });
     }
 
+    if (!isDraft && (!provinceValue || !cityValue)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Province and City / Municipality are required.'
+      });
+    }
+
     const edu = String(educationLevel || '').trim();
     const allowedEducation = [
+      "Bachelor’s / College degree graduate's",
+      'Master’s degree',
+      'Doctorate Degree',
       "Bachelor / College degree graduate's",
       'Master degree',
       'Doctorate degree'
@@ -352,7 +366,13 @@ exports.createJob = async (req, res) => {
 
     const allowedExperienceLevels = [
       'No experience required',
+      'Less than 1 Yr',
       '1 year',
+      '2 year',
+      '3 year',
+      '4 year',
+      '5 year',
+      '6+ year',
       '2 years',
       '3 years',
       '4 years',
@@ -401,6 +421,8 @@ exports.createJob = async (req, res) => {
       archivedAt: null,
       category: companyCategory,
       location: manualLocation || (isDraft ? buildCompanyLocation(employer.employerProfile) : manualLocation),
+      locationProvince: provinceValue,
+      locationCity: cityValue,
 
       openToFreshGraduates: parseBool(openToFreshGraduates),
       perksAndBenefits: perksArray,
@@ -420,7 +442,7 @@ exports.createJob = async (req, res) => {
     applyIfDefined(jobData, 'vacancies', vacancies);
 
     jobData.experienceLevel = normalizedExperience || 'No experience required';
-    jobData.educationLevel = edu || "Bachelor / College degree graduate's";
+    jobData.educationLevel = edu || "Bachelor’s / College degree graduate's";
 
     if (salaryMin !== undefined && salaryMin !== '') jobData.salaryMin = normalizeSalaryAmount(salaryMin);
     if (salaryMax !== undefined && salaryMax !== '') jobData.salaryMax = normalizeSalaryAmount(salaryMax);
@@ -930,10 +952,18 @@ exports.updateJob = async (req, res) => {
 
     if (wantsToPublish) {
       const manualLocation = String(req.body.location || job.location || '').trim();
+      const provinceValue = String(req.body.locationProvince || job.locationProvince || '').trim();
+      const cityValue = String(req.body.locationCity || job.locationCity || '').trim();
       if (!manualLocation) {
         return res.status(400).json({
           success: false,
-          message: 'Location (City) is required.'
+          message: 'Complete work address is required.'
+        });
+      }
+      if (!provinceValue || !cityValue) {
+        return res.status(400).json({
+          success: false,
+          message: 'Province and City / Municipality are required.'
         });
       }
     }
@@ -941,6 +971,9 @@ exports.updateJob = async (req, res) => {
     if (wantsToPublish) {
       const edu = String(req.body.educationLevel || job.educationLevel || '').trim();
       const allowedEducation = [
+        "Bachelor’s / College degree graduate's",
+        'Master’s degree',
+        'Doctorate Degree',
         "Bachelor / College degree graduate's",
         'Master degree',
         'Doctorate degree'
@@ -957,7 +990,13 @@ exports.updateJob = async (req, res) => {
     if (req.body.experienceLevel !== undefined) {
       const allowedExperienceLevels = [
         'No experience required',
+        'Less than 1 Yr',
         '1 year',
+        '2 year',
+        '3 year',
+        '4 year',
+        '5 year',
+        '6+ year',
         '2 years',
         '3 years',
         '4 years',

@@ -11,6 +11,7 @@ import {
   WILLING_TO_RELOCATE_OPTIONS,
   PERKS_AND_BENEFITS_OPTIONS
 } from '../../../constants/postJobDropdownOptions';
+import { PH_PROVINCES_BY_REGION, PH_CITIES_BY_PROVINCE } from '../../../constants/phLocations';
 
 const Alert = ({ type, children }) => {
   const isError = type === 'error';
@@ -813,7 +814,9 @@ const PostJob = () => {
     skillsRequired: '',
     experienceLevel: 'No experience required',
     location: '',
-    educationLevel: "Bachelor / College degree graduate's",
+    locationProvince: '',
+    locationCity: '',
+    educationLevel: "Bachelor’s / College degree graduate's",
 
     openToFreshGraduates: false,
     perksAndBenefits: [],
@@ -849,7 +852,7 @@ const PostJob = () => {
       formData.workMode !== 'On-site' ||
       formData.vacancies !== '1' ||
       formData.experienceLevel !== 'No experience required' ||
-      formData.educationLevel !== "Bachelor / College degree graduate's" ||
+      formData.educationLevel !== "Bachelor’s / College degree graduate's" ||
       formData.willingToRelocate !== 'No - position is fixed location' ||
       Boolean(locationImageFile)
     );
@@ -859,6 +862,8 @@ const PostJob = () => {
   const workModes = ['On-site', 'Remote', 'Blended', 'Work from Home'];
   const experienceLevels = EXPERIENCE_LEVELS;
   const educationLevels = EDUCATION_LEVELS;
+  const provinceOptions = useMemo(() => Array.from(new Set(Object.values(PH_PROVINCES_BY_REGION).flat())).sort((a, b) => a.localeCompare(b)), []);
+  const cityOptions = useMemo(() => formData.locationProvince ? (PH_CITIES_BY_PROVINCE[formData.locationProvince] || []) : [], [formData.locationProvince]);
   const willingToRelocateOptions = WILLING_TO_RELOCATE_OPTIONS;
   const perksAndBenefitsOptions = PERKS_AND_BENEFITS_OPTIONS;
 
@@ -1038,6 +1043,8 @@ const PostJob = () => {
       getRichTextPlainText(formData.description).length >= 80 &&
       getRichTextPlainText(formData.requirements).length >= 40 &&
       formData.location.trim() &&
+      formData.locationProvince.trim() &&
+      formData.locationCity.trim() &&
       isDeadlineValid &&
       salaryValid &&
       skillsCountValid
@@ -1058,7 +1065,7 @@ const PostJob = () => {
       String(formData.educationLevel || '').trim()
     ),
     3: Boolean(skillsCountValid),
-    4: Boolean(formData.location.trim()),
+    4: Boolean(formData.location.trim() && formData.locationProvince.trim() && formData.locationCity.trim()),
   }), [formData, isDeadlineValid, salaryValid, skillsCountValid]);
 
   const currentStep = JOB_FORM_STEPS[activeStep - 1];
@@ -1142,7 +1149,13 @@ const PostJob = () => {
     }
 
     if ((touched.location || submitted) && !formData.location.trim()) {
-      errors.location = 'Location (City) is required.';
+      errors.location = 'Complete work address is required.';
+    }
+    if ((touched.locationProvince || submitted) && !formData.locationProvince.trim()) {
+      errors.locationProvince = 'Province is required.';
+    }
+    if ((touched.locationCity || submitted) && !formData.locationCity.trim()) {
+      errors.locationCity = 'City / Municipality is required.';
     }
 
     if ((touched.experienceLevel || submitted) && !EXPERIENCE_LEVELS.includes(String(formData.experienceLevel || '').trim())) {
@@ -1191,7 +1204,9 @@ const PostJob = () => {
     if (descriptionText.length < 80) return 'Job description must be at least 80 characters';
     if (!requirementsText) return 'Job requirements are required';
     if (requirementsText.length < 40) return 'Requirements must be at least 40 characters';
-    if (!formData.location.trim()) return 'Location (City) is required';
+    if (!formData.location.trim()) return 'Complete work address is required';
+    if (!formData.locationProvince.trim()) return 'Province is required';
+    if (!formData.locationCity.trim()) return 'City / Municipality is required';
     if (!formData.applicationDeadline) return 'Application deadline is required';
     if (!isDeadlineValid) return 'Application deadline must be in the future';
     if (!formData.hideSalary && (formData.salaryMin === '' || formData.salaryMax === '')) {
@@ -1246,6 +1261,8 @@ const PostJob = () => {
     payload.append('status', isDraft ? 'draft' : 'published');
     payload.append('category', companyCategoryDefault);
     payload.append('location', String(formData.location || '').trim());
+    payload.append('locationProvince', String(formData.locationProvince || '').trim());
+    payload.append('locationCity', String(formData.locationCity || '').trim());
     payload.append('educationLevel', String(formData.educationLevel || '').trim());
 
     payload.append('openToFreshGraduates', String(formData.openToFreshGraduates));
@@ -1983,10 +2000,42 @@ const PostJob = () => {
                     <section className={`${activeStep === 4 ? 'block' : 'hidden'} space-y-5`}>
                       <h3 className="text-base font-bold text-gray-900">Additional Details</h3>
 
-                      <div className="grid grid-cols-1 gap-5">
+                      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                        <Field id="locationProvince" label="Province" error={fieldErrors.locationProvince}>
+                          <select
+                            name="locationProvince"
+                            value={formData.locationProvince}
+                            onChange={(event) => {
+                              const province = event.target.value;
+                              setFormData((prev) => ({ ...prev, locationProvince: province, locationCity: '' }));
+                              markTouched('locationProvince');
+                            }}
+                            onBlur={() => markTouched('locationProvince')}
+                            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
+                          >
+                            <option value="">Select province</option>
+                            {provinceOptions.map((province) => <option key={province} value={province}>{province}</option>)}
+                          </select>
+                        </Field>
+
+                        <Field id="locationCity" label="City / Municipality" error={fieldErrors.locationCity}>
+                          <select
+                            name="locationCity"
+                            value={formData.locationCity}
+                            disabled={!formData.locationProvince}
+                            onChange={handleChange}
+                            onBlur={() => markTouched('locationCity')}
+                            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] disabled:bg-gray-100"
+                          >
+                            <option value="">Select city / municipality</option>
+                            {cityOptions.map((city) => <option key={city} value={city}>{city}</option>)}
+                          </select>
+                        </Field>
+
+                        <div className="md:col-span-2">
                         <Field
                           id="location"
-                          label="Location Address / OpenStreetMap"
+                          label="Complete Work Address / OpenStreetMap"
                          
                           error={fieldErrors.location}
                         >
@@ -2009,6 +2058,7 @@ const PostJob = () => {
                             }}
                           />
                         </Field>
+                        </div>
                       </div>
                     </section>
                   </div>

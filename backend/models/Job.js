@@ -50,6 +50,9 @@ const jobSchema = new mongoose.Schema({
     educationLevel: {
         type: String,
         enum: [
+            "Bachelor’s / College degree graduate's",
+            'Master’s degree',
+            'Doctorate Degree',
             "Bachelor / College degree graduate's",
             'Master degree',
             'Doctorate degree'
@@ -86,6 +89,16 @@ const jobSchema = new mongoose.Schema({
         type: String,
         required: function () { return this.isPublished === true; }
     },
+    locationProvince: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    locationCity: {
+        type: String,
+        trim: true,
+        default: ''
+    },
     workMode: {
         type: String,
         enum: ['On-site', 'Remote', 'Blended', 'Work from Home'],
@@ -109,7 +122,13 @@ const jobSchema = new mongoose.Schema({
         type: String,
         enum: [
             'No experience required',
+            'Less than 1 Yr',
             '1 year',
+            '2 year',
+            '3 year',
+            '4 year',
+            '5 year',
+            '6+ year',
             '2 years',
             '3 years',
             '4 years',
