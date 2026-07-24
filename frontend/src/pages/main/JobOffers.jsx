@@ -1548,34 +1548,34 @@ const JobOffers = () => {
 
                       <div className="mt-4 flex flex-wrap items-center gap-1.5">
                         {experienceBadgeLabel && (
-                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap bg-[#2e66a6]/10 text-[#2e66a6] border border-[#2e66a6]/25">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-blue-50 text-[#2e66a6] border border-blue-200">
                             {experienceBadgeLabel}
                           </span>
                         )}
 
                         {tagBlended && (
-                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap bg-[#2e66a6]/10 text-[#2e66a6] border border-[#2e66a6]/25">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-blue-50 text-[#2e66a6] border border-blue-200">
                             Blended
                           </span>
                         )}
                         {tagOnsite && (
-                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap bg-[#2e66a6]/10 text-[#2e66a6] border border-[#2e66a6]/25">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-blue-50 text-[#2e66a6] border border-blue-200">
                             On-site
                           </span>
                         )}
                         {tagRemote && (
-                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap bg-[#2e66a6]/10 text-[#2e66a6] border border-[#2e66a6]/25">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-blue-50 text-[#2e66a6] border border-blue-200">
                             Remote
                           </span>
                         )}
                         {tagWorkFromHome && (
-                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap bg-[#2e66a6]/10 text-[#2e66a6] border border-[#2e66a6]/25">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-blue-50 text-[#2e66a6] border border-blue-200">
                             Work from Home
                           </span>
                         )}
 
                         {tagFreshGrad && (
-                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap bg-[#2e66a6]/10 text-[#2e66a6] border border-[#2e66a6]/25">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-blue-50 text-[#2e66a6] border border-blue-200">
                             Open Fresh Grads
                           </span>
                         )}
