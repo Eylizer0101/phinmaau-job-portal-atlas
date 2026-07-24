@@ -11,7 +11,6 @@ import {
   WILLING_TO_RELOCATE_OPTIONS,
   PERKS_AND_BENEFITS_OPTIONS
 } from '../../../constants/postJobDropdownOptions';
-import { PH_PROVINCES_BY_REGION, PH_CITIES_BY_PROVINCE } from '../../../constants/phLocations';
 
 /* =======================
    UI helpers
@@ -876,8 +875,6 @@ const EditJob = () => {
   const [formData, setFormData] = useState({
     title: '',
     location: '',
-    locationProvince: '',
-    locationCity: '',
     description: '',
     requirements: '',
     jobType: 'Full-time',
@@ -1076,8 +1073,6 @@ const EditJob = () => {
   const experienceLevels = EXPERIENCE_LEVELS;
   const educationLevels = EDUCATION_LEVELS;
   const willingToRelocateOptions = WILLING_TO_RELOCATE_OPTIONS;
-  const provinceOptions = useMemo(() => Array.from(new Set(Object.values(PH_PROVINCES_BY_REGION).flat())).sort((a, b) => a.localeCompare(b)), []);
-  const cityOptions = useMemo(() => formData.locationProvince ? (PH_CITIES_BY_PROVINCE[formData.locationProvince] || []) : [], [formData.locationProvince]);
   const perksAndBenefitsOptions = PERKS_AND_BENEFITS_OPTIONS;
   const workModes = ['On-site', 'Remote', 'Blended', 'Work from Home'];
 
@@ -1138,8 +1133,6 @@ const EditJob = () => {
     return (
       formData.title.trim() &&
       formData.location.trim() &&
-      formData.locationProvince.trim() &&
-      formData.locationCity.trim() &&
       getRichTextPlainText(formData.description).length >= 80 &&
       getRichTextPlainText(formData.requirements).length >= 40 &&
       String(formData.educationLevel || '').trim() &&
@@ -1164,7 +1157,7 @@ const EditJob = () => {
       String(formData.educationLevel || '').trim()
     ),
     3: Boolean(skillsCountValid),
-    4: Boolean(formData.location.trim() && formData.locationProvince.trim() && formData.locationCity.trim()),
+    4: Boolean(formData.location.trim()),
   }), [formData, vacanciesValid, isDeadlineValid, salaryValid, skillsCountValid]);
 
   const currentStep = JOB_FORM_STEPS[activeStep - 1];
@@ -1231,13 +1224,7 @@ const EditJob = () => {
     }
 
     if ((touched.location || submitted) && !formData.location.trim()) {
-      errors.location = 'Complete work address is required.';
-    }
-    if ((touched.locationProvince || submitted) && !formData.locationProvince.trim()) {
-      errors.locationProvince = 'Province is required.';
-    }
-    if ((touched.locationCity || submitted) && !formData.locationCity.trim()) {
-      errors.locationCity = 'City / Municipality is required.';
+      errors.location = 'Location (City) is required.';
     }
 
     if ((touched.experienceLevel || submitted) && !EXPERIENCE_LEVELS.includes(String(formData.experienceLevel || '').trim())) {
@@ -1325,9 +1312,7 @@ const EditJob = () => {
 
   const validateStrict = () => {
     if (!formData.title.trim()) return 'Job title is required';
-    if (!formData.location.trim()) return 'Complete work address is required';
-    if (!formData.locationProvince.trim()) return 'Province is required';
-    if (!formData.locationCity.trim()) return 'City / Municipality is required';
+    if (!formData.location.trim()) return 'Location Address is required';
     if (!String(formData.educationLevel || '').trim()) return 'Education level is required';
     const descriptionText = getRichTextPlainText(formData.description);
     const requirementsText = getRichTextPlainText(formData.requirements);
@@ -1408,8 +1393,6 @@ const EditJob = () => {
 
     payload.append('title', formData.title.trim());
     payload.append('location', formData.location.trim());
-    payload.append('locationProvince', String(formData.locationProvince || '').trim());
-    payload.append('locationCity', String(formData.locationCity || '').trim());
     payload.append('description', formData.description.trim());
     payload.append('requirements', formData.requirements.trim());
     payload.append('jobType', formData.jobType);
@@ -2473,44 +2456,10 @@ const EditJob = () => {
                     <section className={`${activeStep === 4 ? 'block' : 'hidden'} space-y-5`}>
                       <h3 className="text-base font-bold text-gray-900">Additional Details</h3>
 
-                      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                        <Field id="locationProvince" label="Province" error={fieldErrors.locationProvince}>
-                          <select
-                            name="locationProvince"
-                            value={formData.locationProvince}
-                            disabled={isBusy}
-                            onChange={(event) => {
-                              const province = event.target.value;
-                              setFormData((prev) => ({ ...prev, locationProvince: province, locationCity: '' }));
-                              markTouched('locationProvince');
-                              clearMessages();
-                            }}
-                            onBlur={() => markTouched('locationProvince')}
-                            className={selectClass}
-                          >
-                            <option value="">Select province</option>
-                            {provinceOptions.map((province) => <option key={province} value={province}>{province}</option>)}
-                          </select>
-                        </Field>
-
-                        <Field id="locationCity" label="City / Municipality" error={fieldErrors.locationCity}>
-                          <select
-                            name="locationCity"
-                            value={formData.locationCity}
-                            disabled={isBusy || !formData.locationProvince}
-                            onChange={handleChange}
-                            onBlur={() => markTouched('locationCity')}
-                            className={selectClass}
-                          >
-                            <option value="">Select city / municipality</option>
-                            {cityOptions.map((city) => <option key={city} value={city}>{city}</option>)}
-                          </select>
-                        </Field>
-
-                        <div className="md:col-span-2">
+                      <div className="grid grid-cols-1 gap-5">
                         <Field
                           id="location"
-                          label="Complete Work Address / OpenStreetMap"
+                          label="Location Address / OpenStreetMap"
                      
                           error={fieldErrors.location}
                         >
@@ -2533,7 +2482,6 @@ const EditJob = () => {
                             }}
                           />
                         </Field>
-                        </div>
                       </div>
                     </section>
 
