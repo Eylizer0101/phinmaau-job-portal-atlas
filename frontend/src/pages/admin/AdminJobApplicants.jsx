@@ -122,16 +122,160 @@ const getApplicantCourse = (application) => {
   return String(profile.course || education.course || education.studyField || profile.studyField || '').trim() || 'Not specified';
 };
 
+const hasMeaningfulProfileEntry = (entry) => {
+  if (!entry) return false;
+
+  if (typeof entry !== 'object') {
+    return Boolean(String(entry || '').trim());
+  }
+
+  return Object.entries(entry).some(([key, value]) => {
+    if (['_id', 'createdAt', 'updatedAt', '__v'].includes(key)) return false;
+
+    if (Array.isArray(value)) {
+      return value.some((item) => hasMeaningfulProfileEntry(item));
+    }
+
+    if (value && typeof value === 'object') {
+      return hasMeaningfulProfileEntry(value);
+    }
+
+    return Boolean(String(value || '').trim());
+  });
+};
+
+const countProfileSkills = (value) => {
+  if (!value) return 0;
+
+  if (Array.isArray(value)) {
+    return value
+      .flatMap((item) => {
+        if (item && typeof item === 'object') {
+          const skill = String(item.skill || item.name || '').trim();
+          return skill ? [skill] : [];
+        }
+
+        const clean = String(item || '').trim();
+        if (!clean) return [];
+
+        return clean.includes('||')
+          ? clean.split('||').map((part) => part.trim()).filter(Boolean)
+          : [clean];
+      })
+      .filter(Boolean)
+      .length;
+  }
+
+  const clean = String(value || '').trim();
+  if (!clean) return 0;
+
+  if (clean.includes('||')) {
+    return clean.split('||').map((part) => part.trim()).filter(Boolean).length;
+  }
+
+  if (/\s[—-]\s(Basic|Novice|Intermediate|Advanced|Expert)$/i.test(clean)) {
+    return 1;
+  }
+
+  return clean.split(',').map((part) => part.trim()).filter(Boolean).length;
+};
+
 const getJobseekerLevel = (application) => {
   const profile = getProfile(application);
-  const education = getEducationEntry(application);
 
-  return String(
-    profile.educationalAttainment ||
-    education.educationalAttainment ||
-    education.level ||
-    ''
-  ).trim() || 'Not specified';
+  const counts = {
+    skills:
+      countProfileSkills(profile.technicalSkills) +
+      countProfileSkills(profile.softSkills),
+    certifications: Array.isArray(profile.certifications)
+      ? profile.certifications.filter(hasMeaningfulProfileEntry).length
+      : 0,
+    projects: Array.isArray(profile.projects)
+      ? profile.projects.filter(hasMeaningfulProfileEntry).length
+      : 0,
+    seminars: Array.isArray(profile.seminars)
+      ? profile.seminars.filter(hasMeaningfulProfileEntry).length
+      : 0,
+    awards: Array.isArray(profile.awards)
+      ? profile.awards.filter(hasMeaningfulProfileEntry).length
+      : 0,
+    work: Array.isArray(profile.workExperiences)
+      ? profile.workExperiences.filter(hasMeaningfulProfileEntry).length
+      : 0,
+  };
+
+  const tiers = [
+    {
+      name: 'First Time Job Seeker',
+      requirements: {
+        skills: 0,
+        certifications: 0,
+        projects: 0,
+        seminars: 0,
+        awards: 0,
+        work: 0,
+      },
+    },
+    {
+      name: 'Intermediate',
+      requirements: {
+        skills: 5,
+        certifications: 1,
+        projects: 1,
+        seminars: 1,
+        awards: 1,
+        work: 0,
+      },
+    },
+    {
+      name: 'Expert',
+      requirements: {
+        skills: 9,
+        certifications: 2,
+        projects: 2,
+        seminars: 2,
+        awards: 2,
+        work: 1,
+      },
+    },
+    {
+      name: 'Pro',
+      requirements: {
+        skills: 13,
+        certifications: 5,
+        projects: 5,
+        seminars: 5,
+        awards: 5,
+        work: 2,
+      },
+    },
+    {
+      name: 'Legend',
+      requirements: {
+        skills: 17,
+        certifications: 7,
+        projects: 7,
+        seminars: 7,
+        awards: 7,
+        work: 3,
+      },
+    },
+  ];
+
+  const meetsRequirements = (requirements) =>
+    Object.entries(requirements).every(
+      ([key, required]) => counts[key] >= required
+    );
+
+  let currentTier = tiers[0];
+
+  tiers.forEach((tier) => {
+    if (meetsRequirements(tier.requirements)) {
+      currentTier = tier;
+    }
+  });
+
+  return currentTier.name;
 };
 
 const getApplicantStatusMeta = (statusRaw) => {
