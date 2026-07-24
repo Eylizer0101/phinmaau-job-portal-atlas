@@ -597,18 +597,6 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
         Search a location, choose a result, or click/drag the pin on the map to set the exact work location.
       </div>
 
-      <div className="grid grid-cols-1 gap-3 text-xs text-gray-600 sm:grid-cols-2">
-        <div className="rounded-xl border border-gray-200 bg-white px-3 py-2">
-          Latitude: <span className="font-semibold text-gray-900">{latitude || 'Not selected'}</span>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white px-3 py-2">
-          Longitude: <span className="font-semibold text-gray-900">{longitude || 'Not selected'}</span>
-        </div>
-      </div>
-
-      <p className="text-xs text-gray-500" aria-live="polite">
-        {searching ? 'Searching...' : status || 'OpenStreetMap is free and does not require an API key.'}
-      </p>
     </div>
   );
 };
