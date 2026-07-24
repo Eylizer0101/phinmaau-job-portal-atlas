@@ -13,6 +13,48 @@ const formatAmountInput = (value) => {
   return digits ? Number(digits).toLocaleString('en-PH') : '';
 };
 
+
+const normalizeLocationPart = (value) => String(value || '').trim();
+
+const getJobLocationLabels = (job) => {
+  const labels = [
+    normalizeLocationPart(job?.locationCity),
+    normalizeLocationPart(job?.locationProvince),
+  ].filter(Boolean);
+
+  if (labels.length) return Array.from(new Set(labels));
+
+  const address = normalizeLocationPart(job?.location);
+  if (!address) return [];
+
+  const parts = address.split(',').map((part) => part.trim()).filter(Boolean);
+  const ignored = new Set(['philippines', 'luzon', 'visayas', 'mindanao']);
+  const useful = parts.filter((part) => !ignored.has(part.toLowerCase()));
+
+  if (useful.length >= 2) return Array.from(new Set(useful.slice(-2)));
+  return useful;
+};
+
+const jobMatchesSelectedLocations = (job, selectedLocations) => {
+  if (!selectedLocations?.length) return true;
+  const labels = getJobLocationLabels(job).map((label) => label.toLowerCase());
+  return selectedLocations.some((selected) => labels.includes(String(selected || '').trim().toLowerCase()));
+};
+
+const buildTopLocationOptions = (jobs) => {
+  const counts = new Map();
+
+  (jobs || []).forEach((job) => {
+    getJobLocationLabels(job).forEach((label) => {
+      counts.set(label, (counts.get(label) || 0) + 1);
+    });
+  });
+
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([label]) => label);
+};
+
 const normalizeBoolean = (value) => {
   if (typeof value === 'boolean') return value;
   const v = String(value || '').trim().toLowerCase();
@@ -58,7 +100,8 @@ const CheckboxDropdown = ({
   menuWidth = 'w-[320px]',
   openDropdown,
   setOpenDropdown,
-  pillBtn
+  pillBtn,
+  sectionLabel = ''
 }) => {
   const [localSearch, setLocalSearch] = useState('');
 
@@ -129,7 +172,13 @@ const CheckboxDropdown = ({
             />
           )}
 
-          <div className={`${enableSearch ? 'mt-4' : ''} max-h-[280px] overflow-auto pr-1`}>
+          {sectionLabel && (
+            <div className={`${enableSearch ? 'mt-4' : ''} mb-2 text-xs font-bold uppercase tracking-wide text-gray-500`}>
+              {sectionLabel}
+            </div>
+          )}
+
+          <div className={`${enableSearch && !sectionLabel ? 'mt-4' : ''} max-h-[280px] overflow-auto pr-1`}>
             {filtered.length === 0 ? (
               <div className="text-sm text-gray-500 py-4">No results</div>
             ) : (
@@ -677,7 +726,7 @@ const JobSearch = () => {
   const options = useMemo(() => {
     const uniq = (arr) => Array.from(new Set(arr.filter(Boolean)));
 
-    const locations = uniq(jobs.map((j) => formatLocationDisplay(j?.location))).sort((a, b) => a.localeCompare(b));
+    const locations = buildTopLocationOptions(jobs);
 
     const jobTitles = uniq(
       jobs
@@ -702,6 +751,7 @@ const JobSearch = () => {
     const salaryMinValue = Number(normalizeAmount(salaryMinInput));
 
     const filtered = jobs
+      .filter((job) => jobMatchesSelectedLocations(job, selectedLocations))
       .filter((job) =>
         selectedEducationLevels.length
           ? selectedEducationLevels.includes(String(job?.educationLevel || '').trim())
@@ -765,7 +815,7 @@ const JobSearch = () => {
     }
 
     return sorted;
-  }, [jobs, selectedEducationLevels, salaryMinInput, freshGraduate, noExperience, sortBy]);
+  }, [jobs, selectedLocations, selectedEducationLevels, salaryMinInput, freshGraduate, noExperience, sortBy]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -1099,6 +1149,7 @@ const JobSearch = () => {
                       openDropdown={openDropdown}
                       setOpenDropdown={setOpenDropdown}
                       pillBtn={pillBtnHero}
+                      sectionLabel="Top Locations"
                     />
 
                     <CheckboxDropdown

@@ -285,6 +285,8 @@ exports.createJob = async (req, res) => {
       experienceLevel,
       status,
       location,
+      locationProvince,
+      locationCity,
       educationLevel,
       category,
       openToFreshGraduates,
@@ -329,10 +331,19 @@ exports.createJob = async (req, res) => {
     }
 
     const manualLocation = String(location || '').trim();
+    const provinceValue = String(locationProvince || '').trim();
+    const cityValue = String(locationCity || '').trim();
     if (!isDraft && !manualLocation) {
       return res.status(400).json({
         success: false,
         message: 'Location (City) is required.'
+      });
+    }
+
+    if (!isDraft && (!provinceValue || !cityValue)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Province and City / Municipality are required.'
       });
     }
 
@@ -401,6 +412,8 @@ exports.createJob = async (req, res) => {
       archivedAt: null,
       category: companyCategory,
       location: manualLocation || (isDraft ? buildCompanyLocation(employer.employerProfile) : manualLocation),
+      locationProvince: provinceValue,
+      locationCity: cityValue,
 
       openToFreshGraduates: parseBool(openToFreshGraduates),
       perksAndBenefits: perksArray,
@@ -930,10 +943,18 @@ exports.updateJob = async (req, res) => {
 
     if (wantsToPublish) {
       const manualLocation = String(req.body.location || job.location || '').trim();
+      const provinceValue = String(req.body.locationProvince || job.locationProvince || '').trim();
+      const cityValue = String(req.body.locationCity || job.locationCity || '').trim();
       if (!manualLocation) {
         return res.status(400).json({
           success: false,
-          message: 'Location (City) is required.'
+          message: 'Complete work address is required.'
+        });
+      }
+      if (!provinceValue || !cityValue) {
+        return res.status(400).json({
+          success: false,
+          message: 'Province and City / Municipality are required.'
         });
       }
     }

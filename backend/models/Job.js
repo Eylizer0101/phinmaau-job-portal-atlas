@@ -86,6 +86,16 @@ const jobSchema = new mongoose.Schema({
         type: String,
         required: function () { return this.isPublished === true; }
     },
+    locationProvince: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    locationCity: {
+        type: String,
+        trim: true,
+        default: ''
+    },
     workMode: {
         type: String,
         enum: ['On-site', 'Remote', 'Blended', 'Work from Home'],
