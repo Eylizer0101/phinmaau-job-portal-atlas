@@ -1130,7 +1130,7 @@ const JobOffers = () => {
       <MainNavbar />
 
       <div className="pt-24 pb-14">
-        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1500px] mx-auto px-3 lg:px-4 2xl:px-6">
           <div className="bg-transparent">
             <div
               ref={filterBoxRef}
