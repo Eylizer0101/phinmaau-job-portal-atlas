@@ -883,10 +883,7 @@ const AdminJobApplicants = () => {
                 </p>
               </div>
 
-              <span className="w-fit rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#2e66a6]">
-                {filteredApplicants.length} of {applicants.length}{' '}
-                {applicants.length === 1 ? 'Applicant' : 'Applicants'}
-              </span>
+         
             </div>
 
             {!loading && !error && (
