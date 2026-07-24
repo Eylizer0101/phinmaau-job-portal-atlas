@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import MainNavbar from "../../components/shared/MainNavbar";
 import api from "../../services/api";
 import { EDUCATION_LEVELS } from "../../constants/postJobDropdownOptions";
+import { PH_PROVINCES_BY_REGION, PH_CITIES_BY_PROVINCE } from "../../constants/phLocations";
 
 const normalizeAmount = (value) => String(value || "").replace(/[^\d]/g, "");
 
@@ -15,32 +16,87 @@ const formatAmountInput = (value) => {
 
 const normalizeLocationPart = (value) => String(value || '').trim();
 
-const getJobLocationLabels = (job) => {
-  const labels = [
-    normalizeLocationPart(job?.locationCity),
-    normalizeLocationPart(job?.locationProvince),
-  ].filter(Boolean);
+const normalizeLocationKey = (value) =>
+  normalizeLocationPart(value)
+    .toLowerCase()
+    .replace(/\bcity of\b/g, '')
+    .replace(/\bcity\b/g, '')
+    .replace(/[^a-z0-9ñ\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
-  if (labels.length) return Array.from(new Set(labels));
+const PROVINCE_OPTIONS = Array.from(
+  new Set(Object.values(PH_PROVINCES_BY_REGION).flat().filter(Boolean))
+);
+
+const CITY_OPTIONS = Array.from(
+  new Set(Object.values(PH_CITIES_BY_PROVINCE).flat().filter(Boolean))
+);
+
+const buildCanonicalLocationMap = (items) => {
+  const map = new Map();
+
+  items.forEach((item) => {
+    const key = normalizeLocationKey(item);
+    if (key && !map.has(key)) map.set(key, item);
+  });
+
+  return map;
+};
+
+const PROVINCE_BY_KEY = buildCanonicalLocationMap(PROVINCE_OPTIONS);
+const CITY_BY_KEY = buildCanonicalLocationMap(CITY_OPTIONS);
+
+const findCanonicalLocation = (value, preferredType = '') => {
+  const raw = normalizeLocationPart(value);
+  if (!raw || /^\d+$/.test(raw)) return '';
+
+  const key = normalizeLocationKey(raw);
+  if (!key) return '';
+
+  if (preferredType === 'city') return CITY_BY_KEY.get(key) || '';
+  if (preferredType === 'province') return PROVINCE_BY_KEY.get(key) || '';
+
+  return CITY_BY_KEY.get(key) || PROVINCE_BY_KEY.get(key) || '';
+};
+
+const getJobLocationLabels = (job) => {
+  const city = findCanonicalLocation(job?.locationCity, 'city');
+  const province = findCanonicalLocation(job?.locationProvince, 'province');
+  const savedLabels = [city, province].filter(Boolean);
+
+  if (savedLabels.length) return Array.from(new Set(savedLabels));
 
   const address = normalizeLocationPart(job?.location);
   if (!address) return [];
 
-  const parts = address.split(',').map((part) => part.trim()).filter(Boolean);
-  const ignored = new Set(['philippines', 'luzon', 'visayas', 'mindanao']);
-  const useful = parts.filter((part) => !ignored.has(part.toLowerCase()));
+  const parts = address
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .reverse();
 
-  if (useful.length >= 2) return Array.from(new Set(useful.slice(-2)));
-  return useful;
+  const fallbackProvince = parts
+    .map((part) => findCanonicalLocation(part, 'province'))
+    .find(Boolean) || '';
+
+  const fallbackCity = parts
+    .map((part) => findCanonicalLocation(part, 'city'))
+    .find((label) =>
+      label && normalizeLocationKey(label) !== normalizeLocationKey(fallbackProvince)
+    ) || '';
+
+  return Array.from(new Set([fallbackCity, fallbackProvince].filter(Boolean)));
 };
 
 const jobMatchesSelectedLocations = (job, selectedLocations) => {
   if (!selectedLocations?.length) return true;
-  const labels = getJobLocationLabels(job).map((label) => label.toLowerCase());
-  return selectedLocations.some((selected) => labels.includes(String(selected || '').trim().toLowerCase()));
+
+  const labels = getJobLocationLabels(job).map(normalizeLocationKey);
+  return selectedLocations.some((selected) => labels.includes(normalizeLocationKey(selected)));
 };
 
-const buildTopLocationOptions = (jobs) => {
+const buildLocationGroups = (jobs) => {
   const counts = new Map();
 
   (jobs || []).forEach((job) => {
@@ -49,9 +105,22 @@ const buildTopLocationOptions = (jobs) => {
     });
   });
 
-  return Array.from(counts.entries())
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+  const ranked = Array.from(counts.entries()).sort(
+    (a, b) => b[1] - a[1] || a[0].localeCompare(b[0])
+  );
+
+  const topLocations = ranked
+    .filter(([, count]) => count > 1)
+    .slice(0, 5)
     .map(([label]) => label);
+
+  const topSet = new Set(topLocations);
+  const allLocations = ranked
+    .map(([label]) => label)
+    .filter((label) => !topSet.has(label))
+    .sort((a, b) => a.localeCompare(b));
+
+  return { topLocations, allLocations };
 };
 
 const normalizeBoolean = (value) => {
@@ -100,7 +169,8 @@ const CheckboxDropdown = ({
   openDropdown,
   setOpenDropdown,
   pillBtn,
-  sectionLabel = "",
+  topItems = [],
+  allItems = [],
 }) => {
   const [localSearch, setLocalSearch] = useState("");
 
@@ -116,11 +186,18 @@ const CheckboxDropdown = ({
     });
   };
 
-  const filtered = enableSearch
-    ? (items || []).filter((x) =>
-        String(x || "").toLowerCase().includes(localSearch.toLowerCase().trim())
-      )
-    : items || [];
+  const searchValue = localSearch.toLowerCase().trim();
+  const filterItems = (values) =>
+    enableSearch
+      ? (values || []).filter((item) =>
+          String(item || '').toLowerCase().includes(searchValue)
+        )
+      : values || [];
+
+  const hasGroupedItems = topItems.length > 0 || allItems.length > 0;
+  const filteredTopItems = filterItems(topItems);
+  const filteredAllItems = filterItems(allItems);
+  const filtered = filterItems(items);
 
   const count = selected.length;
   const isOpen = openDropdown === id;
@@ -169,14 +246,52 @@ const CheckboxDropdown = ({
             />
           )}
 
-          {sectionLabel && (
-            <div className={`${enableSearch ? "mt-4" : ""} mb-2 text-xs font-bold uppercase tracking-wide text-black/55`}>
-              {sectionLabel}
-            </div>
-          )}
+          <div className={`${enableSearch ? 'mt-4' : ''} max-h-[280px] overflow-auto pr-1`}>
+            {hasGroupedItems ? (
+              <>
+                {filteredTopItems.length > 0 && (
+                  <div>
+                    <div className="mb-2 text-xs font-bold uppercase tracking-wide text-black/55">
+                      Top Locations
+                    </div>
+                    {filteredTopItems.map((opt) => (
+                      <label key={`top-${opt}`} className="flex items-center gap-3 py-2 text-sm text-black cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selected.includes(opt)}
+                          onChange={() => toggleValue(opt)}
+                          className="h-4 w-4"
+                        />
+                        <span className="select-none whitespace-nowrap">{opt}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
 
-          <div className={`${enableSearch && !sectionLabel ? "mt-4" : ""} max-h-[280px] overflow-auto pr-1`}>
-            {filtered.length === 0 ? (
+                {filteredAllItems.length > 0 && (
+                  <div className={filteredTopItems.length > 0 ? 'mt-4 border-t border-gray-200 pt-4' : ''}>
+                    <div className="mb-2 text-xs font-bold uppercase tracking-wide text-black/55">
+                      All Locations
+                    </div>
+                    {filteredAllItems.map((opt) => (
+                      <label key={`all-${opt}`} className="flex items-center gap-3 py-2 text-sm text-black cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selected.includes(opt)}
+                          onChange={() => toggleValue(opt)}
+                          className="h-4 w-4"
+                        />
+                        <span className="select-none whitespace-nowrap">{opt}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {filteredTopItems.length === 0 && filteredAllItems.length === 0 && (
+                  <div className="text-sm text-black/55 py-4">No results</div>
+                )}
+              </>
+            ) : filtered.length === 0 ? (
               <div className="text-sm text-black/55 py-4">No results</div>
             ) : (
               filtered.map((opt) => (
@@ -733,7 +848,7 @@ const JobOffers = () => {
   const options = useMemo(() => {
     const uniq = (arr) => Array.from(new Set(arr.filter(Boolean)));
 
-    const locations = buildTopLocationOptions(allJobs);
+    const locationGroups = buildLocationGroups(allJobs);
 
     const jobTitles = uniq(
       allJobs
@@ -751,7 +866,7 @@ const JobOffers = () => {
       (a, b) => a.localeCompare(b)
     );
 
-    return { locations, jobTitles, employmentTypes, educationLevels, companies };
+    return { ...locationGroups, jobTitles, employmentTypes, educationLevels, companies };
   }, [allJobs]);
 
   const hasActiveFilters =
@@ -1059,7 +1174,9 @@ const JobOffers = () => {
                   id="location"
                   label="Location"
                   placeholder="Search location"
-                  items={options.locations}
+                  items={[]}
+                  topItems={options.topLocations}
+                  allItems={options.allLocations}
                   selected={selectedLocations}
                   setSelected={setSelectedLocations}
                   enableSearch
@@ -1067,7 +1184,6 @@ const JobOffers = () => {
                   openDropdown={openDropdown}
                   setOpenDropdown={setOpenDropdown}
                   pillBtn={pillBtn}
-                  sectionLabel="Top Locations"
                 />
 
                 <CheckboxDropdown
