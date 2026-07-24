@@ -1286,7 +1286,7 @@ const UserManagementDetails = () => {
               <div className="px-5 pb-5 sm:px-7">
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                   <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end">
-                   <div className="-mt-28 flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white bg-white text-[#2e66a6] shadow-md sm:-mt-32 sm:h-28 sm:w-28">
+                   <div className="-mt-32 flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white bg-white text-[#2e66a6] shadow-md sm:-mt-36 sm:h-28 sm:w-28">
                       {logoUrl && !brokenAvatar ? (
                         <img
                           src={logoUrl}
