@@ -710,6 +710,8 @@ const normalizePerksAndBenefits = (value) => {
 const toFormSnapshot = (data) => ({
   title: data.title ?? '',
   location: data.location ?? '',
+  locationProvince: data.locationProvince ?? '',
+  locationCity: data.locationCity ?? '',
   description: data.description ?? '',
   requirements: data.requirements ?? '',
   jobType: data.jobType ?? 'Full-time',
@@ -1154,10 +1156,10 @@ const EditJob = () => {
 
   const requiredOk = useMemo(() => {
     return (
-      formData.title.trim() &&
-      formData.location.trim() &&
-      formData.locationProvince.trim() &&
-      formData.locationCity.trim() &&
+      String(formData.title || '').trim() &&
+      String(formData.location || '').trim() &&
+      String(formData.locationProvince || '').trim() &&
+      String(formData.locationCity || '').trim() &&
       getRichTextPlainText(formData.description).length >= 80 &&
       getRichTextPlainText(formData.requirements).length >= 40 &&
       String(formData.educationLevel || '').trim() &&
@@ -1170,7 +1172,7 @@ const EditJob = () => {
 
   const stepReady = useMemo(() => ({
     1: Boolean(
-      formData.title.trim() &&
+      String(formData.title || '').trim() &&
       vacanciesValid &&
       isDeadlineValid &&
       salaryValid
@@ -1182,7 +1184,7 @@ const EditJob = () => {
       String(formData.educationLevel || '').trim()
     ),
     3: Boolean(skillsCountValid),
-    4: Boolean(formData.location.trim() && formData.locationProvince.trim() && formData.locationCity.trim()),
+    4: Boolean(String(formData.location || '').trim() && String(formData.locationProvince || '').trim() && String(formData.locationCity || '').trim()),
   }), [formData, vacanciesValid, isDeadlineValid, salaryValid, skillsCountValid]);
 
   const currentStep = JOB_FORM_STEPS[activeStep - 1];
@@ -1244,17 +1246,17 @@ const EditJob = () => {
   const fieldErrors = useMemo(() => {
     const errors = {};
 
-    if ((touched.title || submitted) && !formData.title.trim()) {
+    if ((touched.title || submitted) && !String(formData.title || '').trim()) {
       errors.title = 'Job title is required.';
     }
 
-    if ((touched.location || submitted) && !formData.location.trim()) {
+    if ((touched.location || submitted) && !String(formData.location || '').trim()) {
       errors.location = 'Complete work address is required.';
     }
-    if ((touched.locationProvince || submitted) && !formData.locationProvince.trim()) {
+    if ((touched.locationProvince || submitted) && !String(formData.locationProvince || '').trim()) {
       errors.locationProvince = 'Province is required.';
     }
-    if ((touched.locationCity || submitted) && !formData.locationCity.trim()) {
+    if ((touched.locationCity || submitted) && !String(formData.locationCity || '').trim()) {
       errors.locationCity = 'City / Municipality is required.';
     }
 
@@ -1342,10 +1344,10 @@ const EditJob = () => {
   ]);
 
   const validateStrict = () => {
-    if (!formData.title.trim()) return 'Job title is required';
-    if (!formData.location.trim()) return 'Complete work address is required';
-    if (!formData.locationProvince.trim()) return 'Province is required';
-    if (!formData.locationCity.trim()) return 'City / Municipality is required';
+    if (!String(formData.title || '').trim()) return 'Job title is required';
+    if (!String(formData.location || '').trim()) return 'Complete work address is required';
+    if (!String(formData.locationProvince || '').trim()) return 'Province is required';
+    if (!String(formData.locationCity || '').trim()) return 'City / Municipality is required';
     if (!String(formData.educationLevel || '').trim()) return 'Education level is required';
     const descriptionText = getRichTextPlainText(formData.description);
     const requirementsText = getRichTextPlainText(formData.requirements);
@@ -1424,12 +1426,12 @@ const EditJob = () => {
   const buildPayload = ({ mode }) => {
     const payload = new FormData();
 
-    payload.append('title', formData.title.trim());
-    payload.append('location', formData.location.trim());
+    payload.append('title', String(formData.title || '').trim());
+    payload.append('location', String(formData.location || '').trim());
     payload.append('locationProvince', String(formData.locationProvince || '').trim());
     payload.append('locationCity', String(formData.locationCity || '').trim());
-    payload.append('description', formData.description.trim());
-    payload.append('requirements', formData.requirements.trim());
+    payload.append('description', String(formData.description || '').trim());
+    payload.append('requirements', String(formData.requirements || '').trim());
     payload.append('jobType', formData.jobType);
     payload.append('salaryMin', formData.salaryMin === '' ? '' : String(Number(formData.salaryMin)));
     payload.append('salaryMax', formData.salaryMax === '' ? '' : String(Number(formData.salaryMax)));
@@ -1733,7 +1735,7 @@ const EditJob = () => {
     setSubmitted(true);
     clearMessages();
 
-    if (!formData.title.trim()) {
+    if (!String(formData.title || '').trim()) {
       setError('Please add a job title before saving as draft.');
       focusFirstError({ title: 'required' });
       return;
@@ -1772,7 +1774,7 @@ const EditJob = () => {
     setSubmitted(true);
     clearMessages();
 
-    if (!formData.title.trim()) {
+    if (!String(formData.title || '').trim()) {
       setShowCancelModal(false);
       setError('Please add a job title before saving as draft.');
       focusFirstError({ title: 'required' });
