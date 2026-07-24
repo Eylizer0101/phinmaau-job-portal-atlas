@@ -757,15 +757,64 @@ const JobOffers = () => {
   };
 
   const jobMatchesSearch = (job, term) => {
-    const t = String(term || "").trim().toLowerCase();
-    if (!t) return true;
+    const searchText = String(term || "").trim().toLowerCase();
+    if (!searchText) return true;
 
-    const title = String(job?.title || "").toLowerCase();
-    const company = String(job?.companyName || "").toLowerCase();
-    const locRaw = String(job?.location || "").toLowerCase();
-    const locFormatted = String(formatLocationDisplay(job?.location) || "").toLowerCase();
+    const compactSearchText = searchText.replace(/[^a-z0-9ñ]+/g, "");
+    const experienceBadge = getExperienceBadgeLabel(job?.experienceLevel);
+    const workModeBadge = normalizeWorkModeLabel(job?.workMode);
+    const locationLabels = getJobLocationLabels(job);
+    const freshGraduateAliases = isFreshGraduateJob(job)
+      ? "open fresh grads open to fresh graduates fresh graduate fresh grads"
+      : "";
+    const noExperienceAliases = isNoExperienceJob(job?.experienceLevel)
+      ? "no experience no experience required without experience"
+      : "";
 
-    return title.includes(t) || company.includes(t) || locRaw.includes(t) || locFormatted.includes(t);
+    const searchableValues = [
+      job?.title,
+      job?.companyName,
+      job?.location,
+      job?.locationCity,
+      job?.locationProvince,
+      ...locationLabels,
+      job?.jobType,
+      job?.workMode,
+      workModeBadge,
+      job?.experienceLevel,
+      experienceBadge,
+      job?.educationLevel,
+      job?.category,
+      job?.description,
+      job?.requirements,
+      ...(Array.isArray(job?.skillsRequired) ? job.skillsRequired : [job?.skillsRequired]),
+      ...(Array.isArray(job?.perksAndBenefits) ? job.perksAndBenefits : [job?.perksAndBenefits]),
+      job?.otherBenefits,
+      job?.willingToRelocate,
+      job?.salaryMin,
+      job?.salaryMax,
+      formatSalary(job?.salaryMin, job?.salaryMax, job?.hideSalary),
+      formatApplicationDeadline(job?.applicationDeadline),
+      freshGraduateAliases,
+      noExperienceAliases,
+      job?.hideSalary ? "salary undisclosed hidden salary" : "",
+      job?.isUrgent ? "urgent urgently needed" : "",
+    ]
+      .filter((value) => value !== undefined && value !== null && value !== "")
+      .map((value) => String(value).toLowerCase());
+
+    const combinedText = searchableValues.join(" ");
+    if (combinedText.includes(searchText)) return true;
+
+    if (compactSearchText) {
+      const compactCombinedText = combinedText.replace(/[^a-z0-9ñ]+/g, "");
+      if (compactCombinedText.includes(compactSearchText)) return true;
+    }
+
+    return searchText
+      .split(/\s+/)
+      .filter(Boolean)
+      .every((word) => combinedText.includes(word));
   };
 
   const normalizeWorkModeLabel = (value) => {

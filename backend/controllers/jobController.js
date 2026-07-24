@@ -250,6 +250,113 @@ const parseBool = (v) => {
   return s === 'true' || s === '1' || s === 'yes' || s === 'on';
 };
 
+const buildComprehensiveJobSearchCondition = (searchValue) => {
+  const rawSearch = String(searchValue || '').trim();
+  if (!rawSearch) return null;
+
+  const escapedSearch = escapeRegExp(rawSearch);
+  const normalizedSearch = normalizeKeyword(rawSearch);
+  const searchRegex = { $regex: escapedSearch, $options: 'i' };
+
+  const conditions = [
+    { title: searchRegex },
+    { description: searchRegex },
+    { requirements: searchRegex },
+    { companyName: searchRegex },
+    { skillsRequired: searchRegex },
+    { category: searchRegex },
+    { jobType: searchRegex },
+    { workMode: searchRegex },
+    { experienceLevel: searchRegex },
+    { educationLevel: searchRegex },
+    { location: searchRegex },
+    { locationCity: searchRegex },
+    { locationProvince: searchRegex },
+    { perksAndBenefits: searchRegex },
+    { otherBenefits: searchRegex },
+    { willingToRelocate: searchRegex },
+  ];
+
+  if (
+    normalizedSearch.includes('fresh grad') ||
+    normalizedSearch.includes('fresh graduate') ||
+    normalizedSearch.includes('open fresh')
+  ) {
+    conditions.push({ openToFreshGraduates: true });
+  }
+
+  if (
+    normalizedSearch.includes('no experience') ||
+    normalizedSearch.includes('without experience')
+  ) {
+    conditions.push({ experienceLevel: 'No experience required' });
+  }
+
+  if (normalizedSearch.includes('blended') || normalizedSearch.includes('hybrid')) {
+    conditions.push({ workMode: { $regex: 'blended|hybrid', $options: 'i' } });
+  }
+
+  if (
+    normalizedSearch.includes('work from home') ||
+    normalizedSearch === 'wfh'
+  ) {
+    conditions.push({ workMode: { $regex: 'work from home|wfh', $options: 'i' } });
+  }
+
+  if (normalizedSearch.includes('remote')) {
+    conditions.push({ workMode: { $regex: 'remote', $options: 'i' } });
+  }
+
+  if (
+    normalizedSearch.includes('on site') ||
+    normalizedSearch.includes('onsite') ||
+    normalizedSearch.includes('on-site')
+  ) {
+    conditions.push({ workMode: { $regex: 'on[- ]?site|onsite', $options: 'i' } });
+  }
+
+  if (normalizedSearch.includes('salary undisclosed') || normalizedSearch.includes('hidden salary')) {
+    conditions.push({ hideSalary: true });
+  }
+
+  if (normalizedSearch.includes('urgent')) {
+    conditions.push({ isUrgent: true });
+  }
+
+  const experienceMatch = normalizedSearch.match(/(?:less than\s*)?(\d+|6\+)\s*(?:year|years|yr|yrs)(?:\s*exp(?:erience)?)?/i);
+  if (experienceMatch) {
+    const experienceNumber = experienceMatch[1];
+    if (normalizedSearch.includes('less than')) {
+      conditions.push({ experienceLevel: { $regex: '^less than 1 (?:yr|year)$', $options: 'i' } });
+    } else if (experienceNumber === '6+') {
+      conditions.push({ experienceLevel: { $regex: '^6\\+ years?$', $options: 'i' } });
+    } else {
+      conditions.push({
+        experienceLevel: {
+          $regex: `^${escapeRegExp(experienceNumber)} years?$`,
+          $options: 'i'
+        }
+      });
+    }
+  }
+
+  const numericSearch = Number(rawSearch.replace(/[^\d.-]/g, ''));
+  if (Number.isFinite(numericSearch) && /\d/.test(rawSearch)) {
+    conditions.push(
+      { salaryMin: numericSearch },
+      { salaryMax: numericSearch },
+      {
+        $and: [
+          { salaryMin: { $lte: numericSearch } },
+          { salaryMax: { $gte: numericSearch } }
+        ]
+      }
+    );
+  }
+
+  return { $or: conditions };
+};
+
 const isCompanyProfileComplete = (employer) => {
   const profile = employer?.employerProfile || {};
 
@@ -519,15 +626,11 @@ exports.getAllJobs = async (req, res) => {
     };
 
     if (req.query.search) {
-      query.$and = query.$and || [];
-      query.$and.push({
-        $or: [
-          { title: { $regex: req.query.search, $options: 'i' } },
-          { description: { $regex: req.query.search, $options: 'i' } },
-          { companyName: { $regex: req.query.search, $options: 'i' } },
-          { skillsRequired: { $regex: req.query.search, $options: 'i' } }
-        ]
-      });
+      const searchCondition = buildComprehensiveJobSearchCondition(req.query.search);
+      if (searchCondition) {
+        query.$and = query.$and || [];
+        query.$and.push(searchCondition);
+      }
     }
 
     if (req.query.title) {
@@ -656,15 +759,11 @@ exports.getRecommendedJobs = async (req, res) => {
     };
 
     if (req.query.search) {
-      query.$and = query.$and || [];
-      query.$and.push({
-        $or: [
-          { title: { $regex: req.query.search, $options: 'i' } },
-          { description: { $regex: req.query.search, $options: 'i' } },
-          { companyName: { $regex: req.query.search, $options: 'i' } },
-          { skillsRequired: { $regex: req.query.search, $options: 'i' } }
-        ]
-      });
+      const searchCondition = buildComprehensiveJobSearchCondition(req.query.search);
+      if (searchCondition) {
+        query.$and = query.$and || [];
+        query.$and.push(searchCondition);
+      }
     }
 
     if (req.query.title) {
