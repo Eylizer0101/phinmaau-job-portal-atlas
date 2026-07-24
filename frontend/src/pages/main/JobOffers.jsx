@@ -941,7 +941,7 @@ const JobOffers = () => {
         const matchesFreshGraduate = freshGraduate ? isFreshGraduateJob(job) : false;
         const matchesNoExperience = noExperience ? isNoExperienceJob(job?.experienceLevel) : false;
 
-        if (freshGraduate && noExperience) return matchesFreshGraduate || matchesNoExperience;
+        if (freshGraduate && noExperience) return matchesFreshGraduate && matchesNoExperience;
         if (freshGraduate) return matchesFreshGraduate;
         return matchesNoExperience;
       });
@@ -1260,7 +1260,7 @@ const JobOffers = () => {
                 />
 
                 <FilterCheck
-                  label="With no Experience"
+                  label="No Experience Required"
                   checked={noExperience}
                   onChange={(e) => setNoExperience(e.target.checked)}
                 light

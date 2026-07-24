@@ -551,19 +551,12 @@ exports.getAllJobs = async (req, res) => {
     const wantFreshGraduate = parseBool(req.query.freshGraduate);
     const wantNoExperience = parseBool(req.query.noExperience);
 
-    if (wantFreshGraduate || wantNoExperience) {
-      const orConditions = [];
+    if (wantFreshGraduate) {
+      query.openToFreshGraduates = true;
+    }
 
-      if (wantFreshGraduate) {
-        orConditions.push({ openToFreshGraduates: true });
-      }
-
-      if (wantNoExperience) {
-        orConditions.push({ experienceLevel: 'No experience required' });
-      }
-
-      query.$and = query.$and || [];
-      query.$and.push({ $or: orConditions });
+    if (wantNoExperience) {
+      query.experienceLevel = 'No experience required';
     }
 
     const hasMin = req.query.minSalary !== undefined && req.query.minSalary !== '';
@@ -693,12 +686,12 @@ exports.getRecommendedJobs = async (req, res) => {
     const wantFreshGraduate = parseBool(req.query.freshGraduate);
     const wantNoExperience = parseBool(req.query.noExperience);
 
-    if (wantFreshGraduate || wantNoExperience) {
-      const orConditions = [];
-      if (wantFreshGraduate) orConditions.push({ openToFreshGraduates: true });
-      if (wantNoExperience) orConditions.push({ experienceLevel: 'No experience required' });
-      query.$and = query.$and || [];
-      query.$and.push({ $or: orConditions });
+    if (wantFreshGraduate) {
+      query.openToFreshGraduates = true;
+    }
+
+    if (wantNoExperience) {
+      query.experienceLevel = 'No experience required';
     }
 
     const hasMin = req.query.minSalary !== undefined && req.query.minSalary !== '';
