@@ -2062,19 +2062,26 @@ const selectBase =
                               <button
                                 type="button"
                                 onClick={() => openHiringStageModal(app)}
-                                className="flex min-h-[88px] w-full flex-col items-start justify-center px-3 py-5 text-left transition hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
+                                className={cn(
+                                  'group flex min-h-[88px] w-full cursor-pointer flex-col items-start justify-center rounded-xl border border-transparent px-3 py-5 text-left transition-all duration-200',
+                                  'hover:border-[#2e66a6] hover:bg-[#f4f8fd] hover:shadow-sm',
+                                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]',
+                                  'active:scale-[0.98]'
+                                )}
                                 aria-label={`${hiringStage ? 'Change' : 'Choose'} hiring stage for ${name}`}
                               >
                                 <span
                                   className={cn(
-                                    'block max-w-full truncate text-sm font-semibold',
-                                    hiringStage ? 'text-gray-900' : 'italic text-gray-500'
+                                    'block max-w-full truncate text-sm font-semibold transition-colors duration-200',
+                                    hiringStage
+                                      ? 'text-gray-900 group-hover:text-[#2e66a6]'
+                                      : 'italic text-gray-500 group-hover:text-[#2e66a6]'
                                   )}
                                   title={hiringStage || 'No stage set'}
                                 >
                                   {hiringStage || 'No stage set'}
                                 </span>
-                                <span className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-gray-900">
+                                <span className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-gray-900 transition-colors duration-200 group-hover:text-[#2e66a6]">
                                   {hiringStage ? 'Change stage' : 'Choose stage'}
                                   <Icon name="chevron-right" className="h-3.5 w-3.5" />
                                 </span>
@@ -2127,7 +2134,7 @@ const selectBase =
                           <button
                             type="button"
                             onClick={() => openHiringStageModal(app)}
-                            className="w-full rounded-lg px-2 py-2 text-left transition hover:bg-[#edf4fc] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
+                            className="group w-full cursor-pointer rounded-xl border border-transparent px-2 py-2 text-left transition-all duration-200 hover:border-[#2e66a6] hover:bg-[#edf4fc] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] active:scale-[0.98]"
                             aria-label={`${hiringStage ? 'Change' : 'Choose'} hiring stage for ${name}`}
                           >
                             <span className={cn('block font-semibold', hiringStage ? 'text-gray-900' : 'italic text-gray-500')}>
