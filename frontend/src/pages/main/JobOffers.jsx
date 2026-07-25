@@ -916,28 +916,6 @@ const JobOffers = () => {
     return { ...locationGroups, jobTitles, employmentTypes, educationLevels, companies };
   }, [allJobs]);
 
-  const visibleJobs = useMemo(
-    () => filteredJobs.slice(0, visibleJobCount),
-    [filteredJobs, visibleJobCount]
-  );
-
-  const hasMoreJobs = visibleJobCount < filteredJobs.length;
-
-  useEffect(() => {
-    setVisibleJobCount(16);
-    setLoadingMoreJobs(false);
-  }, [filteredJobs]);
-
-  const handleViewMoreJobs = () => {
-    if (loadingMoreJobs || !hasMoreJobs) return;
-
-    setLoadingMoreJobs(true);
-    window.setTimeout(() => {
-      setVisibleJobCount((current) => Math.min(current + 16, filteredJobs.length));
-      setLoadingMoreJobs(false);
-    }, 500);
-  };
-
   const hasActiveFilters =
     search.trim() ||
     selectedLocations.length ||
@@ -1095,6 +1073,28 @@ const JobOffers = () => {
     freshGraduate,
     noExperience,
   ]);
+
+  const visibleJobs = useMemo(
+    () => filteredJobs.slice(0, visibleJobCount),
+    [filteredJobs, visibleJobCount]
+  );
+
+  const hasMoreJobs = visibleJobCount < filteredJobs.length;
+
+  useEffect(() => {
+    setVisibleJobCount(16);
+    setLoadingMoreJobs(false);
+  }, [filteredJobs]);
+
+  const handleViewMoreJobs = () => {
+    if (loadingMoreJobs || !hasMoreJobs) return;
+
+    setLoadingMoreJobs(true);
+    window.setTimeout(() => {
+      setVisibleJobCount((current) => Math.min(current + 16, filteredJobs.length));
+      setLoadingMoreJobs(false);
+    }, 500);
+  };
 
   const clearFilters = () => {
     setSearch("");
