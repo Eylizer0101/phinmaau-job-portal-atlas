@@ -149,7 +149,7 @@ const mapSavedCompanyWithJobs = async (user) => {
   })
     .sort({ createdAt: -1 })
     .select(
-      'title description requirements jobType educationLevel category salaryMin salaryMax location workMode applicationDeadline vacancies skillsRequired experienceLevel openToFreshGraduates perksAndBenefits otherBenefits willingToRelocate locationImage employer companyName companyLogo isActive isPublished createdAt updatedAt'
+      'title description requirements jobType educationLevel category salaryMin salaryMax location workMode applicationDeadline vacancies skillsRequired experienceLevel openToFreshGraduates perksAndBenefits otherBenefits willingToRelocate locationImage employer companyName companyLogo isUrgent isActive isPublished createdAt updatedAt'
     )
     .lean();
 
