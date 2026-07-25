@@ -1499,7 +1499,7 @@ const JobSearch = () => {
                         style={{ border: `1px solid ${COLORS.border}` }}
                       >
                         {job.isUrgent ? (
-                          <div className="absolute -top-4 left-5 z-10 inline-flex h-8 items-center gap-2 rounded-full border border-white/80 bg-gradient-to-r from-[#ff3b30] via-[#ff6a2a] to-[#ffb21c] px-4 text-[11px] font-extrabold uppercase tracking-[0.12em] text-white shadow-[0_8px_18px_rgba(255,92,34,0.32)]">
+                          <div className="absolute -top-4 left-5 z-10 inline-flex h-8 items-center gap-2 rounded-full border border-white/80 bg-gradient-to-r from-[#ff3b30] via-[#ff6a2a] to-[#ffb21c] px-4 text-[11px] font-extrabold uppercase tracking-[0.12em] text-white shadow-[0_4px_10px_rgba(255,92,34,0.18)]">
                             <svg
                               className="h-4 w-4 flex-shrink-0"
                               viewBox="0 0 24 24"
