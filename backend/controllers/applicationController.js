@@ -32,6 +32,18 @@ const normalizeHiringStage = (value) => String(value || '').replace(/\s+/g, ' ')
 const sameHiringStage = (first, second) =>
   normalizeHiringStage(first).toLowerCase() === normalizeHiringStage(second).toLowerCase();
 
+const escapeRegExp = (value) => String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const buildExactHiringStageRegex = (value) => {
+  const normalized = normalizeHiringStage(value);
+  if (!normalized) return null;
+  const pattern = normalized
+    .split(' ')
+    .map((part) => escapeRegExp(part))
+    .join('\\s+');
+  return new RegExp(`^\\s*${pattern}\\s*$`, 'i');
+};
+
 const getEmployerCustomHiringStages = async (employerId) => {
   const stages = await Application.distinct('customHiringStages', { employer: employerId });
   return [...new Set((stages || []).map(normalizeHiringStage).filter(Boolean))]
@@ -2097,32 +2109,40 @@ exports.updateApplicationHiringStage = async (req, res) => {
         sameHiringStage(stage, requestedStage)
       );
 
-      const employerApplications = await Application.find({ employer: req.user._id })
-        .select('_id hiringStage customHiringStages hiddenDefaultHiringStages');
-
-      await Promise.all(
-        employerApplications.map(async (item) => {
-          if (matchingDefaultStage) {
-            const hiddenStages = Array.isArray(item.hiddenDefaultHiringStages)
-              ? item.hiddenDefaultHiringStages
-              : [];
-
-            if (!hiddenStages.some((stage) => sameHiringStage(stage, matchingDefaultStage))) {
-              item.hiddenDefaultHiringStages = [...hiddenStages, matchingDefaultStage];
-            }
-          } else {
-            item.customHiringStages = (item.customHiringStages || []).filter(
-              (stage) => !sameHiringStage(stage, requestedStage)
-            );
-          }
-
-          if (sameHiringStage(item.hiringStage, requestedStage)) {
-            item.hiringStage = '';
-          }
-
-          await item.save();
-        })
+      const existingCustomStages = await getEmployerCustomHiringStages(req.user._id);
+      const matchingCustomStage = existingCustomStages.find((stage) =>
+        sameHiringStage(stage, requestedStage)
       );
+
+      const stageToDelete = matchingDefaultStage || matchingCustomStage;
+
+      if (!stageToDelete) {
+        return res.status(404).json({
+          success: false,
+          message: 'Hiring stage was not found or was already deleted'
+        });
+      }
+
+      const stageRegex = buildExactHiringStageRegex(stageToDelete);
+
+      if (matchingDefaultStage) {
+        await Application.updateMany(
+          { employer: req.user._id },
+          { $addToSet: { hiddenDefaultHiringStages: matchingDefaultStage } }
+        );
+      } else {
+        await Application.updateMany(
+          { employer: req.user._id },
+          { $pull: { customHiringStages: matchingCustomStage } }
+        );
+      }
+
+      if (stageRegex) {
+        await Application.updateMany(
+          { employer: req.user._id, hiringStage: stageRegex },
+          { $set: { hiringStage: '' } }
+        );
+      }
 
       const [refreshedApplication, defaultHiringStages, customHiringStages] = await Promise.all([
         Application.findById(applicationId)

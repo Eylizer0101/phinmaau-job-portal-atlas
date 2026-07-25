@@ -6,6 +6,12 @@ import api from '../../../services/api';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
+const normalizeHiringStageName = (value) =>
+  String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+
+const isSameHiringStage = (first, second) =>
+  normalizeHiringStageName(first) === normalizeHiringStageName(second);
+
 
 const EMPLOYER_DATE_FILTER_OPTIONS = [
   { value: 'all', label: 'All Time' },
@@ -1368,10 +1374,12 @@ const ForInterview = () => {
 
       if (res.data?.success) {
         setApplications(res.data.applications || []);
-        if (Array.isArray(res.data.defaultHiringStages) && res.data.defaultHiringStages.length) {
+        if (Array.isArray(res.data.defaultHiringStages)) {
           setDefaultHiringStages(res.data.defaultHiringStages);
         }
-        setCustomHiringStages(Array.isArray(res.data.customHiringStages) ? res.data.customHiringStages : []);
+        setCustomHiringStages(
+          Array.isArray(res.data.customHiringStages) ? res.data.customHiringStages : []
+        );
       } else {
         setApplications([]);
       }
@@ -1621,7 +1629,7 @@ const ForInterview = () => {
   }, []);
 
   const applyHiringStageResponse = useCallback((responseData) => {
-    if (Array.isArray(responseData?.defaultHiringStages) && responseData.defaultHiringStages.length) {
+    if (Array.isArray(responseData?.defaultHiringStages)) {
       setDefaultHiringStages(responseData.defaultHiringStages);
     }
     if (Array.isArray(responseData?.customHiringStages)) {
@@ -1722,15 +1730,48 @@ const ForInterview = () => {
     try {
       setStageBusy(true);
       setError('');
+      setSuccess('');
+
       const response = await api.put(`/applications/${stageTarget._id}/hiring-stage`, {
         action: 'delete',
         hiringStage: stage,
       });
-      applyHiringStageResponse(response.data);
-      await fetchForInterviewApplications();
-      setSuccess('Hiring stage deleted.');
+      const responseData = response.data || {};
+
+      if (responseData.success === false) {
+        throw new Error(responseData.message || 'Failed to delete hiring stage.');
+      }
+
+      applyHiringStageResponse(responseData);
+
+      setDefaultHiringStages((previous) =>
+        previous.filter((item) => !isSameHiringStage(item, stage))
+      );
+      setCustomHiringStages((previous) =>
+        previous.filter((item) => !isSameHiringStage(item, stage))
+      );
+
+      setApplications((previous) =>
+        previous.map((application) =>
+          isSameHiringStage(application?.hiringStage, stage)
+            ? { ...application, hiringStage: '' }
+            : application
+        )
+      );
+
+      setStageTarget((previous) =>
+        previous && isSameHiringStage(previous.hiringStage, stage)
+          ? { ...previous, hiringStage: '' }
+          : previous
+      );
+
+      setSuccess(responseData.message || 'Hiring stage deleted.');
     } catch (stageError) {
-      setError(stageError?.response?.data?.message || 'Failed to delete hiring stage.');
+      setError(
+        stageError?.response?.data?.message ||
+          stageError?.message ||
+          'Failed to delete hiring stage.'
+      );
     } finally {
       setStageBusy(false);
     }
