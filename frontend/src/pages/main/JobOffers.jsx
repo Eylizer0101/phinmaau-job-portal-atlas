@@ -1473,7 +1473,7 @@ const JobOffers = () => {
                     >
                       {job.isUrgent ? (
                         <img
-                          src="/images/urgent.png"
+                          src="/images/urgents.png"
                           alt="Urgent Hiring"
                           draggable="false"
                           className="pointer-events-none absolute -top-[61px] -left-[13px] z-10 w-[205px] max-w-none select-none"
