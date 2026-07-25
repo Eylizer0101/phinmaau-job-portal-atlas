@@ -193,8 +193,9 @@ const CheckboxDropdown = ({
       : values || [];
 
   const hasGroupedItems = topItems.length > 0 || allItems.length > 0;
-  const filteredTopItems = filterItems(topItems);
-  const filteredAllItems = filterItems(allItems);
+  const searchableGroupedItems = Array.from(new Set([...topItems, ...allItems]));
+  const isSearchingGroupedItems = hasGroupedItems && Boolean(searchValue);
+  const filteredSearchResults = filterItems(searchableGroupedItems);
   const filtered = filterItems(items);
 
   const count = selected.length;
@@ -246,14 +247,14 @@ const CheckboxDropdown = ({
 
           <div className={`${enableSearch ? 'mt-4' : ''} max-h-[280px] overflow-auto pr-1`}>
             {hasGroupedItems ? (
-              <>
-                {filteredTopItems.length > 0 && (
+              isSearchingGroupedItems ? (
+                filteredSearchResults.length > 0 ? (
                   <div>
                     <div className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500">
-                      Top Locations
+                      Search Results
                     </div>
-                    {filteredTopItems.map((opt) => (
-                      <label key={`top-${opt}`} className="flex items-center gap-3 py-2 text-sm text-gray-800 cursor-pointer">
+                    {filteredSearchResults.map((opt) => (
+                      <label key={`search-${opt}`} className="flex items-center gap-3 py-2 text-sm text-gray-800 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={selected.includes(opt)}
@@ -264,31 +265,29 @@ const CheckboxDropdown = ({
                       </label>
                     ))}
                   </div>
-                )}
-
-                {filteredAllItems.length > 0 && (
-                  <div className={filteredTopItems.length > 0 ? 'mt-4 border-t border-gray-200 pt-4' : ''}>
-                    <div className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500">
-                      All Locations
-                    </div>
-                    {filteredAllItems.map((opt) => (
-                      <label key={`all-${opt}`} className="flex items-center gap-3 py-2 text-sm text-gray-800 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selected.includes(opt)}
-                          onChange={() => toggleValue(opt)}
-                          className="h-4 w-4"
-                        />
-                        <span className="select-none whitespace-nowrap">{opt}</span>
-                      </label>
-                    ))}
+                ) : (
+                  <div className="text-sm text-gray-500 py-4">No location found</div>
+                )
+              ) : topItems.length > 0 ? (
+                <div>
+                  <div className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500">
+                    Top Locations
                   </div>
-                )}
-
-                {filteredTopItems.length === 0 && filteredAllItems.length === 0 && (
-                  <div className="text-sm text-gray-500 py-4">No results</div>
-                )}
-              </>
+                  {topItems.map((opt) => (
+                    <label key={`top-${opt}`} className="flex items-center gap-3 py-2 text-sm text-gray-800 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selected.includes(opt)}
+                        onChange={() => toggleValue(opt)}
+                        className="h-4 w-4"
+                      />
+                      <span className="select-none whitespace-nowrap">{opt}</span>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-gray-500 py-4">No top locations available</div>
+              )
             ) : filtered.length === 0 ? (
               <div className="text-sm text-gray-500 py-4">No results</div>
             ) : (
