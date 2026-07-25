@@ -108,6 +108,179 @@ const JOB_SEEKER_LEVEL_BADGES = {
   Legend: "/images/Legend.png",
 };
 
+const JobSeekerLevelBadgeCard = ({
+  currentRank = "First Time Job Seeker",
+}) => {
+  const [showLevelModal, setShowLevelModal] = useState(false);
+  const badgeImage =
+    JOB_SEEKER_LEVEL_BADGES[currentRank] ||
+    JOB_SEEKER_LEVEL_BADGES["First Time Job Seeker"];
+  const jobSeekerLevels = Object.entries(JOB_SEEKER_LEVEL_BADGES);
+
+  useEffect(() => {
+    if (!showLevelModal) return undefined;
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") setShowLevelModal(false);
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [showLevelModal]);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setShowLevelModal(true)}
+        className="group flex w-full items-center gap-4 rounded-2xl border border-[#d8e2ee] bg-[#f7faff] px-4 py-4 text-left transition hover:border-[#2e66a6]/40 hover:bg-[#f2f7fd] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 sm:px-5 lg:w-auto lg:min-w-[250px]"
+        aria-label="View all job seeker levels"
+        aria-haspopup="dialog"
+      >
+        <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-xl bg-white sm:h-[72px] sm:w-[72px]">
+          <img
+            src={badgeImage}
+            alt={`${currentRank} badge`}
+            className="h-[60px] w-[60px] object-contain transition duration-200 group-hover:scale-105 group-hover:drop-shadow-[0_5px_8px_rgba(46,102,166,0.22)] sm:h-16 sm:w-16"
+          />
+        </div>
+
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500 sm:text-[11px]">
+            Jobseeker Level
+          </p>
+          <p className="mt-1 truncate text-lg font-bold text-[#2f3b8f] sm:text-xl">
+            {currentRank}
+          </p>
+        </div>
+      </button>
+
+      {showLevelModal ? (
+        <div
+          className="fixed inset-0 z-[10060] flex items-center justify-center bg-black/50 px-4 py-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="admin-job-seeker-levels-title"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setShowLevelModal(false);
+            }
+          }}
+        >
+          <div className="w-full max-w-[980px] overflow-hidden rounded-[22px] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
+            <div className="flex items-center justify-between gap-4 bg-[#2e66a6] px-5 py-4 sm:px-7">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/75">
+                  Job Seeker Ranking
+                </p>
+                <h2
+                  id="admin-job-seeker-levels-title"
+                  className="mt-1 text-[21px] font-bold text-white sm:text-[24px]"
+                >
+                  Job Seeker Levels
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowLevelModal(false)}
+                className="flex h-10 w-10 items-center justify-center rounded-full text-[28px] leading-none text-white transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                aria-label="Close job seeker levels"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="max-h-[78vh] overflow-y-auto px-5 py-6 sm:px-7 sm:py-7">
+              <p className="text-sm leading-6 text-gray-600">
+                View the jobseeker&apos;s current rank and the complete job seeker level progression.
+              </p>
+
+              <div className="mt-4 overflow-x-auto rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-3">
+                <div className="flex min-w-max items-center gap-2 text-sm font-semibold text-[#2e66a6]">
+                  {jobSeekerLevels.map(([levelName], index) => (
+                    <React.Fragment key={levelName}>
+                      <span
+                        className={
+                          levelName === currentRank
+                            ? "font-extrabold text-black"
+                            : ""
+                        }
+                      >
+                        {levelName}
+                      </span>
+                      {index < jobSeekerLevels.length - 1 ? (
+                        <span className="text-gray-400" aria-hidden="true">
+                          →
+                        </span>
+                      ) : null}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+                {jobSeekerLevels.map(([levelName, levelBadge], index) => {
+                  const isCurrentLevel = levelName === currentRank;
+
+                  return (
+                    <div
+                      key={levelName}
+                      className={cn(
+                        "relative flex min-h-[210px] flex-col items-center rounded-[18px] border px-3 py-5 text-center transition",
+                        isCurrentLevel
+                          ? "border-[#2e66a6] bg-[#f3f8ff] shadow-[0_10px_30px_rgba(46,102,166,0.16)]"
+                          : "border-gray-200 bg-white"
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "absolute left-3 top-3 flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-[11px] font-bold",
+                          isCurrentLevel
+                            ? "bg-[#2e66a6] text-white"
+                            : "bg-gray-100 text-gray-500"
+                        )}
+                      >
+                        {index + 1}
+                      </span>
+
+                      <img
+                        src={levelBadge}
+                        alt={`${levelName} badge`}
+                        className="h-[112px] w-[112px] object-contain"
+                      />
+
+                      <h3 className="mt-3 text-[15px] font-bold leading-5 text-gray-900">
+                        {levelName}
+                      </h3>
+
+                      {isCurrentLevel ? (
+                        <span className="mt-2 inline-flex rounded-full bg-[#2e66a6] px-3 py-1 text-[11px] font-bold text-white">
+                          Current Level
+                        </span>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowLevelModal(false)}
+                  className="h-11 rounded-lg bg-[#2e66a6] px-6 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+};
+
 const TABS = [
   { key: "resume", label: "Resume", icon: "document" },
   { key: "activity", label: "Activity", icon: "clock" },
@@ -394,7 +567,6 @@ const UserManagementDetails = () => {
   }, [user]);
 
   const isJobseeker = String(user?.role || "").toLowerCase() === "jobseeker";
-  const isVerified = String(docs.overallStatus || profile.verificationStatus || "").toLowerCase() === "verified" || user?.isVerified;
   const skills = [...splitList(profile.technicalSkills), ...splitList(profile.softSkills)];
   const educationEntries = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
   const workExperiences = Array.isArray(profile.workExperiences) ? profile.workExperiences : [];
@@ -785,10 +957,6 @@ const UserManagementDetails = () => {
       .map((namePart) => namePart.charAt(0))
       .join("")
       .toUpperCase();
-    const levelBadge =
-      JOB_SEEKER_LEVEL_BADGES[jobSeekerLevel] ||
-      JOB_SEEKER_LEVEL_BADGES["First Time Job Seeker"];
-
     return (
       <section className="overflow-hidden rounded-[20px] border border-[#d8e2ee] bg-white shadow-sm">
         <div className="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between lg:gap-7">
@@ -813,16 +981,6 @@ const UserManagementDetails = () => {
                 <h1 className="min-w-0 text-[26px] font-bold leading-tight text-black sm:text-[30px] lg:text-[32px]">
                   {fullName}
                 </h1>
-
-                {isVerified ? (
-                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700 sm:text-[11px]">
-                    Verified
-                  </span>
-                ) : null}
-
-                <span className="rounded-full border border-[#2e66a6]/20 bg-[#eef5fc] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[#2e66a6] sm:text-[11px]">
-                  Jobseeker
-                </span>
 
                 {profile.yearGraduated ? (
                   <span className="rounded-full border border-[#b9cce1] bg-[#eef5fc] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[#2e66a6] sm:text-[11px]">
@@ -881,24 +1039,7 @@ const UserManagementDetails = () => {
             </div>
           </div>
 
-          <div className="flex w-full items-center gap-4 rounded-2xl border border-[#d8e2ee] bg-[#f7faff] px-4 py-4 sm:px-5 lg:w-auto lg:min-w-[250px]">
-            <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-xl bg-white sm:h-[72px] sm:w-[72px]">
-              <img
-                src={levelBadge}
-                alt={`${jobSeekerLevel} badge`}
-                className="h-[60px] w-[60px] object-contain sm:h-16 sm:w-16"
-              />
-            </div>
-
-            <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500 sm:text-[11px]">
-                Jobseeker Level
-              </p>
-              <p className="mt-1 truncate text-lg font-bold text-[#2f3b8f] sm:text-xl">
-                {jobSeekerLevel}
-              </p>
-            </div>
-          </div>
+          <JobSeekerLevelBadgeCard currentRank={jobSeekerLevel} />
         </div>
 
         <div className="border-t border-[#d8e2ee] px-5 sm:px-7">
