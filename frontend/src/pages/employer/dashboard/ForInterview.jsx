@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import api from '../../../services/api';
@@ -1063,17 +1064,67 @@ const ActionMenu = ({
 }) => {
   const isOpen = openMenuId === app._id;
   const wrapperRef = useRef(null);
+  const triggerRef = useRef(null);
+  const menuRef = useRef(null);
+  const [menuPosition, setMenuPosition] = useState(null);
+
+  const updateMenuPosition = useCallback(() => {
+    const trigger = triggerRef.current;
+    if (!trigger || typeof window === 'undefined') return;
+
+    const triggerRect = trigger.getBoundingClientRect();
+    const menuWidth = menuRef.current?.offsetWidth || 224;
+    const menuHeight = menuRef.current?.offsetHeight || 260;
+    const viewportPadding = 12;
+    const gap = 8;
+
+    let left = triggerRect.right - menuWidth;
+    left = Math.max(
+      viewportPadding,
+      Math.min(left, window.innerWidth - menuWidth - viewportPadding)
+    );
+
+    let top = triggerRect.bottom + gap;
+    if (top + menuHeight > window.innerHeight - viewportPadding) {
+      top = triggerRect.top - menuHeight - gap;
+    }
+    top = Math.max(
+      viewportPadding,
+      Math.min(top, window.innerHeight - menuHeight - viewportPadding)
+    );
+
+    setMenuPosition({ top, left });
+  }, []);
 
   useEffect(() => {
+    if (!isOpen) {
+      setMenuPosition(null);
+      return undefined;
+    }
+
     const handleClickOutside = (event) => {
-      if (!wrapperRef.current?.contains(event.target)) {
+      const clickedTriggerArea = wrapperRef.current?.contains(event.target);
+      const clickedMenu = menuRef.current?.contains(event.target);
+
+      if (!clickedTriggerArea && !clickedMenu) {
         setOpenMenuId((previous) => (previous === app._id ? null : previous));
       }
     };
 
-    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen, setOpenMenuId, app._id]);
+    updateMenuPosition();
+    const animationFrame = window.requestAnimationFrame(updateMenuPosition);
+
+    document.addEventListener('mousedown', handleClickOutside, true);
+    window.addEventListener('resize', updateMenuPosition);
+    window.addEventListener('scroll', updateMenuPosition, true);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      document.removeEventListener('mousedown', handleClickOutside, true);
+      window.removeEventListener('resize', updateMenuPosition);
+      window.removeEventListener('scroll', updateMenuPosition, true);
+    };
+  }, [isOpen, setOpenMenuId, app._id, updateMenuPosition]);
 
   const runAction = (event, action) => {
     event.preventDefault();
@@ -1082,100 +1133,123 @@ const ActionMenu = ({
     if (typeof action === 'function') action();
   };
 
+  const actionDropdown =
+    isOpen && typeof document !== 'undefined'
+      ? createPortal(
+          <div
+            ref={menuRef}
+            className="fixed z-[9999] w-56 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-xl pointer-events-auto"
+            style={{
+              top: `${menuPosition?.top ?? 0}px`,
+              left: `${menuPosition?.left ?? 0}px`,
+              visibility: menuPosition ? 'visible' : 'hidden',
+            }}
+            role="menu"
+            aria-label={`Actions for ${name}`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={(event) => runAction(event, onHire)}
+              disabled={rowBusy || app.alreadyEmployed}
+              title={app.alreadyEmployed ? 'This applicant is already employed through another job application.' : ''}
+              className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+              role="menuitem"
+            >
+              <Icon name="check" className="h-4 w-4" />
+              Hired
+            </button>
+
+            <button
+              type="button"
+              onClick={(event) => runAction(event, onDecline)}
+              disabled={rowBusy}
+              className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+              role="menuitem"
+            >
+              <Icon name="x" className="h-4 w-4" />
+              Decline
+            </button>
+
+            <button
+              type="button"
+              onClick={(event) => runAction(event, onChangeStage)}
+              disabled={rowBusy}
+              className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              role="menuitem"
+            >
+              <Icon name="refresh" className="h-4 w-4" />
+              Change hiring stage
+            </button>
+
+            <button
+              type="button"
+              onClick={(event) => runAction(event, onMessage)}
+              disabled={rowBusy}
+              className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              role="menuitem"
+            >
+              <Icon name="message" className="h-4 w-4" />
+              Send message
+            </button>
+
+            <button
+              type="button"
+              onClick={(event) => runAction(event, onReset)}
+              disabled={rowBusy}
+              className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              role="menuitem"
+            >
+              <Icon name="refresh" className="h-4 w-4" />
+              Reset status
+            </button>
+          </div>,
+          document.body
+        )
+      : null;
+
   return (
-    <div
-      ref={wrapperRef}
-      className="relative flex items-center justify-end gap-2 whitespace-nowrap"
-      onClick={(event) => event.stopPropagation()}
-    >
-      <Link
-        to={`/employer/application/${app._id}?from=for-interview`}
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-        aria-label={`View application of ${name}`}
+    <>
+      <div
+        ref={wrapperRef}
+        className="relative flex items-center justify-end gap-2 whitespace-nowrap"
+        onClick={(event) => event.stopPropagation()}
       >
-        <Icon name="eye" className="h-4 w-4" />
-        View
-      </Link>
-
-      <button
-        type="button"
-        onClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          setOpenMenuId((previous) => (previous === app._id ? null : app._id));
-        }}
-        className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-        aria-label={`More actions for ${name}`}
-        aria-expanded={isOpen}
-        aria-haspopup="menu"
-      >
-        <Icon name="dots-vertical" className="h-5 w-5" />
-      </button>
-
-      {isOpen ? (
-        <div
-          className="absolute right-0 top-12 z-[80] w-56 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-xl"
-          role="menu"
-          aria-label={`Actions for ${name}`}
+        <Link
+          to={`/employer/application/${app._id}?from=for-interview`}
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+          aria-label={`View application of ${name}`}
         >
-          <button
-            type="button"
-            onClick={(event) => runAction(event, onHire)}
-            disabled={rowBusy || app.alreadyEmployed}
-            title={app.alreadyEmployed ? 'This applicant is already employed through another job application.' : ''}
-            className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
-            role="menuitem"
-          >
-            <Icon name="check" className="h-4 w-4" />
-            Hired
-          </button>
+          <Icon name="eye" className="h-4 w-4" />
+          View
+        </Link>
 
-          <button
-            type="button"
-            onClick={(event) => runAction(event, onDecline)}
-            disabled={rowBusy}
-            className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-            role="menuitem"
-          >
-            <Icon name="x" className="h-4 w-4" />
-            Decline
-          </button>
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
 
-          <button
-            type="button"
-            onClick={(event) => runAction(event, onChangeStage)}
-            disabled={rowBusy}
-            className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-            role="menuitem"
-          >
-            <Icon name="refresh" className="h-4 w-4" />
-            Change hiring stage
-          </button>
+            if (isOpen) {
+              setOpenMenuId(null);
+              return;
+            }
 
-          <button
-            type="button"
-            onClick={(event) => runAction(event, onMessage)}
-            disabled={rowBusy}
-            className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-            role="menuitem"
-          >
-            <Icon name="message" className="h-4 w-4" />
-            Send message
-          </button>
+            setMenuPosition(null);
+            setOpenMenuId(app._id);
+          }}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+          aria-label={`More actions for ${name}`}
+          aria-expanded={isOpen}
+          aria-haspopup="menu"
+        >
+          <Icon name="dots-vertical" className="h-5 w-5" />
+        </button>
+      </div>
 
-          <button
-            type="button"
-            onClick={(event) => runAction(event, onReset)}
-            disabled={rowBusy}
-            className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-            role="menuitem"
-          >
-            <Icon name="refresh" className="h-4 w-4" />
-            Reset status
-          </button>
-        </div>
-      ) : null}
-    </div>
+      {actionDropdown}
+    </>
   );
 };
 
