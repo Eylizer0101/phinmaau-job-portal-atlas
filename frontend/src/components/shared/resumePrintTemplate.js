@@ -27,12 +27,44 @@ const sanitizeResumeRichText = (value = '') => {
   if (!raw) return '';
   if (!/<\/?[a-z][\s\S]*>/i.test(raw)) return escapeHtml(raw).replace(/\n/g, '<br>');
   if (typeof window === 'undefined' || typeof window.DOMParser === 'undefined') return escapeHtml(raw);
+
   const allowedTags = new Set(['B','STRONG','I','EM','U','P','DIV','BR','UL','OL','LI','H1','H2','BLOCKQUOTE']);
+  const textAlignmentTags = new Set(['P', 'DIV', 'UL', 'OL', 'LI', 'H1', 'H2', 'BLOCKQUOTE']);
+  const allowedTextAlignments = new Set(['left', 'center', 'right', 'justify']);
   const parser = new window.DOMParser();
   const doc = parser.parseFromString(`<div>${raw}</div>`, 'text/html');
   const wrapper = doc.body.firstElementChild;
   if (!wrapper) return '';
-  const cleanNode = (node) => { Array.from(node.childNodes).forEach((child) => { if (child.nodeType !== window.Node.ELEMENT_NODE) return; if (!allowedTags.has(child.tagName)) { child.replaceWith(...Array.from(child.childNodes)); return; } Array.from(child.attributes).forEach((attribute) => child.removeAttribute(attribute.name)); cleanNode(child); }); };
+
+  const cleanNode = (node) => {
+    Array.from(node.childNodes).forEach((child) => {
+      if (child.nodeType !== window.Node.ELEMENT_NODE) return;
+
+      if (!allowedTags.has(child.tagName)) {
+        child.replaceWith(...Array.from(child.childNodes));
+        return;
+      }
+
+      const inlineAlignment = String(child.style?.textAlign || '').toLowerCase();
+      const alignAttribute = String(child.getAttribute('align') || '').toLowerCase();
+      const textAlignment = allowedTextAlignments.has(inlineAlignment)
+        ? inlineAlignment
+        : allowedTextAlignments.has(alignAttribute)
+          ? alignAttribute
+          : '';
+
+      Array.from(child.attributes).forEach((attribute) => {
+        child.removeAttribute(attribute.name);
+      });
+
+      if (textAlignment && textAlignmentTags.has(child.tagName)) {
+        child.style.textAlign = textAlignment;
+      }
+
+      cleanNode(child);
+    });
+  };
+
   cleanNode(wrapper);
   return wrapper.innerHTML;
 };
