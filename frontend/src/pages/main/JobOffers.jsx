@@ -1645,7 +1645,7 @@ const JobOffers = () => {
 
                         {tagFreshGrad && (
                           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap flex-shrink-0 bg-blue-50 text-[#2e66a6] border border-blue-200">
-                            Open Fresh Grads
+                            Open fresh grad
                           </span>
                         )}
                       </div>
