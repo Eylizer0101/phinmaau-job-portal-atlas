@@ -1244,7 +1244,7 @@ const ApplicationDetails = () => {
               </div>
 
               <article className="mx-auto w-full bg-white font-serif text-[10px] leading-[1.22] text-black">
-                <header className="relative flex min-h-[110px] flex-col items-center justify-center pb-4 pr-[120px] text-center">
+                <header className="relative flex min-h-[110px] flex-col items-center justify-center pb-4 text-center sm:pl-[70px] sm:pr-[210px]">
                   <h2 className="text-[28px] font-bold uppercase leading-tight tracking-[0.02em]">
                     {name}
                   </h2>
@@ -1266,7 +1266,7 @@ const ApplicationDetails = () => {
                       src={image}
                       alt={name}
                       onError={() => setAvatarBroken(true)}
-                      className="absolute right-2 top-0 h-[78px] w-[78px] object-cover"
+                      className="mt-3 h-[78px] w-[78px] object-cover sm:absolute sm:right-[110px] sm:top-0 sm:mt-0"
                     />
                   ) : null}
                 </header>

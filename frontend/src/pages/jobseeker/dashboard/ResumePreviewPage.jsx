@@ -370,6 +370,12 @@ const ResumePreviewPage = () => {
             background: #ffffff !important;
           }
 
+          .preview-document {
+            width: 210mm !important;
+            margin: 0 !important;
+            zoom: 1 !important;
+          }
+
           .resume-paper {
             width: 210mm !important;
             min-height: 297mm !important;
@@ -384,13 +390,20 @@ const ResumePreviewPage = () => {
 
         .page-shell {
           min-height: 100vh;
+          overflow-x: auto;
           background: #e5e7eb;
           padding: 0 16px 24px;
         }
 
-        .preview-topbar {
+        .preview-document {
           width: 210mm;
           margin: 0 auto;
+          zoom: 1.5;
+        }
+
+        .preview-topbar {
+          width: 100%;
+          margin: 0;
           height: 50px;
           display: flex;
           align-items: center;
@@ -421,9 +434,9 @@ const ResumePreviewPage = () => {
         }
 
         .resume-paper {
-          width: 210mm;
+          width: 100%;
           min-height: 297mm;
-          margin: 0 auto;
+          margin: 0;
           background: #ffffff;
           color: #111111;
           font-family: Georgia, 'Times New Roman', serif;
@@ -477,7 +490,7 @@ const ResumePreviewPage = () => {
         .resume-photo {
           position: absolute;
           top: 0;
-          right: 22px;
+          right: 120px;
           width: 61px;
           height: 61px;
           display: flex;
@@ -642,7 +655,18 @@ const ResumePreviewPage = () => {
           color: #777777;
         }
 
+        @media screen and (max-width: 1240px) {
+          .preview-document {
+            zoom: 1.2;
+          }
+        }
+
         @media screen and (max-width: 900px) {
+          .preview-document {
+            width: 100%;
+            zoom: 1;
+          }
+
           .preview-topbar,
           .resume-paper {
             width: 100%;
@@ -676,7 +700,8 @@ const ResumePreviewPage = () => {
       `}</style>
 
       <div className="page-shell">
-        <div className="preview-topbar print-hide">
+        <div className="preview-document">
+          <div className="preview-topbar print-hide">
           <button
             type="button"
             onClick={() => navigate(returnTo)}
@@ -778,7 +803,8 @@ const ResumePreviewPage = () => {
             <ProfileListSection title="Co-curricular Activities" items={cocurricular} />
             <ProfileListSection title="References" items={references} type="references" />
           </div>
-        </main>
+          </main>
+        </div>
       </div>
     </>
   );
