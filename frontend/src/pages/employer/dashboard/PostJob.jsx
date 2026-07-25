@@ -660,7 +660,30 @@ const addDaysLocalISO = (days) => {
 };
 
 const normalizeExperienceLevel = (level) => {
-  return String(level || '').trim();
+  const clean = String(level || '').trim();
+  const normalized = clean.toLowerCase();
+
+  if (normalized === 'no experience required') return 'No experience required';
+  if (normalized === 'less than 1 yr' || normalized === 'less than 1 year') return 'Less than 1 Yr';
+  if (
+    normalized === '1 year' ||
+    normalized === '1 years' ||
+    normalized === '2 year' ||
+    normalized === '2 years' ||
+    normalized === '3 year' ||
+    normalized === '3 years' ||
+    normalized === '1-3 years'
+  ) return '1-3 Years';
+  if (
+    normalized === '4 year' ||
+    normalized === '4 years' ||
+    normalized === '5 year' ||
+    normalized === '5 years' ||
+    normalized === '4-5 years'
+  ) return '4-5 years';
+  if (normalized === '6+ year' || normalized === '6+ years') return '6+ Years';
+
+  return clean;
 };
 
 const normalizeCategory = (industry) => {

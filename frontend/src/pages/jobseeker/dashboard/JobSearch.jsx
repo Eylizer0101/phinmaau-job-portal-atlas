@@ -148,12 +148,9 @@ const getExperienceBadgeLabel = (experienceLevel) => {
 
   if (normalized === 'no experience required') return 'No Experience';
   if (normalized === 'less than 1 yr' || normalized === 'less than 1 year') return 'Less than 1 Yr';
-  if (normalized === '1 year') return '1 Year Exp';
-  if (normalized === '2 year' || normalized === '2 years') return '2 Years Exp';
-  if (normalized === '3 year' || normalized === '3 years') return '3 Years Exp';
-  if (normalized === '4 year' || normalized === '4 years') return '4 Years Exp';
-  if (normalized === '5 year' || normalized === '5 years') return '5 Years Exp';
-  if (normalized === '6+ year' || normalized === '6+ years') return '6+ Yrs Exp';
+  if (['1 year', '1 years', '2 year', '2 years', '3 year', '3 years', '1-3 years'].includes(normalized)) return '1-3 Years';
+  if (['4 year', '4 years', '5 year', '5 years', '4-5 years'].includes(normalized)) return '4-5 years';
+  if (normalized === '6+ year' || normalized === '6+ years') return '6+ Years';
 
   return raw;
 };

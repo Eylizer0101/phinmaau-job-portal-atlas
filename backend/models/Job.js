@@ -123,6 +123,10 @@ const jobSchema = new mongoose.Schema({
         enum: [
             'No experience required',
             'Less than 1 Yr',
+            '1-3 Years',
+            '4-5 years',
+            '6+ Years',
+            // Legacy values are retained so existing job records remain valid.
             '1 year',
             '2 year',
             '3 year',

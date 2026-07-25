@@ -10,12 +10,9 @@ export const JOB_TYPES = [
 export const EXPERIENCE_LEVELS = [
   'No experience required',
   'Less than 1 Yr',
-  '1 year',
-  '2 year',
-  '3 year',
-  '4 year',
-  '5 year',
-  '6+ year',
+  '1-3 Years',
+  '4-5 years',
+  '6+ Years',
 ];
 
 export const EDUCATION_LEVELS = [

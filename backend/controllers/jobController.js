@@ -218,8 +218,53 @@ const applyIfDefined = (obj, key, value) => {
   if (value !== undefined) obj[key] = value;
 };
 
+const EXPERIENCE_LEVEL_GROUPS = [
+  {
+    value: 'No experience required',
+    aliases: ['No experience required'],
+  },
+  {
+    value: 'Less than 1 Yr',
+    aliases: ['Less than 1 Yr', 'Less than 1 year'],
+  },
+  {
+    value: '1-3 Years',
+    aliases: ['1-3 Years', '1 year', '1 years', '2 year', '2 years', '3 year', '3 years'],
+  },
+  {
+    value: '4-5 years',
+    aliases: ['4-5 years', '4 year', '4 years', '5 year', '5 years'],
+  },
+  {
+    value: '6+ Years',
+    aliases: ['6+ Years', '6+ year', '6+ years'],
+  },
+];
+
+const ALLOWED_EXPERIENCE_LEVELS = EXPERIENCE_LEVEL_GROUPS.map((group) => group.value);
+
 const normalizeExperienceLevel = (level) => {
-  return String(level || '').trim();
+  const clean = String(level || '').trim();
+  const normalized = clean.toLowerCase();
+
+  const matchedGroup = EXPERIENCE_LEVEL_GROUPS.find((group) =>
+    group.aliases.some((alias) => alias.toLowerCase() === normalized)
+  );
+
+  return matchedGroup?.value || clean;
+};
+
+const buildExperienceLevelQuery = (level) => {
+  const canonicalValue = normalizeExperienceLevel(level);
+  const matchedGroup = EXPERIENCE_LEVEL_GROUPS.find((group) => group.value === canonicalValue);
+
+  if (!matchedGroup) return canonicalValue;
+
+  return {
+    $in: matchedGroup.aliases.map(
+      (alias) => new RegExp(`^${escapeRegExp(alias)}$`, 'i')
+    ),
+  };
 };
 
 const normalizeCategory = (industry) => {
@@ -323,20 +368,25 @@ const buildComprehensiveJobSearchCondition = (searchValue) => {
     conditions.push({ isUrgent: true });
   }
 
+  const hasOneToThreeYears = /1\s*[-–—]\s*3\s*(?:year|years|yr|yrs)/i.test(normalizedSearch);
+  const hasFourToFiveYears = /4\s*[-–—]\s*5\s*(?:year|years|yr|yrs)/i.test(normalizedSearch);
   const experienceMatch = normalizedSearch.match(/(?:less than\s*)?(\d+|6\+)\s*(?:year|years|yr|yrs)(?:\s*exp(?:erience)?)?/i);
-  if (experienceMatch) {
+
+  if (hasOneToThreeYears) {
+    conditions.push({ experienceLevel: buildExperienceLevelQuery('1-3 Years') });
+  } else if (hasFourToFiveYears) {
+    conditions.push({ experienceLevel: buildExperienceLevelQuery('4-5 years') });
+  } else if (experienceMatch) {
     const experienceNumber = experienceMatch[1];
+
     if (normalizedSearch.includes('less than')) {
-      conditions.push({ experienceLevel: { $regex: '^less than 1 (?:yr|year)$', $options: 'i' } });
+      conditions.push({ experienceLevel: buildExperienceLevelQuery('Less than 1 Yr') });
     } else if (experienceNumber === '6+') {
-      conditions.push({ experienceLevel: { $regex: '^6\\+ years?$', $options: 'i' } });
-    } else {
-      conditions.push({
-        experienceLevel: {
-          $regex: `^${escapeRegExp(experienceNumber)} years?$`,
-          $options: 'i'
-        }
-      });
+      conditions.push({ experienceLevel: buildExperienceLevelQuery('6+ Years') });
+    } else if (['1', '2', '3'].includes(experienceNumber)) {
+      conditions.push({ experienceLevel: buildExperienceLevelQuery('1-3 Years') });
+    } else if (['4', '5'].includes(experienceNumber)) {
+      conditions.push({ experienceLevel: buildExperienceLevelQuery('4-5 years') });
     }
   }
 
@@ -471,23 +521,8 @@ exports.createJob = async (req, res) => {
       });
     }
 
-    const allowedExperienceLevels = [
-      'No experience required',
-      'Less than 1 Yr',
-      '1 year',
-      '2 year',
-      '3 year',
-      '4 year',
-      '5 year',
-      '6+ year',
-      '2 years',
-      '3 years',
-      '4 years',
-      '5 years',
-      '6+ years',
-    ];
     const normalizedExperience = normalizeExperienceLevel(experienceLevel);
-    if (normalizedExperience && !allowedExperienceLevels.includes(normalizedExperience)) {
+    if (normalizedExperience && !ALLOWED_EXPERIENCE_LEVELS.includes(normalizedExperience)) {
       return res.status(400).json({
         success: false,
         message: 'Invalid experience level.'
@@ -649,7 +684,7 @@ exports.getAllJobs = async (req, res) => {
 
     if (req.query.workMode) query.workMode = req.query.workMode;
     if (req.query.location) query.location = { $regex: req.query.location, $options: 'i' };
-    if (req.query.experienceLevel) query.experienceLevel = req.query.experienceLevel;
+    if (req.query.experienceLevel) query.experienceLevel = buildExperienceLevelQuery(req.query.experienceLevel);
 
     const wantFreshGraduate = parseBool(req.query.freshGraduate);
     const wantNoExperience = parseBool(req.query.noExperience);
@@ -780,7 +815,7 @@ exports.getRecommendedJobs = async (req, res) => {
     else if (req.query.category) query.category = normalizeCategory(req.query.category);
     if (req.query.workMode) query.workMode = req.query.workMode;
     if (req.query.location) query.location = { $regex: req.query.location, $options: 'i' };
-    if (req.query.experienceLevel) query.experienceLevel = req.query.experienceLevel;
+    if (req.query.experienceLevel) query.experienceLevel = buildExperienceLevelQuery(req.query.experienceLevel);
 
     const wantFreshGraduate = parseBool(req.query.freshGraduate);
     const wantNoExperience = parseBool(req.query.noExperience);
@@ -1080,23 +1115,8 @@ exports.updateJob = async (req, res) => {
     }
 
     if (req.body.experienceLevel !== undefined) {
-      const allowedExperienceLevels = [
-        'No experience required',
-        'Less than 1 Yr',
-        '1 year',
-        '2 year',
-        '3 year',
-        '4 year',
-        '5 year',
-        '6+ year',
-        '2 years',
-        '3 years',
-        '4 years',
-        '5 years',
-        '6+ years',
-      ];
-      const expValue = String(req.body.experienceLevel || '').trim();
-      if (expValue && !allowedExperienceLevels.includes(expValue)) {
+      const expValue = normalizeExperienceLevel(req.body.experienceLevel);
+      if (expValue && !ALLOWED_EXPERIENCE_LEVELS.includes(expValue)) {
         return res.status(400).json({
           success: false,
           message: 'Invalid experience level.'
