@@ -6462,13 +6462,29 @@ const MyProfile = () => {
         onChangeProfileItem={updateProfileListItem}
       />
 
-      <div className={`min-h-[100dvh] h-auto bg-transparent overflow-x-hidden overflow-y-visible ${isApplyFlow ? 'pb-28 sm:pb-32' : 'pb-6'}`}>
+      <div className="min-h-[100dvh] h-auto bg-transparent overflow-x-hidden overflow-y-visible pb-6">
         <div className="max-w-[1420px] mx-auto px-4 sm:px-6 lg:px-8">
           {error ? <Alert type="error" title="Error" message={error} onClose={() => setError('')} /> : null}
 
-          {isApplyFlow && applyJob ? (
-            <div className="mb-4 rounded-2xl border border-[#d8e2ee] bg-[#f7faff] px-4 py-3 text-sm text-black/65 shadow-sm">
-              Applying for <span className="font-semibold text-black">{applyJob.title || 'Job Title'}</span>
+          {isApplyFlow ? (
+            <div className="mb-4 rounded-2xl border border-[#d8e2ee] bg-white px-4 sm:px-6 py-4 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <button
+                  type="button"
+                  onClick={handleApplyFlowBack}
+                  className="h-12 w-full sm:w-[170px] rounded-xl border border-[#d8e2ee] bg-white text-sm font-bold text-black/75 shadow-sm transition hover:bg-[#f7faff] hover:border-[#2e66a6]/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                >
+                  Back
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleApplyFlowContinue}
+                  className="h-12 w-full flex-1 rounded-xl bg-[#2e66a6] text-sm font-bold text-white shadow-[0_12px_26px_rgba(46,102,166,0.20)] transition hover:bg-[#25578f] active:bg-[#1f4b7c] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                >
+                  Submit Profile
+                </button>
+              </div>
             </div>
           ) : null}
 
@@ -6677,28 +6693,6 @@ const MyProfile = () => {
               </div>
             </div>
 
-
-            {isApplyFlow && (
-              <div className="sticky bottom-0 z-[120] -mx-px mt-6 border-t border-[#d8e2ee] bg-white/95 px-6 sm:px-8 py-4 shadow-[0_-14px_34px_rgba(46,102,166,0.10)] backdrop-blur supports-[backdrop-filter]:bg-white/85">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <button
-                    type="button"
-                    onClick={handleApplyFlowBack}
-                    className="h-12 w-full sm:w-[170px] rounded-xl border border-[#d8e2ee] bg-white text-sm font-bold text-black/75 shadow-sm transition hover:bg-[#f7faff] hover:border-[#2e66a6]/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-                  >
-                    Back
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleApplyFlowContinue}
-                    className="h-12 w-full flex-1 rounded-xl bg-[#2e66a6] text-sm font-bold text-white shadow-[0_12px_26px_rgba(46,102,166,0.20)] transition hover:bg-[#25578f] active:bg-[#1f4b7c] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-                  >
-                    Continue
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>

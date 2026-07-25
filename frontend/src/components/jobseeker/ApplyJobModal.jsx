@@ -433,12 +433,14 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                   {step === 1 && (
                     <div className="max-w-[620px] mx-auto">
                       <div className="mt-2">
-                        <h3 className="text-[28px] sm:text-[34px] font-bold text-black leading-tight">
-                          <span className="inline-flex items-center gap-2">
-                            <span className="text-[#2e66a6]">
-                              <IconInfo className="w-6 h-6" />
+                        <h3 className="font-bold text-black leading-tight">
+                          <span className="inline-flex w-full items-center gap-1 sm:gap-2 whitespace-nowrap">
+                            <span className="shrink-0 text-[#2e66a6]">
+                              <IconInfo className="w-5 h-5 sm:w-6 sm:h-6" />
                             </span>
-                            <span>Reminder: Update Your Job seeker Profile!</span>
+                            <span style={{ fontSize: 'clamp(13px, 4.2vw, 24px)' }}>
+                              Reminder: Update Your Job seeker Profile!
+                            </span>
                           </span>
                         </h3>
 
