@@ -342,6 +342,8 @@ const MyApplications = () => {
   const [actionMessage, setActionMessage] = useState('');
   const [mainTab, setMainTab] = useState('active');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [visibleApplicationCount, setVisibleApplicationCount] = useState(7);
+  const [loadingMoreApplications, setLoadingMoreApplications] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -659,6 +661,31 @@ const MyApplications = () => {
 
     return activeApps.filter((app) => (app.status || '').toLowerCase() === statusFilter);
   }, [applications, mainTab, statusFilter]);
+
+  const visibleApplications = useMemo(
+    () => filteredApplications.slice(0, visibleApplicationCount),
+    [filteredApplications, visibleApplicationCount]
+  );
+
+  const hasMoreApplications = visibleApplicationCount < filteredApplications.length;
+
+  useEffect(() => {
+    setVisibleApplicationCount(7);
+    setLoadingMoreApplications(false);
+  }, [mainTab, statusFilter]);
+
+  const handleSeeMoreApplications = () => {
+    if (loadingMoreApplications || !hasMoreApplications) return;
+
+    setLoadingMoreApplications(true);
+
+    window.setTimeout(() => {
+      setVisibleApplicationCount((current) =>
+        Math.min(current + 7, filteredApplications.length)
+      );
+      setLoadingMoreApplications(false);
+    }, 500);
+  };
 
   const filterLabel = useMemo(() => {
     if (statusFilter === 'declined') return 'Declined Applications';
@@ -1090,7 +1117,7 @@ const MyApplications = () => {
           ) : (
             <div className="space-y-4">
               <div className="grid gap-4">
-                {filteredApplications.map((application) => {
+                {visibleApplications.map((application) => {
                   const statusValue = (application.status || '').toLowerCase();
                   const statusText = getStatusText(application);
                   const statusBadge = getStatusBadgeClass(application);
@@ -1316,7 +1343,24 @@ const MyApplications = () => {
                 })}
               </div>
 
-
+              {hasMoreApplications && (
+                <div className="mt-8 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={handleSeeMoreApplications}
+                    disabled={loadingMoreApplications}
+                    className={`${UI.btnBase} ${UI.btnLg} ${UI.btnSecondary} ${UI.ring} min-w-[180px]`}
+                  >
+                    {loadingMoreApplications && (
+                      <span
+                        className={`h-4 w-4 rounded-full border-2 border-[#2e66a6] border-r-transparent ${UI.spinner}`}
+                        aria-hidden="true"
+                      />
+                    )}
+                    {loadingMoreApplications ? 'Loading applications...' : 'See More'}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
