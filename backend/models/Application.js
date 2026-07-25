@@ -211,6 +211,10 @@ const applicationSchema = new mongoose.Schema({
         type: [String],
         default: []
     },
+    hiddenDefaultHiringStages: {
+        type: [String],
+        default: []
+    },
 
     // Read-only employer activity timeline
     activityHistory: {

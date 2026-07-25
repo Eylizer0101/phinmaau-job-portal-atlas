@@ -919,7 +919,7 @@ const HiringStageModal = ({
   onClose,
   onSelect,
   onAddCustom,
-  onDeleteCustom,
+  onDeleteStage,
 }) => {
   const [customStage, setCustomStage] = useState('');
   const [localError, setLocalError] = useState('');
@@ -971,7 +971,6 @@ const HiringStageModal = ({
           <div className="max-h-[330px] space-y-2 overflow-y-auto pr-1">
             {stages.map((stage) => {
               const selected = stage.toLowerCase() === currentStage.toLowerCase();
-              const custom = customStages.some((item) => item.toLowerCase() === stage.toLowerCase());
 
               return (
                 <div
@@ -991,17 +990,16 @@ const HiringStageModal = ({
                     {selected ? <Icon name="check" className="h-4 w-4 shrink-0" /> : null}
                   </button>
 
-                  {custom ? (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => onDeleteCustom(stage)}
-                      className="mr-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-50"
-                      aria-label={`Delete ${stage}`}
-                    >
-                      <Icon name="trash" className="h-4 w-4" />
-                    </button>
-                  ) : null}
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => onDeleteStage(stage)}
+                    className="mr-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-50"
+                    aria-label={`Delete ${stage}`}
+                    title={`Delete ${stage}`}
+                  >
+                    <Icon name="trash" className="h-4 w-4" />
+                  </button>
                 </div>
               );
             })}
@@ -1718,21 +1716,21 @@ const ForInterview = () => {
     }
   };
 
-  const handleDeleteCustomStage = async (stage) => {
+  const handleDeleteHiringStage = async (stage) => {
     if (!stageTarget?._id || stageBusy) return;
 
     try {
       setStageBusy(true);
       setError('');
       const response = await api.put(`/applications/${stageTarget._id}/hiring-stage`, {
-        action: 'deleteCustom',
+        action: 'delete',
         hiringStage: stage,
       });
       applyHiringStageResponse(response.data);
       await fetchForInterviewApplications();
-      setSuccess('Custom hiring stage deleted.');
+      setSuccess('Hiring stage deleted.');
     } catch (stageError) {
-      setError(stageError?.response?.data?.message || 'Failed to delete custom hiring stage.');
+      setError(stageError?.response?.data?.message || 'Failed to delete hiring stage.');
     } finally {
       setStageBusy(false);
     }
@@ -2138,7 +2136,7 @@ const selectBase =
         onClose={closeHiringStageModal}
         onSelect={handleSelectHiringStage}
         onAddCustom={handleAddCustomStage}
-        onDeleteCustom={handleDeleteCustomStage}
+        onDeleteStage={handleDeleteHiringStage}
       />
 
       <MessagePopup
