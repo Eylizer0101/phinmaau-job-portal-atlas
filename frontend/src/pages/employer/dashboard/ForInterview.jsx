@@ -1930,15 +1930,23 @@ const selectBase =
               </div>
             ) : (
               <>
-                <div className="hidden overflow-x-auto md:block">
-                  <table className="min-w-[1240px] divide-y divide-gray-200">
+                <div className="hidden md:block">
+                  <table className="w-full table-fixed divide-y divide-gray-200">
+                    <colgroup>
+                      <col className="w-[13%]" />
+                      <col className="w-[25%]" />
+                      <col className="w-[19%]" />
+                      <col className="w-[14%]" />
+                      <col className="w-[16%]" />
+                      <col className="w-[13%]" />
+                    </colgroup>
                     <thead className="bg-gray-50">
                       <tr>
                         {['Applied Date', 'Applicant', 'Job Applied', 'Contact Number', 'Hiring Stage', 'Actions'].map((heading) => (
                           <th
                             key={heading}
                             className={cn(
-                              'px-5 py-4 text-xs font-semibold uppercase tracking-wider text-gray-600',
+                              'px-3 py-4 text-xs font-semibold uppercase tracking-wider text-gray-600',
                               heading === 'Actions' ? 'text-right' : 'text-left'
                             )}
                           >
@@ -1976,14 +1984,14 @@ const selectBase =
                             }}
                             className="group cursor-pointer transition-colors hover:bg-[#2e66a6]/[0.06] focus-visible:bg-[#2e66a6]/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
                           >
-                            <td className="px-5 py-5 align-middle text-sm text-gray-700">
+                            <td className="whitespace-nowrap px-3 py-5 align-middle text-sm text-gray-700">
                               {formatDate(app.appliedAt)}
                             </td>
 
-                            <td className="px-5 py-5 align-middle">
-                              <div className="flex items-center gap-3">
+                            <td className="px-3 py-5 align-middle">
+                              <div className="flex min-w-0 items-center gap-3">
                                 <Avatar img={app.jobseeker?.profileImage} name={name} size={44} altKey={`for_interview_${app._id}`} />
-                                <div className="min-w-0 max-w-[210px]">
+                                <div className="min-w-0 flex-1">
                                   <div className="truncate text-sm font-semibold text-gray-900" title={name}>
                                     {name}
                                   </div>
@@ -1994,18 +2002,18 @@ const selectBase =
                               </div>
                             </td>
 
-                            <td className="px-5 py-5 align-middle">
-                              <div className="max-w-[210px] text-sm font-semibold text-gray-900" title={jobTitle}>{jobTitle}</div>
-                              <div className="mt-0.5 text-xs text-gray-500">{companyName}</div>
+                            <td className="px-3 py-5 align-middle">
+                              <div className="truncate text-sm font-semibold text-gray-900" title={jobTitle}>{jobTitle}</div>
+                              <div className="mt-0.5 truncate text-xs text-gray-500" title={companyName}>{companyName}</div>
                             </td>
 
 
-                            <td className="px-5 py-5 align-middle text-sm text-gray-600">
-                              <span className="block max-w-[150px] whitespace-pre-wrap">{contactNumber}</span>
+                            <td className="px-3 py-5 align-middle text-sm text-gray-600">
+                              <span className="block truncate" title={contactNumber}>{contactNumber}</span>
                             </td>
 
-                            <td className="px-5 py-5 align-middle">
-                              <div className={cn('text-sm font-semibold', hiringStage ? 'text-gray-900' : 'italic text-gray-500')}>
+                            <td className="px-3 py-5 align-middle">
+                              <div className={cn('truncate text-sm font-semibold', hiringStage ? 'text-gray-900' : 'italic text-gray-500')} title={hiringStage || 'No stage set'}>
                                 {hiringStage || 'No stage set'}
                               </div>
                               <button
@@ -2018,7 +2026,7 @@ const selectBase =
                               </button>
                             </td>
 
-                            <td className="px-5 py-5 align-middle">
+                            <td className="px-3 py-5 align-middle">
                               <ActionMenu
                                 app={app}
                                 name={name}
