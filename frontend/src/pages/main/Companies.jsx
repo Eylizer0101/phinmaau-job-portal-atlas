@@ -163,10 +163,10 @@ const buildCompanyLocationGroups = (companies, formatLocation, fallbackLocations
     (a, b) => b.count - a.count || a.label.localeCompare(b.label)
   );
 
-  const repeatedLocations = ranked.filter((item) => item.count > 1);
-  const topSource = repeatedLocations.length > 0 ? repeatedLocations : ranked;
-
-  const topLocations = topSource.slice(0, 5).map((item) => item.label);
+  const topLocations = ranked
+    .filter((item) => item.count >= 5)
+    .slice(0, 5)
+    .map((item) => item.label);
   const topKeys = new Set(topLocations.map(normalizeCompanyLocationKey));
 
   const allLocations = ranked

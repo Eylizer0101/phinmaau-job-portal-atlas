@@ -190,7 +190,7 @@ exports.getVerifiedCompanies = async (req, res) => {
     if (location) {
       query.$and.push({
         'employerProfile.regionCity': {
-          $regex: `^${escapeRegex(location)}$`,
+          $regex: escapeRegex(location),
           $options: 'i',
         },
       });
