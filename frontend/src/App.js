@@ -542,6 +542,14 @@ function App() {
           }
         />
         <Route
+          path="/admin/users/:userId/resume-preview"
+          element={
+            <RequireRole role="admin" redirectTo="/login">
+              <ResumePreviewPage />
+            </RequireRole>
+          }
+        />
+        <Route
           path="/admin/users/:userId/posting-history"
           element={
             <RequireRole role="admin" redirectTo="/login">

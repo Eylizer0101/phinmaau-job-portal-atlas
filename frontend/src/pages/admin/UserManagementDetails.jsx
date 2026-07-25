@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
-import { openResumePrintWindow } from "../../components/shared/resumePrintTemplate";
+import { normalizeUserToResumeData } from "../../components/shared/resumePrintTemplate";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
@@ -752,22 +752,24 @@ const UserManagementDetails = () => {
     };
   };
 
-  const handleOpenResumeFullView = async () => {
-    if (docs?.cv?.url) {
-      await handleViewCredential("cv");
-      return;
-    }
-
-    const opened = await openResumePrintWindow({
+  const handleOpenResumeFullView = () => {
+    const resumeData = normalizeUserToResumeData({
       userData: user,
-      formData: profile,
+      profile,
       workExperiences,
-      verificationDocs: docs,
     });
 
-    if (!opened) {
-      alert("Unable to open the resume full view. Please try again.");
-    }
+    sessionStorage.setItem(
+      "resumePreviewData",
+      JSON.stringify({
+        ...resumeData,
+        verificationDocs: docs,
+        returnTo: `/admin/users/${userId}`,
+        viewerMode: "admin",
+      })
+    );
+
+    navigate(`/admin/users/${userId}/resume-preview`);
   };
 
   const HeaderProfile = () => {

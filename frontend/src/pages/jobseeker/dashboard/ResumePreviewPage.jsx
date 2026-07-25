@@ -272,7 +272,9 @@ const ResumePreviewPage = () => {
   const formData = storedData?.formData || {};
   const profileImage = userData?.profileImage || formData?.profileImage || '';
   const returnTo = storedData?.returnTo || '/jobseeker/my-profile';
-  const isEmployerPreview = storedData?.viewerMode === 'employer';
+  const viewerMode = storedData?.viewerMode || 'jobseeker';
+  const isEmployerPreview = viewerMode === 'employer';
+  const isAdminPreview = viewerMode === 'admin';
   const workExperiences = Array.isArray(storedData?.workExperiences) ? storedData.workExperiences : [];
   const fullName = buildName(formData) || 'Your Name';
   const initials = buildInitials(fullName);
@@ -686,7 +688,9 @@ const ResumePreviewPage = () => {
           <span>
             {isEmployerPreview
               ? 'Full applicant resume preview'
-              : 'This is what your resume looks like to your employers'}
+              : isAdminPreview
+                ? 'Full jobseeker resume preview'
+                : 'This is what your resume looks like to your employers'}
           </span>
         </div>
 
