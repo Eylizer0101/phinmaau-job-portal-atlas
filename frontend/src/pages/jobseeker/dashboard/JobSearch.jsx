@@ -1499,18 +1499,12 @@ const JobSearch = () => {
                         style={{ border: `1px solid ${COLORS.border}` }}
                       >
                         {job.isUrgent ? (
-                          <div className="absolute -top-4 left-5 z-10 inline-flex h-8 items-center gap-2 rounded-full border border-white/80 bg-gradient-to-r from-[#ff3b30] via-[#ff6a2a] to-[#ffb21c] px-4 text-[11px] font-extrabold uppercase tracking-[0.12em] text-white shadow-[0_4px_10px_rgba(255,92,34,0.18)]">
-                            <svg
-                              className="h-4 w-4 flex-shrink-0"
-                              viewBox="0 0 24 24"
-                              fill="currentColor"
-                              aria-hidden="true"
-                            >
-                              <path d="M13.5 2.25c.35 3.17-1.08 4.82-2.55 6.22-1.42 1.36-2.76 2.64-2.2 5.08.25 1.1.95 1.98 1.87 2.19-2.26-.87-3.87-3.05-3.87-5.61 0-2.28 1.15-4.12 2.46-5.69-.09 1.96.5 3.03 1.17 3.81.18-2.66 1.31-4.46 3.12-6Z" />
-                              <path d="M14.69 8.08c2.08 1.53 3.56 3.77 3.56 6.34A6.25 6.25 0 1 1 5.9 13.06c.68 2.03 2.19 3.17 3.84 3.57-.58-1.05-.74-2.18-.48-3.33.42-1.86 1.68-3.08 2.9-4.26.94-.91 1.83-1.78 2.53-2.96Z" />
-                            </svg>
-                            <span>Urgent Hiring</span>
-                          </div>
+                          <img
+                            src="/images/urgent.png"
+                            alt="Urgent Hiring"
+                            draggable="false"
+                            className="pointer-events-none absolute -top-[61px] -left-[13px] z-10 w-[205px] max-w-none select-none"
+                          />
                         ) : null}
 
                         <button
