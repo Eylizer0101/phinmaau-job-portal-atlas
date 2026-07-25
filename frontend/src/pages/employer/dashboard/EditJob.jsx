@@ -711,7 +711,12 @@ const normalizeExperienceLevel = (level) => {
   const normalized = clean.toLowerCase();
 
   if (normalized === 'no experience required') return 'No experience required';
-  if (normalized === 'less than 1 yr' || normalized === 'less than 1 year') return 'Less than 1 Yr';
+  if (
+    normalized === 'less than 1 yr' ||
+    normalized === 'less than 1 year' ||
+    normalized === 'less than 1 yr exp' ||
+    normalized === 'less than 1 year exp'
+  ) return 'Less than 1 Yr Exp';
   if (
     normalized === '1 year' ||
     normalized === '1 years' ||
@@ -719,16 +724,23 @@ const normalizeExperienceLevel = (level) => {
     normalized === '2 years' ||
     normalized === '3 year' ||
     normalized === '3 years' ||
-    normalized === '1-3 years'
-  ) return '1-3 Years';
+    normalized === '1-3 years' ||
+    normalized === '1-3 years exp'
+  ) return '1-3 Years Exp';
   if (
     normalized === '4 year' ||
     normalized === '4 years' ||
     normalized === '5 year' ||
     normalized === '5 years' ||
-    normalized === '4-5 years'
-  ) return '4-5 years';
-  if (normalized === '6+ year' || normalized === '6+ years') return '6+ Years';
+    normalized === '4-5 years' ||
+    normalized === '4-5 years exp'
+  ) return '4-5 Years Exp';
+  if (
+    normalized === '6+ year' ||
+    normalized === '6+ years' ||
+    normalized === '6+ year exp' ||
+    normalized === '6+ years exp'
+  ) return '6+ Years Exp';
 
   return clean;
 };

@@ -224,20 +224,20 @@ const EXPERIENCE_LEVEL_GROUPS = [
     aliases: ['No experience required'],
   },
   {
-    value: 'Less than 1 Yr',
-    aliases: ['Less than 1 Yr', 'Less than 1 year'],
+    value: 'Less than 1 Yr Exp',
+    aliases: ['Less than 1 Yr Exp', 'Less than 1 Yr', 'Less than 1 year', 'Less than 1 year Exp'],
   },
   {
-    value: '1-3 Years',
-    aliases: ['1-3 Years', '1 year', '1 years', '2 year', '2 years', '3 year', '3 years'],
+    value: '1-3 Years Exp',
+    aliases: ['1-3 Years Exp', '1-3 Years', '1 year', '1 years', '2 year', '2 years', '3 year', '3 years'],
   },
   {
-    value: '4-5 years',
-    aliases: ['4-5 years', '4 year', '4 years', '5 year', '5 years'],
+    value: '4-5 Years Exp',
+    aliases: ['4-5 Years Exp', '4-5 years', '4 year', '4 years', '5 year', '5 years'],
   },
   {
-    value: '6+ Years',
-    aliases: ['6+ Years', '6+ year', '6+ years'],
+    value: '6+ Years Exp',
+    aliases: ['6+ Years Exp', '6+ Years', '6+ year', '6+ years'],
   },
 ];
 
@@ -373,20 +373,20 @@ const buildComprehensiveJobSearchCondition = (searchValue) => {
   const experienceMatch = normalizedSearch.match(/(?:less than\s*)?(\d+|6\+)\s*(?:year|years|yr|yrs)(?:\s*exp(?:erience)?)?/i);
 
   if (hasOneToThreeYears) {
-    conditions.push({ experienceLevel: buildExperienceLevelQuery('1-3 Years') });
+    conditions.push({ experienceLevel: buildExperienceLevelQuery('1-3 Years Exp') });
   } else if (hasFourToFiveYears) {
-    conditions.push({ experienceLevel: buildExperienceLevelQuery('4-5 years') });
+    conditions.push({ experienceLevel: buildExperienceLevelQuery('4-5 Years Exp') });
   } else if (experienceMatch) {
     const experienceNumber = experienceMatch[1];
 
     if (normalizedSearch.includes('less than')) {
-      conditions.push({ experienceLevel: buildExperienceLevelQuery('Less than 1 Yr') });
+      conditions.push({ experienceLevel: buildExperienceLevelQuery('Less than 1 Yr Exp') });
     } else if (experienceNumber === '6+') {
-      conditions.push({ experienceLevel: buildExperienceLevelQuery('6+ Years') });
+      conditions.push({ experienceLevel: buildExperienceLevelQuery('6+ Years Exp') });
     } else if (['1', '2', '3'].includes(experienceNumber)) {
-      conditions.push({ experienceLevel: buildExperienceLevelQuery('1-3 Years') });
+      conditions.push({ experienceLevel: buildExperienceLevelQuery('1-3 Years Exp') });
     } else if (['4', '5'].includes(experienceNumber)) {
-      conditions.push({ experienceLevel: buildExperienceLevelQuery('4-5 years') });
+      conditions.push({ experienceLevel: buildExperienceLevelQuery('4-5 Years Exp') });
     }
   }
 

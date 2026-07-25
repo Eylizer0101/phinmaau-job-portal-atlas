@@ -169,6 +169,27 @@ const getRelocationDisplayLabel = (value) => {
   return String(value || '').trim() || 'Location Fixed';
 };
 
+const getExperienceDisplayLabel = (value) => {
+  const raw = String(value || '').trim();
+  const normalized = raw.toLowerCase();
+
+  if (!raw || normalized === 'no experience required') return 'No experience required';
+  if (['less than 1 yr', 'less than 1 year', 'less than 1 yr exp', 'less than 1 year exp'].includes(normalized)) {
+    return 'Less than 1 Yr Exp';
+  }
+  if (['1 year', '1 years', '2 year', '2 years', '3 year', '3 years', '1-3 years', '1-3 years exp'].includes(normalized)) {
+    return '1-3 Years Exp';
+  }
+  if (['4 year', '4 years', '5 year', '5 years', '4-5 years', '4-5 years exp'].includes(normalized)) {
+    return '4-5 Years Exp';
+  }
+  if (['6+ year', '6+ years', '6+ year exp', '6+ years exp'].includes(normalized)) {
+    return '6+ Years Exp';
+  }
+
+  return raw;
+};
+
 const UI = {
   page: 'min-h-screen ',
   container: 'mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6',
@@ -939,7 +960,7 @@ const EmployerJobView = () => {
 
           <div className="mb-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             <TopMetricCard icon="money" title="Salary" value={formatSalary(job.salaryMin, job.salaryMax, job.hideSalary)} isPeso />
-            <TopMetricCard icon="clock" title="Experience" value={job.experienceLevel || 'No experience required'} />
+            <TopMetricCard icon="clock" title="Experience" value={getExperienceDisplayLabel(job.experienceLevel)} />
             <TopMetricCard
               icon="graduation"
               title="Educational Requirements"
