@@ -17,6 +17,142 @@ const UI = {
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
+const sanitizeRichTextHtml = (value = "") => {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+
+  if (typeof window === "undefined" || typeof window.DOMParser === "undefined") {
+    return raw
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\r?\n/g, "<br>");
+  }
+
+  const containsHtml = /<\/?[a-z][\s\S]*>/i.test(raw);
+  const source = containsHtml
+    ? raw
+    : raw
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\r?\n/g, "<br>");
+
+  const parser = new window.DOMParser();
+  const doc = parser.parseFromString(source, "text/html");
+
+  doc
+    .querySelectorAll(
+      "script, style, iframe, object, embed, form, input, button, textarea, select, option, link, meta, base"
+    )
+    .forEach((node) => node.remove());
+
+  doc.body.querySelectorAll("*").forEach((element) => {
+    [...element.attributes].forEach((attribute) => {
+      const name = attribute.name.toLowerCase();
+      const rawValue = String(attribute.value || "").trim();
+      const valueText = rawValue.toLowerCase();
+
+      if (name === "style") {
+        const safeStyles = rawValue
+          .split(";")
+          .map((rule) => rule.trim())
+          .filter(Boolean)
+          .map((rule) => {
+            const separatorIndex = rule.indexOf(":");
+            if (separatorIndex < 0) return "";
+
+            const property = rule.slice(0, separatorIndex).trim().toLowerCase();
+            const propertyValue = rule.slice(separatorIndex + 1).trim().toLowerCase();
+
+            if (
+              property === "text-align" &&
+              ["left", "center", "right", "justify"].includes(propertyValue)
+            ) {
+              return `text-align: ${propertyValue}`;
+            }
+
+            if (property === "margin-left") {
+              const match = propertyValue.match(/^(\d+(?:\.\d+)?)(px|em|rem)$/);
+              if (!match) return "";
+
+              const amount = Number(match[1]);
+              const unit = match[2];
+              const maximum = unit === "px" ? 160 : 10;
+
+              if (Number.isFinite(amount) && amount >= 0 && amount <= maximum) {
+                return `margin-left: ${amount}${unit}`;
+              }
+            }
+
+            return "";
+          })
+          .filter(Boolean);
+
+        if (safeStyles.length) {
+          element.setAttribute("style", safeStyles.join("; "));
+        } else {
+          element.removeAttribute("style");
+        }
+
+        return;
+      }
+
+      if (
+        name.startsWith("on") ||
+        name === "srcdoc" ||
+        name === "class" ||
+        ((name === "href" || name === "src") &&
+          (valueText.startsWith("javascript:") || valueText.startsWith("data:text/html")))
+      ) {
+        element.removeAttribute(attribute.name);
+      }
+    });
+
+    if (element.hasAttribute("align")) {
+      const alignment = String(element.getAttribute("align") || "").toLowerCase();
+      if (["left", "center", "right", "justify"].includes(alignment)) {
+        element.style.textAlign = alignment;
+      }
+      element.removeAttribute("align");
+    }
+
+    if (element.tagName === "A") {
+      element.setAttribute("target", "_blank");
+      element.setAttribute("rel", "noopener noreferrer");
+    }
+  });
+
+  return doc.body.innerHTML;
+};
+
+const RichTextContent = ({ value, fallback }) => {
+  const sanitizedHtml = useMemo(
+    () => sanitizeRichTextHtml(value || fallback || ""),
+    [value, fallback]
+  );
+
+  return (
+    <div
+      className={[
+        "break-words",
+        "[&_p]:my-2 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0",
+        "[&_div]:my-2 [&_div:first-child]:mt-0 [&_div:last-child]:mb-0",
+        "[&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-6",
+        "[&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-6",
+        "[&_li]:my-1",
+        "[&_h1]:my-3 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:leading-tight",
+        "[&_h2]:my-3 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:leading-tight",
+        "[&_blockquote]:my-2 [&_blockquote]:border-l-2 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4",
+        "[&_strong]:font-bold [&_b]:font-bold",
+        "[&_em]:italic [&_i]:italic [&_u]:underline",
+        "[&_a]:text-[#2e66a6] [&_a]:underline",
+      ].join(" ")}
+      dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+    />
+  );
+};
+
 const Icon = ({ name, className = "h-4 w-4", ...props }) => {
   const common = {
     className,
@@ -548,8 +684,11 @@ const AdminApplicationView = () => {
           <div className="mb-5">
             <section className={`${UI.sectionCard} p-5 sm:p-6`}>
               <SectionHeader icon="file" title="Job Description" />
-              <div className="mt-4 whitespace-pre-wrap text-sm leading-7 text-[#4b5563] sm:text-[15px]">
-                {job.description || "No description provided."}
+              <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
+                <RichTextContent
+                  value={job.description}
+                  fallback="No description provided."
+                />
               </div>
             </section>
           </div>
@@ -557,8 +696,11 @@ const AdminApplicationView = () => {
           <div className="mb-5">
             <section className={`${UI.sectionCard} p-5 sm:p-6`}>
               <SectionHeader icon="tools" title="Qualification" />
-              <div className="mt-4 whitespace-pre-wrap text-sm leading-7 text-[#4b5563] sm:text-[15px]">
-                {job.requirements || job.qualification || "No requirements provided."}
+              <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
+                <RichTextContent
+                  value={job.requirements || job.qualification}
+                  fallback="No requirements provided."
+                />
               </div>
             </section>
           </div>
