@@ -44,6 +44,16 @@ import {
   FaUsers,
   FaWaveSquare,
   FaUserCheck,
+  FaBold,
+  FaItalic,
+  FaUnderline,
+  FaListOl,
+  FaListUl,
+  FaAlignLeft,
+  FaAlignCenter,
+  FaAlignRight,
+  FaAlignJustify,
+  FaChevronDown,
 } from 'react-icons/fa';
 
 const COLORS = {
@@ -848,6 +858,8 @@ const sanitizeRichText = (value = '') => {
     'H2',
     'BLOCKQUOTE',
   ]);
+  const textAlignmentTags = new Set(['P', 'DIV', 'UL', 'OL', 'LI', 'H1', 'H2', 'BLOCKQUOTE']);
+  const allowedTextAlignments = new Set(['left', 'center', 'right', 'justify']);
 
   const parser = new window.DOMParser();
   const doc = parser.parseFromString(`<div>${clean}</div>`, 'text/html');
@@ -862,9 +874,21 @@ const sanitizeRichText = (value = '') => {
           return;
         }
 
+        const inlineAlignment = String(child.style?.textAlign || '').toLowerCase();
+        const alignAttribute = String(child.getAttribute('align') || '').toLowerCase();
+        const textAlignment = allowedTextAlignments.has(inlineAlignment)
+          ? inlineAlignment
+          : allowedTextAlignments.has(alignAttribute)
+            ? alignAttribute
+            : '';
+
         Array.from(child.attributes).forEach((attribute) => {
           child.removeAttribute(attribute.name);
         });
+
+        if (textAlignment && textAlignmentTags.has(child.tagName)) {
+          child.style.textAlign = textAlignment;
+        }
 
         cleanNode(child);
       }
@@ -898,11 +922,21 @@ const RichTextDisplay = ({ value, className = '' }) => {
   );
 };
 
-const RichTextToolbarButton = ({ title, children, onMouseDown, className = '' }) => (
+const RichTextToolbarButton = ({
+  title,
+  children,
+  onMouseDown,
+  className = '',
+  active = false,
+  ariaExpanded,
+  ariaHaspopup,
+}) => (
   <button
     type="button"
     title={title}
     aria-label={title}
+    aria-expanded={ariaExpanded}
+    aria-haspopup={ariaHaspopup}
     onMouseDown={(event) => {
       event.preventDefault();
       onMouseDown?.();
@@ -911,12 +945,20 @@ const RichTextToolbarButton = ({ title, children, onMouseDown, className = '' })
       'flex h-8 min-w-8 items-center justify-center rounded px-2',
       'text-[15px] font-semibold text-gray-700 transition hover:bg-gray-100',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30',
+      active ? 'bg-[#eaf2fb] text-[#2e66a6]' : '',
       className,
     ].join(' ')}
   >
     {children}
   </button>
 );
+
+const RICH_TEXT_ALIGNMENT_OPTIONS = [
+  { command: 'justifyLeft', label: 'Align left', icon: <FaAlignLeft /> },
+  { command: 'justifyCenter', label: 'Align center', icon: <FaAlignCenter /> },
+  { command: 'justifyRight', label: 'Align right', icon: <FaAlignRight /> },
+  { command: 'justifyFull', label: 'Justify', icon: <FaAlignJustify /> },
+];
 
 const BulletTextArea = ({
   value,
@@ -927,6 +969,9 @@ const BulletTextArea = ({
   showToolbar = true,
 }) => {
   const editorRef = useRef(null);
+  const alignmentMenuRef = useRef(null);
+  const savedSelectionRef = useRef(null);
+  const [alignmentOpen, setAlignmentOpen] = useState(false);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -938,20 +983,69 @@ const BulletTextArea = ({
     }
   }, [value]);
 
+  useEffect(() => {
+    if (!alignmentOpen) return undefined;
+
+    const handleOutsideClick = (event) => {
+      if (alignmentMenuRef.current && !alignmentMenuRef.current.contains(event.target)) {
+        setAlignmentOpen(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') setAlignmentOpen(false);
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [alignmentOpen]);
+
+  const saveSelection = () => {
+    const editor = editorRef.current;
+    const selection = window.getSelection?.();
+    if (!editor || !selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    if (editor.contains(range.commonAncestorContainer)) {
+      savedSelectionRef.current = range.cloneRange();
+    }
+  };
+
+  const restoreSelection = () => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    editor.focus();
+
+    const selection = window.getSelection?.();
+    const savedRange = savedSelectionRef.current;
+    if (!selection || !savedRange) return;
+
+    selection.removeAllRanges();
+    selection.addRange(savedRange);
+  };
+
   const emitChange = () => {
     const nextValue = editorRef.current?.innerHTML || '';
     onChange?.({ target: { value: nextValue } });
   };
 
   const runCommand = (command, commandValue = null) => {
-    editorRef.current?.focus();
+    restoreSelection();
     document.execCommand(command, false, commandValue);
+    saveSelection();
     emitChange();
   };
 
   const formatHeading = (tagName) => {
-    editorRef.current?.focus();
+    restoreSelection();
     document.execCommand('formatBlock', false, tagName);
+    saveSelection();
     emitChange();
   };
 
@@ -961,57 +1055,79 @@ const BulletTextArea = ({
     <div className="w-full">
       {showToolbar ? (
         <div className="flex min-h-12 flex-wrap items-center gap-1 border border-b-0 border-gray-300 rounded-t-[5px] bg-white px-3 py-1.5">
-          <RichTextToolbarButton title="Bold" onMouseDown={() => runCommand('bold')} className="font-extrabold">
-            B
+          <RichTextToolbarButton title="Bold" onMouseDown={() => runCommand('bold')}>
+            <FaBold className="text-[14px]" />
           </RichTextToolbarButton>
 
-          <RichTextToolbarButton title="Italic" onMouseDown={() => runCommand('italic')} className="italic">
-            I
+          <RichTextToolbarButton title="Italic" onMouseDown={() => runCommand('italic')}>
+            <FaItalic className="text-[14px]" />
           </RichTextToolbarButton>
 
-          <RichTextToolbarButton title="Underline" onMouseDown={() => runCommand('underline')} className="underline">
-            U
+          <RichTextToolbarButton title="Underline" onMouseDown={() => runCommand('underline')}>
+            <FaUnderline className="text-[14px]" />
           </RichTextToolbarButton>
 
           <span className="mx-1 h-7 border-l border-gray-300" aria-hidden="true" />
 
           <RichTextToolbarButton title="Numbered list" onMouseDown={() => runCommand('insertOrderedList')}>
-            <span className="text-[17px]">⅓</span>
+            <FaListOl className="text-[16px]" />
           </RichTextToolbarButton>
 
-          <RichTextToolbarButton title="Bullet list" onMouseDown={() => runCommand('insertUnorderedList')}>
-            <span className="text-[18px] leading-none">☷</span>
+          <RichTextToolbarButton title="Bulleted list" onMouseDown={() => runCommand('insertUnorderedList')}>
+            <FaListUl className="text-[16px]" />
           </RichTextToolbarButton>
 
-          <RichTextToolbarButton title="Align left" onMouseDown={() => runCommand('justifyLeft')}>
-            <span className="text-[18px]">≡</span>
-          </RichTextToolbarButton>
+          <div ref={alignmentMenuRef} className="relative">
+            <RichTextToolbarButton
+              title="Text alignment"
+              ariaExpanded={alignmentOpen}
+              ariaHaspopup="menu"
+              active={alignmentOpen}
+              onMouseDown={() => {
+                saveSelection();
+                setAlignmentOpen((current) => !current);
+              }}
+              className="gap-1"
+            >
+              <FaAlignLeft className="text-[16px]" />
+              <FaChevronDown className={`text-[9px] transition-transform ${alignmentOpen ? 'rotate-180' : ''}`} />
+            </RichTextToolbarButton>
 
-          <RichTextToolbarButton
-            title="Indent"
-            onMouseDown={() => {
-              const selection = window.getSelection?.();
-              const anchorElement = selection?.anchorNode?.parentElement;
-              const isInsideList = Boolean(anchorElement?.closest?.('ul, ol'));
-
-              if (isInsideList) {
-                runCommand('indent');
-              } else {
-                formatHeading('BLOCKQUOTE');
-              }
-            }}
-          >
-            <span className="text-[18px]">⇥</span>
-          </RichTextToolbarButton>
+            {alignmentOpen ? (
+              <div
+                role="menu"
+                className="absolute left-0 top-full z-[10050] mt-1 w-44 overflow-hidden rounded-[5px] border border-gray-200 bg-white py-1 shadow-xl"
+              >
+                {RICH_TEXT_ALIGNMENT_OPTIONS.map((option) => (
+                  <button
+                    key={option.command}
+                    type="button"
+                    role="menuitem"
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      runCommand(option.command);
+                      setAlignmentOpen(false);
+                    }}
+                    className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-100 hover:text-[#2e66a6]"
+                  >
+                    <span className="flex w-5 items-center justify-center text-[16px]" aria-hidden="true">
+                      {option.icon}
+                    </span>
+                    <span>{option.label}</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
 
           <span className="mx-1 h-7 border-l border-gray-300" aria-hidden="true" />
 
           <RichTextToolbarButton title="Heading 1" onMouseDown={() => formatHeading('H1')}>
-            H₁
+            <span className="text-[15px] font-bold">H1</span>
           </RichTextToolbarButton>
 
           <RichTextToolbarButton title="Heading 2" onMouseDown={() => formatHeading('H2')}>
-            H₂
+            <span className="text-[15px] font-bold">H2</span>
           </RichTextToolbarButton>
         </div>
       ) : null}
@@ -1029,8 +1145,14 @@ const BulletTextArea = ({
           suppressContentEditableWarning
           role="textbox"
           aria-multiline="true"
-          onInput={emitChange}
+          onInput={() => {
+            saveSelection();
+            emitChange();
+          }}
           onBlur={emitChange}
+          onFocus={saveSelection}
+          onKeyUp={saveSelection}
+          onMouseUp={saveSelection}
           className={[
             'w-full overflow-y-auto px-4 py-3 text-gray-900 outline-none',
             'border border-gray-300 bg-white',
