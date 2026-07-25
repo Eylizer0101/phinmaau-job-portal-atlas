@@ -3,10 +3,65 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../../services/api";
 
+
+const normalizeCompanyLocationKey = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\bcity of\b/g, "")
+    .replace(/\bcity\b/g, "")
+    .replace(/[^a-z0-9ñ\s-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const buildCompanyLocationGroups = (companies, formatLocation, fallbackLocations = []) => {
+  const counts = new Map();
+
+  (companies || []).forEach((company) => {
+    const label = formatLocation(company?.location);
+    const key = normalizeCompanyLocationKey(label);
+
+    if (!key || label === "Location not specified") return;
+
+    const current = counts.get(key);
+    if (current) {
+      current.count += 1;
+    } else {
+      counts.set(key, { label, count: 1 });
+    }
+  });
+
+  (fallbackLocations || []).forEach((location) => {
+    const label = formatLocation(location);
+    const key = normalizeCompanyLocationKey(label);
+
+    if (!key || label === "Location not specified" || counts.has(key)) return;
+    counts.set(key, { label, count: 0 });
+  });
+
+  const ranked = Array.from(counts.values()).sort(
+    (a, b) => b.count - a.count || a.label.localeCompare(b.label)
+  );
+
+  const repeatedLocations = ranked.filter((item) => item.count > 1);
+  const topSource = repeatedLocations.length > 0 ? repeatedLocations : ranked;
+
+  const topLocations = topSource.slice(0, 5).map((item) => item.label);
+  const topKeys = new Set(topLocations.map(normalizeCompanyLocationKey));
+
+  const allLocations = ranked
+    .map((item) => item.label)
+    .filter((label) => !topKeys.has(normalizeCompanyLocationKey(label)))
+    .sort((a, b) => a.localeCompare(b));
+
+  return { topLocations, allLocations };
+};
+
 const JobseekerCompanies = () => {
   const navigate = useNavigate();
 
   const [companies, setCompanies] = useState([]);
+  const [allCompaniesForFilters, setAllCompaniesForFilters] = useState([]);
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -20,6 +75,7 @@ const JobseekerCompanies = () => {
   const [industries, setIndustries] = useState([]);
 
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [locationSearch, setLocationSearch] = useState("");
   const [expandedCardId, setExpandedCardId] = useState(null);
   const filterBoxRef = useRef(null);
 
@@ -197,6 +253,10 @@ const JobseekerCompanies = () => {
       const list = res?.data?.companies || [];
       setCompanies(list);
 
+      if (!s && !loc && !ind) {
+        setAllCompaniesForFilters(list);
+      }
+
       const f = res?.data?.filters || {};
       setLocations(Array.isArray(f.locations) ? f.locations : []);
       setIndustries(Array.isArray(f.industries) ? f.industries : []);
@@ -256,6 +316,12 @@ const JobseekerCompanies = () => {
   }, [search, selectedLocation, selectedIndustry]);
 
   useEffect(() => {
+    if (openDropdown !== "location") {
+      setLocationSearch("");
+    }
+  }, [openDropdown]);
+
+  useEffect(() => {
     const onClick = (e) => {
       if (!openDropdown) return;
       if (!filterBoxRef.current) return;
@@ -276,6 +342,30 @@ const JobseekerCompanies = () => {
       document.removeEventListener("keydown", onKey);
     };
   }, [openDropdown]);
+
+  const { topLocations, allLocations } = useMemo(
+    () =>
+      buildCompanyLocationGroups(
+        allCompaniesForFilters.length ? allCompaniesForFilters : companies,
+        formatCompanyLocation,
+        locations
+      ),
+    [allCompaniesForFilters, companies, locations]
+  );
+
+  const searchableLocations = useMemo(
+    () => Array.from(new Set([...topLocations, ...allLocations])),
+    [topLocations, allLocations]
+  );
+
+  const filteredLocationResults = useMemo(() => {
+    const query = locationSearch.trim().toLowerCase();
+    if (!query) return searchableLocations;
+
+    return searchableLocations.filter((location) =>
+      location.toLowerCase().includes(query)
+    );
+  }, [locationSearch, searchableLocations]);
 
   const hasAnyFilter = Boolean(search.trim() || selectedLocation || selectedIndustry);
 
@@ -307,6 +397,106 @@ const JobseekerCompanies = () => {
     setExpandedCardId((prev) => (prev === companyId ? null : companyId));
   };
 
+  const LocationDropdown = () => {
+    const isOpen = openDropdown === "location";
+    const isSearching = Boolean(locationSearch.trim());
+    const displayItems = isSearching ? filteredLocationResults : topLocations;
+
+    return (
+      <div className="relative inline-block">
+        <button
+          type="button"
+          className={pillBtn}
+          onClick={() => setOpenDropdown(isOpen ? null : "location")}
+          aria-expanded={isOpen}
+          aria-controls="location-menu"
+        >
+          <span className="max-w-[140px] truncate whitespace-nowrap">
+            {selectedLocation || "Location"}
+          </span>
+
+          <svg
+            className={`ml-1 h-4 w-4 text-black/70 transition ${isOpen ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {isOpen && (
+          <div
+            id="location-menu"
+            className="absolute left-0 top-full z-[80] mt-2 w-[300px] max-w-[92vw] rounded-xl border border-[#d8e2ee] bg-white p-4 shadow-xl"
+            role="dialog"
+            aria-label="Location filter"
+          >
+            <input
+              value={locationSearch}
+              onChange={(event) => setLocationSearch(event.target.value)}
+              placeholder="Search location"
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+              autoFocus
+            />
+
+            <div className="mt-4 max-h-[280px] overflow-auto pr-1">
+              {selectedLocation && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedLocation("");
+                    setOpenDropdown(null);
+                  }}
+                  className="mb-2 w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-[#2e66a6] hover:bg-[#f7faff]"
+                >
+                  Clear location
+                </button>
+              )}
+
+              <div className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500">
+                {isSearching ? "Search Results" : "Top Locations"}
+              </div>
+
+              {displayItems.length === 0 ? (
+                <div className="py-4 text-sm text-gray-500">
+                  {isSearching ? "No location found" : "No top locations available"}
+                </div>
+              ) : (
+                displayItems.map((location) => (
+                  <label
+                    key={location}
+                    className="flex cursor-pointer items-center gap-3 py-2 text-sm text-gray-800"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={
+                        normalizeCompanyLocationKey(selectedLocation) ===
+                        normalizeCompanyLocationKey(location)
+                      }
+                      onChange={() => {
+                        setSelectedLocation(
+                          normalizeCompanyLocationKey(selectedLocation) ===
+                            normalizeCompanyLocationKey(location)
+                            ? ""
+                            : location
+                        );
+                        setOpenDropdown(null);
+                      }}
+                      className="h-4 w-4"
+                    />
+                    <span className="select-none">{location}</span>
+                  </label>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const DropdownPill = ({
     id,
     label,
@@ -315,6 +505,7 @@ const JobseekerCompanies = () => {
     onSelect,
     formatter,
     menuWidth = "w-[280px]",
+    showClearOption = true,
   }) => {
     const isOpen = openDropdown === id;
 
@@ -350,16 +541,18 @@ const JobseekerCompanies = () => {
             aria-label={`${label} filter`}
           >
             <div className="max-h-[260px] overflow-auto pr-1">
-              <button
-                type="button"
-                onClick={() => {
-                  onSelect("");
-                  setOpenDropdown(null);
-                }}
-                className="w-full text-left px-3 py-2 rounded-lg text-sm text-black hover:bg-[#f7faff]"
-              >
-                All
-              </button>
+              {showClearOption && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSelect("");
+                    setOpenDropdown(null);
+                  }}
+                  className="w-full text-left px-3 py-2 rounded-lg text-sm text-black hover:bg-[#f7faff]"
+                >
+                  All
+                </button>
+              )}
 
               {items.length === 0 ? (
                 <div className="px-3 py-2 text-sm text-black/60">No results</div>
@@ -469,15 +662,7 @@ const JobseekerCompanies = () => {
                     />
                   </div>
 
-                  <DropdownPill
-                    id="location"
-                    label="Location"
-                    items={locations}
-                    selectedValue={selectedLocation}
-                    onSelect={setSelectedLocation}
-                    formatter={formatCompanyLocation}
-                    menuWidth="w-[280px]"
-                  />
+                  <LocationDropdown />
 
                   <DropdownPill
                     id="industry"
@@ -485,7 +670,8 @@ const JobseekerCompanies = () => {
                     items={industries}
                     selectedValue={selectedIndustry}
                     onSelect={setSelectedIndustry}
-                    menuWidth="w-[320px]"
+                    menuWidth="w-[240px]"
+                    showClearOption={false}
                   />
 
                   {hasAnyFilter && (

@@ -123,10 +123,65 @@ const MainFooter = () => {
   );
 };
 
+
+const normalizeCompanyLocationKey = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\bcity of\b/g, "")
+    .replace(/\bcity\b/g, "")
+    .replace(/[^a-z0-9ñ\s-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const buildCompanyLocationGroups = (companies, formatLocation, fallbackLocations = []) => {
+  const counts = new Map();
+
+  (companies || []).forEach((company) => {
+    const label = formatLocation(company?.location);
+    const key = normalizeCompanyLocationKey(label);
+
+    if (!key || label === "Location not specified") return;
+
+    const current = counts.get(key);
+    if (current) {
+      current.count += 1;
+    } else {
+      counts.set(key, { label, count: 1 });
+    }
+  });
+
+  (fallbackLocations || []).forEach((location) => {
+    const label = formatLocation(location);
+    const key = normalizeCompanyLocationKey(label);
+
+    if (!key || label === "Location not specified" || counts.has(key)) return;
+    counts.set(key, { label, count: 0 });
+  });
+
+  const ranked = Array.from(counts.values()).sort(
+    (a, b) => b.count - a.count || a.label.localeCompare(b.label)
+  );
+
+  const repeatedLocations = ranked.filter((item) => item.count > 1);
+  const topSource = repeatedLocations.length > 0 ? repeatedLocations : ranked;
+
+  const topLocations = topSource.slice(0, 5).map((item) => item.label);
+  const topKeys = new Set(topLocations.map(normalizeCompanyLocationKey));
+
+  const allLocations = ranked
+    .map((item) => item.label)
+    .filter((label) => !topKeys.has(normalizeCompanyLocationKey(label)))
+    .sort((a, b) => a.localeCompare(b));
+
+  return { topLocations, allLocations };
+};
+
 const Companies = () => {
   const navigate = useNavigate();
 
   const [companies, setCompanies] = useState([]);
+  const [allCompaniesForFilters, setAllCompaniesForFilters] = useState([]);
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -140,7 +195,10 @@ const Companies = () => {
   const [industries, setIndustries] = useState([]);
 
   const [filtersOpen, setFiltersOpen] = useState(true);
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const [locationSearch, setLocationSearch] = useState("");
   const [expandedCardId, setExpandedCardId] = useState(null);
+  const filterBoxRef = useRef(null);
 
   const [showGuestModal, setShowGuestModal] = useState(false);
   const firstModalBtnRef = useRef(null);
@@ -319,6 +377,10 @@ const Companies = () => {
       const list = res?.data?.companies || [];
       setCompanies(list);
 
+      if (!s && !loc && !ind) {
+        setAllCompaniesForFilters(list);
+      }
+
       const f = res?.data?.filters || {};
       setLocations(Array.isArray(f.locations) ? f.locations : []);
       setIndustries(Array.isArray(f.industries) ? f.industries : []);
@@ -390,10 +452,63 @@ const Companies = () => {
     "h-[46px] rounded-xl px-4 bg-white border border-[#C9D8E8] shadow-[0_1px_2px_rgba(0,0,0,0.04)] text-sm font-semibold text-black/75 " +
     "hover:border-[#2e66a6]/55 hover:bg-[#F7FAFD] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 transition-all flex-shrink-0";
 
+  useEffect(() => {
+    if (openDropdown !== "location") {
+      setLocationSearch("");
+    }
+  }, [openDropdown]);
+
+  useEffect(() => {
+    const handlePointerDown = (event) => {
+      if (!openDropdown || !filterBoxRef.current) return;
+      if (!filterBoxRef.current.contains(event.target)) {
+        setOpenDropdown(null);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setOpenDropdown(null);
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [openDropdown]);
+
+  const { topLocations, allLocations } = useMemo(
+    () =>
+      buildCompanyLocationGroups(
+        allCompaniesForFilters.length ? allCompaniesForFilters : companies,
+        formatCompanyLocation,
+        locations
+      ),
+    [allCompaniesForFilters, companies, locations]
+  );
+
+  const searchableLocations = useMemo(
+    () => Array.from(new Set([...topLocations, ...allLocations])),
+    [topLocations, allLocations]
+  );
+
+  const filteredLocationResults = useMemo(() => {
+    const query = locationSearch.trim().toLowerCase();
+    if (!query) return searchableLocations;
+
+    return searchableLocations.filter((location) =>
+      location.toLowerCase().includes(query)
+    );
+  }, [locationSearch, searchableLocations]);
+
   const clearAll = () => {
     setSearch("");
     setSelectedLocation("");
     setSelectedIndustry("");
+    setOpenDropdown(null);
+    setLocationSearch("");
     setExpandedCardId(null);
   };
 
@@ -401,6 +516,168 @@ const Companies = () => {
 
   const handleToggleBreakdown = (companyId) => {
     setExpandedCardId((prev) => (prev === companyId ? null : companyId));
+  };
+
+  const LocationDropdown = () => {
+    const isOpen = openDropdown === "location";
+    const isSearching = Boolean(locationSearch.trim());
+    const displayItems = isSearching ? filteredLocationResults : topLocations;
+
+    return (
+      <div className="relative inline-block">
+        <button
+          type="button"
+          className={pillBtn}
+          onClick={() => setOpenDropdown(isOpen ? null : "location")}
+          aria-expanded={isOpen}
+          aria-controls="main-company-location-menu"
+        >
+          <span className="max-w-[135px] truncate whitespace-nowrap">
+            {selectedLocation || "Location"}
+          </span>
+          <svg
+            className={`ml-1 h-4 w-4 text-black/65 transition ${isOpen ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {isOpen && (
+          <div
+            id="main-company-location-menu"
+            className="absolute left-0 top-full z-[80] mt-2 w-[300px] max-w-[92vw] rounded-xl border border-[#D7E2EE] bg-white p-4 shadow-xl"
+            role="dialog"
+            aria-label="Location filter"
+          >
+            <input
+              value={locationSearch}
+              onChange={(event) => setLocationSearch(event.target.value)}
+              placeholder="Search location"
+              className="w-full rounded-xl border border-[#D7E2EE] bg-[#F7FAFD] px-4 py-3 text-sm text-black outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+              autoFocus
+            />
+
+            <div className="mt-4 max-h-[280px] overflow-auto pr-1">
+              {selectedLocation && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedLocation("");
+                    setOpenDropdown(null);
+                  }}
+                  className="mb-2 w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-[#2e66a6] hover:bg-[#F7FAFD]"
+                >
+                  Clear location
+                </button>
+              )}
+
+              <div className="mb-2 text-xs font-bold uppercase tracking-wide text-black/55">
+                {isSearching ? "Search Results" : "Top Locations"}
+              </div>
+
+              {displayItems.length === 0 ? (
+                <div className="py-4 text-sm text-black/55">
+                  {isSearching ? "No location found" : "No top locations available"}
+                </div>
+              ) : (
+                displayItems.map((location) => (
+                  <label
+                    key={location}
+                    className="flex cursor-pointer items-center gap-3 py-2 text-sm text-black"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={
+                        normalizeCompanyLocationKey(selectedLocation) ===
+                        normalizeCompanyLocationKey(location)
+                      }
+                      onChange={() => {
+                        setSelectedLocation(
+                          normalizeCompanyLocationKey(selectedLocation) ===
+                            normalizeCompanyLocationKey(location)
+                            ? ""
+                            : location
+                        );
+                        setOpenDropdown(null);
+                      }}
+                      className="h-4 w-4"
+                    />
+                    <span className="select-none">{location}</span>
+                  </label>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const IndustryDropdown = () => {
+    const isOpen = openDropdown === "industry";
+
+    return (
+      <div className="relative inline-block">
+        <button
+          type="button"
+          className={`${pillBtn} px-4`}
+          onClick={() => setOpenDropdown(isOpen ? null : "industry")}
+          aria-expanded={isOpen}
+          aria-controls="main-company-industry-menu"
+        >
+          <span className="max-w-[135px] truncate whitespace-nowrap">
+            {selectedIndustry || "Industry"}
+          </span>
+          <svg
+            className={`ml-1 h-4 w-4 text-black/65 transition ${isOpen ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {isOpen && (
+          <div
+            id="main-company-industry-menu"
+            className="absolute left-0 top-full z-[80] mt-2 w-[240px] max-w-[92vw] rounded-xl border border-[#D7E2EE] bg-white p-2 shadow-xl"
+            role="dialog"
+            aria-label="Industry filter"
+          >
+            <div className="max-h-[230px] overflow-auto">
+              {industries.length === 0 ? (
+                <div className="px-3 py-2 text-sm text-black/55">No industries available</div>
+              ) : (
+                industries.map((industry) => (
+                  <button
+                    key={industry}
+                    type="button"
+                    onClick={() => {
+                      setSelectedIndustry(industry);
+                      setOpenDropdown(null);
+                    }}
+                    className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
+                      selectedIndustry === industry
+                        ? "bg-[#F7FAFD] font-semibold text-[#2e66a6]"
+                        : "text-black hover:bg-[#F7FAFD]"
+                    }`}
+                    title={industry}
+                  >
+                    {industry}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   const openGateModal = () => setShowGuestModal(true);
@@ -490,7 +767,7 @@ const Companies = () => {
                   <p className="mt-2 text-[15px] text-black/65 leading-relaxed">Browse verified companies and discover new job offers.</p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
+                <div ref={filterBoxRef} className="flex flex-wrap items-center gap-3">
                   <div className={searchBox}>
                     <svg
                       className="w-5 h-5 text-black/55"
@@ -519,47 +796,8 @@ const Companies = () => {
 
                   {filtersOpen ? (
                     <>
-                      <div className="flex items-center gap-2">
-                        <select
-                          className={`${selectPill} w-[170px] md:w-[190px] truncate pr-12 appearance-none bg-[right_14px_center] bg-no-repeat hover:border-[#2e66a6] focus:border-[#2e66a6]`}
-                          style={{
-                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                            backgroundSize: "16px",
-                          }}
-                          value={selectedLocation}
-                          onChange={(e) => setSelectedLocation(e.target.value)}
-                          aria-label="Filter by location"
-                          title={selectedLocation ? formatCompanyLocation(selectedLocation) : "Location"}
-                        >
-                          <option value="">Location</option>
-                          {locations.map((loc) => (
-                            <option key={loc} value={loc}>
-                              {formatCompanyLocation(loc)}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <select
-                          className={`${selectPill} w-[170px] md:w-[190px] truncate pr-12 appearance-none bg-[right_14px_center] bg-no-repeat hover:border-[#2e66a6] focus:border-[#2e66a6]`}
-                          style={{
-                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                            backgroundSize: "16px",
-                          }}
-                          value={selectedIndustry}
-                          onChange={(e) => setSelectedIndustry(e.target.value)}
-                          aria-label="Filter by industry"
-                          title={selectedIndustry ? selectedIndustry : "Industry"}
-                        >
-                          <option value="">Industry</option>
-                          {industries.map((ind) => (
-                            <option key={ind} value={ind}>
-                              {ind}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                      <LocationDropdown />
+                      <IndustryDropdown />
                     </>
                   ) : null}
 
