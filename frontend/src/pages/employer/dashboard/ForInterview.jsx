@@ -975,36 +975,55 @@ const HiringStageModal = ({
           </div>
 
           <div className="max-h-[330px] space-y-2 overflow-y-auto pr-1">
-            {stages.map((stage) => {
-              const selected = stage.toLowerCase() === currentStage.toLowerCase();
+            {stages.map((stage, index) => {
+              const selected = isSameHiringStage(stage, currentStage);
 
               return (
                 <div
                   key={stage}
                   className={cn(
-                    'flex min-h-[48px] items-center rounded-xl border bg-white transition',
-                    selected ? 'border-[#102a78] ring-1 ring-[#102a78]' : 'border-gray-200 hover:border-gray-300'
+                    'flex min-h-[52px] items-stretch overflow-hidden rounded-xl border transition',
+                    selected
+                      ? 'border-[#2e66a6] bg-[#f4f8fd] shadow-sm ring-1 ring-[#2e66a6]'
+                      : 'border-gray-200 bg-white hover:border-[#9db9df] hover:bg-[#f8fbff]'
                   )}
                 >
                   <button
                     type="button"
                     disabled={busy}
                     onClick={() => onSelect(stage)}
-                    className="flex min-w-0 flex-1 items-center justify-between gap-3 px-4 py-3 text-left text-sm font-semibold text-gray-900 disabled:opacity-60"
+                    className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6] disabled:cursor-not-allowed disabled:opacity-60"
+                    aria-pressed={selected}
                   >
-                    <span className="truncate">{stage}</span>
-                    {selected ? <Icon name="check" className="h-4 w-4 shrink-0" /> : null}
+                    <span
+                      className={cn(
+                        'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-extrabold',
+                        selected
+                          ? 'bg-[#2e66a6] text-white'
+                          : 'bg-slate-100 text-slate-600'
+                      )}
+                    >
+                      {index + 1}
+                    </span>
+
+                    <span className="min-w-0 flex-1 truncate">{stage}</span>
+
+                    {selected ? (
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#2e66a6] text-white">
+                        <Icon name="check" className="h-4 w-4" />
+                      </span>
+                    ) : null}
                   </button>
 
                   <button
                     type="button"
                     disabled={busy}
                     onClick={() => onDeleteStage(stage)}
-                    className="mr-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-50"
+                    className="flex w-12 shrink-0 items-center justify-center border-l border-inherit text-red-500 transition hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label={`Delete ${stage}`}
                     title={`Delete ${stage}`}
                   >
-                    <Icon name="trash" className="h-4 w-4" />
+                    <Icon name="trash" className="h-5 w-5" />
                   </button>
                 </div>
               );
@@ -1700,21 +1719,9 @@ const ForInterview = () => {
       if (addResponseData.success === false) {
         throw new Error(addResponseData.message || 'Failed to add custom hiring stage.');
       }
-      applyHiringStageResponse(addResponseData);
 
-      const setResponse = await api.put(`/applications/${stageTarget._id}/hiring-stage`, {
-        action: 'set',
-        hiringStage: stage,
-      });
-      const setResponseData = setResponse.data || {};
-      if (setResponseData.success === false) {
-        throw new Error(setResponseData.message || 'Failed to select the custom hiring stage.');
-      }
-      applyHiringStageResponse(setResponseData);
-      if (!setResponseData.application) {
-        updateApplicationInState({ ...stageTarget, hiringStage: stage });
-      }
-      setSuccess('Custom hiring stage added and selected.');
+      applyHiringStageResponse(addResponseData);
+      setSuccess('Custom hiring stage added. Select it from the list when you are ready.');
       return true;
     } catch (stageError) {
       setError(stageError?.response?.data?.message || stageError?.message || 'Failed to add custom hiring stage.');
@@ -2051,17 +2058,26 @@ const selectBase =
                               <span className="block truncate" title={contactNumber}>{contactNumber}</span>
                             </td>
 
-                            <td className="px-3 py-5 align-middle">
-                              <div className={cn('truncate text-sm font-semibold', hiringStage ? 'text-gray-900' : 'italic text-gray-500')} title={hiringStage || 'No stage set'}>
-                                {hiringStage || 'No stage set'}
-                              </div>
+                            <td className="p-0 align-middle">
                               <button
                                 type="button"
                                 onClick={() => openHiringStageModal(app)}
-                                className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-gray-900 hover:text-[#2e66a6]"
+                                className="flex min-h-[88px] w-full flex-col items-start justify-center px-3 py-5 text-left transition hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
+                                aria-label={`${hiringStage ? 'Change' : 'Choose'} hiring stage for ${name}`}
                               >
-                                {hiringStage ? 'Change stage' : 'Choose stage'}
-                                <Icon name="chevron-right" className="h-3.5 w-3.5" />
+                                <span
+                                  className={cn(
+                                    'block max-w-full truncate text-sm font-semibold',
+                                    hiringStage ? 'text-gray-900' : 'italic text-gray-500'
+                                  )}
+                                  title={hiringStage || 'No stage set'}
+                                >
+                                  {hiringStage || 'No stage set'}
+                                </span>
+                                <span className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-gray-900">
+                                  {hiringStage ? 'Change stage' : 'Choose stage'}
+                                  <Icon name="chevron-right" className="h-3.5 w-3.5" />
+                                </span>
                               </button>
                             </td>
 
@@ -2108,15 +2124,20 @@ const selectBase =
                           <div><span className="font-semibold text-gray-800">Job:</span> {jobTitle}</div>
                           <div><span className="font-semibold text-gray-800">Company:</span> {companyName}</div>
                           <div><span className="font-semibold text-gray-800">Contact:</span> {contactNumber}</div>
-                          <div>
-                            <div className={cn('font-semibold', hiringStage ? 'text-gray-900' : 'italic text-gray-500')}>
+                          <button
+                            type="button"
+                            onClick={() => openHiringStageModal(app)}
+                            className="w-full rounded-lg px-2 py-2 text-left transition hover:bg-[#edf4fc] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
+                            aria-label={`${hiringStage ? 'Change' : 'Choose'} hiring stage for ${name}`}
+                          >
+                            <span className={cn('block font-semibold', hiringStage ? 'text-gray-900' : 'italic text-gray-500')}>
                               {hiringStage || 'No stage set'}
-                            </div>
-                            <button type="button" onClick={() => openHiringStageModal(app)} className="mt-1 inline-flex items-center gap-1 font-semibold text-gray-900 hover:text-[#2e66a6]">
+                            </span>
+                            <span className="mt-1 inline-flex items-center gap-1 font-semibold text-gray-900">
                               {hiringStage ? 'Change stage' : 'Choose stage'}
                               <Icon name="chevron-right" className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
+                            </span>
+                          </button>
                         </div>
 
                         <div className="mt-3 overflow-x-auto pb-1">
