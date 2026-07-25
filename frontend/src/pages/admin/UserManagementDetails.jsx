@@ -1542,6 +1542,19 @@ const UserManagementDetails = () => {
               </div>
             </div>
           ) : null}
+
+          <div className="border-t border-[#d8e2ee] pt-4">
+            <button
+              type="button"
+              onClick={() =>
+                navigate(`/admin/users/${userId}/application-history`)
+              }
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-[#174b91] transition hover:border-[#2e66a6]/35 hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+            >
+              View full tracking history
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
         </div>
       ) : (
         <div className="mt-5 rounded-xl border border-dashed border-[#d8e2ee] bg-[#f8fafc] px-5 py-12 text-center text-sm text-gray-500">

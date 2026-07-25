@@ -75,6 +75,7 @@ import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UserManagement from './pages/admin/UserManagement';
 import UserManagementDetails from './pages/admin/UserManagementDetails';
+import AdminUserApplicationHistory from './pages/admin/AdminUserApplicationHistory';
 import AdminEmployerPostingHistory from './pages/admin/AdminEmployerPostingHistory';
 import AdminEmployerReviews from './pages/admin/AdminEmployerReviews';
 import AdminApplications from './pages/admin/AdminApplications';
@@ -538,6 +539,14 @@ function App() {
           element={
             <RequireRole role="admin" redirectTo="/login">
               <UserManagementDetails />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/admin/users/:userId/application-history"
+          element={
+            <RequireRole role="admin" redirectTo="/login">
+              <AdminUserApplicationHistory />
             </RequireRole>
           }
         />
