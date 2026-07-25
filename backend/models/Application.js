@@ -200,6 +200,18 @@ const applicationSchema = new mongoose.Schema({
         default: () => ({})
     },
 
+    // Employer-managed hiring stage shown on the For Interview table
+    hiringStage: {
+        type: String,
+        default: '',
+        trim: true,
+        maxlength: 80
+    },
+    customHiringStages: {
+        type: [String],
+        default: []
+    },
+
     // Read-only employer activity timeline
     activityHistory: {
         type: [applicationActivitySchema],
@@ -214,6 +226,7 @@ applicationSchema.index({ job: 1, jobseeker: 1 }, { unique: true });
 applicationSchema.index({ employer: 1, status: 1 });
 applicationSchema.index({ jobseeker: 1, status: 1 });
 applicationSchema.index({ employer: 1, 'interviewSchedule.scheduledAt': 1 });
+applicationSchema.index({ employer: 1, hiringStage: 1 });
 applicationSchema.index({ employer: 1, status: 1, isDeclinedArchived: 1 });
 
 module.exports = mongoose.model('Application', applicationSchema);

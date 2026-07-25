@@ -13,6 +13,7 @@ const {
   getEmployerInterviewerOptions,
   getJobApplications,
   updateApplicationStatus,
+  updateApplicationHiringStage,
   updateInterviewSchedule,
   getApplicationDetails,
   downloadApplicationResume,
@@ -64,6 +65,7 @@ router.delete('/:applicationId/permanent', protect, authorize('employer'), delet
 
 router.get('/job/:jobId', protect, authorize('employer', 'admin'), getJobApplications);
 router.put('/:applicationId/status', protect, authorize('employer'), updateApplicationStatus);
+router.put('/:applicationId/hiring-stage', protect, authorize('employer'), updateApplicationHiringStage);
 router.put('/:applicationId/interview-schedule', protect, authorize('employer'), updateInterviewSchedule);
 router.get('/jobseeker/:jobseekerId/status', protect, authorize('employer'), getJobseekerStatus);
 

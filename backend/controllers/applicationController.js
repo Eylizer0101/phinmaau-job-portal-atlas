@@ -26,6 +26,18 @@ const VALID_DECLINE_REASONS = [
 ];
 
 const VALID_DECLINED_FROM = ['applicants', 'forInterview'];
+const DEFAULT_HIRING_STAGES = ['Initial Interview', 'Assessment', 'Final Interview', 'Job Offer'];
+
+const normalizeHiringStage = (value) => String(value || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+const sameHiringStage = (first, second) =>
+  normalizeHiringStage(first).toLowerCase() === normalizeHiringStage(second).toLowerCase();
+
+const getEmployerCustomHiringStages = async (employerId) => {
+  const stages = await Application.distinct('customHiringStages', { employer: employerId });
+  return [...new Set((stages || []).map(normalizeHiringStage).filter(Boolean))]
+    .filter((stage) => !DEFAULT_HIRING_STAGES.some((defaultStage) => sameHiringStage(defaultStage, stage)))
+    .sort((a, b) => a.localeCompare(b));
+};
 
 const attachEmploymentStatus = async (applications = []) => {
   const list = Array.isArray(applications) ? applications : [applications];
@@ -1186,21 +1198,21 @@ exports.getEmployerForInterviewApplications = async (req, res) => {
       })
       .populate({
         path: 'jobseeker',
-        select: 'fullName firstName middleName lastName email profileImage'
+        select: 'fullName firstName middleName lastName email profileImage phoneNumber contactNumber jobSeekerProfile.phoneNumber jobSeekerProfile.mobileNumber'
       })
-      .populate({
-        path: 'interviewSchedule.interviewer',
-        select: 'fullName firstName middleName lastName email'
-      })
-      .sort({
-        'interviewSchedule.scheduledAt': 1,
-        appliedAt: -1
-      });
+      .sort({ appliedAt: -1 });
+
+    const [applicationsWithEmploymentStatus, customHiringStages] = await Promise.all([
+      attachEmploymentStatus(applications),
+      getEmployerCustomHiringStages(req.user._id)
+    ]);
 
     res.status(200).json({
       success: true,
       count: applications.length,
-      applications: await attachEmploymentStatus(applications)
+      applications: applicationsWithEmploymentStatus,
+      defaultHiringStages: DEFAULT_HIRING_STAGES,
+      customHiringStages
     });
   } catch (error) {
     console.error('Error fetching for interview applications:', error);
@@ -1954,6 +1966,176 @@ exports.getJobApplications = async (req, res) => {
   }
 };
 
+// UPDATE EMPLOYER HIRING STAGE
+exports.updateApplicationHiringStage = async (req, res) => {
+  try {
+    if (req.user.role !== 'employer') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only employers can update hiring stages'
+      });
+    }
+
+    const { applicationId } = req.params;
+    const action = String(req.body?.action || 'set').trim().toLowerCase();
+    const requestedStage = normalizeHiringStage(req.body?.hiringStage || req.body?.stage);
+
+    const application = await Application.findById(applicationId)
+      .populate({ path: 'job', select: 'title companyName companyLogo' })
+      .populate({
+        path: 'jobseeker',
+        select: 'fullName firstName middleName lastName email profileImage phoneNumber contactNumber jobSeekerProfile.phoneNumber jobSeekerProfile.mobileNumber'
+      });
+
+    if (!application) {
+      return res.status(404).json({ success: false, message: 'Application not found' });
+    }
+
+    if (String(application.employer) !== String(req.user._id)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to update this application'
+      });
+    }
+
+    if (application.status !== 'for interview') {
+      return res.status(400).json({
+        success: false,
+        message: 'Hiring stages can only be updated for applicants in For Interview'
+      });
+    }
+
+    if (action === 'addcustom') {
+      if (!requestedStage) {
+        return res.status(400).json({ success: false, message: 'Custom stage is required' });
+      }
+
+      if (DEFAULT_HIRING_STAGES.some((stage) => sameHiringStage(stage, requestedStage))) {
+        return res.status(400).json({ success: false, message: 'This stage already exists' });
+      }
+
+      const existingCustomStages = await getEmployerCustomHiringStages(req.user._id);
+      const existingStage = existingCustomStages.find((stage) => sameHiringStage(stage, requestedStage));
+      const stageToSave = existingStage || requestedStage;
+
+      await Application.updateMany(
+        { employer: req.user._id },
+        { $addToSet: { customHiringStages: stageToSave } }
+      );
+
+      const customHiringStages = await getEmployerCustomHiringStages(req.user._id);
+      application.customHiringStages = customHiringStages;
+
+      return res.status(200).json({
+        success: true,
+        message: existingStage ? 'Hiring stage already exists' : 'Custom hiring stage added',
+        application,
+        defaultHiringStages: DEFAULT_HIRING_STAGES,
+        customHiringStages
+      });
+    }
+
+    if (action === 'deletecustom') {
+      if (!requestedStage) {
+        return res.status(400).json({ success: false, message: 'Custom stage is required' });
+      }
+
+      if (DEFAULT_HIRING_STAGES.some((stage) => sameHiringStage(stage, requestedStage))) {
+        return res.status(400).json({ success: false, message: 'Default hiring stages cannot be deleted' });
+      }
+
+      const employerApplications = await Application.find({ employer: req.user._id })
+        .select('_id hiringStage customHiringStages');
+
+      await Promise.all(
+        employerApplications.map(async (item) => {
+          item.customHiringStages = (item.customHiringStages || []).filter(
+            (stage) => !sameHiringStage(stage, requestedStage)
+          );
+          if (sameHiringStage(item.hiringStage, requestedStage)) {
+            item.hiringStage = '';
+          }
+          await item.save();
+        })
+      );
+
+      const refreshedApplication = await Application.findById(applicationId)
+        .populate({ path: 'job', select: 'title companyName companyLogo' })
+        .populate({
+          path: 'jobseeker',
+          select: 'fullName firstName middleName lastName email profileImage phoneNumber contactNumber jobSeekerProfile.phoneNumber jobSeekerProfile.mobileNumber'
+        });
+      const customHiringStages = await getEmployerCustomHiringStages(req.user._id);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Custom hiring stage deleted',
+        application: refreshedApplication,
+        defaultHiringStages: DEFAULT_HIRING_STAGES,
+        customHiringStages
+      });
+    }
+
+    const previousStage = normalizeHiringStage(application.hiringStage);
+
+    if (action === 'reset') {
+      application.hiringStage = '';
+    } else {
+      if (!requestedStage) {
+        return res.status(400).json({ success: false, message: 'Please select a hiring stage' });
+      }
+
+      const customHiringStages = await getEmployerCustomHiringStages(req.user._id);
+      const allowedStage = [...DEFAULT_HIRING_STAGES, ...customHiringStages].find(
+        (stage) => sameHiringStage(stage, requestedStage)
+      );
+
+      if (!allowedStage) {
+        return res.status(400).json({
+          success: false,
+          message: 'Select an existing stage or add it as a custom stage first'
+        });
+      }
+
+      application.hiringStage = allowedStage;
+    }
+
+    const nextStage = normalizeHiringStage(application.hiringStage);
+    if (!sameHiringStage(previousStage, nextStage)) {
+      application.activityHistory.push({
+        type: 'other',
+        title: nextStage ? 'Hiring stage updated' : 'Hiring stage reset',
+        description: nextStage
+          ? `Hiring stage changed from ${previousStage || 'No stage set'} to ${nextStage}.`
+          : `Hiring stage was reset from ${previousStage || 'No stage set'} to No stage set.`,
+        fromStatus: previousStage,
+        toStatus: nextStage,
+        occurredAt: new Date(),
+        performedBy: req.user._id
+      });
+    }
+
+    await application.save();
+
+    const customHiringStages = await getEmployerCustomHiringStages(req.user._id);
+    application.customHiringStages = customHiringStages;
+
+    return res.status(200).json({
+      success: true,
+      message: action === 'reset' ? 'Hiring stage reset' : 'Hiring stage updated',
+      application,
+      defaultHiringStages: DEFAULT_HIRING_STAGES,
+      customHiringStages
+    });
+  } catch (error) {
+    console.error('Error updating hiring stage:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error updating hiring stage'
+    });
+  }
+};
+
 // UPDATE APPLICATION STATUS
 exports.updateApplicationStatus = async (req, res) => {
   try {
@@ -2054,6 +2236,10 @@ exports.updateApplicationStatus = async (req, res) => {
 
     application.status = nextStatus;
     application.reviewedAt = Date.now();
+
+    if (nextStatus === 'for interview' && oldStatus !== 'for interview') {
+      application.hiringStage = '';
+    }
 
     if (ACTIVE_APPLICATION_STATUSES.includes(nextStatus)) {
       application.lastActiveStatus = nextStatus;

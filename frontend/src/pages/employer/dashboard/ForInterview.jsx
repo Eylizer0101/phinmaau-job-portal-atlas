@@ -383,7 +383,6 @@ const EmployerCustomDateRangeModal = ({ open, startDate, endDate, onCancel, onAp
 
 const ITEMS_PER_PAGE = 9;
 
-const PENDING_INTERVIEW_SCHEDULE_KEY = 'agapayPendingInterviewSchedule';
 
 const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
   const common = { className, fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', ...props };
@@ -455,6 +454,30 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
       return (
         <svg {...common}>
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A9.953 9.953 0 0112 15c2.4 0 4.605.846 6.326 2.255M15 9a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      );
+    case 'message':
+      return (
+        <svg {...common}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h8m-8 4h5m7-2a8 8 0 01-8 8 8.7 8.7 0 01-3.7-.8L4 20l.8-4.3A8 8 0 1120 12z" />
+        </svg>
+      );
+    case 'refresh':
+      return (
+        <svg {...common}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v6h6M20 20v-6h-6M5.6 15A7 7 0 0018 17.4M18.4 9A7 7 0 006 6.6" />
+        </svg>
+      );
+    case 'trash':
+      return (
+        <svg {...common}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 7h12m-9 0V5h6v2m-8 0 1 13h8l1-13M10 11v5m4-5v5" />
+        </svg>
+      );
+    case 'send':
+      return (
+        <svg {...common}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 11l18-8-8 18-2-7-8-3zM11 14l4-4" />
         </svg>
       );
     case 'dots-vertical':
@@ -538,20 +561,6 @@ const formatDate = (dateValue) => {
   });
 };
 
-const formatDateTime = (dateValue) => {
-  if (!dateValue) return 'TBS';
-  const d = new Date(dateValue);
-  if (Number.isNaN(d.getTime())) return 'TBS';
-
-  return d.toLocaleString('en-PH', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-};
-
 const formatTimeOnly = (dateValue) => {
   if (!dateValue) return '';
   const d = new Date(dateValue);
@@ -578,59 +587,14 @@ const buildApplicantName = (u) => {
   return 'Applicant';
 };
 
-const getInterviewMeta = (application) => {
-  const scheduledAt = application?.interviewSchedule?.scheduledAt || null;
-  const meetingType = application?.interviewSchedule?.meetingType || '';
-  const notes = application?.interviewSchedule?.notes || '';
-  const interviewer = application?.interviewSchedule?.interviewer || null;
-  const interviewerName =
-    application?.interviewSchedule?.interviewerName ||
-    interviewer?.fullName ||
-    interviewer?.email ||
-    '';
-  const status = application?.interviewSchedule?.status || '';
-  const meetingLink = application?.interviewSchedule?.meetingLink || '';
-
-  return {
-    scheduledAt,
-    meetingType,
-    notes,
-    interviewer,
-    interviewerName,
-    status,
-    meetingLink,
-  };
-};
-
-const getStepLabelClass = (step, currentStep) => {
-  if (step === currentStep) return 'text-[#1154cc] border-b-2 border-[#1154cc]';
-  if (step < currentStep) return 'text-[#1154cc] border-b-2 border-[#1154cc]';
-  return 'text-gray-400 border-b-2 border-gray-200';
-};
-
-const monthNames = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
-];
-
-const weekdayLabels = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-
-const TIME_SLOTS = [
-  '09:00',
-  '09:30',
-  '10:00',
-  '10:30',
-  '11:00',
-  '11:30',
-  '13:00',
-  '13:30',
-  '14:00',
-  '14:30',
-  '15:00',
-  '15:30',
-  '16:00',
-  '16:30',
-];
+const getApplicantContact = (jobseeker) =>
+  String(
+    jobseeker?.phoneNumber ||
+      jobseeker?.contactNumber ||
+      jobseeker?.jobSeekerProfile?.phoneNumber ||
+      jobseeker?.jobSeekerProfile?.mobileNumber ||
+      ''
+  ).trim() || '—';
 
 const FOR_INTERVIEW_DECLINE_REASONS = [
   'Interview performance did not meet expectations',
@@ -640,544 +604,6 @@ const FOR_INTERVIEW_DECLINE_REASONS = [
   'Position requirements not fully met',
   'Failed to attend scheduled interview',
 ];
-
-const parseTimeLabel = (time24) => {
-  const [hourStr, minuteStr] = String(time24 || '00:00').split(':');
-  let hour = Number(hourStr);
-  const minute = Number(minuteStr);
-  const suffix = hour >= 12 ? 'PM' : 'AM';
-  hour = hour % 12 || 12;
-  return `${hour}:${String(minute).padStart(2, '0')} ${suffix}`;
-};
-
-const buildDateTimeFromParts = (dateObj, time24) => {
-  if (!dateObj || !time24) return null;
-  const [hour, minute] = time24.split(':').map(Number);
-  const next = new Date(dateObj);
-  next.setHours(hour, minute, 0, 0);
-  return next;
-};
-
-const isSameDay = (a, b) =>
-  a &&
-  b &&
-  a.getFullYear() === b.getFullYear() &&
-  a.getMonth() === b.getMonth() &&
-  a.getDate() === b.getDate();
-
-const getCalendarDays = (visibleMonth) => {
-  const year = visibleMonth.getFullYear();
-  const month = visibleMonth.getMonth();
-  const firstDay = new Date(year, month, 1);
-  const firstWeekDay = firstDay.getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  const days = [];
-
-  for (let i = 0; i < firstWeekDay; i += 1) {
-    days.push(null);
-  }
-
-  for (let day = 1; day <= daysInMonth; day += 1) {
-    days.push(new Date(year, month, day));
-  }
-
-  return days;
-};
-
-const getStatusButtonLabel = (application) =>
-  application?.interviewSchedule?.scheduledAt ? 'Reschedule Interview' : 'Schedule Interview';
-
-const ScheduleInterviewModal = ({
-  open,
-  onClose,
-  application,
-  interviewerOptions,
-  onSubmit,
-  submitting,
-}) => {
-  const [step, setStep] = useState(1);
-  const [visibleMonth, setVisibleMonth] = useState(() => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), 1);
-  });
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedTime, setSelectedTime] = useState('');
-  const [meetingType, setMeetingType] = useState('Video Call');
-  const [selectedInterviewerId, setSelectedInterviewerId] = useState('');
-  const [notes, setNotes] = useState('');
-  const [modalError, setModalError] = useState('');
-
-  useEffect(() => {
-    if (!open || !application) return;
-
-    const existingSchedule = application?.interviewSchedule?.scheduledAt
-      ? new Date(application.interviewSchedule.scheduledAt)
-      : null;
-
-    const initialDate = existingSchedule && !Number.isNaN(existingSchedule.getTime())
-      ? existingSchedule
-      : null;
-
-    setStep(1);
-    setModalError('');
-    setVisibleMonth(
-      initialDate
-        ? new Date(initialDate.getFullYear(), initialDate.getMonth(), 1)
-        : new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-    );
-    setSelectedDate(initialDate ? new Date(initialDate.getFullYear(), initialDate.getMonth(), initialDate.getDate()) : null);
-    setSelectedTime(
-      initialDate
-        ? `${String(initialDate.getHours()).padStart(2, '0')}:${String(initialDate.getMinutes()).padStart(2, '0')}`
-        : ''
-    );
-    setMeetingType(application?.interviewSchedule?.meetingType || 'Video Call');
-    setSelectedInterviewerId(application?.interviewSchedule?.interviewer?._id || application?.interviewSchedule?.interviewer || '');
-    setNotes(application?.interviewSchedule?.notes || '');
-  }, [open, application]);
-
-  useEffect(() => {
-    if (!selectedInterviewerId && interviewerOptions.length > 0) {
-      setSelectedInterviewerId(interviewerOptions[0]._id);
-    }
-  }, [interviewerOptions, selectedInterviewerId]);
-
-  if (!open || !application) return null;
-
-  const applicantName = buildApplicantName(application.jobseeker);
-  const existingDateTime = buildDateTimeFromParts(selectedDate, selectedTime);
-  const calendarDays = getCalendarDays(visibleMonth);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const selectedInterviewer = interviewerOptions.find((item) => String(item._id) === String(selectedInterviewerId));
-
-  const availableSlots = TIME_SLOTS.filter((slot) => {
-    if (!selectedDate) return true;
-    const slotDateTime = buildDateTimeFromParts(selectedDate, slot);
-    if (!slotDateTime) return false;
-
-    const now = new Date();
-    if (isSameDay(selectedDate, now)) {
-      return slotDateTime.getTime() > now.getTime();
-    }
-
-    return slotDateTime.getTime() >= today.getTime();
-  });
-
-  const handleNext = () => {
-    setModalError('');
-
-    if (step === 1) {
-      if (!selectedDate) {
-        setModalError('Please select an interview date.');
-        return;
-      }
-      if (!selectedTime) {
-        setModalError('Please select an interview time.');
-        return;
-      }
-      setStep(2);
-      return;
-    }
-
-    if (step === 2) {
-      if (!meetingType) {
-        setModalError('Please select an interview type.');
-        return;
-      }
-      if (!selectedInterviewerId) {
-        setModalError('Please select an interviewer.');
-        return;
-      }
-      setStep(3);
-    }
-  };
-
-  const handleBack = () => {
-    setModalError('');
-    if (step === 1) {
-      onClose();
-      return;
-    }
-    setStep((prev) => Math.max(1, prev - 1));
-  };
-
-  const handleConfirm = async () => {
-    setModalError('');
-
-    if (!selectedDate || !selectedTime) {
-      setModalError('Please select date and time.');
-      setStep(1);
-      return;
-    }
-
-    if (!meetingType || !selectedInterviewerId) {
-      setModalError('Please complete the interview details.');
-      setStep(2);
-      return;
-    }
-
-    const scheduledAt = buildDateTimeFromParts(selectedDate, selectedTime);
-    if (!scheduledAt) {
-      setModalError('Invalid interview schedule.');
-      return;
-    }
-
-    await onSubmit({
-      applicationId: application._id,
-      scheduledAt: scheduledAt.toISOString(),
-      meetingType,
-      interviewerId: selectedInterviewerId,
-      notes: notes.trim(),
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4">
-      <div className="flex h-[95vh] w-full max-w-3xl flex-col overflow-hidden rounded-[26px] bg-white shadow-2xl">
-        <div className="border-b border-gray-200 px-6 py-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <h2 className="text-2xl font-semibold text-gray-900">
-                {application?.interviewSchedule?.scheduledAt ? 'Reschedule Interview' : 'Schedule Interview'}
-              </h2>
-              <p className="mt-1 text-sm text-gray-500">
-                {applicantName} · {application?.job?.title || 'Applicant'}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-              aria-label="Close modal"
-            >
-              <Icon name="x" className="h-5 w-5" />
-            </button>
-          </div>
-
-          <div className="mt-5 grid grid-cols-3 gap-2 text-[11px] font-semibold uppercase tracking-wider">
-            <div className={cn('pb-2 text-center', getStepLabelClass(1, step))}>Date & Time</div>
-            <div className={cn('pb-2 text-center', getStepLabelClass(2, step))}>Details</div>
-            <div className={cn('pb-2 text-center', getStepLabelClass(3, step))}>Confirm</div>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-6 py-6 pb-8">
-          {modalError && (
-            <Alert type="error" onClose={() => setModalError('')}>
-              {modalError}
-            </Alert>
-          )}
-
-          {step === 1 && (
-            <div>
-              <div className="mb-5 flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setVisibleMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
-                  }
-                  className="rounded-full p-2 text-gray-600 hover:bg-gray-100"
-                >
-                  <Icon name="chevron-left" className="h-5 w-5" />
-                </button>
-
-                <div className="text-2xl font-semibold text-gray-900">
-                  {monthNames[visibleMonth.getMonth()]} {visibleMonth.getFullYear()}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setVisibleMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))
-                  }
-                  className="rounded-full p-2 text-gray-600 hover:bg-gray-100"
-                >
-                  <Icon name="chevron-right" className="h-5 w-5" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-7 gap-2 text-center text-sm text-gray-500">
-                {weekdayLabels.map((label) => (
-                  <div key={label} className="py-2 font-medium">
-                    {label}
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-2 grid grid-cols-7 gap-2">
-                {calendarDays.map((dateObj, idx) => {
-                  if (!dateObj) {
-                    return <div key={`blank_${idx}`} className="h-12" />;
-                  }
-
-                  const isPast = dateObj.getTime() < today.getTime();
-                  const isSelected = selectedDate && isSameDay(dateObj, selectedDate);
-                  const isToday = isSameDay(dateObj, new Date());
-
-                  return (
-                    <button
-                      key={dateObj.toISOString()}
-                      type="button"
-                      disabled={isPast}
-                      onClick={() => {
-                        setSelectedDate(dateObj);
-                        setSelectedTime('');
-                      }}
-                      className={cn(
-                        'h-12 rounded-xl text-sm font-semibold transition-colors',
-                        isPast && 'cursor-not-allowed bg-gray-50 text-gray-300',
-                        !isPast && !isSelected && 'bg-white text-gray-800 hover:bg-gray-100',
-                        isSelected && 'bg-[#1154cc] text-white',
-                        isToday && !isSelected && 'border border-[#1154cc] text-[#1154cc]'
-                      )}
-                    >
-                      {dateObj.getDate()}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="mt-8">
-                <div className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Select Time
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                  {TIME_SLOTS.map((slot) => {
-                    const isAvailable = availableSlots.includes(slot);
-                    const isSelected = selectedTime === slot;
-
-                    return (
-                      <button
-                        key={slot}
-                        type="button"
-                        disabled={!selectedDate || !isAvailable}
-                        onClick={() => setSelectedTime(slot)}
-                        className={cn(
-                          'rounded-xl border px-3 py-3 text-sm font-semibold transition-colors',
-                          !selectedDate && 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-300',
-                          selectedDate && !isAvailable && 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-300',
-                          isAvailable && !isSelected && 'border-gray-200 bg-white text-gray-800 hover:border-[#1154cc] hover:text-[#1154cc]',
-                          isSelected && 'border-[#1154cc] bg-blue-50 text-[#1154cc]'
-                        )}
-                      >
-                        {parseTimeLabel(slot)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-7">
-              <div>
-                <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Interview Type
-                </div>
-
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() => setMeetingType('Video Call')}
-                    className={cn(
-                      'rounded-2xl border p-5 text-left transition-colors',
-                      meetingType === 'Video Call'
-                        ? 'border-[#1ab1a7] bg-[#eafaf8]'
-                        : 'border-gray-200 bg-white hover:bg-gray-50'
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="rounded-full bg-white p-2 shadow-sm">
-                        <Icon name="video" className="h-5 w-5 text-[#1ab1a7]" />
-                      </span>
-                      <div>
-                        <div className="text-lg font-semibold text-[#11857f]">Video Call</div>
-                        <div className="text-sm text-gray-500">Google Meet</div>
-                      </div>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setMeetingType('On-site')}
-                    className={cn(
-                      'rounded-2xl border p-5 text-left transition-colors',
-                      meetingType === 'On-site'
-                        ? 'border-[#1154cc] bg-blue-50'
-                        : 'border-gray-200 bg-white hover:bg-gray-50'
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="rounded-full bg-white p-2 shadow-sm">
-                        <Icon name="location" className="h-5 w-5 text-gray-600" />
-                      </span>
-                      <div>
-                        <div className="text-lg font-semibold text-gray-900">On-site</div>
-                        <div className="text-sm text-gray-500">Office visit</div>
-                      </div>
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Interviewer
-                </div>
-
-                <div className="space-y-3">
-                  {interviewerOptions.map((interviewer) => {
-                    const selected = String(selectedInterviewerId) === String(interviewer._id);
-
-                    return (
-                      <button
-                        key={interviewer._id}
-                        type="button"
-                        onClick={() => setSelectedInterviewerId(interviewer._id)}
-                        className={cn(
-                          'flex w-full items-center justify-between rounded-2xl border p-4 text-left transition-colors',
-                          selected
-                            ? 'border-[#1154cc] bg-blue-50'
-                            : 'border-gray-200 bg-white hover:bg-gray-50'
-                        )}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="rounded-full bg-gray-100 p-2">
-                            <Icon name="user" className="h-5 w-5 text-gray-500" />
-                          </span>
-                          <div>
-                            <div className="text-base font-semibold text-gray-900">
-                              {interviewer.fullName || interviewer.email}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {interviewer.roleLabel || interviewer.email}
-                            </div>
-                          </div>
-                        </div>
-
-                        {selected && (
-                          <span className="text-[#1154cc]">
-                            <Icon name="check" className="h-5 w-5" />
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div>
-                <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Notes (Optional)
-                </div>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={5}
-                  placeholder="Add interview instructions or notes..."
-                  className="w-full rounded-2xl border border-gray-300 px-4 py-3 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1154cc] focus-visible:ring-offset-2"
-                />
-              </div>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="space-y-5">
-              <div className="rounded-3xl border border-gray-200 bg-gray-50 p-6">
-                <div className="mb-5 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Confirmation
-                </div>
-
-                <div className="mb-6 flex items-center gap-4 border-b border-gray-200 pb-5">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#1154cc] text-lg font-semibold text-[#1154cc]">
-                    {(applicantName?.trim()?.[0] || 'A').toUpperCase()}
-                  </div>
-                  <div>
-                    <div className="text-2xl font-semibold text-gray-900">{applicantName}</div>
-                    <div className="text-sm text-gray-500">{application?.job?.title || 'Applicant'}</div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                  <div>
-                    <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-500">Date</div>
-                    <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
-                      <Icon name="calendar" className="h-4 w-4 text-[#1154cc]" />
-                      {existingDateTime ? formatDate(existingDateTime) : '—'}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-500">Time</div>
-                    <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
-                      <Icon name="clock" className="h-4 w-4 text-[#1154cc]" />
-                      {existingDateTime ? formatTimeOnly(existingDateTime) : '—'}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-500">Type</div>
-                    <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
-                      {meetingType === 'Video Call' ? (
-                        <Icon name="video" className="h-4 w-4 text-[#1ab1a7]" />
-                      ) : (
-                        <Icon name="location" className="h-4 w-4 text-[#1154cc]" />
-                      )}
-                      {meetingType}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-500">Interviewer</div>
-                    <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
-                      <Icon name="user" className="h-4 w-4 text-[#1154cc]" />
-                      {selectedInterviewer?.fullName || selectedInterviewer?.email || '—'}
-                    </div>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-500">Notes</div>
-                    <div className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700">
-                      {notes?.trim() ? notes : 'No notes added.'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-[#bce9e3] bg-[#f1fffc] px-4 py-3 text-sm text-[#12756f]">
-                An interview invitation will be saved for this applicant with the interview details.
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between border-t border-gray-200 bg-white px-6 py-5">
-          <Button variant="secondary" onClick={handleBack}>
-            <Icon name="chevron-left" className="h-4 w-4" />
-            {step === 1 ? 'Cancel' : 'Back'}
-          </Button>
-
-          {step < 3 ? (
-            <Button variant="success" onClick={handleNext}>
-              Next
-              <Icon name="chevron-right" className="h-4 w-4" />
-            </Button>
-          ) : (
-            <Button variant="success" onClick={handleConfirm} disabled={submitting}>
-              {submitting ? 'Saving...' : 'Confirm & Schedule'}
-            </Button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const DeclineReasonModal = ({
   open,
@@ -1326,76 +752,409 @@ const DeclineReasonModal = ({
   );
 };
 
-const ActionMenu = ({ app, name, rowBusy, onHire, onDecline, openMenuId, setOpenMenuId }) => {
+const MessagePopup = ({ open, onClose, application }) => {
+  const [messages, setMessages] = useState([]);
+  const [text, setText] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
+  const bottomRef = useRef(null);
+
+  const currentUser = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem('user') || '{}');
+    } catch {
+      return {};
+    }
+  }, []);
+
+  const applicant = application?.jobseeker;
+  const applicantId = applicant?._id || applicant?.id;
+  const employerId = currentUser?._id || currentUser?.id || application?.employer?._id || application?.employer;
+  const conversationId = applicantId && employerId
+    ? [String(applicantId), String(employerId)].sort().join('_')
+    : '';
+
+  const loadMessages = useCallback(async () => {
+    if (!open || !conversationId) return;
+
+    try {
+      setLoading(true);
+      setError('');
+      const response = await api.get(`/messages/conversation/${conversationId}`);
+      setMessages(response.data?.data || []);
+      await api.put(`/messages/mark-read/${conversationId}`).catch(() => {});
+    } catch (loadError) {
+      setError(loadError?.response?.data?.message || 'Failed to load messages.');
+    } finally {
+      setLoading(false);
+    }
+  }, [open, conversationId]);
+
+  useEffect(() => {
+    if (!open) {
+      setMessages([]);
+      setText('');
+      setError('');
+      return;
+    }
+    loadMessages();
+  }, [open, loadMessages]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  if (!open || !application) return null;
+
+  const sendMessage = async () => {
+    const content = text.trim();
+    if (!content || sending || !applicantId) return;
+
+    try {
+      setSending(true);
+      setError('');
+      const response = await api.post('/messages/send', {
+        receiverId: applicantId,
+        content,
+        jobId: application?.job?._id || application?.job,
+        applicationId: application?._id,
+      });
+
+      setText('');
+      if (response.data?.data) {
+        setMessages((previous) => [...previous, response.data.data]);
+      } else {
+        await loadMessages();
+      }
+    } catch (sendError) {
+      setError(sendError?.response?.data?.message || 'Failed to send message.');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-label="Messages">
+      <div className="flex h-[78vh] w-full max-w-2xl flex-col overflow-hidden rounded-[24px] bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b px-5 py-4">
+          <div>
+            <h2 className="font-semibold text-gray-900">Messages</h2>
+            <p className="text-sm text-gray-500">{buildApplicantName(applicant)}</p>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-full p-2 hover:bg-gray-100" aria-label="Close messages">
+            <Icon name="x" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto bg-gray-50 p-5">
+          {loading ? (
+            <div className="flex justify-center py-10 text-[#2e66a6]">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-current border-r-transparent" />
+            </div>
+          ) : messages.length ? (
+            <div className="space-y-3">
+              {messages.map((message) => {
+                const mine = String(message.sender?._id || message.sender) === String(employerId);
+                return (
+                  <div key={message._id || `${message.createdAt}-${message.content}`} className={cn('flex', mine ? 'justify-end' : 'justify-start')}>
+                    <div className={cn('max-w-[78%] rounded-2xl px-4 py-3 text-sm', mine ? 'rounded-br-md bg-[#2e66a6] text-white' : 'rounded-bl-md border bg-white text-gray-900')}>
+                      <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                      <div className={cn('mt-1 text-[10px]', mine ? 'text-blue-100' : 'text-gray-400')}>
+                        {formatTimeOnly(message.createdAt)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={bottomRef} />
+            </div>
+          ) : (
+            <div className="py-16 text-center text-sm text-gray-500">
+              No messages yet. Start the conversation with this applicant.
+            </div>
+          )}
+
+          {error ? <div className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}
+        </div>
+
+        <div className="border-t p-4">
+          <div className="flex gap-2">
+            <textarea
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault();
+                  sendMessage();
+                }
+              }}
+              rows={2}
+              placeholder="Type a message..."
+              className="flex-1 resize-none rounded-xl border px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#2e66a6] focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={sendMessage}
+              disabled={!text.trim() || sending}
+              className="flex h-11 w-11 items-center justify-center self-end rounded-xl bg-[#2e66a6] text-white disabled:opacity-50"
+              aria-label="Send message"
+            >
+              {sending ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-r-transparent" /> : <Icon name="send" />}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const HiringStageModal = ({
+  open,
+  application,
+  defaultStages,
+  customStages,
+  busy,
+  onClose,
+  onSelect,
+  onAddCustom,
+  onDeleteCustom,
+}) => {
+  const [customStage, setCustomStage] = useState('');
+  const [localError, setLocalError] = useState('');
+
+  useEffect(() => {
+    if (open) {
+      setCustomStage('');
+      setLocalError('');
+    }
+  }, [open, application?._id]);
+
+  if (!open || !application) return null;
+
+  const currentStage = String(application?.hiringStage || '').trim();
+  const stages = [...defaultStages, ...customStages];
+
+  const addCustomStage = async () => {
+    const value = customStage.replace(/\s+/g, ' ').trim();
+    if (!value) {
+      setLocalError('Enter a custom stage name.');
+      return;
+    }
+    setLocalError('');
+    const added = await onAddCustom(value);
+    if (added) setCustomStage('');
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-4 py-6" role="dialog" aria-modal="true" aria-label="Update hiring stage">
+      <div className="w-full max-w-[520px] overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="flex items-start justify-between px-6 pb-3 pt-5">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Update Hiring Stage</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              {buildApplicantName(application.jobseeker)} — {application.job?.title || 'Job'} @ {application.job?.companyName || 'Company'}
+            </p>
+          </div>
+          <button type="button" onClick={onClose} disabled={busy} className="rounded-full p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-50" aria-label="Close hiring stage modal">
+            <Icon name="x" className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="px-6 pb-5">
+          <div className="mb-2 flex items-center justify-between text-xs font-semibold text-gray-700">
+            <span>Select stage</span>
+            <span className="text-gray-500">{stages.length} stage(s)</span>
+          </div>
+
+          <div className="max-h-[330px] space-y-2 overflow-y-auto pr-1">
+            {stages.map((stage) => {
+              const selected = stage.toLowerCase() === currentStage.toLowerCase();
+              const custom = customStages.some((item) => item.toLowerCase() === stage.toLowerCase());
+
+              return (
+                <div
+                  key={stage}
+                  className={cn(
+                    'flex min-h-[48px] items-center rounded-xl border bg-white transition',
+                    selected ? 'border-[#102a78] ring-1 ring-[#102a78]' : 'border-gray-200 hover:border-gray-300'
+                  )}
+                >
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => onSelect(stage)}
+                    className="flex min-w-0 flex-1 items-center justify-between gap-3 px-4 py-3 text-left text-sm font-semibold text-gray-900 disabled:opacity-60"
+                  >
+                    <span className="truncate">{stage}</span>
+                    {selected ? <Icon name="check" className="h-4 w-4 shrink-0" /> : null}
+                  </button>
+
+                  {custom ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => onDeleteCustom(stage)}
+                      className="mr-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-50"
+                      aria-label={`Delete ${stage}`}
+                    >
+                      <Icon name="trash" className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-4">
+            <label htmlFor="customHiringStage" className="text-sm font-semibold text-gray-800">
+              Not listed? Add a custom stage
+            </label>
+            <div className="mt-2 flex gap-2">
+              <input
+                id="customHiringStage"
+                value={customStage}
+                onChange={(event) => setCustomStage(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    addCustomStage();
+                  }
+                }}
+                maxLength={80}
+                placeholder="e.g. Panel Interview"
+                className="h-11 min-w-0 flex-1 rounded-xl border border-gray-300 px-4 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
+              />
+              <button
+                type="button"
+                disabled={busy || !customStage.trim()}
+                onClick={addCustomStage}
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#102a78] px-5 text-sm font-semibold text-white hover:bg-[#0d2365] disabled:opacity-50"
+              >
+                <span className="text-lg leading-none">+</span>
+                Add
+              </button>
+            </div>
+            {localError ? <p className="mt-2 text-xs font-medium text-red-600">{localError}</p> : null}
+          </div>
+
+          <div className="mt-4 flex justify-end">
+            <button type="button" onClick={onClose} disabled={busy} className="h-10 rounded-xl border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ActionMenu = ({
+  app,
+  name,
+  rowBusy,
+  onHire,
+  onDecline,
+  onChangeStage,
+  onMessage,
+  onReset,
+  openMenuId,
+  setOpenMenuId,
+}) => {
   const isOpen = openMenuId === app._id;
   const wrapperRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!wrapperRef.current) return;
-      if (!wrapperRef.current.contains(event.target)) {
-        setOpenMenuId((prev) => (prev === app._id ? null : prev));
+      if (!wrapperRef.current?.contains(event.target)) {
+        setOpenMenuId((previous) => (previous === app._id ? null : previous));
       }
     };
 
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, setOpenMenuId, app._id]);
 
   return (
-    <div ref={wrapperRef} className="relative flex items-center justify-center gap-2">
+    <div ref={wrapperRef} className="relative flex items-center justify-end gap-2 whitespace-nowrap">
       <Link
         to={`/employer/application/${app._id}?from=for-interview`}
-        className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
         aria-label={`View application of ${name}`}
       >
-        <Icon name="eye" className="h-5 w-5" />
+        <Icon name="eye" className="h-4 w-4" />
+        View
       </Link>
+
+      {!app.alreadyEmployed ? (
+        <button
+          type="button"
+          onClick={onHire}
+          disabled={rowBusy}
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+        >
+          <Icon name="check" className="h-4 w-4" />
+          Hired
+        </button>
+      ) : null}
 
       <button
         type="button"
-        onClick={() => setOpenMenuId((prev) => (prev === app._id ? null : app._id))}
-        className="inline-flex h-11 w-16 items-center justify-center gap-1 rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-        aria-label={`Open actions for ${name}`}
+        onClick={onDecline}
+        disabled={rowBusy}
+        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-red-300 bg-white px-3 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
       >
-        <Icon name="dots-vertical" className="h-5 w-5" />
-        <Icon name="chevron-down" className="h-4 w-4" />
+        <Icon name="x" className="h-4 w-4" />
+        Decline
       </button>
 
-      {isOpen && (
-        <div className="absolute right-0 top-14 z-30 w-44 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl">
-          <button
-            type="button"
-            onClick={() => {
-              onHire();
-              setOpenMenuId(null);
-            }}
-            disabled={rowBusy}
-            className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-[#2e66a6] hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Icon name="check" className="h-4 w-4" />
-            Hired
-          </button>
+      <button
+        type="button"
+        onClick={() => setOpenMenuId((previous) => (previous === app._id ? null : app._id))}
+        className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+        aria-label={`More actions for ${name}`}
+      >
+        <Icon name="dots-vertical" className="h-5 w-5" />
+      </button>
 
+      {isOpen ? (
+        <div className="absolute right-0 top-12 z-40 w-52 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-xl">
           <button
             type="button"
             onClick={() => {
-              onDecline();
+              onChangeStage();
+              setOpenMenuId(null);
+            }}
+            className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            <Icon name="refresh" className="h-4 w-4" />
+            Change hiring stage
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onMessage();
+              setOpenMenuId(null);
+            }}
+            className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            <Icon name="message" className="h-4 w-4" />
+            Send message
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onReset();
               setOpenMenuId(null);
             }}
             disabled={rowBusy}
-            className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
-            <Icon name="x" className="h-4 w-4" />
-            Declined
+            <Icon name="refresh" className="h-4 w-4" />
+            Reset status
           </button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 };
@@ -1407,10 +1166,15 @@ const ForInterview = () => {
 
   const [applications, setApplications] = useState([]);
   const [jobs, setJobs] = useState([]);
-  const [interviewerOptions, setInterviewerOptions] = useState([]);
+  const [defaultHiringStages, setDefaultHiringStages] = useState([
+    'Initial Interview',
+    'Assessment',
+    'Final Interview',
+    'Job Offer',
+  ]);
+  const [customHiringStages, setCustomHiringStages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [jobsLoading, setJobsLoading] = useState(true);
-  const [interviewersLoading, setInterviewersLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [query, setQuery] = useState('');
@@ -1423,10 +1187,11 @@ const ForInterview = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [openFilterMenu, setOpenFilterMenu] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedApplication, setSelectedApplication] = useState(null);
-  const [savingSchedule, setSavingSchedule] = useState(false);
-  const [connectingGoogleCalendar, setConnectingGoogleCalendar] = useState(false);
+  const [stageModalOpen, setStageModalOpen] = useState(false);
+  const [stageTarget, setStageTarget] = useState(null);
+  const [stageBusy, setStageBusy] = useState(false);
+  const [messageOpen, setMessageOpen] = useState(false);
+  const [messageTarget, setMessageTarget] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
 
   const [declineModalOpen, setDeclineModalOpen] = useState(false);
@@ -1509,22 +1274,6 @@ const ForInterview = () => {
     }
   }, []);
 
-  const fetchInterviewerOptions = useCallback(async () => {
-    try {
-      setInterviewersLoading(true);
-      const res = await api.get('/applications/employer/interviewer-options');
-      if (res.data?.success) {
-        setInterviewerOptions(res.data.interviewers || []);
-      } else {
-        setInterviewerOptions([]);
-      }
-    } catch (err) {
-      console.error(err);
-      setInterviewerOptions([]);
-    } finally {
-      setInterviewersLoading(false);
-    }
-  }, []);
 
   const fetchForInterviewApplications = useCallback(async () => {
     try {
@@ -1536,6 +1285,10 @@ const ForInterview = () => {
 
       if (res.data?.success) {
         setApplications(res.data.applications || []);
+        if (Array.isArray(res.data.defaultHiringStages) && res.data.defaultHiringStages.length) {
+          setDefaultHiringStages(res.data.defaultHiringStages);
+        }
+        setCustomHiringStages(Array.isArray(res.data.customHiringStages) ? res.data.customHiringStages : []);
       } else {
         setApplications([]);
       }
@@ -1550,8 +1303,7 @@ const ForInterview = () => {
 
   useEffect(() => {
     fetchJobs();
-    fetchInterviewerOptions();
-  }, [fetchJobs, fetchInterviewerOptions]);
+  }, [fetchJobs]);
 
   useEffect(() => {
     fetchForInterviewApplications();
@@ -1594,7 +1346,7 @@ const ForInterview = () => {
     const startOfNextYear = new Date(now.getFullYear() + 1, 0, 1);
 
     const getComparableDate = (app) => {
-      const dateValue = app?.interviewSchedule?.scheduledAt || app?.appliedAt || 0;
+      const dateValue = app?.appliedAt || 0;
       const parsed = new Date(dateValue);
       return Number.isNaN(parsed.getTime()) ? null : parsed;
     };
@@ -1666,7 +1418,7 @@ const ForInterview = () => {
     };
 
     const getRecentValue = (app) => {
-      const time = new Date(app?.interviewSchedule?.scheduledAt || app?.appliedAt || 0).getTime();
+      const time = new Date(app?.appliedAt || 0).getTime();
       return Number.isNaN(time) ? 0 : time;
     };
 
@@ -1767,214 +1519,145 @@ const ForInterview = () => {
     setOpenFilterMenu(null);
   };
 
-  const openScheduleModal = (application) => {
-    setSelectedApplication(application);
-    setModalOpen(true);
+  const updateApplicationInState = useCallback((updatedApplication) => {
+    if (!updatedApplication?._id) return;
+
+    setApplications((previous) =>
+      previous.map((item) =>
+        item._id === updatedApplication._id
+          ? { ...item, ...updatedApplication, alreadyEmployed: item.alreadyEmployed }
+          : item
+      )
+    );
+
+    setStageTarget((previous) =>
+      previous?._id === updatedApplication._id
+        ? { ...previous, ...updatedApplication, alreadyEmployed: previous.alreadyEmployed }
+        : previous
+    );
+  }, []);
+
+  const applyHiringStageResponse = useCallback((responseData) => {
+    if (Array.isArray(responseData?.defaultHiringStages) && responseData.defaultHiringStages.length) {
+      setDefaultHiringStages(responseData.defaultHiringStages);
+    }
+    if (Array.isArray(responseData?.customHiringStages)) {
+      setCustomHiringStages(responseData.customHiringStages);
+    }
+    if (responseData?.application) {
+      updateApplicationInState(responseData.application);
+    }
+  }, [updateApplicationInState]);
+
+  const openHiringStageModal = (application) => {
+    setError('');
+    setSuccess('');
+    setStageTarget(application);
+    setStageModalOpen(true);
   };
 
-  const closeScheduleModal = () => {
-    if (savingSchedule) return;
-    setModalOpen(false);
-    setSelectedApplication(null);
+  const closeHiringStageModal = () => {
+    if (stageBusy) return;
+    setStageModalOpen(false);
+    setStageTarget(null);
   };
 
-  const connectEmployerGoogleCalendar = async () => {
+  const handleSelectHiringStage = async (stage) => {
+    if (!stageTarget?._id || stageBusy) return false;
+
     try {
-      setConnectingGoogleCalendar(true);
+      setStageBusy(true);
       setError('');
-
-      const response = await api.get('/auth/google/employer/connect-url');
-      const authorizationUrl = String(response.data?.authorizationUrl || '').trim();
-
-      if (!authorizationUrl) {
-        throw new Error('Google authorization URL was not returned.');
-      }
-
-      window.location.assign(authorizationUrl);
-    } catch (connectError) {
-      console.error(connectError);
-      setError(
-        connectError?.response?.data?.message ||
-        connectError?.message ||
-        'Unable to connect Google Calendar.'
-      );
-      setConnectingGoogleCalendar(false);
+      const response = await api.put(`/applications/${stageTarget._id}/hiring-stage`, {
+        action: 'set',
+        hiringStage: stage,
+      });
+      applyHiringStageResponse(response.data);
+      setSuccess('Hiring stage updated.');
+      return true;
+    } catch (stageError) {
+      setError(stageError?.response?.data?.message || 'Failed to update hiring stage.');
+      return false;
+    } finally {
+      setStageBusy(false);
     }
   };
 
-  const handleScheduleSubmit = async (payload) => {
+  const handleAddCustomStage = async (stage) => {
+    if (!stageTarget?._id || stageBusy) return false;
+
     try {
-      setSavingSchedule(true);
+      setStageBusy(true);
+      setError('');
+      const addResponse = await api.put(`/applications/${stageTarget._id}/hiring-stage`, {
+        action: 'addCustom',
+        hiringStage: stage,
+      });
+      applyHiringStageResponse(addResponse.data);
+
+      const setResponse = await api.put(`/applications/${stageTarget._id}/hiring-stage`, {
+        action: 'set',
+        hiringStage: stage,
+      });
+      applyHiringStageResponse(setResponse.data);
+      setSuccess('Custom hiring stage added and selected.');
+      return true;
+    } catch (stageError) {
+      setError(stageError?.response?.data?.message || 'Failed to add custom hiring stage.');
+      return false;
+    } finally {
+      setStageBusy(false);
+    }
+  };
+
+  const handleDeleteCustomStage = async (stage) => {
+    if (!stageTarget?._id || stageBusy) return;
+
+    try {
+      setStageBusy(true);
+      setError('');
+      const response = await api.put(`/applications/${stageTarget._id}/hiring-stage`, {
+        action: 'deleteCustom',
+        hiringStage: stage,
+      });
+      applyHiringStageResponse(response.data);
+      await fetchForInterviewApplications();
+      setSuccess('Custom hiring stage deleted.');
+    } catch (stageError) {
+      setError(stageError?.response?.data?.message || 'Failed to delete custom hiring stage.');
+    } finally {
+      setStageBusy(false);
+    }
+  };
+
+  const handleResetHiringStage = async (application) => {
+    if (!application?._id || updatingId) return;
+
+    try {
+      setUpdatingId(application._id);
       setError('');
       setSuccess('');
-
-      const res = await api.put(`/applications/${payload.applicationId}/interview-schedule`, {
-        scheduledAt: payload.scheduledAt,
-        meetingType: payload.meetingType,
-        interviewerId: payload.interviewerId,
-        notes: payload.notes,
+      const response = await api.put(`/applications/${application._id}/hiring-stage`, {
+        action: 'reset',
       });
-
-      if (res.data?.success) {
-        const updatedApplication = res.data.application;
-
-        setApplications((prev) =>
-          prev.map((item) => (item._id === updatedApplication._id ? updatedApplication : item))
-        );
-
-        setSuccess(updatedApplication?.interviewSchedule?.status === 'rescheduled' ? 'Interview rescheduled and sent to chat successfully.' : 'Interview scheduled and sent to chat successfully.');
-        setModalOpen(false);
-        setSelectedApplication(null);
-      } else {
-        setError('Failed to save interview schedule.');
-      }
-    } catch (err) {
-      console.error(err);
-
-      const errorCode = err?.response?.data?.code;
-      const needsGoogleConnection =
-        errorCode === 'GOOGLE_CALENDAR_NOT_CONNECTED' ||
-        errorCode === 'GOOGLE_CALENDAR_RECONNECT_REQUIRED';
-
-      if (needsGoogleConnection) {
-        const shouldConnect = window.confirm(
-          `${err?.response?.data?.message || 'Connect your employer Google account to continue.'}\n\nConnect Google Calendar now?`
-        );
-
-        if (shouldConnect) {
-          sessionStorage.setItem(
-            PENDING_INTERVIEW_SCHEDULE_KEY,
-            JSON.stringify({
-              applicationId: payload.applicationId,
-              scheduledAt: payload.scheduledAt,
-              meetingType: payload.meetingType,
-              interviewerId: payload.interviewerId,
-              notes: payload.notes,
-              savedAt: Date.now(),
-            })
-          );
-
-          await connectEmployerGoogleCalendar();
-          return;
-        }
-      }
-
-      setError(err?.response?.data?.message || 'Failed to save interview schedule.');
+      applyHiringStageResponse(response.data);
+      setSuccess('Hiring stage reset to No stage set.');
+    } catch (stageError) {
+      setError(stageError?.response?.data?.message || 'Failed to reset hiring stage.');
     } finally {
-      setSavingSchedule(false);
+      setUpdatingId(null);
     }
   };
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+  const openMessageModal = (application) => {
+    setMessageTarget(application);
+    setMessageOpen(true);
+  };
 
-    if (params.get('googleCalendar') !== 'connected') return;
-
-    params.delete('googleCalendar');
-
-    const nextSearch = params.toString();
-    const cleanUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${window.location.hash}`;
-
-    window.history.replaceState({}, document.title, cleanUrl);
-
-    const rawPendingSchedule = sessionStorage.getItem(PENDING_INTERVIEW_SCHEDULE_KEY);
-
-    if (!rawPendingSchedule) {
-      setSuccess('Google Calendar connected successfully.');
-      fetchForInterviewApplications();
-      return;
-    }
-
-    let pendingSchedule = null;
-
-    try {
-      pendingSchedule = JSON.parse(rawPendingSchedule);
-    } catch {
-      sessionStorage.removeItem(PENDING_INTERVIEW_SCHEDULE_KEY);
-      setError('Google Calendar was connected, but the pending interview schedule could not be restored.');
-      return;
-    }
-
-    const savedAt = Number(pendingSchedule?.savedAt || 0);
-    const isExpired = !savedAt || Date.now() - savedAt > 30 * 60 * 1000;
-    const hasRequiredData =
-      pendingSchedule?.applicationId &&
-      pendingSchedule?.scheduledAt &&
-      pendingSchedule?.meetingType &&
-      pendingSchedule?.interviewerId;
-
-    if (isExpired || !hasRequiredData) {
-      sessionStorage.removeItem(PENDING_INTERVIEW_SCHEDULE_KEY);
-      setError('Google Calendar was connected, but the pending interview schedule expired. Please schedule it again.');
-      return;
-    }
-
-    let cancelled = false;
-
-    const resumePendingSchedule = async () => {
-      try {
-        setSavingSchedule(true);
-        setError('');
-        setSuccess('');
-
-        sessionStorage.removeItem(PENDING_INTERVIEW_SCHEDULE_KEY);
-
-        const response = await api.put(
-          `/applications/${pendingSchedule.applicationId}/interview-schedule`,
-          {
-            scheduledAt: pendingSchedule.scheduledAt,
-            meetingType: pendingSchedule.meetingType,
-            interviewerId: pendingSchedule.interviewerId,
-            notes: pendingSchedule.notes || '',
-          }
-        );
-
-        if (cancelled) return;
-
-        if (!response.data?.success) {
-          throw new Error('Failed to save interview schedule.');
-        }
-
-        const updatedApplication = response.data.application;
-
-        setApplications((prev) =>
-          prev.map((item) =>
-            item._id === updatedApplication._id ? updatedApplication : item
-          )
-        );
-
-        setModalOpen(false);
-        setSelectedApplication(null);
-        setSuccess(
-          updatedApplication?.interviewSchedule?.status === 'rescheduled'
-            ? 'Interview rescheduled and sent to chat successfully.'
-            : 'Interview scheduled and sent to chat successfully.'
-        );
-
-        await fetchForInterviewApplications();
-      } catch (resumeError) {
-        if (cancelled) return;
-
-        console.error(resumeError);
-        setError(
-          resumeError?.response?.data?.message ||
-          resumeError?.message ||
-          'Google Calendar was connected, but the interview schedule could not be completed. Please try again.'
-        );
-      } finally {
-        if (!cancelled) {
-          setSavingSchedule(false);
-          setConnectingGoogleCalendar(false);
-        }
-      }
-    };
-
-    resumePendingSchedule();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [fetchForInterviewApplications]);
+  const closeMessageModal = () => {
+    setMessageOpen(false);
+    setMessageTarget(null);
+  };
 
   const inputBase =
   'h-[50px] w-full rounded-xl border border-gray-300 pl-11 pr-10 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2';
@@ -1988,13 +1671,8 @@ const selectBase =
         <div className="mb-6">
           <h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">For Interview</h1>
           <p className="mt-1 text-sm text-gray-600">
-            Applicants selected and scheduled for interview
+            Applicants selected for interview
           </p>
-          {connectingGoogleCalendar ? (
-            <p className="mt-2 text-sm font-medium text-[#2e66a6]">
-              Redirecting to Google Calendar connection...
-            </p>
-          ) : null}
         </div>
 
         {error && (
@@ -2131,27 +1809,20 @@ const selectBase =
             ) : (
               <>
                 <div className="hidden overflow-x-auto md:block">
-                  <table className="min-w-full divide-y divide-gray-200">
+                  <table className="min-w-[1420px] divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Applicant
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Job Applied
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Applied Date
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Interview Type / Date & Time
-                        </th>
-                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Interview Applicants
-                        </th>
-                        <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Actions
-                        </th>
+                        {['Applied Date', 'Applicant', 'Job Applied', 'Email', 'Contact Number', 'Hiring Stage', 'Actions'].map((heading) => (
+                          <th
+                            key={heading}
+                            className={cn(
+                              'px-5 py-4 text-xs font-semibold uppercase tracking-wider text-gray-600',
+                              heading === 'Actions' ? 'text-right' : 'text-left'
+                            )}
+                          >
+                            {heading}
+                          </th>
+                        ))}
                       </tr>
                     </thead>
 
@@ -2159,10 +1830,11 @@ const selectBase =
                       {paginatedApplications.map((app) => {
                         const name = buildApplicantName(app.jobseeker);
                         const email = app.jobseeker?.email || '—';
+                        const contactNumber = getApplicantContact(app.jobseeker);
                         const jobTitle = app.job?.title || 'Job Title';
                         const companyName = app.job?.companyName || 'Company';
+                        const hiringStage = String(app.hiringStage || '').trim();
                         const rowBusy = updatingId === app._id;
-                        const interview = getInterviewMeta(app);
 
                         return (
                           <tr
@@ -2182,77 +1854,45 @@ const selectBase =
                             }}
                             className="group cursor-pointer transition-colors hover:bg-[#2e66a6]/[0.06] focus-visible:bg-[#2e66a6]/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
                           >
-                            <td className="px-6 py-5 align-middle">
-                              <div className="flex items-center gap-4">
-                                <Avatar
-                                  img={app.jobseeker?.profileImage}
-                                  name={name}
-                                  size={48}
-                                  altKey={`for_interview_${app._id}`}
-                                />
-                                <div className="min-w-0">
-                                  <div className="truncate text-sm font-semibold text-gray-900">{name}</div>
-                                  <div className="truncate text-sm text-gray-600">{email}</div>
-                                </div>
+                            <td className="px-5 py-5 align-middle text-sm text-gray-700">
+                              {formatDate(app.appliedAt)}
+                            </td>
+
+                            <td className="px-5 py-5 align-middle">
+                              <div className="flex items-center gap-3">
+                                <Avatar img={app.jobseeker?.profileImage} name={name} size={44} altKey={`for_interview_${app._id}`} />
+                                <div className="max-w-[180px] text-sm font-semibold text-gray-900">{name}</div>
                               </div>
                             </td>
 
-                            <td className="px-6 py-5 align-middle">
-                              <div className="max-w-[16rem] truncate text-sm font-semibold text-gray-900" title={jobTitle}>
-                                {jobTitle}
+                            <td className="px-5 py-5 align-middle">
+                              <div className="max-w-[210px] text-sm font-semibold text-gray-900" title={jobTitle}>{jobTitle}</div>
+                              <div className="mt-0.5 text-xs text-gray-500">{companyName}</div>
+                            </td>
+
+                            <td className="px-5 py-5 align-middle text-sm text-gray-600">
+                              <span className="block max-w-[220px] break-all">{email}</span>
+                            </td>
+
+                            <td className="px-5 py-5 align-middle text-sm text-gray-600">
+                              <span className="block max-w-[150px] whitespace-pre-wrap">{contactNumber}</span>
+                            </td>
+
+                            <td className="px-5 py-5 align-middle">
+                              <div className={cn('text-sm font-semibold', hiringStage ? 'text-gray-900' : 'italic text-gray-500')}>
+                                {hiringStage || 'No stage set'}
                               </div>
-                              <div className="mt-0.5 text-sm text-gray-600">{companyName}</div>
+                              <button
+                                type="button"
+                                onClick={() => openHiringStageModal(app)}
+                                className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-gray-900 hover:text-[#2e66a6]"
+                              >
+                                {hiringStage ? 'Change stage' : 'Choose stage'}
+                                <Icon name="chevron-right" className="h-3.5 w-3.5" />
+                              </button>
                             </td>
 
-                            <td className="px-6 py-5 align-middle">
-                              <div className="text-sm text-gray-900">{formatDate(app.appliedAt)}</div>
-                            </td>
-
-                            <td className="px-6 py-5 align-middle">
-                              {interview.scheduledAt ? (
-                                <div className="text-sm">
-                                  <div className="font-semibold text-gray-900">
-                                    {formatDateTime(interview.scheduledAt)}
-                                  </div>
-                                  <div className="mt-0.5 text-sm text-gray-600">
-                                    {interview.meetingType || 'Interview'}
-                                  </div>
-                                  {interview.meetingLink && (
-                                    <a
-                                      href={interview.meetingLink}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="mt-2 inline-flex text-sm font-semibold text-[#2e66a6] hover:underline"
-                                      onClick={(event) => event.stopPropagation()}
-                                    >
-                                      Join Google Meet
-                                    </a>
-                                  )}
-                                </div>
-                              ) : (
-                                <div className="text-sm">
-                                  <div className="font-semibold text-gray-900">TBS</div>
-                                  <div className="mt-0.5 text-sm text-gray-600">( To be scheduled )</div>
-                                </div>
-                              )}
-                            </td>
-
-                            <td className="px-6 py-5 align-middle text-center">
-                              <div className="flex justify-center">
-                                <Button
-                                  variant="softWarning"
-                                  className="min-w-[160px] rounded-full leading-tight"
-                                  onClick={() => openScheduleModal(app)}
-                                  disabled={interviewersLoading}
-                                >
-                                  <span className="whitespace-pre-line text-center">
-                                    {interview.scheduledAt ? 'Reschedule\nInterview' : 'Schedule\nInterview'}
-                                  </span>
-                                </Button>
-                              </div>
-                            </td>
-
-                            <td className="px-6 py-5 align-middle">
+                            <td className="px-5 py-5 align-middle">
                               <ActionMenu
                                 app={app}
                                 name={name}
@@ -2261,6 +1901,9 @@ const selectBase =
                                 setOpenMenuId={setOpenMenuId}
                                 onHire={() => handleStatusUpdate(app._id, 'hired')}
                                 onDecline={() => openDeclineModal(app)}
+                                onChangeStage={() => openHiringStageModal(app)}
+                                onMessage={() => openMessageModal(app)}
+                                onReset={() => handleResetHiringStage(app)}
                               />
                             </td>
                           </tr>
@@ -2274,124 +1917,51 @@ const selectBase =
                   {paginatedApplications.map((app) => {
                     const name = buildApplicantName(app.jobseeker);
                     const email = app.jobseeker?.email || '—';
+                    const contactNumber = getApplicantContact(app.jobseeker);
                     const jobTitle = app.job?.title || 'Job Title';
                     const companyName = app.job?.companyName || 'Company';
-                    const interview = getInterviewMeta(app);
+                    const hiringStage = String(app.hiringStage || '').trim();
                     const rowBusy = updatingId === app._id;
 
                     return (
                       <div key={app._id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                         <div className="flex items-center gap-3">
-                          <Avatar
-                            img={app.jobseeker?.profileImage}
-                            name={name}
-                            size={44}
-                            altKey={`for_interview_mobile_${app._id}`}
-                          />
-
+                          <Avatar img={app.jobseeker?.profileImage} name={name} size={44} altKey={`for_interview_mobile_${app._id}`} />
                           <div className="min-w-0">
                             <div className="truncate text-sm font-semibold text-gray-900">{name}</div>
                             <div className="truncate text-xs text-gray-600">{email}</div>
                           </div>
                         </div>
 
-                        <div className="mt-3 rounded-xl bg-gray-50 p-3">
-                          <div className="text-sm font-semibold text-gray-900">{jobTitle}</div>
-                          <div className="text-xs text-gray-600">{companyName}</div>
-
-                          <div className="mt-2 text-xs text-gray-600">
-                            Applied: <span className="font-semibold text-gray-800">{formatDate(app.appliedAt)}</span>
-                          </div>
-
-                          <div className="mt-1 text-xs text-gray-600">
-                            Interview:
-                            <span className="ml-1 font-semibold text-gray-800">
-                              {interview.scheduledAt ? formatDateTime(interview.scheduledAt) : 'TBS'}
-                            </span>
-                          </div>
-
-                          <div className="text-xs text-gray-600">
-                            Type:
-                            <span className="ml-1 font-semibold text-gray-800">
-                              {interview.meetingType || '( To be scheduled )'}
-                            </span>
-                          </div>
-
-                          {interview.meetingLink && (
-                            <a
-                              href={interview.meetingLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="mt-2 inline-flex text-xs font-semibold text-[#2e66a6] hover:underline"
-                            >
-                              Join Google Meet
-                            </a>
-                          )}
-                        </div>
-
-                        <div className="mt-3">
-                          <Button
-                            variant="softWarning"
-                            className="w-full rounded-full leading-tight"
-                            onClick={() => openScheduleModal(app)}
-                            disabled={interviewersLoading}
-                          >
-                            <span className="whitespace-pre-line text-center">
-                              {interview.scheduledAt ? 'Reschedule\nInterview' : 'Schedule\nInterview'}
-                            </span>
-                          </Button>
-                        </div>
-
-                        <div className="mt-3 flex items-center justify-between">
-                          <Link
-                            to={`/employer/application/${app._id}?from=for-interview`}
-                            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                          >
-                            <Icon name="eye" className="h-5 w-5" />
-                          </Link>
-
-                          <div className="relative">
-                            <button
-                              type="button"
-                              onClick={() => setOpenMenuId((prev) => (prev === app._id ? null : app._id))}
-                              className="inline-flex h-11 w-16 items-center justify-center gap-1 rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                            >
-                              <Icon name="dots-vertical" className="h-5 w-5" />
-                              <Icon name="chevron-down" className="h-4 w-4" />
+                        <div className="mt-3 space-y-2 rounded-xl bg-gray-50 p-3 text-xs text-gray-600">
+                          <div><span className="font-semibold text-gray-800">Applied:</span> {formatDate(app.appliedAt)}</div>
+                          <div><span className="font-semibold text-gray-800">Job:</span> {jobTitle}</div>
+                          <div><span className="font-semibold text-gray-800">Company:</span> {companyName}</div>
+                          <div><span className="font-semibold text-gray-800">Contact:</span> {contactNumber}</div>
+                          <div>
+                            <div className={cn('font-semibold', hiringStage ? 'text-gray-900' : 'italic text-gray-500')}>
+                              {hiringStage || 'No stage set'}
+                            </div>
+                            <button type="button" onClick={() => openHiringStageModal(app)} className="mt-1 inline-flex items-center gap-1 font-semibold text-gray-900 hover:text-[#2e66a6]">
+                              {hiringStage ? 'Change stage' : 'Choose stage'}
+                              <Icon name="chevron-right" className="h-3.5 w-3.5" />
                             </button>
-
-                            {openMenuId === app._id && (
-                              <div className="absolute right-0 top-14 z-30 w-44 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl">
-                                {!app.alreadyEmployed && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      handleStatusUpdate(app._id, 'hired');
-                                      setOpenMenuId(null);
-                                    }}
-                                    disabled={rowBusy}
-                                    className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-[#2e66a6] hover:bg-blue-50 disabled:opacity-60"
-                                  >
-                                    <Icon name="check" className="h-4 w-4" />
-                                    Hired
-                                  </button>
-                                )}
-
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    openDeclineModal(app);
-                                    setOpenMenuId(null);
-                                  }}
-                                  disabled={rowBusy}
-                                  className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
-                                >
-                                  <Icon name="x" className="h-4 w-4" />
-                                  Declined
-                                </button>
-                              </div>
-                            )}
                           </div>
+                        </div>
+
+                        <div className="mt-3 overflow-x-auto pb-1">
+                          <ActionMenu
+                            app={app}
+                            name={name}
+                            rowBusy={rowBusy}
+                            openMenuId={openMenuId}
+                            setOpenMenuId={setOpenMenuId}
+                            onHire={() => handleStatusUpdate(app._id, 'hired')}
+                            onDecline={() => openDeclineModal(app)}
+                            onChangeStage={() => openHiringStageModal(app)}
+                            onMessage={() => openMessageModal(app)}
+                            onReset={() => handleResetHiringStage(app)}
+                          />
                         </div>
                       </div>
                     );
@@ -2431,13 +2001,22 @@ const selectBase =
         </div>
       </div>
 
-      <ScheduleInterviewModal
-        open={modalOpen}
-        onClose={closeScheduleModal}
-        application={selectedApplication}
-        interviewerOptions={interviewerOptions}
-        onSubmit={handleScheduleSubmit}
-        submitting={savingSchedule}
+      <HiringStageModal
+        open={stageModalOpen}
+        application={stageTarget}
+        defaultStages={defaultHiringStages}
+        customStages={customHiringStages}
+        busy={stageBusy}
+        onClose={closeHiringStageModal}
+        onSelect={handleSelectHiringStage}
+        onAddCustom={handleAddCustomStage}
+        onDeleteCustom={handleDeleteCustomStage}
+      />
+
+      <MessagePopup
+        open={messageOpen}
+        application={messageTarget}
+        onClose={closeMessageModal}
       />
 
       <DeclineReasonModal
