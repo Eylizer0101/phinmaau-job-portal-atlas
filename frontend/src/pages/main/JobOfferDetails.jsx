@@ -1401,11 +1401,8 @@ const JobOfferDetails = () => {
                         </div>
                       </div>
 
-                      <div className="rounded-2xl bg-[#f7faff] border border-[#d8e2ee] p-5">
-                        <h3 className="text-sm font-bold text-black">Interested in this role?</h3>
-                        <p className="text-sm text-black/65 mt-1">
-                          Join {job.companyName || 'this company'} and be part of something amazing.
-                        </p>
+                      <div className="rounded-2xl bg-[#f7faff] border border-[#d8e2ee] p-5 text-center">
+                        <h3 className="text-sm font-medium text-black/50">Interested in this role?</h3>
 
                         <button
                           onClick={jobActive ? handleApplyClick : undefined}
@@ -1414,9 +1411,15 @@ const JobOfferDetails = () => {
                             !jobActive ? 'bg-black/5 text-black/50 border border-black/10' : UI.btnPrimary
                           } ${UI.ring} ${UI.btnLg} w-full mt-4`}
                           type="button"
+                          aria-disabled={!jobActive}
+                          title={jobActive ? 'Apply now' : 'This job is no longer accepting applications'}
                         >
                           {primaryCtaLabel}
                         </button>
+
+                        <p className="text-xs text-black/45 mt-4">
+                          Deadline: {job.applicationDeadline ? new Date(job.applicationDeadline).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Not specified'}
+                        </p>
                       </div>
 
                       {false && similarJobs.length > 0 && (

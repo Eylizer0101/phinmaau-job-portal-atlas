@@ -859,6 +859,35 @@ const JobSearch = () => {
   const filteredJobs = useMemo(() => {
     const salaryMinValue = Number(normalizeAmount(salaryMinInput));
 
+    const toSalaryNumber = (value) => {
+      if (value === undefined || value === null || value === '') return null;
+      const numericValue = Number(value);
+      return Number.isFinite(numericValue) ? numericValue : null;
+    };
+
+    const getSalaryMinComparable = (job) => {
+      if (job?.hideSalary) return Number.MAX_SAFE_INTEGER;
+      return toSalaryNumber(job?.salaryMin) ?? Number.MAX_SAFE_INTEGER;
+    };
+
+    const getSalaryMaxComparable = (job) => {
+      if (job?.hideSalary) return -1;
+      return toSalaryNumber(job?.salaryMax) ?? toSalaryNumber(job?.salaryMin) ?? -1;
+    };
+
+    const getExpiryComparable = (job) => {
+      const date = new Date(job?.applicationDeadline || 0).getTime();
+      return Number.isNaN(date) || date <= 0 ? Number.MAX_SAFE_INTEGER : date;
+    };
+
+    const getFreshnessComparable = (job) => {
+      const created = new Date(job?.createdAt || job?.updatedAt || 0).getTime();
+      return Number.isNaN(created) ? 0 : created;
+    };
+
+    const compareByTitle = (a, b) =>
+      String(a?.title || '').localeCompare(String(b?.title || ''));
+
     const filtered = jobs
       .filter((job) => jobMatchesSelectedLocations(job, selectedLocations))
       .filter((job) =>
@@ -868,8 +897,10 @@ const JobSearch = () => {
       )
       .filter((job) => {
         if (!salaryMinInput.trim() || Number.isNaN(salaryMinValue)) return true;
-        const jobMin = Number(job?.salaryMin);
-        return Number.isFinite(jobMin) && jobMin >= salaryMinValue;
+        if (job?.hideSalary) return false;
+
+        const jobMin = toSalaryNumber(job?.salaryMin);
+        return jobMin !== null && jobMin >= salaryMinValue;
       })
       .filter((job) => {
         if (!freshGraduate && !noExperience) return true;
@@ -882,44 +913,54 @@ const JobSearch = () => {
         return matchesNoExperience;
       });
 
-    const getSalaryMinComparable = (job) => {
-      const min = Number(job?.salaryMin);
-      return Number.isFinite(min) ? min : Number.MAX_SAFE_INTEGER;
-    };
-
-    const getSalaryMaxComparable = (job) => {
-      const max = Number(job?.salaryMax);
-      const min = Number(job?.salaryMin);
-      if (Number.isFinite(max)) return max;
-      if (Number.isFinite(min)) return min;
-      return -1;
-    };
-
-    const getExpiryComparable = (job) => {
-      const date = new Date(job?.applicationDeadline || 0).getTime();
-      return Number.isNaN(date) ? Number.MAX_SAFE_INTEGER : date;
-    };
-
-    const getFreshnessComparable = (job) => {
-      const created = new Date(job?.createdAt || job?.updatedAt || 0).getTime();
-      return Number.isNaN(created) ? 0 : created;
-    };
-
     const sorted = [...filtered];
 
     if (sortBy === 'salary_desc') {
-      sorted.sort((a, b) => getSalaryMaxComparable(b) - getSalaryMaxComparable(a));
+      sorted.sort((a, b) => {
+        const maxDifference = getSalaryMaxComparable(b) - getSalaryMaxComparable(a);
+        if (maxDifference !== 0) return maxDifference;
+
+        const minDifference = getSalaryMinComparable(b) - getSalaryMinComparable(a);
+        if (minDifference !== 0) return minDifference;
+
+        return compareByTitle(a, b);
+      });
     } else if (sortBy === 'expiry_asc') {
-      sorted.sort((a, b) => getExpiryComparable(a) - getExpiryComparable(b));
+      sorted.sort((a, b) => {
+        const deadlineDifference = getExpiryComparable(a) - getExpiryComparable(b);
+        if (deadlineDifference !== 0) return deadlineDifference;
+
+        const freshnessDifference = getFreshnessComparable(b) - getFreshnessComparable(a);
+        if (freshnessDifference !== 0) return freshnessDifference;
+
+        return compareByTitle(a, b);
+      });
     } else if (sortBy === 'newest') {
-      sorted.sort((a, b) => getFreshnessComparable(b) - getFreshnessComparable(a));
+      sorted.sort((a, b) => {
+        const freshnessDifference = getFreshnessComparable(b) - getFreshnessComparable(a);
+        if (freshnessDifference !== 0) return freshnessDifference;
+
+        return compareByTitle(a, b);
+      });
     } else if (salaryMinInput.trim()) {
-      sorted.sort((a, b) => getSalaryMinComparable(a) - getSalaryMinComparable(b));
+      sorted.sort((a, b) => {
+        const minDifference = getSalaryMinComparable(a) - getSalaryMinComparable(b);
+        if (minDifference !== 0) return minDifference;
+
+        const maxDifference = getSalaryMaxComparable(a) - getSalaryMaxComparable(b);
+        if (maxDifference !== 0) return maxDifference;
+
+        return compareByTitle(a, b);
+      });
     } else {
       sorted.sort((a, b) => {
         const matchDiff = Number(b?.matchScore || 0) - Number(a?.matchScore || 0);
         if (matchDiff !== 0) return matchDiff;
-        return getFreshnessComparable(b) - getFreshnessComparable(a);
+
+        const freshnessDifference = getFreshnessComparable(b) - getFreshnessComparable(a);
+        if (freshnessDifference !== 0) return freshnessDifference;
+
+        return compareByTitle(a, b);
       });
     }
 
@@ -965,14 +1006,14 @@ const JobSearch = () => {
   };
 
   const formatSalary = (min, max, hideSalary = false) => {
-  if (hideSalary) return 'Salary Undisclosed';
+    if (hideSalary) return 'Salary Undisclosed';
     if (!min && !max) return 'Salary not specified';
 
     const minNum = min ? Number(min) : null;
     const maxNum = max ? Number(max) : null;
 
-    const formattedMin = Number.isFinite(minNum) ? `₱${minNum.toLocaleString()}` : '';
-    const formattedMax = Number.isFinite(maxNum) ? `₱${maxNum.toLocaleString()}` : '';
+    const formattedMin = Number.isFinite(minNum) ? minNum.toLocaleString() : '';
+    const formattedMax = Number.isFinite(maxNum) ? maxNum.toLocaleString() : '';
 
     if (formattedMin && formattedMax) return `${formattedMin} - ${formattedMax}`;
     if (formattedMin) return `From ${formattedMin}`;
@@ -1113,7 +1154,7 @@ const JobSearch = () => {
     'h-[44px] rounded-xl px-4 bg-white/95 border border-white/30 text-sm font-medium text-gray-700 flex items-center gap-2 hover:bg-white transition flex-shrink-0';
 
   const searchBox =
-    'w-full lg:w-[370px] h-[44px] bg-white/95 border border-white/30 rounded-xl px-4 flex items-center gap-3 flex-shrink-0 transition-all duration-300 ease-in-out focus-within:ring-2 focus-within:ring-blue-200';
+    'w-full lg:w-auto lg:min-w-[220px] lg:max-w-[370px] lg:flex-1 h-[44px] bg-white/95 border border-white/30 rounded-xl px-4 flex items-center gap-3 shrink transition-all duration-300 ease-in-out focus-within:ring-2 focus-within:ring-blue-200';
 
   const filterRowClass = 'flex flex-wrap items-center gap-3';
 
