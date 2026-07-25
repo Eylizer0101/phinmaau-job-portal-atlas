@@ -1056,9 +1056,6 @@ const ActionMenu = ({
   rowBusy,
   onHire,
   onDecline,
-  onChangeStage,
-  onMessage,
-  onReset,
   openMenuId,
   setOpenMenuId,
 }) => {
@@ -1067,14 +1064,33 @@ const ActionMenu = ({
   const triggerRef = useRef(null);
   const menuRef = useRef(null);
   const [menuPosition, setMenuPosition] = useState(null);
+  const [triggerVisible, setTriggerVisible] = useState(false);
 
   const updateMenuPosition = useCallback(() => {
     const trigger = triggerRef.current;
-    if (!trigger || typeof window === 'undefined') return;
+    if (!trigger || typeof window === 'undefined') {
+      setMenuPosition(null);
+      setTriggerVisible(false);
+      return false;
+    }
 
     const triggerRect = trigger.getBoundingClientRect();
+    const isActuallyVisible =
+      triggerRect.width > 0 &&
+      triggerRect.height > 0 &&
+      triggerRect.bottom > 0 &&
+      triggerRect.right > 0 &&
+      triggerRect.top < window.innerHeight &&
+      triggerRect.left < window.innerWidth;
+
+    if (!isActuallyVisible) {
+      setMenuPosition(null);
+      setTriggerVisible(false);
+      return false;
+    }
+
     const menuWidth = menuRef.current?.offsetWidth || 224;
-    const menuHeight = menuRef.current?.offsetHeight || 260;
+    const menuHeight = menuRef.current?.offsetHeight || 112;
     const viewportPadding = 12;
     const gap = 8;
 
@@ -1093,14 +1109,20 @@ const ActionMenu = ({
       Math.min(top, window.innerHeight - menuHeight - viewportPadding)
     );
 
+    setTriggerVisible(true);
     setMenuPosition({ top, left });
+    return true;
   }, []);
 
   useEffect(() => {
     if (!isOpen) {
       setMenuPosition(null);
+      setTriggerVisible(false);
       return undefined;
     }
+
+    const visible = updateMenuPosition();
+    if (!visible) return undefined;
 
     const handleClickOutside = (event) => {
       const clickedTriggerArea = wrapperRef.current?.contains(event.target);
@@ -1111,7 +1133,6 @@ const ActionMenu = ({
       }
     };
 
-    updateMenuPosition();
     const animationFrame = window.requestAnimationFrame(updateMenuPosition);
 
     document.addEventListener('mousedown', handleClickOutside, true);
@@ -1134,22 +1155,23 @@ const ActionMenu = ({
   };
 
   const actionDropdown =
-    isOpen && typeof document !== 'undefined'
+    isOpen && triggerVisible && menuPosition && typeof document !== 'undefined'
       ? createPortal(
           <div
             ref={menuRef}
             className="fixed z-[9999] w-56 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-xl pointer-events-auto"
             style={{
-              top: `${menuPosition?.top ?? 0}px`,
-              left: `${menuPosition?.left ?? 0}px`,
-              visibility: menuPosition ? 'visible' : 'hidden',
+              top: `${menuPosition.top}px`,
+              left: `${menuPosition.left}px`,
             }}
             role="menu"
             aria-label={`Actions for ${name}`}
+            onMouseDown={(event) => event.stopPropagation()}
             onClick={(event) => event.stopPropagation()}
           >
             <button
               type="button"
+              onMouseDown={(event) => event.stopPropagation()}
               onClick={(event) => runAction(event, onHire)}
               disabled={rowBusy || app.alreadyEmployed}
               title={app.alreadyEmployed ? 'This applicant is already employed through another job application.' : ''}
@@ -1162,6 +1184,7 @@ const ActionMenu = ({
 
             <button
               type="button"
+              onMouseDown={(event) => event.stopPropagation()}
               onClick={(event) => runAction(event, onDecline)}
               disabled={rowBusy}
               className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
@@ -1169,39 +1192,6 @@ const ActionMenu = ({
             >
               <Icon name="x" className="h-4 w-4" />
               Decline
-            </button>
-
-            <button
-              type="button"
-              onClick={(event) => runAction(event, onChangeStage)}
-              disabled={rowBusy}
-              className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-              role="menuitem"
-            >
-              <Icon name="refresh" className="h-4 w-4" />
-              Change hiring stage
-            </button>
-
-            <button
-              type="button"
-              onClick={(event) => runAction(event, onMessage)}
-              disabled={rowBusy}
-              className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-              role="menuitem"
-            >
-              <Icon name="message" className="h-4 w-4" />
-              Send message
-            </button>
-
-            <button
-              type="button"
-              onClick={(event) => runAction(event, onReset)}
-              disabled={rowBusy}
-              className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-              role="menuitem"
-            >
-              <Icon name="refresh" className="h-4 w-4" />
-              Reset status
             </button>
           </div>,
           document.body
@@ -1237,6 +1227,7 @@ const ActionMenu = ({
             }
 
             setMenuPosition(null);
+            setTriggerVisible(false);
             setOpenMenuId(app._id);
           }}
           className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
@@ -1940,10 +1931,10 @@ const selectBase =
             ) : (
               <>
                 <div className="hidden overflow-x-auto md:block">
-                  <table className="min-w-[1420px] divide-y divide-gray-200">
+                  <table className="min-w-[1240px] divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        {['Applied Date', 'Applicant', 'Job Applied', 'Email', 'Contact Number', 'Hiring Stage', 'Actions'].map((heading) => (
+                        {['Applied Date', 'Applicant', 'Job Applied', 'Contact Number', 'Hiring Stage', 'Actions'].map((heading) => (
                           <th
                             key={heading}
                             className={cn(
@@ -1992,7 +1983,14 @@ const selectBase =
                             <td className="px-5 py-5 align-middle">
                               <div className="flex items-center gap-3">
                                 <Avatar img={app.jobseeker?.profileImage} name={name} size={44} altKey={`for_interview_${app._id}`} />
-                                <div className="max-w-[180px] text-sm font-semibold text-gray-900">{name}</div>
+                                <div className="min-w-0 max-w-[210px]">
+                                  <div className="truncate text-sm font-semibold text-gray-900" title={name}>
+                                    {name}
+                                  </div>
+                                  <div className="mt-0.5 truncate text-xs text-gray-500" title={email}>
+                                    {email}
+                                  </div>
+                                </div>
                               </div>
                             </td>
 
@@ -2001,9 +1999,6 @@ const selectBase =
                               <div className="mt-0.5 text-xs text-gray-500">{companyName}</div>
                             </td>
 
-                            <td className="px-5 py-5 align-middle text-sm text-gray-600">
-                              <span className="block max-w-[220px] break-all">{email}</span>
-                            </td>
 
                             <td className="px-5 py-5 align-middle text-sm text-gray-600">
                               <span className="block max-w-[150px] whitespace-pre-wrap">{contactNumber}</span>
@@ -2032,9 +2027,6 @@ const selectBase =
                                 setOpenMenuId={setOpenMenuId}
                                 onHire={() => handleStatusUpdate(app._id, 'hired')}
                                 onDecline={() => openDeclineModal(app)}
-                                onChangeStage={() => openHiringStageModal(app)}
-                                onMessage={() => openMessageModal(app)}
-                                onReset={() => handleResetHiringStage(app)}
                               />
                             </td>
                           </tr>
@@ -2060,7 +2052,7 @@ const selectBase =
                           <Avatar img={app.jobseeker?.profileImage} name={name} size={44} altKey={`for_interview_mobile_${app._id}`} />
                           <div className="min-w-0">
                             <div className="truncate text-sm font-semibold text-gray-900">{name}</div>
-                            <div className="truncate text-xs text-gray-600">{email}</div>
+                            <div className="max-w-[230px] truncate text-xs text-gray-600" title={email}>{email}</div>
                           </div>
                         </div>
 
@@ -2089,9 +2081,6 @@ const selectBase =
                             setOpenMenuId={setOpenMenuId}
                             onHire={() => handleStatusUpdate(app._id, 'hired')}
                             onDecline={() => openDeclineModal(app)}
-                            onChangeStage={() => openHiringStageModal(app)}
-                            onMessage={() => openMessageModal(app)}
-                            onReset={() => handleResetHiringStage(app)}
                           />
                         </div>
                       </div>
