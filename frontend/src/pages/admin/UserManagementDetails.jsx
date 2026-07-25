@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
+import { openResumePrintWindow } from "../../components/shared/resumePrintTemplate";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
@@ -99,15 +100,129 @@ const EMPLOYER_TABS = [
   { key: "posts", label: "Posting History" },
 ];
 
+const JOB_SEEKER_LEVEL_BADGES = {
+  "First Time Job Seeker": "/images/Firstime.png",
+  Intermediate: "/images/Intermediate.png",
+  Expert: "/images/Expert.png",
+  Pro: "/images/Pro.png",
+  Legend: "/images/Legend.png",
+};
+
 const TABS = [
-  { key: "personal", label: "Personal Info", icon: "user" },
-  { key: "career", label: "Career Profile", icon: "briefcase" },
-  { key: "credentials", label: "Credentials", icon: "shield" },
-  { key: "education", label: "Education", icon: "academic" },
+  { key: "resume", label: "Resume", icon: "document" },
+  { key: "activity", label: "Activity", icon: "clock" },
   { key: "applications", label: "Application History", icon: "history" },
 ];
 
-const APPLICATIONS_PER_PAGE = 6;
+const APPLICATIONS_PER_PAGE = 5;
+
+const hasMeaningfulObjectValue = (item = {}) =>
+  Boolean(
+    item &&
+      typeof item === "object" &&
+      Object.entries(item).some(([key, value]) => {
+        if (["_id", "id", "createdAt", "updatedAt", "__v"].includes(key)) return false;
+        if (Array.isArray(value)) return value.length > 0;
+        if (value && typeof value === "object") return hasMeaningfulObjectValue(value);
+        return Boolean(String(value ?? "").trim());
+      })
+  );
+
+const calculateJobSeekerLevel = ({
+  skills = [],
+  certifications = [],
+  projects = [],
+  seminars = [],
+  awards = [],
+  workExperiences = [],
+}) => {
+  const counts = {
+    skills: Array.isArray(skills) ? skills.filter(Boolean).length : 0,
+    certifications: Array.isArray(certifications)
+      ? certifications.filter(hasMeaningfulObjectValue).length
+      : 0,
+    projects: Array.isArray(projects)
+      ? projects.filter(hasMeaningfulObjectValue).length
+      : 0,
+    seminars: Array.isArray(seminars)
+      ? seminars.filter(hasMeaningfulObjectValue).length
+      : 0,
+    awards: Array.isArray(awards)
+      ? awards.filter(hasMeaningfulObjectValue).length
+      : 0,
+    work: Array.isArray(workExperiences)
+      ? workExperiences.filter(hasMeaningfulObjectValue).length
+      : 0,
+  };
+
+  const tiers = [
+    {
+      name: "First Time Job Seeker",
+      requirements: {
+        skills: 0,
+        certifications: 0,
+        projects: 0,
+        seminars: 0,
+        awards: 0,
+        work: 0,
+      },
+    },
+    {
+      name: "Intermediate",
+      requirements: {
+        skills: 5,
+        certifications: 1,
+        projects: 1,
+        seminars: 1,
+        awards: 1,
+        work: 0,
+      },
+    },
+    {
+      name: "Expert",
+      requirements: {
+        skills: 9,
+        certifications: 2,
+        projects: 2,
+        seminars: 2,
+        awards: 2,
+        work: 1,
+      },
+    },
+    {
+      name: "Pro",
+      requirements: {
+        skills: 13,
+        certifications: 5,
+        projects: 5,
+        seminars: 5,
+        awards: 5,
+        work: 2,
+      },
+    },
+    {
+      name: "Legend",
+      requirements: {
+        skills: 17,
+        certifications: 7,
+        projects: 7,
+        seminars: 7,
+        awards: 7,
+        work: 3,
+      },
+    },
+  ];
+
+  const meetsRequirements = (requirements) =>
+    Object.entries(requirements).every(([key, required]) => counts[key] >= required);
+
+  let currentTierIndex = 0;
+  tiers.forEach((tier, index) => {
+    if (meetsRequirements(tier.requirements)) currentTierIndex = index;
+  });
+
+  return tiers[currentTierIndex].name;
+};
 
 const UserManagementDetails = () => {
   const { userId } = useParams();
@@ -119,7 +234,7 @@ const UserManagementDetails = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState("personal");
+  const [activeTab, setActiveTab] = useState("resume");
   const [activeEmployerTab, setActiveEmployerTab] = useState("about");
   const [applicationPage, setApplicationPage] = useState(1);
   const [brokenAvatar, setBrokenAvatar] = useState(false);
@@ -223,7 +338,7 @@ const UserManagementDetails = () => {
   const splitList = (value) => {
     if (Array.isArray(value)) return value.filter(Boolean);
     return String(value || "")
-      .split(/[,\n]/)
+      .split(/\|\||[,\n]/)
       .map((item) => item.trim())
       .filter(Boolean);
   };
@@ -284,15 +399,399 @@ const UserManagementDetails = () => {
   const educationEntries = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
   const workExperiences = Array.isArray(profile.workExperiences) ? profile.workExperiences : [];
 
+  const toPlainText = (value = "") => {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+
+    if (typeof window !== "undefined" && typeof window.DOMParser !== "undefined") {
+      const parser = new window.DOMParser();
+      const documentValue = parser.parseFromString(raw, "text/html");
+      return String(documentValue.body?.textContent || "")
+        .replace(/\u00a0/g, " ")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    }
+
+    return raw
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/p>|<\/div>|<\/li>/gi, "\n")
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&amp;/gi, "&")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  };
+
+  const formatMonthYear = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value || "");
+    return date.toLocaleDateString("en-PH", {
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const formatEntryDate = (item = {}) => {
+    if (item.date) return String(item.date);
+    const start =
+      [item.startMonth, item.startYear].filter(Boolean).join(" ") ||
+      formatMonthYear(item.startDate);
+    const end = item.isPresent
+      ? "Present"
+      : [item.endMonth, item.endYear || item.yearGraduated]
+          .filter(Boolean)
+          .join(" ") || formatMonthYear(item.endDate);
+
+    return [start, end].filter(Boolean).join(" – ");
+  };
+
+  const formatActivityDateTime = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfActivityDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const differenceInDays = Math.round(
+      (startOfToday.getTime() - startOfActivityDay.getTime()) / 86400000
+    );
+
+    const dateLabel =
+      differenceInDays === 0
+        ? "Today"
+        : differenceInDays === 1
+          ? "Yesterday"
+          : date.toLocaleDateString("en-PH", {
+              month: "short",
+              day: "numeric",
+              year: date.getFullYear() === now.getFullYear() ? undefined : "numeric",
+            });
+
+    const timeLabel = date.toLocaleTimeString("en-PH", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    return `${dateLabel} · ${timeLabel}`;
+  };
+
+  const formatRelativeTime = (value) => {
+    if (!value) return "Updated recently";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Updated recently";
+
+    const difference = Math.max(0, Date.now() - date.getTime());
+    const minutes = Math.floor(difference / 60000);
+    const hours = Math.floor(difference / 3600000);
+    const days = Math.floor(difference / 86400000);
+    const weeks = Math.floor(days / 7);
+    const months = Math.floor(days / 30);
+
+    if (minutes < 1) return "Updated just now";
+    if (minutes < 60) return `Updated ${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+    if (hours < 24) return `Updated ${hours} hour${hours === 1 ? "" : "s"} ago`;
+    if (days < 7) return `Updated ${days} day${days === 1 ? "" : "s"} ago`;
+    if (weeks < 5) return `Updated ${weeks} week${weeks === 1 ? "" : "s"} ago`;
+    return `Updated ${months} month${months === 1 ? "" : "s"} ago`;
+  };
+
+  const resumeSkills = skills.map((value) => {
+    const cleanValue = String(value || "").trim();
+    const match = cleanValue.match(
+      /^(.*?)\s+[—-]\s+(Basic|Novice|Intermediate|Advanced|Expert)$/i
+    );
+
+    if (!match) {
+      return {
+        skill: cleanValue,
+        proficiency: "",
+      };
+    }
+
+    return {
+      skill: match[1].trim(),
+      proficiency:
+        match[2].charAt(0).toUpperCase() + match[2].slice(1).toLowerCase(),
+    };
+  });
+
+  const meaningfulWorkExperiences = workExperiences.filter(hasMeaningfulObjectValue);
+  const meaningfulEducationEntries = educationEntries.filter(hasMeaningfulObjectValue);
+  const meaningfulReferences = Array.isArray(profile.references)
+    ? profile.references.filter(hasMeaningfulObjectValue)
+    : [];
+
+  const resumeProfileSections = [
+    ["Certifications", profile.certifications || []],
+    ["Projects", profile.projects || []],
+    ["Seminars and Trainings", profile.seminars || []],
+    ["Awards and Achievements", profile.awards || []],
+    ["Affiliations", profile.affiliations || []],
+    ["Co-Curricular Activities", profile.cocurricular || []],
+  ]
+    .map(([title, items]) => [
+      title,
+      (Array.isArray(items) ? items : []).filter(hasMeaningfulObjectValue),
+    ])
+    .filter(([, items]) => items.length > 0);
+
+  const personalInformationRows = [
+    ["Preferred Work Mode", profile.preferredWorkMode],
+    ["Employment Type", profile.employmentType],
+    ["Willing to Relocate", profile.willingToRelocate],
+    ["How Soon Can Start", profile.howSoonCanYouStart],
+    ["Experience", profile.experience || profile.whatHaveYouDone],
+    ["Preferred Language", profile.preferredLanguage],
+    ["Educational Attainment", profile.educationalAttainment],
+    ["Field of Study", profile.studyField || profile.course],
+    [
+      "Salary",
+      [profile.minimumSalary, profile.maximumSalary].filter(Boolean).join(" - "),
+    ],
+    ["Nationality", profile.nationality],
+    ["Height", profile.height],
+    ["Weight", profile.weight],
+    ["Gender", profile.gender],
+    ["Civil Status", profile.civilStatus],
+    ["Birthday", profile.birthday],
+  ].filter(([, value]) => String(value || "").trim());
+
+  const jobSeekerLevel = calculateJobSeekerLevel({
+    skills: resumeSkills,
+    certifications: profile.certifications || [],
+    projects: profile.projects || [],
+    seminars: profile.seminars || [],
+    awards: profile.awards || [],
+    workExperiences,
+  });
+
+  const activityItems = useMemo(() => {
+    const items = [];
+
+    const cvDocument = profile?.verificationDocs?.cv || {};
+    if (cvDocument.uploadedAt) {
+      items.push({
+        key: `resume-${cvDocument.uploadedAt}`,
+        type: "resume",
+        title: "Updated resume",
+        description: cvDocument.filename
+          ? `Uploaded ${cvDocument.filename}`
+          : "Uploaded a new resume file.",
+        occurredAt: cvDocument.uploadedAt,
+      });
+    }
+
+    (applications || []).forEach((application) => {
+      const job = application?.job || {};
+      const employerProfile = application?.employer?.employerProfile || {};
+      const companyName =
+        job.companyName ||
+        employerProfile.companyName ||
+        "a company";
+      const jobTitle = job.title || job.jobTitle || "a job position";
+      const history = Array.isArray(application?.activityHistory)
+        ? application.activityHistory
+        : [];
+
+      history.forEach((activity, index) => {
+        items.push({
+          key:
+            activity?._id ||
+            `${application?._id || "application"}-${activity?.occurredAt || index}`,
+          type: activity?.type || "application",
+          title: activity?.title || "Application updated",
+          description:
+            activity?.description ||
+            `${jobTitle} at ${companyName}`,
+          occurredAt:
+            activity?.occurredAt ||
+            activity?.createdAt ||
+            application?.updatedAt,
+        });
+      });
+
+      const hasSubmittedActivity = history.some(
+        (activity) =>
+          String(activity?.type || "").toLowerCase() === "submitted"
+      );
+
+      if (!hasSubmittedActivity) {
+        items.push({
+          key: `application-${application?._id || jobTitle}`,
+          type: "application",
+          title: `Applied to ${companyName}`,
+          description: jobTitle,
+          occurredAt:
+            application?.appliedAt ||
+            application?.createdAt,
+        });
+      }
+
+      if (application?.viewedAt) {
+        items.push({
+          key: `viewed-${application?._id}`,
+          type: "viewed",
+          title: "Application viewed by employer",
+          description: `${jobTitle} at ${companyName}`,
+          occurredAt: application.viewedAt,
+        });
+      }
+
+      if (application?.interviewSchedule?.scheduledAt) {
+        items.push({
+          key: `interview-${application?._id}`,
+          type: "interview",
+          title: "Interview scheduled",
+          description: `${jobTitle} at ${companyName}`,
+          occurredAt:
+            application?.interviewSchedule?.setAt ||
+            application?.updatedAt ||
+            application?.interviewSchedule?.scheduledAt,
+        });
+      }
+    });
+
+    if (user?.updatedAt) {
+      items.push({
+        key: `profile-${user.updatedAt}`,
+        type: "profile",
+        title: "Updated profile",
+        description: "The jobseeker profile information was updated.",
+        occurredAt: user.updatedAt,
+      });
+    }
+
+    return items
+      .filter((item) => item.occurredAt)
+      .sort(
+        (first, second) =>
+          new Date(second.occurredAt).getTime() -
+          new Date(first.occurredAt).getTime()
+      );
+  }, [applications, profile, user?.updatedAt]);
+
+  const getApplicationPresentation = (application = {}) => {
+    const normalizedStatus = String(application.status || "pending").toLowerCase();
+
+    if (normalizedStatus === "for interview") {
+      return {
+        label: "Interview",
+        progress: 75,
+        barClass: "bg-blue-500",
+        badgeClass: "border-blue-200 bg-blue-50 text-blue-700",
+        description: application?.interviewSchedule?.scheduledAt
+          ? `Interview scheduled for ${formatDate(
+              application.interviewSchedule.scheduledAt,
+              true
+            )}`
+          : "Interview stage",
+      };
+    }
+
+    if (normalizedStatus === "hired") {
+      return {
+        label: "Offered",
+        progress: 100,
+        barClass: "bg-emerald-500",
+        badgeClass: "border-emerald-200 bg-emerald-50 text-emerald-700",
+        description: "Application marked as hired",
+      };
+    }
+
+    if (
+      normalizedStatus === "declined" ||
+      normalizedStatus === "vacancy full"
+    ) {
+      return {
+        label: "Not Selected",
+        progress: 100,
+        barClass: "bg-rose-400",
+        badgeClass: "border-rose-200 bg-rose-50 text-rose-700",
+        description:
+          application.declineReason ||
+          (normalizedStatus === "vacancy full"
+            ? "Position filled"
+            : "Application was not selected"),
+      };
+    }
+
+    if (
+      normalizedStatus === "withdrawn" ||
+      normalizedStatus === "cancelled"
+    ) {
+      return {
+        label: normalizedStatus === "withdrawn" ? "Withdrawn" : "Cancelled",
+        progress: 100,
+        barClass: "bg-slate-400",
+        badgeClass: "border-slate-200 bg-slate-50 text-slate-700",
+        description:
+          normalizedStatus === "withdrawn"
+            ? "Application withdrawn"
+            : "Application cancelled",
+      };
+    }
+
+    if (application.reviewedAt || application.isViewedByEmployer) {
+      return {
+        label: "In Review",
+        progress: 40,
+        barClass: "bg-blue-500",
+        badgeClass: "border-amber-200 bg-amber-50 text-amber-700",
+        description: "Resume under review",
+      };
+    }
+
+    return {
+      label: "Submitted",
+      progress: 15,
+      barClass: "bg-blue-500",
+      badgeClass: "border-slate-200 bg-slate-50 text-slate-700",
+      description: "Application received",
+    };
+  };
+
+  const handleOpenResumeFullView = async () => {
+    if (docs?.cv?.url) {
+      await handleViewCredential("cv");
+      return;
+    }
+
+    const opened = await openResumePrintWindow({
+      userData: user,
+      formData: profile,
+      workExperiences,
+      verificationDocs: docs,
+    });
+
+    if (!opened) {
+      alert("Unable to open the resume full view. Please try again.");
+    }
+  };
+
   const HeaderProfile = () => {
     const avatarUrl = getFileUrl(user?.profileImage);
-    const locationText = profile.address || [profile.cityProvince, profile.region].filter(Boolean).join(", ") || "Location not provided";
+    const locationText =
+      profile.address ||
+      [profile.cityProvince, profile.region].filter(Boolean).join(", ") ||
+      "Location not provided";
+    const initials = fullName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((namePart) => namePart.charAt(0))
+      .join("")
+      .toUpperCase();
+    const levelBadge =
+      JOB_SEEKER_LEVEL_BADGES[jobSeekerLevel] ||
+      JOB_SEEKER_LEVEL_BADGES["First Time Job Seeker"];
 
     return (
-      <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <div className="px-5 pt-5 pb-5 sm:px-7">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-            <div className="h-24 w-24 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-md sm:h-28 sm:w-28">
+      <section className="overflow-hidden rounded-[20px] border border-[#d8e2ee] bg-white shadow-sm">
+        <div className="flex flex-col gap-6 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-center">
+            <div className="h-[92px] w-[92px] shrink-0 overflow-hidden rounded-2xl border border-[#d8e2ee] bg-gradient-to-br from-[#3875ff] to-[#4f38f5] shadow-sm">
               {avatarUrl && !brokenAvatar ? (
                 <img
                   src={avatarUrl}
@@ -301,57 +800,67 @@ const UserManagementDetails = () => {
                   onError={() => setBrokenAvatar(true)}
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-[#2e66a6]/10 text-4xl font-bold text-[#2e66a6]">
-                  {fullName.charAt(0).toUpperCase()}
+                <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-white">
+                  {initials || "JS"}
                 </div>
               )}
             </div>
 
-            <div className="min-w-0 flex-1 pt-2">
+            <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="truncate text-2xl font-bold leading-tight text-black sm:text-3xl">
+                <h1 className="min-w-0 text-2xl font-bold leading-tight text-black sm:text-3xl">
                   {fullName}
                 </h1>
 
-                {isVerified && (
-                  <span className="rounded-full border border-green-200 bg-green-50 px-3 py-1 text-[11px] font-bold uppercase text-green-700">
+                {isVerified ? (
+                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
                     Verified
                   </span>
-                )}
+                ) : null}
 
-                <span className="rounded-full border border-[#2e66a6]/20 bg-[#2e66a6]/10 px-3 py-1 text-[11px] font-bold uppercase text-[#2e66a6]">
+                <span className="rounded-full border border-[#2e66a6]/20 bg-[#eef5fc] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[#2e66a6]">
                   Jobseeker
                 </span>
 
-                {profile.yearGraduated && (
-                  <span className="rounded-full border border-[#2e66a6]/20 bg-[#2e66a6]/10 px-3 py-1 text-[11px] font-bold uppercase text-[#2e66a6]">
+                {profile.yearGraduated ? (
+                  <span className="rounded-full border border-[#b9cce1] bg-[#eef5fc] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[#2e66a6]">
                     Class of {profile.yearGraduated}
                   </span>
-                )}
+                ) : null}
               </div>
 
-              <div className="mt-3 flex flex-col gap-2 text-sm text-gray-600">
+              <div className="mt-4 space-y-2 text-sm text-gray-600">
                 <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
                   <span className="inline-flex min-w-0 items-center gap-2">
                     <Icon name="academic" className="h-4 w-4 shrink-0 text-[#2e66a6]" />
-                    <span className="truncate">{profile.campus || "Campus not specified"}</span>
+                    <span className="truncate">
+                      {profile.campus || "Campus not specified"}
+                    </span>
                   </span>
 
                   <span className="inline-flex min-w-0 items-center gap-2">
                     <Icon name="briefcase" className="h-4 w-4 shrink-0 text-[#2e66a6]" />
-                    <span className="truncate">{profile.course || profile.studyField || "Course not specified"}</span>
+                    <span className="truncate">
+                      {profile.course ||
+                        profile.studyField ||
+                        "Course not specified"}
+                    </span>
                   </span>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
                   <span className="inline-flex min-w-0 items-center gap-2">
                     <Icon name="mail" className="h-4 w-4 shrink-0 text-[#2e66a6]" />
-                    <span className="truncate">{user?.email || "Email not provided"}</span>
+                    <span className="truncate">
+                      {user?.email || "Email not provided"}
+                    </span>
                   </span>
 
                   <span className="inline-flex min-w-0 items-center gap-2">
                     <Icon name="phone" className="h-4 w-4 shrink-0 text-[#2e66a6]" />
-                    <span className="truncate">{profile.phoneNumber || "Phone not provided"}</span>
+                    <span className="truncate">
+                      {profile.phoneNumber || "Phone not provided"}
+                    </span>
                   </span>
                 </div>
 
@@ -360,230 +869,542 @@ const UserManagementDetails = () => {
                   <span className="leading-relaxed">{locationText}</span>
                 </span>
 
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-1 text-xs text-gray-600">
-                  <span>
-                    <span className="font-semibold text-black">Date Registered:</span>{" "}
-                    {formatDate(user?.createdAt)}
-                  </span>
-                </div>
+                <p className="pt-1 text-xs text-gray-500">
+                  <span className="font-semibold text-black">
+                    Date Registered:
+                  </span>{" "}
+                  {formatDate(user?.createdAt)}
+                </p>
               </div>
             </div>
+          </div>
+
+          <div className="flex w-full items-center gap-3 rounded-2xl border border-[#d8e2ee] bg-[#f7faff] px-4 py-3 lg:w-auto lg:min-w-[240px]">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-white">
+              <img
+                src={levelBadge}
+                alt={`${jobSeekerLevel} badge`}
+                className="h-14 w-14 object-contain"
+              />
+            </div>
+
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500">
+                Jobseeker Level
+              </p>
+              <p className="mt-1 truncate text-lg font-bold text-[#2f3b8f]">
+                {jobSeekerLevel}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-[#d8e2ee] px-5 sm:px-7">
+          <div className="flex gap-1 overflow-x-auto">
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={cn(
+                  "relative inline-flex h-14 shrink-0 items-center gap-2 px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2",
+                  activeTab === tab.key
+                    ? "text-[#174b91]"
+                    : "text-gray-500 hover:text-black"
+                )}
+              >
+                <Icon name={tab.icon} className="h-4 w-4" />
+                {tab.label}
+                <span
+                  className={cn(
+                    "absolute bottom-0 left-0 right-0 h-[3px]",
+                    activeTab === tab.key ? "bg-[#174b91]" : "bg-transparent"
+                  )}
+                />
+              </button>
+            ))}
           </div>
         </div>
       </section>
     );
   };
 
-  const InfoItem = ({ label, value }) => (
-    <div>
-      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-slate-800">{value || "—"}</p>
-    </div>
-  );
+  const ResumePreview = () => {
+    const avatarUrl = getFileUrl(user?.profileImage);
+    const resumeFileName =
+      docs?.cv?.filename ||
+      `${fullName.toLowerCase().replace(/[^a-z0-9]+/g, "_") || "jobseeker"}_resume.pdf`;
 
-  const EmptyState = ({ text }) => (
-    <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">{text}</div>
-  );
-
-  const PersonalInfo = () => (
-    <section className="space-y-4">
-      <h3 className="text-lg font-bold text-slate-900">Personal Information</h3>
-      <div className="grid gap-5 sm:grid-cols-2">
-        <InfoItem label="Birthday" value={formatDate(profile.birthday)} />
-        <InfoItem label="Civil Status" value={profile.civilStatus} />
-        <InfoItem label="Height" value={profile.height} />
-        <InfoItem label="Weight" value={profile.weight} />
-        <InfoItem label="Nationality" value={profile.nationality} />
-        <InfoItem label="Preferred Language" value={profile.preferredLanguage} />
-        <InfoItem label="Gender" value={profile.gender} />
-       
-      </div>
-    </section>
-  );
-
-  const CareerProfile = () => (
-    <section className="space-y-5">
-      <h3 className="text-lg font-bold text-slate-900">Career Profile</h3>
-      <div>
-        <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">Skills</p>
-        {skills.length ? (
-          <div className="flex flex-wrap gap-2">
-            {skills.map((skill, index) => <span key={`${skill}-${index}`} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{skill}</span>)}
-          </div>
-        ) : <p className="text-sm text-slate-500">—</p>}
-      </div>
-
-      <div className="grid gap-5 sm:grid-cols-2">
-        <InfoItem label="Preferred Work Mode" value={profile.preferredWorkMode} />
-        <InfoItem label="Employment Type" value={profile.employmentType} />
-        <InfoItem label="Educational Attainment" value={profile.educationalAttainment} />
-        <InfoItem label="Study Field" value={profile.studyField} />
-        <InfoItem label="Willing to Relocate" value={profile.willingToRelocate} />
-        <InfoItem label="How Soon Can You Start" value={profile.howSoonCanYouStart} />
-      </div>
-    </section>
-  );
-
-  const Credentials = () => {
-    const docKeys = Object.keys(DOC_LABELS);
     return (
-      <section className="space-y-4">
-        <h3 className="text-lg font-bold text-slate-900">Credentials</h3>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {docKeys.map((key) => {
-            const doc = docs[key] || {};
-            const url = getFileUrl(doc.url);
-            return (
-              <div key={key} className="flex items-center justify-between gap-3 rounded-xl border border-indigo-100 bg-indigo-50/50 px-4 py-3">
-                <div className="flex min-w-0 items-center gap-2 text-sm font-semibold text-indigo-700">
-                  <Icon name="document" className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{DOC_LABELS[key]}</span>
+      <section className="overflow-hidden rounded-[20px] border border-[#d8e2ee] bg-white shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-[#d8e2ee] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+          <div className="flex min-w-0 items-center gap-2 text-sm font-semibold text-gray-700">
+            <Icon name="document" className="h-4 w-4 shrink-0 text-[#2e66a6]" />
+            <span className="truncate">{resumeFileName}</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleOpenResumeFullView}
+            className="inline-flex w-fit items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[#174b91] transition hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+          >
+            <Icon name="eye" className="h-4 w-4" />
+            Open full view
+          </button>
+        </div>
+
+        <div className="px-5 py-6 sm:px-7 lg:px-8">
+          <article className="mx-auto w-full bg-white font-serif text-[11px] leading-[1.3] text-black">
+            <header className="relative flex min-h-[112px] flex-col items-center justify-center border-b border-[#d8e2ee] pb-5 pr-0 text-center sm:pr-[120px]">
+              <h2 className="text-[25px] font-bold uppercase leading-tight tracking-[0.02em]">
+                {fullName}
+              </h2>
+
+              <p className="mt-2 break-words text-[10px] leading-relaxed">
+                {[profile.address, user?.email, profile.phoneNumber]
+                  .filter(Boolean)
+                  .join(" | ") || "Contact information not provided"}
+              </p>
+
+              <p className="mt-1 text-[10px] italic">
+                {[
+                  profile.campus,
+                  profile.course,
+                  profile.yearGraduated
+                    ? `Class of ${profile.yearGraduated}`
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
+              </p>
+
+              {avatarUrl && !brokenAvatar ? (
+                <img
+                  src={avatarUrl}
+                  alt={fullName}
+                  onError={() => setBrokenAvatar(true)}
+                  className="mt-4 h-[82px] w-[82px] object-cover sm:absolute sm:right-2 sm:top-0 sm:mt-0"
+                />
+              ) : null}
+            </header>
+
+            {String(profile.aboutMe || "").trim() ? (
+              <section className="pt-4">
+                <h3 className="border-b border-black text-[11px] font-bold uppercase">
+                  Objective
+                </h3>
+                <p className="whitespace-pre-line pt-1 text-justify">
+                  {toPlainText(profile.aboutMe)}
+                </p>
+              </section>
+            ) : null}
+
+            {personalInformationRows.length ? (
+              <section className="pt-4">
+                <h3 className="border-b border-black text-[11px] font-bold uppercase">
+                  Personal Information
+                </h3>
+                <div className="grid grid-cols-1 gap-x-7 gap-y-1 pt-1 sm:grid-cols-3">
+                  {personalInformationRows.map(([label, value]) => (
+                    <div key={label}>
+                      <b>{label}:</b> {value}
+                    </div>
+                  ))}
                 </div>
-                {url ? (
-                  <div className="flex items-center gap-1">
-                    <button type="button" onClick={() => handleViewCredential(key)} className="rounded-lg p-1.5 text-slate-600 hover:bg-white hover:text-blue-700" title="View"><Icon name="eye" /></button>
-                    <button type="button" onClick={() => handleDownloadCredential(key, DOC_LABELS[key])} className="rounded-lg p-1.5 text-slate-600 hover:bg-white hover:text-blue-700" title="Download"><Icon name="download" /></button>
-                  </div>
-                ) : <span className="text-xs font-medium text-slate-400">No file</span>}
+              </section>
+            ) : null}
+
+            {meaningfulWorkExperiences.length ? (
+              <section className="pt-4">
+                <h3 className="border-b border-black text-[11px] font-bold uppercase">
+                  Work Experience
+                </h3>
+                <div className="space-y-2 pt-1">
+                  {meaningfulWorkExperiences.map((item, index) => (
+                    <div key={item._id || index}>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          {item.positionTitle || item.title ? (
+                            <div className="font-bold">
+                              {item.positionTitle || item.title}
+                            </div>
+                          ) : null}
+                          {item.companyName || item.company ? (
+                            <div className="italic">
+                              {item.companyName || item.company}
+                            </div>
+                          ) : null}
+                        </div>
+
+                        {formatEntryDate(item) ? (
+                          <div className="shrink-0 whitespace-nowrap italic">
+                            {formatEntryDate(item)}
+                          </div>
+                        ) : null}
+                      </div>
+
+                      {item.description ? (
+                        <p className="mt-1 whitespace-pre-line text-justify">
+                          {toPlainText(item.description)}
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {resumeSkills.length ? (
+              <section className="pt-4">
+                <h3 className="border-b border-black text-[11px] font-bold uppercase">
+                  Skills
+                </h3>
+                <ul className="grid list-disc grid-cols-1 gap-x-8 gap-y-1 pl-4 pt-1 sm:grid-cols-2 lg:grid-cols-3">
+                  {resumeSkills.map((item, index) => (
+                    <li key={`${item.skill}-${index}`}>
+                      {item.skill}
+                      {item.proficiency ? ` — ${item.proficiency}` : ""}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+
+            {meaningfulEducationEntries.length ? (
+              <section className="pt-4">
+                <h3 className="border-b border-black text-[11px] font-bold uppercase">
+                  Education
+                </h3>
+                <div className="space-y-2 pt-1">
+                  {meaningfulEducationEntries.map((item, index) => (
+                    <div
+                      key={item._id || index}
+                      className="flex items-start justify-between gap-4"
+                    >
+                      <div className="min-w-0">
+                        {item.educationalAttainment ||
+                        item.level ||
+                        item.course ? (
+                          <div className="font-bold">
+                            {item.educationalAttainment ||
+                              item.level ||
+                              item.course}
+                          </div>
+                        ) : null}
+
+                        {item.school || item.campus ? (
+                          <div className="italic">
+                            {item.school || item.campus}
+                          </div>
+                        ) : null}
+
+                        {item.description ? (
+                          <p className="whitespace-pre-line">
+                            {toPlainText(item.description)}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      {formatEntryDate(item) ? (
+                        <div className="shrink-0 whitespace-nowrap italic">
+                          {formatEntryDate(item)}
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {resumeProfileSections.map(([sectionTitle, items]) => (
+              <section key={sectionTitle} className="pt-4">
+                <h3 className="border-b border-black text-[11px] font-bold uppercase">
+                  {sectionTitle}
+                </h3>
+                <div className="space-y-2 pt-1">
+                  {items.map((item, index) => (
+                    <div key={item._id || `${sectionTitle}-${index}`}>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          {item.title || item.name || item.organization ? (
+                            <div className="font-bold">
+                              {item.title || item.name || item.organization}
+                            </div>
+                          ) : null}
+
+                          {item.issuer ||
+                          item.role ||
+                          item.company ||
+                          item.organization ? (
+                            <div className="italic">
+                              {item.issuer ||
+                                item.role ||
+                                item.company ||
+                                item.organization}
+                            </div>
+                          ) : null}
+                        </div>
+
+                        {formatEntryDate(item) ? (
+                          <div className="shrink-0 whitespace-nowrap italic">
+                            {formatEntryDate(item)}
+                          </div>
+                        ) : null}
+                      </div>
+
+                      {item.description ? (
+                        <p className="mt-1 whitespace-pre-line text-justify">
+                          {toPlainText(item.description)}
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ))}
+
+            {meaningfulReferences.length ? (
+              <section className="pt-4">
+                <h3 className="border-b border-black text-[11px] font-bold uppercase">
+                  References
+                </h3>
+                <div className="grid grid-cols-1 gap-x-8 gap-y-2 pt-1 sm:grid-cols-2">
+                  {meaningfulReferences.map((item, index) => (
+                    <div key={item._id || index}>
+                      {item.name || item.title ? (
+                        <div className="font-bold">
+                          {item.name || item.title}
+                        </div>
+                      ) : null}
+                      {item.position ? (
+                        <div className="italic">{item.position}</div>
+                      ) : null}
+                      {item.company ? <div>{item.company}</div> : null}
+                      {item.phone ? <div>{item.phone}</div> : null}
+                      {item.email ? (
+                        <div className="break-all text-blue-700 underline">
+                          {item.email}
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {!String(profile.aboutMe || "").trim() &&
+            !personalInformationRows.length &&
+            !meaningfulWorkExperiences.length &&
+            !resumeSkills.length &&
+            !meaningfulEducationEntries.length &&
+            !resumeProfileSections.length &&
+            !meaningfulReferences.length ? (
+              <div className="py-16 text-center font-sans text-sm text-gray-500">
+                No resume information is available yet.
               </div>
-            );
-          })}
+            ) : null}
+          </article>
         </div>
       </section>
     );
   };
 
-  const Education = () => (
-    <section className="space-y-4">
-      <h3 className="text-lg font-bold text-slate-900">Educational Background</h3>
-      {educationEntries.length ? (
-        <div className="space-y-3">
-          {educationEntries.map((item, index) => (
-            <div key={index} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700"><Icon name="academic" /></div>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{item.level || "Education"}</p>
-                  <p className="text-sm font-bold text-slate-900">{item.campus || "—"}</p>
-                  <p className="text-xs text-slate-700">{item.course || item.studyField || item.educationalAttainment || "—"}</p>
-                  <p className="mt-1 text-xs font-medium text-slate-500">{formatYearRange(item)}</p>
-                </div>
-              </div>
-            </div>
+  const ActivityTimeline = () => (
+    <section className="rounded-[20px] border border-[#d8e2ee] bg-white p-5 shadow-sm sm:p-7">
+      <h2 className="text-lg font-bold text-black">Recent Activity</h2>
+
+      {activityItems.length ? (
+        <div className="mt-5 max-w-4xl space-y-6">
+          {activityItems.map((item) => (
+            <article
+              key={item.key}
+              className="relative border-l border-[#d8e2ee] pb-1 pl-5 last:border-l-transparent"
+            >
+              <span className="absolute -left-[5px] top-1 h-2.5 w-2.5 rounded-full bg-[#3875ff]" />
+
+              <p className="text-xs font-medium text-gray-500">
+                {formatActivityDateTime(item.occurredAt)}
+              </p>
+              <h3 className="mt-1 text-sm font-bold text-black">
+                {item.title}
+              </h3>
+              <p className="mt-1 text-xs leading-5 text-gray-600">
+                {item.description}
+              </p>
+            </article>
           ))}
         </div>
-      ) : <EmptyState text="Wala pang educational background na nakalagay." />}
+      ) : (
+        <div className="mt-5 rounded-xl border border-dashed border-[#d8e2ee] bg-[#f8fafc] px-5 py-12 text-center text-sm text-gray-500">
+          No recent activity is available for this jobseeker.
+        </div>
+      )}
     </section>
   );
 
   const ApplicationHistory = () => (
-    <section className="space-y-4">
-      <h3 className="text-lg font-bold text-slate-900">Application History</h3>
+    <section className="rounded-[20px] border border-[#d8e2ee] bg-white p-5 shadow-sm sm:p-7">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-bold text-black">Application History</h2>
+          <p className="mt-1 text-xs text-gray-500">
+            Track where this user has applied and their progress.
+          </p>
+        </div>
+
+        <span className="rounded-full bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#2e66a6]">
+          {applications.length} total
+        </span>
+      </div>
+
       {applications.length ? (
-        <div className="overflow-hidden rounded-xl border border-slate-200">
-          <table className="min-w-full divide-y divide-slate-200 text-left text-xs">
-            <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-              <tr>
-                <th className="px-4 py-3">Job Title</th>
-                <th className="px-4 py-3">Company</th>
-                <th className="px-4 py-3">Address</th>
-                <th className="px-4 py-3">Date Applied</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {paginatedApplications.map((app) => {
-                const job = app.job || {};
-                const employerProfile = app.employer?.employerProfile || {};
-                return (
-                  <tr key={app._id} className="text-slate-700">
-                    <td className="px-4 py-3 font-semibold text-slate-900">{job.title || job.jobTitle || "—"}</td>
-                    <td className="px-4 py-3">{job.companyName || employerProfile.companyName || "—"}</td>
-                    <td className="px-4 py-3">{job.location || job.address || employerProfile.regionCity || "—"}</td>
-                    <td className="px-4 py-3">{formatDate(app.appliedAt || app.createdAt)}</td>
-                    <td className="px-4 py-3">
-                      {(() => {
-                        const status = String(app.status || "pending").toLowerCase();
-                        const statusClass =
-                          status === "hired"
-                            ? "border-green-200 bg-green-50 text-green-700"
-                            : status === "for interview"
-                              ? "border-[#2e66a6]/20 bg-[#2e66a6]/10 text-[#2e66a6]"
-                              : status === "declined" || status === "rejected"
-                                ? "border-red-200 bg-red-50 text-red-700"
-                                : status === "pending"
-                                  ? "border-amber-200 bg-amber-50 text-amber-700"
-                                  : "border-gray-200 bg-gray-50 text-gray-700";
-                        return (
-                          <span className={cn(
-                            "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold capitalize",
-                            statusClass
-                          )}>
-                            {app.status || "pending"}
-                          </span>
-                        );
-                      })()}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        type="button"
-                        onClick={() => navigate(`/admin/applications/${app._id}`)}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
-                        title="View application"
-                        aria-label="View application"
-                      >
-                        <Icon name="eye" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {applications.length > APPLICATIONS_PER_PAGE && (
-            <div className="flex flex-col gap-3 border-t border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs font-medium text-slate-500">
-                Showing {(applicationPage - 1) * APPLICATIONS_PER_PAGE + 1} to {Math.min(applicationPage * APPLICATIONS_PER_PAGE, applications.length)} of {applications.length} results
+        <div className="mt-5 space-y-3">
+          {paginatedApplications.map((application) => {
+            const job = application.job || {};
+            const employerProfile = application.employer?.employerProfile || {};
+            const presentation = getApplicationPresentation(application);
+            const companyName =
+              job.companyName ||
+              employerProfile.companyName ||
+              "Company not specified";
+            const locationText =
+              job.location ||
+              job.address ||
+              employerProfile.regionCity ||
+              "Location not specified";
+
+            return (
+              <article
+                key={application._id}
+                className="rounded-xl border border-[#d8e2ee] bg-white px-4 py-4 transition hover:border-[#b9cce1] sm:px-5"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-bold text-black">
+                      {job.title || job.jobTitle || "Job position"}
+                    </h3>
+                    <p className="mt-1 text-xs font-medium text-gray-600">
+                      {companyName}
+                    </p>
+
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-500">
+                      <span className="inline-flex items-center gap-1">
+                        <Icon name="mapPin" className="h-3.5 w-3.5" />
+                        {locationText}
+                      </span>
+                      <span aria-hidden="true">•</span>
+                      <span>
+                        Applied{" "}
+                        {formatDate(
+                          application.appliedAt || application.createdAt
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  <span
+                    className={cn(
+                      "inline-flex w-fit items-center rounded-full border px-3 py-1 text-[10px] font-semibold",
+                      presentation.badgeClass
+                    )}
+                  >
+                    {presentation.label}
+                  </span>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between gap-4 text-[11px]">
+                  <span className="text-gray-600">
+                    {presentation.description}
+                  </span>
+                  <span className="shrink-0 font-semibold text-black">
+                    {presentation.progress}%
+                  </span>
+                </div>
+
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#edf2f7]">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all",
+                      presentation.barClass
+                    )}
+                    style={{ width: `${presentation.progress}%` }}
+                  />
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-[10px] text-gray-400">
+                    {formatRelativeTime(
+                      application.updatedAt ||
+                        application.reviewedAt ||
+                        application.appliedAt ||
+                        application.createdAt
+                    )}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(`/admin/applications/${application._id}`)
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#174b91] transition hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                  >
+                    <Icon name="eye" className="h-3.5 w-3.5" />
+                    View application
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+
+          {applications.length > APPLICATIONS_PER_PAGE ? (
+            <div className="flex flex-col gap-3 border-t border-[#d8e2ee] pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs text-gray-500">
+                Showing{" "}
+                {(applicationPage - 1) * APPLICATIONS_PER_PAGE + 1} to{" "}
+                {Math.min(
+                  applicationPage * APPLICATIONS_PER_PAGE,
+                  applications.length
+                )}{" "}
+                of {applications.length}
               </p>
 
-              <div className="flex items-center justify-end gap-2">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setApplicationPage((page) => Math.max(page - 1, 1))}
+                  onClick={() =>
+                    setApplicationPage((page) => Math.max(page - 1, 1))
+                  }
                   disabled={applicationPage === 1}
-                  className={cn(
-                    "rounded-lg border px-3 py-1.5 text-xs font-bold transition",
-                    applicationPage === 1
-                      ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
-                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                  )}
+                  className="rounded-lg border border-[#d8e2ee] bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-45"
                 >
                   Previous
                 </button>
 
-                <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700">
+                <span className="rounded-lg bg-[#eef5fc] px-3 py-1.5 text-xs font-semibold text-[#2e66a6]">
                   Page {applicationPage} of {totalApplicationPages}
                 </span>
 
                 <button
                   type="button"
-                  onClick={() => setApplicationPage((page) => Math.min(page + 1, totalApplicationPages))}
+                  onClick={() =>
+                    setApplicationPage((page) =>
+                      Math.min(page + 1, totalApplicationPages)
+                    )
+                  }
                   disabled={applicationPage === totalApplicationPages}
-                  className={cn(
-                    "rounded-lg border px-3 py-1.5 text-xs font-bold transition",
-                    applicationPage === totalApplicationPages
-                      ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
-                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                  )}
+                  className="rounded-lg border border-[#d8e2ee] bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-45"
                 >
                   Next
                 </button>
               </div>
             </div>
-          )}
+          ) : null}
         </div>
-      ) : <EmptyState text="Wala pang application history." />}
+      ) : (
+        <div className="mt-5 rounded-xl border border-dashed border-[#d8e2ee] bg-[#f8fafc] px-5 py-12 text-center text-sm text-gray-500">
+          No application history is available for this jobseeker.
+        </div>
+      )}
     </section>
   );
 
@@ -1413,123 +2234,32 @@ const UserManagementDetails = () => {
   }
 
   const activeContent = {
-    personal: <PersonalInfo />,
-    career: <CareerProfile />,
-    credentials: <Credentials />,
-    education: <Education />,
+    resume: <ResumePreview />,
+    activity: <ActivityTimeline />,
     applications: <ApplicationHistory />,
   }[activeTab];
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gray-50 px-0 py-8">
+      <div className="min-h-screen bg-[#f7f9fc] px-0 py-8">
         <div className="w-full space-y-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <button
-              type="button"
-              onClick={() => navigate("/admin/users")}
-              className="inline-flex w-fit items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-            >
-              <Icon name="arrowLeft" className="h-4 w-4" />
-              Back to Users
-            </button>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="flex items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-center text-sm text-gray-700 shadow-sm">
-              <Icon name="history" className="h-4 w-4 text-[#2e66a6]" />
-              <span>Last profile update:</span>
-              <span className="font-semibold text-black">{formatDate(user.updatedAt, true)}</span>
-            </div>
-
-            <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-sm text-gray-700 shadow-sm">
-              <Icon name="user" className="h-4 w-4 text-[#2e66a6]" />
-              <span>Verified by</span>
-              <span className="font-semibold text-black">Admin</span>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/admin/users")}
+            className="inline-flex w-fit items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-black shadow-sm transition hover:border-[#2e66a6]/35 hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+          >
+            <Icon name="arrowLeft" className="h-4 w-4" />
+            Back to Users
+          </button>
 
           <HeaderProfile />
 
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <div className="px-5 py-5 sm:px-7">
-              <section className="rounded-2xl border border-gray-200 bg-white p-5">
-                <h2 className="text-lg font-bold text-black">About Me</h2>
-                <p className="mt-3 max-w-5xl text-sm leading-relaxed text-gray-600">
-                  {profile.aboutMe || "No about me information yet."}
-                </p>
-              </section>
-
-              <section className="mt-5 rounded-2xl border border-gray-200 bg-white p-5">
-                <h2 className="text-sm font-bold uppercase tracking-widest text-black">
-                  Work Experience
-                </h2>
-
-                {workExperiences.length ? (
-                  <div className="mt-4 space-y-4">
-                    {workExperiences.map((item, index) => (
-                      <div
-                        key={item._id || index}
-                        className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4"
-                      >
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                          <div>
-                            <h3 className="text-sm font-bold text-black">
-                              {item.companyName || "Company not provided"}
-                            </h3>
-                            <p className="mt-1 text-xs font-medium italic text-gray-600">
-                              {item.positionTitle || "Position not provided"}
-                            </p>
-                          </div>
-
-                          <p className="shrink-0 text-xs font-semibold text-[#2e66a6]">
-                            {formatYearRange(item)}
-                          </p>
-                        </div>
-
-                        {item.description && (
-                          <p className="mt-3 text-xs leading-relaxed text-gray-600">
-                            {item.description}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-3 rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-4 text-sm text-gray-500">
-                    No work experience added yet.
-                  </p>
-                )}
-              </section>
-            </div>
-
-            <div className="border-t border-gray-200 px-4 sm:px-6">
-              <div className="flex gap-5 overflow-x-auto">
-                {TABS.map((tab) => (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => setActiveTab(tab.key)}
-                    className={cn(
-                      "inline-flex shrink-0 items-center gap-2 border-b-2 px-1 py-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2",
-                      activeTab === tab.key
-                        ? "border-[#2e66a6] text-[#2e66a6]"
-                        : "border-transparent text-gray-500 hover:text-black"
-                    )}
-                  >
-                    <Icon name={tab.icon} className="h-4 w-4" />
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="px-5 py-5 sm:px-7 sm:py-6">{activeContent}</div>
-          </div>
+          <div>{activeContent}</div>
         </div>
       </div>
     </AdminLayout>
   );
+
 };
 
 export default UserManagementDetails;
