@@ -1075,8 +1075,19 @@ const ActionMenu = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, setOpenMenuId, app._id]);
 
+  const runAction = (event, action) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setOpenMenuId(null);
+    if (typeof action === 'function') action();
+  };
+
   return (
-    <div ref={wrapperRef} className="relative flex items-center justify-end gap-2 whitespace-nowrap">
+    <div
+      ref={wrapperRef}
+      className="relative flex items-center justify-end gap-2 whitespace-nowrap"
+      onClick={(event) => event.stopPropagation()}
+    >
       <Link
         to={`/employer/application/${app._id}?from=for-interview`}
         className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
@@ -1086,69 +1097,78 @@ const ActionMenu = ({
         View
       </Link>
 
-      {!app.alreadyEmployed ? (
-        <button
-          type="button"
-          onClick={onHire}
-          disabled={rowBusy}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-        >
-          <Icon name="check" className="h-4 w-4" />
-          Hired
-        </button>
-      ) : null}
-
       <button
         type="button"
-        onClick={onDecline}
-        disabled={rowBusy}
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-red-300 bg-white px-3 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
-      >
-        <Icon name="x" className="h-4 w-4" />
-        Decline
-      </button>
-
-      <button
-        type="button"
-        onClick={() => setOpenMenuId((previous) => (previous === app._id ? null : app._id))}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setOpenMenuId((previous) => (previous === app._id ? null : app._id));
+        }}
         className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
         aria-label={`More actions for ${name}`}
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
       >
         <Icon name="dots-vertical" className="h-5 w-5" />
       </button>
 
       {isOpen ? (
-        <div className="absolute right-0 top-12 z-40 w-52 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-xl">
+        <div
+          className="absolute right-0 top-12 z-[80] w-56 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-xl"
+          role="menu"
+          aria-label={`Actions for ${name}`}
+        >
           <button
             type="button"
-            onClick={() => {
-              onChangeStage();
-              setOpenMenuId(null);
-            }}
-            className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50"
+            onClick={(event) => runAction(event, onHire)}
+            disabled={rowBusy || app.alreadyEmployed}
+            title={app.alreadyEmployed ? 'This applicant is already employed through another job application.' : ''}
+            className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+            role="menuitem"
+          >
+            <Icon name="check" className="h-4 w-4" />
+            Hired
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => runAction(event, onDecline)}
+            disabled={rowBusy}
+            className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+            role="menuitem"
+          >
+            <Icon name="x" className="h-4 w-4" />
+            Decline
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => runAction(event, onChangeStage)}
+            disabled={rowBusy}
+            className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            role="menuitem"
           >
             <Icon name="refresh" className="h-4 w-4" />
             Change hiring stage
           </button>
+
           <button
             type="button"
-            onClick={() => {
-              onMessage();
-              setOpenMenuId(null);
-            }}
-            className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50"
+            onClick={(event) => runAction(event, onMessage)}
+            disabled={rowBusy}
+            className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            role="menuitem"
           >
             <Icon name="message" className="h-4 w-4" />
             Send message
           </button>
+
           <button
             type="button"
-            onClick={() => {
-              onReset();
-              setOpenMenuId(null);
-            }}
+            onClick={(event) => runAction(event, onReset)}
             disabled={rowBusy}
-            className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="flex w-full items-center gap-3 border-t border-gray-100 px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            role="menuitem"
           >
             <Icon name="refresh" className="h-4 w-4" />
             Reset status
@@ -1550,8 +1570,13 @@ const ForInterview = () => {
   }, [updateApplicationInState]);
 
   const openHiringStageModal = (application) => {
+    if (!application?._id) {
+      setError('Unable to update the hiring stage for this applicant.');
+      return;
+    }
     setError('');
     setSuccess('');
+    setOpenMenuId(null);
     setStageTarget(application);
     setStageModalOpen(true);
   };
@@ -1572,11 +1597,18 @@ const ForInterview = () => {
         action: 'set',
         hiringStage: stage,
       });
-      applyHiringStageResponse(response.data);
+      const responseData = response.data || {};
+      if (responseData.success === false) {
+        throw new Error(responseData.message || 'Failed to update hiring stage.');
+      }
+      applyHiringStageResponse(responseData);
+      if (!responseData.application) {
+        updateApplicationInState({ ...stageTarget, hiringStage: stage });
+      }
       setSuccess('Hiring stage updated.');
       return true;
     } catch (stageError) {
-      setError(stageError?.response?.data?.message || 'Failed to update hiring stage.');
+      setError(stageError?.response?.data?.message || stageError?.message || 'Failed to update hiring stage.');
       return false;
     } finally {
       setStageBusy(false);
@@ -1593,17 +1625,28 @@ const ForInterview = () => {
         action: 'addCustom',
         hiringStage: stage,
       });
-      applyHiringStageResponse(addResponse.data);
+      const addResponseData = addResponse.data || {};
+      if (addResponseData.success === false) {
+        throw new Error(addResponseData.message || 'Failed to add custom hiring stage.');
+      }
+      applyHiringStageResponse(addResponseData);
 
       const setResponse = await api.put(`/applications/${stageTarget._id}/hiring-stage`, {
         action: 'set',
         hiringStage: stage,
       });
-      applyHiringStageResponse(setResponse.data);
+      const setResponseData = setResponse.data || {};
+      if (setResponseData.success === false) {
+        throw new Error(setResponseData.message || 'Failed to select the custom hiring stage.');
+      }
+      applyHiringStageResponse(setResponseData);
+      if (!setResponseData.application) {
+        updateApplicationInState({ ...stageTarget, hiringStage: stage });
+      }
       setSuccess('Custom hiring stage added and selected.');
       return true;
     } catch (stageError) {
-      setError(stageError?.response?.data?.message || 'Failed to add custom hiring stage.');
+      setError(stageError?.response?.data?.message || stageError?.message || 'Failed to add custom hiring stage.');
       return false;
     } finally {
       setStageBusy(false);
@@ -1640,16 +1683,30 @@ const ForInterview = () => {
       const response = await api.put(`/applications/${application._id}/hiring-stage`, {
         action: 'reset',
       });
-      applyHiringStageResponse(response.data);
+      const responseData = response.data || {};
+      if (responseData.success === false) {
+        throw new Error(responseData.message || 'Failed to reset hiring stage.');
+      }
+      applyHiringStageResponse(responseData);
+      if (!responseData.application) {
+        updateApplicationInState({ ...application, hiringStage: '' });
+      }
       setSuccess('Hiring stage reset to No stage set.');
     } catch (stageError) {
-      setError(stageError?.response?.data?.message || 'Failed to reset hiring stage.');
+      setError(stageError?.response?.data?.message || stageError?.message || 'Failed to reset hiring stage.');
     } finally {
       setUpdatingId(null);
     }
   };
 
   const openMessageModal = (application) => {
+    if (!application?._id || !application?.jobseeker) {
+      setError('Unable to open messages for this applicant.');
+      return;
+    }
+    setError('');
+    setSuccess('');
+    setOpenMenuId(null);
     setMessageTarget(application);
     setMessageOpen(true);
   };
