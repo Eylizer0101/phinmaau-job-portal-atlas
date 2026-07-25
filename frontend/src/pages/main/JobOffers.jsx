@@ -648,6 +648,8 @@ const JobOffers = () => {
 
   const [allJobs, setAllJobs] = useState([]);
   const [loadingInitial, setLoadingInitial] = useState(true);
+  const [visibleJobCount, setVisibleJobCount] = useState(16);
+  const [loadingMoreJobs, setLoadingMoreJobs] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -913,6 +915,28 @@ const JobOffers = () => {
 
     return { ...locationGroups, jobTitles, employmentTypes, educationLevels, companies };
   }, [allJobs]);
+
+  const visibleJobs = useMemo(
+    () => filteredJobs.slice(0, visibleJobCount),
+    [filteredJobs, visibleJobCount]
+  );
+
+  const hasMoreJobs = visibleJobCount < filteredJobs.length;
+
+  useEffect(() => {
+    setVisibleJobCount(16);
+    setLoadingMoreJobs(false);
+  }, [filteredJobs]);
+
+  const handleViewMoreJobs = () => {
+    if (loadingMoreJobs || !hasMoreJobs) return;
+
+    setLoadingMoreJobs(true);
+    window.setTimeout(() => {
+      setVisibleJobCount((current) => Math.min(current + 16, filteredJobs.length));
+      setLoadingMoreJobs(false);
+    }, 500);
+  };
 
   const hasActiveFilters =
     search.trim() ||
@@ -1450,8 +1474,9 @@ const JobOffers = () => {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5 xl:gap-6">
-                {filteredJobs.map((job) => {
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5 xl:gap-6">
+                {visibleJobs.map((job) => {
                   const jobId = job._id || job.id;
 
                   const experienceBadgeLabel = getExperienceBadgeLabel(job.experienceLevel);
@@ -1686,6 +1711,23 @@ const JobOffers = () => {
                   );
                 })}
               </div>
+
+              {hasMoreJobs && (
+                <div className="mt-8 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={handleViewMoreJobs}
+                    disabled={loadingMoreJobs}
+                    className="inline-flex min-w-[190px] items-center justify-center gap-2 rounded-xl border border-[#2e66a6] bg-white px-6 py-3 text-sm font-semibold text-[#2e66a6] transition hover:bg-[#F7FAFD] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {loadingMoreJobs && (
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#2e66a6] border-r-transparent" />
+                    )}
+                    {loadingMoreJobs ? "Loading jobs..." : "View More Jobs"}
+                  </button>
+                </div>
+              )}
+              </>
             )}
           </div>
         </div>

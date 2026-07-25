@@ -183,6 +183,8 @@ const Companies = () => {
   const [companies, setCompanies] = useState([]);
   const [allCompaniesForFilters, setAllCompaniesForFilters] = useState([]);
   const [loadingInitial, setLoadingInitial] = useState(true);
+  const [visibleCompanyCount, setVisibleCompanyCount] = useState(16);
+  const [loadingMoreCompanies, setLoadingMoreCompanies] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
   const [jobCountByEmployerId, setJobCountByEmployerId] = useState({});
@@ -510,6 +512,28 @@ const Companies = () => {
     setOpenDropdown(null);
     setLocationSearch("");
     setExpandedCardId(null);
+  };
+
+  const visibleCompanies = useMemo(
+    () => companies.slice(0, visibleCompanyCount),
+    [companies, visibleCompanyCount]
+  );
+
+  const hasMoreCompanies = visibleCompanyCount < companies.length;
+
+  useEffect(() => {
+    setVisibleCompanyCount(16);
+    setLoadingMoreCompanies(false);
+  }, [companies]);
+
+  const handleViewMoreCompanies = () => {
+    if (loadingMoreCompanies || !hasMoreCompanies) return;
+
+    setLoadingMoreCompanies(true);
+    window.setTimeout(() => {
+      setVisibleCompanyCount((current) => Math.min(current + 16, companies.length));
+      setLoadingMoreCompanies(false);
+    }, 500);
   };
 
   const hasAnyFilter = Boolean(search.trim() || selectedLocation || selectedIndustry);
@@ -888,8 +912,9 @@ const Companies = () => {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 items-start md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5 xl:gap-6">
-                {companies.map((c) => {
+              <>
+                <div className="grid grid-cols-1 items-start md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5 xl:gap-6">
+                {visibleCompanies.map((c) => {
                   const logoUrl = resolveLogoUrl(c.companyLogo);
                   const employerId = c?._id || c?.id;
                   const jobCount = employerId ? Number(jobCountByEmployerId?.[employerId] || 0) : 0;
@@ -1080,6 +1105,23 @@ const Companies = () => {
                   );
                 })}
               </div>
+
+              {hasMoreCompanies && (
+                <div className="mt-8 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={handleViewMoreCompanies}
+                    disabled={loadingMoreCompanies}
+                    className="inline-flex min-w-[230px] items-center justify-center gap-2 rounded-xl border border-[#2e66a6] bg-white px-6 py-3 text-sm font-semibold text-[#2e66a6] transition hover:bg-[#F7FAFD] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {loadingMoreCompanies && (
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#2e66a6] border-r-transparent" />
+                    )}
+                    {loadingMoreCompanies ? "Loading companies..." : "View More Companies"}
+                  </button>
+                </div>
+              )}
+              </>
             )}
           </div>
         </div>
