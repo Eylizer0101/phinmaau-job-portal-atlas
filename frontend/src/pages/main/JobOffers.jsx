@@ -240,7 +240,7 @@ const CheckboxDropdown = ({
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
               placeholder={placeholder}
-              className="w-full px-4 py-3 rounded-xl bg-[#F7FAFD] border border-[#D7E2EE] outline-none text-sm focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+              className="w-full px-4 py-3 rounded-xl bg-[#F7FAFD] border border-[#D7E2EE] outline-none text-sm text-black placeholder:text-black/45 caret-[#2e66a6] focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
             />
           )}
 
