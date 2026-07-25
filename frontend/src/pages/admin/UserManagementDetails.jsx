@@ -791,9 +791,9 @@ const UserManagementDetails = () => {
 
     return (
       <section className="overflow-hidden rounded-[20px] border border-[#d8e2ee] bg-white shadow-sm">
-        <div className="flex flex-col gap-6 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-center">
-            <div className="h-[92px] w-[92px] shrink-0 overflow-hidden rounded-2xl border border-[#d8e2ee] bg-gradient-to-br from-[#3875ff] to-[#4f38f5] shadow-sm">
+        <div className="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between lg:gap-7">
+          <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:gap-5">
+            <div className="h-[84px] w-[84px] shrink-0 overflow-hidden rounded-2xl border border-[#d8e2ee] bg-gradient-to-br from-[#3875ff] to-[#4f38f5] shadow-sm sm:h-[96px] sm:w-[96px]">
               {avatarUrl && !brokenAvatar ? (
                 <img
                   src={avatarUrl}
@@ -802,7 +802,7 @@ const UserManagementDetails = () => {
                   onError={() => setBrokenAvatar(true)}
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-white">
+                <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-white sm:text-3xl">
                   {initials || "JS"}
                 </div>
               )}
@@ -810,28 +810,28 @@ const UserManagementDetails = () => {
 
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="min-w-0 text-2xl font-bold leading-tight text-black sm:text-3xl">
+                <h1 className="min-w-0 text-[26px] font-bold leading-tight text-black sm:text-[30px] lg:text-[32px]">
                   {fullName}
                 </h1>
 
                 {isVerified ? (
-                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
+                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700 sm:text-[11px]">
                     Verified
                   </span>
                 ) : null}
 
-                <span className="rounded-full border border-[#2e66a6]/20 bg-[#eef5fc] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[#2e66a6]">
+                <span className="rounded-full border border-[#2e66a6]/20 bg-[#eef5fc] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[#2e66a6] sm:text-[11px]">
                   Jobseeker
                 </span>
 
                 {profile.yearGraduated ? (
-                  <span className="rounded-full border border-[#b9cce1] bg-[#eef5fc] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[#2e66a6]">
+                  <span className="rounded-full border border-[#b9cce1] bg-[#eef5fc] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[#2e66a6] sm:text-[11px]">
                     Class of {profile.yearGraduated}
                   </span>
                 ) : null}
               </div>
 
-              <div className="mt-4 space-y-2 text-sm text-gray-600">
+              <div className="mt-4 space-y-2.5 text-[14px] text-gray-600 sm:text-[15px]">
                 <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
                   <span className="inline-flex min-w-0 items-center gap-2">
                     <Icon name="academic" className="h-4 w-4 shrink-0 text-[#2e66a6]" />
@@ -871,7 +871,7 @@ const UserManagementDetails = () => {
                   <span className="leading-relaxed">{locationText}</span>
                 </span>
 
-                <p className="pt-1 text-xs text-gray-500">
+                <p className="pt-1 text-xs text-gray-500 sm:text-sm">
                   <span className="font-semibold text-black">
                     Date Registered:
                   </span>{" "}
@@ -881,20 +881,20 @@ const UserManagementDetails = () => {
             </div>
           </div>
 
-          <div className="flex w-full items-center gap-3 rounded-2xl border border-[#d8e2ee] bg-[#f7faff] px-4 py-3 lg:w-auto lg:min-w-[240px]">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-white">
+          <div className="flex w-full items-center gap-4 rounded-2xl border border-[#d8e2ee] bg-[#f7faff] px-4 py-4 sm:px-5 lg:w-auto lg:min-w-[250px]">
+            <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-xl bg-white sm:h-[72px] sm:w-[72px]">
               <img
                 src={levelBadge}
                 alt={`${jobSeekerLevel} badge`}
-                className="h-14 w-14 object-contain"
+                className="h-[60px] w-[60px] object-contain sm:h-16 sm:w-16"
               />
             </div>
 
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500 sm:text-[11px]">
                 Jobseeker Level
               </p>
-              <p className="mt-1 truncate text-lg font-bold text-[#2f3b8f]">
+              <p className="mt-1 truncate text-lg font-bold text-[#2f3b8f] sm:text-xl">
                 {jobSeekerLevel}
               </p>
             </div>
@@ -909,7 +909,7 @@ const UserManagementDetails = () => {
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  "relative inline-flex h-14 shrink-0 items-center gap-2 px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2",
+                  "relative inline-flex h-14 shrink-0 items-center gap-2 px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 sm:text-[15px]",
                   activeTab === tab.key
                     ? "text-[#174b91]"
                     : "text-gray-500 hover:text-black"
@@ -939,8 +939,8 @@ const UserManagementDetails = () => {
 
     return (
       <section className="overflow-hidden rounded-[20px] border border-[#d8e2ee] bg-white shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-[#d8e2ee] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
-          <div className="flex min-w-0 items-center gap-2 text-sm font-semibold text-gray-700">
+        <div className="flex flex-col gap-3 border-b border-[#d8e2ee] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+          <div className="flex min-w-0 items-center gap-2 text-sm font-semibold text-gray-700 sm:text-base">
             <Icon name="document" className="h-4 w-4 shrink-0 text-[#2e66a6]" />
             <span className="truncate">{resumeFileName}</span>
           </div>
@@ -948,27 +948,27 @@ const UserManagementDetails = () => {
           <button
             type="button"
             onClick={handleOpenResumeFullView}
-            className="inline-flex w-fit items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[#174b91] transition hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+            className="inline-flex w-fit items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[#174b91] transition hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 sm:text-[15px]"
           >
             <Icon name="eye" className="h-4 w-4" />
             Open full view
           </button>
         </div>
 
-        <div className="px-5 py-6 sm:px-7 lg:px-8">
-          <article className="mx-auto w-full bg-white font-serif text-[11px] leading-[1.3] text-black">
-            <header className="relative flex min-h-[112px] flex-col items-center justify-center border-b border-[#d8e2ee] pb-5 pr-0 text-center sm:pr-[120px]">
-              <h2 className="text-[25px] font-bold uppercase leading-tight tracking-[0.02em]">
+        <div className="px-5 py-7 sm:px-8 lg:px-10">
+          <article className="mx-auto w-full bg-white font-serif text-[12px] leading-[1.45] text-black sm:text-[13px]">
+            <header className="relative flex min-h-[120px] flex-col items-center justify-center border-b border-[#d8e2ee] pb-6 pr-0 text-center sm:pr-[132px]">
+              <h2 className="text-[28px] font-bold uppercase leading-tight tracking-[0.02em] sm:text-[31px]">
                 {fullName}
               </h2>
 
-              <p className="mt-2 break-words text-[10px] leading-relaxed">
+              <p className="mt-2 break-words text-[11px] leading-relaxed sm:text-[12px]">
                 {[profile.address, user?.email, profile.phoneNumber]
                   .filter(Boolean)
                   .join(" | ") || "Contact information not provided"}
               </p>
 
-              <p className="mt-1 text-[10px] italic">
+              <p className="mt-1 text-[11px] italic sm:text-[12px]">
                 {[
                   profile.campus,
                   profile.course,
@@ -985,14 +985,14 @@ const UserManagementDetails = () => {
                   src={avatarUrl}
                   alt={fullName}
                   onError={() => setBrokenAvatar(true)}
-                  className="mt-4 h-[82px] w-[82px] object-cover sm:absolute sm:right-2 sm:top-0 sm:mt-0"
+                  className="mt-4 h-[88px] w-[88px] object-cover sm:absolute sm:right-2 sm:top-0 sm:mt-0 sm:h-[96px] sm:w-[96px]"
                 />
               ) : null}
             </header>
 
             {String(profile.aboutMe || "").trim() ? (
-              <section className="pt-4">
-                <h3 className="border-b border-black text-[11px] font-bold uppercase">
+              <section className="pt-5">
+                <h3 className="border-b border-black pb-0.5 text-[12px] font-bold uppercase leading-[1.35] sm:text-[13px]">
                   Objective
                 </h3>
                 <p className="whitespace-pre-line pt-1 text-justify">
@@ -1002,11 +1002,11 @@ const UserManagementDetails = () => {
             ) : null}
 
             {personalInformationRows.length ? (
-              <section className="pt-4">
-                <h3 className="border-b border-black text-[11px] font-bold uppercase">
+              <section className="pt-5">
+                <h3 className="border-b border-black pb-0.5 text-[12px] font-bold uppercase leading-[1.35] sm:text-[13px]">
                   Personal Information
                 </h3>
-                <div className="grid grid-cols-1 gap-x-7 gap-y-1 pt-1 sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-x-7 gap-y-1.5 pt-1.5 sm:grid-cols-3">
                   {personalInformationRows.map(([label, value]) => (
                     <div key={label}>
                       <b>{label}:</b> {value}
@@ -1017,11 +1017,11 @@ const UserManagementDetails = () => {
             ) : null}
 
             {meaningfulWorkExperiences.length ? (
-              <section className="pt-4">
-                <h3 className="border-b border-black text-[11px] font-bold uppercase">
+              <section className="pt-5">
+                <h3 className="border-b border-black pb-0.5 text-[12px] font-bold uppercase leading-[1.35] sm:text-[13px]">
                   Work Experience
                 </h3>
-                <div className="space-y-2 pt-1">
+                <div className="space-y-3 pt-1.5">
                   {meaningfulWorkExperiences.map((item, index) => (
                     <div key={item._id || index}>
                       <div className="flex items-start justify-between gap-4">
@@ -1057,11 +1057,11 @@ const UserManagementDetails = () => {
             ) : null}
 
             {resumeSkills.length ? (
-              <section className="pt-4">
-                <h3 className="border-b border-black text-[11px] font-bold uppercase">
+              <section className="pt-5">
+                <h3 className="border-b border-black pb-0.5 text-[12px] font-bold uppercase leading-[1.35] sm:text-[13px]">
                   Skills
                 </h3>
-                <ul className="grid list-disc grid-cols-1 gap-x-8 gap-y-1 pl-4 pt-1 sm:grid-cols-2 lg:grid-cols-3">
+                <ul className="grid list-disc grid-cols-1 gap-x-8 gap-y-1.5 pl-5 pt-1.5 sm:grid-cols-2 lg:grid-cols-3">
                   {resumeSkills.map((item, index) => (
                     <li key={`${item.skill}-${index}`}>
                       {item.skill}
@@ -1073,11 +1073,11 @@ const UserManagementDetails = () => {
             ) : null}
 
             {meaningfulEducationEntries.length ? (
-              <section className="pt-4">
-                <h3 className="border-b border-black text-[11px] font-bold uppercase">
+              <section className="pt-5">
+                <h3 className="border-b border-black pb-0.5 text-[12px] font-bold uppercase leading-[1.35] sm:text-[13px]">
                   Education
                 </h3>
-                <div className="space-y-2 pt-1">
+                <div className="space-y-3 pt-1.5">
                   {meaningfulEducationEntries.map((item, index) => (
                     <div
                       key={item._id || index}
@@ -1119,11 +1119,11 @@ const UserManagementDetails = () => {
             ) : null}
 
             {resumeProfileSections.map(([sectionTitle, items]) => (
-              <section key={sectionTitle} className="pt-4">
-                <h3 className="border-b border-black text-[11px] font-bold uppercase">
+              <section key={sectionTitle} className="pt-5">
+                <h3 className="border-b border-black pb-0.5 text-[12px] font-bold uppercase leading-[1.35] sm:text-[13px]">
                   {sectionTitle}
                 </h3>
-                <div className="space-y-2 pt-1">
+                <div className="space-y-3 pt-1.5">
                   {items.map((item, index) => (
                     <div key={item._id || `${sectionTitle}-${index}`}>
                       <div className="flex items-start justify-between gap-4">
@@ -1166,11 +1166,11 @@ const UserManagementDetails = () => {
             ))}
 
             {meaningfulReferences.length ? (
-              <section className="pt-4">
-                <h3 className="border-b border-black text-[11px] font-bold uppercase">
+              <section className="pt-5">
+                <h3 className="border-b border-black pb-0.5 text-[12px] font-bold uppercase leading-[1.35] sm:text-[13px]">
                   References
                 </h3>
-                <div className="grid grid-cols-1 gap-x-8 gap-y-2 pt-1 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-x-8 gap-y-3 pt-1.5 sm:grid-cols-2">
                   {meaningfulReferences.map((item, index) => (
                     <div key={item._id || index}>
                       {item.name || item.title ? (
