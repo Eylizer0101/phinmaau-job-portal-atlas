@@ -12,6 +12,18 @@ import {
   PERKS_AND_BENEFITS_OPTIONS
 } from '../../../constants/postJobDropdownOptions';
 import { PH_PROVINCES_BY_REGION, PH_CITIES_BY_PROVINCE } from '../../../constants/phLocations';
+import {
+  FaBold,
+  FaItalic,
+  FaUnderline,
+  FaListOl,
+  FaListUl,
+  FaAlignLeft,
+  FaAlignCenter,
+  FaAlignRight,
+  FaAlignJustify,
+  FaChevronDown,
+} from 'react-icons/fa';
 
 /* =======================
    UI helpers
@@ -143,11 +155,21 @@ const getRichTextPlainText = (value = '') => {
     .trim();
 };
 
-const RichTextToolbarButton = ({ title, children, onMouseDown, className = '' }) => (
+const RichTextToolbarButton = ({
+  title,
+  children,
+  onMouseDown,
+  className = '',
+  active = false,
+  ariaExpanded,
+  ariaHaspopup,
+}) => (
   <button
     type="button"
     title={title}
     aria-label={title}
+    aria-expanded={ariaExpanded}
+    aria-haspopup={ariaHaspopup}
     onMouseDown={(event) => {
       event.preventDefault();
       onMouseDown?.();
@@ -156,12 +178,20 @@ const RichTextToolbarButton = ({ title, children, onMouseDown, className = '' })
       'flex h-8 min-w-8 items-center justify-center rounded px-2',
       'text-[15px] font-semibold text-gray-700 transition hover:bg-gray-100',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30',
+      active ? 'bg-[#eaf2fb] text-[#2e66a6]' : '',
       className,
     ].join(' ')}
   >
     {children}
   </button>
 );
+
+const RICH_TEXT_ALIGNMENT_OPTIONS = [
+  { command: 'justifyLeft', label: 'Align left', icon: <FaAlignLeft /> },
+  { command: 'justifyCenter', label: 'Align center', icon: <FaAlignCenter /> },
+  { command: 'justifyRight', label: 'Align right', icon: <FaAlignRight /> },
+  { command: 'justifyFull', label: 'Justify', icon: <FaAlignJustify /> },
+];
 
 const RichTextEditor = ({
   id,
@@ -176,6 +206,8 @@ const RichTextEditor = ({
 }) => {
   const editorRef = useRef(null);
   const savedRangeRef = useRef(null);
+  const alignmentMenuRef = useRef(null);
+  const [alignmentOpen, setAlignmentOpen] = useState(false);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -186,6 +218,28 @@ const RichTextEditor = ({
       editor.innerHTML = nextHtml;
     }
   }, [value]);
+
+  useEffect(() => {
+    if (!alignmentOpen) return undefined;
+
+    const handleOutsideClick = (event) => {
+      if (alignmentMenuRef.current && !alignmentMenuRef.current.contains(event.target)) {
+        setAlignmentOpen(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') setAlignmentOpen(false);
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [alignmentOpen]);
 
   const emitChange = () => {
     const nextValue = editorRef.current?.innerHTML || '';
@@ -279,44 +333,79 @@ const RichTextEditor = ({
           error ? 'border-red-300' : 'border-gray-300'
         }`}
       >
-        <RichTextToolbarButton title="Bold" onMouseDown={() => runCommand('bold')} className="font-extrabold">
-          B
+        <RichTextToolbarButton title="Bold" onMouseDown={() => runCommand('bold')}>
+          <FaBold className="text-[14px]" />
         </RichTextToolbarButton>
 
-        <RichTextToolbarButton title="Italic" onMouseDown={() => runCommand('italic')} className="italic">
-          I
+        <RichTextToolbarButton title="Italic" onMouseDown={() => runCommand('italic')}>
+          <FaItalic className="text-[14px]" />
         </RichTextToolbarButton>
 
-        <RichTextToolbarButton title="Underline" onMouseDown={() => runCommand('underline')} className="underline">
-          U
+        <RichTextToolbarButton title="Underline" onMouseDown={() => runCommand('underline')}>
+          <FaUnderline className="text-[14px]" />
         </RichTextToolbarButton>
 
         <span className="mx-1 h-7 border-l border-gray-300" aria-hidden="true" />
 
         <RichTextToolbarButton title="Numbered list" onMouseDown={() => runCommand('insertOrderedList')}>
-          <span className="text-[17px] font-bold">1.</span>
+          <FaListOl className="text-[16px]" />
         </RichTextToolbarButton>
 
-        <RichTextToolbarButton title="Bullet list" onMouseDown={() => runCommand('insertUnorderedList')}>
-          <span className="text-[20px] leading-none">•</span>
+        <RichTextToolbarButton title="Bulleted list" onMouseDown={() => runCommand('insertUnorderedList')}>
+          <FaListUl className="text-[16px]" />
         </RichTextToolbarButton>
 
-        <RichTextToolbarButton title="Align left" onMouseDown={() => runCommand('justifyLeft')}>
-          <span className="text-[18px]">≡</span>
-        </RichTextToolbarButton>
+        <div ref={alignmentMenuRef} className="relative">
+          <RichTextToolbarButton
+            title="Text alignment"
+            ariaExpanded={alignmentOpen}
+            ariaHaspopup="menu"
+            active={alignmentOpen}
+            onMouseDown={() => {
+              saveSelection();
+              setAlignmentOpen((current) => !current);
+            }}
+            className="gap-1"
+          >
+            <FaAlignLeft className="text-[16px]" />
+            <FaChevronDown className={`text-[9px] transition-transform ${alignmentOpen ? 'rotate-180' : ''}`} />
+          </RichTextToolbarButton>
 
-        <RichTextToolbarButton title="Indent" onMouseDown={() => runCommand('indent')}>
-          <span className="text-[18px]">⇥</span>
-        </RichTextToolbarButton>
+          {alignmentOpen ? (
+            <div
+              role="menu"
+              className="absolute left-0 top-full z-[10050] mt-1 w-44 overflow-hidden rounded-[5px] border border-gray-200 bg-white py-1 shadow-xl"
+            >
+              {RICH_TEXT_ALIGNMENT_OPTIONS.map((option) => (
+                <button
+                  key={option.command}
+                  type="button"
+                  role="menuitem"
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    runCommand(option.command);
+                    setAlignmentOpen(false);
+                  }}
+                  className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-100 hover:text-[#2e66a6]"
+                >
+                  <span className="flex w-5 items-center justify-center text-[16px]" aria-hidden="true">
+                    {option.icon}
+                  </span>
+                  <span>{option.label}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
 
         <span className="mx-1 h-7 border-l border-gray-300" aria-hidden="true" />
 
         <RichTextToolbarButton title="Heading 1" onMouseDown={() => formatHeading('H1')}>
-          H₁
+          <span className="text-[15px] font-bold">H1</span>
         </RichTextToolbarButton>
 
         <RichTextToolbarButton title="Heading 2" onMouseDown={() => formatHeading('H2')}>
-          H₂
+          <span className="text-[15px] font-bold">H2</span>
         </RichTextToolbarButton>
       </div>
 
