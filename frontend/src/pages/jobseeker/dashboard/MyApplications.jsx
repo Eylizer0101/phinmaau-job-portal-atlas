@@ -459,8 +459,10 @@ const MyApplications = () => {
     if (pendingDisplay) return pendingDisplay.text;
 
     switch (normalizedStatus) {
-      case 'for interview':
-        return 'For Interview';
+      case 'for interview': {
+        const hiringStage = String(application?.hiringStage || '').trim();
+        return hiringStage ? `For Interview – ${hiringStage}` : 'For Interview';
+      }
       case 'hired':
         return 'Hired';
       case 'declined':
@@ -934,6 +936,67 @@ const MyApplications = () => {
             </div>
           </div>
 
+          <div className="pt-2">
+            <div className={`${UI.card} p-6`}>
+                  <div>
+                    <h3 className={`text-lg font-bold tracking-tight ${UI.textPrimary}`}>Understanding Application Status</h3>
+                    <p className={`mt-1 text-sm ${UI.textSecondary}`}>Quick guide for what each status means.</p>
+                  </div>
+
+                  <div className="mt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                    <div className="p-4 rounded-xl border border-gray-200 bg-white">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-black/5 border border-black/15 flex items-center justify-center text-black/70">
+                          <SvgIcon name="clock" className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className={`font-semibold ${UI.textPrimary}`}>Pending</p>
+                          <p className={`mt-1 text-sm ${UI.textSecondary}`}>Your application was sent successfully and it is still under review.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-xl border border-gray-200 bg-white">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-[#2e66a6]/10 border border-[#2e66a6]/20 flex items-center justify-center text-[#2e66a6]">
+                          <SvgIcon name="star" className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className={`font-semibold ${UI.textPrimary}`}>For Interview</p>
+                          <p className={`mt-1 text-sm ${UI.textSecondary}`}>You passed initial screening. Wait for interview or next steps.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-xl border border-gray-200 bg-white">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700">
+                          <SvgIcon name="checkCircle" className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className={`font-semibold ${UI.textPrimary}`}>Hired</p>
+                          <p className={`mt-1 text-sm ${UI.textSecondary}`}>The employer has hired you for the role.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-xl border border-gray-200 bg-white">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-black/5 border border-black/15 flex items-center justify-center text-black/70">
+                          <SvgIcon name="timesCircle" className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className={`font-semibold ${UI.textPrimary}`}>Declined</p>
+                          <p className={`mt-1 text-sm ${UI.textSecondary}`}>Not selected this time. You can also view the employer's decline reason and feedback here.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                
+            </div>
+          </div>
+
           <div className="border-b border-gray-200">
             <div className="flex items-center gap-8">
               {[
@@ -1253,78 +1316,7 @@ const MyApplications = () => {
                 })}
               </div>
 
-              <div className="pt-2">
-                <div className={`${UI.card} p-6`}>
-                  <div>
-                    <h3 className={`text-lg font-bold tracking-tight ${UI.textPrimary}`}>Understanding Application Status</h3>
-                    <p className={`mt-1 text-sm ${UI.textSecondary}`}>Quick guide for what each status means.</p>
-                  </div>
 
-                  <div className="mt-5 grid grid-cols-1 md:grid-cols-5 gap-4">
-                    <div className="p-4 rounded-xl border border-gray-200 bg-white">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-black/5 border border-black/15 flex items-center justify-center text-black/70">
-                          <SvgIcon name="clock" className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className={`font-semibold ${UI.textPrimary}`}>Pending</p>
-                          <p className={`mt-1 text-sm ${UI.textSecondary}`}>Your application was sent successfully and it is still under review.</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="p-4 rounded-xl border border-gray-200 bg-white">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-[#2e66a6]/10 border border-[#2e66a6]/20 flex items-center justify-center text-[#2e66a6]">
-                          <SvgIcon name="star" className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className={`font-semibold ${UI.textPrimary}`}>For Interview</p>
-                          <p className={`mt-1 text-sm ${UI.textSecondary}`}>You passed initial screening. Wait for interview or next steps.</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="p-4 rounded-xl border border-gray-200 bg-white">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700">
-                          <SvgIcon name="checkCircle" className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className={`font-semibold ${UI.textPrimary}`}>Hired</p>
-                          <p className={`mt-1 text-sm ${UI.textSecondary}`}>The employer has hired you for the role.</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="p-4 rounded-xl border border-gray-200 bg-white">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-black/5 border border-black/15 flex items-center justify-center text-black/70">
-                          <SvgIcon name="timesCircle" className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className={`font-semibold ${UI.textPrimary}`}>Declined</p>
-                          <p className={`mt-1 text-sm ${UI.textSecondary}`}>Not selected this time. You can also view the employer's decline reason and feedback here.</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="p-4 rounded-xl border border-gray-200 bg-white">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-red-50 border border-red-200 flex items-center justify-center text-red-700">
-                          <SvgIcon name="timesCircle" className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className={`font-semibold ${UI.textPrimary}`}>Withdrawn / Cancelled</p>
-                          <p className={`mt-1 text-sm ${UI.textSecondary}`}>These applications can be reactivated.</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                
-                </div>
-              </div>
             </div>
           )}
         </div>
