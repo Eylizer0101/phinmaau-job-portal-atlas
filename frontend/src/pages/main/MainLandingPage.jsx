@@ -128,7 +128,7 @@ const PartnersSection = ({ partners, loading, error }) => {
                 aria-label={`${partner.name} partner card`}
               >
                 <img
-                  src="/images/partners.png"
+                  src="/images/helloww.png"
                   alt=""
                   className="absolute inset-0 w-full h-full object-cover"
                   loading="lazy"
