@@ -390,6 +390,7 @@ exports.getFile = async (req, res) => {
 exports.getConversations = async (req, res) => {
   try {
     const userId = req.user._id;
+    const view = String(req.query.view || 'active').toLowerCase();
 
     // Get distinct conversations where user is either sender or receiver
     const conversations = await Message.aggregate([
@@ -545,6 +546,11 @@ exports.getConversations = async (req, res) => {
     const preferenceMap = new Map(preferences.map((preference) => [preference.conversationId, preference]));
     const visibleConversations = conversations.filter((conversation) => {
       const preference = preferenceMap.get(conversation._id);
+
+      if (view === 'archived') {
+        return preference?.archived === true && preference?.deleted !== true;
+      }
+
       return !preference?.archived && !preference?.hiddenCompany && !preference?.deleted;
     });
 
@@ -1052,7 +1058,7 @@ exports.getInterviewsCount = async (req, res) => {
   }
 };
 
-// Archive, hide, or delete one or more conversations for the current user.
+// Archive, unarchive, hide, or delete one or more conversations for the current user.
 exports.updateConversationAction = async (req, res) => {
   try {
     const action = String(req.body.action || '').toLowerCase();
@@ -1060,7 +1066,7 @@ exports.updateConversationAction = async (req, res) => {
       ? [...new Set(req.body.conversationIds.map((id) => String(id).trim()).filter(Boolean))]
       : [];
 
-    if (!['archive', 'hide', 'delete'].includes(action)) {
+    if (!['archive', 'unarchive', 'hide', 'delete'].includes(action)) {
       return res.status(400).json({ success: false, message: 'Invalid conversation action' });
     }
     if (!conversationIds.length) {
@@ -1076,7 +1082,16 @@ exports.updateConversationAction = async (req, res) => {
 
       const otherUserId = participants.find((id) => id !== userId.toString()) || null;
       const update = { otherUser: otherUserId };
-      if (action === 'archive') update.archived = true;
+      if (action === 'archive') {
+        update.archived = true;
+        update.hiddenCompany = false;
+        update.deleted = false;
+      }
+      if (action === 'unarchive') {
+        update.archived = false;
+        update.hiddenCompany = false;
+        update.deleted = false;
+      }
       if (action === 'hide') update.hiddenCompany = true;
       if (action === 'delete') update.deleted = true;
 
