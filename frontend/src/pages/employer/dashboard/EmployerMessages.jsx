@@ -38,7 +38,7 @@ import api from '../../../services/api';
 // ---------------- UI TOKENS ----------------
 const UI = {
   pageBg: 'bg-gray-50',
-  container: 'mx-auto max-w-[1280px] px-4 sm:px-6 lg:px-8 py-6 lg:py-8',
+  container: 'mx-auto max-w-7xl px-1 py-8',
   shell: 'bg-white border border-[#e6edf5] rounded-[24px] shadow-[0_18px_45px_rgba(46,102,166,0.08)] overflow-hidden',
 
   grid: 'flex h-[calc(100dvh-235px)] min-h-[620px] max-h-[760px] overflow-hidden',
@@ -2232,10 +2232,6 @@ const EmployerMessages = () => {
                             ].join(' ')}
                             aria-current={active ? 'page' : undefined}
                           >
-                            {active && (
-                              <span className="absolute bottom-2 left-0 top-2 w-1 rounded-full bg-[#2e66a6]" />
-                            )}
-
                             <div className="flex items-start gap-3">
                               <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#2e66a6]/20 bg-[#2e66a6]/10">
                                 {avatarUrl ? (
@@ -2277,8 +2273,14 @@ const EmployerMessages = () => {
                                     className="relative flex max-w-[150px] flex-shrink-0 flex-col items-end gap-2"
                                     data-conversation-menu
                                   >
-                                    <div className="flex items-center gap-1">
-                                      <span className={`text-xs ${UI.textMuted} group-hover:hidden`}>
+                                    <div className="relative h-8 w-14 flex-shrink-0">
+                                      <span
+                                        className={`absolute inset-0 flex items-center justify-end text-xs ${UI.textMuted} ${
+                                          conversation.__temp
+                                            ? ''
+                                            : 'transition-opacity duration-150 group-hover:opacity-0'
+                                        }`}
+                                      >
                                         {time}
                                       </span>
 
@@ -2293,7 +2295,7 @@ const EmployerMessages = () => {
                                                 : entryId
                                             );
                                           }}
-                                          className={`hidden h-8 w-8 items-center justify-center rounded-full hover:bg-white group-hover:inline-flex ${UI.ring}`}
+                                          className={`pointer-events-none absolute right-0 top-0 inline-flex h-8 w-8 items-center justify-center rounded-full opacity-0 transition-opacity duration-150 hover:bg-white group-hover:pointer-events-auto group-hover:opacity-100 ${UI.ring}`}
                                           aria-label={`Actions for ${title}`}
                                         >
                                           <FontAwesomeIcon icon={faEllipsisVertical} />
