@@ -554,10 +554,61 @@ exports.getConversations = async (req, res) => {
       return !preference?.archived && !preference?.hiddenCompany && !preference?.deleted;
     });
 
+    // Attach the latest application between the current user and the other
+    // participant. Employer Messages uses this summary for status filtering,
+    // job-title search, and the clickable application header.
+    const otherUserIds = [
+      ...new Set(
+        visibleConversations
+          .map((conversation) => conversation?.otherUser?._id?.toString())
+          .filter(Boolean)
+      )
+    ];
+
+    const applicationByOtherUser = new Map();
+
+    if (otherUserIds.length) {
+      const relatedApplications = await Application.find({
+        $or: [
+          {
+            employer: userId,
+            jobseeker: { $in: otherUserIds }
+          },
+          {
+            jobseeker: userId,
+            employer: { $in: otherUserIds }
+          }
+        ]
+      })
+        .select(
+          '_id job jobseeker employer status lastActiveStatus appliedAt interviewSchedule'
+        )
+        .populate('job', 'title companyName employer')
+        .sort({ appliedAt: -1, createdAt: -1 })
+        .lean();
+
+      relatedApplications.forEach((application) => {
+        const employerId = application?.employer?.toString();
+        const jobseekerId = application?.jobseeker?.toString();
+        const otherUserId =
+          employerId === userId.toString() ? jobseekerId : employerId;
+
+        if (otherUserId && !applicationByOtherUser.has(otherUserId)) {
+          applicationByOtherUser.set(otherUserId, application);
+        }
+      });
+    }
+
+    const enrichedConversations = visibleConversations.map((conversation) => ({
+      ...conversation,
+      application:
+        applicationByOtherUser.get(conversation?.otherUser?._id?.toString()) || null
+    }));
+
     res.status(200).json({
       success: true,
-      count: visibleConversations.length,
-      data: visibleConversations
+      count: enrichedConversations.length,
+      data: enrichedConversations
     });
 
   } catch (error) {

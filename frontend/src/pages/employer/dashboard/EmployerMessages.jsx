@@ -28,6 +28,10 @@ import {
   faChevronLeft,
   faChevronRight,
   faUser,
+  faEllipsisVertical,
+  faArchive,
+  faTrash,
+  faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import api from '../../../services/api';
@@ -35,11 +39,11 @@ import api from '../../../services/api';
 // ---------------- UI TOKENS ----------------
 const UI = {
   pageBg: 'bg-gray-50',
-  container: 'mx-auto max-w-7xl px-1 py-8',
-  shell: 'bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden',
+  container: 'mx-auto max-w-[1280px] px-4 sm:px-6 lg:px-8 py-6 lg:py-8',
+  shell: 'bg-white border border-[#e6edf5] rounded-[24px] shadow-[0_18px_45px_rgba(46,102,166,0.08)] overflow-hidden',
 
-  grid: 'flex min-h-[690px] h-[calc(100vh-180px)]',
-  sidebar: 'w-full sm:w-[320px] md:w-[340px] lg:w-[360px] border-r border-gray-200 flex flex-col bg-white',
+  grid: 'flex min-h-[640px] h-[calc(100vh-230px)]',
+  sidebar: 'w-full sm:w-[320px] md:w-[350px] lg:w-[380px] border-r border-[#e6edf5] flex flex-col bg-white',
   main: 'flex-1 flex flex-col bg-white min-w-0',
 
   textPrimary: 'text-gray-900',
@@ -73,15 +77,15 @@ const UI = {
   badgeUnread: 'bg-[#2e66a6] bg-opacity-10 text-[#2e66a6] border-[#2e66a6] border-opacity-20',
 
   convItem:
-    'relative p-3 rounded-xl border border-transparent hover:bg-gray-50 hover:border-gray-200 transition cursor-pointer',
-  convActive: 'bg-[#2e66a6] bg-opacity-5 border-[#2e66a6] ring-1 ring-[#2e66a6]',
+    'relative p-3.5 rounded-2xl border border-transparent hover:bg-[#f7faff] hover:border-[#d8e2ee] transition cursor-pointer',
+  convActive: 'bg-[#f7faff] border-[#2e66a6] ring-1 ring-[#2e66a6]/80 shadow-[0_8px_20px_rgba(46,102,166,0.08)]',
 
-  chatHeader: 'p-4 border-b border-gray-200 bg-white',
-  chatBody: 'flex-1 overflow-y-auto px-4 sm:px-6 py-4 bg-gray-50',
+  chatHeader: 'p-4 border-b border-[#e6edf5] bg-white',
+  chatBody: 'flex-1 overflow-y-auto px-4 sm:px-6 py-5 bg-[#f8fafc] pb-28',
   chatInputWrap:
     'sticky bottom-0 border-t border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80',
 
-  bubbleBase: 'w-fit max-w-[92%] sm:max-w-[70%] lg:max-w-[68%] rounded-2xl p-3',
+  bubbleBase: 'w-fit max-w-[86%] sm:max-w-[66%] lg:max-w-[58%] rounded-2xl px-4 py-3 shadow-sm',
   bubbleTextMe: 'bg-[#2e66a6] text-white rounded-br-md',
   bubbleTextOther: 'bg-white border border-gray-200 text-gray-900 rounded-bl-md',
 
@@ -106,6 +110,15 @@ const UI = {
 
 // ---------------- CONSTANTS ----------------
 const MAX_FILE_MB = 10;
+const CONVERSATIONS_PER_PAGE = 7;
+
+const STATUS_FILTER_OPTIONS = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'for interview', label: 'For Interview' },
+  { value: 'hired', label: 'Hired' },
+  { value: 'declined', label: 'Declined' },
+];
+
 const ALLOWED_MIMES = [
   'image/jpeg',
   'image/jpg',
@@ -218,6 +231,26 @@ const buildDisplayName = (u) => {
   if (email) return email;
 
   return 'Unknown Jobseeker';
+};
+
+const formatApplicationStatus = (value = '') => {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return 'Not Applied';
+
+  return normalized
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
+const getApplicationStatusClass = (status = '') => {
+  const normalized = String(status || '').trim().toLowerCase();
+
+  if (normalized === 'for interview') return 'bg-[#eaf3ff] text-[#2e66a6]';
+  if (normalized === 'hired') return 'bg-green-100 text-green-800';
+  if (normalized === 'pending') return 'bg-yellow-100 text-yellow-800';
+  if (normalized === 'declined') return 'bg-red-100 text-red-800';
+  return 'bg-gray-100 text-gray-700';
 };
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
@@ -894,6 +927,15 @@ const EmployerMessages = () => {
 
   const [convSearch, setConvSearch] = useState('');
   const [jsSearch, setJsSearch] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState('pending');
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+  const [conversationView, setConversationView] = useState('active');
+  const [topMenuOpen, setTopMenuOpen] = useState(false);
+  const [itemMenuId, setItemMenuId] = useState(null);
+  const [visibleConversationCount, setVisibleConversationCount] = useState(CONVERSATIONS_PER_PAGE);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
@@ -907,6 +949,8 @@ const EmployerMessages = () => {
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
   const chatBodyRef = useRef(null);
+  const statusMenuRef = useRef(null);
+  const topMenuRef = useRef(null);
 
   const currentUserId = useMemo(() => getUserId(), []);
 
@@ -975,9 +1019,9 @@ const EmployerMessages = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
   }, []);
 
-  const fetchConversations = useCallback(async () => {
+  const fetchConversations = useCallback(async (view = 'active') => {
     try {
-      const res = await api.get('/messages/conversations');
+      const res = await api.get('/messages/conversations', { params: { view } });
       if (res.data?.success) setConversations(res.data.data || []);
     } catch (err) {
       console.error(err);
@@ -1061,6 +1105,19 @@ const EmployerMessages = () => {
         const res = await api.get(`/messages/conversation/${conversationId}`);
         if (res.data?.success) {
           setMessages(res.data.data || []);
+          setConversations((previous) =>
+            previous.map((conversation) =>
+              conversation._id === conversationId
+                ? { ...conversation, unreadCount: 0 }
+                : conversation
+            )
+          );
+          setSelectedConversation((previous) =>
+            previous?._id === conversationId
+              ? { ...previous, unreadCount: 0 }
+              : previous
+          );
+          window.dispatchEvent(new Event('messages:unread-updated'));
           setTimeout(() => scrollToBottom(false), 0);
         }
       } catch (err) {
@@ -1076,12 +1133,12 @@ const EmployerMessages = () => {
       if (!conversationId) return;
       try {
         await api.put(`/messages/mark-read/${conversationId}`);
-        fetchConversations();
+        fetchConversations(conversationView);
       } catch (err) {
         console.log('Mark read endpoint not available, continuing...');
       }
     },
-    [fetchConversations]
+    [conversationView, fetchConversations]
   );
 
   const getOrCreateConversation = useCallback(
@@ -1103,7 +1160,7 @@ const EmployerMessages = () => {
   useEffect(() => {
     const boot = async () => {
       setLoading(true);
-      await Promise.all([fetchConversations(), fetchJobseekers(), fetchInterviewerOptions()]);
+      await Promise.all([fetchConversations('active'), fetchJobseekers(), fetchInterviewerOptions()]);
       setLoading(false);
     };
     boot();
@@ -1130,15 +1187,69 @@ const EmployerMessages = () => {
     if (selectedConversation) setIsJobseekersOpen(false);
   }, [selectedConversation]);
 
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (!statusMenuRef.current?.contains(event.target)) setStatusMenuOpen(false);
+      if (!topMenuRef.current?.contains(event.target)) setTopMenuOpen(false);
+      if (!event.target.closest?.('[data-conversation-menu]')) setItemMenuId(null);
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
   const filteredConversations = useMemo(() => {
     const q = convSearch.trim().toLowerCase();
-    if (!q) return conversations;
-    return conversations.filter((conv) => {
-      const name = buildDisplayName(conv.otherUser).toLowerCase() || '';
-      const last = conv.lastMessage?.content?.toLowerCase() || '';
-      return name.includes(q) || last.includes(q);
+
+    return conversations.filter((conversation) => {
+      const application = conversation.application || {};
+      const applicationStatusValue = String(application.status || '').trim().toLowerCase();
+
+      if (activeTab === 'unread' && Number(conversation.unreadCount || 0) <= 0) {
+        return false;
+      }
+
+      if (activeTab === 'status' && applicationStatusValue !== selectedStatusFilter) {
+        return false;
+      }
+
+      if (!q) return true;
+
+      const searchableValues = [
+        buildDisplayName(conversation.otherUser),
+        conversation.otherUser?.email,
+        application.job?.title,
+        application.job?.companyName,
+        applicationStatusValue,
+        formatApplicationStatus(applicationStatusValue),
+        conversation.lastMessage?.content,
+      ];
+
+      return searchableValues.some((value) =>
+        String(value || '').toLowerCase().includes(q)
+      );
     });
-  }, [conversations, convSearch]);
+  }, [conversations, convSearch, activeTab, selectedStatusFilter]);
+
+  const unreadMessageCount = useMemo(
+    () =>
+      conversations.reduce(
+        (total, conversation) => total + Number(conversation.unreadCount || 0),
+        0
+      ),
+    [conversations]
+  );
+
+  const visibleConversations = useMemo(
+    () => filteredConversations.slice(0, visibleConversationCount),
+    [filteredConversations, visibleConversationCount]
+  );
+
+  const hasMoreConversations = visibleConversationCount < filteredConversations.length;
+
+  useEffect(() => {
+    setVisibleConversationCount(CONVERSATIONS_PER_PAGE);
+  }, [convSearch, activeTab, selectedStatusFilter, conversationView]);
 
   const filteredJobseekers = useMemo(() => {
     const q = jsSearch.trim().toLowerCase();
@@ -1150,6 +1261,11 @@ const EmployerMessages = () => {
     if (!selectedConversation) return '';
     return buildDisplayName(selectedConversation.otherUser) || 'Unknown User';
   }, [selectedConversation]);
+
+  const selectedApplicationSummary = useMemo(
+    () => selectedApplication || selectedConversation?.application || null,
+    [selectedApplication, selectedConversation?.application]
+  );
 
   const scheduleButtonLabel = useMemo(() => {
     return selectedApplication?.interviewSchedule?.scheduledAt ? 'Reschedule Interview' : 'Schedule Interview';
@@ -1170,9 +1286,104 @@ const EmployerMessages = () => {
   }, [navigate, showToast]);
 
   const handleSelectConversation = (conv) => {
-    setSelectedConversation(conv);
+    const openedConversation = { ...conv, unreadCount: 0 };
+    const conversationApplication = conv.application || null;
+
+    setSelectedConversation(openedConversation);
+    setConversations((previous) =>
+      previous.map((conversation) =>
+        conversation._id === conv._id ? openedConversation : conversation
+      )
+    );
+    setSelectedApplication(conversationApplication);
+    setApplicationStatus(
+      conversationApplication?.status
+        ? String(conversationApplication.status).toLowerCase()
+        : null
+    );
+    setItemMenuId(null);
     setShowSidebar(false);
   };
+
+  const handleConversationViewChange = useCallback(
+    async (view) => {
+      setConversationView(view);
+      setActiveTab('all');
+      setStatusMenuOpen(false);
+      setTopMenuOpen(false);
+      setItemMenuId(null);
+      setVisibleConversationCount(CONVERSATIONS_PER_PAGE);
+      setSelectedConversation(null);
+      setSelectedApplication(null);
+      setApplicationStatus(null);
+      setMessages([]);
+      await fetchConversations(view);
+    },
+    [fetchConversations]
+  );
+
+  const runConversationAction = useCallback(
+    async (action, conversationIds) => {
+      if (!conversationIds?.length || actionLoading) return;
+
+      try {
+        setActionLoading(true);
+        await api.patch('/messages/conversations/action', {
+          action,
+          conversationIds,
+        });
+
+        if (conversationIds.includes(selectedConversation?._id)) {
+          setSelectedConversation(null);
+          setSelectedApplication(null);
+          setApplicationStatus(null);
+          setMessages([]);
+        }
+
+        setDeleteTarget(null);
+        setItemMenuId(null);
+        await fetchConversations(conversationView);
+
+        showToast({
+          type: 'success',
+          title:
+            action === 'archive'
+              ? 'Conversation archived'
+              : action === 'unarchive'
+              ? 'Conversation restored'
+              : 'Conversation deleted',
+          message:
+            action === 'delete'
+              ? 'The conversation was removed from your message list.'
+              : '',
+        });
+      } catch (err) {
+        console.error(err);
+        showToast({
+          type: 'error',
+          title: 'Conversation action failed',
+          message: err?.response?.data?.message || 'Please try again.',
+        });
+      } finally {
+        setActionLoading(false);
+      }
+    },
+    [
+      actionLoading,
+      conversationView,
+      fetchConversations,
+      selectedConversation?._id,
+      showToast,
+    ]
+  );
+
+  const handleOpenApplicationDetails = useCallback(() => {
+    const applicationId =
+      selectedApplication?._id || selectedConversation?.application?._id;
+
+    if (!applicationId) return;
+    navigate(`/employer/application/${applicationId}?from=messages`);
+  }, [navigate, selectedApplication?._id, selectedConversation?.application?._id]);
 
   const handleSelectJobseeker = useCallback(
     async (jobseeker) => {
@@ -1291,7 +1502,7 @@ const EmployerMessages = () => {
         const serverMsg = res.data.data;
 
         setMessages((prev) => prev.map((m) => (m._id === optimisticId ? serverMsg : m)));
-        fetchConversations();
+        fetchConversations(conversationView);
         setTimeout(() => scrollToBottom(true), 0);
       } else {
         throw new Error('Send failed');
@@ -1304,6 +1515,7 @@ const EmployerMessages = () => {
       setSending(false);
     }
   }, [
+    conversationView,
     currentUserId,
     fetchConversations,
     newMessage,
@@ -1363,7 +1575,7 @@ const EmployerMessages = () => {
           setTimeout(() => scrollToBottom(true), 0);
         }
 
-        fetchConversations();
+        fetchConversations(conversationView);
         setScheduleModalOpen(false);
 
         showToast({
@@ -1385,7 +1597,7 @@ const EmployerMessages = () => {
         setSavingSchedule(false);
       }
     },
-    [fetchConversations, scrollToBottom, showToast]
+    [conversationView, fetchConversations, scrollToBottom, showToast]
   );
 
   if (loading) {
@@ -1627,8 +1839,19 @@ const EmployerMessages = () => {
             <div className={UI.grid}>
               <div className={[UI.sidebar, showSidebar ? 'block' : 'hidden', 'sm:block'].join(' ')}>
                 <div className={`${UI.panelPad} ${UI.divider}`}>
-                  <div className="flex items-center justify-between gap-2">
-                    <p className={`${UI.h2} ${UI.textPrimary}`}>Conversations</p>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className={`${UI.h2} ${UI.textPrimary}`}>
+                        {conversationView === 'archived' ? 'Archived Chats' : 'Messages'}
+                      </p>
+
+                      {conversationView === 'active' && (
+                        <span className="mt-2 inline-flex items-center rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1 text-xs font-semibold text-[#2e66a6]">
+                          {unreadMessageCount}{' '}
+                          {unreadMessageCount === 1 ? 'unread message' : 'unread messages'}
+                        </span>
+                      )}
+                    </div>
 
                     <button
                       type="button"
@@ -1648,54 +1871,213 @@ const EmployerMessages = () => {
                     />
                     <input
                       value={convSearch}
-                      onChange={(e) => setConvSearch(e.target.value)}
+                      onChange={(event) => setConvSearch(event.target.value)}
                       className={`${UI.input} ${UI.ring}`}
-                      placeholder="Search conversations…"
+                      placeholder="Search conversations..."
                       aria-label="Search conversations"
                     />
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-1.5">
+                    {[
+                      { key: 'all', label: 'All' },
+                      { key: 'unread', label: 'Unread' },
+                    ].map((tab) => (
+                      <button
+                        key={tab.key}
+                        type="button"
+                        onClick={() => {
+                          setActiveTab(tab.key);
+                          setStatusMenuOpen(false);
+                        }}
+                        className={`rounded-full px-3 py-2 text-sm font-semibold transition ${
+                          activeTab === tab.key
+                            ? 'bg-[#eaf3ff] text-[#2e66a6]'
+                            : 'text-gray-600 hover:bg-[#f7faff]'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+
+                    <div ref={statusMenuRef} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStatusMenuOpen((open) => !open);
+                          setTopMenuOpen(false);
+                        }}
+                        className={`inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm font-semibold transition ${
+                          activeTab === 'status'
+                            ? 'bg-[#eaf3ff] text-[#2e66a6]'
+                            : 'text-gray-600 hover:bg-[#f7faff]'
+                        }`}
+                        aria-expanded={statusMenuOpen}
+                        aria-haspopup="menu"
+                      >
+                        {activeTab === 'status'
+                          ? formatApplicationStatus(selectedStatusFilter)
+                          : 'Status'}
+                        <FontAwesomeIcon icon={faChevronDown} className="h-3 w-3" />
+                      </button>
+
+                      {statusMenuOpen && (
+                        <div
+                          className="absolute left-0 top-11 z-40 w-44 rounded-xl border border-[#e6edf5] bg-white p-1.5 shadow-xl"
+                          role="menu"
+                          aria-label="Filter conversations by application status"
+                        >
+                          {STATUS_FILTER_OPTIONS.map((option) => (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => {
+                                setSelectedStatusFilter(option.value);
+                                setActiveTab('status');
+                                setStatusMenuOpen(false);
+                              }}
+                              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-semibold transition ${
+                                activeTab === 'status' &&
+                                selectedStatusFilter === option.value
+                                  ? 'bg-[#eaf3ff] text-[#2e66a6]'
+                                  : 'text-gray-700 hover:bg-[#f7faff]'
+                              }`}
+                              role="menuitem"
+                            >
+                              <span>{option.label}</span>
+                              {activeTab === 'status' &&
+                                selectedStatusFilter === option.value && (
+                                  <FontAwesomeIcon icon={faCheck} className="h-3.5 w-3.5" />
+                                )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div ref={topMenuRef} className="relative ml-auto">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTopMenuOpen((open) => !open);
+                          setStatusMenuOpen(false);
+                        }}
+                        className={`h-9 w-9 rounded-full text-gray-600 transition hover:bg-[#f7faff] ${UI.ring}`}
+                        aria-label="Conversation actions"
+                        aria-expanded={topMenuOpen}
+                        aria-haspopup="menu"
+                      >
+                        <FontAwesomeIcon icon={faEllipsisVertical} />
+                      </button>
+
+                      {topMenuOpen && (
+                        <div
+                          className="absolute right-0 top-11 z-40 w-48 rounded-xl border border-[#e6edf5] bg-white p-1.5 shadow-xl"
+                          role="menu"
+                        >
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleConversationViewChange(
+                                conversationView === 'archived' ? 'active' : 'archived'
+                              )
+                            }
+                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-semibold text-gray-700 hover:bg-[#f7faff]"
+                            role="menuitem"
+                          >
+                            <FontAwesomeIcon
+                              icon={conversationView === 'archived' ? faArrowLeft : faArchive}
+                              className="w-4"
+                            />
+                            {conversationView === 'archived' ? 'All Chats' : 'Archived Chats'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-3">
                   {filteredConversations.length === 0 ? (
                     <div className="text-center py-10">
-                      <FontAwesomeIcon icon={faComments} className="w-10 h-10 text-gray-300 mx-auto mb-3" aria-hidden="true" />
-                      <p className={`font-semibold ${UI.textPrimary}`}>No conversations</p>
-                      <p className={`text-sm ${UI.textMuted} mt-1`}>Select a job seeker below to start.</p>
+                      <FontAwesomeIcon
+                        icon={faComments}
+                        className="mx-auto mb-3 h-10 w-10 text-gray-300"
+                        aria-hidden="true"
+                      />
+                      <p className={`font-semibold ${UI.textPrimary}`}>
+                        {conversationView === 'archived'
+                          ? 'No archived conversations'
+                          : activeTab === 'unread'
+                          ? 'No unread conversations'
+                          : activeTab === 'status'
+                          ? `No ${formatApplicationStatus(selectedStatusFilter)} conversations`
+                          : 'No conversations'}
+                      </p>
+                      <p className={`mt-1 text-sm ${UI.textMuted}`}>
+                        {convSearch
+                          ? 'Try another search term.'
+                          : conversationView === 'archived'
+                          ? 'Archived conversations will appear here.'
+                          : 'Select a job seeker below to start.'}
+                      </p>
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {filteredConversations.map((conv) => {
-                        const active = selectedConversation?._id === conv._id;
-                        const title = buildDisplayName(conv.otherUser);
-                        const time = formatTime(conv.lastMessageTime || conv.lastMessage?.createdAt);
-                        const last = conv.lastMessage?.content || 'No messages yet';
-
-                        const avatarUrl = getProfileImageUrl(conv.otherUser?.profileImage);
+                      {visibleConversations.map((conversation) => {
+                        const active = selectedConversation?._id === conversation._id;
+                        const title = buildDisplayName(conversation.otherUser);
+                        const time = formatTime(
+                          conversation.lastMessageTime ||
+                            conversation.lastMessage?.createdAt
+                        );
+                        const last =
+                          conversation.lastMessage?.content || 'No messages yet';
+                        const avatarUrl = getProfileImageUrl(
+                          conversation.otherUser?.profileImage
+                        );
+                        const status = String(
+                          conversation.application?.status || ''
+                        ).toLowerCase();
+                        const jobTitle = conversation.application?.job?.title || '';
 
                         return (
-                          <button
-                            key={conv._id}
-                            type="button"
-                            onClick={() => handleSelectConversation(conv)}
-                            className={['w-full text-left', UI.convItem, active ? UI.convActive : '', UI.ring].join(' ')}
+                          <div
+                            key={conversation._id}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => handleSelectConversation(conversation)}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                handleSelectConversation(conversation);
+                              }
+                            }}
+                            className={[
+                              'group w-full text-left',
+                              UI.convItem,
+                              active ? UI.convActive : '',
+                              UI.ring,
+                            ].join(' ')}
                             aria-current={active ? 'page' : undefined}
                           >
-                            {active && <span className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-[#2e66a6]" />}
+                            {active && (
+                              <span className="absolute bottom-2 left-0 top-2 w-1 rounded-full bg-[#2e66a6]" />
+                            )}
 
                             <div className="flex items-start gap-3">
-                              <div className="h-10 w-10 rounded-full overflow-hidden bg-[#2e66a6] bg-opacity-10 border border-[#2e66a6] border-opacity-20 flex items-center justify-center flex-shrink-0">
+                              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#2e66a6]/20 bg-[#2e66a6]/10">
                                 {avatarUrl ? (
                                   <img
                                     src={avatarUrl}
                                     alt={title}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      e.currentTarget.style.display = 'none';
+                                    className="h-full w-full object-cover"
+                                    onError={(event) => {
+                                      event.currentTarget.style.display = 'none';
                                     }}
                                   />
                                 ) : (
-                                  <span className="text-[#2e66a6] font-bold text-sm">
+                                  <span className="text-sm font-bold text-[#2e66a6]">
                                     {(title?.trim()?.[0] || 'U').toUpperCase()}
                                   </span>
                                 )}
@@ -1703,24 +2085,135 @@ const EmployerMessages = () => {
 
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-start justify-between gap-2">
-                                  <p className={`font-semibold ${UI.textPrimary} truncate`} title={title}>
-                                    {title}
-                                  </p>
-                                  <span className={`text-xs ${UI.textMuted} flex-shrink-0`}>{time}</span>
+                                  <div className="min-w-0">
+                                    <p
+                                      className={`truncate font-semibold ${UI.textPrimary}`}
+                                      title={title}
+                                    >
+                                      {title}
+                                    </p>
+                                    {jobTitle && (
+                                      <p
+                                        className={`truncate text-xs ${UI.textMuted}`}
+                                        title={jobTitle}
+                                      >
+                                        {jobTitle}
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  <div
+                                    className="relative flex flex-shrink-0 items-center gap-1"
+                                    data-conversation-menu
+                                  >
+                                    <span className={`text-xs ${UI.textMuted} group-hover:hidden`}>
+                                      {time}
+                                    </span>
+
+                                    <button
+                                      type="button"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        setItemMenuId((current) =>
+                                          current === conversation._id
+                                            ? null
+                                            : conversation._id
+                                        );
+                                      }}
+                                      className={`hidden h-8 w-8 items-center justify-center rounded-full hover:bg-white group-hover:inline-flex ${UI.ring}`}
+                                      aria-label={`Actions for ${title}`}
+                                    >
+                                      <FontAwesomeIcon icon={faEllipsisVertical} />
+                                    </button>
+
+                                    {itemMenuId === conversation._id && (
+                                      <div className="absolute right-0 top-9 z-50 w-40 rounded-xl border border-[#e6edf5] bg-white p-1.5 shadow-xl">
+                                        <button
+                                          type="button"
+                                          onClick={(event) => {
+                                            event.stopPropagation();
+                                            runConversationAction(
+                                              conversationView === 'archived'
+                                                ? 'unarchive'
+                                                : 'archive',
+                                              [conversation._id]
+                                            );
+                                          }}
+                                          disabled={actionLoading}
+                                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-[#f7faff] disabled:opacity-50"
+                                        >
+                                          <FontAwesomeIcon icon={faArchive} />
+                                          {conversationView === 'archived'
+                                            ? 'Unarchive'
+                                            : 'Archive'}
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={(event) => {
+                                            event.stopPropagation();
+                                            setDeleteTarget(conversation);
+                                            setItemMenuId(null);
+                                          }}
+                                          disabled={actionLoading}
+                                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                                        >
+                                          <FontAwesomeIcon icon={faTrash} />
+                                          Delete Chat
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
 
-                                <p className={`text-sm ${UI.textSecondary} mt-1 line-clamp-2`} title={last}>
+                                <p
+                                  className={`mt-1 truncate text-sm ${UI.textSecondary}`}
+                                  title={last}
+                                >
                                   {last}
                                 </p>
 
-                                {conv.unreadCount > 0 && (
-                                  <span className={`${UI.badge} ${UI.badgeUnread} mt-2`}>{conv.unreadCount} new</span>
-                                )}
+                                <div className="mt-2 flex flex-wrap items-center gap-2">
+                                  {status && (
+                                    <span
+                                      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${getApplicationStatusClass(
+                                        status
+                                      )}`}
+                                    >
+                                      {formatApplicationStatus(status)}
+                                    </span>
+                                  )}
+
+                                  {Number(conversation.unreadCount || 0) > 0 && (
+                                    <span className={`${UI.badge} ${UI.badgeUnread}`}>
+                                      {conversation.unreadCount} new
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </button>
+                          </div>
                         );
                       })}
+
+                      {hasMoreConversations && (
+                        <div className="flex justify-center px-2 pb-2 pt-3">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setVisibleConversationCount((current) =>
+                                Math.min(
+                                  current + CONVERSATIONS_PER_PAGE,
+                                  filteredConversations.length
+                                )
+                              )
+                            }
+                            className={`w-full rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-[#2e66a6] transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] ${UI.ring}`}
+                          >
+                            View More
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1809,38 +2302,55 @@ const EmployerMessages = () => {
                 </div>
               </div>
 
+
               <div className={[UI.main, showSidebar ? 'hidden sm:flex' : 'flex'].join(' ')}>
                 {selectedConversation ? (
                   <>
                     <div className={UI.chatHeader}>
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <button
-                            type="button"
-                            onClick={() => setShowSidebar(true)}
-                            className={`sm:hidden ${UI.btnBase} ${UI.btnIcon} ${UI.btnGhost} ${UI.ring}`}
-                            aria-label="Back to conversations"
-                          >
-                            <FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />
-                          </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setShowSidebar(true)}
+                          className={`sm:hidden ${UI.btnBase} ${UI.btnIcon} ${UI.btnGhost} ${UI.ring}`}
+                          aria-label="Back to conversations"
+                        >
+                          <FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />
+                        </button>
 
+                        <button
+                          type="button"
+                          onClick={handleOpenApplicationDetails}
+                          disabled={!selectedApplicationSummary?._id}
+                          className={`group flex min-w-0 flex-1 items-center gap-3 rounded-xl px-2 py-1.5 text-left transition ${
+                            selectedApplicationSummary?._id
+                              ? 'hover:bg-[#f7faff]'
+                              : 'cursor-default'
+                          } ${UI.ring}`}
+                          title={
+                            selectedApplicationSummary?._id
+                              ? 'Open application details and resume'
+                              : 'No application details available'
+                          }
+                        >
                           {(() => {
                             const title = selectedHeaderTitle;
-                            const avatarUrl = getProfileImageUrl(selectedConversation.otherUser?.profileImage);
+                            const avatarUrl = getProfileImageUrl(
+                              selectedConversation.otherUser?.profileImage
+                            );
 
                             return (
-                              <div className="h-10 w-10 rounded-full overflow-hidden bg-[#2e66a6] bg-opacity-10 border border-[#2e66a6] border-opacity-20 flex items-center justify-center flex-shrink-0">
+                              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#2e66a6]/20 bg-[#2e66a6]/10">
                                 {avatarUrl ? (
                                   <img
                                     src={avatarUrl}
                                     alt={title}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      e.currentTarget.style.display = 'none';
+                                    className="h-full w-full object-cover"
+                                    onError={(event) => {
+                                      event.currentTarget.style.display = 'none';
                                     }}
                                   />
                                 ) : (
-                                  <span className="text-[#2e66a6] font-bold text-sm">
+                                  <span className="text-sm font-bold text-[#2e66a6]">
                                     {(title?.trim()?.[0] || 'U').toUpperCase()}
                                   </span>
                                 )}
@@ -1848,41 +2358,59 @@ const EmployerMessages = () => {
                             );
                           })()}
 
-                          <div className="min-w-0">
-                            <p className={`font-bold ${UI.textPrimary} truncate`} title={selectedHeaderTitle}>
+                          <span className="min-w-0 flex-1">
+                            <span
+                              className={`block truncate font-bold ${UI.textPrimary}`}
+                              title={selectedHeaderTitle}
+                            >
                               {selectedHeaderTitle}
-                            </p>
-                            <p className={`text-sm ${UI.textSecondary} truncate`}>
-                              {selectedApplication?.job?.title || 'Job Seeker'}
-                            </p>
-                            <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                              <span className="text-xs font-medium text-gray-500">Status:</span>
+                            </span>
+
+                            <span
+                              className={`block truncate text-sm ${UI.textSecondary}`}
+                              title={selectedApplicationSummary?.job?.title || 'Job Seeker'}
+                            >
+                              {selectedApplicationSummary?.job?.title
+                                ? `Applied for: ${selectedApplicationSummary.job.title}`
+                                : 'Job Seeker'}
+                            </span>
+
+                            {selectedApplicationSummary?.job?.companyName && (
                               <span
-                                className={`text-xs px-2 py-0.5 rounded-full ${
-                                  applicationStatus === 'for interview'
-                                    ? 'bg-[#2e66a6] bg-opacity-10 text-[#2e66a6]'
-                                    : applicationStatus === 'hired'
-                                    ? 'bg-green-100 text-green-800'
-                                    : applicationStatus === 'pending'
-                                    ? 'bg-yellow-100 text-yellow-800'
-                                    : applicationStatus === 'declined'
-                                    ? 'bg-red-100 text-red-800'
-                                    : 'bg-gray-100 text-gray-800'
-                                }`}
+                                className={`block truncate text-xs ${UI.textMuted}`}
+                                title={selectedApplicationSummary.job.companyName}
+                              >
+                                {selectedApplicationSummary.job.companyName}
+                              </span>
+                            )}
+
+                            <span className="mt-1 flex flex-wrap items-center gap-2">
+                              <span className="text-xs font-medium text-gray-500">
+                                Status:
+                              </span>
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-xs font-semibold ${getApplicationStatusClass(
+                                  applicationStatus ||
+                                    selectedApplicationSummary?.status
+                                )}`}
                               >
                                 {checkingStatus
                                   ? 'Checking...'
-                                  : applicationStatus
-                                  ? applicationStatus
-                                      .split(' ')
-                                      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                                      .join(' ')
-                                  : 'Not Applied'}
+                                  : formatApplicationStatus(
+                                      applicationStatus ||
+                                        selectedApplicationSummary?.status
+                                    )}
                               </span>
-                            </div>
-                          </div>
-                        </div>
+                            </span>
+                          </span>
 
+                          {selectedApplicationSummary?._id && (
+                            <span className="hidden flex-shrink-0 items-center gap-1.5 rounded-lg border border-[#d8e2ee] bg-white px-3 py-2 text-xs font-semibold text-[#2e66a6] transition group-hover:border-[#2e66a6]/40 sm:inline-flex">
+                              <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5" />
+                              View Application
+                            </span>
+                          )}
+                        </button>
                       </div>
                     </div>
 
@@ -2152,6 +2680,66 @@ const EmployerMessages = () => {
               </div>
             </div>
           </div>
+
+          {deleteTarget && (
+            <div
+              className="fixed inset-0 z-[110] flex items-center justify-center bg-black/45 px-4 py-6"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Delete conversation"
+            >
+              <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">Delete Chat?</h2>
+                    <p className="mt-2 text-sm leading-6 text-gray-600">
+                      This removes the conversation with{' '}
+                      <span className="font-semibold text-gray-900">
+                        {buildDisplayName(deleteTarget.otherUser)}
+                      </span>{' '}
+                      from your message list.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setDeleteTarget(null)}
+                    disabled={actionLoading}
+                    className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 ${UI.ring}`}
+                    aria-label="Close delete confirmation"
+                  >
+                    <FontAwesomeIcon icon={faXmark} />
+                  </button>
+                </div>
+
+                <div className="mt-6 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setDeleteTarget(null)}
+                    disabled={actionLoading}
+                    className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSecondary} ${UI.ring}`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      runConversationAction('delete', [deleteTarget._id])
+                    }
+                    disabled={actionLoading}
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
+                  >
+                    {actionLoading ? (
+                      <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+                    ) : (
+                      <FontAwesomeIcon icon={faTrash} />
+                    )}
+                    Delete Chat
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <ScheduleInterviewModal
             open={scheduleModalOpen}
