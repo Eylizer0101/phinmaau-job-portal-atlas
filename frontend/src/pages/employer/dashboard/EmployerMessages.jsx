@@ -41,9 +41,9 @@ const UI = {
   container: 'mx-auto max-w-[1280px] px-4 sm:px-6 lg:px-8 py-6 lg:py-8',
   shell: 'bg-white border border-[#e6edf5] rounded-[24px] shadow-[0_18px_45px_rgba(46,102,166,0.08)] overflow-hidden',
 
-  grid: 'flex min-h-[640px] h-[calc(100vh-230px)]',
-  sidebar: 'w-full sm:w-[320px] md:w-[350px] lg:w-[380px] border-r border-[#e6edf5] flex flex-col bg-white',
-  main: 'flex-1 flex flex-col bg-white min-w-0',
+  grid: 'flex min-h-[640px] h-[calc(100vh-230px)] overflow-hidden',
+  sidebar: 'w-full sm:w-[320px] md:w-[350px] lg:w-[380px] min-h-0 overflow-hidden border-r border-[#e6edf5] flex flex-col bg-white',
+  main: 'flex-1 min-h-0 overflow-hidden flex flex-col bg-white min-w-0',
 
   textPrimary: 'text-gray-900',
   textSecondary: 'text-gray-600',
@@ -80,7 +80,7 @@ const UI = {
   convActive: 'bg-[#f7faff] border-[#2e66a6] ring-1 ring-[#2e66a6]/80 shadow-[0_8px_20px_rgba(46,102,166,0.08)]',
 
   chatHeader: 'p-4 border-b border-[#e6edf5] bg-white',
-  chatBody: 'flex-1 overflow-y-auto px-4 sm:px-6 py-5 bg-[#f8fafc] pb-28',
+  chatBody: 'flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 py-5 bg-[#f8fafc] pb-28',
   chatInputWrap:
     'sticky bottom-0 border-t border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80',
 
@@ -1017,7 +1017,13 @@ const EmployerMessages = () => {
   }, []);
 
   const scrollToBottom = useCallback((smooth = true) => {
-    messagesEndRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
+    const chatBody = chatBodyRef.current;
+    if (!chatBody) return;
+
+    chatBody.scrollTo({
+      top: chatBody.scrollHeight,
+      behavior: smooth ? 'smooth' : 'auto',
+    });
   }, []);
 
   const fetchConversations = useCallback(async (view = 'active') => {
@@ -1038,11 +1044,36 @@ const EmployerMessages = () => {
 
   const fetchApplications = useCallback(async () => {
     try {
-      const res = await api.get('/applications/employer/all');
-      if (res.data?.success) {
-        setApplications(res.data.applications || []);
-      } else {
-        setApplications([]);
+      const [allResult, declinedResult] = await Promise.allSettled([
+        api.get('/applications/employer/all'),
+        api.get('/applications/employer/declined'),
+      ]);
+
+      const allApplications =
+        allResult.status === 'fulfilled' && allResult.value.data?.success
+          ? allResult.value.data.applications || []
+          : [];
+
+      const declinedApplications =
+        declinedResult.status === 'fulfilled' && declinedResult.value.data?.success
+          ? declinedResult.value.data.applications || []
+          : [];
+
+      const applicationsById = new Map();
+
+      [...allApplications, ...declinedApplications].forEach((application) => {
+        const applicationId = String(application?._id || '');
+        if (!applicationId) return;
+        applicationsById.set(applicationId, application);
+      });
+
+      setApplications(Array.from(applicationsById.values()));
+
+      if (
+        allResult.status === 'rejected' &&
+        declinedResult.status === 'rejected'
+      ) {
+        throw allResult.reason || declinedResult.reason;
       }
     } catch (err) {
       console.error(err);
@@ -2096,7 +2127,7 @@ const EmployerMessages = () => {
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-3">
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3">
                   {filteredConversations.length === 0 ? (
                     <div className="text-center py-10">
                       <FontAwesomeIcon
