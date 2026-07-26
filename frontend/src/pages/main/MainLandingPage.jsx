@@ -124,9 +124,21 @@ const PartnersSection = ({ partners, loading, error }) => {
             {displayPartners.map((partner) => (
               <article
                 key={partner.id}
-                className="relative rounded-2xl overflow-hidden shadow-lg border border-black/10 h-[260px] md:h-[280px] bg-gradient-to-br from-[#123f73] via-[#0e315d] to-[#081f3d]"
+                className="relative rounded-2xl overflow-hidden shadow-lg border border-black/10 h-[260px] md:h-[280px] bg-[#0b2f5f]"
                 aria-label={`${partner.name} partner card`}
               >
+                <img
+                  src="/images/partners.png"
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                  aria-hidden="true"
+                />
+
+                <div className="absolute inset-0 bg-gradient-to-r from-[#071b38]/95 via-[#0b2f5f]/85 to-[#0b2f5f]/45" />
+                <div className="absolute inset-0 bg-black/10" />
+
                 <div className="absolute top-4 right-4 z-10 w-12 h-12 md:w-14 md:h-14 flex items-center justify-center">
                   <img
                     src={partner.img}
