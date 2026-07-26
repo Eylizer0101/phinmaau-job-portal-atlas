@@ -70,8 +70,8 @@ const FILTERS = [
   { key: "Submitted", label: "Submitted" },
   { key: "Resume Under Review", label: "In Review" },
   { key: "For Interview", label: "For Interview" },
-  { key: "Offered", label: "Offered" },
-  { key: "Hired", label: "Hired" },
+
+  { key: "Hired", label: "Offered" },
   { key: "Not Selected", label: "Not Selected" },
 ];
 
