@@ -1225,7 +1225,7 @@ const ActionMenu = ({
     <>
       <div
         ref={wrapperRef}
-        className="relative flex items-center justify-end gap-2 whitespace-nowrap"
+        className="relative flex items-center justify-center gap-2 whitespace-nowrap"
         onClick={(event) => event.stopPropagation()}
       >
         <Link
@@ -1980,11 +1980,11 @@ const selectBase =
                   <table className="w-full table-fixed divide-y divide-gray-200">
                     <colgroup>
                       <col className="w-[13%]" />
-                      <col className="w-[25%]" />
-                      <col className="w-[19%]" />
+                      <col className="w-[24%]" />
+                      <col className="w-[18%]" />
                       <col className="w-[14%]" />
+                      <col className="w-[15%]" />
                       <col className="w-[16%]" />
-                      <col className="w-[13%]" />
                     </colgroup>
                     <thead className="bg-gray-50">
                       <tr>
@@ -1993,7 +1993,7 @@ const selectBase =
                             key={heading}
                             className={cn(
                               'px-3 py-4 text-xs font-semibold uppercase tracking-wider text-gray-600',
-                              heading === 'Actions' ? 'text-right' : 'text-left'
+                              heading === 'Actions' ? 'text-center' : 'text-left'
                             )}
                           >
                             {heading}
@@ -2088,7 +2088,7 @@ const selectBase =
                               </button>
                             </td>
 
-                            <td className="px-3 py-5 align-middle">
+                            <td className="px-2 py-5 align-middle">
                               <ActionMenu
                                 app={app}
                                 name={name}
