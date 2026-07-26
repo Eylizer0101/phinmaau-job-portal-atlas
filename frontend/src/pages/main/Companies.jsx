@@ -164,7 +164,7 @@ const buildCompanyLocationGroups = (companies, formatLocation, fallbackLocations
   );
 
   const topLocations = ranked
-    .filter((item) => item.count >= 5)
+    .filter((item) => item.count > 0)
     .slice(0, 5)
     .map((item) => item.label);
   const topKeys = new Set(topLocations.map(normalizeCompanyLocationKey));

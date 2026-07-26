@@ -1363,6 +1363,7 @@ const JobseekerMessages = () => {
                     <p className={`mt-1 text-sm ${UI.textSecondary} text-center max-w-md`}>
                       Select a conversation from the list to continue chatting.
                     </p>
+                   
 
                     <div className="mt-6 flex flex-col sm:flex-row gap-3">
                       <button
