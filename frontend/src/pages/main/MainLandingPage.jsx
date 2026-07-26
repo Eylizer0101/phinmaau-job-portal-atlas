@@ -1,8 +1,32 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainNavbar from "../../components/shared/MainNavbar";
+import api from "../../services/api";
 
-const PartnersSection = ({ partners }) => {
+const API_ORIGIN = String(
+  api?.defaults?.baseURL || "https://phinmaau-job-portal-atlas.onrender.com/api"
+).replace(/\/api\/?$/, "");
+
+const resolveCompanyLogoUrl = (logo) => {
+  const value = String(logo || "").trim();
+
+  if (!value) return "/images/agapay.png";
+  if (/^(https?:|data:|blob:)/i.test(value)) return value;
+  if (value.startsWith("/uploads")) return `${API_ORIGIN}${value}`;
+
+  return `${API_ORIGIN}/${value.replace(/^\/+/, "")}`;
+};
+
+const truncateCompanyDescription = (value, maxLength = 120) => {
+  const description = String(value || "").trim().replace(/\s+/g, " ");
+
+  if (!description) return "No company description available.";
+  if (description.length <= maxLength) return description;
+
+  return `${description.slice(0, maxLength).trimEnd()}...`;
+};
+
+const PartnersSection = ({ partners, loading, error }) => {
   const [visibleCount, setVisibleCount] = useState(4);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -21,10 +45,11 @@ const PartnersSection = ({ partners }) => {
 
   useEffect(() => {
     setCurrentIndex(0);
-  }, [visibleCount]);
+  }, [visibleCount, partners.length]);
 
   const displayPartners = useMemo(() => {
-    if (!partners?.length) return [];
+    if (!partners.length) return [];
+    if (partners.length <= visibleCount) return partners;
 
     const items = [];
     for (let i = 0; i < visibleCount; i++) {
@@ -34,13 +59,15 @@ const PartnersSection = ({ partners }) => {
     return items;
   }, [partners, visibleCount, currentIndex]);
 
+  const showCarouselControls = partners.length > visibleCount;
+
   const handlePrev = () => {
-    if (!partners?.length) return;
+    if (!showCarouselControls) return;
     setCurrentIndex((prev) => (prev - 1 + partners.length) % partners.length);
   };
 
   const handleNext = () => {
-    if (!partners?.length) return;
+    if (!showCarouselControls) return;
     setCurrentIndex((prev) => (prev + 1) % partners.length);
   };
 
@@ -51,61 +78,89 @@ const PartnersSection = ({ partners }) => {
       </h2>
 
       <div className="relative mt-10 px-6 md:px-12">
-        <button
-          type="button"
-          onClick={handlePrev}
-          aria-label="Previous partners"
-          className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full leading-none bg-white border border-slate-200 shadow-md flex items-center justify-center text-2xl text-[#2e66a6] hover:bg-slate-50 transition"
-        >
-          ‹
-        </button>
-
-        <button
-          type="button"
-          onClick={handleNext}
-          aria-label="Next partners"
-          className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full leading-none bg-white border border-slate-200 shadow-md flex items-center justify-center text-2xl text-[#2e66a6] hover:bg-slate-50 transition"
-        >
-          ›
-        </button>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 px-10 md:px-14">
-          {displayPartners.map((p, idx) => (
-            <article
-              key={`${p.id}-${idx}`}
-              className="relative rounded-2xl overflow-hidden shadow-lg border border-black/10 h-[260px] md:h-[280px] bg-white"
-              aria-label={`${p.name} partner card`}
+        {showCarouselControls && !loading && !error && (
+          <>
+            <button
+              type="button"
+              onClick={handlePrev}
+              aria-label="Previous partners"
+              className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full leading-none bg-white border border-slate-200 shadow-md flex items-center justify-center text-2xl text-[#2e66a6] hover:bg-slate-50 transition"
             >
-              <img
-                src={p.img}
-                alt={p.name}
-                className="absolute inset-0 w-full h-full object-cover"
-                loading="lazy"
-                decoding="async"
+              ‹
+            </button>
+
+            <button
+              type="button"
+              onClick={handleNext}
+              aria-label="Next partners"
+              className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full leading-none bg-white border border-slate-200 shadow-md flex items-center justify-center text-2xl text-[#2e66a6] hover:bg-slate-50 transition"
+            >
+              ›
+            </button>
+          </>
+        )}
+
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 px-10 md:px-14">
+            {Array.from({ length: visibleCount }).map((_, index) => (
+              <div
+                key={`partner-loading-${index}`}
+                className="h-[260px] md:h-[280px] rounded-2xl bg-slate-200 animate-pulse shadow-lg border border-black/10"
+                aria-hidden="true"
               />
+            ))}
+          </div>
+        ) : error ? (
+          <div className="mx-10 md:mx-14 rounded-2xl border border-red-200 bg-white px-6 py-10 text-center text-red-600 shadow-sm">
+            {error}
+          </div>
+        ) : displayPartners.length === 0 ? (
+          <div className="mx-10 md:mx-14 rounded-2xl border border-slate-200 bg-white px-6 py-10 text-center text-slate-600 shadow-sm">
+            No partner companies are available right now.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 px-10 md:px-14">
+            {displayPartners.map((partner) => (
+              <article
+                key={partner.id}
+                className="relative rounded-2xl overflow-hidden shadow-lg border border-black/10 h-[260px] md:h-[280px] bg-white"
+                aria-label={`${partner.name} partner card`}
+              >
+                <img
+                  src={partner.img}
+                  alt={`${partner.name} logo`}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                  onError={(event) => {
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = "/images/agapay.png";
+                  }}
+                />
 
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-black/10" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/45 to-black/20" />
 
-              <div className="relative h-full p-5 text-white flex flex-col">
-                <h3 className="text-xl md:text-2xl font-extrabold leading-tight drop-shadow">
-                  {p.name}
-                </h3>
+                <div className="relative h-full p-5 text-white flex flex-col">
+                  <h3 className="text-xl md:text-2xl font-extrabold leading-tight drop-shadow line-clamp-2">
+                    {partner.name}
+                  </h3>
 
-                <p className="mt-1 text-sm text-white/90 font-semibold drop-shadow">
-                  {p.tagline}
-                </p>
+                  <p className="mt-1 text-sm text-white/90 font-semibold drop-shadow line-clamp-2">
+                    {partner.industry}
+                  </p>
 
-                <p className="mt-2 text-sm md:text-base text-white/85 leading-snug line-clamp-3 max-w-[95%]">
-                  {p.desc}
-                </p>
+                  <p className="mt-2 text-sm md:text-base text-white/85 leading-snug line-clamp-3 max-w-[95%]">
+                    {partner.description}
+                  </p>
 
-                <div className="mt-auto pt-4 text-sm md:text-base font-semibold text-white/95 drop-shadow">
-                  {p.openings} Openings
+                  <div className="mt-auto pt-4 text-sm md:text-base font-semibold text-white/95 drop-shadow">
+                    {partner.openings} {partner.openings === 1 ? "Opening" : "Openings"}
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
-        </div>
+              </article>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -272,35 +327,61 @@ const MainLandingPage = () => {
     active: "#1f476f",
   };
 
-  const partners = useMemo(
-    () => [
-      {
-        id: 1,
-        name: "MediCard",
-        tagline: "Your Ultimate Health Plan",
-        desc: "MediCard is a leading HMO offering comprehensive healthcare services through its clinics, partners, and doctors nationwide.",
-        openings: 30,
-        img: "/images/medicard.png",
-      },
-      {
-        id: 2,
-        name: "St. Luke's Medical Center",
-        tagline: "We Love Life",
-        desc: "St. Luke's Medical Center sets global standards in healthcare with advanced facilities, expert doctors, and world-class service.",
-        openings: 12,
-        img: "/images/stluke.png",
-      },
-      {
-        id: 3,
-        name: "Medical City",
-        tagline: "Trusted Healthcare",
-        desc: "Medical City continuously strives to deliver compassionate healthcare through its nationwide partner network and clinics.",
-        openings: 12,
-        img: "/images/medical.png",
-      },
-    ],
-    []
-  );
+  const [partners, setPartners] = useState([]);
+  const [partnersLoading, setPartnersLoading] = useState(true);
+  const [partnersError, setPartnersError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchPartners = async () => {
+      try {
+        setPartnersLoading(true);
+        setPartnersError("");
+
+        const response = await api.get("/companies/verified");
+        const companies = Array.isArray(response?.data?.companies)
+          ? response.data.companies
+          : [];
+
+        const normalizedPartners = companies
+          .filter((company) => company?._id && String(company?.companyName || "").trim())
+          .map((company) => ({
+            id: company._id,
+            name: String(company.companyName || "").trim(),
+            industry: String(company.industry || "").trim() || "Industry not specified",
+            description: truncateCompanyDescription(company.about),
+            openings: Math.max(0, Number(company.openingsCount) || 0),
+            img: resolveCompanyLogoUrl(company.companyLogo),
+          }))
+          .sort(
+            (a, b) =>
+              b.openings - a.openings || a.name.localeCompare(b.name)
+          );
+
+        if (isMounted) {
+          setPartners(normalizedPartners);
+        }
+      } catch (error) {
+        console.error("Failed to load partner companies:", error);
+
+        if (isMounted) {
+          setPartners([]);
+          setPartnersError("We couldn't load partner companies right now. Please try again later.");
+        }
+      } finally {
+        if (isMounted) {
+          setPartnersLoading(false);
+        }
+      }
+    };
+
+    fetchPartners();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const campuses = useMemo(
     () => [
@@ -478,7 +559,11 @@ const MainLandingPage = () => {
             "bg-gradient-to-b from-white via-blue-50 to-slate-50",
           ].join(" ")}
         >
-          <PartnersSection partners={partners} />
+          <PartnersSection
+            partners={partners}
+            loading={partnersLoading}
+            error={partnersError}
+          />
         </section>
       </main>
 

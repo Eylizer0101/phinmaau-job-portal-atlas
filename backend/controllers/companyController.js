@@ -208,6 +208,35 @@ exports.getVerifiedCompanies = async (req, res) => {
     if (!query.$and.length) delete query.$and;
 
     const employers = await User.find(query).select('-password').sort({ createdAt: -1 });
+    const employerIds = employers.map((employer) => employer._id);
+
+    const openingsByEmployer = new Map();
+
+    if (employerIds.length > 0) {
+      const openingCounts = await Job.aggregate([
+        {
+          $match: {
+            employer: { $in: employerIds },
+            isPublished: true,
+            isActive: true,
+            $or: [
+              { isArchived: false },
+              { isArchived: { $exists: false } },
+            ],
+          },
+        },
+        {
+          $group: {
+            _id: '$employer',
+            count: { $sum: 1 },
+          },
+        },
+      ]);
+
+      openingCounts.forEach((item) => {
+        openingsByEmployer.set(String(item._id), Number(item.count) || 0);
+      });
+    }
 
     const companies = employers.map((u) => {
       const ep = u.employerProfile || {};
@@ -224,6 +253,12 @@ exports.getVerifiedCompanies = async (req, res) => {
         mobileNumber: ep.mobileNumber || '',
         companyLogo: ep.companyLogo || '',
         companyWebsite: ep.companyWebsiteUrl || '',
+        about:
+          ep.companyDescription ||
+          ep.aboutCompany ||
+          ep.description ||
+          '',
+        openingsCount: openingsByEmployer.get(String(u._id)) || 0,
         rating: summary.rating,
         reviewCount: summary.reviewCount,
         ratingBreakdown,
