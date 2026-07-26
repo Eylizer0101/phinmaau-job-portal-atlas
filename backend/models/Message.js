@@ -61,7 +61,6 @@ const messageSchema = new mongoose.Schema({
 
 // Create compound index for faster queries
 messageSchema.index({ conversationId: 1, createdAt: -1 });
-messageSchema.index({ conversationId: 1, application: 1, createdAt: -1 });
 messageSchema.index({ sender: 1, receiver: 1 });
 messageSchema.index({ isRead: 1 });
 
