@@ -68,10 +68,9 @@ const Icon = ({ name, className = "h-4 w-4" }) => {
 const FILTERS = [
   { key: "all", label: "All" },
   { key: "Submitted", label: "Submitted" },
-  { key: "Resume Under Review", label: "Resume Under Review" },
-  { key: "For Interview", label: "For Interview" },
+  { key: "In Review", label: "In Review" },
+  { key: "Interview", label: "Interview" },
   { key: "Offered", label: "Offered" },
-  { key: "Hired", label: "Hired" },
   { key: "Not Selected", label: "Not Selected" },
 ];
 
@@ -117,35 +116,26 @@ const formatRelativeTime = (value) => {
   return `Updated ${months} month${months === 1 ? "" : "s"} ago`;
 };
 
-const normalizeStageName = (value) =>
-  String(value || "").replace(/\s+/g, " ").trim();
-
-const isOfferStage = (value) => {
-  const normalized = normalizeStageName(value).toLowerCase();
-  return normalized === "job offer" || normalized === "offered" || normalized.includes("offer");
-};
-
-const getInterviewProgress = (application = {}) => {
-  const stage = normalizeStageName(application.hiringStage).toLowerCase();
-
-  if (isOfferStage(stage)) return 90;
-  if (stage.includes("final")) return 80;
-  if (stage.includes("assessment")) return 70;
-  if (stage.includes("initial")) return 60;
-  if (application?.interviewSchedule?.scheduledAt) return 75;
-  if (stage) return 70;
-  return 55;
-};
-
 const getApplicationPresentation = (application = {}) => {
   const normalizedStatus = String(application.status || "pending").toLowerCase();
-  const hiringStage = normalizeStageName(application.hiringStage);
+
+  if (normalizedStatus === "for interview") {
+    return {
+      label: "Interview",
+      progress: 75,
+      description: application?.interviewSchedule?.scheduledAt
+        ? "Technical interview scheduled"
+        : "Interview stage",
+      badgeClass: "border-blue-200 bg-blue-50 text-blue-700",
+      barClass: "bg-blue-500",
+    };
+  }
 
   if (normalizedStatus === "hired") {
     return {
-      label: "Hired",
+      label: "Offered",
       progress: 100,
-      description: "Applicant was hired",
+      description: "Offer letter sent",
       badgeClass: "border-emerald-200 bg-emerald-50 text-emerald-700",
       barClass: "bg-emerald-500",
     };
@@ -165,86 +155,31 @@ const getApplicationPresentation = (application = {}) => {
     };
   }
 
-  if (normalizedStatus === "for interview") {
-    if (isOfferStage(hiringStage)) {
-      return {
-        label: "Offered",
-        progress: 90,
-        description: "Applicant reached the job offer stage",
-        badgeClass: "border-violet-200 bg-violet-50 text-violet-700",
-        barClass: "bg-violet-500",
-      };
-    }
-
+  if (application.reviewedAt || application.isViewedByEmployer) {
     return {
-      label: "For Interview",
-      progress: getInterviewProgress(application),
-      description:
-        hiringStage ||
-        (application?.interviewSchedule?.scheduledAt
-          ? "Interview scheduled"
-          : "Applicant is in the interview process"),
-      badgeClass: "border-blue-200 bg-blue-50 text-blue-700",
-      barClass: "bg-blue-500",
-    };
-  }
-
-  if (application.reviewedAt || application.viewedAt || application.isViewedByEmployer) {
-    return {
-      label: "Resume Under Review",
-      progress: 35,
-      description: "Employer opened and reviewed the applicant's resume",
+      label: "In Review",
+      progress: 40,
+      description: "Resume under review",
       badgeClass: "border-amber-200 bg-amber-50 text-amber-700",
-      barClass: "bg-amber-500",
+      barClass: "bg-blue-500",
     };
   }
 
   return {
     label: "Submitted",
     progress: 15,
-    description: "Application received by the employer",
+    description: "Application received",
     badgeClass: "border-slate-200 bg-slate-50 text-slate-700",
     barClass: "bg-blue-500",
   };
 };
 
-const getActivityTimelineTitle = (activity = {}) => {
-  const type = String(activity.type || "").toLowerCase();
-  const title = String(activity.title || "").trim();
-  const description = String(activity.description || "").trim();
-  const toStatus = normalizeStageName(activity.toStatus);
-  const normalizedToStatus = toStatus.toLowerCase();
-
-  if (type === "submitted") return "Application submitted";
-  if (type === "reviewed") return "Resume under review";
-  if (type === "hired" || normalizedToStatus === "hired") return "Hired";
-
-  if (type === "declined" || normalizedToStatus === "declined") {
-    return description ? `Not Selected — ${description}` : "Not Selected";
-  }
-
-  if (
-    title.toLowerCase().includes("hiring stage") ||
-    (type === "interview" &&
-      normalizedToStatus &&
-      normalizedToStatus !== "for interview")
-  ) {
-    if (isOfferStage(toStatus)) return "Offered";
-    return toStatus || title || "Hiring stage updated";
-  }
-
-  if (normalizedToStatus === "for interview" || type === "interview") {
-    return "For Interview";
-  }
-
-  if (isOfferStage(title) || isOfferStage(toStatus)) return "Offered";
-
-  return title || description || "Application updated";
-};
-
 const normalizeTimelineEntry = (activity, index, applicationId) => ({
   key: activity?._id || `${applicationId || "application"}-${index}`,
-  title: getActivityTimelineTitle(activity),
+  title:
+    activity?.title ||
+    activity?.description ||
+    "Application updated",
   date:
     activity?.occurredAt ||
     activity?.createdAt ||
@@ -289,74 +224,30 @@ const buildProgressTimeline = (application = {}, presentation) => {
 
   addFallback(
     "Resume under review",
-    application.viewedAt || application.reviewedAt,
-    ["resume under review", "application reviewed", "reviewed"]
+    application.reviewedAt || application.viewedAt,
+    ["review", "viewed"]
   );
 
-  const normalizedStatus = String(application.status || "").toLowerCase();
-  const reachedInterview =
-    normalizedStatus === "for interview" ||
-    normalizedStatus === "hired" ||
-    normalizedStatus === "declined" ||
-    Boolean(normalizeStageName(application.hiringStage));
-
-  if (reachedInterview) {
-    const interviewActivity = Array.isArray(application.activityHistory)
-      ? application.activityHistory.find((activity) => {
-          const type = String(activity?.type || "").toLowerCase();
-          const toStatus = String(activity?.toStatus || "").toLowerCase();
-          return type === "interview" || toStatus === "for interview";
-        })
-      : null;
-
-    addFallback(
-      "For Interview",
-      interviewActivity?.occurredAt ||
-        application?.interviewSchedule?.setAt ||
-        application.reviewedAt ||
-        application.updatedAt,
-      ["for interview", "moved to interview"]
-    );
-  }
-
-  const currentHiringStage = normalizeStageName(application.hiringStage);
-  if (currentHiringStage) {
-    addFallback(
-      isOfferStage(currentHiringStage) ? "Offered" : currentHiringStage,
-      application.updatedAt,
-      [currentHiringStage.toLowerCase(), isOfferStage(currentHiringStage) ? "offered" : ""].filter(Boolean)
-    );
-  }
-
-  if (application?.interviewSchedule?.scheduledAt) {
-    addFallback(
-      "Interview scheduled",
-      application?.interviewSchedule?.setAt ||
-        application?.interviewSchedule?.scheduledAt,
-      ["interview scheduled", "technical interview"]
-    );
-  }
+  addFallback(
+    "Technical interview scheduled",
+    application?.interviewSchedule?.setAt ||
+      application?.interviewSchedule?.scheduledAt,
+    ["interview scheduled", "technical interview"]
+  );
 
   if (presentation.label === "Offered") {
-    addFallback("Offered", application.updatedAt, ["offered", "job offer"]);
-  }
-
-  if (presentation.label === "Hired") {
-    addFallback("Hired", application.updatedAt, ["hired"]);
+    addFallback(
+      "Offer letter sent",
+      application.updatedAt,
+      ["offer", "hired"]
+    );
   }
 
   if (presentation.label === "Not Selected") {
-    const reason = [
-      application.declineReason,
-      application.declineComment,
-    ]
-      .filter(Boolean)
-      .join(" — ");
-
     addFallback(
-      reason ? `Not Selected — ${reason}` : "Not Selected",
+      application.declineReason || "Position filled by another candidate",
       application.updatedAt,
-      ["not selected", "declined", "position filled"]
+      ["declined", "not selected", "position filled"]
     );
   }
 
@@ -437,10 +328,9 @@ const AdminUserApplicationHistory = () => {
     const counts = {
       all: preparedApplications.length,
       Submitted: 0,
-      "Resume Under Review": 0,
-      "For Interview": 0,
+      "In Review": 0,
+      Interview: 0,
       Offered: 0,
-      Hired: 0,
       "Not Selected": 0,
     };
 
@@ -478,9 +368,6 @@ const AdminUserApplicationHistory = () => {
         job.workMode,
         job.jobType,
         presentation.label,
-        application.hiringStage,
-        application.declineReason,
-        application.declineComment,
       ]
         .filter(Boolean)
         .join(" ")
