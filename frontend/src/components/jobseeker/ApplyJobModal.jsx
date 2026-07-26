@@ -446,6 +446,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
 
                         <p className="mt-5 text-[16px] sm:text-[17px] text-black/65 leading-8 max-w-[600px]">
                           Before you proceed, ensure your profile reflects your current qualifications.
+                          <br />
                           A complete profile helps employers learn more about your skills, qualifications,
                           and experience. Update your information to increase your chances of getting hired.
                         </p>
