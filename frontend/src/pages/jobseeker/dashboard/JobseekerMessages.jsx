@@ -23,12 +23,7 @@ import {
   faSpinner,
   faArrowLeft,
   faEye,
-  faInfoCircle,
   faUser,
-  faEllipsisVertical,
-  faArchive,
-  faTrash,
-  faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import JobSeekerLayout from '../../../layouts/JobSeekerLayout';
 
@@ -72,10 +67,6 @@ const UI = {
   btnSecondary: 'bg-white text-black border border-[#d8e2ee] hover:bg-[#f7faff] hover:border-[#2e66a6]/35',
   btnGhost: 'bg-transparent text-black/70 hover:bg-[#f7faff]',
   btnDangerGhost: 'bg-transparent text-black/60 hover:bg-[#f7faff]',
-
-  // Badges
-  badge: 'inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold border',
-  badgeUnread: 'bg-[#f7faff] text-[#2e66a6] border-[#d8e2ee]',
 
   // Conversation item
   convItem:
@@ -165,13 +156,6 @@ const JobseekerMessages = () => {
 
   const [logoError, setLogoError] = useState({});
   const [activeTab, setActiveTab] = useState('all');
-  const [conversationView, setConversationView] = useState('active');
-  const [topMenuOpen, setTopMenuOpen] = useState(false);
-  const [itemMenuId, setItemMenuId] = useState(null);
-  const [selectionMode, setSelectionMode] = useState(null);
-  const [selectedConversationIds, setSelectedConversationIds] = useState([]);
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [actionLoading, setActionLoading] = useState(false);
 
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -513,9 +497,13 @@ const JobseekerMessages = () => {
         conv.otherUser?.employerProfile?.companyName?.toLowerCase() ||
         conv.otherUser?.companyName?.toLowerCase() ||
         '';
+      const industry =
+        conv.otherUser?.employerProfile?.industry?.toLowerCase() ||
+        conv.otherUser?.industry?.toLowerCase() ||
+        '';
       const name = conv.otherUser?.fullName?.toLowerCase() || '';
       const last = conv.lastMessage?.content?.toLowerCase() || '';
-      return company.includes(q) || name.includes(q) || last.includes(q);
+      return company.includes(q) || industry.includes(q) || name.includes(q) || last.includes(q);
     });
   }, [conversations, convSearch, activeTab]);
 
@@ -537,7 +525,7 @@ const JobseekerMessages = () => {
 
   useEffect(() => {
     setVisibleConversationCount(CONVERSATIONS_PER_PAGE);
-  }, [convSearch, activeTab, conversationView]);
+  }, [convSearch, activeTab]);
 
   const selectedHeaderTitle = useMemo(() => {
     if (!selectedConversation) return '';
@@ -551,7 +539,11 @@ const JobseekerMessages = () => {
 
   const selectedHeaderSub = useMemo(() => {
     if (!selectedConversation) return '';
-    return selectedConversation.otherUser?.fullName || 'Employer';
+    return (
+      selectedConversation.otherUser?.employerProfile?.industry ||
+      selectedConversation.otherUser?.industry ||
+      'Industry not specified'
+    );
   }, [selectedConversation]);
 
   const canReplyToSelectedConversation = useMemo(() => {
@@ -577,56 +569,6 @@ const JobseekerMessages = () => {
       )
     );
     setShowSidebar(false);
-  };
-
-  const toggleConversationSelection = (conversationId) => {
-    setSelectedConversationIds((prev) =>
-      prev.includes(conversationId)
-        ? prev.filter((id) => id !== conversationId)
-        : [...prev, conversationId]
-    );
-  };
-
-  const cancelSelectionMode = () => {
-    setSelectionMode(null);
-    setSelectedConversationIds([]);
-  };
-
-  const handleConversationViewChange = async (view) => {
-    setConversationView(view);
-    setVisibleConversationCount(CONVERSATIONS_PER_PAGE);
-    setActiveTab('all');
-    setTopMenuOpen(false);
-    setItemMenuId(null);
-    cancelSelectionMode();
-    setSelectedConversation(null);
-    setMessages([]);
-    await fetchConversations(view);
-  };
-
-  const runConversationAction = async (action, conversationIds) => {
-    if (!conversationIds?.length) return;
-    try {
-      setActionLoading(true);
-      const token = getToken();
-      await axios.patch(
-        `${API_BASE_URL}/messages/conversations/action`,
-        { action, conversationIds },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (conversationIds.includes(selectedConversation?._id)) {
-        setSelectedConversation(null);
-        setMessages([]);
-      }
-      await fetchConversations(conversationView);
-      cancelSelectionMode();
-      setItemMenuId(null);
-    } catch (error) {
-      console.error(`Error performing ${action}:`, error);
-      alert(error.response?.data?.message || `Failed to ${action} conversation.`);
-    } finally {
-      setActionLoading(false);
-    }
   };
 
   const handleCompanyHeaderClick = () => {
@@ -710,7 +652,7 @@ const JobseekerMessages = () => {
         setMessages((prev) => [...prev, response.data.data]);
         setNewMessage('');
         removeSelectedFile();
-        fetchConversations(conversationView);
+        fetchConversations('active');
         window.dispatchEvent(new Event('messages:unread-updated'));
         setTimeout(() => scrollToBottom(true), 0);
       }
@@ -842,6 +784,13 @@ const JobseekerMessages = () => {
     <JobSeekerLayout>
       <div className={UI.pageBg}>
         <div className={UI.container}>
+          <div className="mb-6">
+            <h1 className="text-[33px] leading-[40px] font-semibold text-black">Messages</h1>
+            <p className="mt-2 text-black/70">
+              Communicate with employers for interviews and follow-ups
+            </p>
+          </div>
+
           <div className={UI.shell}>
             <div className={UI.grid}>
               {/* SIDEBAR */}
@@ -852,16 +801,12 @@ const JobseekerMessages = () => {
                 <div className={`${UI.panelPad} ${UI.divider}`}>
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className={`${UI.h2} ${UI.textPrimary}`}>
-                        {conversationView === 'archived' ? 'Archived Chats' : 'Messages'}
-                      </p>
+                      <p className={`${UI.h2} ${UI.textPrimary}`}>Messages</p>
 
-                      {conversationView === 'active' && (
-                        <span className="mt-2 inline-flex items-center rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1 text-xs font-semibold text-[#2e66a6]">
-                          {unreadMessageCount}{' '}
-                          {unreadMessageCount === 1 ? 'unread message' : 'unread messages'}
-                        </span>
-                      )}
+                      <span className="mt-2 block text-xs font-semibold text-[#2e66a6]">
+                        {unreadMessageCount}{' '}
+                        {unreadMessageCount === 1 ? 'unread message' : 'unread messages'}
+                      </span>
                     </div>
 
                     <button
@@ -916,71 +861,17 @@ const JobseekerMessages = () => {
                       Community
                     </button>
 
-                    <div className="relative ml-auto">
-                      <button
-                        type="button"
-                        onClick={() => setTopMenuOpen((open) => !open)}
-                        className={`h-9 w-9 rounded-full text-black/65 hover:bg-[#f7faff] ${UI.ring}`}
-                        aria-label="Conversation actions"
-                      >
-                        <FontAwesomeIcon icon={faEllipsisVertical} />
-                      </button>
-
-                      {topMenuOpen && (
-                        <div className="absolute right-0 top-11 z-30 w-48 rounded-xl border border-[#e6edf5] bg-white p-1.5 shadow-xl">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleConversationViewChange(
-                                conversationView === 'archived' ? 'active' : 'archived'
-                              )
-                            }
-                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-[#f7faff]"
-                          >
-                            <FontAwesomeIcon
-                              icon={conversationView === 'archived' ? faArrowLeft : faArchive}
-                              className="w-4"
-                            />
-                            {conversationView === 'archived' ? 'All Chats' : 'Archive Chats'}
-                          </button>
-                        </div>
-                      )}
-                    </div>
                   </div>
 
-                  {selectionMode && (
-                    <div className="mt-3 flex items-center justify-between rounded-xl bg-[#f7faff] px-3 py-2">
-                      <span className="text-xs font-semibold text-[#2e66a6]">
-                        {selectedConversationIds.length} selected
-                      </span>
-                      <div className="flex gap-2">
-                        <button type="button" onClick={cancelSelectionMode} className="text-xs font-semibold text-black/60">
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!selectedConversationIds.length || actionLoading}
-                          onClick={() => runConversationAction(selectionMode, selectedConversationIds)}
-                          className="rounded-lg bg-[#2e66a6] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
-                        >
-                          {selectionMode === 'archive' ? 'Archive' : 'Hide'}
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-3">
                   {filteredConversations.length === 0 ? (
                     <div className="text-center py-10">
                       <FontAwesomeIcon icon={faComments} className="w-10 h-10 text-black/25 mx-auto mb-3" />
-                      <p className={`font-semibold ${UI.textPrimary}`}>
-                        {conversationView === 'archived' ? 'No archived conversations' : 'No conversations'}
-                      </p>
+                      <p className={`font-semibold ${UI.textPrimary}`}>No conversations</p>
                       <p className={`text-sm ${UI.textMuted} mt-1`}>
-                        {conversationView === 'archived'
-                          ? 'Archived conversations will appear here.'
-                          : 'Wait for the employer to start the conversation.'}
+                        Wait for the employer to start the conversation.
                       </p>
                     </div>
                   ) : (
@@ -992,7 +883,10 @@ const JobseekerMessages = () => {
                           conv.otherUser?.companyName ||
                           conv.otherUser?.fullName ||
                           'Unknown Employer';
-                        const sub = conv.otherUser?.fullName || '';
+                        const sub =
+                          conv.otherUser?.employerProfile?.industry ||
+                          conv.otherUser?.industry ||
+                          'Industry not specified';
                         const time = formatTime(conv.lastMessageTime || conv.lastMessage?.createdAt);
                         const last = conv.lastMessage?.content || 'No messages yet';
 
@@ -1001,11 +895,11 @@ const JobseekerMessages = () => {
                             key={conv._id}
                             role="button"
                             tabIndex={0}
-                            onClick={() => selectionMode ? toggleConversationSelection(conv._id) : handleSelectConversation(conv)}
+                            onClick={() => handleSelectConversation(conv)}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' || e.key === ' ') {
                                 e.preventDefault();
-                                selectionMode ? toggleConversationSelection(conv._id) : handleSelectConversation(conv);
+                                handleSelectConversation(conv);
                               }
                             }}
                             className={['group w-full text-left', UI.convItem, active ? UI.convActive : '', UI.ring].join(' ')}
@@ -1014,16 +908,6 @@ const JobseekerMessages = () => {
                             {active && <span className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-[#2e66a6]" />}
 
                             <div className="flex items-start gap-3">
-                              {selectionMode && (
-                                <input
-                                  type="checkbox"
-                                  checked={selectedConversationIds.includes(conv._id)}
-                                  onChange={() => toggleConversationSelection(conv._id)}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="mt-3 h-4 w-4 accent-[#2e66a6]"
-                                  aria-label={`Select ${title}`}
-                                />
-                              )}
                               {renderCompanyLogo(conv.otherUser, 'h-10 w-10', 'text-sm')}
 
                               <div className="min-w-0 flex-1">
@@ -1039,43 +923,7 @@ const JobseekerMessages = () => {
                                     )}
                                   </div>
 
-                                  <div className="relative flex flex-shrink-0 items-center gap-1">
-                                    <span className={`text-xs ${UI.textMuted} group-hover:hidden`}>{time}</span>
-                                    {!selectionMode && (
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setItemMenuId((id) => id === conv._id ? null : conv._id);
-                                        }}
-                                        className={`hidden h-8 w-8 rounded-full hover:bg-white group-hover:inline-flex items-center justify-center ${UI.ring}`}
-                                        aria-label="Chat options"
-                                      >
-                                        <FontAwesomeIcon icon={faEllipsisVertical} />
-                                      </button>
-                                    )}
-                                    {itemMenuId === conv._id && (
-                                      <div className="absolute right-0 top-9 z-40 w-40 rounded-xl border border-[#e6edf5] bg-white p-1.5 shadow-xl">
-                                        <button
-                                          type="button"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            runConversationAction(
-                                              conversationView === 'archived' ? 'unarchive' : 'archive',
-                                              [conv._id]
-                                            );
-                                          }}
-                                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-[#f7faff]"
-                                        >
-                                          <FontAwesomeIcon icon={faArchive} />
-                                          {conversationView === 'archived' ? 'Unarchive' : 'Archive'}
-                                        </button>
-                                        <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteTarget(conv); setItemMenuId(null); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50">
-                                          <FontAwesomeIcon icon={faTrash} /> Delete Chat
-                                        </button>
-                                      </div>
-                                    )}
-                                  </div>
+                                  <span className={`flex-shrink-0 text-xs ${UI.textMuted}`}>{time}</span>
                                 </div>
 
                                 <p className={`text-sm ${UI.textSecondary} truncate mt-0.5`} title={last}>
@@ -1083,7 +931,10 @@ const JobseekerMessages = () => {
                                 </p>
 
                                 {conv.unreadCount > 0 && (
-                                  <span className={`${UI.badge} ${UI.badgeUnread} mt-1.5`}>{conv.unreadCount} new</span>
+                                  <p className="mt-1.5 text-xs font-semibold text-[#2e66a6]">
+                                    {conv.unreadCount}{' '}
+                                    {conv.unreadCount === 1 ? 'unread message' : 'unread messages'}
+                                  </p>
                                 )}
                               </div>
                             </div>
@@ -1118,16 +969,6 @@ const JobseekerMessages = () => {
               <div className={[UI.main, showSidebar ? 'hidden sm:flex' : 'flex'].join(' ')}>
                 {selectedConversation ? (
                   <>
-                    {!canReplyToSelectedConversation && (
-                      <div className="px-4 pt-3 bg-amber-50 border-b border-amber-200 animate-fadeIn">
-                        <div className="flex items-center gap-2 text-sm text-amber-800">
-                          <FontAwesomeIcon icon={faInfoCircle} className="text-amber-600" />
-                          <span className="font-semibold">Messaging Rules:</span>
-                          <span>Wait for the employer to message you first.</span>
-                        </div>
-                        <p className="text-xs text-amber-700 mt-1 ml-6"></p>
-                      </div>
-                    )}
 
                     <div className={UI.chatHeader}>
                       <div className="flex items-center gap-3 min-w-0">
@@ -1454,40 +1295,6 @@ const JobseekerMessages = () => {
           </div>
         </div>
       </div>
-      {deleteTarget && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-bold text-black">Delete this chat?</h2>
-                <p className="mt-2 text-sm leading-6 text-black/60">
-                  Are you sure you want to delete this conversation?
-                </p>
-              </div>
-              <button type="button" onClick={() => setDeleteTarget(null)} className="h-9 w-9 rounded-full hover:bg-[#f7faff]" aria-label="Close">
-                <FontAwesomeIcon icon={faXmark} />
-              </button>
-            </div>
-            <div className="mt-6 flex justify-end gap-3">
-              <button type="button" onClick={() => setDeleteTarget(null)} className="rounded-xl border border-[#d8e2ee] px-4 py-2 text-sm font-semibold hover:bg-[#f7faff]">
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={actionLoading}
-                onClick={async () => {
-                  const id = deleteTarget._id;
-                  setDeleteTarget(null);
-                  await runConversationAction('delete', [id]);
-                }}
-                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </JobSeekerLayout>
   );
 };

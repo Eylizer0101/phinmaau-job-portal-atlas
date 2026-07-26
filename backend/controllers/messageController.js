@@ -2,7 +2,6 @@ const Message = require('../models/Message');
 const User = require('../models/User');
 const Job = require('../models/Job');
 const Application = require('../models/Application');
-const ConversationPreference = require('../models/ConversationPreference');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -390,8 +389,6 @@ exports.getFile = async (req, res) => {
 exports.getConversations = async (req, res) => {
   try {
     const userId = req.user._id;
-    const view = String(req.query.view || 'active').toLowerCase();
-
     // Get distinct conversations where user is either sender or receiver
     const conversations = await Message.aggregate([
       {
@@ -520,14 +517,16 @@ exports.getConversations = async (req, res) => {
 
             // ✅ KEEP OLD FIELD (para di masira existing frontend usage)
             companyName: "$otherUser.employerProfile.companyName",
+            industry: "$otherUser.employerProfile.industry",
 
-            // ✅ FIX: include employerProfile with companyLogo
+            // ✅ Include the employer profile details used by Jobseeker Messages
             employerProfile: {
               companyName: "$otherUser.employerProfile.companyName",
-              companyLogo: "$otherUser.employerProfile.companyLogo"
+              companyLogo: "$otherUser.employerProfile.companyLogo",
+              industry: "$otherUser.employerProfile.industry"
             },
 
-            // ✅ OPTIONAL: add top-level companyLogo too (extra safe for frontend)
+            // ✅ Keep top-level fields for existing frontend fallbacks
             companyLogo: "$otherUser.employerProfile.companyLogo"
           },
           lastMessageTime: "$lastMessage.createdAt"
@@ -538,21 +537,7 @@ exports.getConversations = async (req, res) => {
       }
     ]);
 
-    const preferences = await ConversationPreference.find({
-      user: userId,
-      conversationId: { $in: conversations.map((conversation) => conversation._id) },
-    }).lean();
-
-    const preferenceMap = new Map(preferences.map((preference) => [preference.conversationId, preference]));
-    const visibleConversations = conversations.filter((conversation) => {
-      const preference = preferenceMap.get(conversation._id);
-
-      if (view === 'archived') {
-        return preference?.archived === true && preference?.deleted !== true;
-      }
-
-      return !preference?.archived && !preference?.hiddenCompany && !preference?.deleted;
-    });
+    const visibleConversations = conversations;
 
     // Attach the latest application between the current user and the other
     // participant. Employer Messages uses this summary for status filtering,
@@ -1109,53 +1094,3 @@ exports.getInterviewsCount = async (req, res) => {
   }
 };
 
-// Archive, unarchive, hide, or delete one or more conversations for the current user.
-exports.updateConversationAction = async (req, res) => {
-  try {
-    const action = String(req.body.action || '').toLowerCase();
-    const conversationIds = Array.isArray(req.body.conversationIds)
-      ? [...new Set(req.body.conversationIds.map((id) => String(id).trim()).filter(Boolean))]
-      : [];
-
-    if (!['archive', 'unarchive', 'hide', 'delete'].includes(action)) {
-      return res.status(400).json({ success: false, message: 'Invalid conversation action' });
-    }
-    if (!conversationIds.length) {
-      return res.status(400).json({ success: false, message: 'Select at least one conversation' });
-    }
-
-    const userId = req.user._id;
-    for (const conversationId of conversationIds) {
-      const participants = conversationId.split('_');
-      if (!participants.includes(userId.toString())) {
-        return res.status(403).json({ success: false, message: 'Not authorized for one or more conversations' });
-      }
-
-      const otherUserId = participants.find((id) => id !== userId.toString()) || null;
-      const update = { otherUser: otherUserId };
-      if (action === 'archive') {
-        update.archived = true;
-        update.hiddenCompany = false;
-        update.deleted = false;
-      }
-      if (action === 'unarchive') {
-        update.archived = false;
-        update.hiddenCompany = false;
-        update.deleted = false;
-      }
-      if (action === 'hide') update.hiddenCompany = true;
-      if (action === 'delete') update.deleted = true;
-
-      await ConversationPreference.findOneAndUpdate(
-        { user: userId, conversationId },
-        { $set: update },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
-      );
-    }
-
-    res.json({ success: true, message: `Conversation action '${action}' completed` });
-  } catch (error) {
-    console.error('Error updating conversation action:', error);
-    res.status(500).json({ success: false, message: 'Error updating conversations' });
-  }
-};
