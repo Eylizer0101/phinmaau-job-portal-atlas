@@ -324,10 +324,17 @@ const resumeStyles = `
   }
 
   .resume-header {
-    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 61px;
+    align-items: start;
+    column-gap: 14px;
     min-height: 62px;
-    padding-right: 98px;
+    padding-right: 0;
     text-align: center;
+  }
+
+  .resume-header-main {
+    min-width: 0;
   }
 
   .resume-name {
@@ -361,9 +368,7 @@ const resumeStyles = `
 
   .resume-initials,
   .resume-photo {
-    position: absolute;
-    top: 0;
-    right: 120px;
+    position: static;
     width: 61px;
     height: 61px;
     display: flex;
@@ -404,6 +409,11 @@ const resumeStyles = `
   .objective-text {
     margin: 0;
     text-align: justify;
+    text-decoration: none;
+  }
+
+  .objective-text u {
+    text-decoration: none;
   }
 
   .three-column-rows { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 20px; }
@@ -543,6 +553,8 @@ const resumeStyles = `
     }
 
     .resume-header {
+      grid-template-columns: 1fr;
+      row-gap: 12px;
       padding-right: 0;
       text-align: left;
     }
@@ -550,7 +562,7 @@ const resumeStyles = `
     .resume-initials,
     .resume-photo {
       position: static;
-      margin-top: 12px;
+      margin-top: 0;
     }
 
     .three-column-rows,
@@ -686,13 +698,15 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
       <main class="resume-paper">
         <div class="resume-inner">
           <header class="resume-header">
-            <h1 class="resume-name">${escapeHtml(fullName)}</h1>
-            <div class="resume-contact">
-              ${formData.address ? `<span>${escapeHtml(formData.address)}</span>` : ''}
-              ${formData.phoneNumber ? `<span>${escapeHtml(formData.phoneNumber)}</span>` : ''}
-              ${formData.email ? `<span>${escapeHtml(formData.email)}</span>` : ''}
+            <div class="resume-header-main">
+              <h1 class="resume-name">${escapeHtml(fullName)}</h1>
+              <div class="resume-contact">
+                ${formData.address ? `<span>${escapeHtml(formData.address)}</span>` : ''}
+                ${formData.phoneNumber ? `<span>${escapeHtml(formData.phoneNumber)}</span>` : ''}
+                ${formData.email ? `<span>${escapeHtml(formData.email)}</span>` : ''}
+              </div>
+              ${educationSummary ? `<div class="resume-education-summary">${escapeHtml(educationSummary)}</div>` : ''}
             </div>
-            ${educationSummary ? `<div class="resume-education-summary">${escapeHtml(educationSummary)}</div>` : ''}
             ${photoHtml}
           </header>
 
