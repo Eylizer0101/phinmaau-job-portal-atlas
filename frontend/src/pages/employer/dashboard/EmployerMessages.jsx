@@ -21,7 +21,6 @@ import {
   faTimes,
   faSpinner,
   faChevronDown,
-  faChevronUp,
   faArrowLeft,
   faEye,
   faInfoCircle,
@@ -118,6 +117,10 @@ const STATUS_FILTER_OPTIONS = [
   { value: 'hired', label: 'Hired' },
   { value: 'declined', label: 'Declined' },
 ];
+
+const VISIBLE_APPLICATION_STATUSES = new Set(
+  STATUS_FILTER_OPTIONS.map((option) => option.value)
+);
 
 const ALLOWED_MIMES = [
   'image/jpeg',
@@ -911,7 +914,7 @@ const EmployerMessages = () => {
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
-  const [jobseekers, setJobseekers] = useState([]);
+  const [applications, setApplications] = useState([]);
 
   const [applicationStatus, setApplicationStatus] = useState(null);
   const [selectedApplication, setSelectedApplication] = useState(null);
@@ -926,7 +929,6 @@ const EmployerMessages = () => {
   const [sending, setSending] = useState(false);
 
   const [convSearch, setConvSearch] = useState('');
-  const [jsSearch, setJsSearch] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('pending');
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
@@ -940,7 +942,6 @@ const EmployerMessages = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
 
-  const [isJobseekersOpen, setIsJobseekersOpen] = useState(true);
   const [showSidebar, setShowSidebar] = useState(true);
 
   const [toast, setToast] = useState(null);
@@ -1022,20 +1023,35 @@ const EmployerMessages = () => {
   const fetchConversations = useCallback(async (view = 'active') => {
     try {
       const res = await api.get('/messages/conversations', { params: { view } });
-      if (res.data?.success) setConversations(res.data.data || []);
+      if (res.data?.success) {
+        const nextConversations = res.data.data || [];
+        setConversations(nextConversations);
+        return nextConversations;
+      }
     } catch (err) {
       console.error(err);
       showToast({ type: 'error', title: 'Failed to load conversations', message: 'Please refresh the page.' });
     }
+
+    return [];
   }, [showToast]);
 
-  const fetchJobseekers = useCallback(async () => {
+  const fetchApplications = useCallback(async () => {
     try {
-      const res = await api.get('/messages/employer/jobseekers');
-      if (res.data?.success) setJobseekers(res.data.data || []);
+      const res = await api.get('/applications/employer/all');
+      if (res.data?.success) {
+        setApplications(res.data.applications || []);
+      } else {
+        setApplications([]);
+      }
     } catch (err) {
       console.error(err);
-      showToast({ type: 'error', title: 'Failed to load job seekers', message: 'Please refresh the page.' });
+      setApplications([]);
+      showToast({
+        type: 'error',
+        title: 'Failed to load applicants',
+        message: 'Please refresh the page.',
+      });
     }
   }, [showToast]);
 
@@ -1057,46 +1073,37 @@ const EmployerMessages = () => {
   }, []);
 
   const fetchConversationApplication = useCallback(
-    async (jobseekerId) => {
+    (jobseekerId) => {
       if (!jobseekerId) {
         setApplicationStatus(null);
         setSelectedApplication(null);
         return;
       }
 
-      try {
-        setCheckingStatus(true);
+      setCheckingStatus(true);
 
-        const applicationsRes = await api.get('/applications/employer/all');
-        if (applicationsRes.data?.success) {
-          const applications = applicationsRes.data.applications || [];
-          const jobseekerApplications = applications.filter(
-            (app) =>
-              app.jobseeker?._id === jobseekerId ||
-              app.jobseeker?._id?.toString() === jobseekerId.toString()
-          );
+      const jobseekerApplications = applications
+        .filter(
+          (application) =>
+            String(application?.jobseeker?._id || application?.jobseeker || '') ===
+            String(jobseekerId)
+        )
+        .sort(
+          (first, second) =>
+            new Date(second?.appliedAt || second?.createdAt || 0).getTime() -
+            new Date(first?.appliedAt || first?.createdAt || 0).getTime()
+        );
 
-          if (jobseekerApplications.length > 0) {
-            const latestApplication = jobseekerApplications[0];
-            setSelectedApplication(latestApplication);
-            setApplicationStatus(String(latestApplication.status || '').toLowerCase());
-          } else {
-            setSelectedApplication(null);
-            setApplicationStatus(null);
-          }
-        } else {
-          setSelectedApplication(null);
-          setApplicationStatus(null);
-        }
-      } catch (err) {
-        console.error('Error fetching conversation application:', err);
-        setSelectedApplication(null);
-        setApplicationStatus(null);
-      } finally {
-        setCheckingStatus(false);
-      }
+      const latestApplication = jobseekerApplications[0] || null;
+      setSelectedApplication(latestApplication);
+      setApplicationStatus(
+        latestApplication?.status
+          ? String(latestApplication.status).toLowerCase()
+          : null
+      );
+      setCheckingStatus(false);
     },
-    []
+    [applications]
   );
 
   const fetchMessages = useCallback(
@@ -1141,51 +1148,54 @@ const EmployerMessages = () => {
     [conversationView, fetchConversations]
   );
 
-  const getOrCreateConversation = useCallback(
-    async (receiverId) => {
-      const existing = conversations.find((c) => c?.otherUser?._id === receiverId);
-      if (existing) return existing;
-
-      return {
-        _id: `temp_${currentUserId}_${receiverId}`,
-        otherUser: { _id: receiverId, fullName: 'Unknown Jobseeker', profileImage: '' },
-        lastMessage: null,
-        unreadCount: 0,
-        __temp: true,
-      };
-    },
-    [conversations, currentUserId]
-  );
-
   useEffect(() => {
     const boot = async () => {
       setLoading(true);
-      await Promise.all([fetchConversations('active'), fetchJobseekers(), fetchInterviewerOptions()]);
+      await Promise.all([
+        fetchConversations('active'),
+        fetchApplications(),
+        fetchInterviewerOptions(),
+      ]);
       setLoading(false);
     };
     boot();
-  }, [fetchConversations, fetchJobseekers, fetchInterviewerOptions]);
+  }, [fetchConversations, fetchApplications, fetchInterviewerOptions]);
 
   useEffect(() => {
     if (!selectedConversation?._id) return;
-    fetchMessages(selectedConversation._id);
-    markConversationRead(selectedConversation._id);
 
-    if (selectedConversation?.otherUser?._id) {
+    if (selectedConversation.__temp) {
+      setMessages([]);
+    } else {
+      fetchMessages(selectedConversation._id);
+      markConversationRead(selectedConversation._id);
+    }
+
+    if (selectedConversation?.application) {
+      setSelectedApplication(selectedConversation.application);
+      setApplicationStatus(
+        selectedConversation.application?.status
+          ? String(selectedConversation.application.status).toLowerCase()
+          : null
+      );
+    } else if (selectedConversation?.otherUser?._id) {
       fetchConversationApplication(selectedConversation.otherUser._id);
     } else {
       setApplicationStatus(null);
       setSelectedApplication(null);
     }
-  }, [selectedConversation?._id, fetchMessages, markConversationRead, fetchConversationApplication]);
+  }, [
+    selectedConversation?._id,
+    selectedConversation?.__temp,
+    selectedConversation?.application,
+    fetchMessages,
+    markConversationRead,
+    fetchConversationApplication,
+  ]);
 
   useEffect(() => {
     if (isNearBottom()) scrollToBottom(true);
   }, [messages, isNearBottom, scrollToBottom]);
-
-  useEffect(() => {
-    if (selectedConversation) setIsJobseekersOpen(false);
-  }, [selectedConversation]);
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -1198,12 +1208,108 @@ const EmployerMessages = () => {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
+  const latestApplicationsByJobseeker = useMemo(() => {
+    const latestByJobseeker = new Map();
+
+    [...applications]
+      .filter((application) => {
+        const status = String(application?.status || '').trim().toLowerCase();
+        const jobseekerId = application?.jobseeker?._id || application?.jobseeker;
+        return Boolean(jobseekerId) && VISIBLE_APPLICATION_STATUSES.has(status);
+      })
+      .sort(
+        (first, second) =>
+          new Date(second?.appliedAt || second?.createdAt || 0).getTime() -
+          new Date(first?.appliedAt || first?.createdAt || 0).getTime()
+      )
+      .forEach((application) => {
+        const jobseekerId = String(
+          application?.jobseeker?._id || application?.jobseeker || ''
+        );
+
+        if (jobseekerId && !latestByJobseeker.has(jobseekerId)) {
+          latestByJobseeker.set(jobseekerId, application);
+        }
+      });
+
+    return latestByJobseeker;
+  }, [applications]);
+
+  const conversationEntries = useMemo(() => {
+    if (conversationView === 'archived') return conversations;
+
+    const entriesByJobseeker = new Map();
+
+    conversations.forEach((conversation) => {
+      const jobseekerId = String(conversation?.otherUser?._id || '');
+      if (!jobseekerId) return;
+
+      const application =
+        conversation.application || latestApplicationsByJobseeker.get(jobseekerId) || null;
+      const status = String(application?.status || '').trim().toLowerCase();
+
+      if (!application || !VISIBLE_APPLICATION_STATUSES.has(status)) return;
+
+      entriesByJobseeker.set(jobseekerId, {
+        ...conversation,
+        application,
+      });
+    });
+
+    latestApplicationsByJobseeker.forEach((application, jobseekerId) => {
+      if (entriesByJobseeker.has(jobseekerId)) return;
+
+      const jobseeker =
+        application?.jobseeker && typeof application.jobseeker === 'object'
+          ? application.jobseeker
+          : { _id: jobseekerId };
+
+      entriesByJobseeker.set(jobseekerId, {
+        _id: `temp_${currentUserId}_${jobseekerId}`,
+        otherUser: {
+          ...jobseeker,
+          _id: jobseekerId,
+        },
+        application,
+        lastMessage: null,
+        lastMessageTime: application?.appliedAt || application?.createdAt || null,
+        unreadCount: 0,
+        __temp: true,
+      });
+    });
+
+    return Array.from(entriesByJobseeker.values()).sort((first, second) => {
+      const firstTime = new Date(
+        first?.lastMessageTime ||
+          first?.lastMessage?.createdAt ||
+          first?.application?.appliedAt ||
+          first?.application?.createdAt ||
+          0
+      ).getTime();
+      const secondTime = new Date(
+        second?.lastMessageTime ||
+          second?.lastMessage?.createdAt ||
+          second?.application?.appliedAt ||
+          second?.application?.createdAt ||
+          0
+      ).getTime();
+      return secondTime - firstTime;
+    });
+  }, [
+    conversations,
+    conversationView,
+    currentUserId,
+    latestApplicationsByJobseeker,
+  ]);
+
   const filteredConversations = useMemo(() => {
     const q = convSearch.trim().toLowerCase();
 
-    return conversations.filter((conversation) => {
+    return conversationEntries.filter((conversation) => {
       const application = conversation.application || {};
-      const applicationStatusValue = String(application.status || '').trim().toLowerCase();
+      const applicationStatusValue = String(application.status || '')
+        .trim()
+        .toLowerCase();
 
       if (activeTab === 'unread' && Number(conversation.unreadCount || 0) <= 0) {
         return false;
@@ -1229,7 +1335,12 @@ const EmployerMessages = () => {
         String(value || '').toLowerCase().includes(q)
       );
     });
-  }, [conversations, convSearch, activeTab, selectedStatusFilter]);
+  }, [
+    conversationEntries,
+    convSearch,
+    activeTab,
+    selectedStatusFilter,
+  ]);
 
   const unreadMessageCount = useMemo(
     () =>
@@ -1250,12 +1361,6 @@ const EmployerMessages = () => {
   useEffect(() => {
     setVisibleConversationCount(CONVERSATIONS_PER_PAGE);
   }, [convSearch, activeTab, selectedStatusFilter, conversationView]);
-
-  const filteredJobseekers = useMemo(() => {
-    const q = jsSearch.trim().toLowerCase();
-    if (!q) return jobseekers;
-    return jobseekers.filter((js) => buildDisplayName(js?.jobseeker).toLowerCase().includes(q));
-  }, [jobseekers, jsSearch]);
 
   const selectedHeaderTitle = useMemo(() => {
     if (!selectedConversation) return '';
@@ -1290,11 +1395,15 @@ const EmployerMessages = () => {
     const conversationApplication = conv.application || null;
 
     setSelectedConversation(openedConversation);
-    setConversations((previous) =>
-      previous.map((conversation) =>
-        conversation._id === conv._id ? openedConversation : conversation
-      )
-    );
+    if (conv.__temp) {
+      setMessages([]);
+    } else {
+      setConversations((previous) =>
+        previous.map((conversation) =>
+          conversation._id === conv._id ? openedConversation : conversation
+        )
+      );
+    }
     setSelectedApplication(conversationApplication);
     setApplicationStatus(
       conversationApplication?.status
@@ -1384,32 +1493,6 @@ const EmployerMessages = () => {
     if (!applicationId) return;
     navigate(`/employer/application/${applicationId}?from=messages`);
   }, [navigate, selectedApplication?._id, selectedConversation?.application?._id]);
-
-  const handleSelectJobseeker = useCallback(
-    async (jobseeker) => {
-      if (!requireSession()) return;
-
-      const receiverId = jobseeker?._id;
-      if (!receiverId) {
-        showToast({ type: 'error', title: 'Jobseeker missing', message: 'Please try again.' });
-        return;
-      }
-
-      const conv = await getOrCreateConversation(receiverId);
-
-      conv.otherUser = { ...(conv.otherUser || {}), ...(jobseeker || {}), _id: receiverId };
-      conv.otherUser.profileImage = jobseeker?.profileImage || conv.otherUser.profileImage || '';
-
-      setSelectedConversation(conv);
-
-      if (conv.__temp) setMessages([]);
-
-      setShowSidebar(false);
-
-      fetchConversationApplication(receiverId);
-    },
-    [getOrCreateConversation, requireSession, showToast, fetchConversationApplication]
-  );
 
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
@@ -1502,7 +1585,22 @@ const EmployerMessages = () => {
         const serverMsg = res.data.data;
 
         setMessages((prev) => prev.map((m) => (m._id === optimisticId ? serverMsg : m)));
-        fetchConversations(conversationView);
+
+        const refreshedConversations = await fetchConversations(conversationView);
+        const createdConversation = refreshedConversations.find(
+          (conversation) =>
+            String(conversation?.otherUser?._id || '') === String(receiverId)
+        );
+
+        if (createdConversation) {
+          setSelectedConversation({
+            ...createdConversation,
+            application:
+              createdConversation.application || selectedApplication || null,
+            unreadCount: 0,
+          });
+        }
+
         setTimeout(() => scrollToBottom(true), 0);
       } else {
         throw new Error('Send failed');
@@ -1521,6 +1619,7 @@ const EmployerMessages = () => {
     newMessage,
     requireSession,
     scrollToBottom,
+    selectedApplication,
     selectedConversation,
     selectedFile,
     showToast,
@@ -2019,7 +2118,7 @@ const EmployerMessages = () => {
                           ? 'Try another search term.'
                           : conversationView === 'archived'
                           ? 'Archived conversations will appear here.'
-                          : 'Select a job seeker below to start.'}
+                          : 'Applicants with Pending, For Interview, Hired, or Declined status will appear here.'}
                       </p>
                     </div>
                   ) : (
@@ -2031,8 +2130,9 @@ const EmployerMessages = () => {
                           conversation.lastMessageTime ||
                             conversation.lastMessage?.createdAt
                         );
-                        const last =
-                          conversation.lastMessage?.content || 'No messages yet';
+                        const last = conversation.__temp
+                          ? 'Tap to start chat'
+                          : conversation.lastMessage?.content || 'No messages yet';
                         const avatarUrl = getProfileImageUrl(
                           conversation.otherUser?.profileImage
                         );
@@ -2110,23 +2210,25 @@ const EmployerMessages = () => {
                                       {time}
                                     </span>
 
-                                    <button
-                                      type="button"
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        setItemMenuId((current) =>
-                                          current === conversation._id
-                                            ? null
-                                            : conversation._id
-                                        );
-                                      }}
-                                      className={`hidden h-8 w-8 items-center justify-center rounded-full hover:bg-white group-hover:inline-flex ${UI.ring}`}
-                                      aria-label={`Actions for ${title}`}
-                                    >
-                                      <FontAwesomeIcon icon={faEllipsisVertical} />
-                                    </button>
+                                    {!conversation.__temp && (
+                                      <button
+                                        type="button"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          setItemMenuId((current) =>
+                                            current === conversation._id
+                                              ? null
+                                              : conversation._id
+                                          );
+                                        }}
+                                        className={`hidden h-8 w-8 items-center justify-center rounded-full hover:bg-white group-hover:inline-flex ${UI.ring}`}
+                                        aria-label={`Actions for ${title}`}
+                                      >
+                                        <FontAwesomeIcon icon={faEllipsisVertical} />
+                                      </button>
+                                    )}
 
-                                    {itemMenuId === conversation._id && (
+                                    {!conversation.__temp && itemMenuId === conversation._id && (
                                       <div className="absolute right-0 top-9 z-50 w-40 rounded-xl border border-[#e6edf5] bg-white p-1.5 shadow-xl">
                                         <button
                                           type="button"
@@ -2218,88 +2320,6 @@ const EmployerMessages = () => {
                   )}
                 </div>
 
-                <div className="border-t border-gray-200">
-                  <button
-                    type="button"
-                    onClick={() => setIsJobseekersOpen((v) => !v)}
-                    className={`w-full ${UI.panelPad} flex items-center justify-between ${UI.btnBase} ${UI.btnGhost} ${UI.ring}`}
-                    aria-expanded={isJobseekersOpen}
-                  >
-                    <div className="text-left">
-                      <span className={`${UI.h2} ${UI.textPrimary}`}>Available Job Seekers</span>
-                      <div className={`text-xs ${UI.textMuted} mt-0.5`}>Start a new conversation</div>
-                    </div>
-                    <FontAwesomeIcon icon={isJobseekersOpen ? faChevronUp : faChevronDown} aria-hidden="true" />
-                  </button>
-
-                  {isJobseekersOpen && (
-                    <div className="px-4 pb-4">
-                      <div className="relative mb-3">
-                        <FontAwesomeIcon
-                          icon={faSearch}
-                          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                          aria-hidden="true"
-                        />
-                        <input
-                          value={jsSearch}
-                          onChange={(e) => setJsSearch(e.target.value)}
-                          className={`${UI.input} ${UI.ring}`}
-                          placeholder="Search job seekers…"
-                          aria-label="Search job seekers"
-                        />
-                      </div>
-
-                      <div className="space-y-2 max-h-44 overflow-y-auto">
-                        {filteredJobseekers.length > 0 ? (
-                          filteredJobseekers.map((js) => {
-                            const jobseeker = js.jobseeker;
-                            const name = buildDisplayName(jobseeker);
-                            const id = jobseeker?._id;
-
-                            const avatarUrl = getProfileImageUrl(jobseeker?.profileImage);
-
-                            return (
-                              <button
-                                key={id}
-                                type="button"
-                                onClick={() => handleSelectJobseeker(jobseeker)}
-                                className={`w-full text-left p-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition ${UI.ring}`}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div className="h-9 w-9 rounded-full overflow-hidden bg-[#2e66a6] bg-opacity-10 border border-[#2e66a6] border-opacity-20 flex items-center justify-center flex-shrink-0">
-                                    {avatarUrl ? (
-                                      <img
-                                        src={avatarUrl}
-                                        alt={name}
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                          e.currentTarget.style.display = 'none';
-                                        }}
-                                      />
-                                    ) : (
-                                      <span className="text-[#2e66a6] font-bold text-xs">
-                                        {(name?.trim()?.[0] || 'J').toUpperCase()}
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  <div className="min-w-0 flex-1">
-                                    <p className={`text-sm font-semibold ${UI.textPrimary} truncate`} title={name}>
-                                      {name}
-                                    </p>
-                                    <p className={`text-xs ${UI.textMuted}`}>Tap to start chat</p>
-                                  </div>
-                                </div>
-                              </button>
-                            );
-                          })
-                        ) : (
-                          <p className={`text-sm ${UI.textMuted} text-center py-2`}>No job seekers available</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
               </div>
 
 
@@ -2652,7 +2672,7 @@ const EmployerMessages = () => {
                     <FontAwesomeIcon icon={faComments} className="w-16 h-16 text-gray-300 mb-4" aria-hidden="true" />
                     <p className={`text-lg font-bold ${UI.textPrimary}`}>No conversation selected</p>
                     <p className={`mt-1 text-sm ${UI.textSecondary} text-center max-w-md`}>
-                      Select a conversation from the list, or choose a job seeker to start a new chat.
+                      Select an applicant or conversation from the list to start chatting.
                     </p>
 
                     <div className="mt-6 flex flex-col sm:flex-row gap-3">
@@ -2666,13 +2686,10 @@ const EmployerMessages = () => {
 
                       <button
                         type="button"
-                        onClick={() => {
-                          setShowSidebar(true);
-                          setIsJobseekersOpen(true);
-                        }}
+                        onClick={() => setShowSidebar(true)}
                         className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSecondary} ${UI.ring}`}
                       >
-                        Start new chat
+                        View Applicants
                       </button>
                     </div>
                   </div>
