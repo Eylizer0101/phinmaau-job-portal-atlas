@@ -41,7 +41,7 @@ const UI = {
   container: 'mx-auto max-w-[1280px] px-4 sm:px-6 lg:px-8 py-6 lg:py-8',
   shell: 'bg-white border border-[#e6edf5] rounded-[24px] shadow-[0_18px_45px_rgba(46,102,166,0.08)] overflow-hidden',
 
-  grid: 'flex h-[calc(100dvh-300px)] min-h-[520px] max-h-[680px] overflow-hidden',
+  grid: 'flex h-[calc(100dvh-235px)] min-h-[620px] max-h-[760px] overflow-hidden',
   sidebar: 'w-full sm:w-[320px] md:w-[350px] lg:w-[380px] min-h-0 overflow-hidden border-r border-[#e6edf5] flex flex-col bg-white',
   main: 'flex-1 min-h-0 overflow-hidden flex flex-col bg-white min-w-0',
 
@@ -244,6 +244,28 @@ const formatApplicationStatus = (value = '') => {
     .split(' ')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
+};
+
+const getApplicationStatusLabel = (status = '', hiringStage = '') => {
+  const normalizedStatus = String(status || '').trim().toLowerCase();
+  const normalizedHiringStage = String(hiringStage || '').replace(/\s+/g, ' ').trim();
+  const statusLabel = formatApplicationStatus(normalizedStatus);
+
+  if (normalizedStatus === 'for interview' && normalizedHiringStage) {
+    return `${statusLabel} (${normalizedHiringStage})`;
+  }
+
+  return statusLabel;
+};
+
+const getApplicationStatusDotClass = (status = '') => {
+  const normalized = String(status || '').trim().toLowerCase();
+
+  if (normalized === 'for interview') return 'bg-[#2e66a6]';
+  if (normalized === 'hired') return 'bg-green-600';
+  if (normalized === 'pending') return 'bg-yellow-500';
+  if (normalized === 'declined') return 'bg-red-600';
+  return 'bg-gray-500';
 };
 
 const getApplicationStatusClass = (status = '') => {
@@ -1368,6 +1390,8 @@ const EmployerMessages = () => {
         application.job?.companyName,
         applicationStatusValue,
         formatApplicationStatus(applicationStatusValue),
+        application.hiringStage,
+        getApplicationStatusLabel(applicationStatusValue, application.hiringStage),
         conversation.lastMessage?.content,
       ];
 
@@ -2183,6 +2207,9 @@ const EmployerMessages = () => {
                         const status = String(
                           conversation.application?.status || ''
                         ).toLowerCase();
+                        const hiringStage = String(
+                          conversation.application?.hiringStage || ''
+                        ).replace(/\s+/g, ' ').trim();
                         const jobTitle = conversation.application?.job?.title || '';
 
                         return (
@@ -2247,29 +2274,42 @@ const EmployerMessages = () => {
                                   </div>
 
                                   <div
-                                    className="relative flex flex-shrink-0 items-center gap-1"
+                                    className="relative flex max-w-[150px] flex-shrink-0 flex-col items-end gap-2"
                                     data-conversation-menu
                                   >
-                                    <span className={`text-xs ${UI.textMuted} group-hover:hidden`}>
-                                      {time}
-                                    </span>
+                                    <div className="flex items-center gap-1">
+                                      <span className={`text-xs ${UI.textMuted} group-hover:hidden`}>
+                                        {time}
+                                      </span>
 
-                                    {!conversation.__temp && (
-                                      <button
-                                        type="button"
-                                        onClick={(event) => {
-                                          event.stopPropagation();
-                                          setItemMenuId((current) =>
-                                            current === entryId
-                                              ? null
-                                              : entryId
-                                          );
-                                        }}
-                                        className={`hidden h-8 w-8 items-center justify-center rounded-full hover:bg-white group-hover:inline-flex ${UI.ring}`}
-                                        aria-label={`Actions for ${title}`}
+                                      {!conversation.__temp && (
+                                        <button
+                                          type="button"
+                                          onClick={(event) => {
+                                            event.stopPropagation();
+                                            setItemMenuId((current) =>
+                                              current === entryId
+                                                ? null
+                                                : entryId
+                                            );
+                                          }}
+                                          className={`hidden h-8 w-8 items-center justify-center rounded-full hover:bg-white group-hover:inline-flex ${UI.ring}`}
+                                          aria-label={`Actions for ${title}`}
+                                        >
+                                          <FontAwesomeIcon icon={faEllipsisVertical} />
+                                        </button>
+                                      )}
+                                    </div>
+
+                                    {status && (
+                                      <span
+                                        className={`max-w-full rounded-full px-2 py-0.5 text-right text-[11px] font-semibold leading-4 ${getApplicationStatusClass(
+                                          status
+                                        )}`}
+                                        title={getApplicationStatusLabel(status, hiringStage)}
                                       >
-                                        <FontAwesomeIcon icon={faEllipsisVertical} />
-                                      </button>
+                                        {getApplicationStatusLabel(status, hiringStage)}
+                                      </span>
                                     )}
 
                                     {!conversation.__temp && itemMenuId === entryId && (
@@ -2319,23 +2359,13 @@ const EmployerMessages = () => {
                                   {last}
                                 </p>
 
-                                <div className="mt-2 flex flex-wrap items-center gap-2">
-                                  {status && (
-                                    <span
-                                      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${getApplicationStatusClass(
-                                        status
-                                      )}`}
-                                    >
-                                      {formatApplicationStatus(status)}
-                                    </span>
-                                  )}
-
-                                  {Number(conversation.unreadCount || 0) > 0 && (
+                                {Number(conversation.unreadCount || 0) > 0 && (
+                                  <div className="mt-2 flex flex-wrap items-center gap-2">
                                     <span className={`${UI.badge} ${UI.badgeUnread}`}>
                                       {conversation.unreadCount} new
                                     </span>
-                                  )}
-                                </div>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -2448,30 +2478,40 @@ const EmployerMessages = () => {
                               </span>
                             )}
 
-                            <span className="mt-1 flex flex-wrap items-center gap-2">
-                              <span className="text-xs font-medium text-gray-500">
-                                Status:
-                              </span>
-                              <span
-                                className={`rounded-full px-2 py-0.5 text-xs font-semibold ${getApplicationStatusClass(
-                                  applicationStatus ||
-                                    selectedApplicationSummary?.status
-                                )}`}
-                              >
-                                {checkingStatus
-                                  ? 'Checking...'
-                                  : formatApplicationStatus(
-                                      applicationStatus ||
-                                        selectedApplicationSummary?.status
-                                    )}
-                              </span>
-                            </span>
                           </span>
 
                           {selectedApplicationSummary?._id && (
-                            <span className="hidden flex-shrink-0 items-center gap-1.5 rounded-lg border border-[#d8e2ee] bg-white px-3 py-2 text-xs font-semibold text-[#2e66a6] transition group-hover:border-[#2e66a6]/40 sm:inline-flex">
-                              <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5" />
-                              View Application
+                            <span
+                              className={`ml-auto inline-flex max-w-[220px] flex-shrink-0 items-center justify-end gap-2 rounded-full px-3 py-1.5 text-right text-xs font-semibold leading-4 ${getApplicationStatusClass(
+                                applicationStatus ||
+                                  selectedApplicationSummary?.status
+                              )}`}
+                              title={
+                                checkingStatus
+                                  ? 'Checking status'
+                                  : getApplicationStatusLabel(
+                                      applicationStatus ||
+                                        selectedApplicationSummary?.status,
+                                      selectedApplicationSummary?.hiringStage
+                                    )
+                              }
+                            >
+                              <span
+                                className={`h-2 w-2 flex-shrink-0 rounded-full ${getApplicationStatusDotClass(
+                                  applicationStatus ||
+                                    selectedApplicationSummary?.status
+                                )}`}
+                                aria-hidden="true"
+                              />
+                              <span>
+                                {checkingStatus
+                                  ? 'Checking...'
+                                  : getApplicationStatusLabel(
+                                      applicationStatus ||
+                                        selectedApplicationSummary?.status,
+                                      selectedApplicationSummary?.hiringStage
+                                    )}
+                              </span>
                             </span>
                           )}
                         </button>
