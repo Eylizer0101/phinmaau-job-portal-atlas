@@ -5991,7 +5991,7 @@ const MyProfile = () => {
     if (sectionKey === 'personal') {
       return (
         <div className="px-0 pb-8 pt-5 text-center">
-          <div className="flex items-start justify-center gap-8">
+          <div className="flex items-start justify-center gap-5">
             <div className="flex-1 min-w-0">
               <AutoFitProfileName>{fullName || 'YOUR NAME'}</AutoFitProfileName>
               <div className="mt-2 font-serif text-[15px] leading-6 text-gray-900">
@@ -6011,7 +6011,7 @@ const MyProfile = () => {
               </div>
             </div>
 
-            <div className="hidden sm:flex w-[124px] h-[124px] bg-[#1f2430] text-white items-center justify-center font-serif text-[32px] font-bold shrink-0 overflow-hidden">
+            <div className="hidden sm:flex w-[124px] h-[124px] mr-6 bg-[#1f2430] text-white items-center justify-center font-serif text-[32px] font-bold shrink-0 overflow-hidden">
               {profileImageUrl ? (
                 <img
                   src={profileImageUrl}
