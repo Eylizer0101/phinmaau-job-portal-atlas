@@ -391,8 +391,16 @@ exports.getConversations = async (req, res) => {
   try {
     const userId = req.user._id;
     const view = String(req.query.view || 'active').toLowerCase();
+    const applicationScoped =
+      String(req.query.applicationScoped || '').toLowerCase() === 'true';
 
-    // Get distinct conversations where user is either sender or receiver
+    const groupId = applicationScoped
+      ? {
+          conversationId: '$conversationId',
+          application: '$application'
+        }
+      : '$conversationId';
+
     const conversations = await Message.aggregate([
       {
         $match: {
@@ -407,15 +415,17 @@ exports.getConversations = async (req, res) => {
       },
       {
         $group: {
-          _id: "$conversationId",
-          lastMessage: { $first: "$$ROOT" },
+          _id: groupId,
+          conversationId: { $first: '$conversationId' },
+          applicationId: { $first: '$application' },
+          lastMessage: { $first: '$$ROOT' },
           unreadCount: {
             $sum: {
               $cond: [
                 {
                   $and: [
-                    { $eq: ["$receiver", userId] },
-                    { $eq: ["$isRead", false] }
+                    { $eq: ['$receiver', userId] },
+                    { $eq: ['$isRead', false] }
                   ]
                 },
                 1,
@@ -445,46 +455,44 @@ exports.getConversations = async (req, res) => {
         $addFields: {
           otherUser: {
             $cond: [
-              { $eq: [{ $arrayElemAt: ["$senderDetails._id", 0] }, userId] },
-              { $arrayElemAt: ["$receiverDetails", 0] },
-              { $arrayElemAt: ["$senderDetails", 0] }
+              { $eq: [{ $arrayElemAt: ['$senderDetails._id', 0] }, userId] },
+              { $arrayElemAt: ['$receiverDetails', 0] },
+              { $arrayElemAt: ['$senderDetails', 0] }
             ]
           }
         }
       },
-
-      // ✅ ADD: compute fullName fallback from first/middle/last (if fullName missing)
       {
         $addFields: {
           otherUserComputedFullName: {
             $let: {
               vars: {
-                existing: { $ifNull: ["$otherUser.fullName", ""] },
-                first: { $ifNull: ["$otherUser.firstName", ""] },
-                middle: { $ifNull: ["$otherUser.middleName", ""] },
-                last: { $ifNull: ["$otherUser.lastName", ""] }
+                existing: { $ifNull: ['$otherUser.fullName', ''] },
+                first: { $ifNull: ['$otherUser.firstName', ''] },
+                middle: { $ifNull: ['$otherUser.middleName', ''] },
+                last: { $ifNull: ['$otherUser.lastName', ''] }
               },
               in: {
                 $cond: [
-                  { $gt: [{ $strLenCP: { $trim: { input: "$$existing" } } }, 0] },
-                  { $trim: { input: "$$existing" } },
+                  { $gt: [{ $strLenCP: { $trim: { input: '$$existing' } } }, 0] },
+                  { $trim: { input: '$$existing' } },
                   {
                     $trim: {
                       input: {
                         $reduce: {
-                          input: ["$$first", "$$middle", "$$last"],
-                          initialValue: "",
+                          input: ['$$first', '$$middle', '$$last'],
+                          initialValue: '',
                           in: {
                             $cond: [
-                              { $gt: [{ $strLenCP: { $trim: { input: "$$this" } } }, 0] },
+                              { $gt: [{ $strLenCP: { $trim: { input: '$$this' } } }, 0] },
                               {
                                 $concat: [
-                                  "$$value",
-                                  { $cond: [{ $gt: [{ $strLenCP: "$$value" }, 0] }, " ", ""] },
-                                  { $trim: { input: "$$this" } }
+                                  '$$value',
+                                  { $cond: [{ $gt: [{ $strLenCP: '$$value' }, 0] }, ' ', ''] },
+                                  { $trim: { input: '$$this' } }
                                 ]
                               },
-                              "$$value"
+                              '$$value'
                             ]
                           }
                         }
@@ -497,40 +505,29 @@ exports.getConversations = async (req, res) => {
           }
         }
       },
-
       {
         $project: {
-          _id: 1,
+          _id: '$conversationId',
+          applicationId: 1,
           lastMessage: 1,
           unreadCount: 1,
           otherUser: {
-            _id: "$otherUser._id",
-
-            // ✅ fullName ALWAYS present now (computed fallback)
-            fullName: "$otherUserComputedFullName",
-
-            // ✅ ADD: names + email so frontend can build too
-            firstName: "$otherUser.firstName",
-            middleName: "$otherUser.middleName",
-            lastName: "$otherUser.lastName",
-            email: "$otherUser.email",
-
-            profileImage: "$otherUser.profileImage",
-            role: "$otherUser.role",
-
-            // ✅ KEEP OLD FIELD (para di masira existing frontend usage)
-            companyName: "$otherUser.employerProfile.companyName",
-
-            // ✅ FIX: include employerProfile with companyLogo
+            _id: '$otherUser._id',
+            fullName: '$otherUserComputedFullName',
+            firstName: '$otherUser.firstName',
+            middleName: '$otherUser.middleName',
+            lastName: '$otherUser.lastName',
+            email: '$otherUser.email',
+            profileImage: '$otherUser.profileImage',
+            role: '$otherUser.role',
+            companyName: '$otherUser.employerProfile.companyName',
             employerProfile: {
-              companyName: "$otherUser.employerProfile.companyName",
-              companyLogo: "$otherUser.employerProfile.companyLogo"
+              companyName: '$otherUser.employerProfile.companyName',
+              companyLogo: '$otherUser.employerProfile.companyLogo'
             },
-
-            // ✅ OPTIONAL: add top-level companyLogo too (extra safe for frontend)
-            companyLogo: "$otherUser.employerProfile.companyLogo"
+            companyLogo: '$otherUser.employerProfile.companyLogo'
           },
-          lastMessageTime: "$lastMessage.createdAt"
+          lastMessageTime: '$lastMessage.createdAt'
         }
       },
       {
@@ -538,25 +535,39 @@ exports.getConversations = async (req, res) => {
       }
     ]);
 
-    const preferences = await ConversationPreference.find({
-      user: userId,
-      conversationId: { $in: conversations.map((conversation) => conversation._id) },
-    }).lean();
+    const conversationIds = [
+      ...new Set(
+        conversations
+          .map((conversation) => String(conversation?._id || ''))
+          .filter(Boolean)
+      )
+    ];
 
-    const preferenceMap = new Map(preferences.map((preference) => [preference.conversationId, preference]));
+    const preferences = conversationIds.length
+      ? await ConversationPreference.find({
+          user: userId,
+          conversationId: { $in: conversationIds }
+        }).lean()
+      : [];
+
+    const preferenceMap = new Map(
+      preferences.map((preference) => [preference.conversationId, preference])
+    );
+
     const visibleConversations = conversations.filter((conversation) => {
-      const preference = preferenceMap.get(conversation._id);
+      const preference = preferenceMap.get(String(conversation._id));
 
       if (view === 'archived') {
         return preference?.archived === true && preference?.deleted !== true;
       }
 
-      return !preference?.archived && !preference?.hiddenCompany && !preference?.deleted;
+      return (
+        !preference?.archived &&
+        !preference?.hiddenCompany &&
+        !preference?.deleted
+      );
     });
 
-    // Attach the latest application between the current user and the other
-    // participant. Employer Messages uses this summary for status filtering,
-    // job-title search, and the clickable application header.
     const otherUserIds = [
       ...new Set(
         visibleConversations
@@ -565,52 +576,141 @@ exports.getConversations = async (req, res) => {
       )
     ];
 
-    const applicationByOtherUser = new Map();
+    const exactApplicationIds = [
+      ...new Set(
+        visibleConversations
+          .map((conversation) => conversation?.applicationId?.toString())
+          .filter(Boolean)
+      )
+    ];
 
-    if (otherUserIds.length) {
-      const relatedApplications = await Application.find({
-        $or: [
-          {
-            employer: userId,
-            jobseeker: { $in: otherUserIds }
-          },
-          {
-            jobseeker: userId,
-            employer: { $in: otherUserIds }
-          }
-        ]
-      })
-        .select(
-          '_id job jobseeker employer status lastActiveStatus appliedAt interviewSchedule'
-        )
-        .populate('job', 'title companyName employer')
-        .sort({ appliedAt: -1, createdAt: -1 })
-        .lean();
+    const applicationQueries = [];
 
-      relatedApplications.forEach((application) => {
-        const employerId = application?.employer?.toString();
-        const jobseekerId = application?.jobseeker?.toString();
-        const otherUserId =
-          employerId === userId.toString() ? jobseekerId : employerId;
-
-        if (otherUserId && !applicationByOtherUser.has(otherUserId)) {
-          applicationByOtherUser.set(otherUserId, application);
-        }
-      });
+    if (exactApplicationIds.length) {
+      applicationQueries.push({ _id: { $in: exactApplicationIds } });
     }
 
-    const enrichedConversations = visibleConversations.map((conversation) => ({
-      ...conversation,
-      application:
-        applicationByOtherUser.get(conversation?.otherUser?._id?.toString()) || null
-    }));
+    if (otherUserIds.length) {
+      applicationQueries.push(
+        {
+          employer: userId,
+          jobseeker: { $in: otherUserIds }
+        },
+        {
+          jobseeker: userId,
+          employer: { $in: otherUserIds }
+        }
+      );
+    }
+
+    const relatedApplications = applicationQueries.length
+      ? await Application.find({ $or: applicationQueries })
+          .select(
+            '_id job jobseeker employer status lastActiveStatus appliedAt interviewSchedule hiringStage'
+          )
+          .populate('job', 'title companyName employer')
+          .sort({ appliedAt: -1, createdAt: -1 })
+          .lean()
+      : [];
+
+    const applicationById = new Map();
+    const latestApplicationByOtherUser = new Map();
+
+    relatedApplications.forEach((application) => {
+      const applicationId = application?._id?.toString();
+      if (applicationId) {
+        applicationById.set(applicationId, application);
+      }
+
+      const employerId = application?.employer?.toString();
+      const jobseekerId = application?.jobseeker?.toString();
+      const otherUserId =
+        employerId === userId.toString() ? jobseekerId : employerId;
+
+      if (otherUserId && !latestApplicationByOtherUser.has(otherUserId)) {
+        latestApplicationByOtherUser.set(otherUserId, application);
+      }
+    });
+
+    const enrichedConversations = visibleConversations.map((conversation) => {
+      const storedApplicationId = conversation?.applicationId?.toString() || '';
+      const otherUserId = conversation?.otherUser?._id?.toString() || '';
+      const exactApplication = storedApplicationId
+        ? applicationById.get(storedApplicationId) || null
+        : null;
+      const fallbackApplication =
+        latestApplicationByOtherUser.get(otherUserId) || null;
+      const application = applicationScoped
+        ? exactApplication || fallbackApplication
+        : fallbackApplication || exactApplication;
+
+      return {
+        ...conversation,
+        applicationId:
+          application?._id?.toString() || storedApplicationId || null,
+        application
+      };
+    });
+
+    let responseConversations = enrichedConversations;
+
+    if (applicationScoped) {
+      const scopedConversationMap = new Map();
+
+      enrichedConversations.forEach((conversation) => {
+        const applicationId =
+          conversation?.application?._id?.toString() ||
+          conversation?.applicationId?.toString() ||
+          'no_application';
+        const key = `${conversation._id}_${applicationId}`;
+        const existing = scopedConversationMap.get(key);
+
+        if (!existing) {
+          scopedConversationMap.set(key, conversation);
+          return;
+        }
+
+        const existingTime = new Date(
+          existing?.lastMessageTime ||
+            existing?.lastMessage?.createdAt ||
+            0
+        ).getTime();
+        const conversationTime = new Date(
+          conversation?.lastMessageTime ||
+            conversation?.lastMessage?.createdAt ||
+            0
+        ).getTime();
+        const newer =
+          conversationTime > existingTime ? conversation : existing;
+
+        scopedConversationMap.set(key, {
+          ...newer,
+          unreadCount:
+            Number(existing?.unreadCount || 0) +
+            Number(conversation?.unreadCount || 0)
+        });
+      });
+
+      responseConversations = Array.from(scopedConversationMap.values()).sort(
+        (first, second) =>
+          new Date(
+            second?.lastMessageTime ||
+              second?.lastMessage?.createdAt ||
+              0
+          ).getTime() -
+          new Date(
+            first?.lastMessageTime ||
+              first?.lastMessage?.createdAt ||
+              0
+          ).getTime()
+      );
+    }
 
     res.status(200).json({
       success: true,
-      count: enrichedConversations.length,
-      data: enrichedConversations
+      count: responseConversations.length,
+      data: responseConversations
     });
-
   } catch (error) {
     console.error('Error fetching conversations:', error);
     res.status(500).json({
@@ -625,6 +725,7 @@ exports.getMessages = async (req, res) => {
   try {
     const { conversationId } = req.params;
     const userId = req.user._id;
+    const applicationId = String(req.query.applicationId || '').trim();
 
     // Verify user is part of the conversation
     const participants = conversationId.split('_');
@@ -635,21 +736,32 @@ exports.getMessages = async (req, res) => {
       });
     }
 
+    const messageQuery = { conversationId };
+    if (applicationId) {
+      messageQuery.application = applicationId;
+    }
+
     // Get messages
-    const messages = await Message.find({ conversationId })
+    const messages = await Message.find(messageQuery)
       .populate('sender', 'fullName firstName middleName lastName email profileImage role employerProfile.companyName employerProfile.companyLogo')
       .populate('receiver', 'fullName firstName middleName lastName email profileImage role employerProfile.companyName employerProfile.companyLogo')
       .populate('job', 'title companyName')
       .populate('application')
       .sort({ createdAt: 1 });
 
+    const readQuery = {
+      conversationId,
+      receiver: userId,
+      isRead: false
+    };
+
+    if (applicationId) {
+      readQuery.application = applicationId;
+    }
+
     // Mark messages as read
     await Message.updateMany(
-      {
-        conversationId,
-        receiver: userId,
-        isRead: false
-      },
+      readQuery,
       {
         $set: { isRead: true, readAt: Date.now() }
       }
@@ -725,13 +837,20 @@ exports.markAsRead = async (req, res) => {
   try {
     const { conversationId } = req.params;
     const userId = req.user._id;
+    const applicationId = String(req.query.applicationId || '').trim();
+
+    const readQuery = {
+      conversationId,
+      receiver: userId,
+      isRead: false
+    };
+
+    if (applicationId) {
+      readQuery.application = applicationId;
+    }
 
     await Message.updateMany(
-      {
-        conversationId,
-        receiver: userId,
-        isRead: false
-      },
+      readQuery,
       {
         $set: { isRead: true, readAt: Date.now() }
       }

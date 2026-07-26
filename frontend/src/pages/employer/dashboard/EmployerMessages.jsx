@@ -1050,7 +1050,9 @@ const EmployerMessages = () => {
 
   const fetchConversations = useCallback(async (view = 'active') => {
     try {
-      const res = await api.get('/messages/conversations', { params: { view } });
+      const res = await api.get('/messages/conversations', {
+        params: { view, applicationScoped: true },
+      });
       if (res.data?.success) {
         const nextConversations = res.data.data || [];
         setConversations(nextConversations);
@@ -1160,23 +1162,38 @@ const EmployerMessages = () => {
   );
 
   const fetchMessages = useCallback(
-    async (conversationId) => {
+    async (conversationId, applicationId = null) => {
       try {
-        const res = await api.get(`/messages/conversation/${conversationId}`);
+        const res = await api.get(`/messages/conversation/${conversationId}`, {
+          params: applicationId ? { applicationId } : undefined,
+        });
+
         if (res.data?.success) {
           setMessages(res.data.data || []);
           setConversations((previous) =>
-            previous.map((conversation) =>
-              conversation._id === conversationId
+            previous.map((conversation) => {
+              const sameConversation = conversation._id === conversationId;
+              const sameApplication =
+                !applicationId ||
+                String(conversation?.application?._id || conversation?.applicationId || '') ===
+                  String(applicationId);
+
+              return sameConversation && sameApplication
                 ? { ...conversation, unreadCount: 0 }
-                : conversation
-            )
+                : conversation;
+            })
           );
-          setSelectedConversation((previous) =>
-            previous?._id === conversationId
+          setSelectedConversation((previous) => {
+            const sameConversation = previous?._id === conversationId;
+            const sameApplication =
+              !applicationId ||
+              String(previous?.application?._id || previous?.applicationId || '') ===
+                String(applicationId);
+
+            return sameConversation && sameApplication
               ? { ...previous, unreadCount: 0 }
-              : previous
-          );
+              : previous;
+          });
           window.dispatchEvent(new Event('messages:unread-updated'));
           setTimeout(() => scrollToBottom(false), 0);
         }
@@ -1189,10 +1206,12 @@ const EmployerMessages = () => {
   );
 
   const markConversationRead = useCallback(
-    async (conversationId) => {
+    async (conversationId, applicationId = null) => {
       if (!conversationId) return;
       try {
-        await api.put(`/messages/mark-read/${conversationId}`);
+        await api.put(`/messages/mark-read/${conversationId}`, null, {
+          params: applicationId ? { applicationId } : undefined,
+        });
         fetchConversations(conversationView);
       } catch (err) {
         console.log('Mark read endpoint not available, continuing...');
@@ -1220,8 +1239,13 @@ const EmployerMessages = () => {
     if (selectedConversation.__temp) {
       setMessages([]);
     } else {
-      fetchMessages(selectedConversation._id);
-      markConversationRead(selectedConversation._id);
+      const selectedApplicationId =
+        selectedConversation?.application?._id ||
+        selectedConversation?.applicationId ||
+        null;
+
+      fetchMessages(selectedConversation._id, selectedApplicationId);
+      markConversationRead(selectedConversation._id, selectedApplicationId);
     }
 
     if (selectedConversation?.application) {
@@ -1280,18 +1304,27 @@ const EmployerMessages = () => {
 
   const conversationEntries = useMemo(() => {
     if (conversationView === 'archived') {
-      return conversations.map((conversation) => ({
-        ...conversation,
-        _entryId: conversation._id,
-      }));
+      return conversations.map((conversation) => {
+        const applicationId = String(
+          conversation?.application?._id || conversation?.applicationId || 'no_application'
+        );
+
+        return {
+          ...conversation,
+          _entryId: `${conversation._id}_${applicationId}`,
+        };
+      });
     }
 
-    const conversationByJobseeker = new Map();
+    const conversationByApplication = new Map();
 
     conversations.forEach((conversation) => {
-      const jobseekerId = String(conversation?.otherUser?._id || '');
-      if (jobseekerId && !conversationByJobseeker.has(jobseekerId)) {
-        conversationByJobseeker.set(jobseekerId, conversation);
+      const applicationId = String(
+        conversation?.application?._id || conversation?.applicationId || ''
+      );
+
+      if (applicationId && !conversationByApplication.has(applicationId)) {
+        conversationByApplication.set(applicationId, conversation);
       }
     });
 
@@ -1304,7 +1337,8 @@ const EmployerMessages = () => {
 
         if (!applicationId || !jobseekerId) return null;
 
-        const existingConversation = conversationByJobseeker.get(jobseekerId) || null;
+        const existingConversation =
+          conversationByApplication.get(applicationId) || null;
         const jobseeker =
           application?.jobseeker && typeof application.jobseeker === 'object'
             ? application.jobseeker
@@ -1315,6 +1349,7 @@ const EmployerMessages = () => {
             ...existingConversation,
             _entryId: `${existingConversation._id}_${applicationId}`,
             application,
+            applicationId,
             otherUser: {
               ...(existingConversation.otherUser || {}),
               ...jobseeker,
@@ -1333,6 +1368,7 @@ const EmployerMessages = () => {
             _id: jobseekerId,
           },
           application,
+          applicationId,
           lastMessage: null,
           lastMessageTime: application?.appliedAt || application?.createdAt || null,
           unreadCount: 0,
@@ -1462,12 +1498,21 @@ const EmployerMessages = () => {
     if (conv.__temp) {
       setMessages([]);
     } else {
+      const selectedApplicationId = String(
+        conv?.application?._id || conv?.applicationId || ''
+      );
+
       setConversations((previous) =>
-        previous.map((conversation) =>
-          conversation._id === conv._id
+        previous.map((conversation) => {
+          const conversationApplicationId = String(
+            conversation?.application?._id || conversation?.applicationId || ''
+          );
+
+          return conversation._id === conv._id &&
+            conversationApplicationId === selectedApplicationId
             ? { ...conversation, unreadCount: 0 }
-            : conversation
-        )
+            : conversation;
+        })
       );
     }
     setSelectedApplication(conversationApplication);
@@ -1608,6 +1653,27 @@ const EmployerMessages = () => {
       return;
     }
 
+    const applicationId =
+      selectedApplication?._id ||
+      selectedConversation?.application?._id ||
+      selectedConversation?.applicationId ||
+      null;
+    const jobId =
+      selectedApplication?.job?._id ||
+      selectedApplication?.job ||
+      selectedConversation?.application?.job?._id ||
+      selectedConversation?.application?.job ||
+      null;
+
+    if (!applicationId) {
+      showToast({
+        type: 'error',
+        title: 'Application missing',
+        message: 'Please re-open the applicant card before sending.',
+      });
+      return;
+    }
+
     const optimisticId = makeClientId();
     const optimisticMsg = {
       _id: optimisticId,
@@ -1618,6 +1684,8 @@ const EmployerMessages = () => {
       createdAt: new Date().toISOString(),
       isRead: false,
       messageType: selectedFile ? 'file' : 'text',
+      application: { _id: applicationId },
+      job: jobId ? { _id: jobId } : null,
       file: selectedFile
         ? {
             originalName: selectedFile.name,
@@ -1642,6 +1710,8 @@ const EmployerMessages = () => {
       if (fileToSend) formData.append('file', fileToSend);
       formData.append('receiverId', receiverId);
       formData.append('content', optimisticMsg.content);
+      formData.append('applicationId', applicationId);
+      if (jobId) formData.append('jobId', jobId);
 
       const res = await api.post('/messages/send', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -1655,14 +1725,19 @@ const EmployerMessages = () => {
         const refreshedConversations = await fetchConversations(conversationView);
         const createdConversation = refreshedConversations.find(
           (conversation) =>
-            String(conversation?.otherUser?._id || '') === String(receiverId)
+            String(conversation?.otherUser?._id || '') === String(receiverId) &&
+            String(
+              conversation?.application?._id || conversation?.applicationId || ''
+            ) === String(applicationId)
         );
 
         if (createdConversation) {
           setSelectedConversation({
             ...createdConversation,
+            _entryId: `${createdConversation._id}_${applicationId}`,
             application:
               createdConversation.application || selectedApplication || null,
+            applicationId,
             unreadCount: 0,
           });
         }
