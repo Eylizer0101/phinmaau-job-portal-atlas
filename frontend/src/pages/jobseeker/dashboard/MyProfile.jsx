@@ -613,6 +613,49 @@ const Spinner = ({ size = 'medium' }) => {
   );
 };
 
+const AutoFitProfileName = ({ children, maxFontSize = 34, minFontSize = 18 }) => {
+  const containerRef = useRef(null);
+  const textRef = useRef(null);
+  const [fontSize, setFontSize] = useState(maxFontSize);
+
+  useEffect(() => {
+    const fitText = () => {
+      const container = containerRef.current;
+      const text = textRef.current;
+      if (!container || !text) return;
+
+      let nextSize = maxFontSize;
+      text.style.fontSize = `${nextSize}px`;
+
+      while (nextSize > minFontSize && text.scrollWidth > container.clientWidth) {
+        nextSize -= 0.5;
+        text.style.fontSize = `${nextSize}px`;
+      }
+
+      setFontSize(nextSize);
+    };
+
+    const frameId = window.requestAnimationFrame(fitText);
+    window.addEventListener('resize', fitText);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener('resize', fitText);
+    };
+  }, [children, maxFontSize, minFontSize]);
+
+  return (
+    <div ref={containerRef} className="w-full min-w-0 overflow-hidden">
+      <h1
+        ref={textRef}
+        className="whitespace-nowrap font-serif leading-tight font-bold tracking-[0.22em] uppercase text-[#111827]"
+        style={{ fontSize: `${fontSize}px` }}
+      >
+        {children}
+      </h1>
+    </div>
+  );
+};
 const Alert = ({ type = 'info', title, message, onClose }) => {
   const styles = {
     info: { bg: '#eff6ff', text: '#1d4ed8', icon: <FaInfoCircle className="text-blue-600" /> },
@@ -5950,18 +5993,16 @@ const MyProfile = () => {
         <div className="px-0 pb-8 pt-5 text-center">
           <div className="flex items-start justify-center gap-8">
             <div className="flex-1 min-w-0">
-              <h1 className="font-serif text-[26px] sm:text-[34px] leading-tight font-bold tracking-[0.22em] uppercase text-[#111827]">
-                {fullName || 'YOUR NAME'}
-              </h1>
-              <div className="mt-2 font-serif text-[13px] text-gray-900">
+              <AutoFitProfileName>{fullName || 'YOUR NAME'}</AutoFitProfileName>
+              <div className="mt-2 font-serif text-[15px] leading-6 text-gray-900">
                 {buildAddressString(formData) || 'Complete your basic information to get started.'}
               </div>
               {(formData.email || formData.phoneNumber) ? (
-                <div className="mt-1 font-serif text-[13px] text-gray-900">
+                <div className="mt-1 font-serif text-[15px] leading-6 text-gray-900">
                   {[formData.email, formData.phoneNumber].filter(Boolean).join(' • ')}
                 </div>
               ) : null}
-              <div className="mt-2 font-serif italic text-[13px] text-gray-500">
+              <div className="mt-2 font-serif italic text-[15px] leading-6 text-gray-500">
                 {[
                   formData.campus,
                   formData.course,

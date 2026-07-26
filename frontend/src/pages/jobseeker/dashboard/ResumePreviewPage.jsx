@@ -470,8 +470,8 @@ const ResumePreviewPage = () => {
         .resume-contact {
           margin-top: 5px;
           color: #222222;
-          font-size: 6.7px;
-          line-height: 1.35;
+          font-size: 8px;
+          line-height: 1.4;
         }
 
         .resume-contact span + span::before {
@@ -481,8 +481,8 @@ const ResumePreviewPage = () => {
         .resume-education-summary {
           margin-top: 3px;
           color: #222222;
-          font-size: 7.2px;
-          line-height: 1.25;
+          font-size: 8.2px;
+          line-height: 1.35;
           font-style: italic;
         }
 
