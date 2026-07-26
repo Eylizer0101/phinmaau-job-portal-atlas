@@ -76,7 +76,7 @@ const UI = {
   badgeUnread: 'bg-[#2e66a6] bg-opacity-10 text-[#2e66a6] border-[#2e66a6] border-opacity-20',
 
   convItem:
-    'relative p-3.5 rounded-2xl border border-transparent hover:bg-[#f7faff] hover:border-[#d8e2ee] transition cursor-pointer',
+    'relative p-3 rounded-2xl border border-transparent hover:bg-[#f7faff] hover:border-[#d8e2ee] transition cursor-pointer',
   convActive: 'bg-[#f7faff] border-[#2e66a6] ring-1 ring-[#2e66a6]/80 shadow-[0_8px_20px_rgba(46,102,166,0.08)]',
 
   chatHeader: 'p-4 border-b border-[#e6edf5] bg-white',
@@ -2270,48 +2270,35 @@ const EmployerMessages = () => {
                                   </div>
 
                                   <div
-                                    className="relative flex max-w-[150px] flex-shrink-0 flex-col items-end gap-2"
+                                    className="relative h-8 w-14 flex-shrink-0"
                                     data-conversation-menu
                                   >
-                                    <div className="relative h-8 w-14 flex-shrink-0">
-                                      <span
-                                        className={`absolute inset-0 flex items-center justify-end text-xs ${UI.textMuted} ${
-                                          conversation.__temp
-                                            ? ''
-                                            : 'transition-opacity duration-150 group-hover:opacity-0'
-                                        }`}
-                                      >
-                                        {time}
-                                      </span>
+                                    <span
+                                      className={`absolute inset-0 flex items-center justify-end text-xs ${UI.textMuted} ${
+                                        conversation.__temp
+                                          ? ''
+                                          : 'transition-opacity duration-150 group-hover:opacity-0'
+                                      }`}
+                                    >
+                                      {time}
+                                    </span>
 
-                                      {!conversation.__temp && (
-                                        <button
-                                          type="button"
-                                          onClick={(event) => {
-                                            event.stopPropagation();
-                                            setItemMenuId((current) =>
-                                              current === entryId
-                                                ? null
-                                                : entryId
-                                            );
-                                          }}
-                                          className={`pointer-events-none absolute right-0 top-0 inline-flex h-8 w-8 items-center justify-center rounded-full opacity-0 transition-opacity duration-150 hover:bg-white group-hover:pointer-events-auto group-hover:opacity-100 ${UI.ring}`}
-                                          aria-label={`Actions for ${title}`}
-                                        >
-                                          <FontAwesomeIcon icon={faEllipsisVertical} />
-                                        </button>
-                                      )}
-                                    </div>
-
-                                    {status && (
-                                      <span
-                                        className={`max-w-full rounded-full px-2 py-0.5 text-right text-[11px] font-semibold leading-4 ${getApplicationStatusClass(
-                                          status
-                                        )}`}
-                                        title={getApplicationStatusLabel(status, hiringStage)}
+                                    {!conversation.__temp && (
+                                      <button
+                                        type="button"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          setItemMenuId((current) =>
+                                            current === entryId
+                                              ? null
+                                              : entryId
+                                          );
+                                        }}
+                                        className={`pointer-events-none absolute right-0 top-0 inline-flex h-8 w-8 items-center justify-center rounded-full opacity-0 transition-opacity duration-150 hover:bg-white group-hover:pointer-events-auto group-hover:opacity-100 ${UI.ring}`}
+                                        aria-label={`Actions for ${title}`}
                                       >
-                                        {getApplicationStatusLabel(status, hiringStage)}
-                                      </span>
+                                        <FontAwesomeIcon icon={faEllipsisVertical} />
+                                      </button>
                                     )}
 
                                     {!conversation.__temp && itemMenuId === entryId && (
@@ -2354,15 +2341,28 @@ const EmployerMessages = () => {
                                   </div>
                                 </div>
 
-                                <p
-                                  className={`mt-1 truncate text-sm ${UI.textSecondary}`}
-                                  title={last}
-                                >
-                                  {last}
-                                </p>
+                                <div className="mt-1 flex min-w-0 items-center justify-between gap-2">
+                                  <p
+                                    className={`min-w-0 flex-1 truncate text-sm ${UI.textSecondary}`}
+                                    title={last}
+                                  >
+                                    {last}
+                                  </p>
+
+                                  {status && (
+                                    <span
+                                      className={`max-w-[150px] flex-shrink-0 rounded-full px-2 py-0.5 text-right text-[11px] font-semibold leading-4 ${getApplicationStatusClass(
+                                        status
+                                      )}`}
+                                      title={getApplicationStatusLabel(status, hiringStage)}
+                                    >
+                                      {getApplicationStatusLabel(status, hiringStage)}
+                                    </span>
+                                  )}
+                                </div>
 
                                 {Number(conversation.unreadCount || 0) > 0 && (
-                                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                                  <div className="mt-1.5 flex flex-wrap items-center gap-2">
                                     <span className={`${UI.badge} ${UI.badgeUnread}`}>
                                       {conversation.unreadCount} new
                                     </span>

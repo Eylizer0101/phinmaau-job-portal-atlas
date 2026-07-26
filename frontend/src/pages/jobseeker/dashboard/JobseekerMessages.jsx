@@ -79,7 +79,7 @@ const UI = {
 
   // Conversation item
   convItem:
-    'relative p-3.5 rounded-2xl border border-transparent hover:bg-[#f7faff] hover:border-[#d8e2ee] transition cursor-pointer',
+    'relative p-3 rounded-2xl border border-transparent hover:bg-[#f7faff] hover:border-[#d8e2ee] transition cursor-pointer',
   convActive: 'bg-[#f7faff] border-[#2e66a6] ring-1 ring-[#2e66a6]/80 shadow-[0_8px_20px_rgba(46,102,166,0.08)]',
 
   // Chat
@@ -1078,12 +1078,12 @@ const JobseekerMessages = () => {
                                   </div>
                                 </div>
 
-                                <p className={`text-sm ${UI.textSecondary} truncate mt-1`} title={last}>
+                                <p className={`text-sm ${UI.textSecondary} truncate mt-0.5`} title={last}>
                                   {last}
                                 </p>
 
                                 {conv.unreadCount > 0 && (
-                                  <span className={`${UI.badge} ${UI.badgeUnread} mt-2`}>{conv.unreadCount} new</span>
+                                  <span className={`${UI.badge} ${UI.badgeUnread} mt-1.5`}>{conv.unreadCount} new</span>
                                 )}
                               </div>
                             </div>
