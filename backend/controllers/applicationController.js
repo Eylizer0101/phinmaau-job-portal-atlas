@@ -647,7 +647,7 @@ exports.applyForJob = async (req, res) => {
       },
       activityHistory: [{
         type: 'submitted',
-        title: 'Application received',
+        title: 'Application submitted',
         description: `${buildUserDisplayName(jobseeker, 'Applicant')} applied for ${job.title || 'this position'}.`,
         fromStatus: '',
         toStatus: 'pending',
@@ -2196,8 +2196,10 @@ exports.updateApplicationHiringStage = async (req, res) => {
     const nextStage = normalizeHiringStage(application.hiringStage);
     if (!sameHiringStage(previousStage, nextStage)) {
       application.activityHistory.push({
-        type: 'other',
-        title: nextStage ? 'Hiring stage updated' : 'Hiring stage reset',
+        type: 'interview',
+        title: nextStage
+          ? (sameHiringStage(nextStage, 'Job Offer') ? 'Offered' : nextStage)
+          : 'Hiring stage reset',
         description: nextStage
           ? `Hiring stage changed from ${previousStage || 'No stage set'} to ${nextStage}.`
           : `Hiring stage was reset from ${previousStage || 'No stage set'} to No stage set.`,
@@ -2360,11 +2362,11 @@ exports.updateApplicationStatus = async (req, res) => {
             ? 'declined'
             : 'status_changed';
       const title = nextStatus === 'for interview'
-        ? 'Moved to interview'
+        ? 'For Interview'
         : nextStatus === 'hired'
-          ? 'Applicant hired'
+          ? 'Hired'
           : nextStatus === 'declined'
-            ? 'Application declined'
+            ? 'Not Selected'
             : 'Application status updated';
       const description = nextStatus === 'declined'
         ? [declineReason, declineComment].filter(Boolean).join(' — ')
@@ -2565,7 +2567,7 @@ exports.getApplicationDetails = async (req, res) => {
         application.reviewedAt = application.reviewedAt || viewedAt;
         application.activityHistory.push({
           type: 'reviewed',
-          title: 'Application reviewed',
+          title: 'Resume under review',
           description: 'The employer opened and reviewed the applicant profile and resume.',
           fromStatus: application.status || '',
           toStatus: application.status || '',
