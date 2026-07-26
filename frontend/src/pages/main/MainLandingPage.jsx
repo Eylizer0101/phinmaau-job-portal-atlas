@@ -74,7 +74,7 @@ const PartnersSection = ({ partners, loading, error }) => {
 
   return (
     <div className="relative w-full max-w-[1550px] mx-auto">
-      <h2 className="text-center text-3xl md:text-4xl font-semibold text-black">
+      <h2 className="text-center text-3xl md:text-4xl font-semibold text-slate-900">
         Find your next job with one of Our Partners
       </h2>
 
@@ -85,7 +85,7 @@ const PartnersSection = ({ partners, loading, error }) => {
               type="button"
               onClick={handlePrev}
               aria-label="Previous partners"
-              className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full leading-none bg-white border border-[#212C61]/25 shadow-md flex items-center justify-center text-2xl text-[#212C61] hover:bg-[#FFD000] hover:text-black transition"
+              className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full leading-none bg-white border border-slate-200 shadow-md flex items-center justify-center text-2xl text-[#2e66a6] hover:bg-slate-50 transition"
             >
               ‹
             </button>
@@ -94,7 +94,7 @@ const PartnersSection = ({ partners, loading, error }) => {
               type="button"
               onClick={handleNext}
               aria-label="Next partners"
-              className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full leading-none bg-white border border-[#212C61]/25 shadow-md flex items-center justify-center text-2xl text-[#212C61] hover:bg-[#FFD000] hover:text-black transition"
+              className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full leading-none bg-white border border-slate-200 shadow-md flex items-center justify-center text-2xl text-[#2e66a6] hover:bg-slate-50 transition"
             >
               ›
             </button>
@@ -106,17 +106,17 @@ const PartnersSection = ({ partners, loading, error }) => {
             {Array.from({ length: visibleCount }).map((_, index) => (
               <div
                 key={`partner-loading-${index}`}
-                className="h-[260px] md:h-[280px] rounded-2xl bg-[#212C61]/15 animate-pulse shadow-lg border border-[#212C61]/20"
+                className="h-[260px] md:h-[280px] rounded-2xl bg-slate-200 animate-pulse shadow-lg border border-black/10"
                 aria-hidden="true"
               />
             ))}
           </div>
         ) : error ? (
-          <div className="mx-10 md:mx-14 rounded-2xl border border-[#FFD000] bg-white px-6 py-10 text-center text-black shadow-sm">
+          <div className="mx-10 md:mx-14 rounded-2xl border border-red-200 bg-white px-6 py-10 text-center text-red-600 shadow-sm">
             {error}
           </div>
         ) : displayPartners.length === 0 ? (
-          <div className="mx-10 md:mx-14 rounded-2xl border border-[#212C61]/20 bg-white px-6 py-10 text-center text-black/70 shadow-sm">
+          <div className="mx-10 md:mx-14 rounded-2xl border border-slate-200 bg-white px-6 py-10 text-center text-slate-600 shadow-sm">
             No partner companies are available right now.
           </div>
         ) : (
@@ -124,7 +124,7 @@ const PartnersSection = ({ partners, loading, error }) => {
             {displayPartners.map((partner) => (
               <article
                 key={partner.id}
-                className="relative rounded-2xl overflow-hidden shadow-lg border border-[#212C61]/20 h-[260px] md:h-[280px] bg-[#212C61]"
+                className="relative rounded-2xl overflow-hidden shadow-lg border border-black/10 h-[260px] md:h-[280px] bg-[#0b2f5f]"
                 aria-label={`${partner.name} partner card`}
               >
                 <img
@@ -136,7 +136,7 @@ const PartnersSection = ({ partners, loading, error }) => {
                   aria-hidden="true"
                 />
 
-                <div className="absolute inset-0 bg-gradient-to-r from-[#212C61]/95 via-[#212C61]/85 to-[#212C61]/50" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#071b38]/95 via-[#0b2f5f]/85 to-[#0b2f5f]/45" />
                 <div className="absolute inset-0 bg-black/10" />
 
                 <div className="absolute top-4 right-4 z-10 w-12 h-12 md:w-14 md:h-14 flex items-center justify-center">
@@ -181,27 +181,31 @@ const PartnersSection = ({ partners, loading, error }) => {
 
 const MainFooter = () => {
   return (
-    <footer className="bg-[#212C61] border-t-4 border-[#FFD000]">
+    <footer className="bg-[#f5f5f5] border-t border-slate-200">
       <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-12 md:py-14">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {/* Left Column */}
           <div>
-            <img src="/images/agapay.png" alt="AGAPAY" className="h-10 w-auto brightness-0 invert" />
+            <img
+              src="/images/agapay.png"
+              alt="AGAPAY"
+              className="h-10 w-auto"
+            />
 
-            <h3 className="mt-6 text-[20px] md:text-[22px] font-bold text-white leading-tight max-w-[320px]">
+            <h3 className="mt-6 text-[20px] md:text-[22px] font-bold text-slate-700 leading-tight max-w-[320px]">
               Your Future Employer is Looking for Someone Exactly Like You!
             </h3>
 
-            <p className="mt-4 text-white/80 text-base leading-relaxed max-w-[340px]">
+            <p className="mt-4 text-slate-600 text-base leading-relaxed max-w-[340px]">
               The job market is competitive but you are prepared.
             </p>
 
-            <div className="mt-6 space-y-3 text-white/80 text-sm md:text-[15px]">
+            <div className="mt-6 space-y-3 text-slate-600 text-sm md:text-[15px]">
               <p>✉ agapay@au.phinma.edu.ph</p>
               <p>☎ +63 (2) 8123-4567</p>
               <p className="flex items-start gap-2">
                 <svg
-                  className="w-6 h-6 text-[#FFD000] mt-1"
+                  className="w-6 h-6 text-black-500 mt-1"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                 >
@@ -216,9 +220,9 @@ const MainFooter = () => {
 
             <div className="mt-6 flex items-center gap-4">
               {/* Facebook */}
-              <div className="w-9 h-9 rounded-full bg-white border border-[#FFD000] flex items-center justify-center shadow-sm">
+              <div className="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
                 <svg
-                  className="w-4 h-4 text-[#212C61]"
+                  className="w-4 h-4 text-blue-600"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                   aria-hidden="true"
@@ -228,9 +232,9 @@ const MainFooter = () => {
               </div>
 
               {/* LinkedIn */}
-              <div className="w-9 h-9 rounded-full bg-white border border-[#FFD000] flex items-center justify-center shadow-sm">
+              <div className="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
                 <svg
-                  className="w-4 h-4 text-[#212C61]"
+                  className="w-4 h-4 text-blue-700"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                   aria-hidden="true"
@@ -240,9 +244,9 @@ const MainFooter = () => {
               </div>
 
               {/* Twitter/X style */}
-              <div className="w-9 h-9 rounded-full bg-white border border-[#FFD000] flex items-center justify-center shadow-sm">
+              <div className="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
                 <svg
-                  className="w-4 h-4 text-[#212C61]"
+                  className="w-4 h-4 text-sky-500"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                   aria-hidden="true"
@@ -252,9 +256,9 @@ const MainFooter = () => {
               </div>
 
               {/* YouTube */}
-              <div className="w-9 h-9 rounded-full bg-white border border-[#FFD000] flex items-center justify-center shadow-sm">
+              <div className="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
                 <svg
-                  className="w-4 h-4 text-[#212C61]"
+                  className="w-4 h-4 text-red-600"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                   aria-hidden="true"
@@ -267,11 +271,11 @@ const MainFooter = () => {
 
           {/* Job Seeker */}
           <div>
-            <h4 className="text-sm font-extrabold tracking-[0.16em] text-[#FFD000] uppercase">
+            <h4 className="text-sm font-extrabold tracking-[0.16em] text-slate-900 uppercase">
               Job Seeker
             </h4>
 
-            <ul className="mt-6 space-y-4 text-white/80 text-[15px]">
+            <ul className="mt-6 space-y-4 text-slate-600 text-[15px]">
               <li>Job Search</li>
               <li>Job Offers</li>
               <li>Job Application</li>
@@ -283,11 +287,11 @@ const MainFooter = () => {
 
           {/* Employers */}
           <div>
-            <h4 className="text-sm font-extrabold tracking-[0.16em] text-[#FFD000] uppercase">
+            <h4 className="text-sm font-extrabold tracking-[0.16em] text-slate-900 uppercase">
               Employers
             </h4>
 
-            <ul className="mt-6 space-y-4 text-white/80 text-[15px]">
+            <ul className="mt-6 space-y-4 text-slate-600 text-[15px]">
               <li>Post Job</li>
               <li>Find Talent</li>
               <li>Company Profile</li>
@@ -297,11 +301,11 @@ const MainFooter = () => {
 
           {/* About Agapay */}
           <div>
-            <h4 className="text-sm font-extrabold tracking-[0.16em] text-[#FFD000] uppercase">
+            <h4 className="text-sm font-extrabold tracking-[0.16em] text-slate-900 uppercase">
               About Agapay
             </h4>
 
-            <ul className="mt-6 space-y-4 text-white/80 text-[15px]">
+            <ul className="mt-6 space-y-4 text-slate-600 text-[15px]">
               <li>About Us</li>
               <li>Contact Us</li>
               <li>Careers</li>
@@ -311,12 +315,12 @@ const MainFooter = () => {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-white/30 pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <p className="text-white/70 text-sm">
+        <div className="mt-10 border-t border-slate-300 pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <p className="text-slate-500 text-sm">
             © 2026 PHINMA ARAULLO UNIVERSITY. All rights reserved.
           </p>
 
-          <div className="flex items-center gap-4 text-white/70 text-sm">
+          <div className="flex items-center gap-4 text-slate-500 text-sm">
             <span>Privacy Policy</span>
             <span>|</span>
             <span>Terms of Use</span>
@@ -331,9 +335,9 @@ const MainLandingPage = () => {
   const navigate = useNavigate();
 
   const BLUE = {
-    primary: "#212C61",
-    hover: "#212C61",
-    active: "#000000",
+    primary: "#2e66a6",
+    hover: "#245387",
+    active: "#1f476f",
   };
 
   const [partners, setPartners] = useState([]);
@@ -417,7 +421,7 @@ const MainLandingPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100">
       <MainNavbar />
 
       <main>
@@ -427,7 +431,7 @@ const MainLandingPage = () => {
             <div className="mt-0 md:mt-8 text-center">
               <div className="flex justify-center">
                 <img
-                  src="/images/agpay.png"
+                  src="/images/agapaymo.png"
                   alt="AGAPAY"
                   className="h-28 md:h-44 w-auto"
                   decoding="async"
@@ -435,14 +439,14 @@ const MainLandingPage = () => {
                 />
               </div>
 
-              <h1 className="font-sans font-semibold text-black text-2xl md:text-4xl lg:text-5xl max-w-4xl mx-auto leading-tight">
+              <h1 className="font-sans font-semibold text-slate-900 text-2xl md:text-4xl lg:text-5xl max-w-4xl mx-auto leading-tight">
                 Your Dream Job and Team is{" "}
                 <span className="block md:inline" style={{ color: BLUE.primary }}>
                   Just <br className="hidden md:block" />A Click Away
                 </span>
               </h1>
 
-              <p className="mt-4 text-black/70 max-w-2xl mx-auto leading-relaxed text-lg">
+              <p className="mt-4 text-slate-600 max-w-2xl mx-auto leading-relaxed text-lg">
                 Create an account or sign in to explore jobs and top talent all in one place.
                 <br />
                 <span className="font-semibold" style={{ color: BLUE.primary }}>
@@ -457,7 +461,7 @@ const MainLandingPage = () => {
                   className={[
                     "w-[220px] inline-flex items-center justify-center gap-3 py-3 rounded-xl font-semibold",
                     "text-white transition-colors shadow-sm",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD000] focus-visible:ring-offset-2",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
                   ].join(" ")}
                   style={{ backgroundColor: BLUE.primary }}
                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = BLUE.hover)}
@@ -485,7 +489,7 @@ const MainLandingPage = () => {
 
             <div className="mt-10 flex justify-center">
   <div
-    className="inline-flex items-center gap-1 text-black/70 select-none"
+    className="inline-flex items-center gap-1 text-slate-600 select-none"
     aria-hidden="true"
   >
     <span className="text-[13px] md:text-sm font-normal">
@@ -516,7 +520,7 @@ const MainLandingPage = () => {
         <section id="campuses-section" className="px-4 pb-16 md:pb-20 mt-24 md:mt-28">
           <div className="max-w-[1400px] mx-auto">
             <div className="mb-8 md:mb-10">
-              <h2 className="text-3xl md:text-4xl font-semibold text-black"></h2>
+              <h2 className="text-3xl md:text-4xl font-semibold text-slate-700"></h2>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -565,7 +569,7 @@ const MainLandingPage = () => {
           className={[
             "px-4",
             "py-16 sm:py-20 md:py-24",
-            "bg-white",
+            "bg-gradient-to-b from-white via-blue-50 to-slate-50",
           ].join(" ")}
         >
           <PartnersSection
