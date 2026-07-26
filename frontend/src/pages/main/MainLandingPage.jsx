@@ -431,7 +431,7 @@ const MainLandingPage = () => {
             <div className="mt-0 md:mt-8 text-center">
               <div className="flex justify-center">
                 <img
-                  src="/images/agapaymo.png"
+                  src="/images/agpay.png"
                   alt="AGAPAY"
                   className="h-28 md:h-44 w-auto"
                   decoding="async"
