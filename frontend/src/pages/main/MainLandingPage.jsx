@@ -49,17 +49,18 @@ const PartnersSection = ({ partners, loading, error }) => {
 
   const displayPartners = useMemo(() => {
     if (!partners.length) return [];
-    if (partners.length <= visibleCount) return partners;
 
+    const numberOfCards = Math.min(visibleCount, partners.length);
     const items = [];
-    for (let i = 0; i < visibleCount; i++) {
+
+    for (let i = 0; i < numberOfCards; i++) {
       items.push(partners[(currentIndex + i) % partners.length]);
     }
 
     return items;
   }, [partners, visibleCount, currentIndex]);
 
-  const showCarouselControls = partners.length > visibleCount;
+  const showCarouselControls = partners.length > 1;
 
   const handlePrev = () => {
     if (!showCarouselControls) return;
