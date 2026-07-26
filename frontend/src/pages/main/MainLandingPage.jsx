@@ -187,7 +187,7 @@ const MainFooter = () => {
           {/* Left Column */}
           <div>
             <img
-              src="/images/agapay.png"
+              src="/images/apay.png"
               alt="AGAPAY"
               className="h-10 w-auto"
             />
