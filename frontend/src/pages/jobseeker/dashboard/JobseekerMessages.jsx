@@ -131,6 +131,8 @@ const UI = {
 };
 
 const MAX_FILE_MB = 10;
+const CONVERSATIONS_PER_PAGE = 7;
+
 const ALLOWED_MIMES = [
   'image/jpeg',
   'image/jpg',
@@ -154,6 +156,7 @@ const JobseekerMessages = () => {
   const [sending, setSending] = useState(false);
 
   const [convSearch, setConvSearch] = useState('');
+  const [visibleConversationCount, setVisibleConversationCount] = useState(CONVERSATIONS_PER_PAGE);
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
@@ -460,6 +463,18 @@ const JobseekerMessages = () => {
 
         if (response.data?.success) {
           setMessages(response.data.data || []);
+          setConversations((previous) =>
+            previous.map((conversation) =>
+              conversation._id === conversationId
+                ? { ...conversation, unreadCount: 0 }
+                : conversation
+            )
+          );
+          setSelectedConversation((previous) =>
+            previous?._id === conversationId
+              ? { ...previous, unreadCount: 0 }
+              : previous
+          );
           window.dispatchEvent(new Event('messages:unread-updated'));
           setTimeout(() => scrollToBottom(false), 0);
         }
@@ -504,6 +519,26 @@ const JobseekerMessages = () => {
     });
   }, [conversations, convSearch, activeTab]);
 
+  const unreadMessageCount = useMemo(
+    () =>
+      conversations.reduce(
+        (total, conversation) => total + Number(conversation.unreadCount || 0),
+        0
+      ),
+    [conversations]
+  );
+
+  const visibleConversations = useMemo(
+    () => filteredConversations.slice(0, visibleConversationCount),
+    [filteredConversations, visibleConversationCount]
+  );
+
+  const hasMoreConversations = visibleConversationCount < filteredConversations.length;
+
+  useEffect(() => {
+    setVisibleConversationCount(CONVERSATIONS_PER_PAGE);
+  }, [convSearch, activeTab, conversationView]);
+
   const selectedHeaderTitle = useMemo(() => {
     if (!selectedConversation) return '';
     return (
@@ -531,7 +566,16 @@ const JobseekerMessages = () => {
 
   // ---------- Actions ----------
   const handleSelectConversation = (conv) => {
-    setSelectedConversation(conv);
+    const openedConversation = { ...conv, unreadCount: 0 };
+
+    setSelectedConversation(openedConversation);
+    setConversations((previous) =>
+      previous.map((conversation) =>
+        conversation._id === conv._id
+          ? openedConversation
+          : conversation
+      )
+    );
     setShowSidebar(false);
   };
 
@@ -550,6 +594,7 @@ const JobseekerMessages = () => {
 
   const handleConversationViewChange = async (view) => {
     setConversationView(view);
+    setVisibleConversationCount(CONVERSATIONS_PER_PAGE);
     setActiveTab('all');
     setTopMenuOpen(false);
     setItemMenuId(null);
@@ -805,10 +850,19 @@ const JobseekerMessages = () => {
                 aria-label="Conversations sidebar"
               >
                 <div className={`${UI.panelPad} ${UI.divider}`}>
-                  <div className="flex items-center justify-between gap-2">
-                    <p className={`${UI.h2} ${UI.textPrimary}`}>
-                      {conversationView === 'archived' ? 'Archived Chats' : 'Messages'}
-                    </p>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className={`${UI.h2} ${UI.textPrimary}`}>
+                        {conversationView === 'archived' ? 'Archived Chats' : 'Messages'}
+                      </p>
+
+                      {conversationView === 'active' && (
+                        <span className="mt-2 inline-flex items-center rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1 text-xs font-semibold text-[#2e66a6]">
+                          {unreadMessageCount}{' '}
+                          {unreadMessageCount === 1 ? 'unread message' : 'unread messages'}
+                        </span>
+                      )}
+                    </div>
 
                     <button
                       type="button"
@@ -931,7 +985,7 @@ const JobseekerMessages = () => {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {filteredConversations.map((conv) => {
+                      {visibleConversations.map((conv) => {
                         const active = selectedConversation?._id === conv._id;
                         const title =
                           conv.otherUser?.employerProfile?.companyName ||
@@ -1036,6 +1090,25 @@ const JobseekerMessages = () => {
                           </div>
                         );
                       })}
+
+                      {hasMoreConversations && (
+                        <div className="flex justify-center px-2 pb-2 pt-3">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setVisibleConversationCount((current) =>
+                                Math.min(
+                                  current + CONVERSATIONS_PER_PAGE,
+                                  filteredConversations.length
+                                )
+                              )
+                            }
+                            className={`w-full rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-[#2e66a6] transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] ${UI.ring}`}
+                          >
+                            View More
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
