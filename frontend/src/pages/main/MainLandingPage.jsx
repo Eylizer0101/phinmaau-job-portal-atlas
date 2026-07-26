@@ -186,11 +186,7 @@ const MainFooter = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {/* Left Column */}
           <div>
-            <img
-              src="/images/apay.png"
-              alt="AGAPAY"
-              className="h-10 w-auto"
-            />
+            <img src="/images/agapay.png" alt="AGAPAY" className="h-10 w-auto brightness-0 invert" />
 
             <h3 className="mt-6 text-[20px] md:text-[22px] font-bold text-white leading-tight max-w-[320px]">
               Your Future Employer is Looking for Someone Exactly Like You!
