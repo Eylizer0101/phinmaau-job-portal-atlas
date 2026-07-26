@@ -41,7 +41,7 @@ const UI = {
   container: 'mx-auto max-w-[1280px] px-4 sm:px-6 lg:px-8 py-6 lg:py-8',
   shell: 'bg-white border border-[#e6edf5] rounded-[24px] shadow-[0_18px_45px_rgba(46,102,166,0.08)] overflow-hidden',
 
-  grid: 'flex min-h-[640px] h-[calc(100vh-230px)] overflow-hidden',
+  grid: 'flex h-[calc(100dvh-300px)] min-h-[520px] max-h-[680px] overflow-hidden',
   sidebar: 'w-full sm:w-[320px] md:w-[350px] lg:w-[380px] min-h-0 overflow-hidden border-r border-[#e6edf5] flex flex-col bg-white',
   main: 'flex-1 min-h-0 overflow-hidden flex flex-col bg-white min-w-0',
 
@@ -1217,6 +1217,7 @@ const EmployerMessages = () => {
     }
   }, [
     selectedConversation?._id,
+    selectedConversation?._entryId,
     selectedConversation?.__temp,
     selectedConversation?.application,
     fetchMessages,
@@ -1239,98 +1240,106 @@ const EmployerMessages = () => {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
-  const latestApplicationsByJobseeker = useMemo(() => {
-    const latestByJobseeker = new Map();
+  const visibleApplications = useMemo(
+    () =>
+      [...applications]
+        .filter((application) => {
+          const status = String(application?.status || '').trim().toLowerCase();
+          const jobseekerId = application?.jobseeker?._id || application?.jobseeker;
+          return Boolean(jobseekerId) && VISIBLE_APPLICATION_STATUSES.has(status);
+        })
+        .sort(
+          (first, second) =>
+            new Date(second?.appliedAt || second?.createdAt || 0).getTime() -
+            new Date(first?.appliedAt || first?.createdAt || 0).getTime()
+        ),
+    [applications]
+  );
 
-    [...applications]
-      .filter((application) => {
-        const status = String(application?.status || '').trim().toLowerCase();
-        const jobseekerId = application?.jobseeker?._id || application?.jobseeker;
-        return Boolean(jobseekerId) && VISIBLE_APPLICATION_STATUSES.has(status);
-      })
-      .sort(
-        (first, second) =>
-          new Date(second?.appliedAt || second?.createdAt || 0).getTime() -
-          new Date(first?.appliedAt || first?.createdAt || 0).getTime()
-      )
-      .forEach((application) => {
+  const conversationEntries = useMemo(() => {
+    if (conversationView === 'archived') {
+      return conversations.map((conversation) => ({
+        ...conversation,
+        _entryId: conversation._id,
+      }));
+    }
+
+    const conversationByJobseeker = new Map();
+
+    conversations.forEach((conversation) => {
+      const jobseekerId = String(conversation?.otherUser?._id || '');
+      if (jobseekerId && !conversationByJobseeker.has(jobseekerId)) {
+        conversationByJobseeker.set(jobseekerId, conversation);
+      }
+    });
+
+    return visibleApplications
+      .map((application) => {
+        const applicationId = String(application?._id || '');
         const jobseekerId = String(
           application?.jobseeker?._id || application?.jobseeker || ''
         );
 
-        if (jobseekerId && !latestByJobseeker.has(jobseekerId)) {
-          latestByJobseeker.set(jobseekerId, application);
+        if (!applicationId || !jobseekerId) return null;
+
+        const existingConversation = conversationByJobseeker.get(jobseekerId) || null;
+        const jobseeker =
+          application?.jobseeker && typeof application.jobseeker === 'object'
+            ? application.jobseeker
+            : existingConversation?.otherUser || { _id: jobseekerId };
+
+        if (existingConversation) {
+          return {
+            ...existingConversation,
+            _entryId: `${existingConversation._id}_${applicationId}`,
+            application,
+            otherUser: {
+              ...(existingConversation.otherUser || {}),
+              ...jobseeker,
+              _id: jobseekerId,
+            },
+          };
         }
+
+        const temporaryId = `temp_${currentUserId}_${jobseekerId}_${applicationId}`;
+
+        return {
+          _id: temporaryId,
+          _entryId: temporaryId,
+          otherUser: {
+            ...jobseeker,
+            _id: jobseekerId,
+          },
+          application,
+          lastMessage: null,
+          lastMessageTime: application?.appliedAt || application?.createdAt || null,
+          unreadCount: 0,
+          __temp: true,
+        };
+      })
+      .filter(Boolean)
+      .sort((first, second) => {
+        const firstTime = new Date(
+          first?.lastMessageTime ||
+            first?.lastMessage?.createdAt ||
+            first?.application?.appliedAt ||
+            first?.application?.createdAt ||
+            0
+        ).getTime();
+        const secondTime = new Date(
+          second?.lastMessageTime ||
+            second?.lastMessage?.createdAt ||
+            second?.application?.appliedAt ||
+            second?.application?.createdAt ||
+            0
+        ).getTime();
+        return secondTime - firstTime;
       });
-
-    return latestByJobseeker;
-  }, [applications]);
-
-  const conversationEntries = useMemo(() => {
-    if (conversationView === 'archived') return conversations;
-
-    const entriesByJobseeker = new Map();
-
-    conversations.forEach((conversation) => {
-      const jobseekerId = String(conversation?.otherUser?._id || '');
-      if (!jobseekerId) return;
-
-      const application =
-        conversation.application || latestApplicationsByJobseeker.get(jobseekerId) || null;
-      const status = String(application?.status || '').trim().toLowerCase();
-
-      if (!application || !VISIBLE_APPLICATION_STATUSES.has(status)) return;
-
-      entriesByJobseeker.set(jobseekerId, {
-        ...conversation,
-        application,
-      });
-    });
-
-    latestApplicationsByJobseeker.forEach((application, jobseekerId) => {
-      if (entriesByJobseeker.has(jobseekerId)) return;
-
-      const jobseeker =
-        application?.jobseeker && typeof application.jobseeker === 'object'
-          ? application.jobseeker
-          : { _id: jobseekerId };
-
-      entriesByJobseeker.set(jobseekerId, {
-        _id: `temp_${currentUserId}_${jobseekerId}`,
-        otherUser: {
-          ...jobseeker,
-          _id: jobseekerId,
-        },
-        application,
-        lastMessage: null,
-        lastMessageTime: application?.appliedAt || application?.createdAt || null,
-        unreadCount: 0,
-        __temp: true,
-      });
-    });
-
-    return Array.from(entriesByJobseeker.values()).sort((first, second) => {
-      const firstTime = new Date(
-        first?.lastMessageTime ||
-          first?.lastMessage?.createdAt ||
-          first?.application?.appliedAt ||
-          first?.application?.createdAt ||
-          0
-      ).getTime();
-      const secondTime = new Date(
-        second?.lastMessageTime ||
-          second?.lastMessage?.createdAt ||
-          second?.application?.appliedAt ||
-          second?.application?.createdAt ||
-          0
-      ).getTime();
-      return secondTime - firstTime;
-    });
   }, [
     conversations,
     conversationView,
     currentUserId,
-    latestApplicationsByJobseeker,
+    visibleApplications,
   ]);
 
   const filteredConversations = useMemo(() => {
@@ -1431,7 +1440,9 @@ const EmployerMessages = () => {
     } else {
       setConversations((previous) =>
         previous.map((conversation) =>
-          conversation._id === conv._id ? openedConversation : conversation
+          conversation._id === conv._id
+            ? { ...conversation, unreadCount: 0 }
+            : conversation
         )
       );
     }
@@ -1967,7 +1978,7 @@ const EmployerMessages = () => {
 
           <div className={UI.shell}>
             <div className={UI.grid}>
-              <div className={[UI.sidebar, showSidebar ? 'block' : 'hidden', 'sm:block'].join(' ')}>
+              <div className={[UI.sidebar, showSidebar ? 'flex' : 'hidden', 'sm:flex'].join(' ')}>
                 <div className={`${UI.panelPad} ${UI.divider}`}>
                   <div className="flex items-start justify-between gap-2">
                     <div>
@@ -2155,7 +2166,9 @@ const EmployerMessages = () => {
                   ) : (
                     <div className="space-y-2">
                       {visibleConversations.map((conversation) => {
-                        const active = selectedConversation?._id === conversation._id;
+                        const entryId = conversation._entryId || conversation._id;
+                        const active =
+                          (selectedConversation?._entryId || selectedConversation?._id) === entryId;
                         const title = buildDisplayName(conversation.otherUser);
                         const time = formatTime(
                           conversation.lastMessageTime ||
@@ -2174,7 +2187,7 @@ const EmployerMessages = () => {
 
                         return (
                           <div
-                            key={conversation._id}
+                            key={entryId}
                             role="button"
                             tabIndex={0}
                             onClick={() => handleSelectConversation(conversation)}
@@ -2247,9 +2260,9 @@ const EmployerMessages = () => {
                                         onClick={(event) => {
                                           event.stopPropagation();
                                           setItemMenuId((current) =>
-                                            current === conversation._id
+                                            current === entryId
                                               ? null
-                                              : conversation._id
+                                              : entryId
                                           );
                                         }}
                                         className={`hidden h-8 w-8 items-center justify-center rounded-full hover:bg-white group-hover:inline-flex ${UI.ring}`}
@@ -2259,7 +2272,7 @@ const EmployerMessages = () => {
                                       </button>
                                     )}
 
-                                    {!conversation.__temp && itemMenuId === conversation._id && (
+                                    {!conversation.__temp && itemMenuId === entryId && (
                                       <div className="absolute right-0 top-9 z-50 w-40 rounded-xl border border-[#e6edf5] bg-white p-1.5 shadow-xl">
                                         <button
                                           type="button"
