@@ -124,25 +124,25 @@ const PartnersSection = ({ partners, loading, error }) => {
             {displayPartners.map((partner) => (
               <article
                 key={partner.id}
-                className="relative rounded-2xl overflow-hidden shadow-lg border border-black/10 h-[260px] md:h-[280px] bg-white"
+                className="relative rounded-2xl overflow-hidden shadow-lg border border-black/10 h-[260px] md:h-[280px] bg-gradient-to-br from-[#123f73] via-[#0e315d] to-[#081f3d]"
                 aria-label={`${partner.name} partner card`}
               >
-                <img
-                  src={partner.img}
-                  alt={`${partner.name} logo`}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  loading="lazy"
-                  decoding="async"
-                  onError={(event) => {
-                    event.currentTarget.onerror = null;
-                    event.currentTarget.src = "/images/agapay.png";
-                  }}
-                />
-
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/45 to-black/20" />
+                <div className="absolute top-4 right-4 z-10 w-12 h-12 md:w-14 md:h-14 rounded-xl bg-white/95 border border-white/70 shadow-md p-1.5 flex items-center justify-center">
+                  <img
+                    src={partner.img}
+                    alt={`${partner.name} logo`}
+                    className="w-full h-full object-contain"
+                    loading="lazy"
+                    decoding="async"
+                    onError={(event) => {
+                      event.currentTarget.onerror = null;
+                      event.currentTarget.src = "/images/agapay.png";
+                    }}
+                  />
+                </div>
 
                 <div className="relative h-full p-5 text-white flex flex-col">
-                  <h3 className="text-xl md:text-2xl font-extrabold leading-tight drop-shadow line-clamp-2">
+                  <h3 className="pr-16 md:pr-20 text-xl md:text-2xl font-extrabold leading-tight drop-shadow line-clamp-2">
                     {partner.name}
                   </h3>
 
