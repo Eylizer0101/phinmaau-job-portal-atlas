@@ -1343,16 +1343,15 @@ const RegisterPage = () => {
                   <p className="text-sm font-semibold text-gray-900">Your account is under review</p>
 
                   <p className="mt-3 text-sm text-gray-800">
-                    Our team is reviewing the information and credentials you submitted to ensure everything is complete and accurate. This verification process usually takes 24 to 48 hours.
-                    Once your account is approved, you’ll receive a confirmation email with your login details.
-                    Keep an eye on your inbox if we require any additional information, our team will contact you directly.
+                 Our team is reviewing the information and credentials you submitted to ensure everything is complete and accurate. 
+                 This verification process usually takes 24 to 48 hours.
                   </p>
 
                   <p className="mt-4 text-sm text-gray-800">
-                    After verification, you’ll gain full access as an employer, allowing you to post job opportunities, connect with top PHINMA AU graduates, and manage applications efficiently.
-
-                    If you don’t receive a confirmation email within 48 hours or have any questions during this process, please contact us at
-                    agapay@gmail.com
+                    Once your account is approved, you’ll receive a confirmation email with your login details. 
+Keep an eye on your inbox—if we require any additional information, our team will contact you directly.
+After verification, you’ll gain full access as a job seeker, allowing you to explore career opportunities, connect with potential employers, and manage your professional profile efficiently.
+If you don’t receive a confirmation email within 48 hours or have any questions during this process, please contact us at agapay@gmail.com
                   </p>
                 </div>
 
