@@ -324,17 +324,20 @@ const resumeStyles = `
   }
 
   .resume-header {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 61px;
-    align-items: start;
-    column-gap: 14px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 12px;
     min-height: 62px;
     padding-right: 0;
     text-align: center;
   }
 
   .resume-header-main {
+    flex: 0 1 auto;
+    width: fit-content;
     min-width: 0;
+    max-width: calc(100% - 73px);
   }
 
   .resume-name {
@@ -352,6 +355,7 @@ const resumeStyles = `
     color: #222222;
     font-size: 8px;
     line-height: 1.4;
+    overflow-wrap: anywhere;
   }
 
   .resume-contact span + span::before {
@@ -369,6 +373,7 @@ const resumeStyles = `
   .resume-initials,
   .resume-photo {
     position: static;
+    flex: 0 0 61px;
     width: 61px;
     height: 61px;
     display: flex;
@@ -553,10 +558,16 @@ const resumeStyles = `
     }
 
     .resume-header {
-      grid-template-columns: 1fr;
-      row-gap: 12px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
       padding-right: 0;
       text-align: left;
+    }
+
+    .resume-header-main {
+      width: 100%;
+      max-width: none;
     }
 
     .resume-initials,

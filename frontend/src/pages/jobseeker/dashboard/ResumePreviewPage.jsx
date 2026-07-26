@@ -451,10 +451,20 @@ const ResumePreviewPage = () => {
         }
 
         .resume-header {
-          position: relative;
+          display: flex;
+          align-items: flex-start;
+          justify-content: center;
+          gap: 12px;
           min-height: 62px;
-          padding-right: 98px;
+          padding-right: 0;
           text-align: center;
+        }
+
+        .resume-header-main {
+          flex: 0 1 auto;
+          width: fit-content;
+          min-width: 0;
+          max-width: calc(100% - 73px);
         }
 
         .resume-name {
@@ -472,6 +482,7 @@ const ResumePreviewPage = () => {
           color: #222222;
           font-size: 8px;
           line-height: 1.4;
+          overflow-wrap: anywhere;
         }
 
         .resume-contact span + span::before {
@@ -488,9 +499,8 @@ const ResumePreviewPage = () => {
 
         .resume-initials,
         .resume-photo {
-          position: absolute;
-          top: 0;
-          right: 120px;
+          position: static;
+          flex: 0 0 61px;
           width: 61px;
           height: 61px;
           display: flex;
@@ -681,14 +691,22 @@ const ResumePreviewPage = () => {
           }
 
           .resume-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
             padding-right: 0;
             text-align: left;
+          }
+
+          .resume-header-main {
+            width: 100%;
+            max-width: none;
           }
 
           .resume-initials,
           .resume-photo {
             position: static;
-            margin-top: 12px;
+            margin-top: 0;
           }
 
           .three-column-rows,
@@ -722,13 +740,15 @@ const ResumePreviewPage = () => {
         <main className="resume-paper">
           <div className="resume-inner">
             <header className="resume-header">
-              <h1 className="resume-name">{fullName}</h1>
-              <div className="resume-contact">
-                {formData.address ? <span>{formData.address}</span> : null}
-                {formData.phoneNumber ? <span>{formData.phoneNumber}</span> : null}
-                {formData.email ? <span>{formData.email}</span> : null}
+              <div className="resume-header-main">
+                <h1 className="resume-name">{fullName}</h1>
+                <div className="resume-contact">
+                  {formData.address ? <span>{formData.address}</span> : null}
+                  {formData.phoneNumber ? <span>{formData.phoneNumber}</span> : null}
+                  {formData.email ? <span>{formData.email}</span> : null}
+                </div>
+                {educationSummary ? <div className="resume-education-summary">{educationSummary}</div> : null}
               </div>
-              {educationSummary ? <div className="resume-education-summary">{educationSummary}</div> : null}
               <ResumePhoto src={profileImage} initials={initials} fullName={fullName} />
             </header>
 
