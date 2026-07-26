@@ -507,15 +507,6 @@ const JobseekerMessages = () => {
     });
   }, [conversations, convSearch, activeTab]);
 
-  const unreadMessageCount = useMemo(
-    () =>
-      conversations.reduce(
-        (total, conversation) => total + Number(conversation.unreadCount || 0),
-        0
-      ),
-    [conversations]
-  );
-
   const visibleConversations = useMemo(
     () => filteredConversations.slice(0, visibleConversationCount),
     [filteredConversations, visibleConversationCount]
@@ -803,10 +794,6 @@ const JobseekerMessages = () => {
                     <div>
                       <p className={`${UI.h2} ${UI.textPrimary}`}>Messages</p>
 
-                      <span className="mt-2 block text-xs font-semibold text-[#2e66a6]">
-                        {unreadMessageCount}{' '}
-                        {unreadMessageCount === 1 ? 'unread message' : 'unread messages'}
-                      </span>
                     </div>
 
                     <button
@@ -883,10 +870,6 @@ const JobseekerMessages = () => {
                           conv.otherUser?.companyName ||
                           conv.otherUser?.fullName ||
                           'Unknown Employer';
-                        const sub =
-                          conv.otherUser?.employerProfile?.industry ||
-                          conv.otherUser?.industry ||
-                          'Industry not specified';
                         const time = formatTime(conv.lastMessageTime || conv.lastMessage?.createdAt);
                         const last = conv.lastMessage?.content || 'No messages yet';
 
@@ -905,8 +888,6 @@ const JobseekerMessages = () => {
                             className={['group w-full text-left', UI.convItem, active ? UI.convActive : '', UI.ring].join(' ')}
                             aria-current={active ? 'page' : undefined}
                           >
-                            {active && <span className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-[#2e66a6]" />}
-
                             <div className="flex items-start gap-3">
                               {renderCompanyLogo(conv.otherUser, 'h-10 w-10', 'text-sm')}
 
@@ -916,11 +897,6 @@ const JobseekerMessages = () => {
                                     <p className={`font-semibold ${UI.textPrimary} truncate`} title={title}>
                                       {title}
                                     </p>
-                                    {sub && (
-                                      <p className={`text-xs ${UI.textMuted} truncate`} title={sub}>
-                                        {sub}
-                                      </p>
-                                    )}
                                   </div>
 
                                   <span className={`flex-shrink-0 text-xs ${UI.textMuted}`}>{time}</span>

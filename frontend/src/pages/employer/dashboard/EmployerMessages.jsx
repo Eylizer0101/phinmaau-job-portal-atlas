@@ -1378,15 +1378,6 @@ const EmployerMessages = () => {
     selectedStatusFilter,
   ]);
 
-  const unreadMessageCount = useMemo(
-    () =>
-      conversations.reduce(
-        (total, conversation) => total + Number(conversation.unreadCount || 0),
-        0
-      ),
-    [conversations]
-  );
-
   const visibleConversations = useMemo(
     () => filteredConversations.slice(0, visibleConversationCount),
     [filteredConversations, visibleConversationCount]
@@ -1906,10 +1897,6 @@ const EmployerMessages = () => {
                     <div>
                       <p className={`${UI.h2} ${UI.textPrimary}`}>Messages</p>
 
-                      <span className="mt-2 block text-xs font-semibold text-[#2e66a6]">
-                        {unreadMessageCount}{' '}
-                        {unreadMessageCount === 1 ? 'unread message' : 'unread messages'}
-                      </span>
                     </div>
 
                     <button
@@ -2054,14 +2041,6 @@ const EmployerMessages = () => {
                         const avatarUrl = getProfileImageUrl(
                           conversation.otherUser?.profileImage
                         );
-                        const status = String(
-                          conversation.application?.status || ''
-                        ).toLowerCase();
-                        const hiringStage = String(
-                          conversation.application?.hiringStage || ''
-                        ).replace(/\s+/g, ' ').trim();
-                        const jobTitle = conversation.application?.job?.title || '';
-
                         return (
                           <div
                             key={entryId}
@@ -2109,14 +2088,6 @@ const EmployerMessages = () => {
                                     >
                                       {title}
                                     </p>
-                                    {jobTitle && (
-                                      <p
-                                        className={`truncate text-xs ${UI.textMuted}`}
-                                        title={jobTitle}
-                                      >
-                                        {jobTitle}
-                                      </p>
-                                    )}
                                   </div>
 
                                   <span className={`flex-shrink-0 text-xs ${UI.textMuted}`}>
@@ -2124,25 +2095,12 @@ const EmployerMessages = () => {
                                   </span>
                                 </div>
 
-                                <div className="mt-1 flex min-w-0 items-center justify-between gap-2">
-                                  <p
-                                    className={`min-w-0 flex-1 truncate text-sm ${UI.textSecondary}`}
-                                    title={last}
-                                  >
-                                    {last}
-                                  </p>
-
-                                  {status && (
-                                    <span
-                                      className={`max-w-[150px] flex-shrink-0 rounded-full px-2 py-0.5 text-right text-[11px] font-semibold leading-4 ${getApplicationStatusClass(
-                                        status
-                                      )}`}
-                                      title={getApplicationStatusLabel(status, hiringStage)}
-                                    >
-                                      {getApplicationStatusLabel(status, hiringStage)}
-                                    </span>
-                                  )}
-                                </div>
+                                <p
+                                  className={`mt-1 truncate text-sm ${UI.textSecondary}`}
+                                  title={last}
+                                >
+                                  {last}
+                                </p>
 
                                 {Number(conversation.unreadCount || 0) > 0 && (
                                   <p className="mt-1.5 text-xs font-semibold text-[#2e66a6]">
@@ -2255,14 +2213,6 @@ const EmployerMessages = () => {
                                 : 'Job Seeker'}
                             </span>
 
-                            {selectedApplicationSummary?.job?.companyName && (
-                              <span
-                                className={`block truncate text-xs ${UI.textMuted}`}
-                                title={selectedApplicationSummary.job.companyName}
-                              >
-                                {selectedApplicationSummary.job.companyName}
-                              </span>
-                            )}
 
                           </span>
 
