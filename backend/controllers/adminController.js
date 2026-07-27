@@ -2589,443 +2589,41 @@ const buildArchiveDateMatch = (dateFilter, field = 'updatedAt') => {
 
 exports.getAdminArchive = async (req, res) => {
   try {
-    const tab = String(req.query.tab || 'community').toLowerCase();
-
-    if (!['community', 'dormant', 'jobs'].includes(tab)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Unsupported archive tab',
-      });
-    }
-
     const q = String(req.query.q || '').trim().toLowerCase();
-
-
-    if (tab === 'jobs') {
-      const statusFilter = String(req.query.status || 'all').toLowerCase();
-      const companyFilter = String(req.query.company || 'all').trim();
-      const dateFilter = String(req.query.date || 'all').toLowerCase();
-      const customFrom = String(req.query.dateFrom || '').trim();
-      const customTo = String(req.query.dateTo || '').trim();
-      const now = new Date();
-
-      const getDateBounds = () => {
-        let start = null;
-        let end = new Date(now);
-        end.setHours(23, 59, 59, 999);
-
-        if (dateFilter === 'today') {
-          start = new Date(now);
-          start.setHours(0, 0, 0, 0);
-        } else if (dateFilter === '7days') {
-          start = new Date(now);
-          start.setDate(start.getDate() - 6);
-          start.setHours(0, 0, 0, 0);
-        } else if (dateFilter === '30days') {
-          start = new Date(now);
-          start.setDate(start.getDate() - 29);
-          start.setHours(0, 0, 0, 0);
-        } else if (dateFilter === 'thismonth') {
-          start = new Date(now.getFullYear(), now.getMonth(), 1);
-          start.setHours(0, 0, 0, 0);
-        } else if (dateFilter === 'custom') {
-          start = customFrom ? new Date(`${customFrom}T00:00:00`) : null;
-          end = customTo ? new Date(`${customTo}T23:59:59.999`) : end;
-        }
-
-        return { start, end };
-      };
-
-      const { start, end } = getDateBounds();
-
-      const isWithinDate = (value) => {
-        if (!start && dateFilter === 'all') return true;
-
-        const date = new Date(value || 0);
-        if (Number.isNaN(date.getTime())) return false;
-        if (start && date < start) return false;
-        if (end && date > end) return false;
-        return true;
-      };
-
-      /*
-       * Get ALL declined applications first.
-       *
-       * The previous query loaded closed/expired jobs first and then searched
-       * declined applicants only inside those jobs. Because of that, an active
-       * job with declined applicants could never appear in the Jobs tab.
-       */
-      const declinedApplications = await Application.find({
-        status: 'declined',
-      })
-        .populate(
-          'jobseeker',
-          'email firstName middleName lastName fullName jobSeekerProfile'
-        )
-        .select(
-          'job jobseeker status lastActiveStatus declinedFrom declineReason declineComment appliedAt reviewedAt updatedAt isDeclinedArchived declinedArchivedAt'
-        )
-        .sort({ reviewedAt: -1, updatedAt: -1 })
-        .lean();
-
-      const declinedJobIds = [
-        ...new Set(
-          declinedApplications
-            .map((application) => String(application.job || ''))
-            .filter(Boolean)
-        ),
-      ];
-
-      /*
-       * A job belongs in the archive when at least one condition is true:
-       * - its status is closed;
-       * - it is published but inactive;
-       * - it was archived by the employer;
-       * - its application deadline has passed;
-       * - it has one or more declined applicants.
-       *
-       * This also fixes employer-archived jobs that remain status="published"
-       * but have isArchived=true and isActive=false.
-       */
-      const jobs = await Job.find({
-        $or: [
-          { status: 'closed' },
-          {
-            isPublished: true,
-            isActive: false,
-          },
-          {
-            isPublished: true,
-            isArchived: true,
-          },
-          { applicationDeadline: { $lt: now } },
-          ...(declinedJobIds.length
-            ? [{ _id: { $in: declinedJobIds } }]
-            : []),
-        ],
-      })
-        .select(
-          'title companyName companyLogo employer status applicationDeadline location workMode jobType isActive isPublished isArchived archivedAt createdAt updatedAt'
-        )
-        .sort({ updatedAt: -1 })
-        .lean();
-
-      const jobIdSet = new Set(jobs.map((job) => String(job._id)));
-      const applicationsByJob = new Map();
-
-      declinedApplications.forEach((application) => {
-        const jobId = String(application.job || '');
-
-        if (!jobId || !jobIdSet.has(jobId)) return;
-        if (!applicationsByJob.has(jobId)) applicationsByJob.set(jobId, []);
-
-        const jobseeker = application.jobseeker || {};
-        const profile = jobseeker.jobSeekerProfile || {};
-
-        const applicantName =
-          jobseeker.fullName ||
-          [jobseeker.firstName, jobseeker.middleName, jobseeker.lastName]
-            .filter(Boolean)
-            .join(' ') ||
-          jobseeker.email ||
-          'Jobseeker';
-
-        const declinedStage =
-          application.declinedFrom === 'forInterview'
-            ? 'For Interview'
-            : application.declinedFrom === 'applicants'
-              ? 'Initial Screening'
-              : application.lastActiveStatus === 'for interview'
-                ? 'For Interview'
-                : 'Application Review';
-
-        applicationsByJob.get(jobId).push({
-          _id: application._id,
-          applicantName,
-          jobseekerLevel:
-            profile.jobseekerLevel ||
-            profile.jobSeekerLevel ||
-            profile.experienceLevel ||
-            profile.careerLevel ||
-            'Not specified',
-          declinedStage,
-          declineReason: application.declineReason || '',
-          declineComment: application.declineComment || '',
-          appliedAt: application.appliedAt,
-          declinedAt: application.reviewedAt || application.updatedAt,
-          isDeclinedArchived: Boolean(application.isDeclinedArchived),
-          declinedArchivedAt: application.declinedArchivedAt,
-        });
-      });
-
-      const jobCompanies = new Set();
-
-      let jobArchives = jobs.map((job) => {
-        if (job.companyName) jobCompanies.add(job.companyName);
-
-        const isExpired =
-          Boolean(job.applicationDeadline) &&
-          new Date(job.applicationDeadline) < now;
-
-        const isClosed =
-          job.status === 'closed' ||
-          (job.isPublished === true && job.isActive === false) ||
-          (job.isPublished === true && job.isArchived === true);
-
-        return {
-          jobId: String(job._id),
-          job,
-          isClosed,
-          isExpired,
-          declinedApplicants: applicationsByJob.get(String(job._id)) || [],
-        };
-      });
-
-      if (statusFilter === 'closed') {
-        jobArchives = jobArchives.filter((entry) => entry.isClosed);
-      } else if (statusFilter === 'expired') {
-        jobArchives = jobArchives.filter((entry) => entry.isExpired);
-      } else if (statusFilter === 'declined') {
-        jobArchives = jobArchives.filter(
-          (entry) => entry.declinedApplicants.length > 0
-        );
-      }
-
-      if (companyFilter !== 'all') {
-        jobArchives = jobArchives.filter(
-          (entry) => entry.job.companyName === companyFilter
-        );
-      }
-
-      if (q) {
-        jobArchives = jobArchives.filter((entry) => {
-          const applicantNames = entry.declinedApplicants
-            .map((application) => application.applicantName)
-            .join(' ');
-
-          return [
-            entry.job.title,
-            entry.job.companyName,
-            applicantNames,
-          ]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase()
-            .includes(q);
-        });
-      }
-
-      jobArchives = jobArchives.filter((entry) => {
-        /*
-         * For declined-only records, use the latest declined date so the date
-         * filter does not incorrectly depend only on the job's updated date.
-         */
-        const latestDeclinedAt = entry.declinedApplicants.reduce(
-          (latest, application) => {
-            const candidate =
-              application.declinedAt || application.appliedAt || null;
-
-            if (!candidate) return latest;
-            if (!latest) return candidate;
-
-            return new Date(candidate) > new Date(latest)
-              ? candidate
-              : latest;
-          },
-          null
-        );
-
-        const relevantDate = entry.isExpired
-          ? entry.job.applicationDeadline
-          : entry.isClosed
-            ? entry.job.archivedAt || entry.job.updatedAt
-            : latestDeclinedAt || entry.job.updatedAt;
-
-        return isWithinDate(relevantDate);
-      });
-
-      jobArchives.sort((a, b) => {
-        const getLatestDate = (entry) => {
-          const declinedDates = entry.declinedApplicants
-            .map((application) => application.declinedAt || application.appliedAt)
-            .filter(Boolean)
-            .map((value) => new Date(value).getTime())
-            .filter(Number.isFinite);
-
-          return Math.max(
-            new Date(entry.job.archivedAt || 0).getTime() || 0,
-            new Date(entry.job.updatedAt || 0).getTime() || 0,
-            new Date(entry.job.applicationDeadline || 0).getTime() || 0,
-            declinedDates.length ? Math.max(...declinedDates) : 0
-          );
-        };
-
-        return getLatestDate(b) - getLatestDate(a);
-      });
-
-      return res.json({
-        success: true,
-        jobArchives,
-        options: {
-          jobCompanies: Array.from(jobCompanies).sort(),
-        },
-      });
-    }
-
-    if (tab === 'dormant') {
-      const roleFilter = String(req.query.role || 'all').toLowerCase();
-      const industryFilter = String(req.query.industry || 'all').trim();
-      const inactivityFilter = String(req.query.inactivity || '6-12').toLowerCase();
-
-      const now = new Date();
-      const sixMonthsAgo = new Date(now);
-      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-      const twelveMonthsAgo = new Date(now);
-      twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
-
-      const candidateUsers = await User.find({
-        role: { $in: ['jobseeker', 'employer'] },
-        status: { $nin: ['deleted'] },
-        isActive: { $ne: false },
-        $or: [
-          { lastLogin: { $gte: twelveMonthsAgo, $lte: sixMonthsAgo } },
-          {
-            $and: [
-              { $or: [{ lastLogin: null }, { lastLogin: { $exists: false } }] },
-              { createdAt: { $gte: twelveMonthsAgo, $lte: sixMonthsAgo } },
-            ],
-          },
-        ],
-      })
-        .select(
-          'email username firstName middleName lastName fullName profileImage role status isActive lastLogin createdAt jobSeekerProfile employerProfile'
-        )
-        .sort({ lastLogin: 1, createdAt: 1 })
-        .lean();
-
-      const getMonthsInactive = (dateValue) => {
-        const date = new Date(dateValue);
-        if (Number.isNaN(date.getTime())) return 0;
-
-        let months =
-          (now.getFullYear() - date.getFullYear()) * 12 +
-          (now.getMonth() - date.getMonth());
-
-        if (now.getDate() < date.getDate()) months -= 1;
-        return Math.max(0, months);
-      };
-
-      const getCourse = (user = {}) => {
-        const profile = user.jobSeekerProfile || {};
-        const education = Array.isArray(profile.educationEntries)
-          ? profile.educationEntries
-          : [];
-        const entry = education.find(
-          (item) => item?.course || item?.program || item?.degree
-        );
-
-        return (
-          profile.course ||
-          profile.program ||
-          entry?.course ||
-          entry?.program ||
-          entry?.degree ||
-          'Unspecified'
-        );
-      };
-
-      const getIndustry = (user = {}) =>
-        user?.employerProfile?.industry ||
-        user?.employerProfile?.businessType ||
-        'Unspecified';
-
-      const dormantIndustries = new Set();
-
-      let dormantUsers = candidateUsers.map((user) => {
-        const lastActive = user.lastLogin || user.createdAt;
-        const inactivityMonths = getMonthsInactive(lastActive);
-        const industryOrCourse =
-          user.role === 'employer' ? getIndustry(user) : getCourse(user);
-
-        if (industryOrCourse && industryOrCourse !== 'Unspecified') {
-          dormantIndustries.add(industryOrCourse);
-        }
-
-        return {
-          userId: String(user._id),
-          user,
-          lastActive,
-          inactivityMonths,
-          industryOrCourse,
-          dormantStatus: 'Dormant Account',
-        };
-      });
-
-      if (roleFilter !== 'all') {
-        dormantUsers = dormantUsers.filter(
-          (entry) => String(entry.user?.role || '').toLowerCase() === roleFilter
-        );
-      }
-
-      if (industryFilter !== 'all') {
-        dormantUsers = dormantUsers.filter(
-          (entry) => entry.industryOrCourse === industryFilter
-        );
-      }
-
-      if (inactivityFilter === '6-8') {
-        dormantUsers = dormantUsers.filter(
-          (entry) => entry.inactivityMonths >= 6 && entry.inactivityMonths <= 8
-        );
-      } else if (inactivityFilter === '9-12') {
-        dormantUsers = dormantUsers.filter(
-          (entry) => entry.inactivityMonths >= 9 && entry.inactivityMonths <= 12
-        );
-      } else {
-        dormantUsers = dormantUsers.filter(
-          (entry) => entry.inactivityMonths >= 6 && entry.inactivityMonths <= 12
-        );
-      }
-
-      if (q) {
-        dormantUsers = dormantUsers.filter((entry) => {
-          const searchable = [
-            getArchiveUserName(entry.user),
-            entry.user?.email,
-            entry.industryOrCourse,
-            entry.user?.role,
-          ]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase();
-
-          return searchable.includes(q);
-        });
-      }
-
-      dormantUsers.sort(
-        (a, b) =>
-          b.inactivityMonths - a.inactivityMonths ||
-          new Date(a.lastActive || 0) - new Date(b.lastActive || 0)
-      );
-
-      return res.json({
-        success: true,
-        dormantUsers,
-        options: {
-          dormantRoles: ['jobseeker', 'employer'],
-          dormantIndustries: Array.from(dormantIndustries).sort(),
-        },
-      });
-    }
-
-    const status = String(req.query.status || 'all').toLowerCase();
-    const campusFilter = String(req.query.campus || 'all').trim();
-    const courseFilter = String(req.query.course || 'all').trim();
-    const dateFilter = String(req.query.date || 'all').toLowerCase();
+    const roleFilter = String(req.query.role || 'all').trim().toLowerCase();
+    const typeFilter = String(req.query.type || 'all').trim().toLowerCase();
+    const dateFilter = String(req.query.date || 'all').trim().toLowerCase();
     const customFrom = String(req.query.dateFrom || '').trim();
     const customTo = String(req.query.dateTo || '').trim();
+    const sort = String(req.query.sort || 'recent').trim().toLowerCase();
+
+    const archiveUserFields = [
+      'email',
+      'username',
+      'firstName',
+      'middleName',
+      'lastName',
+      'extensionName',
+      'profileImage',
+      'role',
+      'status',
+      'isActive',
+      'lastLogin',
+      'createdAt',
+      'updatedAt',
+      'jobSeekerProfile.campus',
+      'jobSeekerProfile.course',
+      'jobSeekerProfile.program',
+      'jobSeekerProfile.educationEntries',
+      'jobSeekerProfile.address',
+      'employerProfile.companyName',
+      'employerProfile.companyLogo',
+      'employerProfile.industry',
+      'employerProfile.businessType',
+      'employerProfile.companyAddress',
+      'employerProfile.regionCity',
+      'employerProfile.address',
+    ].join(' ');
 
     const getDateBounds = () => {
       const now = new Date();
@@ -3057,7 +2655,7 @@ exports.getAdminArchive = async (req, res) => {
 
     const { start, end } = getDateBounds();
     const isWithinDate = (value) => {
-      if (!start && dateFilter === 'all') return true;
+      if (dateFilter === 'all') return true;
       const date = new Date(value || 0);
       if (Number.isNaN(date.getTime())) return false;
       if (start && date < start) return false;
@@ -3065,132 +2663,273 @@ exports.getAdminArchive = async (req, res) => {
       return true;
     };
 
-    const posts = await CommunityPost.find({
-      $or: [
-        { isDeleted: true },
-        { comments: { $elemMatch: { isDeleted: true } } },
-      ],
-    })
-      .populate(
-        'author',
-        'email firstName middleName lastName fullName profileImage role jobSeekerProfile.campus jobSeekerProfile.course jobSeekerProfile.program jobSeekerProfile.educationEntries'
-      )
-      .populate(
-        'comments.author',
-        'email firstName middleName lastName fullName profileImage role jobSeekerProfile.campus jobSeekerProfile.course jobSeekerProfile.program jobSeekerProfile.educationEntries'
-      )
-      .sort({ deletedAt: -1, updatedAt: -1 })
-      .lean();
+    const getCourse = (user = {}) => {
+      const profile = user.jobSeekerProfile || {};
+      const education = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
+      const entry = education.find((item) => item?.course || item?.program || item?.degree);
+      return (
+        profile.course ||
+        profile.program ||
+        entry?.course ||
+        entry?.program ||
+        entry?.degree ||
+        ''
+      );
+    };
 
     const getCampus = (user = {}) => {
       const profile = user.jobSeekerProfile || {};
       const education = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
-      return (
-        profile.campus ||
-        education.find((entry) => entry?.campus)?.campus ||
-        'Unspecified'
-      );
+      return profile.campus || education.find((item) => item?.campus)?.campus || '';
     };
 
-    const getCourse = (user = {}) => {
-      const profile = user.jobSeekerProfile || {};
-      const education = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
-      const educationItem = education.find((entry) => entry?.course || entry?.program || entry?.degree);
-      return (
-        profile.course ||
-        profile.program ||
-        educationItem?.course ||
-        educationItem?.program ||
-        educationItem?.degree ||
-        'Unspecified'
-      );
+    const getSecondaryText = (user = {}) => {
+      if (user.role === 'employer') {
+        return (
+          user?.employerProfile?.industry ||
+          user?.employerProfile?.businessType ||
+          user?.employerProfile?.companyAddress ||
+          user?.email ||
+          ''
+        );
+      }
+
+      return getCampus(user) || getCourse(user) || user?.email || '';
+    };
+
+    const typeDefinitions = {
+      post: { key: 'post', label: 'Post', order: 1 },
+      comment: { key: 'comment', label: 'Comment', order: 2 },
+      'job-post': { key: 'job-post', label: 'Job Post', order: 3 },
+      'declined-applicants': {
+        key: 'declined-applicants',
+        label: 'Declined Applicants',
+        order: 4,
+      },
+      'inactive-account': {
+        key: 'inactive-account',
+        label: 'Inactive Account',
+        order: 5,
+      },
     };
 
     const grouped = new Map();
-    const allCampuses = new Set();
-    const allCourses = new Set();
 
-    const ensureAuthor = (author) => {
-      if (!author?._id) return null;
-      const authorId = String(author._id);
-      if (!grouped.has(authorId)) {
-        const campus = getCampus(author);
-        const course = getCourse(author);
-        grouped.set(authorId, {
-          authorId,
-          author,
-          campus,
-          course,
-          postCount: 0,
-          commentCount: 0,
-          latestDeletedAt: null,
-          searchableContent: [],
+    const ensureGroup = (account) => {
+      if (!account?._id) return null;
+      const accountId = String(account._id);
+
+      if (!grouped.has(accountId)) {
+        grouped.set(accountId, {
+          accountId,
+          account,
+          displayName: getArchiveUserName(account),
+          secondaryText: getSecondaryText(account),
+          role: String(account.role || '').toLowerCase(),
+          records: [],
+          searchableText: [],
+          latestArchivedAt: null,
         });
-        if (campus && campus !== 'Unspecified') allCampuses.add(campus);
-        if (course && course !== 'Unspecified') allCourses.add(course);
       }
-      return grouped.get(authorId);
+
+      return grouped.get(accountId);
     };
 
-    posts.forEach((post) => {
-      if (post.isDeleted === true && status !== 'comment' && isWithinDate(post.deletedAt || post.updatedAt)) {
-        const entry = ensureAuthor(post.author);
-        if (entry) {
-          entry.postCount += 1;
-          entry.searchableContent.push(String(post.content || ''));
-          const deletedAt = post.deletedAt || post.updatedAt;
-          if (!entry.latestDeletedAt || new Date(deletedAt) > new Date(entry.latestDeletedAt)) {
-            entry.latestDeletedAt = deletedAt;
-          }
-        }
+    const addRecord = (account, record) => {
+      if (!record?.archiveType || !isWithinDate(record.archivedAt)) return;
+      const group = ensureGroup(account);
+      if (!group) return;
+
+      group.records.push(record);
+      group.searchableText.push(
+        [
+          record.typeLabel,
+          record.title,
+          record.content,
+          record.postContent,
+          record.searchText,
+        ]
+          .filter(Boolean)
+          .join(' ')
+      );
+
+      if (
+        !group.latestArchivedAt ||
+        new Date(record.archivedAt || 0) > new Date(group.latestArchivedAt || 0)
+      ) {
+        group.latestArchivedAt = record.archivedAt;
+      }
+    };
+
+    const [communityPosts, archivedJobs, archivedDeclinedApplications, inactiveUsers] =
+      await Promise.all([
+        CommunityPost.find({
+          $or: [
+            { isDeleted: true },
+            { comments: { $elemMatch: { isDeleted: true } } },
+          ],
+        })
+          .populate('author', archiveUserFields)
+          .populate('comments.author', archiveUserFields)
+          .lean(),
+        Job.find({
+          $or: [{ isArchived: true }, { archivedAt: { $ne: null } }],
+        })
+          .populate('employer', archiveUserFields)
+          .select(
+            'title companyName companyLogo employer status isActive isPublished isArchived archivedAt applicationDeadline createdAt updatedAt'
+          )
+          .lean(),
+        Application.find({
+          status: 'declined',
+          isDeclinedArchived: true,
+        })
+          .populate('employer', archiveUserFields)
+          .populate('job', 'title companyName')
+          .populate('jobseeker', 'email firstName middleName lastName fullName')
+          .select(
+            'employer job jobseeker status hiringStage lastActiveStatus declinedFrom declinedArchivedAt reviewedAt updatedAt'
+          )
+          .lean(),
+        User.find({
+          role: { $in: ['jobseeker', 'employer'] },
+          status: { $ne: 'deleted' },
+          $or: [
+            { status: 'inactive' },
+            { isActive: false, status: { $in: ['active', 'inactive'] } },
+          ],
+        })
+          .select(archiveUserFields)
+          .lean(),
+      ]);
+
+    communityPosts.forEach((post) => {
+      if (post.isDeleted === true) {
+        addRecord(post.author, {
+          archiveType: 'post',
+          typeLabel: 'Post',
+          title: 'Community Post',
+          content: post.content || '',
+          archivedAt: post.deletedAt || post.updatedAt,
+          searchText: [post.category, ...(post.topics || [])].filter(Boolean).join(' '),
+        });
       }
 
       (post.comments || []).forEach((comment) => {
-        if (comment.isDeleted !== true || status === 'post' || !isWithinDate(comment.deletedAt || comment.updatedAt)) return;
-        const entry = ensureAuthor(comment.author);
-        if (entry) {
-          entry.commentCount += 1;
-          entry.searchableContent.push(String(comment.content || ''));
-          const deletedAt = comment.deletedAt || comment.updatedAt;
-          if (!entry.latestDeletedAt || new Date(deletedAt) > new Date(entry.latestDeletedAt)) {
-            entry.latestDeletedAt = deletedAt;
-          }
-        }
+        if (comment.isDeleted !== true) return;
+        addRecord(comment.author, {
+          archiveType: 'comment',
+          typeLabel: 'Comment',
+          title: 'Community Comment',
+          content: comment.content || '',
+          postContent: post.content || '',
+          archivedAt: comment.deletedAt || comment.updatedAt,
+        });
       });
     });
 
-    let communityAuthors = Array.from(grouped.values()).filter(
-      (entry) => entry.postCount > 0 || entry.commentCount > 0
-    );
+    archivedJobs.forEach((job) => {
+      addRecord(job.employer, {
+        archiveType: 'job-post',
+        typeLabel: 'Job Post',
+        title: job.title || 'Unfinished Posting',
+        archivedAt: job.archivedAt || job.updatedAt,
+        searchText: [job.companyName, job.status].filter(Boolean).join(' '),
+      });
+    });
+
+    archivedDeclinedApplications.forEach((application) => {
+      const jobTitle = application.job?.title || 'Archived Job';
+      const jobseekerName = getArchiveUserName(application.jobseeker || {});
+      addRecord(application.employer, {
+        archiveType: 'declined-applicants',
+        typeLabel: 'Declined Applicants',
+        title: jobTitle,
+        archivedAt:
+          application.declinedArchivedAt || application.reviewedAt || application.updatedAt,
+        searchText: [jobTitle, jobseekerName, application.hiringStage].filter(Boolean).join(' '),
+      });
+    });
+
+    inactiveUsers.forEach((user) => {
+      addRecord(user, {
+        archiveType: 'inactive-account',
+        typeLabel: 'Inactive Account',
+        title: 'Inactive Account',
+        archivedAt: user.updatedAt || user.lastLogin || user.createdAt,
+        searchText: [user.status, user.email].filter(Boolean).join(' '),
+      });
+    });
+
+    let archiveGroups = Array.from(grouped.values()).map((group) => {
+      const archivedTypeKeys = [...new Set(group.records.map((record) => record.archiveType))];
+      const archivedTypes = archivedTypeKeys
+        .map((key) => typeDefinitions[key])
+        .filter(Boolean)
+        .sort((first, second) => first.order - second.order)
+        .map(({ order, ...type }) => type);
+
+      return {
+        accountId: group.accountId,
+        account: group.account,
+        displayName: group.displayName,
+        secondaryText: group.secondaryText,
+        role: group.role,
+        archivedTypes,
+        latestArchivedAt: group.latestArchivedAt,
+        recordCount: group.records.length,
+        searchableText: group.searchableText,
+      };
+    });
+
+    if (roleFilter !== 'all') {
+      archiveGroups = archiveGroups.filter((group) => group.role === roleFilter);
+    }
+
+    if (typeFilter !== 'all') {
+      archiveGroups = archiveGroups.filter((group) =>
+        group.archivedTypes.some((type) => type.key === typeFilter)
+      );
+    }
 
     if (q) {
-      communityAuthors = communityAuthors.filter((entry) => {
-        const authorName = getArchiveUserName(entry.author).toLowerCase();
-        const content = entry.searchableContent.join(' ').toLowerCase();
-        return authorName.includes(q) || content.includes(q);
+      archiveGroups = archiveGroups.filter((group) => {
+        const searchable = [
+          group.displayName,
+          group.secondaryText,
+          group.role,
+          group.account?.email,
+          ...group.archivedTypes.map((type) => type.label),
+          ...group.searchableText,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+
+        return searchable.includes(q);
       });
     }
 
-    if (campusFilter !== 'all') {
-      communityAuthors = communityAuthors.filter((entry) => entry.campus === campusFilter);
-    }
+    archiveGroups.sort((first, second) => {
+      if (sort === 'oldest') {
+        return new Date(first.latestArchivedAt || 0) - new Date(second.latestArchivedAt || 0);
+      }
+      if (sort === 'name-asc') return first.displayName.localeCompare(second.displayName);
+      if (sort === 'name-desc') return second.displayName.localeCompare(first.displayName);
+      return new Date(second.latestArchivedAt || 0) - new Date(first.latestArchivedAt || 0);
+    });
 
-    if (courseFilter !== 'all') {
-      communityAuthors = communityAuthors.filter((entry) => entry.course === courseFilter);
-    }
-
-    communityAuthors.sort(
-      (a, b) => new Date(b.latestDeletedAt || 0) - new Date(a.latestDeletedAt || 0)
-    );
-
-    communityAuthors = communityAuthors.map(({ searchableContent, ...entry }) => entry);
+    archiveGroups = archiveGroups.map(({ searchableText, ...group }) => group);
 
     return res.json({
       success: true,
-      communityAuthors,
+      archiveGroups,
+      total: archiveGroups.length,
       options: {
-        campuses: Array.from(allCampuses).sort(),
-        courses: Array.from(allCourses).sort(),
+        roles: ['jobseeker', 'employer'],
+        types: Object.values(typeDefinitions)
+          .sort((first, second) => first.order - second.order)
+          .map(({ order, ...type }) => type),
       },
     });
   } catch (error) {
@@ -3202,16 +2941,271 @@ exports.getAdminArchive = async (req, res) => {
   }
 };
 
+
 exports.getAdminArchiveDetails = async (req, res) => {
   try {
     const type = String(req.params.type || '').toLowerCase();
     const { id } = req.params;
 
 
+    if (type === 'account') {
+      const archiveUserFields = [
+        'email',
+        'username',
+        'firstName',
+        'middleName',
+        'lastName',
+        'extensionName',
+        'profileImage',
+        'role',
+        'status',
+        'isActive',
+        'lastLogin',
+        'createdAt',
+        'updatedAt',
+        'jobSeekerProfile',
+        'employerProfile',
+      ].join(' ');
+
+      const account = await User.findById(id).select(archiveUserFields).lean();
+
+      if (!account || account.role === 'admin') {
+        return res.status(404).json({
+          success: false,
+          message: 'Archived account not found',
+        });
+      }
+
+      const [communityPosts, archivedJobs, archivedDeclinedApplications] = await Promise.all([
+        CommunityPost.find({
+          $or: [
+            { author: id, isDeleted: true },
+            { comments: { $elemMatch: { author: id, isDeleted: true } } },
+          ],
+        })
+          .populate('deletedBy', 'email firstName middleName lastName fullName')
+          .populate('comments.deletedBy', 'email firstName middleName lastName fullName')
+          .lean(),
+        account.role === 'employer'
+          ? Job.find({
+              employer: id,
+              $or: [{ isArchived: true }, { archivedAt: { $ne: null } }],
+            })
+              .select(
+                'title companyName companyLogo employer status applicationDeadline isActive isPublished isArchived archivedAt createdAt updatedAt'
+              )
+              .lean()
+          : [],
+        account.role === 'employer'
+          ? Application.find({
+              employer: id,
+              status: 'declined',
+              isDeclinedArchived: true,
+            })
+              .populate('job', 'title companyName companyLogo')
+              .populate(
+                'jobseeker',
+                'email firstName middleName lastName fullName profileImage jobSeekerProfile'
+              )
+              .select(
+                'job jobseeker employer status hiringStage lastActiveStatus declinedFrom declineReason declineComment appliedAt reviewedAt updatedAt isDeclinedArchived declinedArchivedAt'
+              )
+              .sort({ declinedArchivedAt: -1, updatedAt: -1 })
+              .lean()
+          : [],
+      ]);
+
+      const records = [];
+
+      communityPosts.forEach((post) => {
+        if (String(post.author || '') === String(id) && post.isDeleted === true) {
+          records.push({
+            recordId: `post-${post._id}`,
+            archiveType: 'post',
+            typeLabel: 'Post',
+            title: 'Community Post',
+            subtitle: post.category ? `Category: ${post.category}` : '',
+            content: post.content || '',
+            category: post.category || '',
+            topics: post.topics || [],
+            imageUrl: post.imageUrl || '',
+            linkUrl: post.linkUrl || '',
+            archivedAt: post.deletedAt || post.updatedAt,
+            archivedBy: getArchiveUserName(post.deletedBy || {}),
+            postId: String(post._id),
+          });
+        }
+
+        (post.comments || []).forEach((comment) => {
+          if (String(comment.author || '') !== String(id) || comment.isDeleted !== true) return;
+
+          records.push({
+            recordId: `comment-${comment._id}`,
+            archiveType: 'comment',
+            typeLabel: 'Comment',
+            title: 'Community Comment',
+            subtitle: 'Comment on an archived community post',
+            content: comment.content || '',
+            postContent: post.content || '',
+            archivedAt: comment.deletedAt || comment.updatedAt,
+            archivedBy: getArchiveUserName(comment.deletedBy || {}),
+            postId: String(post._id),
+            commentId: String(comment._id),
+          });
+        });
+      });
+
+      archivedJobs.forEach((job) => {
+        records.push({
+          recordId: `job-${job._id}`,
+          archiveType: 'job-post',
+          typeLabel: 'Job Post',
+          title: job.title || 'Unfinished Posting',
+          subtitle: job.companyName || getArchiveUserName(account),
+          archivedAt: job.archivedAt || job.updatedAt,
+          jobId: String(job._id),
+          companyName: job.companyName || getArchiveUserName(account),
+        });
+      });
+
+      const declinedByJob = new Map();
+
+      archivedDeclinedApplications.forEach((application) => {
+        const jobId = String(application.job?._id || application.job || 'unknown-job');
+        const jobTitle = application.job?.title || 'Archived Job';
+        const archivedAt =
+          application.declinedArchivedAt || application.reviewedAt || application.updatedAt;
+
+        if (!declinedByJob.has(jobId)) {
+          declinedByJob.set(jobId, {
+            recordId: `declined-${jobId}`,
+            archiveType: 'declined-applicants',
+            typeLabel: 'Declined Applicants',
+            title: jobTitle,
+            subtitle: application.job?.companyName || getArchiveUserName(account),
+            archivedAt,
+            jobId: jobId === 'unknown-job' ? '' : jobId,
+            companyName: application.job?.companyName || getArchiveUserName(account),
+            applicants: [],
+          });
+        }
+
+        const group = declinedByJob.get(jobId);
+        if (new Date(archivedAt || 0) > new Date(group.archivedAt || 0)) {
+          group.archivedAt = archivedAt;
+        }
+
+        const jobseeker = application.jobseeker || {};
+        const profile = jobseeker.jobSeekerProfile || {};
+        const declinedStage =
+          String(application.hiringStage || '').trim() ||
+          (application.declinedFrom === 'forInterview'
+            ? 'For Interview'
+            : application.declinedFrom === 'applicants'
+              ? 'Initial Screening'
+              : application.lastActiveStatus === 'for interview'
+                ? 'For Interview'
+                : 'Application Review');
+
+        group.applicants.push({
+          applicationId: String(application._id),
+          _id: String(application._id),
+          applicantName:
+            jobseeker.fullName ||
+            [jobseeker.firstName, jobseeker.middleName, jobseeker.lastName]
+              .filter(Boolean)
+              .join(' ') ||
+            jobseeker.email ||
+            'Jobseeker',
+          email: jobseeker.email || '',
+          profileImage: jobseeker.profileImage || profile.profileImage || '',
+          jobTitle,
+          declinedStage,
+          declineReason: application.declineReason || '',
+          declineComment: application.declineComment || '',
+          appliedAt: application.appliedAt,
+          declinedAt: application.reviewedAt || application.updatedAt,
+          archivedAt,
+        });
+      });
+
+      records.push(...declinedByJob.values());
+
+      const isInactive =
+        account.status === 'inactive' ||
+        (account.isActive === false && !['suspended', 'deleted'].includes(account.status));
+      if (isInactive) {
+        records.push({
+          recordId: `inactive-${account._id}`,
+          archiveType: 'inactive-account',
+          typeLabel: 'Inactive Account',
+          title: 'Account Details',
+          subtitle: account.role === 'employer' ? 'Employer account' : 'Jobseeker account',
+          archivedAt: account.updatedAt || account.lastLogin || account.createdAt,
+          accountId: String(account._id),
+        });
+      }
+
+      records.sort(
+        (first, second) =>
+          new Date(second.archivedAt || 0) - new Date(first.archivedAt || 0)
+      );
+
+      const jobSeekerProfile = account.jobSeekerProfile || {};
+      const employerProfile = account.employerProfile || {};
+      const educationEntries = Array.isArray(jobSeekerProfile.educationEntries)
+        ? jobSeekerProfile.educationEntries
+        : [];
+      const educationItem = educationEntries.find(
+        (entry) => entry?.course || entry?.program || entry?.degree
+      );
+
+      const industryOrCourse =
+        account.role === 'employer'
+          ? employerProfile.industry || employerProfile.businessType || 'Unspecified'
+          : jobSeekerProfile.course ||
+            jobSeekerProfile.program ||
+            educationItem?.course ||
+            educationItem?.program ||
+            educationItem?.degree ||
+            'Unspecified';
+
+      const location =
+        account.role === 'employer'
+          ? employerProfile.companyAddress ||
+            employerProfile.regionCity ||
+            employerProfile.address ||
+            'Unspecified'
+          : jobSeekerProfile.campus ||
+            educationEntries.find((entry) => entry?.campus)?.campus ||
+            jobSeekerProfile.address ||
+            'Unspecified';
+
+      const lastActive = account.lastLogin || account.updatedAt || account.createdAt;
+      const lastActiveDate = new Date(lastActive || 0);
+      const inactivityDays = Number.isNaN(lastActiveDate.getTime())
+        ? 0
+        : Math.max(0, Math.floor((Date.now() - lastActiveDate.getTime()) / 86400000));
+
+      return res.json({
+        success: true,
+        account,
+        records,
+        summary: {
+          industryOrCourse,
+          location,
+          lastActive,
+          inactivityDays,
+          latestArchivedAt: records[0]?.archivedAt || null,
+        },
+      });
+    }
+
     if (type === 'job') {
-      const job = await Job.findById(id)
-        .select(
-          'title companyName companyLogo employer status description requirements applicationDeadline location workMode jobType educationLevel category vacancies isActive isPublished isArchived archivedAt createdAt updatedAt'
+      let job = await Job.findById(id)
+        .populate(
+          'employer',
+          'email firstName middleName lastName fullName employerProfile.companyName employerProfile.companyLogo employerProfile.companyAddress employerProfile.industry employerProfile.companyWebsiteUrl employerProfile.companyWebsite'
         )
         .lean();
 
@@ -3221,6 +3215,22 @@ exports.getAdminArchiveDetails = async (req, res) => {
           message: 'Archived job not found',
         });
       }
+
+      const employer = job.employer || {};
+      const employerProfile = employer.employerProfile || {};
+      job = {
+        ...job,
+        companyName:
+          job.companyName || employerProfile.companyName || getArchiveUserName(employer),
+        companyLogo: job.companyLogo || employerProfile.companyLogo || '',
+        employerDetails: {
+          companyName: employerProfile.companyName || job.companyName || '',
+          companyAddress: employerProfile.companyAddress || '',
+          industry: employerProfile.industry || '',
+          companyWebsite:
+            employerProfile.companyWebsiteUrl || employerProfile.companyWebsite || '',
+        },
+      };
 
       const applications = await Application.find({
         job: id,
@@ -3244,8 +3254,9 @@ exports.getAdminArchiveDetails = async (req, res) => {
 
       const isClosed =
         job.status === 'closed' ||
-        (job.isPublished === true && job.isActive === false) ||
-        (job.isPublished === true && job.isArchived === true);
+        job.isArchived === true ||
+        Boolean(job.archivedAt) ||
+        (job.isPublished === true && job.isActive === false);
 
       /*
        * A job with declined applicants must remain viewable even when the job

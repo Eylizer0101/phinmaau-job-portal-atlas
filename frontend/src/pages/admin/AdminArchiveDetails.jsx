@@ -3,17 +3,15 @@ import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
 
-const getName = (user = {}) =>
-  user?.employerProfile?.companyName ||
-  user?.companyName ||
-  user?.fullName ||
-  [user?.firstName, user?.middleName, user?.lastName].filter(Boolean).join(" ") ||
-  user?.email ||
-  "Community Member";
+const ITEMS_PER_PAGE = 10;
 
-const getInitials = (name) => {
-  const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
-  return `${parts[0]?.[0] || "C"}${parts[1]?.[0] || ""}`.toUpperCase();
+const formatDateInput = (date) => {
+  const value = new Date(date);
+  if (Number.isNaN(value.getTime())) return "";
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
 const formatDate = (value) => {
@@ -24,6 +22,64 @@ const formatDate = (value) => {
     month: "short",
     day: "2-digit",
   });
+};
+
+const getPresetRange = (value) => {
+  const now = new Date();
+  const end = formatDateInput(now);
+
+  if (value === "today") return { dateFrom: end, dateTo: end };
+
+  if (value === "7days") {
+    const start = new Date(now);
+    start.setDate(start.getDate() - 6);
+    return { dateFrom: formatDateInput(start), dateTo: end };
+  }
+
+  if (value === "30days") {
+    const start = new Date(now);
+    start.setDate(start.getDate() - 29);
+    return { dateFrom: formatDateInput(start), dateTo: end };
+  }
+
+  if (value === "thisMonth") {
+    return {
+      dateFrom: formatDateInput(new Date(now.getFullYear(), now.getMonth(), 1)),
+      dateTo: end,
+    };
+  }
+
+  return { dateFrom: "", dateTo: "" };
+};
+
+const getName = (user = {}) =>
+  user?.employerProfile?.companyName ||
+  user?.companyName ||
+  user?.fullName ||
+  [user?.firstName, user?.middleName, user?.lastName].filter(Boolean).join(" ") ||
+  user?.email ||
+  "Archived account";
+
+const getInitials = (name) => {
+  const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+  return `${parts[0]?.[0] || "A"}${parts[1]?.[0] || ""}`.toUpperCase();
+};
+
+const API_ORIGIN = String(
+  process.env.REACT_APP_API_URL || "https://phinmaau-job-portal-atlas.onrender.com/api"
+).replace(/\/api\/?$/, "");
+
+const resolveMediaUrl = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (/^(https?:|data:|blob:)/i.test(raw)) return raw;
+  return `${API_ORIGIN}${raw.startsWith("/") ? raw : `/${raw}`}`;
+};
+
+const normalizeUrl = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
 };
 
 const Icon = ({ name, className = "h-4 w-4" }) => {
@@ -37,46 +93,52 @@ const Icon = ({ name, className = "h-4 w-4" }) => {
 
   const icons = {
     arrowLeft: <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5m6-6-6 6 6 6" />,
-    restore: <path strokeLinecap="round" strokeLinejoin="round" d="M4 10a8 8 0 108-6M4 4v6h6" />,
-    trash: (
+    eye: (
       <>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13" />
-        <path strokeLinecap="round" d="M10 11v5m4-5v5" />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"
+        />
+        <circle cx="12" cy="12" r="2.5" />
+      </>
+    ),
+    search: (
+      <>
+        <circle cx="11" cy="11" r="7" />
+        <path strokeLinecap="round" d="m20 20-3.5-3.5" />
+      </>
+    ),
+    close: <path strokeLinecap="round" strokeLinejoin="round" d="m6 6 12 12M18 6 6 18" />,
+    building: (
+      <>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 21V4h14v17M3 21h18" />
+        <path strokeLinecap="round" d="M9 8h2m2 0h2M9 12h2m2 0h2M9 16h2m2 0h2" />
+      </>
+    ),
+    location: (
+      <>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s7-6 7-12a7 7 0 1 0-14 0c0 6 7 12 7 12z" />
+        <circle cx="12" cy="9" r="2" />
       </>
     ),
     calendar: (
       <>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6 3v3m12-3v3M4 9h16M5 5h14a1 1 0 011-1v14H4V6a1 1 0 011-1z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 3v3m12-3v3M4 9h16" />
+        <rect x="4" y="5" width="16" height="16" rx="2" />
       </>
     ),
-    user: (
+    chevron: <path strokeLinecap="round" strokeLinejoin="round" d="m8 10 4 4 4-4" />,
+    users: (
       <>
-        <circle cx="12" cy="8" r="3" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M5 20a7 7 0 0114 0" />
+        <circle cx="9" cy="8" r="3" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 20a6 6 0 0 1 12 0M16 5a3 3 0 0 1 0 6m1 3a5 5 0 0 1 4 5" />
       </>
     ),
-    building: (
+    link: (
       <>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M5 21V4h14v17M3 21h18M9 8h2m2 0h2M9 12h2m2 0h2M9 16h2m2 0h2" />
-      </>
-    ),
-    mail: (
-      <>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18v12H3z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="m3 7 9 6 9-6" />
-      </>
-    ),
-    phone: <path strokeLinecap="round" strokeLinejoin="round" d="M5 4h3l2 5-2 1a14 14 0 006 6l1-2 5 2v3a2 2 0 01-2 2C10 21 3 14 3 6a2 2 0 012-2z" />,
-    location: (
-      <>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s7-6 7-12a7 7 0 10-14 0c0 6 7 12 7 12z" />
-        <circle cx="12" cy="9" r="2" />
-      </>
-    ),
-    clock: (
-      <>
-        <circle cx="12" cy="12" r="9" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 7v5l3 2" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10 13a5 5 0 0 0 7.07 0l2.12-2.12a5 5 0 0 0-7.07-7.07L10.7 5.22" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M14 11a5 5 0 0 0-7.07 0l-2.12 2.12a5 5 0 0 0 7.07 7.07l1.42-1.41" />
       </>
     ),
   };
@@ -84,207 +146,186 @@ const Icon = ({ name, className = "h-4 w-4" }) => {
   return <svg {...common}>{icons[name]}</svg>;
 };
 
-const ConfirmModal = ({ target, action, loading, onCancel, onConfirm }) => {
-  if (!target) return null;
-
-  const isDelete = action === "delete";
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 text-center shadow-2xl">
-        <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl ${isDelete ? "bg-red-50 text-red-600" : "bg-[#2e66a6]/10 text-[#2e66a6]"}`}>
-          <Icon name={isDelete ? "trash" : "restore"} className="h-7 w-7" />
-        </div>
-        <h2 className="mt-5 text-xl font-bold text-slate-950">
-          {isDelete ? "Delete permanently?" : "Restore archived item?"}
-        </h2>
-        <p className="mt-3 text-sm leading-6 text-slate-500">
-          {isDelete
-            ? "This record will be removed permanently and cannot be recovered."
-            : "This record will be returned to the Community page."}
-        </p>
-        <div className="mt-6 grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            disabled={loading}
-            onClick={onCancel}
-            className="h-11 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            disabled={loading}
-            onClick={onConfirm}
-            className={`h-11 rounded-xl text-sm font-bold text-white ${isDelete ? "bg-red-600 hover:bg-red-700" : "bg-[#2e66a6] hover:bg-[#255487]"}`}
-          >
-            {loading ? "Please wait..." : isDelete ? "Delete" : "Restore"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+const typeBadgeStyles = {
+  post: "bg-cyan-100 text-cyan-800",
+  comment: "bg-green-100 text-green-800",
+  "job-post": "bg-sky-100 text-sky-800",
+  "declined-applicants": "bg-orange-100 text-orange-800",
+  "inactive-account": "bg-rose-100 text-rose-700",
 };
 
-const InfoCard = ({ icon, label, value, full = false }) => (
-  <div className={`rounded-xl border border-slate-200 bg-slate-50 p-4 ${full ? "sm:col-span-2" : ""}`}>
-    <div className="flex items-start gap-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-[#2e66a6] shadow-sm">
-        <Icon name={icon} />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">{label}</p>
-        <p className="mt-1 break-words text-sm font-semibold text-slate-900">{value || "—"}</p>
-      </div>
-    </div>
-  </div>
+const TypeBadge = ({ type, label }) => (
+  <span
+    className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+      typeBadgeStyles[type] || "bg-slate-100 text-slate-700"
+    }`}
+  >
+    {label}
+  </span>
 );
 
-const DormantDetails = ({ data, loading, errorMessage, onBack }) => {
-  if (loading) {
-    return <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500">Loading dormant account details...</div>;
-  }
+const SelectField = ({ value, onChange, children, ariaLabel, icon }) => (
+  <label className="relative block">
+    <span className="sr-only">{ariaLabel}</span>
+    <select
+      value={value}
+      onChange={onChange}
+      className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 pr-9 text-sm font-medium text-slate-800 outline-none transition hover:border-slate-300 focus:border-[#212C61] focus:ring-2 focus:ring-[#212C61]/10"
+    >
+      {children}
+    </select>
+    <Icon
+      name={icon === "calendar" ? "calendar" : "chevron"}
+      className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+    />
+  </label>
+);
 
-  if (errorMessage || !data) {
-    return <div className="flex min-h-[320px] items-center justify-center px-6 text-center text-sm text-red-600">{errorMessage || "Dormant account not found."}</div>;
-  }
-
-  const user = data.user || {};
-  const name = getName(user);
-  const isEmployer = user.role === "employer";
+const CommunityContentModal = ({ record, onClose }) => {
+  if (!record) return null;
 
   return (
-    <div className="px-5 pb-6 pt-4">
-      <button
-        type="button"
-        onClick={onBack}
-        className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 hover:text-[#2e66a6]"
-      >
-        <Icon name="arrowLeft" />
-        Back to Dormant
-      </button>
-
-      <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-center gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-[#2e66a6] shadow-sm">
-              {isEmployer ? <Icon name="building" className="h-8 w-8" /> : <span className="text-lg font-bold">{getInitials(name)}</span>}
-            </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="truncate text-xl font-bold text-slate-950">{name}</h1>
-                <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">
-                  Dormant Account
-                </span>
-              </div>
-              <p className="mt-2 text-sm capitalize text-slate-500">{user.role || "user"} account</p>
-            </div>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4 py-8 backdrop-blur-sm">
+      <div className="max-h-full w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+        <div className="flex items-start justify-between border-b border-slate-200 px-5 py-4">
+          <div>
+            <h2 className="text-lg font-bold text-black">
+              {record.archiveType === "post" ? "Archived Post" : "Archived Comment"}
+            </h2>
+            <p className="mt-1 text-xs text-slate-500">Archived on {formatDate(record.archivedAt)}</p>
           </div>
-
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 text-center">
-            <p className="text-2xl font-bold text-amber-700">{data.inactivityMonths}</p>
-            <p className="text-xs font-semibold text-amber-700">months inactive</p>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50"
+            aria-label="Close archived content"
+          >
+            <Icon name="close" />
+          </button>
         </div>
-      </div>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <InfoCard icon="mail" label="Email Address" value={user.email} />
-        <InfoCard icon="phone" label="Contact Number" value={data.phoneNumber} />
-        <InfoCard icon="calendar" label="Date Registered" value={formatDate(user.createdAt)} />
-        <InfoCard icon="clock" label="Last Login / Activity" value={formatDate(data.lastActive)} />
-        <InfoCard icon={isEmployer ? "building" : "user"} label={isEmployer ? "Industry" : "Course"} value={data.industryOrCourse} />
-        <InfoCard icon="user" label="Account Status" value={user.status || "active"} />
-        <InfoCard icon="location" label={isEmployer ? "Company Address" : "Campus / Address"} value={data.location} full />
-      </div>
+        <div className="space-y-4 p-5">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+              {record.archiveType === "post" ? "Post content" : "Comment content"}
+            </p>
+            <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-900">
+              {record.content || "No content available."}
+            </p>
+          </div>
 
-      <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50 px-5 py-4 text-sm leading-6 text-blue-800">
-        This account appears automatically in Dormant because its last login, or registration date when no login exists, is between 6 and 12 months ago.
+          {record.archiveType === "comment" && record.postContent ? (
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Original post</p>
+              <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">
+                {record.postContent}
+              </p>
+            </div>
+          ) : null}
+
+          {record.imageUrl ? (
+            <img
+              src={resolveMediaUrl(record.imageUrl)}
+              alt="Archived post attachment"
+              className="max-h-[360px] w-full rounded-xl border border-slate-200 object-contain"
+            />
+          ) : null}
+
+          {record.linkUrl ? (
+            <a
+              href={normalizeUrl(record.linkUrl)}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 break-all text-sm font-semibold text-[#212C61] hover:underline"
+            >
+              <Icon name="link" />
+              {record.linkUrl}
+            </a>
+          ) : null}
+        </div>
       </div>
     </div>
   );
 };
 
-
-const JobArchiveDetails = ({ data, loading, errorMessage, onBack }) => {
-  if (loading) {
-    return <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500">Loading archived job details...</div>;
-  }
-
-  if (errorMessage || !data?.job) {
-    return <div className="flex min-h-[320px] items-center justify-center px-6 text-center text-sm text-red-600">{errorMessage || "Archived job not found."}</div>;
-  }
-
-  const job = data.job;
-  const applicants = data.declinedApplicants || [];
+const DeclinedApplicantsModal = ({ record, onClose, onViewApplicant }) => {
+  if (!record) return null;
+  const applicants = Array.isArray(record.applicants) ? record.applicants : [];
 
   return (
-    <div className="px-5 pb-6 pt-4">
-      <button
-        type="button"
-        onClick={onBack}
-        className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 hover:text-[#2e66a6]"
-      >
-        <Icon name="arrowLeft" />
-        Back to Jobs
-      </button>
-
-      <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4 py-8 backdrop-blur-sm">
+      <div className="max-h-full w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+        <div className="flex items-start justify-between border-b border-slate-200 px-5 py-4">
           <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl font-bold text-slate-950">{job.title || "Untitled job"}</h1>
-              {data.isClosed ? <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-700">Closed</span> : null}
-              {data.isExpired ? <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Expired</span> : null}
-            </div>
-            <p className="mt-2 text-sm font-semibold text-slate-600">{job.companyName || "Unspecified company"}</p>
-            <p className="mt-1 text-xs text-slate-500">{job.location || "Location not specified"} · {job.workMode || "Work mode not specified"}</p>
+            <h2 className="text-lg font-bold text-black">Declined Applicants · {record.title}</h2>
+            <p className="mt-1 text-xs text-slate-500">{record.companyName || "Archived employer"}</p>
           </div>
-
-          <div className="rounded-xl border border-rose-200 bg-rose-50 px-5 py-3 text-center">
-            <p className="text-2xl font-bold text-rose-700">{applicants.length}</p>
-            <p className="text-xs font-semibold text-rose-700">declined applicants</p>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50"
+            aria-label="Close declined applicants"
+          >
+            <Icon name="close" />
+          </button>
         </div>
-      </div>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <InfoCard icon="calendar" label="Application Deadline" value={formatDate(job.applicationDeadline)} />
-        <InfoCard icon="clock" label="Last Updated" value={formatDate(job.updatedAt)} />
-        <InfoCard icon="building" label="Employment Type" value={job.jobType} />
-        <InfoCard icon="location" label="Work Location" value={job.location} />
-      </div>
-
-      <div className="mt-6">
-        <h2 className="text-sm font-bold text-slate-950">Declined applicants</h2>
-        <p className="mt-1 text-xs text-slate-500">Applicants are shown with the stage where the employer declined them.</p>
-
-        {applicants.length === 0 ? (
-          <div className="mt-4 flex min-h-[140px] items-center justify-center rounded-xl border border-slate-200 text-sm text-slate-500">
-            No declined applicants were found for this job.
+        <div className="p-5">
+          <div className="mb-3 flex items-center gap-2 text-sm text-slate-600">
+            <Icon name="users" />
+            <span>
+              {applicants.length} applicant{applicants.length === 1 ? "" : "s"} declined for{" "}
+              <strong className="text-black">{record.title}</strong>
+            </span>
           </div>
-        ) : (
-          <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
-            <div className="grid min-w-[760px] grid-cols-[1.3fr_0.9fr_1fr_0.9fr_0.9fr] gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-500">
-              <span>Applicant</span>
-              <span>Jobseeker level</span>
-              <span>Declined stage</span>
-              <span>Date applied</span>
-              <span>Date declined</span>
+
+          {applicants.length === 0 ? (
+            <div className="flex min-h-[150px] items-center justify-center rounded-xl border border-slate-200 text-sm text-slate-500">
+              No archived declined applicants found.
             </div>
-            {applicants.map((application) => (
-              <div
-                key={application._id}
-                className="grid min-w-[760px] grid-cols-[1.3fr_0.9fr_1fr_0.9fr_0.9fr] gap-3 border-b border-slate-100 px-4 py-3 text-xs last:border-b-0"
-              >
-                <span className="font-semibold text-slate-900">{application.applicantName}</span>
-                <span className="text-slate-600">{application.jobseekerLevel || "Not specified"}</span>
-                <span><span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-1 font-semibold text-rose-700">{application.declinedStage}</span></span>
-                <span className="text-slate-500">{formatDate(application.appliedAt)}</span>
-                <span className="text-slate-500">{formatDate(application.declinedAt)}</span>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <div className="min-w-[700px]">
+                <div className="grid grid-cols-[1.2fr_1fr_1fr_0.8fr_0.65fr] gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                  <span>Applicant</span>
+                  <span>Job Title Applied</span>
+                  <span>Decline Stage</span>
+                  <span>Declined On</span>
+                  <span>Actions</span>
+                </div>
+
+                {applicants.map((applicant) => (
+                  <div
+                    key={applicant.applicationId || applicant._id}
+                    className="grid grid-cols-[1.2fr_1fr_1fr_0.8fr_0.65fr] items-center gap-3 border-b border-slate-100 px-4 py-3 text-xs last:border-b-0"
+                  >
+                    <div>
+                      <p className="font-semibold text-black">{applicant.applicantName || "Applicant"}</p>
+                      <p className="mt-0.5 truncate text-[11px] text-slate-500">{applicant.email || "—"}</p>
+                    </div>
+                    <span className="text-slate-600">{applicant.jobTitle || record.title}</span>
+                    <span>
+                      <span className="inline-flex rounded-full bg-rose-100 px-2 py-1 text-[10px] font-semibold text-rose-700">
+                        {applicant.declinedStage || "Application Review"}
+                      </span>
+                    </span>
+                    <span className="text-slate-500">{formatDate(applicant.declinedAt)}</span>
+                    <button
+                      type="button"
+                      onClick={() => onViewApplicant(applicant)}
+                      className="inline-flex h-8 w-fit items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 font-semibold text-slate-700 hover:border-[#212C61]/40 hover:text-[#212C61]"
+                    >
+                      <Icon name="eye" className="h-3.5 w-3.5" />
+                      View
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          )}
+
+          <p className="mt-3 text-xs text-slate-500">Archived on {formatDate(record.archivedAt)}</p>
+        </div>
       </div>
     </div>
   );
@@ -294,21 +335,26 @@ const AdminArchiveDetails = () => {
   const navigate = useNavigate();
   const { type, id } = useParams();
 
-  const [author, setAuthor] = useState(null);
-  const [items, setItems] = useState([]);
-  const [dormantData, setDormantData] = useState(null);
-  const [jobData, setJobData] = useState(null);
-  const [filterType, setFilterType] = useState("all");
+  const [account, setAccount] = useState(null);
+  const [summary, setSummary] = useState({});
+  const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
-  const [confirmState, setConfirmState] = useState({ target: null, action: "" });
-  const [actionLoading, setActionLoading] = useState(false);
-
-  const isDormantView = type === "dormant-user";
-  const isJobView = type === "job";
+  const [currentPage, setCurrentPage] = useState(1);
+  const [communityModalRecord, setCommunityModalRecord] = useState(null);
+  const [declinedModalRecord, setDeclinedModalRecord] = useState(null);
+  const [filters, setFilters] = useState({
+    search: "",
+    type: "all",
+    title: "all",
+    date: "all",
+    dateFrom: "",
+    dateTo: "",
+    sort: "recent",
+  });
 
   const loadDetails = useCallback(async () => {
-    if (!["community-author", "dormant-user", "job"].includes(type)) {
+    if (type !== "account") {
       setErrorMessage("Unsupported archive detail type.");
       setLoading(false);
       return;
@@ -318,23 +364,16 @@ const AdminArchiveDetails = () => {
     setErrorMessage("");
 
     try {
-      const response = await api.get(`/admin/archive/${type}/${id}`);
-
-      if (type === "dormant-user") {
-        setDormantData(response.data || null);
-      } else if (type === "job") {
-        setJobData(response.data || null);
-      } else {
-        setAuthor(response.data?.author || null);
-        setItems(response.data?.items || []);
-      }
+      const response = await api.get(`/admin/archive/account/${id}`);
+      setAccount(response.data?.account || null);
+      setSummary(response.data?.summary || {});
+      setRecords(response.data?.records || []);
     } catch (error) {
       console.error("Failed to load archive details:", error);
-      setAuthor(null);
-      setItems([]);
-      setDormantData(null);
-      setJobData(null);
-      setErrorMessage(error?.response?.data?.message || "Failed to load archive details.");
+      setAccount(null);
+      setSummary({});
+      setRecords([]);
+      setErrorMessage(error?.response?.data?.message || "Failed to load archived account details.");
     } finally {
       setLoading(false);
     }
@@ -344,208 +383,355 @@ const AdminArchiveDetails = () => {
     loadDetails();
   }, [loadDetails]);
 
-  const visibleItems = useMemo(() => {
-    if (filterType === "all") return items;
-    return items.filter((item) => item.archiveType === filterType);
-  }, [filterType, items]);
+  const updateFilter = (key, value) => {
+    if (key === "date") {
+      const range = getPresetRange(value);
+      setFilters((previous) => ({ ...previous, date: value, ...range }));
+      return;
+    }
 
-  const runAction = async () => {
-    const target = confirmState.target;
-    if (!target) return;
+    setFilters((previous) => ({ ...previous, [key]: value }));
+  };
 
-    const endpointType = target.archiveType === "post" ? "community-post" : "community-comment";
-    setActionLoading(true);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
 
-    try {
-      if (confirmState.action === "restore") {
-        await api.patch(`/admin/archive/${endpointType}/${target._id}/restore`);
-      } else {
-        await api.delete(`/admin/archive/${endpointType}/${target._id}`);
+  const jobTitles = useMemo(
+    () =>
+      [
+        ...new Set(
+          records
+            .filter((record) =>
+              ["job-post", "declined-applicants"].includes(record.archiveType)
+            )
+            .map((record) => String(record.title || "").trim())
+            .filter(Boolean)
+        ),
+      ].sort((a, b) => a.localeCompare(b)),
+    [records]
+  );
+
+  const visibleRecords = useMemo(() => {
+    const query = filters.search.trim().toLowerCase();
+    const from = filters.dateFrom ? new Date(`${filters.dateFrom}T00:00:00`) : null;
+    const to = filters.dateTo ? new Date(`${filters.dateTo}T23:59:59.999`) : null;
+
+    const filtered = records.filter((record) => {
+      if (filters.type !== "all" && record.archiveType !== filters.type) return false;
+      if (filters.title !== "all" && record.title !== filters.title) return false;
+
+      if (query) {
+        const searchable = [
+          record.typeLabel,
+          record.title,
+          record.content,
+          record.postContent,
+          ...(Array.isArray(record.applicants)
+            ? record.applicants.flatMap((applicant) => [
+                applicant.applicantName,
+                applicant.email,
+                applicant.declinedStage,
+              ])
+            : []),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        if (!searchable.includes(query)) return false;
       }
 
-      setConfirmState({ target: null, action: "" });
-      await loadDetails();
-    } catch (error) {
-      console.error("Community archive action failed:", error);
-      window.alert(error?.response?.data?.message || "The requested action failed.");
-    } finally {
-      setActionLoading(false);
+      if (filters.date !== "all") {
+        const archivedAt = new Date(record.archivedAt || 0);
+        if (Number.isNaN(archivedAt.getTime())) return false;
+        if (from && archivedAt < from) return false;
+        if (to && archivedAt > to) return false;
+      }
+
+      return true;
+    });
+
+    return [...filtered].sort((first, second) => {
+      if (filters.sort === "oldest") {
+        return new Date(first.archivedAt || 0) - new Date(second.archivedAt || 0);
+      }
+      if (filters.sort === "title-asc") return String(first.title || "").localeCompare(String(second.title || ""));
+      if (filters.sort === "title-desc") return String(second.title || "").localeCompare(String(first.title || ""));
+      return new Date(second.archivedAt || 0) - new Date(first.archivedAt || 0);
+    });
+  }, [filters, records]);
+
+  const pageCount = Math.max(1, Math.ceil(visibleRecords.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(currentPage, pageCount);
+  const paginatedRecords = useMemo(() => {
+    const start = (safePage - 1) * ITEMS_PER_PAGE;
+    return visibleRecords.slice(start, start + ITEMS_PER_PAGE);
+  }, [safePage, visibleRecords]);
+
+  const handleViewRecord = (record) => {
+    if (record.archiveType === "job-post" && record.jobId) {
+      navigate(`/admin/jobs/${record.jobId}?archive=1`, {
+        state: {
+          isArchivedView: true,
+          backPath: `/admin/archive/account/${id}`,
+          backLabel: "Archive Details",
+        },
+      });
+      return;
+    }
+
+    if (record.archiveType === "declined-applicants") {
+      setDeclinedModalRecord(record);
+      return;
+    }
+
+    if (record.archiveType === "post" || record.archiveType === "comment") {
+      setCommunityModalRecord(record);
+      return;
+    }
+
+    if (record.archiveType === "inactive-account") {
+      navigate(`/admin/users/${id}?archive=1`, {
+        state: {
+          fromArchive: true,
+          archiveBackPath: `/admin/archive/account/${id}`,
+          archivedAt: record.archivedAt,
+          lastActive: summary.lastActive,
+          inactivityDays: summary.inactivityDays,
+        },
+      });
     }
   };
 
-  if (isJobView) {
-    return (
-      <AdminLayout>
-        <main className="mx-auto w-full max-w-[1120px] px-4 py-8 sm:px-6 lg:px-8">
-          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-200 px-5 py-4">
-              <h1 className="text-sm font-bold text-slate-950">Archived Job Details</h1>
-              <p className="mt-0.5 text-xs text-slate-500">
-                Review the closed or expired job and its declined applicants.
-              </p>
-            </div>
-            <JobArchiveDetails
-              data={jobData}
-              loading={loading}
-              errorMessage={errorMessage}
-              onBack={() => navigate("/admin/archive?tab=jobs")}
-            />
-          </section>
-        </main>
-      </AdminLayout>
-    );
-  }
-
-  if (isDormantView) {
-    return (
-      <AdminLayout>
-        <main className="mx-auto w-full max-w-[1120px] px-4 py-8 sm:px-6 lg:px-8">
-          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-200 px-5 py-4">
-              <h1 className="text-sm font-bold text-slate-950">Dormant Account Details</h1>
-              <p className="mt-0.5 text-xs text-slate-500">
-                Review the profile and inactivity information of this account.
-              </p>
-            </div>
-            <DormantDetails
-              data={dormantData}
-              loading={loading}
-              errorMessage={errorMessage}
-              onBack={() => navigate("/admin/archive?tab=dormant")}
-            />
-          </section>
-        </main>
-      </AdminLayout>
-    );
-  }
-
-  const authorName = getName(author || {});
+  const accountName = getName(account || {});
+  const avatarUrl = resolveMediaUrl(
+    account?.employerProfile?.companyLogo ||
+      account?.companyLogo ||
+      account?.profileImage ||
+      account?.jobSeekerProfile?.profileImage ||
+      ""
+  );
 
   return (
     <AdminLayout>
-      <main className="mx-auto w-full max-w-[1280px] px-4 py-8 sm:px-6 lg:px-8">
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 px-5 py-4">
-            <h1 className="text-sm font-bold text-slate-950">Archive Manager</h1>
-            <p className="mt-0.5 text-xs text-slate-500">
-              Review, restore, or permanently delete archived community records.
-            </p>
+      <main className="mx-auto w-full max-w-[1180px] px-1 py-8">
+        <header className="mb-5 flex flex-wrap items-center gap-4">
+          <button
+            type="button"
+            onClick={() => navigate("/admin/archive")}
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-black shadow-sm hover:bg-slate-50"
+          >
+            <Icon name="arrowLeft" />
+            Back
+          </button>
+
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-fuchsia-200 text-sm font-bold text-[#212C61]">
+            {avatarUrl ? <img src={avatarUrl} alt={accountName} className="h-full w-full object-cover" /> : getInitials(accountName)}
           </div>
 
-          <div className="px-5 pb-5 pt-4">
-            <div className="mb-5 inline-flex h-10 items-center rounded-lg border border-slate-200 bg-slate-50 px-5 text-sm font-bold text-slate-900 shadow-sm">
-              Community
+          <div className="min-w-0">
+            <h1 className="truncate text-2xl font-bold text-black">{accountName}</h1>
+            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+              <span className="inline-flex items-center gap-1.5">
+                <Icon name="building" className="h-3.5 w-3.5" />
+                {summary.industryOrCourse || account?.role || "Archived account"}
+              </span>
+              {summary.location ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon name="location" className="h-3.5 w-3.5" />
+                  {summary.location}
+                </span>
+              ) : null}
             </div>
+          </div>
+        </header>
 
-            <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => navigate("/admin/archive")}
-                  className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 hover:text-[#2e66a6]"
-                >
-                  <Icon name="arrowLeft" />
-                  Back
-                </button>
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="grid gap-3 border-b border-slate-200 p-4 lg:grid-cols-[minmax(250px,1.5fr)_minmax(130px,0.7fr)_minmax(160px,0.9fr)_minmax(145px,0.75fr)_minmax(160px,0.8fr)]">
+            <label className="relative block">
+              <span className="sr-only">Search archived records</span>
+              <Icon
+                name="search"
+                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                type="search"
+                value={filters.search}
+                onChange={(event) => updateFilter("search", event.target.value)}
+                placeholder="Search job title or content..."
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-[#212C61] focus:ring-2 focus:ring-[#212C61]/10"
+              />
+            </label>
 
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700">
-                  {getInitials(authorName)}
-                </div>
+            <SelectField
+              value={filters.type}
+              onChange={(event) => updateFilter("type", event.target.value)}
+              ariaLabel="Filter by archived type"
+            >
+              <option value="all">All Type</option>
+              <option value="post">Post</option>
+              <option value="comment">Comment</option>
+              <option value="job-post">Job Post</option>
+              <option value="declined-applicants">Declined Applicants</option>
+              <option value="inactive-account">Inactive Account</option>
+            </SelectField>
 
-                <div>
-                  <h2 className="text-sm font-bold text-slate-950">{authorName}</h2>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
-                    <span>{author?.campus || "Unspecified campus"}</span>
-                    <span>{author?.course || "Unspecified course"}</span>
-                  </div>
-                </div>
-              </div>
+            <SelectField
+              value={filters.title}
+              onChange={(event) => updateFilter("title", event.target.value)}
+              ariaLabel="Filter by job title"
+            >
+              <option value="all">All Job Title</option>
+              {jobTitles.map((title) => (
+                <option key={title} value={title}>
+                  {title}
+                </option>
+              ))}
+            </SelectField>
 
-              <select
-                value={filterType}
-                onChange={(event) => setFilterType(event.target.value)}
-                className="h-10 min-w-[150px] rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#2e66a6]"
-              >
-                <option value="all">All types</option>
-                <option value="post">Posts</option>
-                <option value="comment">Comments</option>
-              </select>
+            <SelectField
+              value={filters.date}
+              onChange={(event) => updateFilter("date", event.target.value)}
+              ariaLabel="Filter by archived date"
+              icon="calendar"
+            >
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              <option value="7days">Last 7 Days</option>
+              <option value="30days">Last 30 Days</option>
+              <option value="thisMonth">This Month</option>
+              <option value="custom">Custom Range</option>
+            </SelectField>
+
+            <SelectField
+              value={filters.sort}
+              onChange={(event) => updateFilter("sort", event.target.value)}
+              ariaLabel="Sort archived details"
+            >
+              <option value="recent">Sort By: Recent</option>
+              <option value="oldest">Sort By: Oldest</option>
+              <option value="title-asc">Sort By: Title A-Z</option>
+              <option value="title-desc">Sort By: Title Z-A</option>
+            </SelectField>
+          </div>
+
+          {filters.date === "custom" ? (
+            <div className="grid gap-3 border-b border-slate-200 bg-slate-50 p-4 sm:grid-cols-2">
+              <label className="text-xs font-semibold text-slate-600">
+                Start date
+                <input
+                  type="date"
+                  value={filters.dateFrom}
+                  onChange={(event) => updateFilter("dateFrom", event.target.value)}
+                  className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#212C61]"
+                />
+              </label>
+              <label className="text-xs font-semibold text-slate-600">
+                End date
+                <input
+                  type="date"
+                  value={filters.dateTo}
+                  onChange={(event) => updateFilter("dateTo", event.target.value)}
+                  className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#212C61]"
+                />
+              </label>
             </div>
+          ) : null}
 
-            {loading ? (
-              <div className="flex min-h-[220px] items-center justify-center text-sm text-slate-500">
-                Loading deletion history...
+          <div className="overflow-x-auto">
+            <div className="min-w-[760px]">
+              <div className="grid grid-cols-[0.8fr_1.65fr_0.9fr_0.65fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600">
+                <span>Type</span>
+                <span>Job Title</span>
+                <span>Archived Date</span>
+                <span>Actions</span>
               </div>
-            ) : errorMessage ? (
-              <div className="flex min-h-[220px] items-center justify-center px-6 text-center text-sm text-red-600">
-                {errorMessage}
-              </div>
-            ) : visibleItems.length === 0 ? (
-              <div className="flex min-h-[220px] items-center justify-center text-sm text-slate-500">
-                No archived posts or comments found for this jobseeker.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {visibleItems.map((item) => (
-                  <article
-                    key={`${item.archiveType}-${item._id}`}
-                    className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+
+              {loading ? (
+                <div className="flex min-h-[230px] items-center justify-center text-sm text-slate-500">
+                  Loading archived account details...
+                </div>
+              ) : errorMessage ? (
+                <div className="flex min-h-[230px] items-center justify-center px-6 text-center text-sm text-red-600">
+                  {errorMessage}
+                </div>
+              ) : paginatedRecords.length === 0 ? (
+                <div className="flex min-h-[230px] items-center justify-center text-sm text-slate-500">
+                  No archived records found for this account.
+                </div>
+              ) : (
+                paginatedRecords.map((record) => (
+                  <div
+                    key={record.recordId}
+                    className="grid grid-cols-[0.8fr_1.65fr_0.9fr_0.65fr] items-center gap-4 border-b border-slate-200 px-5 py-4 last:border-b-0 hover:bg-slate-50/50"
                   >
+                    <div>
+                      <TypeBadge type={record.archiveType} label={record.typeLabel} />
+                    </div>
                     <div className="min-w-0">
-                      <div className="flex items-start gap-3">
-                        <span className={`mt-0.5 rounded-md px-2 py-1 text-[10px] font-bold ${item.archiveType === "post" ? "bg-blue-50 text-blue-700 ring-1 ring-blue-100" : "bg-violet-50 text-violet-700 ring-1 ring-violet-100"}`}>
-                          {item.archiveType === "post" ? "Post" : "Comment"}
-                        </span>
-                        <div className="min-w-0">
-                          <p className="break-words text-sm font-medium leading-6 text-slate-900">
-                            {item.content || "No content"}
-                          </p>
-                          {item.archiveType === "comment" && item.postContent ? (
-                            <p className="mt-1 line-clamp-1 text-xs text-slate-400">
-                              On post: {item.postContent}
-                            </p>
-                          ) : null}
-                          <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-slate-500">
-                            <Icon name="calendar" className="h-3 w-3" />
-                            {formatDate(item.deletedAt)}
-                            {item.deletedByName ? ` · by ${item.deletedByName}` : ""}
-                          </p>
-                        </div>
-                      </div>
+                      <p className="truncate text-sm font-semibold text-black">
+                        {record.title || "Archived record"}
+                      </p>
+                      {record.subtitle ? (
+                        <p className="mt-1 truncate text-[11px] text-slate-500">{record.subtitle}</p>
+                      ) : null}
                     </div>
+                    <span className="text-sm text-slate-600">{formatDate(record.archivedAt)}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleViewRecord(record)}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-[#212C61]/40 hover:bg-[#212C61]/5 hover:text-[#212C61]"
+                      aria-label={`View ${record.typeLabel}`}
+                      title={`View ${record.typeLabel}`}
+                    >
+                      <Icon name="eye" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
 
-                    <div className="flex shrink-0 items-center gap-2 sm:justify-end">
-                      <button
-                        type="button"
-                        onClick={() => setConfirmState({ target: item, action: "restore" })}
-                        className="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
-                      >
-                        <Icon name="restore" />
-                        Restore
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setConfirmState({ target: item, action: "delete" })}
-                        className="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-xs font-semibold text-red-600 transition hover:bg-red-50"
-                      >
-                        <Icon name="trash" />
-                        Delete
-                      </button>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
+          <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50/40 px-5 py-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              Showing {visibleRecords.length === 0 ? 0 : (safePage - 1) * ITEMS_PER_PAGE + 1} to{" "}
+              {Math.min(safePage * ITEMS_PER_PAGE, visibleRecords.length)} of {visibleRecords.length} results
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={safePage <= 1}
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                className="h-9 rounded-lg border border-slate-200 bg-white px-3 font-semibold text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Previous
+              </button>
+              <span className="flex h-9 min-w-9 items-center justify-center rounded-lg bg-[#212C61] px-3 font-bold text-white">
+                {safePage}
+              </span>
+              <button
+                type="button"
+                disabled={safePage >= pageCount}
+                onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))}
+                className="h-9 rounded-lg border border-slate-200 bg-white px-3 font-semibold text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </section>
       </main>
 
-      <ConfirmModal
-        target={confirmState.target}
-        action={confirmState.action}
-        loading={actionLoading}
-        onCancel={() => !actionLoading && setConfirmState({ target: null, action: "" })}
-        onConfirm={runAction}
+      <CommunityContentModal record={communityModalRecord} onClose={() => setCommunityModalRecord(null)} />
+      <DeclinedApplicantsModal
+        record={declinedModalRecord}
+        onClose={() => setDeclinedModalRecord(null)}
+        onViewApplicant={(applicant) => {
+          const applicationId = applicant.applicationId || applicant._id;
+          if (!applicationId) return;
+          navigate(`/admin/applications/${applicationId}`);
+        }}
       />
     </AdminLayout>
   );

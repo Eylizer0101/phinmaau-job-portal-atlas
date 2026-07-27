@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
 import { normalizeUserToResumeData } from "../../components/shared/resumePrintTemplate";
@@ -400,6 +400,16 @@ const calculateJobSeekerLevel = ({
 const UserManagementDetails = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isArchiveView = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return Boolean(location.state?.fromArchive) || params.get("archive") === "1";
+  }, [location.search, location.state]);
+  const archiveBackPath = location.state?.archiveBackPath || `/admin/archive/account/${userId}`;
+
+  const handleBack = () => {
+    navigate(isArchiveView ? archiveBackPath : "/admin/users");
+  };
 
   const [user, setUser] = useState(null);
   const [applications, setApplications] = useState([]);
@@ -1568,7 +1578,7 @@ const UserManagementDetails = () => {
     return (
       <AdminLayout>
         <div className="w-full px-0 py-10">
-          <button onClick={() => navigate("/admin/users")} className="mb-6 rounded-full p-2 hover:bg-slate-100" aria-label="Back"><Icon name="arrowLeft" className="h-5 w-5" /></button>
+          <button onClick={handleBack} className="mb-6 rounded-full p-2 hover:bg-slate-100" aria-label="Back"><Icon name="arrowLeft" className="h-5 w-5" /></button>
           <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white py-20">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
             <p className="mt-4 text-sm text-slate-600">Loading user profile...</p>
@@ -1582,12 +1592,40 @@ const UserManagementDetails = () => {
     return (
       <AdminLayout>
         <div className="w-full px-0 py-10">
-          <button onClick={() => navigate("/admin/users")} className="mb-6 rounded-full p-2 hover:bg-slate-100" aria-label="Back"><Icon name="arrowLeft" className="h-5 w-5" /></button>
+          <button onClick={handleBack} className="mb-6 rounded-full p-2 hover:bg-slate-100" aria-label="Back"><Icon name="arrowLeft" className="h-5 w-5" /></button>
           <div className="rounded-2xl border border-red-100 bg-red-50 p-6 text-red-700">{error || "User not found."}</div>
         </div>
       </AdminLayout>
     );
   }
+
+  const archiveLastActive = location.state?.lastActive || user.lastLogin || user.updatedAt || user.createdAt;
+  const archiveDate = location.state?.archivedAt || user.updatedAt || user.createdAt;
+  const archiveInactivityDays = Number.isFinite(Number(location.state?.inactivityDays))
+    ? Number(location.state.inactivityDays)
+    : Math.max(
+        0,
+        Math.floor((Date.now() - new Date(archiveLastActive || Date.now()).getTime()) / 86400000)
+      );
+
+  const archiveBanner = isArchiveView ? (
+    <div className="flex flex-col gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p className="text-sm font-bold">Account marked as inactive</p>
+        <p className="mt-0.5 text-xs text-rose-600">
+          Archived on {formatDate(archiveDate)} due to prolonged inactivity.
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold">
+        <span className="rounded-full border border-rose-200 bg-white px-3 py-1.5">
+          Last Active: {formatDate(archiveLastActive)}
+        </span>
+        <span className="rounded-full border border-rose-200 bg-white px-3 py-1.5">
+          Total Inactivity: {archiveInactivityDays} days
+        </span>
+      </div>
+    </div>
+  ) : null;
 
   if (!isJobseeker) {
     const employerProfile = user.employerProfile || {};
@@ -2244,12 +2282,14 @@ const UserManagementDetails = () => {
           <div className="w-full space-y-5">
             <button
               type="button"
-              onClick={() => navigate("/admin/users")}
+              onClick={handleBack}
               className="inline-flex w-fit items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-black shadow-sm transition hover:border-[#2e66a6]/35 hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
             >
               <Icon name="arrowLeft" className="h-4 w-4" />
-              Back to Users
+              {isArchiveView ? "Back to Archive" : "Back to Users"}
             </button>
+
+            {archiveBanner}
 
             <section className="overflow-hidden rounded-2xl border border-[#dfe7f0] bg-white shadow-[0_16px_40px_rgba(46,102,166,0.08)]">
               <div className="h-44 overflow-hidden bg-[#eaf2fb] sm:h-56 lg:h-64">
@@ -2341,12 +2381,14 @@ const UserManagementDetails = () => {
                     </span>
                     </button>
 
-                    <div className="w-full whitespace-nowrap rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-2.5 text-center text-xs text-black/60 shadow-sm">
-                      <span className="font-semibold text-black">
-                        Last profile update:
-                      </span>{" "}
-                      {formatDate(user.updatedAt, true)}
-                    </div>
+                    {!isArchiveView ? (
+                      <div className="w-full whitespace-nowrap rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-2.5 text-center text-xs text-black/60 shadow-sm">
+                        <span className="font-semibold text-black">
+                          Last profile update:
+                        </span>{" "}
+                        {formatDate(user.updatedAt, true)}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
 
@@ -2401,12 +2443,14 @@ const UserManagementDetails = () => {
         <div className="w-full space-y-5">
           <button
             type="button"
-            onClick={() => navigate("/admin/users")}
+            onClick={handleBack}
             className="inline-flex w-fit items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-black shadow-sm transition hover:border-[#2e66a6]/35 hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
           >
             <Icon name="arrowLeft" className="h-4 w-4" />
-            Back to Users
+            {isArchiveView ? "Back to Archive" : "Back to Users"}
           </button>
+
+          {archiveBanner}
 
           <HeaderProfile />
 

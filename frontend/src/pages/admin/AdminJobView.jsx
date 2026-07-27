@@ -615,9 +615,13 @@ const AdminJobView = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const isArchivedView = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return Boolean(location.state?.isArchivedView) || params.get('archive') === '1';
+  }, [location.search, location.state]);
 
-  const backPath = location.state?.backPath || '/admin/users';
-  const backLabel = location.state?.backLabel || 'Back';
+  const backPath = location.state?.backPath || (isArchivedView ? '/admin/archive' : '/admin/users');
+  const backLabel = location.state?.backLabel || (isArchivedView ? 'Archive' : 'Back');
 
   const handleBack = () => {
     navigate(backPath);
@@ -729,7 +733,9 @@ const AdminJobView = () => {
       setLoading(true);
       setError('');
 
-      const response = await api.get(`/jobs/${jobId}`);
+      const response = await api.get(
+        isArchivedView ? `/admin/archive/job/${jobId}` : `/jobs/${jobId}`
+      );
 
       if (response.data.success) {
         const jobData = response.data.job;
@@ -762,9 +768,14 @@ const AdminJobView = () => {
     } finally {
       setLoading(false);
     }
-  }, [jobId]);
+  }, [isArchivedView, jobId]);
 
   const fetchJobApplicants = useCallback(async () => {
+    if (isArchivedView) {
+      setApplicants([]);
+      return;
+    }
+
     try {
       const response = await api.get(`/applications/job/${jobId}`);
       const rows = Array.isArray(response.data?.applications) ? response.data.applications : [];
@@ -772,7 +783,7 @@ const AdminJobView = () => {
     } catch {
       setApplicants([]);
     }
-  }, [jobId]);
+  }, [isArchivedView, jobId]);
 
   useEffect(() => {
     fetchJobDetails();
@@ -917,8 +928,9 @@ const AdminJobView = () => {
                   </div>
                 </div>
 
-                <div className="flex w-full justify-start lg:w-auto lg:self-center lg:justify-end">
-                  <button
+                {!isArchivedView ? (
+                  <div className="flex w-full justify-start lg:w-auto lg:self-center lg:justify-end">
+                    <button
                     type="button"
                     onClick={() =>
                       navigate(`/admin/jobs/${jobId}/applicants`, {
@@ -973,8 +985,9 @@ const AdminJobView = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 5l7 7-7 7" />
                       </svg>
                     </span>
-                  </button>
-                </div>
+                    </button>
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
