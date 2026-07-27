@@ -20,6 +20,7 @@ import {
   faClock,
 } from '@fortawesome/free-solid-svg-icons';
 import api from '../services/api.js';
+import ChatbotWidget from '../components/shared/ChatbotWidget';
 
 /** Helpers */
 function useOnClickOutside(refs, handler, enabled = true) {
@@ -1608,6 +1609,8 @@ const JobSeekerLayout = ({ children }) => {
       </div>
 
       <main className="w-full py-8 pt-20 hidden md:block">{children}</main>
+
+      <ChatbotWidget role="jobseeker" />
     </div>
   );
 };

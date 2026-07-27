@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation, useMatch, useNavigate } from "react-router-dom";
 import api from "../services/api";
+import ChatbotWidget from "../components/shared/ChatbotWidget";
 
 const VERIFY_MODAL_SEEN_KEY = "employerVerifyModalSeen"; // session flag
 
@@ -1121,6 +1122,8 @@ const EmployerLayout = ({ children }) => {
           </div>
         </div>
       )}
+
+      <ChatbotWidget role="employer" />
     </div>
   );
 };

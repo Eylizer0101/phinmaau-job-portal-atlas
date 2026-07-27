@@ -291,6 +291,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/jobs', require('./routes/jobRoutes'));
 app.use('/api/applications', applicationRoutes);
 app.use('/api/messages', require('./routes/messageRoutes'));
+app.use('/api/chatbot', require('./routes/chatbotRoutes'));
 app.use('/api/community', require('./routes/communityRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 
