@@ -184,6 +184,27 @@ const normalizeUrl = (value) => {
   return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
 };
 
+const getLinkDetails = (value) => {
+  const normalized = normalizeUrl(value);
+  if (!normalized) return { url: "", host: "", label: "" };
+
+  try {
+    const parsed = new URL(normalized);
+    const host = parsed.hostname.replace(/^www\./i, "");
+    return {
+      url: normalized,
+      host,
+      label: host || normalized,
+    };
+  } catch {
+    return {
+      url: normalized,
+      host: normalized,
+      label: normalized,
+    };
+  }
+};
+
 const Icon = ({ name, className = "h-4 w-4" }) => {
   const common = {
     className,
@@ -632,8 +653,20 @@ const SortFilterDropdown = ({ value, disabled, onSelect }) => {
   );
 };
 
-const CommunityContentModal = ({ record, onClose }) => {
+const CommunityContentModal = ({ record, account, onClose }) => {
   if (!record) return null;
+
+  const isPost = record.archiveType === "post";
+  const topics = Array.isArray(record.topics)
+    ? record.topics
+        .map((topic) => String(topic || "").trim().replace(/^#+/, ""))
+        .filter(Boolean)
+    : String(record.topics || "")
+        .split(",")
+        .map((topic) => topic.trim().replace(/^#+/, ""))
+        .filter(Boolean);
+  const link = getLinkDetails(record.linkUrl);
+  const authorName = getName(account || {});
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4 py-8 backdrop-blur-sm">
@@ -641,7 +674,7 @@ const CommunityContentModal = ({ record, onClose }) => {
         <div className="flex items-start justify-between border-b border-slate-200 px-5 py-4">
           <div>
             <h2 className="text-lg font-bold text-black">
-              {record.archiveType === "post" ? "Archived Post" : "Archived Comment"}
+              {isPost ? "Archived Post" : "Archived Comment"}
             </h2>
             <p className="mt-1 text-xs text-slate-500">Archived on {formatDate(record.archivedAt)}</p>
           </div>
@@ -655,44 +688,86 @@ const CommunityContentModal = ({ record, onClose }) => {
           </button>
         </div>
 
-        <div className="space-y-4 p-5">
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-              {record.archiveType === "post" ? "Post content" : "Comment content"}
-            </p>
-            <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-900">
-              {record.content || "No content available."}
-            </p>
-          </div>
+        <div className="p-5">
+          {isPost ? (
+            <article className="rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#eaf3ff] text-sm font-bold text-[#212C61]">
+                  {getInitials(authorName)}
+                </div>
 
-          {record.archiveType === "comment" && record.postContent ? (
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Original post</p>
-              <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">
-                {record.postContent}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-bold text-black">{authorName}</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                    <span>Archived community post</span>
+                    {record.category ? (
+                      <span className="rounded-full bg-[#212C61]/10 px-2.5 py-1 font-semibold capitalize text-[#212C61]">
+                        {record.category}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-6 text-black/75">
+                {record.content || "No content available."}
               </p>
+
+              {topics.length > 0 ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {topics.map((topic, index) => (
+                    <span
+                      key={`${topic}-${index}`}
+                      className="rounded-full bg-[#f1edff] px-3 py-1 text-xs font-medium text-[#6350a8]"
+                    >
+                      #{topic}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+
+              {link.url ? (
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 inline-flex max-w-full items-center gap-2 text-sm font-medium text-[#6350a8] transition hover:text-[#5140b5] hover:underline"
+                  title={link.url}
+                >
+                  <Icon name="link" className="h-4 w-4 shrink-0" />
+                  <span className="min-w-0 truncate">Source: {link.label}</span>
+                </a>
+              ) : null}
+
+              {record.imageUrl ? (
+                <img
+                  src={resolveMediaUrl(record.imageUrl)}
+                  alt="Archived community post"
+                  className="mt-4 max-h-[460px] w-full rounded-xl border border-slate-200 object-cover"
+                />
+              ) : null}
+            </article>
+          ) : (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                  Comment content
+                </p>
+                <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-900">
+                  {record.content || "No content available."}
+                </p>
+              </div>
+
+              {record.postContent ? (
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Original post</p>
+                  <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">
+                    {record.postContent}
+                  </p>
+                </div>
+              ) : null}
             </div>
-          ) : null}
-
-          {record.imageUrl ? (
-            <img
-              src={resolveMediaUrl(record.imageUrl)}
-              alt="Archived post attachment"
-              className="max-h-[360px] w-full rounded-xl border border-slate-200 object-contain"
-            />
-          ) : null}
-
-          {record.linkUrl ? (
-            <a
-              href={normalizeUrl(record.linkUrl)}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 break-all text-sm font-semibold text-[#212C61] hover:underline"
-            >
-              <Icon name="link" />
-              {record.linkUrl}
-            </a>
-          ) : null}
+          )}
         </div>
       </div>
     </div>
@@ -1487,7 +1562,11 @@ const AdminArchiveDetails = () => {
         onApply={applyCustomDateRange}
       />
 
-      <CommunityContentModal record={communityModalRecord} onClose={() => setCommunityModalRecord(null)} />
+      <CommunityContentModal
+        record={communityModalRecord}
+        account={account}
+        onClose={() => setCommunityModalRecord(null)}
+      />
       <DeclinedApplicantsModal
         record={selectedDeclinedApplicant ? null : declinedModalRecord}
         onClose={() => {
