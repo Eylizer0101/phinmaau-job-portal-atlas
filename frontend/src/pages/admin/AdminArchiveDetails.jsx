@@ -781,6 +781,295 @@ const DeclinedApplicantsModal = ({ record, onClose, onViewApplicant }) => {
   );
 };
 
+
+const normalizeStageName = (value = "") =>
+  String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const sameStageName = (first, second) =>
+  normalizeStageName(first).toLowerCase() === normalizeStageName(second).toLowerCase();
+
+const buildDeclinePipeline = (application = {}, fallbackStage = "") => {
+  const hiddenStages = Array.isArray(application?.hiddenDefaultHiringStages)
+    ? application.hiddenDefaultHiringStages
+    : [];
+  const customStages = Array.isArray(application?.customHiringStages)
+    ? application.customHiringStages.map(normalizeStageName).filter(Boolean)
+    : [];
+
+  const defaultStages = ["Initial Screening", "Assessment", "Final Interview", "Job Offer"].filter(
+    (stage) =>
+      !hiddenStages.some((hiddenStage) => {
+        const normalizedHidden = normalizeStageName(hiddenStage).replace(
+          /^Initial Interview$/i,
+          "Initial Screening"
+        );
+        return sameStageName(normalizedHidden, stage);
+      })
+  );
+
+  const stages = [];
+  const addStage = (stage, preferredIndex = null) => {
+    const cleanStage = normalizeStageName(stage).replace(/^Initial Interview$/i, "Initial Screening");
+    if (!cleanStage || stages.some((item) => sameStageName(item, cleanStage))) return;
+
+    if (Number.isInteger(preferredIndex) && preferredIndex >= 0 && preferredIndex <= stages.length) {
+      stages.splice(preferredIndex, 0, cleanStage);
+      return;
+    }
+
+    stages.push(cleanStage);
+  };
+
+  addStage(defaultStages[0] || "Initial Screening");
+  customStages.forEach((stage) => addStage(stage));
+  defaultStages.slice(1).forEach((stage) => addStage(stage));
+
+  const declinedStage = normalizeStageName(
+    application?.hiringStage || fallbackStage || "Application Review"
+  ).replace(/^Initial Interview$/i, "Initial Screening");
+
+  if (!stages.some((stage) => sameStageName(stage, declinedStage))) {
+    const lowerStage = declinedStage.toLowerCase();
+    let insertIndex = Math.max(1, stages.length - 1);
+
+    if (lowerStage.includes("screen")) insertIndex = 0;
+    else if (lowerStage.includes("assessment")) insertIndex = Math.min(1, stages.length);
+    else if (lowerStage.includes("final")) insertIndex = Math.max(1, stages.length - 1);
+    else if (lowerStage.includes("interview")) insertIndex = Math.min(1, stages.length);
+
+    addStage(declinedStage, insertIndex);
+  }
+
+  const declinedIndex = Math.max(
+    0,
+    stages.findIndex((stage) => sameStageName(stage, declinedStage))
+  );
+
+  return { stages, declinedStage, declinedIndex };
+};
+
+const DeclinedApplicantDetailsModal = ({
+  applicant,
+  record,
+  application,
+  loading,
+  errorMessage,
+  onBack,
+}) => {
+  if (!applicant) return null;
+
+  const jobseeker = application?.jobseeker || {};
+  const job = application?.job || {};
+  const employer = application?.employer || {};
+  const employerProfile = employer?.employerProfile || {};
+
+  const applicantName =
+    jobseeker?.fullName ||
+    [jobseeker?.firstName, jobseeker?.middleName, jobseeker?.lastName]
+      .filter(Boolean)
+      .join(" ") ||
+    applicant?.applicantName ||
+    "Applicant";
+  const profileImage = resolveMediaUrl(
+    jobseeker?.profileImage ||
+      jobseeker?.jobSeekerProfile?.profileImage ||
+      applicant?.profileImage ||
+      ""
+  );
+  const companyName =
+    employerProfile?.companyName ||
+    job?.companyName ||
+    record?.companyName ||
+    "Archived employer";
+  const jobTitle = job?.title || job?.jobTitle || applicant?.jobTitle || record?.title || "Archived job";
+  const declinedStage =
+    application?.hiringStage || applicant?.declinedStage || "Application Review";
+  const declinedAt =
+    application?.reviewedAt || application?.updatedAt || applicant?.declinedAt;
+  const declineReason =
+    application?.declineReason ||
+    applicant?.declineReason ||
+    "No decline reason was provided for this archived application.";
+  const declineComment = application?.declineComment || applicant?.declineComment || "";
+  const initials = getInitials(applicantName);
+  const { stages, declinedStage: pipelineDeclinedStage, declinedIndex } = buildDeclinePipeline(
+    application || {},
+    declinedStage
+  );
+
+  return (
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/55 px-4 py-8 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="declined-applicant-details-title"
+    >
+      <div className="max-h-full w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+        <div className="flex items-start justify-between border-b border-slate-200 px-5 py-4">
+          <div className="min-w-0">
+            <h2
+              id="declined-applicant-details-title"
+              className="truncate text-lg font-bold text-black"
+            >
+              {applicantName}
+            </h2>
+            <p className="mt-1 text-xs text-slate-500">{companyName}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50"
+            aria-label="Back to declined applicants list"
+          >
+            <Icon name="close" />
+          </button>
+        </div>
+
+        <div className="space-y-5 p-5">
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-[#212C61]/40 hover:text-[#212C61]"
+          >
+            <Icon name="arrowLeft" className="h-3.5 w-3.5" />
+            Back to list
+          </button>
+
+          {loading ? (
+            <div className="flex min-h-[260px] items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-500">
+              Loading applicant decline details...
+            </div>
+          ) : (
+            <>
+              {errorMessage ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800">
+                  {errorMessage} The archived information available in the list is shown below.
+                </div>
+              ) : null}
+
+              <section className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-orange-100 text-sm font-bold text-orange-700">
+                    {profileImage ? (
+                      <img
+                        src={profileImage}
+                        alt={applicantName}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      initials
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-black">{applicantName}</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Applied for <strong className="text-slate-700">{jobTitle}</strong>
+                    </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className="inline-flex rounded-full bg-rose-100 px-2.5 py-1 text-[10px] font-semibold text-rose-700">
+                        {declinedStage}
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-600">
+                        <Icon name="calendar" className="h-3 w-3" />
+                        Declined on {formatDate(declinedAt)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section>
+                <h3 className="text-sm font-bold text-black">Hiring Pipeline</h3>
+                <div className="mt-4 overflow-x-auto pb-1">
+                  <div className="flex min-w-max items-start">
+                    {stages.map((stage, index) => {
+                      const isDeclined = index === declinedIndex;
+                      const isCompleted = index < declinedIndex;
+
+                      return (
+                        <React.Fragment key={`${stage}-${index}`}>
+                          <div className="w-32 shrink-0 text-center">
+                            <div
+                              className={cn(
+                                "mx-auto flex h-7 w-7 items-center justify-center rounded-full border text-[11px] font-bold",
+                                isDeclined
+                                  ? "border-rose-200 bg-rose-100 text-rose-700"
+                                  : isCompleted
+                                    ? "border-[#212C61]/20 bg-[#212C61]/10 text-[#212C61]"
+                                    : "border-slate-200 bg-slate-100 text-slate-500"
+                              )}
+                            >
+                              {isDeclined ? "×" : index + 1}
+                            </div>
+                            <p
+                              className={cn(
+                                "mt-2 text-[11px] font-bold leading-4",
+                                isDeclined ? "text-rose-600" : "text-slate-700"
+                              )}
+                            >
+                              {stage}
+                            </p>
+                            <p
+                              className={cn(
+                                "mt-0.5 text-[9px] font-bold uppercase tracking-wide",
+                                isDeclined
+                                  ? "text-rose-500"
+                                  : isCompleted
+                                    ? "text-[#212C61]"
+                                    : "text-slate-400"
+                              )}
+                            >
+                              {isDeclined ? "Declined" : isCompleted ? "Completed" : "Pending"}
+                            </p>
+                          </div>
+
+                          {index < stages.length - 1 ? (
+                            <div
+                              className={cn(
+                                "mt-3.5 h-px w-10 shrink-0",
+                                index < declinedIndex ? "bg-[#212C61]/30" : "bg-slate-200"
+                              )}
+                              aria-hidden="true"
+                            />
+                          ) : null}
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                </div>
+                <p className="sr-only">Declined at {pipelineDeclinedStage}</p>
+              </section>
+
+              <section className="space-y-3">
+                <div>
+                  <h3 className="text-sm font-bold text-black">Reason for Decline</h3>
+                  <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-600">
+                    {declineReason}
+                  </p>
+                </div>
+
+                {declineComment ? (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                      Feedback and Evaluation Notes
+                    </p>
+                    <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">
+                      {declineComment}
+                    </p>
+                  </div>
+                ) : null}
+              </section>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AdminArchiveDetails = () => {
   const navigate = useNavigate();
   const { type, id } = useParams();
@@ -793,6 +1082,10 @@ const AdminArchiveDetails = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [communityModalRecord, setCommunityModalRecord] = useState(null);
   const [declinedModalRecord, setDeclinedModalRecord] = useState(null);
+  const [selectedDeclinedApplicant, setSelectedDeclinedApplicant] = useState(null);
+  const [selectedApplication, setSelectedApplication] = useState(null);
+  const [applicantDetailsLoading, setApplicantDetailsLoading] = useState(false);
+  const [applicantDetailsError, setApplicantDetailsError] = useState("");
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
   const [filters, setFilters] = useState({
     search: "",
@@ -935,6 +1228,35 @@ const AdminArchiveDetails = () => {
     const start = (safePage - 1) * ITEMS_PER_PAGE;
     return visibleRecords.slice(start, start + ITEMS_PER_PAGE);
   }, [safePage, visibleRecords]);
+
+  const handleViewDeclinedApplicant = async (applicant) => {
+    const applicationId = applicant?.applicationId || applicant?._id;
+    if (!applicationId) return;
+
+    setSelectedDeclinedApplicant(applicant);
+    setSelectedApplication(null);
+    setApplicantDetailsError("");
+    setApplicantDetailsLoading(true);
+
+    try {
+      const response = await api.get(`/applications/${applicationId}`);
+      setSelectedApplication(response.data?.application || null);
+    } catch (error) {
+      console.error("Failed to load declined applicant details:", error);
+      setApplicantDetailsError(
+        error?.response?.data?.message || "Unable to load the complete application details."
+      );
+    } finally {
+      setApplicantDetailsLoading(false);
+    }
+  };
+
+  const closeDeclinedApplicantDetails = () => {
+    setSelectedDeclinedApplicant(null);
+    setSelectedApplication(null);
+    setApplicantDetailsError("");
+    setApplicantDetailsLoading(false);
+  };
 
   const handleViewRecord = (record) => {
     if (record.archiveType === "job-post" && record.jobId) {
@@ -1167,13 +1489,20 @@ const AdminArchiveDetails = () => {
 
       <CommunityContentModal record={communityModalRecord} onClose={() => setCommunityModalRecord(null)} />
       <DeclinedApplicantsModal
-        record={declinedModalRecord}
-        onClose={() => setDeclinedModalRecord(null)}
-        onViewApplicant={(applicant) => {
-          const applicationId = applicant.applicationId || applicant._id;
-          if (!applicationId) return;
-          navigate(`/admin/applications/${applicationId}`);
+        record={selectedDeclinedApplicant ? null : declinedModalRecord}
+        onClose={() => {
+          closeDeclinedApplicantDetails();
+          setDeclinedModalRecord(null);
         }}
+        onViewApplicant={handleViewDeclinedApplicant}
+      />
+      <DeclinedApplicantDetailsModal
+        applicant={selectedDeclinedApplicant}
+        record={declinedModalRecord}
+        application={selectedApplication}
+        loading={applicantDetailsLoading}
+        errorMessage={applicantDetailsError}
+        onBack={closeDeclinedApplicantDetails}
       />
     </AdminLayout>
   );
