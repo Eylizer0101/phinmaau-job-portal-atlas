@@ -48,6 +48,14 @@ const DATE_OPTIONS = [
   { value: "custom", label: "Custom Range" },
 ];
 
+const SORT_OPTIONS = [
+  { value: "default", label: "Sort By" },
+  { value: "newest", label: "Most Recent Newest to Oldest" },
+  { value: "oldest", label: "Oldest First" },
+  { value: "name_asc", label: "A to Z" },
+  { value: "name_desc", label: "Z to A" },
+];
+
 const getPresetRange = (value) => {
   const today = new Date();
   const current = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -494,8 +502,10 @@ const DateFilterDropdown = ({ value, startDate, endDate, disabled, onSelect }) =
 
   useEffect(() => {
     if (!open) return undefined;
+
     const close = () => setOpen(false);
     window.addEventListener("click", close);
+
     return () => window.removeEventListener("click", close);
   }, [open]);
 
@@ -509,10 +519,13 @@ const DateFilterDropdown = ({ value, startDate, endDate, disabled, onSelect }) =
           setOpen((previous) => !previous);
         }}
         className={cn(
-          "flex h-11 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:border-slate-300 hover:bg-slate-50",
+          "flex h-11 w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61] focus-visible:ring-offset-2",
-          "disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60"
+          "disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60"
         )}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label="Filter archived records by date"
       >
         <span className="truncate">{getDateOptionLabel(value, startDate, endDate)}</span>
         <Icon name="calendar" className="h-4 w-4 text-slate-500" />
@@ -521,7 +534,9 @@ const DateFilterDropdown = ({ value, startDate, endDate, disabled, onSelect }) =
       {open ? (
         <div
           onClick={(event) => event.stopPropagation()}
-          className="absolute left-0 top-[52px] z-50 w-56 rounded-2xl border border-slate-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
+          className="absolute left-0 top-[52px] z-50 w-56 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
+          role="listbox"
+          aria-label="Date filter options"
         >
           <div className="space-y-1">
             {DATE_OPTIONS.map((option) => (
@@ -538,6 +553,79 @@ const DateFilterDropdown = ({ value, startDate, endDate, disabled, onSelect }) =
                     ? "bg-[#212C61]/10 text-[#212C61]"
                     : "text-slate-600 hover:bg-slate-50"
                 )}
+                role="option"
+                aria-selected={value === option.value}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+const SortFilterDropdown = ({ value, disabled, onSelect }) => {
+  const [open, setOpen] = useState(false);
+  const selectedLabel =
+    SORT_OPTIONS.find((option) => option.value === value)?.label || "Sort By";
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const close = () => setOpen(false);
+    window.addEventListener("click", close);
+
+    return () => window.removeEventListener("click", close);
+  }, [open]);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={(event) => {
+          event.stopPropagation();
+          setOpen((previous) => !previous);
+        }}
+        className={cn(
+          "flex h-11 w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61] focus-visible:ring-offset-2",
+          "disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60"
+        )}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label="Sort archived records"
+      >
+        <span className="truncate">{selectedLabel}</span>
+        <Icon name="chevron" className="h-4 w-4 text-slate-500" />
+      </button>
+
+      {open ? (
+        <div
+          onClick={(event) => event.stopPropagation()}
+          className="absolute right-0 top-[52px] z-50 w-64 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
+          role="listbox"
+          aria-label="Sort options"
+        >
+          <div className="space-y-1">
+            {SORT_OPTIONS.map((option) => (
+              <button
+                type="button"
+                key={option.value}
+                onClick={() => {
+                  setOpen(false);
+                  onSelect(option.value);
+                }}
+                className={cn(
+                  "w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition",
+                  value === option.value
+                    ? "bg-[#212C61]/10 text-[#212C61]"
+                    : "text-slate-600 hover:bg-slate-50"
+                )}
+                role="option"
+                aria-selected={value === option.value}
               >
                 {option.label}
               </button>
@@ -563,7 +651,7 @@ const AdminArchive = () => {
     date: "all",
     dateFrom: "",
     dateTo: "",
-    sort: "newest",
+    sort: "default",
   });
 
   const updateFilter = (key, value) => {
@@ -605,7 +693,7 @@ const AdminArchive = () => {
           date: filters.date,
           dateFrom: filters.dateFrom,
           dateTo: filters.dateTo,
-          sort: filters.sort,
+          sort: filters.sort === "default" ? "newest" : filters.sort,
         },
       });
 
@@ -693,17 +781,11 @@ const AdminArchive = () => {
               onSelect={handleDateFilterChange}
             />
 
-            <SelectField
+            <SortFilterDropdown
               value={filters.sort}
-              onChange={(event) => updateFilter("sort", event.target.value)}
-              ariaLabel="Sort archived records"
-            >
-              <option value="newest">Sort By</option>
-              <option value="newest">Most Recent Newest to Oldest</option>
-              <option value="oldest">Oldest First</option>
-              <option value="name_asc">A to Z</option>
-              <option value="name_desc">Z to A</option>
-            </SelectField>
+              disabled={loading}
+              onSelect={(value) => updateFilter("sort", value)}
+            />
           </div>
 
           <p className="mt-3 text-xs text-slate-500">
