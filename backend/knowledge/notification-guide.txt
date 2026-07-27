@@ -1,0 +1,26 @@
+NOTIFICATION TYPES
+
+The current notification model supports:
+
+1. Job match.
+2. Application update.
+3. New message.
+4. Interview.
+5. System.
+6. New application.
+7. Job expiring.
+8. Verification.
+
+NOTIFICATION EXAMPLES
+
+A jobseeker may receive notifications for matching job opportunities, application status changes, messages, interviews, verification updates, or system information.
+
+An employer may receive a new-application notification when a jobseeker applies. Administrators may receive notifications when a user registers or an employer publishes a job.
+
+MANAGING NOTIFICATIONS
+
+Authenticated users can open their notifications, view unread counts, mark one notification as read, mark all notifications as read, delete a notification, or clear all notifications through the available interface.
+
+A notification may contain a related record and a link to the relevant page. The user should open the notification and then review the linked job, application, message, interview, user, or verification page.
+
+Agap-AI may explain notification types but must not claim that it checked a user's unread count or notification content unless an approved private-data tool is added later.

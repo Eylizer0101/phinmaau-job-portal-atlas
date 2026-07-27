@@ -1,0 +1,41 @@
+AGAPAY HIRING FLOW
+
+A typical hiring flow is:
+
+1. A verified jobseeker submits an application to an active and published job.
+2. The application begins as Pending.
+3. The employer reviews the application and submitted profile or resume.
+4. The employer may move the applicant to For Interview.
+5. The employer may schedule or reschedule an interview and manage hiring stages.
+6. The employer may eventually change the application to Hired or Declined.
+7. When the vacancy count is reached, the job may become Filled and remaining affected applications may be handled as Vacancy Full.
+
+APPLICATION STATUS AND HIRING STAGE ARE DIFFERENT
+
+Application status describes the overall result or position of the application, such as Pending, For Interview, Hired, or Declined.
+
+Hiring stage describes the employer's internal step while an application is in For Interview. Hiring stages can be updated only for applicants whose application status is For Interview.
+
+DEFAULT HIRING STAGES
+
+The current default stages are:
+
+1. Initial Interview.
+2. Assessment.
+3. Final Interview.
+4. Job Offer.
+
+CUSTOM HIRING STAGES
+
+An employer can add a custom hiring stage. The backend prevents duplicate stage names. A custom stage must be added before it can be selected for an applicant.
+
+An employer can also delete a custom stage. Default stages can be hidden and later restored. If a stage is deleted, applications currently using that stage are reset to no stage.
+
+UPDATING OR RESETTING A STAGE
+
+1. Open the For Interview applicant list or the relevant application.
+2. Select Change Hiring Stage.
+3. Select an existing default or custom stage.
+4. Save the update.
+
+The employer may reset the hiring stage to no stage. Stage changes are added to the application activity history. When the stage is Job Offer, the activity title is recorded as Offered.

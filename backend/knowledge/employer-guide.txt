@@ -1,0 +1,39 @@
+EMPLOYER REGISTRATION
+
+Employer registration collects the representative's name, company name, website, business email, mobile number, location, industry, company logo, and required business credentials.
+
+The current employer registration requires all of these documents:
+
+1. SEC Registration.
+2. BIR Registration.
+3. DTI Registration.
+4. City or Municipality Permit.
+5. Business Permit.
+
+After registration, the employer account remains under review until the administrator completes verification.
+
+EMPLOYER APPROVAL AND LOGIN
+
+When an employer is approved, AGAPAY can activate the account, generate credentials, send them to the registered email address, and require a temporary password change. Rejected verification can include reasons and a message. A hold status may identify a document that must be corrected and resubmitted through a time-limited link.
+
+COMPANY PROFILE
+
+The employer can maintain company information such as company name, industry, website, business email, phone number, address or location, description, logo, cover photo, gallery images, social links, company size, benefits, and other supported details.
+
+A complete company profile is required before a non-draft job can be published. An unverified employer may save a job as a draft but cannot publish the job until the company has been verified by an administrator.
+
+EMPLOYER DASHBOARD
+
+The employer dashboard provides access to job postings, applicants, application status groups, interviews, messages, notifications, company information, and account settings. Exact dashboard cards depend on the current frontend page.
+
+MANAGING APPLICANTS
+
+1. Open Applicants or the applicants page for a specific job.
+2. Select an applicant.
+3. Review the submitted profile, copied resume information, application details, application activity, and employment indicators.
+4. Update the application status when appropriate.
+5. For applicants in For Interview, update the hiring stage or interview schedule.
+6. Send a professional message when follow-up is needed.
+7. Use Hired, Declined, and archived declined pages to manage completed outcomes.
+
+An employer can update only applications that belong to that employer's job postings. The backend prevents an employer from changing an applicant to a non-declined status when the applicant is already hired through another job application.

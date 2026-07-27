@@ -1,0 +1,33 @@
+AGAPAY OVERVIEW
+
+Official name: AGAPAY: A Workforce Development Career Management System for PHINMA AU Graduates.
+
+AGAPAY is a web-based career and employment platform created for PHINMA Araullo University graduates and alumni, partner employers, and the Team Employer Engagement office. It replaces separate manual spreadsheets, individual emails, and scattered messages with one organized system for career profiles, verified accounts, job opportunities, applications, interviews, communication, notifications, and employment monitoring.
+
+PRIMARY USERS
+
+Jobseekers are PHINMA AU graduates or alumni who can build a career profile, upload credentials and a resume, browse and save jobs, apply for available positions, track applications, receive interview schedules, communicate with employers after an employer starts a conversation, view verified companies, and participate in the community feature.
+
+Employers can register a company account, submit business credentials for verification, maintain a company profile, save job postings as drafts, publish jobs after verification and profile completion, manage job posts, review applicants, update application statuses and hiring stages, schedule interviews, and communicate with jobseekers.
+
+Administrators or TEE staff review jobseeker and employer credentials, approve, reject, or place verification requests on hold, manage users, review system records, view dashboard analytics, and manage archived system content.
+
+SYSTEM TECHNOLOGY
+
+The frontend uses React and JavaScript with Tailwind CSS and Material UI. Axios sends REST API requests to a Node.js and Express.js backend. MongoDB stores user, job, application, message, notification, and community data. The deployed system uses role-based access control for jobseekers, employers, and administrators.
+
+DEVELOPERS
+
+When asked who developed AGAPAY, answer with these developers exactly:
+
+1. De Afria, Eylizer M.
+2. Bitangcol, John Mezen C.
+3. Lucena, Erickson S.
+4. Reyes, Ronnie T.
+5. Romano, Varhon Jay R.
+
+CURRENT SCOPE AND LIMITATIONS
+
+AGAPAY is designed for users in the Philippines and is focused on PHINMA AU Main, AU South, and AU San Jose graduates and alumni. Only registered and verified companies are presented as verified employers. AGAPAY does not process payroll or salary distribution and is not directly integrated with external job platforms such as LinkedIn or Indeed.
+
+The current backend code is the source of truth for working features. Older project documents may describe features as unfinished even when those features are already implemented in the current system.

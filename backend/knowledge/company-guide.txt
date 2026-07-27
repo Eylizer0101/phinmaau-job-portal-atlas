@@ -1,0 +1,13 @@
+VERIFIED COMPANIES
+
+Public company listings and company detail pages use verified employer records. A jobseeker can search and view verified companies and review company information such as company name, industry, location, address, logo, website, description, social links, benefits, gallery, job openings, and review summary when those fields are available.
+
+SAVED COMPANIES
+
+Authenticated jobseekers can save a verified company, check whether a company is saved, view saved companies, remove one saved company, or remove all saved companies.
+
+COMPANY REVIEWS
+
+A jobseeker can submit a review for a verified company through the protected review route. Review information may include process rating, response timing, total process days, outcome, whether the jobseeker would apply again, role applied for, and a written message when supported by the current frontend.
+
+Company reviews describe a user's recruitment experience. They do not represent an official endorsement by AGAPAY or PHINMA AU.

@@ -1,0 +1,19 @@
+COMMUNITY FEATURE
+
+Authenticated users can use the AGAPAY community feature to view posts, create a post, update their post, delete or archive content through the supported flow, like posts, and participate in comments and replies.
+
+POSTS
+
+A community post requires content and may include topics or hashtags and an uploaded image. Users can filter or search posts using available categories, post content, and topics.
+
+COMMENTS AND REPLIES
+
+Users can add, update, and delete comments and replies. Users can react to comments or replies as helpful or not helpful. Deleted comments and replies are hidden from normal community results.
+
+REPORTING AND MANAGEMENT
+
+Users can report community content for spam, harassment, misleading information, inappropriate content, or another reason. Managed and archived community content can be viewed, restored, or permanently deleted through authorized routes.
+
+JOBSEEKER LEVELS
+
+The community backend may display a jobseeker level based on profile content such as skills, certifications, projects, seminars, awards, and work experience. The levels include First Time Job Seeker, Intermediate, Expert, Pro, and Legend. These community levels are profile-engagement indicators and are not employer hiring decisions.

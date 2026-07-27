@@ -1,0 +1,57 @@
+WHAT IS AGAPAY?
+
+AGAPAY is a workforce development and career management system for PHINMA Araullo University graduates and alumni. It connects verified jobseekers with registered employers and helps TEE staff manage verification, job opportunities, applications, communication, interviews, notifications, and employment monitoring in one platform.
+
+WHO DEVELOPED AGAPAY?
+
+AGAPAY was developed by:
+
+1. De Afria, Eylizer M.
+2. Bitangcol, John Mezen C.
+3. Lucena, Erickson S.
+4. Reyes, Ronnie T.
+5. Romano, Varhon Jay R.
+
+CAN AN UNVERIFIED JOBSEEKER APPLY?
+
+No. The current backend requires the jobseeker account to be verified before an application can be submitted. The jobseeker must also have a CV or resume in Profile Credentials.
+
+CAN AN UNVERIFIED EMPLOYER POST A JOB?
+
+An unverified employer can save a job as a draft. Publishing requires verified employer credentials and a complete company profile.
+
+WHAT DOES PENDING MEAN?
+
+Pending is the default application status after submission. It means the application is waiting for employer review.
+
+WHAT DOES FOR INTERVIEW MEAN?
+
+For Interview means the employer moved the application into an interview or screening process. The employer can assign hiring stages and schedule or reschedule an interview.
+
+WHAT ARE THE DEFAULT HIRING STAGES?
+
+The default stages are Initial Interview, Assessment, Final Interview, and Job Offer.
+
+CAN A JOBSEEKER MESSAGE AN EMPLOYER FIRST?
+
+No. The current messaging rule requires the employer to start a new conversation. After the first employer message, the jobseeker can reply.
+
+CAN A JOBSEEKER WITHDRAW AN APPLICATION?
+
+Yes. A jobseeker can withdraw an active application. The system stores the last active status before making the application Withdrawn.
+
+CAN AN INACTIVE APPLICATION BE REACTIVATED?
+
+Yes, when the job is still active, published, accepting applications, and not full. The system restores the last active status when possible.
+
+WHAT HAPPENS WHEN A VACANCY IS FULL?
+
+The job can be marked Filled and stops accepting new applications. Other affected applications may be updated or notified using the Vacancy Full flow.
+
+HOW DOES VIDEO INTERVIEW SCHEDULING WORK?
+
+The employer connects a Google account, selects a future date and time, and uses Video Call. AGAPAY creates a Google Calendar event and Google Meet link, adds the jobseeker as an attendee, saves the schedule, and sends an interview message and notification.
+
+DOES AGAPAY PROCESS SALARIES?
+
+No. AGAPAY can display salary information in job posts, but it does not distribute payroll or salary payments.

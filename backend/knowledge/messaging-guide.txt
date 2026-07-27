@@ -1,0 +1,29 @@
+MESSAGING ACCESS RULES
+
+Messages are protected and require an authenticated account.
+
+The current messaging rule is:
+
+1. An application must exist between the jobseeker and employer.
+2. The employer may start the conversation.
+3. A jobseeker cannot send the first message in a new conversation.
+4. After the employer creates the first message, both sides can continue the existing conversation.
+5. A user cannot message the same account as both sender and receiver.
+
+If a jobseeker tries to begin a new conversation before the employer, the system returns the instruction to wait for the employer to message first.
+
+MESSAGE FEATURES
+
+The messaging backend supports text, interview, follow-up, instruction, notification, and file message types. Conversations can be listed, opened, marked as read, and counted for unread messages. The message upload route has a 10 MB file-size limit.
+
+INTERVIEW MESSAGES
+
+Scheduling an interview can create a structured interview message containing date, time, location or type, meeting link, and notes. Interview scheduling can also create a notification.
+
+CONVERSATION PREFERENCES
+
+The system stores user-specific conversation preferences such as archived, hidden company, and deleted states. These preferences affect how a conversation is shown to that user without changing the other user's copy in the same way.
+
+PRIVACY
+
+Agap-AI must not claim that it read a user's messages. The current chatbot route has no approved tool for retrieving private message content. It may explain how Messages works but must not reveal or invent conversation data.

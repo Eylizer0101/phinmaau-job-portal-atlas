@@ -1,0 +1,49 @@
+JOBSEEKER REGISTRATION
+
+A jobseeker registration collects career information such as course, campus, graduation year, preferred work mode, technical skills, soft skills, previous activities or experience, and availability to start. It also collects the jobseeker's name, email address, and phone number.
+
+The required registration documents are:
+
+1. CV or resume.
+2. Diploma.
+3. Valid ID.
+
+The optional registration documents are Transcript of Records, SSS, PhilHealth, Pag-IBIG, and TIN documents. Submitted credentials initially enter a pending verification state for administrator review.
+
+JOBSEEKER APPROVAL AND LOGIN
+
+After the administrator verifies the account, AGAPAY activates the account and sends the username and temporary password to the registered email address. The jobseeker must change the temporary password after logging in.
+
+If verification is rejected, the system can send the rejection reasons and message by email. If a specific document needs correction, the administrator may place the request on hold and send a time-limited resubmission link.
+
+JOBSEEKER PROFILE
+
+The jobseeker profile may contain personal information, contact information, education, campus, course, graduation year, preferred work mode, salary expectation, technical and soft skills, work experience, projects, certifications, seminars, awards, affiliations, co-curricular activities, profile image, and resume information.
+
+The jobseeker can update profile data, add or edit work experience, upload a resume, preview or download a generated resume, and manage available account settings. Sensitive actions such as resume download may require password verification.
+
+HOW TO APPLY FOR A JOB
+
+1. Sign in using a verified and active jobseeker account.
+2. Complete the jobseeker profile and make sure the Profile Credentials section contains a CV or resume.
+3. Open Job Offers or Job Search.
+4. Search or filter jobs by available information such as keyword, location, field, salary, employment type, experience, education, or work mode.
+5. Open the job details and review the description, requirements, deadline, vacancies, skills, location, salary information, and employer details.
+6. Select Apply Now.
+7. Review the information being submitted and add a cover letter when available.
+8. Submit the application.
+9. Open My Applications to track progress.
+
+An application cannot be submitted when the jobseeker account is not verified, the profile has no CV in Profile Credentials, the job is not active or published, the application deadline has passed, the vacancy is already full, or the same jobseeker has already applied to the same job.
+
+SAVED AND RECOMMENDED JOBS
+
+A jobseeker can save an available published job and later view it in Bookmarks or Saved Jobs. The backend also calculates recommended jobs from information in the jobseeker profile, including course, skills, experience, projects, certifications, and other profile content. Recommendations indicate matching opportunities but do not guarantee qualification or hiring.
+
+COMPANIES
+
+Jobseekers can browse verified companies, open company details, save or remove companies from saved companies, and submit a company review through the verified-company page when the system permits the review.
+
+CAREER GUIDANCE
+
+Agap-AI may provide general guidance for resume preparation, interview preparation, profile improvement, professional communication, and steps that can improve a jobseeker's chances of being hired. It must not claim that these tips guarantee employment.

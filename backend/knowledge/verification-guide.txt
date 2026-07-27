@@ -1,0 +1,43 @@
+VERIFICATION PURPOSE
+
+AGAPAY uses administrator review to confirm that jobseekers are eligible PHINMA AU graduates or alumni and that employers have submitted legitimate business credentials. Verification is not fully automatic; TEE or administrator staff review the submitted documents.
+
+VERIFICATION STATUSES
+
+Jobseeker and employer verification records can use states such as Not Submitted or Unverified, Pending, Hold or On Hold, Verified, and Rejected. Individual documents may also have Not Submitted, Submitted, Pending, Approved, Rejected, or Hold states.
+
+JOBSEEKER REQUIRED DOCUMENTS
+
+1. CV or resume.
+2. Diploma.
+3. Valid ID.
+
+Optional jobseeker documents are Transcript of Records, SSS, PhilHealth, Pag-IBIG, and TIN.
+
+EMPLOYER REQUIRED DOCUMENTS
+
+1. SEC Registration.
+2. BIR Registration.
+3. DTI Registration.
+4. City or Municipality Permit.
+5. Business Permit.
+
+PENDING
+
+Pending means the credentials were submitted and are waiting for administrator review.
+
+VERIFIED
+
+Verified means the administrator approved the credentials. When a new account is approved, the system can activate the account, generate a username and temporary password, send credentials by email, and require the user to change the temporary password.
+
+REJECTED
+
+Rejected means the administrator did not approve the verification request. The system can store rejection reasons and a message and send the user an email. The user should follow the provided instructions before attempting another submission.
+
+HOLD AND DOCUMENT RESUBMISSION
+
+Hold means a selected credential needs correction or clarification. The administrator selects the document and enters a reason. AGAPAY creates a secure token and sends a resubmission link by email. The current hold flow creates a link that expires after 48 hours. After the corrected document is submitted, the verification can return to the review process.
+
+ADMINISTRATOR SECURITY
+
+Administrator verification routes are protected by administrator authentication. Accessing sensitive credential files can require the administrator password before the document is delivered.

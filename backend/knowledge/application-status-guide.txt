@@ -1,0 +1,59 @@
+APPLICATION STATUS OVERVIEW
+
+The current AGAPAY backend recognizes these application statuses:
+
+1. Pending.
+2. For Interview.
+3. Hired.
+4. Declined.
+5. Withdrawn.
+6. Cancelled.
+7. Vacancy Full.
+
+ACTIVE APPLICATION STATUSES
+
+Pending, For Interview, and Hired are treated as active application statuses by the backend.
+
+INACTIVE APPLICATION STATUSES
+
+Declined, Withdrawn, Cancelled, and Vacancy Full are treated as inactive application statuses.
+
+PENDING
+
+Pending is the default status immediately after a successful application submission. It means the application has been recorded and is waiting for employer review. The employer receives a new-application notification. The jobseeker should monitor My Applications, Messages, and Notifications.
+
+FOR INTERVIEW
+
+For Interview means the employer moved the applicant into the interview or screening process. Entering this status clears the current hiring stage so the employer can select or assign the correct stage. Scheduling an interview also sets the application status and last active status to For Interview.
+
+HIRED
+
+Hired means the employer selected the applicant for the position. The system records the status change, creates an application-status notification, and checks the job's vacancy limit. When the number of hired applicants reaches the vacancy count, the job can be marked Filled and other affected active applications can receive Vacancy Full handling.
+
+The backend also checks whether the jobseeker is already hired through another job application. When that condition applies, another application may only be changed to Declined.
+
+DECLINED
+
+Declined means the employer did not select the applicant. A decline action requires an approved decline reason and identifies whether the decision came from the Applicants flow or the For Interview flow. An optional comment may be recorded. The status activity is shown as Not Selected in the activity history.
+
+Employers can move declined applications to the declined archive, restore them from that archive, or permanently delete them using the available declined-application actions.
+
+WITHDRAWN
+
+Withdrawn means the jobseeker voluntarily made the application inactive. Before withdrawal, the system stores the last active status. An application that is already inactive cannot be withdrawn again.
+
+CANCELLED
+
+Cancelled is an inactive status recognized by the backend. The exact reason should be checked in the application details, activity history, or employer communication.
+
+VACANCY FULL
+
+Vacancy Full means the position no longer has an available slot. This status can be applied when the job reaches its vacancy limit. A job marked Filled no longer accepts new applications.
+
+REACTIVATING AN APPLICATION
+
+A jobseeker can reactivate an inactive application only when the related job is still published, active, accepting applications, and not full. The system restores the application's last active status when that value is Pending, For Interview, or Hired; otherwise it restores Pending.
+
+STATUS NOTIFICATIONS AND HISTORY
+
+When an employer changes an application status, the backend records the change in the application activity history and creates an application-status notification for the jobseeker. The chatbot must not claim to know a user's current status unless it is connected to an approved account-data tool.

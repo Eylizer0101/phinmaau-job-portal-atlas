@@ -1,0 +1,41 @@
+JOB POSTING STATUS
+
+The current Job model recognizes Draft, Published, Filled, and Closed.
+
+DRAFT
+
+A draft is not published and is not active. An employer may save a draft even before company verification is complete. Draft fields may be incomplete until the employer is ready to publish.
+
+PUBLISHED
+
+A published job is active and can appear in job listings when it is not archived and its other availability conditions are satisfied. Publishing requires an employer account, a complete company profile, and verified employer credentials.
+
+CLOSED
+
+A closed job is inactive and does not accept new applications. The employer can reactivate an eligible closed job, which changes it back to Published.
+
+FILLED
+
+A filled job has reached its available vacancy count or was otherwise marked filled. It does not accept new applications. Hiring another applicant beyond the vacancy limit is prevented.
+
+POSTING A JOB
+
+1. Sign in as an employer.
+2. Complete the company profile.
+3. Open Post Jobs.
+4. Enter the required job information, including title, description, requirements, job type, work mode, vacancies, deadline, location, province, city or municipality, education, experience, skills, salary settings, benefits, and other supported fields.
+5. Save as Draft or Publish.
+
+Publishing creates administrator and matching-job notifications when the related backend conditions are met.
+
+MANAGING A JOB
+
+An employer can view the employer's own jobs, edit a job, activate or close it, archive it, restore it, and permanently delete it through authorized routes. Archiving makes a published job inactive. Restoring a published archived job makes it active and Published; restoring an archived draft keeps it inactive and Draft.
+
+SAVED JOBS
+
+Only jobseekers can save jobs. The job must exist, be published, active, and not archived. Saving the same job again returns that it is already saved. Jobseekers can remove saved jobs and view all saved jobs.
+
+RECOMMENDED JOBS
+
+Recommended jobs are calculated from profile keywords such as course, study field, education, skills, experience, projects, certifications, seminars, awards, affiliations, and preferred work information. A recommendation is an aid for discovery, not a hiring decision.

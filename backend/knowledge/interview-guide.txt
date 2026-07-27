@@ -1,0 +1,30 @@
+INTERVIEW SCHEDULING RULES
+
+Only an employer can create or update an interview schedule for an application that belongs to that employer.
+
+The interview date and time must be valid and must be in the future. The current application scheduling flow accepts these interview types:
+
+1. Video Call.
+2. On-site.
+
+The employer currently assigns the employer's own account as the interviewer. The schedule stores the interview date and time, duration, meeting type, notes, interviewer, organizer, meeting link when applicable, and whether the schedule is Scheduled or Rescheduled.
+
+VIDEO CALL INTERVIEWS
+
+For a Video Call, the employer must connect a Google account with the required Google Calendar permission. That connected employer Google account becomes the calendar organizer. The jobseeker's email is added as an attendee. AGAPAY creates a Google Calendar event and retrieves the Google Meet link.
+
+If the Google Calendar connection is missing, expired, or lacks permission, the employer must reconnect the Google account before the system can generate the meeting link.
+
+ON-SITE INTERVIEWS
+
+For an On-site interview, the schedule is saved without requiring a Google Meet link. The employer should provide clear location or instructions through the available notes or message fields when needed.
+
+WHAT HAPPENS AFTER SCHEDULING
+
+1. The application status becomes For Interview.
+2. The interview schedule is saved on the application.
+3. A structured interview message is created in the conversation.
+4. An interview notification is created for the jobseeker.
+5. If a previous schedule already existed, the new action is recorded as Rescheduled instead of Scheduled.
+
+The jobseeker should check Messages and Notifications for the date, time, type, interviewer, notes, and meeting link when a Video Call is used.
