@@ -288,7 +288,7 @@ const DeclinedApplicantsModal = ({ record, onClose, onViewApplicant }) => {
               <div className="min-w-[700px]">
                 <div className="grid grid-cols-[1.2fr_1fr_1fr_0.8fr_0.65fr] gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500">
                   <span>Applicant</span>
-                  <span>Job Title Applied</span>
+                  <span>Jobseeker Level</span>
                   <span>Decline Stage</span>
                   <span>Declined On</span>
                   <span>Actions</span>
@@ -303,7 +303,7 @@ const DeclinedApplicantsModal = ({ record, onClose, onViewApplicant }) => {
                       <p className="font-semibold text-black">{applicant.applicantName || "Applicant"}</p>
                       <p className="mt-0.5 truncate text-[11px] text-slate-500">{applicant.email || "—"}</p>
                     </div>
-                    <span className="text-slate-600">{applicant.jobTitle || record.title}</span>
+                    <span className="font-semibold text-slate-700">{applicant.jobSeekerLevel || "First Time Job Seeker"}</span>
                     <span>
                       <span className="inline-flex rounded-full bg-rose-100 px-2 py-1 text-[10px] font-semibold text-rose-700">
                         {applicant.declinedStage || "Application Review"}
@@ -324,7 +324,6 @@ const DeclinedApplicantsModal = ({ record, onClose, onViewApplicant }) => {
             </div>
           )}
 
-          <p className="mt-3 text-xs text-slate-500">Archived on {formatDate(record.archivedAt)}</p>
         </div>
       </div>
     </div>

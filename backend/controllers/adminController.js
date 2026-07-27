@@ -2573,6 +2573,102 @@ const getArchiveJobStatus = (job = {}) => {
   return 'Closed';
 };
 
+
+const countArchiveSkills = (value) => {
+  if (Array.isArray(value)) {
+    return value
+      .flatMap((item) => {
+        if (item && typeof item === 'object') {
+          const skill = String(item.skill || item.name || '').trim();
+          return skill ? [skill] : [];
+        }
+
+        const clean = String(item || '').trim();
+        if (!clean) return [];
+        if (clean.includes('||')) {
+          return clean.split('||').map((entry) => entry.trim()).filter(Boolean);
+        }
+        return [clean];
+      })
+      .filter(Boolean).length;
+  }
+
+  const clean = String(value || '').trim();
+  if (!clean) return 0;
+  if (clean.includes('||')) {
+    return clean.split('||').map((entry) => entry.trim()).filter(Boolean).length;
+  }
+  if (/\s[—-]\s(Basic|Novice|Intermediate|Advanced|Expert)$/i.test(clean)) return 1;
+  return clean.split(',').map((entry) => entry.trim()).filter(Boolean).length;
+};
+
+const hasMeaningfulArchiveObjectValue = (item = {}) =>
+  Boolean(
+    item &&
+      typeof item === 'object' &&
+      Object.entries(item).some(([key, value]) => {
+        if (['_id', 'id', 'createdAt', 'updatedAt', '__v'].includes(key)) return false;
+        if (Array.isArray(value)) return value.length > 0;
+        if (value && typeof value === 'object') return hasMeaningfulArchiveObjectValue(value);
+        return Boolean(String(value ?? '').trim());
+      })
+  );
+
+const getArchiveJobSeekerLevel = (user = {}) => {
+  const profile = user.jobSeekerProfile || {};
+  const counts = {
+    skills:
+      countArchiveSkills(profile.technicalSkills) +
+      countArchiveSkills(profile.softSkills),
+    certifications: Array.isArray(profile.certifications)
+      ? profile.certifications.filter(hasMeaningfulArchiveObjectValue).length
+      : 0,
+    projects: Array.isArray(profile.projects)
+      ? profile.projects.filter(hasMeaningfulArchiveObjectValue).length
+      : 0,
+    seminars: Array.isArray(profile.seminars)
+      ? profile.seminars.filter(hasMeaningfulArchiveObjectValue).length
+      : 0,
+    awards: Array.isArray(profile.awards)
+      ? profile.awards.filter(hasMeaningfulArchiveObjectValue).length
+      : 0,
+    work: Array.isArray(profile.workExperiences) ? profile.workExperiences.length : 0,
+  };
+
+  const tiers = [
+    {
+      name: 'First Time Job Seeker',
+      requirements: { skills: 0, certifications: 0, projects: 0, seminars: 0, awards: 0, work: 0 },
+    },
+    {
+      name: 'Intermediate',
+      requirements: { skills: 5, certifications: 1, projects: 1, seminars: 1, awards: 1, work: 0 },
+    },
+    {
+      name: 'Expert',
+      requirements: { skills: 9, certifications: 2, projects: 2, seminars: 2, awards: 2, work: 1 },
+    },
+    {
+      name: 'Pro',
+      requirements: { skills: 13, certifications: 5, projects: 5, seminars: 5, awards: 5, work: 2 },
+    },
+    {
+      name: 'Legend',
+      requirements: { skills: 17, certifications: 7, projects: 7, seminars: 7, awards: 7, work: 3 },
+    },
+  ];
+
+  let currentLevel = tiers[0].name;
+  tiers.forEach((tier) => {
+    const passed = Object.entries(tier.requirements).every(
+      ([key, required]) => counts[key] >= required
+    );
+    if (passed) currentLevel = tier.name;
+  });
+
+  return currentLevel;
+};
+
 const buildArchiveDateMatch = (dateFilter, field = 'updatedAt') => {
   const value = String(dateFilter || 'all').toLowerCase();
   if (value === 'all') return {};
@@ -2595,7 +2691,7 @@ exports.getAdminArchive = async (req, res) => {
     const dateFilter = String(req.query.date || 'all').trim().toLowerCase();
     const customFrom = String(req.query.dateFrom || '').trim();
     const customTo = String(req.query.dateTo || '').trim();
-    const sort = String(req.query.sort || 'recent').trim().toLowerCase();
+    const sort = String(req.query.sort || 'newest').trim().toLowerCase();
 
     const archiveUserFields = [
       'email',
@@ -2634,17 +2730,30 @@ exports.getAdminArchive = async (req, res) => {
       if (dateFilter === 'today') {
         start = new Date(now);
         start.setHours(0, 0, 0, 0);
+      } else if (dateFilter === 'yesterday') {
+        start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+        end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999);
+      } else if (dateFilter === 'thisweek') {
+        const dayOfWeek = now.getDay();
+        const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset);
+        start.setHours(0, 0, 0, 0);
       } else if (dateFilter === '7days') {
         start = new Date(now);
         start.setDate(start.getDate() - 6);
         start.setHours(0, 0, 0, 0);
-      } else if (dateFilter === '30days') {
-        start = new Date(now);
-        start.setDate(start.getDate() - 29);
-        start.setHours(0, 0, 0, 0);
       } else if (dateFilter === 'thismonth') {
         start = new Date(now.getFullYear(), now.getMonth(), 1);
         start.setHours(0, 0, 0, 0);
+      } else if (dateFilter === 'lastmonth') {
+        start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+      } else if (dateFilter === 'thisyear') {
+        start = new Date(now.getFullYear(), 0, 1);
+        start.setHours(0, 0, 0, 0);
+      } else if (dateFilter === 'lastyear') {
+        start = new Date(now.getFullYear() - 1, 0, 1);
+        end = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
       } else if (dateFilter === 'custom') {
         start = customFrom ? new Date(`${customFrom}T00:00:00`) : null;
         end = customTo ? new Date(`${customTo}T23:59:59.999`) : end;
@@ -2914,8 +3023,12 @@ exports.getAdminArchive = async (req, res) => {
       if (sort === 'oldest') {
         return new Date(first.latestArchivedAt || 0) - new Date(second.latestArchivedAt || 0);
       }
-      if (sort === 'name-asc') return first.displayName.localeCompare(second.displayName);
-      if (sort === 'name-desc') return second.displayName.localeCompare(first.displayName);
+      if (sort === 'name_asc' || sort === 'name-asc') {
+        return first.displayName.localeCompare(second.displayName);
+      }
+      if (sort === 'name_desc' || sort === 'name-desc') {
+        return second.displayName.localeCompare(first.displayName);
+      }
       return new Date(second.latestArchivedAt || 0) - new Date(first.latestArchivedAt || 0);
     });
 
@@ -3120,6 +3233,7 @@ exports.getAdminArchiveDetails = async (req, res) => {
           email: jobseeker.email || '',
           profileImage: jobseeker.profileImage || profile.profileImage || '',
           jobTitle,
+          jobSeekerLevel: getArchiveJobSeekerLevel(jobseeker),
           declinedStage,
           declineReason: application.declineReason || '',
           declineComment: application.declineComment || '',
