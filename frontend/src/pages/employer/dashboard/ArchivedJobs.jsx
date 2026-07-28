@@ -758,11 +758,11 @@ const ArchivedJobs = () => {
     const status = getDerivedStatus(job);
 
     if (status === 'open') {
-      return 'This job post will be restored as Open. It will return to your active job posts and will be visible in job offers so job seekers can apply.';
+      return 'This job post will be restored as Closed. To make it visible in the job offers and accept applications again, you must open the job post.';
     }
 
     if (status === 'closed') {
-      return 'This job post will be restored as Closed. It will appear in your active job posts but will remain unavailable for new applications. To accept applications again, you must open the job post.';
+      return 'This job post will be restored as Closed. It will appear in your active job posts but will remain unavailable for new applications.';
     }
 
     if (status === 'expired') {

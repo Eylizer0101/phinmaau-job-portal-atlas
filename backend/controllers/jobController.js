@@ -1390,9 +1390,11 @@ exports.restoreJob = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to restore this job' });
     }
 
-    const restoredStatus =
+    const archivedStatus =
       String(job.statusBeforeArchive || '').trim().toLowerCase() ||
       getStatusBeforeArchive(job);
+
+    const restoredStatus = archivedStatus === 'open' ? 'closed' : archivedStatus;
 
     job.isArchived = false;
     job.archivedAt = null;
@@ -1400,10 +1402,6 @@ exports.restoreJob = async (req, res) => {
     if (restoredStatus === 'draft') {
       job.status = 'draft';
       job.isPublished = false;
-      job.isActive = false;
-    } else if (restoredStatus === 'closed') {
-      job.status = 'closed';
-      job.isPublished = true;
       job.isActive = false;
     } else if (restoredStatus === 'expired') {
       job.status = 'published';
@@ -1414,9 +1412,9 @@ exports.restoreJob = async (req, res) => {
       job.isPublished = true;
       job.isActive = false;
     } else {
-      job.status = 'published';
+      job.status = 'closed';
       job.isPublished = true;
-      job.isActive = true;
+      job.isActive = false;
     }
 
     await job.save();
