@@ -1433,15 +1433,17 @@ const AdminArchiveDetails = () => {
           <div className="overflow-x-auto">
             <div className={isJobseekerAccount ? "min-w-[620px]" : "min-w-[560px]"}>
               {isJobseekerAccount ? (
-                <div className="grid grid-cols-[0.8fr_1.65fr_0.9fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600">
+                <div className="grid grid-cols-[0.8fr_1.65fr_0.9fr_0.55fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600">
                   <span>Type</span>
                   <span>Category</span>
                   <span>Archived Date</span>
+                  <span className="text-center">Actions</span>
                 </div>
               ) : (
-                <div className="grid grid-cols-[0.85fr_2fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600">
+                <div className="grid grid-cols-[0.85fr_2fr_0.55fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600">
                   <span>Type</span>
                   <span>Job Title</span>
+                  <span className="text-center">Actions</span>
                 </div>
               )}
 
@@ -1473,8 +1475,8 @@ const AdminArchiveDetails = () => {
                     className={cn(
                       "cursor-pointer items-center gap-4 border-b border-slate-200 px-5 py-4 transition last:border-b-0 hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#212C61]/30",
                       isJobseekerAccount
-                        ? "grid grid-cols-[0.8fr_1.65fr_0.9fr]"
-                        : "grid grid-cols-[0.85fr_2fr]"
+                        ? "grid grid-cols-[0.8fr_1.65fr_0.9fr_0.55fr]"
+                        : "grid grid-cols-[0.85fr_2fr_0.55fr]"
                     )}
                     aria-label={`Open ${record.typeLabel}`}
                   >
@@ -1493,6 +1495,21 @@ const AdminArchiveDetails = () => {
                     {isJobseekerAccount ? (
                       <span className="text-sm text-slate-600">{formatDate(record.archivedAt)}</span>
                     ) : null}
+
+                    <div className="flex justify-center">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleViewRecord(record);
+                        }}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-[#212C61]/40 hover:bg-[#212C61]/5 hover:text-[#212C61] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61]/30"
+                        aria-label={`View ${record.typeLabel}`}
+                        title={`View ${record.typeLabel}`}
+                      >
+                        <Icon name="eye" />
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
