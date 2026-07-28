@@ -683,10 +683,10 @@ const AdminArchive = () => {
       : "grid gap-3 lg:grid-cols-[minmax(300px,1.7fr)_minmax(140px,0.65fr)_minmax(160px,0.75fr)_minmax(170px,0.8fr)]";
 
   const tableGridClass = isJobseekerView
-    ? "grid-cols-[1.3fr_0.85fr_1.35fr_1.2fr_0.9fr]"
+    ? "grid-cols-[1.3fr_0.85fr_1.35fr_1.2fr_0.9fr_0.55fr]"
     : isEmployerView
-      ? "grid-cols-[1.3fr_1fr_1.1fr_1.2fr_0.9fr]"
-      : "grid-cols-[1.45fr_0.7fr_1.4fr_0.8fr]";
+      ? "grid-cols-[1.3fr_1fr_1.1fr_1.2fr_0.9fr_0.55fr]"
+      : "grid-cols-[1.45fr_0.7fr_1.4fr_0.8fr_0.55fr]";
 
   return (
     <AdminLayout>
@@ -836,6 +836,7 @@ const AdminArchive = () => {
                 )}
                 <span>Archived Type</span>
                 <span>Contact Number</span>
+                <span className="text-center">Actions</span>
               </div>
 
               {loading ? (
@@ -918,6 +919,21 @@ const AdminArchive = () => {
                       <ArchiveTypeBadges types={entry.archivedTypes || []} />
 
                       <span className="text-sm text-slate-600">{entry.contactNumber || "—"}</span>
+
+                      <div className="flex justify-center">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            navigate(`/admin/archive/account/${entry.accountId}`);
+                          }}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-[#212C61]/40 hover:bg-[#212C61]/5 hover:text-[#212C61] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61]/30"
+                          aria-label={`Open archived records of ${name}`}
+                          title="View archive details"
+                        >
+                          <Icon name="eye" />
+                        </button>
+                      </div>
                     </div>
                   );
                 })
