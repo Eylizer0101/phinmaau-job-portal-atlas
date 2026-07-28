@@ -940,7 +940,7 @@ const AdminJobView = () => {
                 </div>
 
                 {isArchivedView ? (
-                  <div className="flex w-full justify-start lg:w-auto lg:self-center lg:justify-end">
+                  <div className="flex w-full justify-start lg:mr-20 lg:w-auto lg:self-center lg:justify-end xl:mr-[190px]">
                     <div className="min-w-[220px] rounded-xl border border-[#d7e6f5] bg-[#f8fafc] px-5 py-4 shadow-sm">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6b7280]">
                         Archived Date
