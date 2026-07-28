@@ -566,6 +566,7 @@ const ArchivedJobs = () => {
 
   const [selectedJob, setSelectedJob] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [restoreJobCandidate, setRestoreJobCandidate] = useState(null);
 
   const modalRef = useRef(null);
   const cancelBtnRef = useRef(null);
@@ -720,13 +721,19 @@ const ArchivedJobs = () => {
   };
 
   const getDerivedStatus = (job) => {
+    const archivedStatus = String(job?.statusBeforeArchive || '').trim().toLowerCase();
+    if (['draft', 'open', 'closed', 'expired', 'filled'].includes(archivedStatus)) {
+      return archivedStatus;
+    }
+
     const explicitStatus = String(job?.status || '').trim().toLowerCase();
 
     if (explicitStatus === 'draft' || job.isPublished === false) return 'draft';
     if (explicitStatus === 'filled') return 'filled';
-    if (job.isActive && isExpired(job.applicationDeadline)) return 'expired';
-    if (explicitStatus === 'closed' || job.isActive === false) return 'closed';
-    return 'open';
+    if (explicitStatus === 'closed') return 'closed';
+    if (isExpired(job.applicationDeadline)) return 'expired';
+    if (explicitStatus === 'published') return 'open';
+    return job.isActive ? 'open' : 'closed';
   };
 
   const getStatusPill = (job) => {
@@ -745,6 +752,32 @@ const ArchivedJobs = () => {
     if (status === 'expired') return 'Expired';
     if (status === 'filled') return 'Filled';
     return 'Closed';
+  };
+
+  const getRestoreConfirmationMessage = (job) => {
+    const status = getDerivedStatus(job);
+
+    if (status === 'open') {
+      return 'This job post will be restored as Open. It will return to your active job posts and will be visible in job offers so job seekers can apply.';
+    }
+
+    if (status === 'closed') {
+      return 'This job post will be restored as Closed. It will appear in your active job posts but will remain unavailable for new applications. To accept applications again, you must open the job post.';
+    }
+
+    if (status === 'expired') {
+      return 'This job post will be restored as Expired. It will return to your active job posts but will remain unavailable for applications unless you extend its application deadline.';
+    }
+
+    if (status === 'draft') {
+      return 'This job post will be restored as a Draft. It will remain unpublished and invisible to job seekers until you publish it.';
+    }
+
+    if (status === 'filled') {
+      return 'This job post will be restored as Filled. It will return to your active job posts but will remain unavailable for new applications.';
+    }
+
+    return 'This job post will be restored to your active job posts using the status it had before it was archived.';
   };
 
   const formatSalary = (job) => {
@@ -797,6 +830,7 @@ const ArchivedJobs = () => {
         active: prev.active + 1,
         archived: Math.max(0, prev.archived - 1),
       }));
+      setRestoreJobCandidate(null);
       setSuccess('Job restored successfully');
     } catch (err) {
       console.error('Error restoring job:', err);
@@ -1249,7 +1283,7 @@ const ArchivedJobs = () => {
 
                           <button
                             type="button"
-                            onClick={() => handleRestore(job._id)}
+                            onClick={() => setRestoreJobCandidate(job)}
                             disabled={busyThisRow}
                             className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/[0.06] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             aria-label={`Restore ${title}`}
@@ -1412,7 +1446,7 @@ const ArchivedJobs = () => {
 
                                 <button
                                   type="button"
-                                  onClick={() => handleRestore(job._id)}
+                                  onClick={() => setRestoreJobCandidate(job)}
                                   disabled={busyThisRow}
                                   className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/[0.06] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                   aria-label={`Restore ${title}`}
@@ -1450,6 +1484,73 @@ const ArchivedJobs = () => {
             )}
           </div>
         </div>
+
+        {restoreJobCandidate && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget && !action.jobId) {
+                setRestoreJobCandidate(null);
+              }
+            }}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="restore-job-title"
+              aria-describedby="restore-job-description"
+              className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl"
+            >
+              <div className="p-6">
+                <div className="mb-4 flex items-start gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#2e66a6]/10 text-[#2e66a6]">
+                    <ActionIcon name="restore" className="h-6 w-6" />
+                  </div>
+
+                  <div className="min-w-0">
+                    <h3 id="restore-job-title" className="text-lg font-semibold text-gray-900">
+                      Restore this job post?
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="mb-6 rounded-xl border border-[#2e66a6]/20 bg-[#2e66a6]/[0.06] p-4">
+                  <p className="font-semibold text-gray-900">
+                    “{restoreJobCandidate.title || 'Untitled Draft'}”
+                  </p>
+                  <p id="restore-job-description" className="mt-1 text-sm leading-6 text-gray-700">
+                    {getRestoreConfirmationMessage(restoreJobCandidate)}
+                  </p>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setRestoreJobCandidate(null)}
+                    disabled={action.type === 'restore' && action.jobId === restoreJobCandidate._id}
+                    className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleRestore(restoreJobCandidate._id)}
+                    disabled={action.type === 'restore' && action.jobId === restoreJobCandidate._id}
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#2e66a6] px-4 py-2 text-sm font-semibold text-white hover:bg-[#255487] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] disabled:opacity-50"
+                  >
+                    {action.type === 'restore' && action.jobId === restoreJobCandidate._id ? (
+                      <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-white" />
+                    ) : (
+                      <ActionIcon name="restore" />
+                    )}
+                    Restore Job Post
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showDeleteModal && selectedJob && (
           <div

@@ -810,6 +810,7 @@ const EmployerJobView = () => {
   const isDraftJob =
     String(job.status || '').trim().toLowerCase() === 'draft' ||
     job.isPublished === false;
+  const hasExtendedDeadline = Boolean(job.deadlineExtendedAt);
   const isLocationMissing = !String(job.location || '').trim();
   const isJobTypeMissing = !String(job.jobType || '').trim();
   const isWorkModeMissing = !String(job.workMode || '').trim();
@@ -945,7 +946,9 @@ const EmployerJobView = () => {
                       <p>
                         {formatPostedRelative(job.createdAt)}
                         {job.applicationDeadline
-                          ? ` and deadline of application is on ${formatFullDate(job.applicationDeadline)}`
+                          ? hasExtendedDeadline
+                            ? ` and deadline extended until ${formatFullDate(job.applicationDeadline)}`
+                            : ` and deadline of application is on ${formatFullDate(job.applicationDeadline)}`
                           : ' and no application deadline specified'}
                       </p>
                     </div>

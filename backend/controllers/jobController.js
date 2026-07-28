@@ -224,6 +224,25 @@ const applyIfNotBlank = (obj, key, value) => {
   obj[key] = value;
 };
 
+const isPastApplicationDeadline = (value, now = new Date()) => {
+  if (!value) return false;
+  const deadline = new Date(value);
+  if (Number.isNaN(deadline.getTime())) return false;
+  return deadline.getTime() < now.getTime();
+};
+
+const getStatusBeforeArchive = (job = {}) => {
+  const explicitStatus = String(job.status || '').trim().toLowerCase();
+
+  if (explicitStatus === 'draft' || job.isPublished === false) return 'draft';
+  if (explicitStatus === 'filled') return 'filled';
+  if (explicitStatus === 'closed') return 'closed';
+  if (isPastApplicationDeadline(job.applicationDeadline)) return 'expired';
+  if (explicitStatus === 'published' && job.isArchived === true) return 'open';
+  if (job.isActive === true && job.isPublished === true) return 'open';
+  return 'closed';
+};
+
 const EXPERIENCE_LEVEL_GROUPS = [
   {
     value: 'No experience required',
@@ -598,6 +617,7 @@ exports.createJob = async (req, res) => {
     applyIfNotBlank(jobData, 'jobType', jobType);
     applyIfNotBlank(jobData, 'workMode', workMode);
     applyIfNotBlank(jobData, 'applicationDeadline', applicationDeadline);
+    applyIfNotBlank(jobData, 'originalApplicationDeadline', applicationDeadline);
     applyIfNotBlank(jobData, 'vacancies', vacancies);
     applyIfNotBlank(jobData, 'experienceLevel', normalizedExperience);
     applyIfNotBlank(jobData, 'educationLevel', edu);
@@ -1000,7 +1020,7 @@ exports.getEmployerJobs = async (req, res) => {
     const [jobs, activeCount, archivedCount] = await Promise.all([
       Job.find(filterQuery)
         .select(
-          'title location jobType workMode category isActive isPublished status createdAt updatedAt companyLogo companyName applicationCount applicationDeadline salaryMin salaryMax vacancies openToFreshGraduates perksAndBenefits otherBenefits willingToRelocate locationImage educationLevel experienceLevel isArchived archivedAt'
+          'title location jobType workMode category isActive isPublished status createdAt updatedAt companyLogo companyName applicationCount applicationDeadline originalApplicationDeadline deadlineExtendedAt salaryMin salaryMax vacancies openToFreshGraduates perksAndBenefits otherBenefits willingToRelocate locationImage educationLevel experienceLevel isArchived statusBeforeArchive archivedAt'
         )
         .sort({ createdAt: -1 }),
       Job.countDocuments({
@@ -1055,6 +1075,36 @@ exports.updateJob = async (req, res) => {
     const currentLogo = employer?.employerProfile?.companyLogo || '';
 
     const wasDraft = job.isPublished === false;
+    const previousApplicationDeadline = job.applicationDeadline
+      ? new Date(job.applicationDeadline)
+      : null;
+
+    if (req.body.applicationDeadline !== undefined) {
+      const cleanDeadline = String(req.body.applicationDeadline || '').trim();
+      const nextApplicationDeadline = cleanDeadline ? new Date(cleanDeadline) : null;
+      const previousDeadlineIsValid =
+        previousApplicationDeadline &&
+        !Number.isNaN(previousApplicationDeadline.getTime());
+      const nextDeadlineIsValid =
+        nextApplicationDeadline &&
+        !Number.isNaN(nextApplicationDeadline.getTime());
+
+      if (nextDeadlineIsValid) {
+        if (!job.originalApplicationDeadline) {
+          job.originalApplicationDeadline = previousDeadlineIsValid
+            ? previousApplicationDeadline
+            : nextApplicationDeadline;
+        }
+
+        if (
+          previousDeadlineIsValid &&
+          previousApplicationDeadline.getTime() < Date.now() &&
+          nextApplicationDeadline.getTime() > previousApplicationDeadline.getTime()
+        ) {
+          job.deadlineExtendedAt = new Date();
+        }
+      }
+    }
 
     if (req.body.skillsRequired !== undefined) {
       job.skillsRequired = normalizeSkills(req.body.skillsRequired);
@@ -1296,18 +1346,19 @@ exports.deleteJob = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to archive this job' });
     }
 
+    const statusBeforeArchive = getStatusBeforeArchive(job);
+
+    job.statusBeforeArchive = statusBeforeArchive;
     job.isArchived = true;
     job.archivedAt = new Date();
-
-    if (job.isPublished) {
-      job.isActive = false;
-    }
+    job.isActive = false;
 
     await job.save();
 
     res.status(200).json({
       success: true,
       message: 'Job archived successfully',
+      archivedStatus: statusBeforeArchive,
       job
     });
   } catch (error) {
@@ -1331,22 +1382,41 @@ exports.restoreJob = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to restore this job' });
     }
 
+    const restoredStatus =
+      String(job.statusBeforeArchive || '').trim().toLowerCase() ||
+      getStatusBeforeArchive(job);
+
     job.isArchived = false;
     job.archivedAt = null;
 
-    if (job.isPublished) {
-      job.isActive = true;
-      job.status = 'published';
-    } else {
-      job.isActive = false;
+    if (restoredStatus === 'draft') {
       job.status = 'draft';
+      job.isPublished = false;
+      job.isActive = false;
+    } else if (restoredStatus === 'closed') {
+      job.status = 'closed';
+      job.isPublished = true;
+      job.isActive = false;
+    } else if (restoredStatus === 'expired') {
+      job.status = 'published';
+      job.isPublished = true;
+      job.isActive = false;
+    } else if (restoredStatus === 'filled') {
+      job.status = 'filled';
+      job.isPublished = true;
+      job.isActive = false;
+    } else {
+      job.status = 'published';
+      job.isPublished = true;
+      job.isActive = true;
     }
 
     await job.save();
 
     res.status(200).json({
       success: true,
-      message: 'Job restored successfully',
+      message: `Job restored as ${restoredStatus === 'draft' ? 'Draft' : restoredStatus.charAt(0).toUpperCase() + restoredStatus.slice(1)}`,
+      restoredStatus,
       job
     });
   } catch (error) {

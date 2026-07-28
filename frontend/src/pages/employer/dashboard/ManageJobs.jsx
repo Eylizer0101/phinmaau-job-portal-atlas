@@ -720,7 +720,8 @@ const ManageJobs = () => {
 
     if (explicitStatus === 'draft' || job.isPublished === false) return 'draft';
     if (explicitStatus === 'filled') return 'filled';
-    if (job.isActive && isExpired(job.applicationDeadline)) return 'expired';
+    if (explicitStatus === 'closed') return 'closed';
+    if (isExpired(job.applicationDeadline)) return 'expired';
     return job.isActive ? 'open' : 'closed';
   };
 
@@ -740,6 +741,32 @@ const ManageJobs = () => {
     if (s === 'expired') return 'Expired';
     if (s === 'filled') return 'Filled';
     return 'Closed';
+  };
+
+  const getArchiveConfirmationMessage = (job) => {
+    const status = getDerivedStatus(job);
+
+    if (status === 'open') {
+      return 'This job post is currently Open. Archiving it will remove it from the job offers and listings, and job seekers will no longer be able to view or apply for it.';
+    }
+
+    if (status === 'closed') {
+      return 'This job post is currently Closed. Archiving it will move the job post to your archived records for future reference.';
+    }
+
+    if (status === 'expired') {
+      return 'This job has Expired. Archiving it will remove it from your active job posts while keeping it available in your archived records.';
+    }
+
+    if (status === 'draft') {
+      return 'This job is currently a Draft. Archiving it will remove the draft from your active list and store it in your archived records. It will remain unpublished and invisible to job seekers.';
+    }
+
+    if (status === 'filled') {
+      return 'This job is currently Filled. Archiving it will remove it from your active job posts while keeping it available in your archived records.';
+    }
+
+    return 'Archiving this job will remove it from your active jobs and move it to your archived records.';
   };
 
   const safeDate = (d) => {
@@ -879,7 +906,7 @@ const ManageJobs = () => {
       setSuccess({ type: 'archive', title: 'Job Archived Successfully', message: 'The job has been moved to archived jobs.' });
     } catch (err) {
       console.error('Error archiving job:', err);
-      setError('Failed to delete job');
+      setError('Failed to archive job');
     } finally {
       setAction({ type: '', jobId: '' });
     }
@@ -1908,7 +1935,7 @@ const ManageJobs = () => {
                     “{selectedJob.title || 'Untitled Draft'}”
                   </p>
                   <p id="delete-desc" className="mt-1 text-sm text-red-800">
-                    This job will be removed from your active jobs and moved to archived jobs.
+                    {getArchiveConfirmationMessage(selectedJob)}
                   </p>
                 </div>
 

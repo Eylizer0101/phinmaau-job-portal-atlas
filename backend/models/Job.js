@@ -108,6 +108,14 @@ const jobSchema = new mongoose.Schema({
         type: Date,
         required: function () { return this.isPublished === true; }
     },
+    originalApplicationDeadline: {
+        type: Date,
+        default: null
+    },
+    deadlineExtendedAt: {
+        type: Date,
+        default: null
+    },
     vacancies: {
         type: Number,
         required: function () { return this.isPublished === true; },
@@ -208,6 +216,12 @@ const jobSchema = new mongoose.Schema({
     isArchived: {
         type: Boolean,
         default: false
+    },
+
+    statusBeforeArchive: {
+        type: String,
+        enum: ['draft', 'open', 'closed', 'expired', 'filled'],
+        default: null
     },
 
     archivedAt: {
