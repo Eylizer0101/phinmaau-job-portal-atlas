@@ -816,23 +816,20 @@ const DeclinedApplicantsModal = ({ record, onClose, onViewApplicant }) => {
             </div>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <div className="min-w-[860px]">
-                <div className="grid grid-cols-[0.85fr_1.25fr_1fr_1.15fr_0.85fr] gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+              <div className="min-w-[920px]">
+                <div className="grid grid-cols-[0.85fr_1.25fr_1fr_1.15fr_0.85fr_0.55fr] gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500">
                   <span>Applied Date</span>
                   <span>Applicant</span>
                   <span>Jobseeker Level</span>
                   <span>Decline Stage</span>
                   <span>Archived Date</span>
+                  <span className="text-center">Actions</span>
                 </div>
 
                 {applicants.map((applicant) => (
-                  <button
-                    type="button"
+                  <div
                     key={applicant.applicationId || applicant._id}
-                    onClick={() => onViewApplicant(applicant)}
-                    className="grid w-full grid-cols-[0.85fr_1.25fr_1fr_1.15fr_0.85fr] items-center gap-3 border-b border-slate-100 px-4 py-3 text-left text-xs transition last:border-b-0 hover:bg-slate-50"
-                    aria-label={`View archived decline details for ${applicant.applicantName || "applicant"}`}
-                    title="View applicant decline details"
+                    className="grid w-full grid-cols-[0.85fr_1.25fr_1fr_1.15fr_0.85fr_0.55fr] items-center gap-3 border-b border-slate-100 px-4 py-3 text-left text-xs transition last:border-b-0 hover:bg-slate-50"
                   >
                     <span className="text-slate-600">{formatDate(applicant.appliedAt)}</span>
                     <span className="min-w-0">
@@ -855,7 +852,18 @@ const DeclinedApplicantsModal = ({ record, onClose, onViewApplicant }) => {
                       </span>
                     </span>
                     <span className="text-slate-600">{formatDate(applicant.archivedAt)}</span>
-                  </button>
+                    <div className="flex justify-center">
+                      <button
+                        type="button"
+                        onClick={() => onViewApplicant(applicant)}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-[#212C61]/40 hover:bg-[#212C61]/5 hover:text-[#212C61]"
+                        aria-label={`View archived decline details for ${applicant.applicantName || "applicant"}`}
+                        title="View applicant decline details"
+                      >
+                        <Icon name="eye" />
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
