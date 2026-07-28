@@ -5,6 +5,88 @@ import EmployerLayout from '../../../layouts/EmployerLayout';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
+const ActionIcon = ({ name, className = 'h-5 w-5' }) => {
+  const common = {
+    className,
+    fill: 'none',
+    stroke: 'currentColor',
+    viewBox: '0 0 24 24',
+    'aria-hidden': true,
+  };
+
+  if (name === 'view') {
+    return (
+      <svg {...common}>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+        />
+      </svg>
+    );
+  }
+
+  if (name === 'edit') {
+    return (
+      <svg {...common}>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
+        />
+      </svg>
+    );
+  }
+
+  if (name === 'restore') {
+    return (
+      <svg {...common}>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M3 10h6V4"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M3.51 15a9 9 0 102.13-9.36L3 8"
+        />
+      </svg>
+    );
+  }
+
+  if (name === 'delete') {
+    return (
+      <svg {...common}>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+        />
+      </svg>
+    );
+  }
+
+  return null;
+};
+
 
 const ARCHIVED_DATE_FILTER_OPTIONS = [
   { value: 'all', label: 'All Time' },
@@ -1138,7 +1220,7 @@ const ArchivedJobs = () => {
                           </div>
                         </div>
 
-                        <div className="mt-4 grid grid-cols-2 gap-2">
+                        <div className="mt-4 grid grid-cols-4 gap-2">
                           <Link
                             to={`/employer/manage-jobs/${job._id}/view`}
                             state={{
@@ -1146,42 +1228,49 @@ const ArchivedJobs = () => {
                               backPath: '/employer/manage-jobs/archived',
                               backLabel: 'Archived Jobs',
                             }}
-                            className="inline-flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                            className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/[0.06] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                             aria-label={`View ${title}`}
+                            title="View"
                           >
-                            View
+                            <ActionIcon name="view" />
                           </Link>
 
                           <Link
                             to={`/employer/edit-job/${job._id}`}
-                            className="inline-flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                            className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/[0.06] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                             aria-label={`Edit ${title}`}
+                            title="Edit"
                           >
-                            Edit
+                            <ActionIcon name="edit" />
                           </Link>
 
                           <button
+                            type="button"
                             onClick={() => handleRestore(job._id)}
                             disabled={busyThisRow}
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/[0.06] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             aria-label={`Restore ${title}`}
+                            title="Restore"
                           >
                             {busyThisRow && action.type === 'restore' ? (
-                              <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-b-2 border-t-2 border-current" />
-                            ) : null}
-                            Restore
+                              <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-current" />
+                            ) : (
+                              <ActionIcon name="restore" />
+                            )}
                           </button>
 
                           <button
+                            type="button"
                             onClick={() => {
                               setSelectedJob(job);
                               setShowDeleteModal(true);
                             }}
                             disabled={busyThisRow}
-                            className="inline-flex w-full items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             aria-label={`Permanently delete ${title}`}
+                            title="Delete"
                           >
-                            Delete
+                            <ActionIcon name="delete" />
                           </button>
                         </div>
                       </div>
@@ -1295,7 +1384,7 @@ const ArchivedJobs = () => {
                             </td>
 
                             <td className="px-6 py-4 text-center align-middle">
-                              <div className="flex flex-wrap items-center justify-center gap-2">
+                              <div className="flex items-center justify-center gap-2">
                                 <Link
                                   to={`/employer/manage-jobs/${job._id}/view`}
                                   state={{
@@ -1303,31 +1392,35 @@ const ArchivedJobs = () => {
                                     backPath: '/employer/manage-jobs/archived',
                                     backLabel: 'Archived Jobs',
                                   }}
-                                  className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/[0.06] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                                   aria-label={`View ${title}`}
+                                  title="View"
                                 >
-                                  View
+                                  <ActionIcon name="view" />
                                 </Link>
 
                                 <Link
                                   to={`/employer/edit-job/${job._id}`}
-                                  className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/[0.06] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                                   aria-label={`Edit ${title}`}
+                                  title="Edit"
                                 >
-                                  Edit
+                                  <ActionIcon name="edit" />
                                 </Link>
 
                                 <button
                                   type="button"
                                   onClick={() => handleRestore(job._id)}
                                   disabled={busyThisRow}
-                                  className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/[0.06] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                   aria-label={`Restore ${title}`}
+                                  title="Restore"
                                 >
                                   {busyThisRow && action.type === 'restore' ? (
-                                    <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-b-2 border-t-2 border-current" />
-                                  ) : null}
-                                  Restore
+                                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-current" />
+                                  ) : (
+                                    <ActionIcon name="restore" />
+                                  )}
                                 </button>
 
                                 <button
@@ -1337,10 +1430,11 @@ const ArchivedJobs = () => {
                                     setShowDeleteModal(true);
                                   }}
                                   disabled={busyThisRow}
-                                  className="inline-flex h-10 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                   aria-label={`Permanently delete ${title}`}
+                                  title="Delete"
                                 >
-                                  Delete
+                                  <ActionIcon name="delete" />
                                 </button>
                               </div>
                             </td>
