@@ -358,8 +358,17 @@ const resumeStyles = `
     overflow-wrap: anywhere;
   }
 
-  .resume-contact span + span::before {
-    content: ' | ';
+  .resume-contact-address {
+    display: block;
+  }
+
+  .resume-contact-details {
+    display: block;
+    margin-top: 1px;
+  }
+
+  .resume-contact-details span + span::before {
+    content: ' • ';
   }
 
   .resume-education-summary {
@@ -712,9 +721,16 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
             <div class="resume-header-main">
               <h1 class="resume-name">${escapeHtml(fullName)}</h1>
               <div class="resume-contact">
-                ${formData.address ? `<span>${escapeHtml(formData.address)}</span>` : ''}
-                ${formData.phoneNumber ? `<span>${escapeHtml(formData.phoneNumber)}</span>` : ''}
-                ${formData.email ? `<span>${escapeHtml(formData.email)}</span>` : ''}
+                ${formData.address ? `<div class="resume-contact-address">${escapeHtml(formData.address)}</div>` : ''}
+                ${
+                  formData.email || formData.phoneNumber
+                    ? `<div class="resume-contact-details">${
+                        formData.email ? `<span>${escapeHtml(formData.email)}</span>` : ''
+                      }${
+                        formData.phoneNumber ? `<span>${escapeHtml(formData.phoneNumber)}</span>` : ''
+                      }</div>`
+                    : ''
+                }
               </div>
               ${educationSummary ? `<div class="resume-education-summary">${escapeHtml(educationSummary)}</div>` : ''}
             </div>
@@ -868,7 +884,12 @@ export const normalizeUserToResumeData = ({ userData = {}, profile = {}, workExp
     email: userData.email || '',
     profileImage: userData.profileImage || '',
 
-    phoneNumber: profile.phoneNumber || '',
+    phoneNumber:
+      profile.phoneNumber ||
+      profile.mobileNumber ||
+      userData.phoneNumber ||
+      userData.contactNumber ||
+      '',
     aboutMe: profile.aboutMe || '',
     minimumSalary: profile.minimumSalary || '',
     maximumSalary: profile.maximumSalary || '',

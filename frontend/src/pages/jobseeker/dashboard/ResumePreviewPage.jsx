@@ -485,8 +485,17 @@ const ResumePreviewPage = () => {
           overflow-wrap: anywhere;
         }
 
-        .resume-contact span + span::before {
-          content: ' | ';
+        .resume-contact-address {
+          display: block;
+        }
+
+        .resume-contact-details {
+          display: block;
+          margin-top: 1px;
+        }
+
+        .resume-contact-details span + span::before {
+          content: ' • ';
         }
 
         .resume-education-summary {
@@ -743,9 +752,15 @@ const ResumePreviewPage = () => {
               <div className="resume-header-main">
                 <h1 className="resume-name">{fullName}</h1>
                 <div className="resume-contact">
-                  {formData.address ? <span>{formData.address}</span> : null}
-                  {formData.phoneNumber ? <span>{formData.phoneNumber}</span> : null}
-                  {formData.email ? <span>{formData.email}</span> : null}
+                  {formData.address ? (
+                    <div className="resume-contact-address">{formData.address}</div>
+                  ) : null}
+                  {formData.email || formData.phoneNumber ? (
+                    <div className="resume-contact-details">
+                      {formData.email ? <span>{formData.email}</span> : null}
+                      {formData.phoneNumber ? <span>{formData.phoneNumber}</span> : null}
+                    </div>
+                  ) : null}
                 </div>
                 {educationSummary ? <div className="resume-education-summary">{educationSummary}</div> : null}
               </div>

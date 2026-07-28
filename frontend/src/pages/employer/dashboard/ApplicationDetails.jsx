@@ -63,6 +63,60 @@ const SvgIcon = ({ name, className = 'h-5 w-5' }) => {
 
 const Spinner = () => <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-r-transparent" />;
 
+const AutoFitApplicationHeaderName = ({ children, maxFontSize = 30, minFontSize = 16 }) => {
+  const containerRef = useRef(null);
+  const textRef = useRef(null);
+  const [fontSize, setFontSize] = useState(maxFontSize);
+
+  useEffect(() => {
+    const fitText = () => {
+      const container = containerRef.current;
+      const text = textRef.current;
+      if (!container || !text) return;
+
+      let nextSize = maxFontSize;
+      text.style.fontSize = `${nextSize}px`;
+
+      while (nextSize > minFontSize && text.scrollWidth > container.clientWidth) {
+        nextSize -= 0.5;
+        text.style.fontSize = `${nextSize}px`;
+      }
+
+      setFontSize(nextSize);
+    };
+
+    const frameId = window.requestAnimationFrame(fitText);
+    const resizeObserver =
+      typeof window.ResizeObserver === 'function'
+        ? new window.ResizeObserver(fitText)
+        : null;
+
+    if (containerRef.current && resizeObserver) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    window.addEventListener('resize', fitText);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', fitText);
+    };
+  }, [children, maxFontSize, minFontSize]);
+
+  return (
+    <div ref={containerRef} className="min-w-0 flex-1 overflow-hidden">
+      <h1
+        ref={textRef}
+        className="whitespace-nowrap font-bold leading-tight text-gray-900"
+        style={{ fontSize: `${fontSize}px` }}
+      >
+        {children}
+      </h1>
+    </div>
+  );
+};
+
 const formatDate = (value, options = {}) => {
   if (!value) return '';
   const date = new Date(value);
@@ -447,15 +501,21 @@ const getApplicantExperienceYears = (workExperiences = [], profileExperience = '
 const getEducationRank = (value = '') => {
   const normalized = normalizeMatchText(value);
   if (!normalized) return 0;
-  if (normalized.includes('doctor')) return 5;
-  if (normalized.includes('master')) return 4;
+  if (normalized.includes('doctor') || normalized.includes('phd')) return 5;
+  if (normalized.includes('master') || normalized.includes('post graduate')) return 4;
   if (
     normalized.includes('bachelor') ||
     normalized.includes('college') ||
-    normalized.includes('degree graduate')
+    normalized.includes('degree graduate') ||
+    normalized.includes('professional license') ||
+    normalized.includes('board exam')
   ) return 3;
-  if (normalized.includes('associate') || normalized.includes('vocational')) return 2;
-  if (normalized.includes('high school')) return 1;
+  if (
+    normalized.includes('associate') ||
+    normalized.includes('vocational') ||
+    normalized.includes('diploma')
+  ) return 2;
+  if (normalized.includes('high school') || normalized.includes('secondary')) return 1;
   return 0;
 };
 
@@ -497,12 +557,23 @@ const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work =
     ? education[education.length - 1]
     : {};
 
-  const applicantEducation =
-    latestEducation.educationalAttainment ||
-    latestEducation.level ||
-    profile.educationalAttainment ||
-    profile.course ||
-    '';
+  const educationCandidates = [
+    profile.educationalAttainment,
+    ...(Array.isArray(education)
+      ? education.flatMap((entry) => [
+          entry?.educationalAttainment,
+          entry?.level,
+        ])
+      : []),
+  ]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean);
+
+  const applicantEducation = educationCandidates.reduce((highest, candidate) => {
+    return getEducationRank(candidate) > getEducationRank(highest)
+      ? candidate
+      : highest;
+  }, educationCandidates[0] || '');
 
   const requiredEducation = job.educationLevel || job.educationalRequirements || '';
   const applicantEducationRank = getEducationRank(applicantEducation);
@@ -1137,6 +1208,15 @@ const ApplicationDetails = () => {
     education,
   });
   const salary = [profile.minimumSalary, profile.maximumSalary].filter(Boolean).join(' - ');
+  const resumeAddress = String(profile.address || '').trim();
+  const resumeEmail = String(user.email || '').trim();
+  const resumePhoneNumber = String(
+    profile.phoneNumber ||
+      profile.mobileNumber ||
+      user.phoneNumber ||
+      user.contactNumber ||
+      ''
+  ).trim();
   const meaningfulWork = work.filter(hasMeaningfulObjectValue);
   const meaningfulEducation = education.filter(hasMeaningfulObjectValue);
   const meaningfulProfileSections = [
@@ -1205,26 +1285,35 @@ const ApplicationDetails = () => {
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_330px]">
         <main className="overflow-hidden rounded-[20px] border border-[#d8e2ee] bg-white">
           <div className="flex flex-col gap-5 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex min-w-0 items-center gap-5">
+            <div className="flex min-w-0 flex-1 items-center gap-5">
               <div className="h-[108px] w-[108px] shrink-0 overflow-hidden rounded-full bg-[#eef5fc]">{image && !avatarBroken ? <img src={image} alt={name} onError={() => setAvatarBroken(true)} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-[#2e66a6]">{name[0]}</div>}</div>
-              <div className="min-w-0"><div className="flex flex-wrap items-center gap-3"><h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">{name}</h1><span className={`rounded-md px-2 py-1 text-xs font-semibold ${isAlreadyEmployed ? 'bg-amber-100 text-amber-800' : 'bg-green-50 text-green-700'}`}>{visibleStatusLabel}</span></div><p className="mt-2 text-sm text-gray-500">
-                Applied for{' '}
-                {application.job?._id || application.job ? (
-                  <Link
-                    to={`/employer/manage-jobs/${application.job?._id || application.job}/view`}
-                    className="font-semibold text-[#174b91] transition hover:text-[#2e66a6] hover:underline focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
-                  >
-                    {application.job?.title || 'Job Position'}
-                  </Link>
-                ) : (
-                  <span className="font-semibold text-[#174b91]">Job Position</span>
-                )}
-              </p><p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-500">
-                <SvgIcon name="calendar" className="h-4 w-4" />
-                <span>Applied on {formatDate(application.appliedAt || application.createdAt)}</span>
-                <span aria-hidden="true">•</span>
-                <span>{formatRelativeTime(application.appliedAt || application.createdAt)}</span>
-              </p></div>
+              <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 items-center gap-3">
+                  <AutoFitApplicationHeaderName>{name}</AutoFitApplicationHeaderName>
+                  <span className={`shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-xs font-semibold ${isAlreadyEmployed ? 'bg-amber-100 text-amber-800' : 'bg-green-50 text-green-700'}`}>
+                    {visibleStatusLabel}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm text-gray-500">
+                  Applied for{' '}
+                  {application.job?._id || application.job ? (
+                    <Link
+                      to={`/employer/manage-jobs/${application.job?._id || application.job}/view`}
+                      className="font-semibold text-[#174b91] transition hover:text-[#2e66a6] hover:underline focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
+                    >
+                      {application.job?.title || 'Job Position'}
+                    </Link>
+                  ) : (
+                    <span className="font-semibold text-[#174b91]">Job Position</span>
+                  )}
+                </p>
+                <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-500">
+                  <SvgIcon name="calendar" className="h-4 w-4" />
+                  <span>Applied on {formatDate(application.appliedAt || application.createdAt)}</span>
+                  <span aria-hidden="true">•</span>
+                  <span>{formatRelativeTime(application.appliedAt || application.createdAt)}</span>
+                </p>
+              </div>
             </div>
             <JobSeekerLevelBadgeCard currentRank={jobSeekerLevel.currentRank} />
           </div>
@@ -1249,11 +1338,21 @@ const ApplicationDetails = () => {
                     {name}
                   </h2>
 
-                  <p className="mt-2 break-words text-[10px] leading-relaxed">
-                    {[profile.address, user.email, profile.phoneNumber]
-                      .filter(Boolean)
-                      .join(' | ') || 'Contact information not provided'}
-                  </p>
+                  {resumeAddress ? (
+                    <p className="mt-2 break-words text-[10px] leading-relaxed">
+                      {resumeAddress}
+                    </p>
+                  ) : null}
+
+                  {resumeEmail || resumePhoneNumber ? (
+                    <p className="mt-0.5 break-words text-[10px] leading-relaxed">
+                      {[resumeEmail, resumePhoneNumber].filter(Boolean).join(' • ')}
+                    </p>
+                  ) : !resumeAddress ? (
+                    <p className="mt-2 text-[10px] leading-relaxed text-gray-500">
+                      Contact information not provided
+                    </p>
+                  ) : null}
 
                   <p className="mt-1 text-[10px] italic">
                     {[profile.campus, profile.course, profile.yearGraduated ? `Class of ${profile.yearGraduated}` : '']
