@@ -2,7 +2,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { PH_REGIONS, PH_CITIES_BY_REGION } from '../../../constants/phLocations';
+import {
+  PH_REGIONS,
+  PH_PROVINCES_BY_REGION,
+  PH_CITIES_BY_PROVINCE,
+} from '../../../constants/phLocations';
 import api from '../../../services/api';
 
 const cx = (...classes) => classes.filter(Boolean).join(' ');
@@ -99,28 +103,74 @@ const isEqualShallow = (a, b) => {
   return true;
 };
 
-const parseRegionCity = (regionCity) => {
-  const s = String(regionCity || '').trim();
-  if (!s) return { region: '', city: '' };
+const normalizeLocationToken = (value) =>
+  String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\b(city|municipality of)\b/g, ' ')
+    .replace(/[^a-z0-9ñ\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
-  const parts = s.split(' - ').map((p) => p.trim()).filter(Boolean);
-  if (parts.length >= 2) {
-    const region = parts[0];
-    const city = parts.slice(1).join(' - ').trim();
-    return { region, city };
+const parseRegionLocation = (regionCity, companyAddress = '') => {
+  const rawRegionCity = String(regionCity || '').trim();
+  if (!rawRegionCity) {
+    return { region: '', province: '', city: '' };
   }
 
-  return { region: s, city: '' };
+  const parts = rawRegionCity
+    .split(' - ')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  const region = parts[0] || '';
+  const validProvinces = PH_PROVINCES_BY_REGION?.[region] || [];
+
+  let province = '';
+  let city = '';
+
+  if (parts.length >= 3) {
+    province = parts[1] || '';
+    city = parts.slice(2).join(' - ').trim();
+  } else if (parts.length === 2) {
+    const legacyValue = parts[1] || '';
+
+    if (validProvinces.includes(legacyValue)) {
+      province = legacyValue;
+    } else {
+      city = legacyValue;
+      province =
+        validProvinces.find((provinceName) =>
+          (PH_CITIES_BY_PROVINCE?.[provinceName] || []).includes(legacyValue)
+        ) || '';
+    }
+  }
+
+  if (province && !city) {
+    const normalizedAddress = normalizeLocationToken(companyAddress);
+    const provinceCities = PH_CITIES_BY_PROVINCE?.[province] || [];
+
+    city =
+      provinceCities.find((cityName) => {
+        const normalizedCity = normalizeLocationToken(cityName);
+        return normalizedCity && normalizedAddress.includes(normalizedCity);
+      }) || '';
+  }
+
+  return { region, province, city };
 };
 
-const composeRegionCity = (region, city) => {
-  const r = String(region || '').trim();
-  const c = String(city || '').trim();
-  if (!r && !c) return '';
-  if (!r) return c;
-  if (!c) return r;
-  return `${r} - ${c}`;
-};
+const composeRegionCity = (region, province, city) =>
+  [region, province, city]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean)
+    .join(' - ');
+
+const composeCompanyAddress = (province, city) =>
+  [city, province]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean)
+    .join(', ');
 
 const normalizeUrl = (value) => {
   const raw = String(value || '').trim();
@@ -509,6 +559,7 @@ const CompanyProfile = () => {
 
   const [initialData, setInitialData] = useState(companyData);
   const [selectedRegion, setSelectedRegion] = useState('');
+  const [selectedProvince, setSelectedProvince] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [industryDropdownOpen, setIndustryDropdownOpen] = useState(false);
 
@@ -580,11 +631,17 @@ const CompanyProfile = () => {
 
   const requiredComplete = useMemo(() => Boolean(companyData.companyName?.trim()), [companyData.companyName]);
 
-  const cityOptions = useMemo(() => {
-    const r = String(selectedRegion || '').trim();
-    if (!r) return [];
-    return PH_CITIES_BY_REGION?.[r] || [];
+  const provinceOptions = useMemo(() => {
+    const region = String(selectedRegion || '').trim();
+    if (!region) return [];
+    return PH_PROVINCES_BY_REGION?.[region] || [];
   }, [selectedRegion]);
+
+  const cityOptions = useMemo(() => {
+    const province = String(selectedProvince || '').trim();
+    if (!province) return [];
+    return PH_CITIES_BY_PROVINCE?.[province] || [];
+  }, [selectedProvince]);
 
   const filteredIndustryOptions = useMemo(() => {
     const query = String(companyData.industry || '').trim().toLowerCase();
@@ -693,8 +750,9 @@ const CompanyProfile = () => {
         revokeLocalPreviewUrls();
         setGalleryFiles([]);
 
-        const parsed = parseRegionCity(next.regionCity);
+        const parsed = parseRegionLocation(next.regionCity, next.companyAddress);
         setSelectedRegion(parsed.region);
+        setSelectedProvince(parsed.province);
         setSelectedCity(parsed.city);
 
         const v = p?.verificationDocs || {};
@@ -748,9 +806,32 @@ const CompanyProfile = () => {
 
   useEffect(() => {
     if (!isEditOpen) return;
-    const combined = composeRegionCity(selectedRegion, selectedCity);
-    setCompanyData((prev) => ({ ...prev, regionCity: combined }));
-  }, [selectedRegion, selectedCity, isEditOpen]);
+
+    const combinedRegionCity = composeRegionCity(
+      selectedRegion,
+      selectedProvince,
+      selectedCity
+    );
+    const combinedCompanyAddress = composeCompanyAddress(
+      selectedProvince,
+      selectedCity
+    );
+
+    setCompanyData((prev) => {
+      if (
+        prev.regionCity === combinedRegionCity &&
+        prev.companyAddress === combinedCompanyAddress
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        regionCity: combinedRegionCity,
+        companyAddress: combinedCompanyAddress,
+      };
+    });
+  }, [selectedRegion, selectedProvince, selectedCity, isEditOpen]);
 
   useEffect(() => {
     if (!industryDropdownOpen) return undefined;
@@ -953,12 +1034,21 @@ const CompanyProfile = () => {
     clearMessages();
     clearFieldErrors();
 
-    const parsed = parseRegionCity(companyData.regionCity);
+    const parsed = parseRegionLocation(
+      companyData.regionCity,
+      companyData.companyAddress
+    );
     setSelectedRegion(parsed.region);
+    setSelectedProvince(parsed.province);
     setSelectedCity(parsed.city);
     setIndustryDropdownOpen(false);
     setIsEditOpen(true);
-  }, [clearFieldErrors, clearMessages, companyData.regionCity]);
+  }, [
+    clearFieldErrors,
+    clearMessages,
+    companyData.companyAddress,
+    companyData.regionCity,
+  ]);
 
   const handleCancel = useCallback(async () => {
     if (isDirty && !window.confirm('Discard unsaved changes?')) return;
@@ -975,13 +1065,20 @@ const CompanyProfile = () => {
     const next = {};
 
     if (!companyData.companyName?.trim()) next.companyName = 'Company name is required.';
-    if (!selectedRegion?.trim()) next.regionCity = 'Region is required.';
-    if (!selectedCity?.trim()) next.regionCity = 'City / Province is required.';
+    if (!selectedRegion?.trim()) next.region = 'Region is required.';
+    if (!selectedProvince?.trim()) next.province = 'Province is required.';
+    if (!selectedCity?.trim()) next.city = 'City / Municipality is required.';
     if (!companyData.industry?.trim()) next.industry = 'Industry is required.';
 
     setFieldErrors(next);
     return { ok: Object.keys(next).length === 0 };
-  }, [companyData.companyName, companyData.industry, selectedCity, selectedRegion]);
+  }, [
+    companyData.companyName,
+    companyData.industry,
+    selectedCity,
+    selectedProvince,
+    selectedRegion,
+  ]);
 
   const handleSubmit = useCallback(
     async (e) => {
@@ -1015,7 +1112,14 @@ const CompanyProfile = () => {
           fd.append(key, companyData[key] ?? '');
         });
 
-        fd.set('regionCity', composeRegionCity(selectedRegion, selectedCity));
+        fd.set(
+          'regionCity',
+          composeRegionCity(selectedRegion, selectedProvince, selectedCity)
+        );
+        fd.set(
+          'companyAddress',
+          composeCompanyAddress(selectedProvince, selectedCity)
+        );
         fd.set('industry', normalizeIndustryValue(companyData.industry));
 
         if (logoFile) fd.append('companyLogo', logoFile);
@@ -1054,6 +1158,7 @@ const CompanyProfile = () => {
       persistedGalleryItems,
       resetLocalUploads,
       selectedCity,
+      selectedProvince,
       selectedRegion,
       validateClient,
     ]
@@ -1710,8 +1815,8 @@ const CompanyProfile = () => {
                           />
                         </div>
 
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                          <div className="md:col-span-2">
+                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                          <div className="lg:col-span-3">
                             <FormField label="Company Name" required error={fieldErrors.companyName}>
                               <input
                                 type="text"
@@ -1730,18 +1835,24 @@ const CompanyProfile = () => {
                             </FormField>
                           </div>
 
-                          <FormField label="Region" required error={fieldErrors.regionCity}>
+                          <FormField label="Region" required error={fieldErrors.region}>
                             <select
                               value={selectedRegion}
-                              onChange={(e) => {
-                                setSelectedRegion(e.target.value);
+                              onChange={(event) => {
+                                setSelectedRegion(event.target.value);
+                                setSelectedProvince('');
                                 setSelectedCity('');
                                 clearMessages();
-                                setFieldErrors((prev) => ({ ...prev, regionCity: undefined }));
+                                setFieldErrors((prev) => ({
+                                  ...prev,
+                                  region: undefined,
+                                  province: undefined,
+                                  city: undefined,
+                                }));
                               }}
                               className={cx(
                                 'w-full rounded-[10px] border bg-white px-4 py-3 text-[14px] outline-none transition',
-                                fieldErrors.regionCity
+                                fieldErrors.region
                                   ? 'border-red-300 focus:border-red-500'
                                   : 'border-[#d1d5db] focus:border-[#2e66a6]'
                               )}
@@ -1756,23 +1867,62 @@ const CompanyProfile = () => {
                             </select>
                           </FormField>
 
-                          <FormField label="City / Provinces" required error={fieldErrors.regionCity}>
+                          <FormField label="Province" required error={fieldErrors.province}>
                             <select
-                              value={selectedCity}
-                              onChange={(e) => {
-                                setSelectedCity(e.target.value);
+                              value={selectedProvince}
+                              onChange={(event) => {
+                                setSelectedProvince(event.target.value);
+                                setSelectedCity('');
                                 clearMessages();
-                                setFieldErrors((prev) => ({ ...prev, regionCity: undefined }));
+                                setFieldErrors((prev) => ({
+                                  ...prev,
+                                  province: undefined,
+                                  city: undefined,
+                                }));
                               }}
                               className={cx(
                                 'w-full rounded-[10px] border bg-white px-4 py-3 text-[14px] outline-none transition',
-                                fieldErrors.regionCity
+                                fieldErrors.province
                                   ? 'border-red-300 focus:border-red-500'
                                   : 'border-[#d1d5db] focus:border-[#2e66a6]'
                               )}
                               disabled={saving || !selectedRegion}
                             >
-                              <option value="">{selectedRegion ? 'Select city / province' : 'Select region first'}</option>
+                              <option value="">
+                                {selectedRegion ? 'Select province' : 'Select region first'}
+                              </option>
+                              {provinceOptions.map((province) => (
+                                <option key={province} value={province}>
+                                  {province}
+                                </option>
+                              ))}
+                            </select>
+                          </FormField>
+
+                          <FormField label="City / Municipality" required error={fieldErrors.city}>
+                            <select
+                              value={selectedCity}
+                              onChange={(event) => {
+                                setSelectedCity(event.target.value);
+                                clearMessages();
+                                setFieldErrors((prev) => ({
+                                  ...prev,
+                                  city: undefined,
+                                }));
+                              }}
+                              className={cx(
+                                'w-full rounded-[10px] border bg-white px-4 py-3 text-[14px] outline-none transition',
+                                fieldErrors.city
+                                  ? 'border-red-300 focus:border-red-500'
+                                  : 'border-[#d1d5db] focus:border-[#2e66a6]'
+                              )}
+                              disabled={saving || !selectedProvince}
+                            >
+                              <option value="">
+                                {selectedProvince
+                                  ? 'Select city / municipality'
+                                  : 'Select province first'}
+                              </option>
                               {cityOptions.map((city) => (
                                 <option key={city} value={city}>
                                   {city}
@@ -1780,20 +1930,6 @@ const CompanyProfile = () => {
                               ))}
                             </select>
                           </FormField>
-
-                          <div className="md:col-span-2">
-                            <FormField label="Company Address" required={false} error={fieldErrors.companyAddress}>
-                              <input
-                                type="text"
-                                name="companyAddress"
-                                value={companyData.companyAddress}
-                                onChange={handleInputChange}
-                                className="w-full rounded-[10px] border border-[#d1d5db] px-4 py-3 text-[14px] outline-none transition focus:border-[#2e66a6]"
-                                placeholder="Unit / Floor No. / Street Address"
-                                disabled={saving}
-                              />
-                            </FormField>
-                          </div>
                         </div>
                       </div>
                     </div>
