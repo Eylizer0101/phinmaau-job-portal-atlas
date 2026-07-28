@@ -121,10 +121,8 @@ const PREFERRED_WORK_MODE_OPTIONS = [
 const EMPLOYMENT_TYPE_OPTIONS = [
   'Full time',
   'Part time',
-  'Contract',
-  'Internship',
-  'Freelance',
-  'Temporary',
+  'Contractual',
+  'Permanent',
 ];
 
 const WILLING_TO_RELOCATE_OPTIONS = [
@@ -141,19 +139,12 @@ const HOW_SOON_CAN_START_OPTIONS = [
   'Within a month',
 ];
 
-const PREFERRED_LANGUAGE_OPTIONS = [
-  'English',
-  'Filipino',
-  'English and Filipino',
-];
-
 const EXPERIENCE_OPTIONS = [
-  'No experience',
-  'Less than 1 year',
-  '1-2 years',
-  '2-3 years',
-  '3-5 years',
-  '5+ years',
+  'No Experience',
+  'Less than 1 Year',
+  '1-3 Years Experience',
+  '4-5 Years Experience',
+  '6+ Years Experience',
 ];
 
 const GENDER_OPTIONS = [
@@ -165,8 +156,9 @@ const GENDER_OPTIONS = [
 const CIVIL_STATUS_OPTIONS = [
   'Single',
   'Married',
-  'Widowed',
-  'Separated',
+  'Divorced',
+  'Legally Separated',
+  'Prefer not to say',
 ];
 
 const SALARY_PRIVACY_OPTIONS = [
@@ -183,6 +175,112 @@ const SALARY_PRIVACY_OPTIONS = [
     icon: '🔒',
   },
 ];
+
+const normalizeSalaryDigits = (value = '') =>
+  String(value || '').replace(/[^\d]/g, '');
+
+const formatSalaryInput = (value = '') => {
+  const digits = normalizeSalaryDigits(value);
+  return digits ? Number(digits).toLocaleString('en-US') : '';
+};
+
+const normalizeEmploymentTypeValue = (value = '') => {
+  const clean = String(value || '').trim();
+  const normalized = clean.toLowerCase();
+
+  if (normalized === 'contract') return 'Contractual';
+  if (normalized === 'full-time') return 'Full time';
+  if (normalized === 'part-time') return 'Part time';
+
+  return EMPLOYMENT_TYPE_OPTIONS.includes(clean) ? clean : '';
+};
+
+const normalizeExperienceValue = (value = '') => {
+  const normalized = String(value || '').trim().toLowerCase();
+
+  if (!normalized) return '';
+  if (['no experience', 'no experience required'].includes(normalized)) {
+    return 'No Experience';
+  }
+  if (
+    ['less than 1 year', 'less than 1 yr', 'less than 1 year experience'].includes(
+      normalized
+    )
+  ) {
+    return 'Less than 1 Year';
+  }
+  if (
+    [
+      '1-2 years',
+      '2-3 years',
+      '1-3 years',
+      '1-3 years experience',
+      '1 year',
+      '2 years',
+      '3 years',
+    ].includes(normalized)
+  ) {
+    return '1-3 Years Experience';
+  }
+  if (
+    [
+      '3-5 years',
+      '4-5 years',
+      '4-5 years experience',
+      '4 years',
+      '5 years',
+    ].includes(normalized)
+  ) {
+    return '4-5 Years Experience';
+  }
+  if (
+    ['5+ years', '6+ years', '6+ years experience', '6 years'].includes(normalized)
+  ) {
+    return '6+ Years Experience';
+  }
+
+  return EXPERIENCE_OPTIONS.find(
+    (option) => option.toLowerCase() === normalized
+  ) || '';
+};
+
+const normalizeEducationalAttainmentValue = (value = '') => {
+  const normalized = String(value || '').trim().toLowerCase();
+
+  if (
+    [
+      "bachelor’s / college degree graduate's",
+      "bachelor's / college degree graduate's",
+      'bachelor / college degree',
+      "bachelor (honor's)",
+    ].includes(normalized)
+  ) {
+    return "Bachelor’s / College degree graduate's";
+  }
+  if (['master’s degree', "master's degree", 'masters degree'].includes(normalized)) {
+    return 'Master’s degree';
+  }
+  if (
+    ['doctorate degree', 'doctorate degree / (phd)', 'doctorate degree / (ph.d.)'].includes(
+      normalized
+    )
+  ) {
+    return 'Doctorate Degree';
+  }
+
+  return '';
+};
+
+const normalizeCivilStatusValue = (value = '') => {
+  const clean = String(value || '').trim();
+  const normalized = clean.toLowerCase();
+
+  if (normalized === 'separated') return 'Legally Separated';
+
+  return CIVIL_STATUS_OPTIONS.find(
+    (option) => option.toLowerCase() === normalized
+  ) || '';
+};
 
 const PROFICIENCY_LEVEL_OPTIONS = [
   'Basic',
@@ -3112,11 +3210,11 @@ const ProfileEditModal = ({
           <Select label="Willing to Relocate" value={drafts.willingToRelocate} onChange={(e) => onChange('willingToRelocate', e.target.value)} options={WILLING_TO_RELOCATE_OPTIONS} placeholder="Select relocation preference" />
           <Select label="How Soon Can Start" value={drafts.howSoonCanYouStart} onChange={(e) => onChange('howSoonCanYouStart', e.target.value)} options={HOW_SOON_CAN_START_OPTIONS} placeholder="Select availability" />
           <Select label="Experience" value={drafts.experience} onChange={(e) => onChange('experience', e.target.value)} options={EXPERIENCE_OPTIONS} placeholder="Select experience" />
-          <Select label="Preferred Language" value={drafts.preferredLanguage} onChange={(e) => onChange('preferredLanguage', e.target.value)} options={PREFERRED_LANGUAGE_OPTIONS} placeholder="Select preferred language" />
+          <Input label="Preferred Language" value={drafts.preferredLanguage} onChange={(e) => onChange('preferredLanguage', e.target.value)} placeholder="Enter preferred language" />
           <Select label="Educational Attainment" value={drafts.educationalAttainment} onChange={(e) => onChange('educationalAttainment', e.target.value)} options={EDUCATIONAL_ATTAINMENT_OPTIONS} placeholder="Select educational attainment" />
           <Select label="Double Degree" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} options={FIELD_OF_STUDY_OPTIONS} placeholder="Select study field" />
-          <Input label="Minimum Salary" value={drafts.minimumSalary} onChange={(e) => onChange('minimumSalary', e.target.value)} placeholder="Minimum Salary" />
-          <Input label="Maximum Salary" value={drafts.maximumSalary} onChange={(e) => onChange('maximumSalary', e.target.value)} placeholder="Maximum Salary" />
+          <Input label="Minimum Salary" value={drafts.minimumSalary} onChange={(e) => onChange('minimumSalary', formatSalaryInput(e.target.value))} placeholder="Minimum Salary" />
+          <Input label="Maximum Salary" value={drafts.maximumSalary} onChange={(e) => onChange('maximumSalary', formatSalaryInput(e.target.value))} placeholder="Maximum Salary" />
           <SalaryPrivacySelect value={drafts.salaryPrivacy} onChange={(value) => onChange('salaryPrivacy', value)} />
           <Input label="Height" value={drafts.height} onChange={(e) => onChange('height', e.target.value)} placeholder="Height" />
           <Input label="Weight" value={drafts.weight} onChange={(e) => onChange('weight', e.target.value)} placeholder="Weight" />
@@ -4668,8 +4766,8 @@ const MyProfile = () => {
           phoneNumber: profile.phoneNumber || '',
 
           aboutMe: profile.aboutMe || '',
-          minimumSalary: profile.minimumSalary || '',
-          maximumSalary: profile.maximumSalary || '',
+          minimumSalary: formatSalaryInput(profile.minimumSalary),
+          maximumSalary: formatSalaryInput(profile.maximumSalary),
           salaryPrivacy: ['limited', 'only_me'].includes(profile.salaryPrivacy)
             ? profile.salaryPrivacy
             : 'only_me',
@@ -4683,7 +4781,7 @@ const MyProfile = () => {
           birthday: profile.birthday || '',
           gender: profile.gender || '',
           nationality: profile.nationality || '',
-          civilStatus: profile.civilStatus || '',
+          civilStatus: normalizeCivilStatusValue(profile.civilStatus),
           height: profile.height || '',
           weight: profile.weight || '',
           preferredLanguage: profile.preferredLanguage || '',
@@ -4700,11 +4798,13 @@ const MyProfile = () => {
           ]),
           whatHaveYouDone: profile.whatHaveYouDone || '',
           howSoonCanYouStart: profile.howSoonCanYouStart || '',
-          employmentType: profile.employmentType || '',
-          educationalAttainment: profile.educationalAttainment || '',
+          employmentType: normalizeEmploymentTypeValue(profile.employmentType),
+          educationalAttainment: normalizeEducationalAttainmentValue(
+            profile.educationalAttainment
+          ),
           willingToRelocate: profile.willingToRelocate || '',
           studyField: profile.studyField || profile.course || '',
-          experience: profile.experience || '',
+          experience: normalizeExperienceValue(profile.experience),
 
           certifications: normalizeProfileList(profile.certifications),
           projects: normalizeProfileList(profile.projects),
@@ -4901,8 +5001,8 @@ const MyProfile = () => {
       if (sectionKey === 'salary') {
         payload = {
           jobSeekerProfile: {
-            minimumSalary: activeDrafts.minimumSalary,
-            maximumSalary: activeDrafts.maximumSalary,
+            minimumSalary: normalizeSalaryDigits(activeDrafts.minimumSalary),
+            maximumSalary: normalizeSalaryDigits(activeDrafts.maximumSalary),
             salaryPrivacy: activeDrafts.salaryPrivacy || 'only_me',
           },
         };
@@ -4940,8 +5040,8 @@ const MyProfile = () => {
             willingToRelocate: activeDrafts.willingToRelocate,
             studyField: activeDrafts.studyField,
             experience: activeDrafts.experience,
-            minimumSalary: activeDrafts.minimumSalary,
-            maximumSalary: activeDrafts.maximumSalary,
+            minimumSalary: normalizeSalaryDigits(activeDrafts.minimumSalary),
+            maximumSalary: normalizeSalaryDigits(activeDrafts.maximumSalary),
             salaryPrivacy: activeDrafts.salaryPrivacy || 'only_me',
           },
         };

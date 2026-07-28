@@ -1,12 +1,9 @@
 // src/constants/jobseekerEducationOptions.js
 
 export const EDUCATIONAL_ATTAINMENT_OPTIONS = [
-  'Bachelor / College degree',
-  "Bachelor (honor's)",
-  'Diploma',
-  'Masters Degree',
-  'Professional license (pass board exam)',
-  'Doctorate degree / (PHD)',
+  "Bachelor’s / College degree graduate's",
+  'Master’s degree',
+  'Doctorate Degree',
 ];
 
 export const FIELD_OF_STUDY_OPTIONS = [
