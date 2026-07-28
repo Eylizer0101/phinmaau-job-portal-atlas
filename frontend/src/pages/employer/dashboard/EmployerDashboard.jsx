@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 import EmployerLayout from '../../../layouts/EmployerLayout';
+import { EXPERIENCE_LEVELS } from '../../../constants/postJobDropdownOptions';
 
 const EmployerDashboard = () => {
   const navigate = useNavigate();
@@ -43,7 +44,6 @@ const EmployerDashboard = () => {
   const [notifLoading, setNotifLoading] = useState(false);
 
   const [profileOpen, setProfileOpen] = useState(false);
-  const [showProfileReminder, setShowProfileReminder] = useState(false);
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
@@ -124,25 +124,56 @@ const EmployerDashboard = () => {
 
   const formatExperienceBadge = (value) => {
     const raw = String(value || '').trim();
-    const normalized = raw.toLowerCase();
-
     if (!raw) return '';
-    if (normalized.includes('no experience')) return 'No Experience Required';
 
-    const numberMatch = normalized.match(/(\d+)\s*\+?\s*year/);
-    if (numberMatch) {
-      const years = numberMatch[1];
-      const label = years === '1' ? 'Year' : 'Years';
-      return `${years} ${label} Experience`;
+    const normalized = raw
+      .toLowerCase()
+      .replace(/[–—]/g, '-')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const exactOption = EXPERIENCE_LEVELS.find(
+      (option) => option.toLowerCase() === normalized
+    );
+    if (exactOption) return exactOption;
+
+    if (normalized.includes('no experience')) {
+      return EXPERIENCE_LEVELS[0];
     }
 
-    if (normalized.includes('6+')) return '6+ Years Experience';
+    if (
+      normalized.includes('less than 1') ||
+      normalized.includes('below 1 year') ||
+      normalized.includes('under 1 year')
+    ) {
+      return EXPERIENCE_LEVELS[1];
+    }
 
-    return raw
-      .split(' ')
-      .filter(Boolean)
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
+    if (/1\s*-\s*3\s*(?:year|years|yr|yrs)/.test(normalized)) {
+      return EXPERIENCE_LEVELS[2];
+    }
+
+    if (/4\s*-\s*5\s*(?:year|years|yr|yrs)/.test(normalized)) {
+      return EXPERIENCE_LEVELS[3];
+    }
+
+    if (
+      normalized.includes('6+') ||
+      /(?:6|7|8|9|\d{2,})\s*(?:year|years|yr|yrs)/.test(normalized)
+    ) {
+      return EXPERIENCE_LEVELS[4];
+    }
+
+    const numberMatch = normalized.match(/(\d+)\s*(?:year|years|yr|yrs)/);
+    if (numberMatch) {
+      const years = Number(numberMatch[1]);
+
+      if (years >= 1 && years <= 3) return EXPERIENCE_LEVELS[2];
+      if (years >= 4 && years <= 5) return EXPERIENCE_LEVELS[3];
+      if (years >= 6) return EXPERIENCE_LEVELS[4];
+    }
+
+    return '';
   };
 
   const isOpenToFreshGraduate = (job) => {
@@ -389,7 +420,6 @@ const EmployerDashboard = () => {
       avatarUrl: user?.profileImage || '',
     });
 
-    setShowProfileReminder(!profileComplete);
   };
 
   const fetchUserData = async () => {
@@ -1703,43 +1733,7 @@ const EmployerDashboard = () => {
             <h1 className="text-[34px] leading-[40px] font-semibold text-gray-900">Overview</h1>
           </div>
 
-          {showProfileReminder ? (
-            <div className="hidden lg:flex flex-1 mt-8 justify-end">
-              <div
-                className="w-full max-w-[720px] rounded-2xl border border-gray-200 bg-white px-5 py-3 shadow-sm
-                           flex items-center justify-between gap-4"
-                role="status"
-                aria-live="polite"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="h-10 w-10 shrink-0 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#0b7cff]">
-                    <OutlineIcon name="alert" className="w-5 h-5" />
-                  </div>
-                  <p className="text-sm text-gray-700 leading-snug">
-                    You have not yet completed your company&apos;s profile. A complete company profile is required to post a job.
-                  </p>
-                </div>
 
-                <div className="flex items-center gap-3 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => navigate('/employer/company-profile')}
-                    className="px-5 py-2 rounded-lg bg-[#075fc8] hover:bg-[#064da3] text-white text-xs font-bold transition"
-                  >
-                    GO TO PROFILE
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowProfileReminder(false)}
-                    className="h-8 w-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition"
-                    aria-label="Close profile reminder"
-                  >
-                    <OutlineIcon name="x" className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : null}
 
           <div className="flex items-center gap-4 shrink-0">
             <button
@@ -2027,35 +2021,7 @@ const EmployerDashboard = () => {
           </div>
         </div>
 
-        {showProfileReminder ? (
-          <div className="lg:hidden mt-5 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3 min-w-0">
-              <div className="h-10 w-10 shrink-0 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#0b7cff]">
-                <OutlineIcon name="alert" className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm text-gray-700 leading-snug">
-                  You have not yet completed your company&apos;s profile. A complete company profile is required to post a job.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => navigate('/employer/company-profile')}
-                  className="mt-3 px-5 py-2 rounded-lg bg-[#075fc8] hover:bg-[#064da3] text-white text-xs font-bold transition"
-                >
-                  GO TO PROFILE
-                </button>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowProfileReminder(false)}
-              className="h-8 w-8 shrink-0 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition"
-              aria-label="Close profile reminder"
-            >
-              <OutlineIcon name="x" className="w-5 h-5" />
-            </button>
-          </div>
-        ) : null}
+
 
         {error ? (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
@@ -2449,7 +2415,7 @@ const EmployerDashboard = () => {
           <Panel
             title="Recent job posts"
             iconName="briefcase"
-            actionLabel="View all"
+            actionLabel="View all >"
             onAction={handleManageJobs}
           >
             {dashboardData.recentJobs.length > 0 ? (
