@@ -33,16 +33,11 @@ const getExperienceBadgeLabel = (experienceLevel) => {
 
   const normalized = normalizeExperienceLevelValue(raw);
 
-  if (normalized === 'no experience required') {
-    return 'No experience required';
-  }
-
-  if (normalized === '1 year') return '1 Year Experience';
-  if (normalized === '2 years') return '2 Years Experience';
-  if (normalized === '3 years') return '3 Years Experience';
-  if (normalized === '4 years') return '4 Years Experience';
-  if (normalized === '5 years') return '5 Years Experience';
-  if (normalized === '6+ years') return '6+ Years Experience';
+  if (normalized === 'no experience required') return 'No Experience';
+  if (['less than 1 yr', 'less than 1 year', 'less than 1 yr exp', 'less than 1 year exp'].includes(normalized)) return 'Less than 1 Yr Exp';
+  if (['1 year', '1 years', '2 year', '2 years', '3 year', '3 years', '1-3 years', '1-3 years exp'].includes(normalized)) return '1-3 Years Exp';
+  if (['4 year', '4 years', '5 year', '5 years', '4-5 years', '4-5 years exp'].includes(normalized)) return '4-5 Years Exp';
+  if (['6+ year', '6+ years', '6+ year exp', '6+ years exp'].includes(normalized)) return '6+ Years Exp';
 
   return raw;
 };
@@ -566,7 +561,13 @@ const JobSeekerDashboard = () => {
 
   const getJobOfferTags = (job) => {
     const tags = [];
-    const wmLabel = normalizeWorkModeLabel(job?.workMode);
+    const wmSource =
+      job?.workMode ||
+      job?.workArrangement ||
+      job?.workSetup ||
+      job?.setup ||
+      '';
+    const wmLabel = normalizeWorkModeLabel(wmSource);
     const experienceBadgeLabel = getExperienceBadgeLabel(job?.experienceLevel);
     const freshGraduate = isFreshGraduateJob(job);
 
@@ -607,7 +608,7 @@ const JobSeekerDashboard = () => {
 
     if (freshGraduate) {
       tags.push({
-        label: 'Open Fresh Grads',
+        label: 'Open fresh grad',
         className: 'px-2 bg-[#EAF2FB] text-[#2e66a6] border border-[#BFD4EA]',
       });
     }
