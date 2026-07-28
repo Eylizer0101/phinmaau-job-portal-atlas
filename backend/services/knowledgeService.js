@@ -230,7 +230,13 @@ const scoreKnowledgeChunk = ({ chunk, query, queryTokens, role }) => {
   return score;
 };
 
-const getRelevantKnowledge = ({ query, role = 'jobseeker', maxChunks = 7, maxCharacters = 12000 } = {}) => {
+const getRelevantKnowledge = ({
+  query,
+  role = 'jobseeker',
+  maxChunks = 7,
+  maxCharacters = 12000,
+  minimumScore = 4.5,
+} = {}) => {
   const documents = loadKnowledgeDocuments();
   const queryTokens = tokenize(query);
 
@@ -241,12 +247,19 @@ const getRelevantKnowledge = ({ query, role = 'jobseeker', maxChunks = 7, maxCha
     }))
     .sort((a, b) => b.score - a.score || a.fileName.localeCompare(b.fileName));
 
+  const maxScore = Number(scored[0]?.score || 0);
+  const numericMinimumScore = Number(minimumScore);
+  const baseMinimumScore = Number.isFinite(numericMinimumScore)
+    ? Math.max(0, numericMinimumScore)
+    : 4.5;
+  const effectiveMinimumScore = Math.max(baseMinimumScore, maxScore * 0.3);
+
   const selected = [];
   let characterCount = 0;
 
   scored.forEach((chunk) => {
     if (selected.length >= maxChunks) return;
-    if (chunk.score <= 0 && selected.length > 0) return;
+    if (chunk.score < effectiveMinimumScore) return;
 
     const formatted = `[Knowledge file: ${chunk.fileName} | Section: ${chunk.title}]\n${chunk.text}`;
     if (characterCount + formatted.length > maxCharacters && selected.length > 0) return;
@@ -255,20 +268,12 @@ const getRelevantKnowledge = ({ query, role = 'jobseeker', maxChunks = 7, maxCha
     characterCount += formatted.length;
   });
 
-  if (!selected.length) {
-    const fallback = documents.find((chunk) => chunk.fileName === 'agapay-overview.txt') || documents[0];
-    if (fallback) {
-      selected.push({
-        ...fallback,
-        formatted: `[Knowledge file: ${fallback.fileName} | Section: ${fallback.title}]\n${fallback.text}`,
-      });
-    }
-  }
-
   return {
     context: selected.map((item) => item.formatted).join('\n\n---\n\n'),
     sources: [...new Set(selected.map((item) => item.fileName))],
     chunkCount: selected.length,
+    matched: selected.length > 0,
+    maxScore,
   };
 };
 

@@ -31,12 +31,12 @@ const INITIAL_MESSAGES = {
   jobseeker: {
     id: 'welcome-jobseeker',
     sender: 'assistant',
-    text: "Hello! I'm Agap-AI, your job portal assistant. I can guide you through job applications, profile completion, interviews, and other system features.",
+    text: "Hello! I'm Agap-AI. I can guide you through AGAPAY, answer career questions, and help with general questions using AI.",
   },
   employer: {
     id: 'welcome-employer',
     sender: 'assistant',
-    text: "Hello! I'm Agap-AI, your job portal assistant. I can guide you through job posting, applicant management, interviews, and other system features.",
+    text: "Hello! I'm Agap-AI. I can guide you through AGAPAY, answer hiring questions, and help with general questions using AI.",
   },
 };
 
@@ -55,6 +55,11 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [serviceStatus, setServiceStatus] = useState({
+    loaded: false,
+    aiReady: false,
+    knowledgeReady: false,
+  });
   const [messages, setMessages] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem(storageKey) || 'null');
@@ -71,6 +76,43 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
   );
 
   const isMessagesPage = location.pathname.toLowerCase().includes('/messages');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    api.get('/chatbot/status')
+      .then((response) => {
+        if (!isMounted) return;
+        setServiceStatus({
+          loaded: true,
+          aiReady: Boolean(response?.data?.aiReady),
+          knowledgeReady: Boolean(response?.data?.knowledgeReady),
+        });
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setServiceStatus({
+          loaded: true,
+          aiReady: false,
+          knowledgeReady: false,
+        });
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [normalizedRole]);
+
+  const serviceStatusText = useMemo(() => {
+    if (!serviceStatus.loaded) return 'Checking Agap-AI service...';
+    if (serviceStatus.aiReady && serviceStatus.knowledgeReady) {
+      return 'AI answers general questions and uses official AGAPAY knowledge when relevant.';
+    }
+    if (serviceStatus.aiReady) {
+      return 'AI service is active for general questions.';
+    }
+    return 'Static AGAPAY guides are available while AI service is inactive.';
+  }, [serviceStatus]);
 
   useEffect(() => {
     try {
@@ -282,7 +324,7 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
                   }
                 }}
                 rows={1}
-                placeholder="Ask about the system..."
+                placeholder="Ask Agap-AI anything..."
                 className="max-h-28 min-h-[44px] flex-1 resize-none rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#212C61] focus:outline-none focus:ring-2 focus:ring-[#212C61]/20"
               />
               <button
@@ -297,7 +339,7 @@ const ChatbotWidget = ({ role = 'jobseeker' }) => {
 
             <div className="mt-2 flex items-center justify-between gap-3 px-1">
               <p className="text-[11px] text-slate-400">
-                Static guides are available while AI service is inactive.
+                {serviceStatusText}
               </p>
               {messages.length > 1 && (
                 <button
