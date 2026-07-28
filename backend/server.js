@@ -102,6 +102,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 const authMiddleware = require('./middleware/authMiddleware');
 const User = require('./models/User');
 const bcrypt = require('bcryptjs');
+const { startInactiveEmployerMonitor } = require('./services/inactiveEmployerService');
 
 // ✅ DEFAULT ADMIN ACCOUNT SEEDER
 // Backend lang ang gumagawa nito. Hindi ito dumadaan sa frontend registration.
@@ -179,6 +180,7 @@ mongoose
   .then(async () => {
     console.log(' MongoDB connected successfully');
     await createDefaultAdminAccount();
+    startInactiveEmployerMonitor();
   })
   .catch((err) => {
     console.log(' MongoDB connection error:', err.message);

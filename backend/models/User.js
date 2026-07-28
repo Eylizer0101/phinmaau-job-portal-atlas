@@ -353,6 +353,12 @@ const userSchema = new mongoose.Schema(
     isActive: { type: Boolean, default: true },
     lastLogin: { type: Date, default: null },
 
+    // Automatically set when an employer has not logged in for the configured period.
+    inactiveBySystem: { type: Boolean, default: false, index: true },
+    inactiveAt: { type: Date, default: null },
+    inactiveReason: { type: String, default: '', trim: true },
+    inactiveThresholdMonths: { type: Number, default: null, min: 6, max: 12 },
+
     status: {
       type: String,
       enum: ['active', 'inactive', 'suspended', 'pending', 'deleted'],

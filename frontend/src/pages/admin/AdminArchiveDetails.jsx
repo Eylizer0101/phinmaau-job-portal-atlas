@@ -1257,7 +1257,7 @@ const AdminArchiveDetails = () => {
       .filter((record) =>
         isJobseekerAccount
           ? ["post", "comment"].includes(record.archiveType)
-          : ["job-post", "declined-applicants"].includes(record.archiveType)
+          : ["job-post", "declined-applicants", "inactive-account"].includes(record.archiveType)
       )
       .map((record) =>
         isJobseekerAccount
@@ -1278,7 +1278,7 @@ const AdminArchiveDetails = () => {
       const allowedTypes = isJobseekerAccount
         ? ["post", "comment"]
         : isEmployerAccount
-          ? ["job-post", "declined-applicants"]
+          ? ["job-post", "declined-applicants", "inactive-account"]
           : [];
 
       if (!allowedTypes.includes(record.archiveType)) return false;
@@ -1487,6 +1487,7 @@ const AdminArchiveDetails = () => {
                 <>
                   <option value="job-post">Job Post</option>
                   <option value="declined-applicants">Declined Applicants</option>
+                  <option value="inactive-account">Inactive Account</option>
                 </>
               )}
             </SelectField>

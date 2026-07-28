@@ -681,7 +681,9 @@ exports.getAllUsers = async (req, res) => {
     const verifiedParam = req.query.verified;
 
     const baseQuery = {
-      status: { $ne: 'deleted' }
+      status: { $ne: 'deleted' },
+      // System-archived inactive employers belong in Admin Archive, not User Management.
+      $nor: [{ role: 'employer', inactiveBySystem: true }],
     };
     const andConditions = [];
 
@@ -761,7 +763,10 @@ exports.getAllUsers = async (req, res) => {
       sortOption.createdAt = -1;
     }
 
-    const allUsersForStats = await User.find({ status: { $ne: 'deleted' } }).select('-password');
+    const allUsersForStats = await User.find({
+      status: { $ne: 'deleted' },
+      $nor: [{ role: 'employer', inactiveBySystem: true }],
+    }).select('-password');
 
     const stats = allUsersForStats.reduce(
       (acc, user) => {
@@ -960,7 +965,15 @@ exports.updateUserStatus = async (req, res) => {
     }
 
     if (status === 'active') {
+      user.isActive = true;
       user.lastLogin = Date.now();
+      user.inactiveBySystem = false;
+      user.inactiveAt = null;
+      user.inactiveReason = '';
+      user.inactiveThresholdMonths = null;
+      await user.save();
+    } else if (status === 'inactive') {
+      user.isActive = false;
       await user.save();
     }
 
@@ -2736,6 +2749,10 @@ exports.getAdminArchive = async (req, res) => {
       'status',
       'isActive',
       'lastLogin',
+      'inactiveBySystem',
+      'inactiveAt',
+      'inactiveReason',
+      'inactiveThresholdMonths',
       'createdAt',
       'updatedAt',
       'jobSeekerProfile.campus',
@@ -2926,12 +2943,10 @@ exports.getAdminArchive = async (req, res) => {
           )
           .lean(),
         User.find({
-          role: { $in: ['jobseeker', 'employer'] },
-          status: { $ne: 'deleted' },
-          $or: [
-            { status: 'inactive' },
-            { isActive: false, status: { $in: ['active', 'inactive'] } },
-          ],
+          role: 'employer',
+          status: 'inactive',
+          isActive: false,
+          inactiveBySystem: true,
         })
           .select(archiveUserFields)
           .lean(),
@@ -2990,8 +3005,8 @@ exports.getAdminArchive = async (req, res) => {
         archiveType: 'inactive-account',
         typeLabel: 'Inactive Account',
         title: 'Inactive Account',
-        archivedAt: user.updatedAt || user.lastLogin || user.createdAt,
-        searchText: [user.status, user.email].filter(Boolean).join(' '),
+        archivedAt: user.inactiveAt || user.updatedAt || user.lastLogin || user.createdAt,
+        searchText: [user.status, user.email, user.inactiveReason].filter(Boolean).join(' '),
       });
     });
 
@@ -3101,6 +3116,10 @@ exports.getAdminArchiveDetails = async (req, res) => {
         'status',
         'isActive',
         'lastLogin',
+        'inactiveBySystem',
+        'inactiveAt',
+        'inactiveReason',
+        'inactiveThresholdMonths',
         'createdAt',
         'updatedAt',
         'jobSeekerProfile',
@@ -3285,8 +3304,10 @@ exports.getAdminArchiveDetails = async (req, res) => {
       records.push(...declinedByJob.values());
 
       const isInactive =
-        account.status === 'inactive' ||
-        (account.isActive === false && !['suspended', 'deleted'].includes(account.status));
+        account.role === 'employer' &&
+        account.inactiveBySystem === true &&
+        account.status === 'inactive' &&
+        account.isActive === false;
       if (isInactive) {
         records.push({
           recordId: `inactive-${account._id}`,
@@ -3294,8 +3315,10 @@ exports.getAdminArchiveDetails = async (req, res) => {
           typeLabel: 'Inactive Account',
           title: 'Account Details',
           subtitle: account.role === 'employer' ? 'Employer account' : 'Jobseeker account',
-          archivedAt: account.updatedAt || account.lastLogin || account.createdAt,
+          archivedAt: account.inactiveAt || account.updatedAt || account.lastLogin || account.createdAt,
           accountId: String(account._id),
+          inactiveReason: account.inactiveReason || '',
+          inactiveThresholdMonths: account.inactiveThresholdMonths || null,
         });
       }
 
@@ -3340,7 +3363,7 @@ exports.getAdminArchiveDetails = async (req, res) => {
         educationEntries.find((entry) => entry?.yearGraduated || entry?.endYear)?.endYear ||
         '';
 
-      const lastActive = account.lastLogin || account.updatedAt || account.createdAt;
+      const lastActive = account.lastLogin || account.createdAt;
       const lastActiveDate = new Date(lastActive || 0);
       const inactivityDays = Number.isNaN(lastActiveDate.getTime())
         ? 0
@@ -3356,6 +3379,9 @@ exports.getAdminArchiveDetails = async (req, res) => {
           lastActive,
           inactivityDays,
           graduationYear,
+          inactiveAt: account.inactiveAt || null,
+          inactiveReason: account.inactiveReason || '',
+          inactiveThresholdMonths: account.inactiveThresholdMonths || null,
           latestArchivedAt: records[0]?.archivedAt || null,
         },
       });
@@ -3692,10 +3718,17 @@ exports.restoreAdminArchiveItem = async (req, res) => {
       const user = await User.findById(id);
       if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
+      const wasSystemInactive = user.inactiveBySystem === true;
+
       user.status = 'active';
       user.isActive = true;
+      user.lastLogin = new Date();
+      user.inactiveBySystem = false;
+      user.inactiveAt = null;
+      user.inactiveReason = '';
+      user.inactiveThresholdMonths = null;
 
-      if (user.role === 'employer') {
+      if (user.role === 'employer' && !wasSystemInactive) {
         if (user.employerProfile?.verificationDocs) {
           user.employerProfile.verificationDocs.overallStatus = 'pending';
           user.employerProfile.verificationDocs.remarks = '';
