@@ -180,6 +180,18 @@ const formatTime = (dateString) => {
   return date.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
+const formatMessageTime = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return '';
+
+  return date.toLocaleTimeString('en-PH', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+};
+
 const formatFileSize = (bytes) => {
   if (!bytes) return '0 Bytes';
   const k = 1024;
@@ -1378,6 +1390,15 @@ const EmployerMessages = () => {
     selectedStatusFilter,
   ]);
 
+  const totalUnreadMessages = useMemo(
+    () =>
+      conversationEntries.reduce(
+        (total, conversation) => total + Number(conversation.unreadCount || 0),
+        0
+      ),
+    [conversationEntries]
+  );
+
   const visibleConversations = useMemo(
     () => filteredConversations.slice(0, visibleConversationCount),
     [filteredConversations, visibleConversationCount]
@@ -1673,25 +1694,14 @@ const EmployerMessages = () => {
     );
   }
 
-  const MessageMeta = ({ me, time, isRead, variant = 'bubble' }) => {
-    const timeClass = variant === 'bubble' ? (me ? 'text-white/80' : 'text-gray-500') : 'text-gray-500';
-
-    const checkClass =
-      variant === 'bubble'
-        ? me
-          ? isRead
-            ? 'text-white/90'
-            : 'text-white/60'
-          : 'text-[#2e66a6] text-opacity-80'
-        : 'text-[#2e66a6] text-opacity-80';
-
+  const MessageMeta = ({ me, time, isRead }) => {
     return (
-      <div className="flex items-center justify-between gap-3 mt-2">
-        <span className={`text-xs ${timeClass}`}>{time}</span>
+      <div className="mt-1 flex items-center gap-2 px-1">
+        <span className="text-[11px] text-gray-400">{time}</span>
         {me && (
           <FontAwesomeIcon
             icon={isRead ? faCheckDouble : faCheck}
-            className={`text-xs ${checkClass}`}
+            className={`text-[11px] ${isRead ? 'text-[#2e66a6]/90' : 'text-gray-400'}`}
             aria-label={isRead ? 'Read' : 'Sent'}
           />
         )}
@@ -1805,16 +1815,6 @@ const EmployerMessages = () => {
             </div>
           ) : null}
 
-          <div className="mt-3 flex items-center justify-between">
-            <span className="text-xs text-gray-500">{formatTime(msg.createdAt)}</span>
-            {me && (
-              <FontAwesomeIcon
-                icon={msg.isRead ? faCheckDouble : faCheck}
-                className="text-xs text-[#2e66a6]/80"
-                aria-label={msg.isRead ? 'Read' : 'Sent'}
-              />
-            )}
-          </div>
         </div>
       );
     }
@@ -1866,16 +1866,6 @@ const EmployerMessages = () => {
           </div>
         )}
 
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-xs text-amber-900/70">{formatTime(msg.createdAt)}</span>
-          {me && (
-            <FontAwesomeIcon
-              icon={msg.isRead ? faCheckDouble : faCheck}
-              className="text-xs text-amber-900/70"
-              aria-label={msg.isRead ? 'Read' : 'Sent'}
-            />
-          )}
-        </div>
       </div>
     );
   };
@@ -1886,6 +1876,9 @@ const EmployerMessages = () => {
         <div className={UI.container}>
           <div className="mb-6">
             <h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">Messages</h1>
+            <p className="mt-1 text-base text-gray-700">
+              {totalUnreadMessages} {totalUnreadMessages === 1 ? 'unread message' : 'unread messages'}
+            </p>
             <p className="text-gray-600 mt-2">Communicate with job seekers for interviews and follow-ups</p>
           </div>
 
@@ -2272,7 +2265,8 @@ const EmployerMessages = () => {
 
                             return (
                               <div key={stableKey} className={`flex ${me ? 'justify-end' : 'justify-start'}`}>
-                                {hasFile ? (
+                                <div className={`flex w-full flex-col ${me ? 'items-end' : 'items-start'}`}>
+                                  {hasFile ? (
                                   <div className={UI.attachWrap}>
                                     {(() => {
                                       const f = msg.file;
@@ -2321,7 +2315,6 @@ const EmployerMessages = () => {
 
                                             {msg.content && <p className="mt-2 text-sm text-gray-800 break-words">{msg.content}</p>}
 
-                                            <MessageMeta me={me} time={formatTime(msg.createdAt)} isRead={msg.isRead} variant="file" />
                                           </>
                                         );
                                       }
@@ -2364,19 +2357,24 @@ const EmployerMessages = () => {
 
                                           {msg.content && <p className="mt-2 text-sm text-gray-800 break-words">{msg.content}</p>}
 
-                                          <MessageMeta me={me} time={formatTime(msg.createdAt)} isRead={msg.isRead} variant="file" />
                                         </>
                                       );
                                     })()}
                                   </div>
                                 ) : isInterview ? (
                                   <InterviewBubble msg={msg} me={me} />
-                                ) : (
-                                  <div className={`${UI.bubbleBase} ${me ? UI.bubbleTextMe : UI.bubbleTextOther}`}>
-                                    <p className={`${me ? 'text-white' : 'text-gray-800'} text-sm break-words`}>{msg.content}</p>
-                                    <MessageMeta me={me} time={formatTime(msg.createdAt)} isRead={msg.isRead} />
-                                  </div>
-                                )}
+                                  ) : (
+                                    <div className={`${UI.bubbleBase} ${me ? UI.bubbleTextMe : UI.bubbleTextOther}`}>
+                                      <p className={`${me ? 'text-white' : 'text-gray-800'} text-sm break-words`}>{msg.content}</p>
+                                    </div>
+                                  )}
+
+                                  <MessageMeta
+                                    me={me}
+                                    time={formatMessageTime(msg.createdAt)}
+                                    isRead={msg.isRead}
+                                  />
+                                </div>
                               </div>
                             );
                           })}

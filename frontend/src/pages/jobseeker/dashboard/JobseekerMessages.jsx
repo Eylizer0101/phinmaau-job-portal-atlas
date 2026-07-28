@@ -273,6 +273,18 @@ const JobseekerMessages = () => {
     return date.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
+  const formatMessageTime = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return '';
+
+    return date.toLocaleTimeString('en-PH', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
+
   const formatFileSize = (bytes) => {
     if (!bytes) return '0 Bytes';
     const k = 1024;
@@ -507,6 +519,15 @@ const JobseekerMessages = () => {
     });
   }, [conversations, convSearch, activeTab]);
 
+  const totalUnreadMessages = useMemo(
+    () =>
+      conversations.reduce(
+        (total, conversation) => total + Number(conversation.unreadCount || 0),
+        0
+      ),
+    [conversations]
+  );
+
   const visibleConversations = useMemo(
     () => filteredConversations.slice(0, visibleConversationCount),
     [filteredConversations, visibleConversationCount]
@@ -736,17 +757,6 @@ const JobseekerMessages = () => {
           {data.notes && <p className={UI.interviewNotes}>{data.notes}</p>}
         </div>
 
-        <div className="flex items-center justify-between gap-3 mt-2 px-1">
-          <span className="text-xs text-black/50">{formatTime(msg.createdAt)}</span>
-
-          {me && (
-            <FontAwesomeIcon
-              icon={msg.isRead ? faCheckDouble : faCheck}
-              className="text-xs text-[#2e66a6]/80"
-              aria-label={msg.isRead ? 'Read' : 'Sent'}
-            />
-          )}
-        </div>
       </div>
     );
   };
@@ -777,6 +787,9 @@ const JobseekerMessages = () => {
         <div className={UI.container}>
           <div className="mb-6">
             <h1 className="text-[33px] leading-[40px] font-semibold text-black">Messages</h1>
+            <p className="mt-1 text-base text-black/80">
+              {totalUnreadMessages} {totalUnreadMessages === 1 ? 'unread message' : 'unread messages'}
+            </p>
             <p className="mt-2 text-black/70">
               Communicate with employers for interviews and follow-ups
             </p>
@@ -995,7 +1008,8 @@ const JobseekerMessages = () => {
 
                             return (
                               <div key={msg._id} className={`flex ${me ? 'justify-end' : 'justify-start'}`}>
-                                {hasFile ? (
+                                <div className={`flex w-full flex-col ${me ? 'items-end' : 'items-start'}`}>
+                                  {hasFile ? (
                                   <div className={UI.attachWrap}>
                                     {(() => {
                                       const f = msg.file;
@@ -1040,17 +1054,6 @@ const JobseekerMessages = () => {
                                                 <p className="mt-2 text-sm text-black break-words">{msg.content}</p>
                                               )}
 
-                                            <div className="flex items-center justify-between gap-3 mt-2">
-                                              <span className="text-xs text-black/50">{formatTime(msg.createdAt)}</span>
-
-                                              {me && (
-                                                <FontAwesomeIcon
-                                                  icon={msg.isRead ? faCheckDouble : faCheck}
-                                                  className="text-xs text-[#2e66a6]/80"
-                                                  aria-label={msg.isRead ? 'Read' : 'Sent'}
-                                                />
-                                              )}
-                                            </div>
                                           </>
                                         );
                                       }
@@ -1100,44 +1103,35 @@ const JobseekerMessages = () => {
                                               <p className="mt-2 text-sm text-black break-words">{msg.content}</p>
                                             )}
 
-                                          <div className="flex items-center justify-between gap-3 mt-2">
-                                            <span className="text-xs text-black/50">{formatTime(msg.createdAt)}</span>
-
-                                            {me && (
-                                              <FontAwesomeIcon
-                                                icon={msg.isRead ? faCheckDouble : faCheck}
-                                                className="text-xs text-[#2e66a6]/80"
-                                                aria-label={msg.isRead ? 'Read' : 'Sent'}
-                                              />
-                                            )}
-                                          </div>
                                         </>
                                       );
                                     })()}
                                   </div>
                                 ) : isInterview ? (
                                   renderInterviewCard(msg, me)
-                                ) : (
-                                  <div className={bubbleClass}>
-                                    <p className={`${me ? 'text-white' : 'text-black'} text-sm break-words`}>
-                                      {msg.content}
-                                    </p>
-
-                                    <div className="flex items-center justify-between gap-3 mt-2">
-                                      <span className={`text-xs ${me ? 'text-white/80' : 'text-black/50'}`}>
-                                        {formatTime(msg.createdAt)}
-                                      </span>
-
-                                      {me && (
-                                        <FontAwesomeIcon
-                                          icon={msg.isRead ? faCheckDouble : faCheck}
-                                          className={`text-xs ${msg.isRead ? 'text-white/90' : 'text-white/60'}`}
-                                          aria-label={msg.isRead ? 'Read' : 'Sent'}
-                                        />
-                                      )}
+                                  ) : (
+                                    <div className={bubbleClass}>
+                                      <p className={`${me ? 'text-white' : 'text-black'} text-sm break-words`}>
+                                        {msg.content}
+                                      </p>
                                     </div>
+                                  )}
+
+                                  <div className="mt-1 flex items-center gap-2 px-1">
+                                    <span className="text-[11px] text-black/45">
+                                      {formatMessageTime(msg.createdAt)}
+                                    </span>
+                                    {me && (
+                                      <FontAwesomeIcon
+                                        icon={msg.isRead ? faCheckDouble : faCheck}
+                                        className={`text-[11px] ${
+                                          msg.isRead ? 'text-[#2e66a6]/90' : 'text-black/35'
+                                        }`}
+                                        aria-label={msg.isRead ? 'Read' : 'Sent'}
+                                      />
+                                    )}
                                   </div>
-                                )}
+                                </div>
                               </div>
                             );
                           })}
