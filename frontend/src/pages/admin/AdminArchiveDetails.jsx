@@ -38,13 +38,6 @@ const DATE_OPTIONS = [
   { value: "custom", label: "Custom Range" },
 ];
 
-const SORT_OPTIONS = [
-  { value: "default", label: "Sort By" },
-  { value: "newest", label: "Most Recent Newest to Oldest" },
-  { value: "oldest", label: "Oldest First" },
-  { value: "name_asc", label: "A to Z" },
-  { value: "name_desc", label: "Z to A" },
-];
 
 const getPresetRange = (value) => {
   const today = new Date();
@@ -588,76 +581,6 @@ const DateFilterDropdown = ({ value, startDate, endDate, disabled, onSelect }) =
   );
 };
 
-const SortFilterDropdown = ({ value, disabled, onSelect }) => {
-  const [open, setOpen] = useState(false);
-  const selectedLabel =
-    SORT_OPTIONS.find((option) => option.value === value)?.label || "Sort By";
-
-  useEffect(() => {
-    if (!open) return undefined;
-
-    const close = () => setOpen(false);
-    window.addEventListener("click", close);
-
-    return () => window.removeEventListener("click", close);
-  }, [open]);
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={(event) => {
-          event.stopPropagation();
-          setOpen((previous) => !previous);
-        }}
-        className={cn(
-          "flex h-11 w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61] focus-visible:ring-offset-2",
-          "disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60"
-        )}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-label="Sort archived records"
-      >
-        <span className="truncate">{selectedLabel}</span>
-        <Icon name="chevron" className="h-4 w-4 text-slate-500" />
-      </button>
-
-      {open ? (
-        <div
-          onClick={(event) => event.stopPropagation()}
-          className="absolute right-0 top-[52px] z-50 w-64 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
-          role="listbox"
-          aria-label="Sort options"
-        >
-          <div className="space-y-1">
-            {SORT_OPTIONS.map((option) => (
-              <button
-                type="button"
-                key={option.value}
-                onClick={() => {
-                  setOpen(false);
-                  onSelect(option.value);
-                }}
-                className={cn(
-                  "w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition",
-                  value === option.value
-                    ? "bg-[#212C61]/10 text-[#212C61]"
-                    : "text-slate-600 hover:bg-slate-50"
-                )}
-                role="option"
-                aria-selected={value === option.value}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
-};
 
 const CommunityContentModal = ({ record, account, onClose }) => {
   if (!record) return null;
@@ -1186,7 +1109,6 @@ const AdminArchiveDetails = () => {
     date: "all",
     dateFrom: "",
     dateTo: "",
-    sort: "default",
   });
 
   const loadDetails = useCallback(async () => {
@@ -1322,16 +1244,10 @@ const AdminArchiveDetails = () => {
       return true;
     });
 
-    return [...filtered].sort((first, second) => {
-      if (filters.sort === "oldest") {
-        return new Date(first.archivedAt || 0) - new Date(second.archivedAt || 0);
-      }
-      const firstLabel = isJobseekerAccount ? first.category : first.title;
-      const secondLabel = isJobseekerAccount ? second.category : second.title;
-      if (filters.sort === "name_asc") return String(firstLabel || "").localeCompare(String(secondLabel || ""));
-      if (filters.sort === "name_desc") return String(secondLabel || "").localeCompare(String(firstLabel || ""));
-      return new Date(second.archivedAt || 0) - new Date(first.archivedAt || 0);
-    });
+    return [...filtered].sort(
+      (first, second) =>
+        new Date(second.archivedAt || 0) - new Date(first.archivedAt || 0)
+    );
   }, [filters, isEmployerAccount, isJobseekerAccount, records]);
 
   const pageCount = Math.max(1, Math.ceil(visibleRecords.length / ITEMS_PER_PAGE));
@@ -1456,7 +1372,7 @@ const AdminArchiveDetails = () => {
         </header>
 
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="grid gap-3 border-b border-slate-200 p-4 lg:grid-cols-[minmax(250px,1.5fr)_minmax(130px,0.7fr)_minmax(160px,0.9fr)_minmax(145px,0.75fr)_minmax(160px,0.8fr)]">
+          <div className="grid gap-3 border-b border-slate-200 p-4 lg:grid-cols-[minmax(280px,1.6fr)_minmax(140px,0.75fr)_minmax(180px,0.95fr)_minmax(170px,0.85fr)]">
             <label className="relative block">
               <span className="sr-only">Search archived records</span>
               <Icon
@@ -1513,11 +1429,6 @@ const AdminArchiveDetails = () => {
               onSelect={handleDateFilterChange}
             />
 
-            <SortFilterDropdown
-              value={filters.sort}
-              disabled={loading}
-              onSelect={(value) => updateFilter("sort", value)}
-            />
           </div>
 
 

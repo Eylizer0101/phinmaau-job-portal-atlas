@@ -555,6 +555,12 @@ const DateFilterDropdown = ({ value, startDate, endDate, disabled, onSelect }) =
 const AdminArchive = () => {
   const navigate = useNavigate();
   const [archiveGroups, setArchiveGroups] = useState([]);
+  const [archiveOptions, setArchiveOptions] = useState({
+    campuses: [],
+    courses: [],
+    companies: [],
+    industries: [],
+  });
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -563,14 +569,28 @@ const AdminArchive = () => {
     search: "",
     role: "all",
     type: "all",
+    campus: "all",
+    course: "all",
+    company: "all",
+    industry: "all",
     date: "all",
     dateFrom: "",
     dateTo: "",
-    sort: "newest",
   });
 
   const updateFilter = (key, value) => {
     setFilters((previous) => ({ ...previous, [key]: value }));
+  };
+
+  const handleRoleChange = (value) => {
+    setFilters((previous) => ({
+      ...previous,
+      role: value,
+      campus: "all",
+      course: "all",
+      company: "all",
+      industry: "all",
+    }));
   };
 
   const handleDateFilterChange = (value) => {
@@ -605,17 +625,32 @@ const AdminArchive = () => {
           q: filters.search,
           role: filters.role,
           type: filters.type,
+          campus: filters.campus,
+          course: filters.course,
+          company: filters.company,
+          industry: filters.industry,
           date: filters.date,
           dateFrom: filters.dateFrom,
           dateTo: filters.dateTo,
-          sort: filters.sort,
         },
       });
 
       setArchiveGroups(response.data?.archiveGroups || []);
+      setArchiveOptions({
+        campuses: response.data?.options?.campuses || [],
+        courses: response.data?.options?.courses || [],
+        companies: response.data?.options?.companies || [],
+        industries: response.data?.options?.industries || [],
+      });
     } catch (error) {
       console.error("Failed to load admin archive:", error);
       setArchiveGroups([]);
+      setArchiveOptions({
+        campuses: [],
+        courses: [],
+        companies: [],
+        industries: [],
+      });
       setErrorMessage(error?.response?.data?.message || "Failed to load archived records.");
     } finally {
       setLoading(false);
@@ -639,6 +674,20 @@ const AdminArchive = () => {
     return archiveGroups.slice(start, start + ITEMS_PER_PAGE);
   }, [archiveGroups, safePage]);
 
+  const isJobseekerView = filters.role === "jobseeker";
+  const isEmployerView = filters.role === "employer";
+
+  const filterGridClass =
+    isJobseekerView || isEmployerView
+      ? "grid gap-3 lg:grid-cols-[minmax(240px,1.45fr)_minmax(125px,0.65fr)_minmax(135px,0.72fr)_minmax(145px,0.8fr)_minmax(155px,0.9fr)_minmax(165px,0.85fr)]"
+      : "grid gap-3 lg:grid-cols-[minmax(300px,1.7fr)_minmax(140px,0.65fr)_minmax(160px,0.75fr)_minmax(170px,0.8fr)]";
+
+  const tableGridClass = isJobseekerView
+    ? "grid-cols-[1.3fr_0.85fr_1.35fr_1.2fr_0.9fr_0.55fr]"
+    : isEmployerView
+      ? "grid-cols-[1.3fr_1fr_1.1fr_1.2fr_0.9fr_0.55fr]"
+      : "grid-cols-[1.45fr_0.7fr_1.4fr_0.8fr_0.65fr]";
+
   return (
     <AdminLayout>
       <main className="mx-auto w-full max-w-[1280px] px-1 py-8">
@@ -650,7 +699,7 @@ const AdminArchive = () => {
         </header>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="grid gap-3 lg:grid-cols-[minmax(280px,1.8fr)_minmax(130px,0.65fr)_minmax(150px,0.75fr)_minmax(150px,0.75fr)_minmax(160px,0.8fr)]">
+          <div className={filterGridClass}>
             <label className="relative block">
               <span className="sr-only">Search archived records</span>
               <Icon
@@ -668,7 +717,7 @@ const AdminArchive = () => {
 
             <SelectField
               value={filters.role}
-              onChange={(event) => updateFilter("role", event.target.value)}
+              onChange={(event) => handleRoleChange(event.target.value)}
               ariaLabel="Filter by role"
             >
               <option value="all">All Roles</option>
@@ -688,6 +737,66 @@ const AdminArchive = () => {
               ))}
             </SelectField>
 
+            {isJobseekerView ? (
+              <>
+                <SelectField
+                  value={filters.campus}
+                  onChange={(event) => updateFilter("campus", event.target.value)}
+                  ariaLabel="Filter by campus"
+                >
+                  <option value="all">All Campus</option>
+                  {archiveOptions.campuses.map((campus) => (
+                    <option key={campus} value={campus}>
+                      {campus}
+                    </option>
+                  ))}
+                </SelectField>
+
+                <SelectField
+                  value={filters.course}
+                  onChange={(event) => updateFilter("course", event.target.value)}
+                  ariaLabel="Filter by course"
+                >
+                  <option value="all">All Course</option>
+                  {archiveOptions.courses.map((course) => (
+                    <option key={course} value={course}>
+                      {course}
+                    </option>
+                  ))}
+                </SelectField>
+              </>
+            ) : null}
+
+            {isEmployerView ? (
+              <>
+                <SelectField
+                  value={filters.company}
+                  onChange={(event) => updateFilter("company", event.target.value)}
+                  ariaLabel="Filter by company"
+                >
+                  <option value="all">All Company</option>
+                  {archiveOptions.companies.map((company) => (
+                    <option key={company} value={company}>
+                      {company}
+                    </option>
+                  ))}
+                </SelectField>
+
+                <SelectField
+                  value={filters.industry}
+                  onChange={(event) => updateFilter("industry", event.target.value)}
+                  ariaLabel="Filter by industry"
+                >
+                  <option value="all">All Industry</option>
+                  {archiveOptions.industries.map((industry) => (
+                    <option key={industry} value={industry}>
+                      {industry}
+                    </option>
+                  ))}
+                </SelectField>
+              </>
+            ) : null}
+
             <DateFilterDropdown
               value={filters.date}
               startDate={filters.dateFrom}
@@ -695,18 +804,6 @@ const AdminArchive = () => {
               disabled={loading}
               onSelect={handleDateFilterChange}
             />
-
-            <SelectField
-              value={filters.sort}
-              onChange={(event) => updateFilter("sort", event.target.value)}
-              ariaLabel="Sort archived records"
-            >
-              <option value="newest">Sort By</option>
-              <option value="newest">Most Recent Newest to Oldest</option>
-              <option value="oldest">Oldest First</option>
-              <option value="name_asc">A to Z</option>
-              <option value="name_desc">Z to A</option>
-            </SelectField>
           </div>
 
           <p className="mt-3 text-xs text-slate-500">
@@ -716,10 +813,27 @@ const AdminArchive = () => {
 
         <section className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
-            <div className="min-w-[900px]">
-              <div className="grid grid-cols-[1.45fr_0.7fr_1.4fr_0.8fr_0.65fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600">
+            <div className={isJobseekerView || isEmployerView ? "min-w-[1080px]" : "min-w-[900px]"}>
+              <div
+                className={cn(
+                  "grid gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600",
+                  tableGridClass
+                )}
+              >
                 <span>Name</span>
-                <span>Role</span>
+                {isJobseekerView ? (
+                  <>
+                    <span>Campus</span>
+                    <span>Course</span>
+                  </>
+                ) : isEmployerView ? (
+                  <>
+                    <span>Company</span>
+                    <span>Industry</span>
+                  </>
+                ) : (
+                  <span>Role</span>
+                )}
                 <span>Archived Type</span>
                 <span>Contact Number</span>
                 <span>Actions</span>
@@ -745,7 +859,10 @@ const AdminArchive = () => {
                   return (
                     <div
                       key={entry.accountId}
-                      className="grid grid-cols-[1.45fr_0.7fr_1.4fr_0.8fr_0.65fr] items-center gap-4 border-b border-slate-200 px-5 py-3.5 last:border-b-0 hover:bg-slate-50/50"
+                      className={cn(
+                        "grid items-center gap-4 border-b border-slate-200 px-5 py-3.5 last:border-b-0 hover:bg-slate-50/50",
+                        tableGridClass
+                      )}
                     >
                       <div className="flex min-w-0 items-center gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-xs font-bold text-[#212C61]">
@@ -763,11 +880,31 @@ const AdminArchive = () => {
                         </div>
                       </div>
 
-                      <div>
-                        <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold capitalize text-black">
-                          {entry.role || "—"}
-                        </span>
-                      </div>
+                      {isJobseekerView ? (
+                        <>
+                          <span className="truncate text-sm text-slate-600" title={entry.campus || ""}>
+                            {entry.campus || "—"}
+                          </span>
+                          <span className="truncate text-sm text-slate-600" title={entry.course || ""}>
+                            {entry.course || "—"}
+                          </span>
+                        </>
+                      ) : isEmployerView ? (
+                        <>
+                          <span className="truncate text-sm text-slate-600" title={entry.company || ""}>
+                            {entry.company || "—"}
+                          </span>
+                          <span className="truncate text-sm text-slate-600" title={entry.industry || ""}>
+                            {entry.industry || "—"}
+                          </span>
+                        </>
+                      ) : (
+                        <div>
+                          <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold capitalize text-black">
+                            {entry.role || "—"}
+                          </span>
+                        </div>
+                      )}
 
                       <ArchiveTypeBadges types={entry.archivedTypes || []} />
 

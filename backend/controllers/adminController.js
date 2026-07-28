@@ -2732,6 +2732,10 @@ exports.getAdminArchive = async (req, res) => {
     const q = String(req.query.q || '').trim().toLowerCase();
     const roleFilter = String(req.query.role || 'all').trim().toLowerCase();
     const typeFilter = String(req.query.type || 'all').trim().toLowerCase();
+    const campusFilter = String(req.query.campus || 'all').trim();
+    const courseFilter = String(req.query.course || 'all').trim();
+    const companyFilter = String(req.query.company || 'all').trim();
+    const industryFilter = String(req.query.industry || 'all').trim();
     const dateFilter = String(req.query.date || 'all').trim().toLowerCase();
     const customFrom = String(req.query.dateFrom || '').trim();
     const customTo = String(req.query.dateTo || '').trim();
@@ -2870,13 +2874,26 @@ exports.getAdminArchive = async (req, res) => {
       const accountId = String(account._id);
 
       if (!grouped.has(accountId)) {
+        const role = String(account.role || '').toLowerCase();
+        const employerProfile = account.employerProfile || {};
+
         grouped.set(accountId, {
           accountId,
           account,
           displayName: getArchiveAccountHolderName(account),
           secondaryText: getSecondaryText(account),
           contactNumber: getArchiveContactNumber(account),
-          role: String(account.role || '').toLowerCase(),
+          role,
+          campus: role === 'jobseeker' ? getCampus(account) : '',
+          course: role === 'jobseeker' ? getCourse(account) : '',
+          company:
+            role === 'employer'
+              ? employerProfile.companyName || account.companyName || ''
+              : '',
+          industry:
+            role === 'employer'
+              ? employerProfile.industry || employerProfile.businessType || ''
+              : '',
           records: [],
           searchableText: [],
           latestArchivedAt: null,
@@ -3025,6 +3042,10 @@ exports.getAdminArchive = async (req, res) => {
         secondaryText: group.secondaryText,
         contactNumber: group.contactNumber,
         role: group.role,
+        campus: group.campus,
+        course: group.course,
+        company: group.company,
+        industry: group.industry,
         archivedTypes,
         latestArchivedAt: group.latestArchivedAt,
         recordCount: group.records.length,
@@ -3032,8 +3053,64 @@ exports.getAdminArchive = async (req, res) => {
       };
     });
 
+    const uniqueSortedArchiveValues = (values = []) =>
+      [...new Set(values.map((value) => String(value || '').trim()).filter(Boolean))].sort(
+        (first, second) => first.localeCompare(second)
+      );
+
+    const archiveFilterOptions = {
+      campuses: uniqueSortedArchiveValues(
+        archiveGroups
+          .filter((group) => group.role === 'jobseeker')
+          .map((group) => group.campus)
+      ),
+      courses: uniqueSortedArchiveValues(
+        archiveGroups
+          .filter((group) => group.role === 'jobseeker')
+          .map((group) => group.course)
+      ),
+      companies: uniqueSortedArchiveValues(
+        archiveGroups
+          .filter((group) => group.role === 'employer')
+          .map((group) => group.company)
+      ),
+      industries: uniqueSortedArchiveValues(
+        archiveGroups
+          .filter((group) => group.role === 'employer')
+          .map((group) => group.industry)
+      ),
+    };
+
     if (roleFilter !== 'all') {
       archiveGroups = archiveGroups.filter((group) => group.role === roleFilter);
+    }
+
+    if (campusFilter.toLowerCase() !== 'all') {
+      archiveGroups = archiveGroups.filter(
+        (group) =>
+          String(group.campus || '').toLowerCase() === campusFilter.toLowerCase()
+      );
+    }
+
+    if (courseFilter.toLowerCase() !== 'all') {
+      archiveGroups = archiveGroups.filter(
+        (group) =>
+          String(group.course || '').toLowerCase() === courseFilter.toLowerCase()
+      );
+    }
+
+    if (companyFilter.toLowerCase() !== 'all') {
+      archiveGroups = archiveGroups.filter(
+        (group) =>
+          String(group.company || '').toLowerCase() === companyFilter.toLowerCase()
+      );
+    }
+
+    if (industryFilter.toLowerCase() !== 'all') {
+      archiveGroups = archiveGroups.filter(
+        (group) =>
+          String(group.industry || '').toLowerCase() === industryFilter.toLowerCase()
+      );
     }
 
     if (typeFilter !== 'all') {
@@ -3048,6 +3125,10 @@ exports.getAdminArchive = async (req, res) => {
           group.displayName,
           group.secondaryText,
           group.role,
+          group.campus,
+          group.course,
+          group.company,
+          group.industry,
           group.account?.email,
           group.contactNumber,
           ...group.archivedTypes.map((type) => type.label),
@@ -3085,6 +3166,10 @@ exports.getAdminArchive = async (req, res) => {
         types: Object.values(typeDefinitions)
           .sort((first, second) => first.order - second.order)
           .map(({ order, ...type }) => type),
+        campuses: archiveFilterOptions.campuses,
+        courses: archiveFilterOptions.courses,
+        companies: archiveFilterOptions.companies,
+        industries: archiveFilterOptions.industries,
       },
     });
   } catch (error) {
