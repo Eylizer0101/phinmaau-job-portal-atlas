@@ -1191,7 +1191,6 @@ const ArchivedJobs = () => {
                             >
                               {title}
                             </Link>
-                            <p className="mt-0.5 truncate text-xs text-gray-600">{safeCompany(job)}</p>
                           </div>
                         </div>
 
@@ -1360,7 +1359,6 @@ const ArchivedJobs = () => {
                                   >
                                     {title}
                                   </Link>
-                                  <div className="truncate text-sm text-gray-600">{safeCompany(job)}</div>
                                 </div>
                               </div>
                             </td>

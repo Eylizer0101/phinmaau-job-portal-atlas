@@ -805,6 +805,31 @@ const EmployerJobView = () => {
 
   if (!job) return null;
 
+  const isDraftJob =
+    String(job.status || '').trim().toLowerCase() === 'draft' ||
+    job.isPublished === false;
+  const isLocationMissing = !String(job.location || '').trim();
+  const isJobTypeMissing = !String(job.jobType || '').trim();
+  const isWorkModeMissing = !String(job.workMode || '').trim();
+  const isVacanciesMissing =
+    job.vacancies === undefined || job.vacancies === null || job.vacancies === '';
+  const isRelocationMissing = !String(job.willingToRelocate || '').trim();
+  const useSingleRowDraftPlaceholders =
+    isDraftJob &&
+    isJobTypeMissing &&
+    isWorkModeMissing &&
+    isVacanciesMissing &&
+    isRelocationMissing;
+
+  const regularDetailChipClass =
+    'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[#d9dbe3] bg-white px-3 py-1 text-xs font-medium text-[#374151]';
+  const compactPlaceholderChipClass =
+    'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#d9dbe3] bg-white px-2 py-1 text-[10px] font-medium text-[#374151]';
+  const regularRelocationChipClass =
+    'shrink-0 whitespace-nowrap rounded-full border border-[#d9dbe3] bg-[#f3f4f6] px-3 py-1 text-xs font-medium text-[#374151]';
+  const compactRelocationChipClass =
+    'shrink-0 whitespace-nowrap rounded-full border border-[#d9dbe3] bg-[#f3f4f6] px-2 py-1 text-[10px] font-medium text-[#374151]';
+
   return (
     <EmployerLayout>
       <div className={UI.page}>
@@ -851,28 +876,70 @@ const EmployerJobView = () => {
 
                     <div className="mt-2 flex items-center gap-2 text-[#6b7280]">
                       <SvgIcon name="location" className="h-4 w-4" />
-                      <span className="text-sm">{formatLocationDisplay(job.location)}</span>
+                      <span
+                        className={isDraftJob && isLocationMissing ? 'text-[11px]' : 'text-sm'}
+                      >
+                        {formatLocationDisplay(job.location)}
+                      </span>
                     </div>
 
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <span className={UI.chip}>
-                        <SvgIcon name="briefcase" className="h-3.5 w-3.5" />
+                    <div
+                      className={cn(
+                        'mt-4 flex flex-wrap gap-2',
+                        useSingleRowDraftPlaceholders && 'lg:flex-nowrap lg:gap-1.5'
+                      )}
+                    >
+                      <span
+                        className={
+                          isDraftJob && isJobTypeMissing
+                            ? compactPlaceholderChipClass
+                            : regularDetailChipClass
+                        }
+                      >
+                        <SvgIcon
+                          name="briefcase"
+                          className={isDraftJob && isJobTypeMissing ? 'h-3 w-3' : 'h-3.5 w-3.5'}
+                        />
                         {String(job.jobType || '').trim() || 'Employment type not specified'}
                       </span>
 
-                      <span className={UI.chip}>
-                        <SvgIcon name="building" className="h-3.5 w-3.5" />
+                      <span
+                        className={
+                          isDraftJob && isWorkModeMissing
+                            ? compactPlaceholderChipClass
+                            : regularDetailChipClass
+                        }
+                      >
+                        <SvgIcon
+                          name="building"
+                          className={isDraftJob && isWorkModeMissing ? 'h-3 w-3' : 'h-3.5 w-3.5'}
+                        />
                         {String(job.workMode || '').trim() || 'Work mode not specified'}
                       </span>
 
-                      <span className={UI.chip}>
-                        <SvgIcon name="users" className="h-3.5 w-3.5" />
-                        {job.vacancies !== undefined && job.vacancies !== null && job.vacancies !== ''
+                      <span
+                        className={
+                          isDraftJob && isVacanciesMissing
+                            ? compactPlaceholderChipClass
+                            : regularDetailChipClass
+                        }
+                      >
+                        <SvgIcon
+                          name="users"
+                          className={isDraftJob && isVacanciesMissing ? 'h-3 w-3' : 'h-3.5 w-3.5'}
+                        />
+                        {!isVacanciesMissing
                           ? `${job.vacancies} Vacancies`
                           : 'Number of vacancies not specified'}
                       </span>
 
-                      <span className="rounded-full border border-[#d9dbe3] bg-[#f3f4f6] px-3 py-1 text-xs font-medium text-[#374151]">
+                      <span
+                        className={
+                          isDraftJob && isRelocationMissing
+                            ? compactRelocationChipClass
+                            : regularRelocationChipClass
+                        }
+                      >
                         {getRelocationDisplayLabel(job.willingToRelocate)}
                       </span>
                     </div>

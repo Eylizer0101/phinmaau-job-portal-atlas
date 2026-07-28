@@ -1336,7 +1336,6 @@ const ManageJobs = () => {
                             >
                               {title}
                             </Link>
-                            <p className="truncate text-sm text-gray-600">{safeCompany(job)}</p>
                             <div className="mt-2 flex flex-wrap items-center gap-2">
                               <span className={cn('inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold', getStatusPill(job))}>
                                 {getStatusText(job)}
@@ -1433,6 +1432,19 @@ const ManageJobs = () => {
                             </div>
                           )}
 
+                          <button
+                            onClick={() => {
+                              setSelectedJob(job);
+                              setShowDeleteModal(true);
+                            }}
+                            disabled={busyThisRow}
+                            className="col-span-2 inline-flex h-10 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            aria-label={`Archive ${title}`}
+                            title="Archive"
+                          >
+                            <Icon name="trash" className="h-4 w-4" />
+                          </button>
+
                           {derivedStatus === 'draft' && (
                             <button
                               onClick={() => handlePublish(job._id)}
@@ -1451,19 +1463,6 @@ const ManageJobs = () => {
                               Publish
                             </button>
                           )}
-
-                          <button
-                            onClick={() => {
-                              setSelectedJob(job);
-                              setShowDeleteModal(true);
-                            }}
-                            disabled={busyThisRow}
-                            className="col-span-2 inline-flex h-10 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            aria-label={`Archive ${title}`}
-                            title="Archive"
-                          >
-                            <Icon name="trash" className="h-4 w-4" />
-                          </button>
                         </div>
                       </div>
                     );
@@ -1584,7 +1583,6 @@ const ManageJobs = () => {
                                   >
                                     {title}
                                   </div>
-                                  <div className="truncate text-sm text-gray-600">{safeCompany(job)}</div>
                                 </div>
                               </div>
                             </td>
@@ -1688,6 +1686,19 @@ const ManageJobs = () => {
                                   </div>
                                 )}
 
+                                <button
+                                  onClick={() => {
+                                    setSelectedJob(job);
+                                    setShowDeleteModal(true);
+                                  }}
+                                  disabled={busyThisRow}
+                                  className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                  aria-label={`Archive ${title}`}
+                                  title="Archive"
+                                >
+                                  <Icon name="trash" className="h-4 w-4" />
+                                </button>
+
                                 {derivedStatus === 'draft' && (
                                   <button
                                     onClick={() => handlePublish(job._id)}
@@ -1706,19 +1717,6 @@ const ManageJobs = () => {
                                     Publish
                                   </button>
                                 )}
-
-                                <button
-                                  onClick={() => {
-                                    setSelectedJob(job);
-                                    setShowDeleteModal(true);
-                                  }}
-                                  disabled={busyThisRow}
-                                  className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                  aria-label={`Archive ${title}`}
-                                  title="Archive"
-                                >
-                                  <Icon name="trash" className="h-4 w-4" />
-                                </button>
                               </div>
                             </td>
                           </tr>
