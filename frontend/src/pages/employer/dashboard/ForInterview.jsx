@@ -2097,14 +2097,14 @@ const selectBase =
                     <colgroup>
                       <col className="w-[13%]" />
                       <col className="w-[24%]" />
-                      <col className="w-[18%]" />
-                      <col className="w-[14%]" />
-                      <col className="w-[15%]" />
                       <col className="w-[16%]" />
+                      <col className="w-[18%]" />
+                      <col className="w-[15%]" />
+                      <col className="w-[14%]" />
                     </colgroup>
                     <thead className="bg-gray-50">
                       <tr>
-                        {['Applied Date', 'Applicant', 'Job Applied', 'Contact Number', 'Hiring Stage', 'Actions'].map((heading) => (
+                        {['Applied Date', 'Applicant', 'Contact Number', 'Job Applied', 'Hiring Stage', 'Actions'].map((heading) => (
                           <th
                             key={heading}
                             className={cn(
@@ -2124,7 +2124,6 @@ const selectBase =
                         const email = app.jobseeker?.email || '—';
                         const contactNumber = getApplicantContact(app.jobseeker);
                         const jobTitle = app.job?.title || 'Job Title';
-                        const companyName = app.job?.companyName || 'Company';
                         const hiringStage = String(app.hiringStage || '').trim();
                         const rowBusy = updatingId === app._id;
 
@@ -2164,14 +2163,12 @@ const selectBase =
                               </div>
                             </td>
 
-                            <td className="px-3 py-5 align-middle">
-                              <div className="truncate text-sm font-semibold text-gray-900" title={jobTitle}>{jobTitle}</div>
-                              <div className="mt-0.5 truncate text-xs text-gray-500" title={companyName}>{companyName}</div>
-                            </td>
-
-
                             <td className="px-3 py-5 align-middle text-sm text-gray-600">
                               <span className="block truncate" title={contactNumber}>{contactNumber}</span>
+                            </td>
+
+                            <td className="px-3 py-5 align-middle">
+                              <div className="truncate text-sm font-semibold text-gray-900" title={jobTitle}>{jobTitle}</div>
                             </td>
 
                             <td className="p-0 align-middle">
@@ -2228,7 +2225,6 @@ const selectBase =
                     const email = app.jobseeker?.email || '—';
                     const contactNumber = getApplicantContact(app.jobseeker);
                     const jobTitle = app.job?.title || 'Job Title';
-                    const companyName = app.job?.companyName || 'Company';
                     const hiringStage = String(app.hiringStage || '').trim();
                     const rowBusy = updatingId === app._id;
 
@@ -2244,9 +2240,8 @@ const selectBase =
 
                         <div className="mt-3 space-y-2 rounded-xl bg-gray-50 p-3 text-xs text-gray-600">
                           <div><span className="font-semibold text-gray-800">Applied:</span> {formatDate(app.appliedAt)}</div>
-                          <div><span className="font-semibold text-gray-800">Job:</span> {jobTitle}</div>
-                          <div><span className="font-semibold text-gray-800">Company:</span> {companyName}</div>
                           <div><span className="font-semibold text-gray-800">Contact:</span> {contactNumber}</div>
+                          <div><span className="font-semibold text-gray-800">Job:</span> {jobTitle}</div>
                           <button
                             type="button"
                             onClick={() => openHiringStageModal(app)}

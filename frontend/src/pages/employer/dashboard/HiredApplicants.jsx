@@ -513,6 +513,15 @@ const HiredApplicants = () => {
     return 'Applicant';
   }, []);
 
+  const getApplicantContact = useCallback((jobseeker) =>
+    String(
+      jobseeker?.phoneNumber ||
+        jobseeker?.contactNumber ||
+        jobseeker?.jobSeekerProfile?.phoneNumber ||
+        jobseeker?.jobSeekerProfile?.mobileNumber ||
+        ''
+    ).trim() || '—', []);
+
   const Avatar = useCallback(
     ({ img, name, size = 48, altKey }) => {
       const initial = (name?.trim()?.[0] || 'U').toUpperCase();
@@ -946,18 +955,18 @@ const selectBase =
                   <thead className="border-b border-gray-200 bg-[#fafafa]">
                     <tr>
                       <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
+                        Applied Date
+                      </th>
+                      <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
                         Applicant
+                      </th>
+                      <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
+                        Contact Number
                       </th>
                       <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
                         Job Applied
                       </th>
-                      <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
-                        Applied Date
-                      </th>
-                      <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
-                        Salary
-                      </th>
-                      <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
+                      <th className="px-6 py-5 text-center text-sm font-semibold uppercase tracking-wide text-gray-700">
                         Actions
                       </th>
                     </tr>
@@ -967,8 +976,8 @@ const selectBase =
                     {paginatedApplications.map((app) => {
                       const name = buildApplicantName(app.jobseeker);
                       const email = app.jobseeker?.email || '—';
+                      const contactNumber = getApplicantContact(app.jobseeker);
                       const jobTitle = app.job?.title || '—';
-                      const salaryText = formatSalary(app.job?.salaryMin, app.job?.salaryMax);
 
                       return (
                         <tr
@@ -988,6 +997,10 @@ const selectBase =
                           }}
                           className="border-b border-gray-200 last:border-b-0 group cursor-pointer transition-colors hover:bg-[#2e66a6]/[0.06] focus-visible:bg-[#2e66a6]/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
                         >
+                          <td className="px-6 py-4 text-[15px] text-gray-700">
+                            {formatDate(app.appliedAt)}
+                          </td>
+
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-4">
                               <Avatar
@@ -1003,23 +1016,18 @@ const selectBase =
                             </div>
                           </td>
 
+                          <td className="px-6 py-4 text-sm text-gray-700">
+                            <span className="block truncate" title={contactNumber}>{contactNumber}</span>
+                          </td>
+
                           <td className="px-6 py-4">
                             <div className="text-[15px] font-semibold text-gray-900">{jobTitle}</div>
-                            <div className="text-sm text-gray-500">{app.job?.companyName || '—'}</div>
                           </td>
 
-                          <td className="px-6 py-4 text-[15px] text-gray-700">
-                            {formatDate(app.appliedAt)}
-                          </td>
-
-                          <td className="px-6 py-4 text-sm font-medium text-gray-800">
-                            {salaryText}
-                          </td>
-
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-4 text-center">
                             <Link
                               to={`/employer/application/${app._id}?from=hired`}
-                              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                              className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                               aria-label={`View details of ${name}`}
                             >
                               <Icon name="eye" className="h-4 w-4" />
@@ -1038,8 +1046,8 @@ const selectBase =
                 {paginatedApplications.map((app) => {
                   const name = buildApplicantName(app.jobseeker);
                   const email = app.jobseeker?.email || '—';
+                  const contactNumber = getApplicantContact(app.jobseeker);
                   const jobTitle = app.job?.title || '—';
-                  const salaryText = formatSalary(app.job?.salaryMin, app.job?.salaryMax);
 
                   return (
                     <div key={app._id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -1059,18 +1067,18 @@ const selectBase =
 
                       <div className="mt-4 space-y-2 rounded-xl bg-gray-50 p-3">
                         <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Job Applied</p>
-                          <p className="text-sm font-semibold text-gray-900">{jobTitle}</p>
-                        </div>
-
-                        <div>
                           <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Applied Date</p>
                           <p className="text-sm text-gray-800">{formatDate(app.appliedAt)}</p>
                         </div>
 
                         <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Salary</p>
-                          <p className="text-sm text-gray-800">{salaryText}</p>
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Contact Number</p>
+                          <p className="text-sm text-gray-800">{contactNumber}</p>
+                        </div>
+
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Job Applied</p>
+                          <p className="text-sm font-semibold text-gray-900">{jobTitle}</p>
                         </div>
                       </div>
 

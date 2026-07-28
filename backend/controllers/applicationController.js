@@ -1174,7 +1174,7 @@ exports.getEmployerHiredApplications = async (req, res) => {
       })
       .populate({
         path: 'jobseeker',
-        select: 'fullName firstName middleName lastName email profileImage'
+        select: 'fullName firstName middleName lastName email profileImage phoneNumber contactNumber jobSeekerProfile.phoneNumber jobSeekerProfile.mobileNumber'
       })
       .populate({
         path: 'interviewSchedule.interviewer',

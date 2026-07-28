@@ -1162,18 +1162,21 @@ const ArchivedDeclinedApplicants = () => {
                     <thead className="bg-gray-50">
                       <tr>
                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                          Applied Date
+                        </th>
+                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                           Applicant
                         </th>
                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                           Job Applied
                         </th>
                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                          Applied Date
+                          Decline Stage
                         </th>
                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                           Archived Date
                         </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                           Actions
                         </th>
                       </tr>
@@ -1184,12 +1187,13 @@ const ArchivedDeclinedApplicants = () => {
                         const name = buildApplicantName(app.jobseeker);
                         const email = app.jobseeker?.email || '—';
                         const jobTitle = app.job?.title || 'Job Title';
-                        const companyName = app.job?.companyName || 'Company';
                         const declinedStageLabel = getDeclinedStageLabel(app.declinedFrom);
                         const busy = action.id === app._id;
 
                         return (
                           <tr key={app._id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 text-sm text-gray-900">{formatDate(app.appliedAt)}</td>
+
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-4">
                                 <Avatar
@@ -1209,48 +1213,51 @@ const ArchivedDeclinedApplicants = () => {
                               <div className="max-w-[18rem] truncate text-sm font-semibold text-gray-900" title={jobTitle}>
                                 {jobTitle}
                               </div>
-                              <div className="mt-0.5 max-w-[18rem] truncate text-xs text-gray-600" title={companyName}>
-                                {companyName}
-                              </div>
-                              <div className="mt-1">
-                                <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold bg-red-50 text-red-800 border border-red-200">
-                                  {declinedStageLabel}
-                                </span>
+                            </td>
+
+                            <td className="px-6 py-4">
+                              <span className="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-800">
+                                {declinedStageLabel}
+                              </span>
+                              <div className="mt-1 text-xs text-gray-600">
+                                {formatDate(app.reviewedAt)}
                               </div>
                             </td>
 
-                            <td className="px-6 py-4 text-sm text-gray-900">{formatDate(app.appliedAt)}</td>
                             <td className="px-6 py-4 text-sm text-gray-900">{formatDate(app.declinedArchivedAt)}</td>
 
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <Button
-                                  variant="primarySoft"
-                                  size="xs"
-                                  onClick={() => setRestoreTarget(app)}
-                                  disabled={busy}
-                                >
-                                  <Icon name="restore" className="h-4 w-4" />
-                                  Restore
-                                </Button>
-
+                            <td className="px-6 py-4 text-center">
+                              <div className="flex items-center justify-center gap-2">
                                 <Link
                                   to={`/employer/application/${app._id}`}
-                                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                                  title="View"
+                                  aria-label={`View application of ${name}`}
+                                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                                 >
                                   <Icon name="eye" className="h-4 w-4" />
-                                  View
                                 </Link>
 
-                                <Button
-                                  variant="dangerSoft"
-                                  size="xs"
+                                <button
+                                  type="button"
+                                  title="Restore"
+                                  aria-label={`Restore declined application of ${name}`}
+                                  onClick={() => setRestoreTarget(app)}
+                                  disabled={busy}
+                                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-[#2e66a6] transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  <Icon name="restore" className="h-4 w-4" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  title="Delete"
+                                  aria-label={`Permanently delete declined application of ${name}`}
                                   onClick={() => setDeleteTarget(app)}
                                   disabled={busy}
+                                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                   <Icon name="trash" className="h-4 w-4" />
-                                  Permanent Delete
-                                </Button>
+                                </button>
                               </div>
                             </td>
                           </tr>
@@ -1265,7 +1272,6 @@ const ArchivedDeclinedApplicants = () => {
                     const name = buildApplicantName(app.jobseeker);
                     const email = app.jobseeker?.email || '—';
                     const jobTitle = app.job?.title || 'Job Title';
-                    const companyName = app.job?.companyName || 'Company';
                     const declinedStageLabel = getDeclinedStageLabel(app.declinedFrom);
                     const busy = action.id === app._id;
 
@@ -1294,45 +1300,51 @@ const ArchivedDeclinedApplicants = () => {
                           <div className="truncate text-sm font-semibold text-gray-900" title={jobTitle}>
                             {jobTitle}
                           </div>
-                          <div className="truncate text-xs text-gray-600" title={companyName}>
-                            {companyName}
-                          </div>
                           <div className="mt-2 text-xs text-gray-600">
                             Applied: <span className="font-semibold text-gray-800">{formatDate(app.appliedAt)}</span>
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            Stage: <span className="font-semibold text-gray-800">{declinedStageLabel}</span>
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            Declined: <span className="font-semibold text-gray-800">{formatDate(app.reviewedAt)}</span>
                           </div>
                           <div className="text-xs text-gray-600">
                             Archived: <span className="font-semibold text-gray-800">{formatDate(app.declinedArchivedAt)}</span>
                           </div>
                         </div>
 
-                        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                          <Button
-                            variant="primarySoft"
-                            size="md"
-                            onClick={() => setRestoreTarget(app)}
-                            disabled={busy}
-                          >
-                            <Icon name="restore" className="h-5 w-5" />
-                            Restore
-                          </Button>
-
+                        <div className="mt-3 flex items-center justify-center gap-3">
                           <Link
                             to={`/employer/application/${app._id}`}
-                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                            title="View"
+                            aria-label={`View application of ${name}`}
+                            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                           >
                             <Icon name="eye" className="h-5 w-5" />
-                            View
                           </Link>
 
-                          <Button
-                            variant="dangerSoft"
-                            size="md"
+                          <button
+                            type="button"
+                            title="Restore"
+                            aria-label={`Restore declined application of ${name}`}
+                            onClick={() => setRestoreTarget(app)}
+                            disabled={busy}
+                            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-blue-200 bg-blue-50 text-[#2e66a6] transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <Icon name="restore" className="h-5 w-5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            title="Delete"
+                            aria-label={`Permanently delete declined application of ${name}`}
                             onClick={() => setDeleteTarget(app)}
                             disabled={busy}
+                            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             <Icon name="trash" className="h-5 w-5" />
-                            Permanent Delete
-                          </Button>
+                          </button>
                         </div>
                       </div>
                     );

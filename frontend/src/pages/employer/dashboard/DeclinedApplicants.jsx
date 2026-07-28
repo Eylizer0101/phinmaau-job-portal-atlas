@@ -1114,18 +1114,18 @@ const DeclinedApplicants = () => {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                          Applied Date
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Applicant
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Job Applied
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
-                          Applied Date
+                          Decline Stage
                         </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
-                          Application Stage
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Actions
                         </th>
                       </tr>
@@ -1136,7 +1136,6 @@ const DeclinedApplicants = () => {
                         const name = buildApplicantName(app.jobseeker);
                         const email = app.jobseeker?.email || '—';
                         const jobTitle = app.job?.title || 'Job Title';
-                        const companyName = app.job?.companyName || 'Company';
                         const rowBusy = deletingId === app._id;
                         const declinedStageLabel = getDeclinedStageLabel(app.declinedFrom);
 
@@ -1159,6 +1158,10 @@ const DeclinedApplicants = () => {
                             className="group cursor-pointer transition-colors hover:bg-[#2e66a6]/[0.06] focus-visible:bg-[#2e66a6]/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
                           >
                             <td className="px-6 py-4">
+                              <div className="text-sm text-gray-900">{formatDate(app.appliedAt)}</div>
+                            </td>
+
+                            <td className="px-6 py-4">
                               <div className="flex items-center gap-4">
                                 <Avatar
                                   img={app.jobseeker?.profileImage}
@@ -1178,26 +1181,19 @@ const DeclinedApplicants = () => {
                               <div className="max-w-[18rem] truncate text-sm font-semibold text-gray-900" title={jobTitle}>
                                 {jobTitle}
                               </div>
-                              <div className="mt-0.5 max-w-[18rem] truncate text-xs text-gray-600" title={companyName}>
-                                {companyName}
-                              </div>
-                            </td>
-
-                            <td className="px-6 py-4">
-                              <div className="text-sm text-gray-900">{formatDate(app.appliedAt)}</div>
-                              <div className="mt-0.5 text-xs text-gray-600">
-                                {app.reviewedAt ? `Reviewed: ${formatDate(app.reviewedAt)}` : 'Not reviewed'}
-                              </div>
                             </td>
 
                             <td className="px-6 py-4">
                               <span className="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-800">
                                 {declinedStageLabel}
                               </span>
+                              <div className="mt-1 text-xs text-gray-600">
+                                {formatDate(app.reviewedAt)}
+                              </div>
                             </td>
 
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-2">
+                            <td className="px-6 py-4 text-center">
+                              <div className="flex items-center justify-center gap-2">
                                 <Link
                                   to={`/employer/application/${app._id}?from=declined`}
                                   className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
@@ -1238,7 +1234,6 @@ const DeclinedApplicants = () => {
                     const name = buildApplicantName(app.jobseeker);
                     const email = app.jobseeker?.email || '—';
                     const jobTitle = app.job?.title || 'Job Title';
-                    const companyName = app.job?.companyName || 'Company';
                     const rowBusy = deletingId === app._id;
                     const declinedStageLabel = getDeclinedStageLabel(app.declinedFrom);
 
@@ -1268,17 +1263,14 @@ const DeclinedApplicants = () => {
                           <div className="truncate text-sm font-semibold text-gray-900" title={jobTitle}>
                             {jobTitle}
                           </div>
-                          <div className="truncate text-xs text-gray-600" title={companyName}>
-                            {companyName}
-                          </div>
                           <div className="mt-2 text-xs text-gray-600">
                             Applied: <span className="font-semibold text-gray-800">{formatDate(app.appliedAt)}</span>
                           </div>
-                          <div className="text-xs text-gray-600">
-                            {app.reviewedAt ? `Reviewed: ${formatDate(app.reviewedAt)}` : 'Not reviewed'}
-                          </div>
                           <div className="mt-1 text-xs text-gray-600">
                             Stage: <span className="font-semibold text-gray-800">{declinedStageLabel}</span>
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            Declined: <span className="font-semibold text-gray-800">{formatDate(app.reviewedAt)}</span>
                           </div>
                         </div>
 
