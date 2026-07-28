@@ -167,6 +167,12 @@ const getInitials = (name) => {
   return `${parts[0]?.[0] || "A"}${parts[1]?.[0] || ""}`.toUpperCase();
 };
 
+const formatCategoryLabel = (value) =>
+  String(value || "Uncategorized")
+    .trim()
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
 const API_ORIGIN = String(
   process.env.REACT_APP_API_URL || "https://phinmaau-job-portal-atlas.onrender.com/api"
 ).replace(/\/api\/?$/, "");
@@ -780,11 +786,10 @@ const DeclinedApplicantsModal = ({ record, onClose, onViewApplicant }) => {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4 py-8 backdrop-blur-sm">
-      <div className="max-h-full w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+      <div className="max-h-full w-full max-w-5xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
         <div className="flex items-start justify-between border-b border-slate-200 px-5 py-4">
           <div>
             <h2 className="text-lg font-bold text-black">Declined Applicants · {record.title}</h2>
-            <p className="mt-1 text-xs text-slate-500">{record.companyName || "Archived employer"}</p>
           </div>
           <button
             type="button"
@@ -811,51 +816,55 @@ const DeclinedApplicantsModal = ({ record, onClose, onViewApplicant }) => {
             </div>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <div className="min-w-[700px]">
-                <div className="grid grid-cols-[1.2fr_1fr_1fr_0.8fr_0.65fr] gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+              <div className="min-w-[860px]">
+                <div className="grid grid-cols-[0.85fr_1.25fr_1fr_1.15fr_0.85fr] gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                  <span>Applied Date</span>
                   <span>Applicant</span>
                   <span>Jobseeker Level</span>
                   <span>Decline Stage</span>
-                  <span>Declined On</span>
-                  <span>Actions</span>
+                  <span>Archived Date</span>
                 </div>
 
                 {applicants.map((applicant) => (
-                  <div
+                  <button
+                    type="button"
                     key={applicant.applicationId || applicant._id}
-                    className="grid grid-cols-[1.2fr_1fr_1fr_0.8fr_0.65fr] items-center gap-3 border-b border-slate-100 px-4 py-3 text-xs last:border-b-0"
+                    onClick={() => onViewApplicant(applicant)}
+                    className="grid w-full grid-cols-[0.85fr_1.25fr_1fr_1.15fr_0.85fr] items-center gap-3 border-b border-slate-100 px-4 py-3 text-left text-xs transition last:border-b-0 hover:bg-slate-50"
+                    aria-label={`View archived decline details for ${applicant.applicantName || "applicant"}`}
+                    title="View applicant decline details"
                   >
-                    <div>
-                      <p className="font-semibold text-black">{applicant.applicantName || "Applicant"}</p>
-                      <p className="mt-0.5 truncate text-[11px] text-slate-500">{applicant.email || "—"}</p>
-                    </div>
-                    <span className="font-semibold text-slate-700">{applicant.jobSeekerLevel || "First Time Job Seeker"}</span>
+                    <span className="text-slate-600">{formatDate(applicant.appliedAt)}</span>
+                    <span className="min-w-0">
+                      <span className="block truncate font-semibold text-black">
+                        {applicant.applicantName || "Applicant"}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[11px] text-slate-500">
+                        {applicant.email || "—"}
+                      </span>
+                    </span>
+                    <span className="font-semibold text-slate-700">
+                      {applicant.jobSeekerLevel || "First Time Job Seeker"}
+                    </span>
                     <span>
                       <span className="inline-flex rounded-full bg-rose-100 px-2 py-1 text-[10px] font-semibold text-rose-700">
                         {applicant.declinedStage || "Application Review"}
                       </span>
+                      <span className="mt-1 block text-[11px] text-slate-500">
+                        {formatDate(applicant.declinedAt)}
+                      </span>
                     </span>
-                    <span className="text-slate-500">{formatDate(applicant.declinedAt)}</span>
-                    <button
-                      type="button"
-                      onClick={() => onViewApplicant(applicant)}
-                      className="inline-flex h-8 w-fit items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 font-semibold text-slate-700 hover:border-[#212C61]/40 hover:text-[#212C61]"
-                    >
-                      <Icon name="eye" className="h-3.5 w-3.5" />
-                      View
-                    </button>
-                  </div>
+                    <span className="text-slate-600">{formatDate(applicant.archivedAt)}</span>
+                  </button>
                 ))}
               </div>
             </div>
           )}
-
         </div>
       </div>
     </div>
   );
 };
-
 
 const normalizeStageName = (value = "") =>
   String(value || "")
@@ -1232,20 +1241,25 @@ const AdminArchiveDetails = () => {
     setCurrentPage(1);
   }, [filters]);
 
-  const jobTitles = useMemo(
-    () =>
-      [
-        ...new Set(
-          records
-            .filter((record) =>
-              ["job-post", "declined-applicants"].includes(record.archiveType)
-            )
-            .map((record) => String(record.title || "").trim())
-            .filter(Boolean)
-        ),
-      ].sort((a, b) => a.localeCompare(b)),
-    [records]
-  );
+  const isJobseekerAccount = String(account?.role || "").toLowerCase() === "jobseeker";
+  const isEmployerAccount = String(account?.role || "").toLowerCase() === "employer";
+
+  const secondaryFilterOptions = useMemo(() => {
+    const values = records
+      .filter((record) =>
+        isJobseekerAccount
+          ? ["post", "comment"].includes(record.archiveType)
+          : ["job-post", "declined-applicants"].includes(record.archiveType)
+      )
+      .map((record) =>
+        isJobseekerAccount
+          ? String(record.category || "").trim()
+          : String(record.title || "").trim()
+      )
+      .filter(Boolean);
+
+    return [...new Set(values)].sort((first, second) => first.localeCompare(second));
+  }, [isJobseekerAccount, records]);
 
   const visibleRecords = useMemo(() => {
     const query = filters.search.trim().toLowerCase();
@@ -1253,13 +1267,26 @@ const AdminArchiveDetails = () => {
     const to = filters.dateTo ? new Date(`${filters.dateTo}T23:59:59.999`) : null;
 
     const filtered = records.filter((record) => {
+      const allowedTypes = isJobseekerAccount
+        ? ["post", "comment"]
+        : isEmployerAccount
+          ? ["job-post", "declined-applicants"]
+          : [];
+
+      if (!allowedTypes.includes(record.archiveType)) return false;
       if (filters.type !== "all" && record.archiveType !== filters.type) return false;
-      if (filters.title !== "all" && record.title !== filters.title) return false;
+
+      const secondaryValue = isJobseekerAccount
+        ? String(record.category || "").trim()
+        : String(record.title || "").trim();
+      if (filters.title !== "all" && secondaryValue !== filters.title) return false;
 
       if (query) {
         const searchable = [
           record.typeLabel,
           record.title,
+          record.category,
+          ...(Array.isArray(record.topics) ? record.topics : []),
           record.content,
           record.postContent,
           ...(Array.isArray(record.applicants)
@@ -1291,11 +1318,13 @@ const AdminArchiveDetails = () => {
       if (filters.sort === "oldest") {
         return new Date(first.archivedAt || 0) - new Date(second.archivedAt || 0);
       }
-      if (filters.sort === "name_asc") return String(first.title || "").localeCompare(String(second.title || ""));
-      if (filters.sort === "name_desc") return String(second.title || "").localeCompare(String(first.title || ""));
+      const firstLabel = isJobseekerAccount ? first.category : first.title;
+      const secondLabel = isJobseekerAccount ? second.category : second.title;
+      if (filters.sort === "name_asc") return String(firstLabel || "").localeCompare(String(secondLabel || ""));
+      if (filters.sort === "name_desc") return String(secondLabel || "").localeCompare(String(firstLabel || ""));
       return new Date(second.archivedAt || 0) - new Date(first.archivedAt || 0);
     });
-  }, [filters, records]);
+  }, [filters, isEmployerAccount, isJobseekerAccount, records]);
 
   const pageCount = Math.max(1, Math.ceil(visibleRecords.length / ITEMS_PER_PAGE));
   const safePage = Math.min(currentPage, pageCount);
@@ -1395,7 +1424,14 @@ const AdminArchiveDetails = () => {
           </div>
 
           <div className="min-w-0">
-            <h1 className="truncate text-2xl font-bold text-black">{accountName}</h1>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="truncate text-2xl font-bold text-black">{accountName}</h1>
+              {isJobseekerAccount && summary.graduationYear ? (
+                <span className="inline-flex rounded-full bg-[#212C61]/10 px-3 py-1 text-xs font-semibold text-[#212C61]">
+                  Class of {summary.graduationYear}
+                </span>
+              ) : null}
+            </div>
             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
               <span className="inline-flex items-center gap-1.5">
                 <Icon name="building" className="h-3.5 w-3.5" />
@@ -1423,7 +1459,7 @@ const AdminArchiveDetails = () => {
                 type="search"
                 value={filters.search}
                 onChange={(event) => updateFilter("search", event.target.value)}
-                placeholder="Search job title or content..."
+                placeholder={isJobseekerAccount ? "Search category or content..." : "Search job title or content..."}
                 className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-[#212C61] focus:ring-2 focus:ring-[#212C61]/10"
               />
             </label>
@@ -1434,22 +1470,28 @@ const AdminArchiveDetails = () => {
               ariaLabel="Filter by archived type"
             >
               <option value="all">All Type</option>
-              <option value="post">Post</option>
-              <option value="comment">Comment</option>
-              <option value="job-post">Job Post</option>
-              <option value="declined-applicants">Declined Applicants</option>
-              <option value="inactive-account">Inactive Account</option>
+              {isJobseekerAccount ? (
+                <>
+                  <option value="post">Post</option>
+                  <option value="comment">Comment</option>
+                </>
+              ) : (
+                <>
+                  <option value="job-post">Job Post</option>
+                  <option value="declined-applicants">Declined Applicants</option>
+                </>
+              )}
             </SelectField>
 
             <SelectField
               value={filters.title}
               onChange={(event) => updateFilter("title", event.target.value)}
-              ariaLabel="Filter by job title"
+              ariaLabel={isJobseekerAccount ? "Filter by category" : "Filter by job title"}
             >
-              <option value="all">All Job Title</option>
-              {jobTitles.map((title) => (
-                <option key={title} value={title}>
-                  {title}
+              <option value="all">{isJobseekerAccount ? "All Category" : "All Job Title"}</option>
+              {secondaryFilterOptions.map((value) => (
+                <option key={value} value={value}>
+                  {isJobseekerAccount ? formatCategoryLabel(value) : value}
                 </option>
               ))}
             </SelectField>
@@ -1471,13 +1513,21 @@ const AdminArchiveDetails = () => {
 
 
           <div className="overflow-x-auto">
-            <div className="min-w-[760px]">
-              <div className="grid grid-cols-[0.8fr_1.65fr_0.9fr_0.65fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600">
-                <span>Type</span>
-                <span>Job Title</span>
-                <span>Archived Date</span>
-                <span>Actions</span>
-              </div>
+            <div className={isJobseekerAccount ? "min-w-[760px]" : "min-w-[680px]"}>
+              {isJobseekerAccount ? (
+                <div className="grid grid-cols-[0.8fr_1.65fr_0.9fr_0.65fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600">
+                  <span>Type</span>
+                  <span>Category</span>
+                  <span>Archived Date</span>
+                  <span className="text-center">Actions</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-[0.85fr_2fr_0.65fr] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600">
+                  <span>Type</span>
+                  <span>Job Title</span>
+                  <span className="text-center">Actions</span>
+                </div>
+              )}
 
               {loading ? (
                 <div className="flex min-h-[230px] items-center justify-center text-sm text-slate-500">
@@ -1495,29 +1545,40 @@ const AdminArchiveDetails = () => {
                 paginatedRecords.map((record) => (
                   <div
                     key={record.recordId}
-                    className="grid grid-cols-[0.8fr_1.65fr_0.9fr_0.65fr] items-center gap-4 border-b border-slate-200 px-5 py-4 last:border-b-0 hover:bg-slate-50/50"
+                    className={cn(
+                      "items-center gap-4 border-b border-slate-200 px-5 py-4 last:border-b-0 hover:bg-slate-50/50",
+                      isJobseekerAccount
+                        ? "grid grid-cols-[0.8fr_1.65fr_0.9fr_0.65fr]"
+                        : "grid grid-cols-[0.85fr_2fr_0.65fr]"
+                    )}
                   >
                     <div>
                       <TypeBadge type={record.archiveType} label={record.typeLabel} />
                     </div>
+
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-black">
-                        {record.title || "Archived record"}
+                        {isJobseekerAccount
+                          ? formatCategoryLabel(record.category)
+                          : record.title || "Archived record"}
                       </p>
-                      {record.subtitle ? (
-                        <p className="mt-1 truncate text-[11px] text-slate-500">{record.subtitle}</p>
-                      ) : null}
                     </div>
-                    <span className="text-sm text-slate-600">{formatDate(record.archivedAt)}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleViewRecord(record)}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-[#212C61]/40 hover:bg-[#212C61]/5 hover:text-[#212C61]"
-                      aria-label={`View ${record.typeLabel}`}
-                      title={`View ${record.typeLabel}`}
-                    >
-                      <Icon name="eye" />
-                    </button>
+
+                    {isJobseekerAccount ? (
+                      <span className="text-sm text-slate-600">{formatDate(record.archivedAt)}</span>
+                    ) : null}
+
+                    <div className="flex justify-center">
+                      <button
+                        type="button"
+                        onClick={() => handleViewRecord(record)}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-[#212C61]/40 hover:bg-[#212C61]/5 hover:text-[#212C61]"
+                        aria-label={`View ${record.typeLabel}`}
+                        title={`View ${record.typeLabel}`}
+                      >
+                        <Icon name="eye" />
+                      </button>
+                    </div>
                   </div>
                 ))
               )}

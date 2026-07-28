@@ -728,6 +728,17 @@ const AdminJobView = () => {
     });
   }, []);
 
+  const formatArchivedDate = useCallback((dateString) => {
+    if (!dateString) return 'Not specified';
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return 'Not specified';
+    return date.toLocaleDateString('en-PH', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  }, []);
+
   const fetchJobDetails = useCallback(async () => {
     try {
       setLoading(true);
@@ -928,7 +939,18 @@ const AdminJobView = () => {
                   </div>
                 </div>
 
-                {!isArchivedView ? (
+                {isArchivedView ? (
+                  <div className="flex w-full justify-start lg:w-auto lg:self-center lg:justify-end">
+                    <div className="min-w-[220px] rounded-xl border border-[#d7e6f5] bg-[#f8fafc] px-5 py-4 shadow-sm">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6b7280]">
+                        Archived Date
+                      </p>
+                      <p className="mt-1.5 text-base font-bold text-[#111827]">
+                        {formatArchivedDate(job.archivedAt || job.updatedAt)}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
                   <div className="flex w-full justify-start lg:w-auto lg:self-center lg:justify-end">
                     <button
                     type="button"
@@ -987,7 +1009,7 @@ const AdminJobView = () => {
                     </span>
                     </button>
                   </div>
-                ) : null}
+                )}
               </div>
             </div>
           </div>

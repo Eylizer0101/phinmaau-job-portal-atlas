@@ -2542,6 +2542,37 @@ const getArchiveUserName = (user = {}) => {
   return employerName || fullName || user?.email || 'User';
 };
 
+const getArchiveAccountHolderName = (user = {}) => {
+  const fullName =
+    user?.fullName ||
+    [user?.firstName, user?.middleName, user?.lastName, user?.extensionName]
+      .map((part) => String(part || '').trim())
+      .filter(Boolean)
+      .join(' ');
+
+  return fullName || user?.email || user?.username || 'Archived account';
+};
+
+const getArchiveContactNumber = (user = {}) => {
+  if (String(user?.role || '').toLowerCase() === 'employer') {
+    return (
+      user?.employerProfile?.mobileNumber ||
+      user?.mobileNumber ||
+      user?.phoneNumber ||
+      user?.phone ||
+      ''
+    );
+  }
+
+  return (
+    user?.jobSeekerProfile?.phoneNumber ||
+    user?.phoneNumber ||
+    user?.mobileNumber ||
+    user?.phone ||
+    ''
+  );
+};
+
 const getArchiveCompanyName = (source = {}) => {
   const employer = source?.employer || source?.job?.employer || source;
   return (
@@ -2712,6 +2743,7 @@ exports.getAdminArchive = async (req, res) => {
       'jobSeekerProfile.program',
       'jobSeekerProfile.educationEntries',
       'jobSeekerProfile.address',
+      'jobSeekerProfile.phoneNumber',
       'employerProfile.companyName',
       'employerProfile.companyLogo',
       'employerProfile.industry',
@@ -2719,6 +2751,10 @@ exports.getAdminArchive = async (req, res) => {
       'employerProfile.companyAddress',
       'employerProfile.regionCity',
       'employerProfile.address',
+      'employerProfile.mobileNumber',
+      'phoneNumber',
+      'mobileNumber',
+      'phone',
     ].join(' ');
 
     const getDateBounds = () => {
@@ -2792,19 +2828,7 @@ exports.getAdminArchive = async (req, res) => {
       return profile.campus || education.find((item) => item?.campus)?.campus || '';
     };
 
-    const getSecondaryText = (user = {}) => {
-      if (user.role === 'employer') {
-        return (
-          user?.employerProfile?.industry ||
-          user?.employerProfile?.businessType ||
-          user?.employerProfile?.companyAddress ||
-          user?.email ||
-          ''
-        );
-      }
-
-      return getCampus(user) || getCourse(user) || user?.email || '';
-    };
+    const getSecondaryText = (user = {}) => user?.email || '';
 
     const typeDefinitions = {
       post: { key: 'post', label: 'Post', order: 1 },
@@ -2832,8 +2856,9 @@ exports.getAdminArchive = async (req, res) => {
         grouped.set(accountId, {
           accountId,
           account,
-          displayName: getArchiveUserName(account),
+          displayName: getArchiveAccountHolderName(account),
           secondaryText: getSecondaryText(account),
+          contactNumber: getArchiveContactNumber(account),
           role: String(account.role || '').toLowerCase(),
           records: [],
           searchableText: [],
@@ -2983,6 +3008,7 @@ exports.getAdminArchive = async (req, res) => {
         account: group.account,
         displayName: group.displayName,
         secondaryText: group.secondaryText,
+        contactNumber: group.contactNumber,
         role: group.role,
         archivedTypes,
         latestArchivedAt: group.latestArchivedAt,
@@ -3008,6 +3034,7 @@ exports.getAdminArchive = async (req, res) => {
           group.secondaryText,
           group.role,
           group.account?.email,
+          group.contactNumber,
           ...group.archivedTypes.map((type) => type.label),
           ...group.searchableText,
         ]
@@ -3121,7 +3148,7 @@ exports.getAdminArchiveDetails = async (req, res) => {
                 'email firstName middleName lastName fullName profileImage jobSeekerProfile'
               )
               .select(
-                'job jobseeker employer status hiringStage lastActiveStatus declinedFrom declineReason declineComment appliedAt reviewedAt updatedAt isDeclinedArchived declinedArchivedAt'
+                'job jobseeker employer status hiringStage lastActiveStatus declinedFrom declineReason declineComment appliedAt reviewedAt updatedAt activityHistory isDeclinedArchived declinedArchivedAt'
               )
               .sort({ declinedArchivedAt: -1, updatedAt: -1 })
               .lean()
@@ -3157,9 +3184,11 @@ exports.getAdminArchiveDetails = async (req, res) => {
             archiveType: 'comment',
             typeLabel: 'Comment',
             title: 'Community Comment',
-            subtitle: 'Comment on an archived community post',
+            subtitle: post.category ? `Category: ${post.category}` : '',
             content: comment.content || '',
             postContent: post.content || '',
+            category: post.category || '',
+            topics: post.topics || [],
             archivedAt: comment.deletedAt || comment.updatedAt,
             archivedBy: getArchiveUserName(comment.deletedBy || {}),
             postId: String(post._id),
@@ -3174,7 +3203,7 @@ exports.getAdminArchiveDetails = async (req, res) => {
           archiveType: 'job-post',
           typeLabel: 'Job Post',
           title: job.title || 'Unfinished Posting',
-          subtitle: job.companyName || getArchiveUserName(account),
+          subtitle: '',
           archivedAt: job.archivedAt || job.updatedAt,
           jobId: String(job._id),
           companyName: job.companyName || getArchiveUserName(account),
@@ -3195,7 +3224,7 @@ exports.getAdminArchiveDetails = async (req, res) => {
             archiveType: 'declined-applicants',
             typeLabel: 'Declined Applicants',
             title: jobTitle,
-            subtitle: application.job?.companyName || getArchiveUserName(account),
+            subtitle: '',
             archivedAt,
             jobId: jobId === 'unknown-job' ? '' : jobId,
             companyName: application.job?.companyName || getArchiveUserName(account),
@@ -3210,6 +3239,15 @@ exports.getAdminArchiveDetails = async (req, res) => {
 
         const jobseeker = application.jobseeker || {};
         const profile = jobseeker.jobSeekerProfile || {};
+        const declinedActivity = [...(Array.isArray(application.activityHistory)
+          ? application.activityHistory
+          : [])]
+          .reverse()
+          .find(
+            (activity) =>
+              String(activity?.type || '').toLowerCase() === 'declined' ||
+              String(activity?.toStatus || '').toLowerCase() === 'declined'
+          );
         const declinedStage =
           String(application.hiringStage || '').trim() ||
           (application.declinedFrom === 'forInterview'
@@ -3238,7 +3276,8 @@ exports.getAdminArchiveDetails = async (req, res) => {
           declineReason: application.declineReason || '',
           declineComment: application.declineComment || '',
           appliedAt: application.appliedAt,
-          declinedAt: application.reviewedAt || application.updatedAt,
+          declinedAt:
+            declinedActivity?.occurredAt || application.reviewedAt || application.updatedAt,
           archivedAt,
         });
       });
@@ -3295,6 +3334,12 @@ exports.getAdminArchiveDetails = async (req, res) => {
             jobSeekerProfile.address ||
             'Unspecified';
 
+      const graduationYear =
+        jobSeekerProfile.yearGraduated ||
+        educationEntries.find((entry) => entry?.yearGraduated || entry?.endYear)?.yearGraduated ||
+        educationEntries.find((entry) => entry?.yearGraduated || entry?.endYear)?.endYear ||
+        '';
+
       const lastActive = account.lastLogin || account.updatedAt || account.createdAt;
       const lastActiveDate = new Date(lastActive || 0);
       const inactivityDays = Number.isNaN(lastActiveDate.getTime())
@@ -3310,6 +3355,7 @@ exports.getAdminArchiveDetails = async (req, res) => {
           location,
           lastActive,
           inactivityDays,
+          graduationYear,
           latestArchivedAt: records[0]?.archivedAt || null,
         },
       });

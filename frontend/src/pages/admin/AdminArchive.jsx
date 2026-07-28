@@ -158,10 +158,13 @@ const getYearOptions = () => {
 
 const getName = (entry = {}) =>
   entry?.displayName ||
-  entry?.account?.employerProfile?.companyName ||
-  entry?.account?.companyName ||
   entry?.account?.fullName ||
-  [entry?.account?.firstName, entry?.account?.middleName, entry?.account?.lastName]
+  [
+    entry?.account?.firstName,
+    entry?.account?.middleName,
+    entry?.account?.lastName,
+    entry?.account?.extensionName,
+  ]
     .filter(Boolean)
     .join(" ") ||
   entry?.account?.email ||
@@ -186,10 +189,10 @@ const resolveMediaUrl = (value) => {
 const getAvatarUrl = (entry = {}) => {
   const account = entry.account || {};
   return resolveMediaUrl(
-    account?.employerProfile?.companyLogo ||
-      account?.companyLogo ||
-      account?.profileImage ||
+    account?.profileImage ||
       account?.jobSeekerProfile?.profileImage ||
+      account?.employerProfile?.companyLogo ||
+      account?.companyLogo ||
       ""
   );
 };
@@ -718,7 +721,7 @@ const AdminArchive = () => {
                 <span>Name</span>
                 <span>Role</span>
                 <span>Archived Type</span>
-                <span>Date Archived</span>
+                <span>Contact Number</span>
                 <span>Actions</span>
               </div>
 
@@ -768,7 +771,7 @@ const AdminArchive = () => {
 
                       <ArchiveTypeBadges types={entry.archivedTypes || []} />
 
-                      <span className="text-sm text-slate-600">{formatDate(entry.latestArchivedAt)}</span>
+                      <span className="text-sm text-slate-600">{entry.contactNumber || "—"}</span>
 
                       <div className="flex items-center">
                         <button
