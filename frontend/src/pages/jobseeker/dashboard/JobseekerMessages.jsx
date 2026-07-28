@@ -787,9 +787,6 @@ const JobseekerMessages = () => {
         <div className={UI.container}>
           <div className="mb-6">
             <h1 className="text-[33px] leading-[40px] font-semibold text-black">Messages</h1>
-            <p className="mt-1 text-base text-black/80">
-              {totalUnreadMessages} {totalUnreadMessages === 1 ? 'unread message' : 'unread messages'}
-            </p>
             <p className="mt-2 text-black/70">
               Communicate with employers for interviews and follow-ups
             </p>
@@ -806,7 +803,9 @@ const JobseekerMessages = () => {
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className={`${UI.h2} ${UI.textPrimary}`}>Messages</p>
-
+                      <p className={`mt-1 text-sm ${UI.textSecondary}`}>
+                        {totalUnreadMessages} {totalUnreadMessages === 1 ? 'unread message' : 'unread messages'}
+                      </p>
                     </div>
 
                     <button
