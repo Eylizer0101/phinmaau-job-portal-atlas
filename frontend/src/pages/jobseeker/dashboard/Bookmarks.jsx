@@ -2670,13 +2670,13 @@ const Bookmarks = () => {
                                 </div>
                               </div>
 
-                              {perksAndBenefitsList.length > 0 && (
-                                <div className={UI.insetPanel}>
-                                  <div className={UI.insetHead}>
-                                    <p className="text-sm font-semibold text-[#000000]">Perks and Benefits</p>
-                                  </div>
+                              <div className={UI.insetPanel}>
+                                <div className={UI.insetHead}>
+                                  <p className="text-sm font-semibold text-[#000000]">Perks and Benefits</p>
+                                </div>
 
-                                  <div className={UI.insetBody}>
+                                <div className={UI.insetBody}>
+                                  {perksAndBenefitsList.length > 0 ? (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                       {perksAndBenefitsList.map((benefit, idx) => (
                                         <div
@@ -2687,9 +2687,11 @@ const Bookmarks = () => {
                                         </div>
                                       ))}
                                     </div>
-                                  </div>
+                                  ) : (
+                                    <p className={UI.meta}>No perks or benefits specified</p>
+                                  )}
                                 </div>
-                              )}
+                              </div>
                             </div>
                           </div>
 
@@ -2736,7 +2738,7 @@ const Bookmarks = () => {
                                       ))}
                                     </div>
                                   ) : (
-                                    <p className={`${UI.meta} mt-1`}>No required skills listed.</p>
+                                    <p className={`${UI.meta} mt-1`}>No skills specified</p>
                                   )}
                                 </div>
 

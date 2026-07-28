@@ -1928,7 +1928,8 @@ const EditJob = () => {
     setSavingCancelDraft(true);
 
     try {
-      const payload = buildPayload({ mode: 'draft' });
+      const savingExistingDraft = formData.isPublished === false;
+      const payload = buildPayload({ mode: savingExistingDraft ? 'draft' : 'preserve' });
       await persist(payload);
 
       setShowCancelModal(false);
@@ -1938,13 +1939,23 @@ const EditJob = () => {
         window.history.go(-2);
       } else {
         navigate(pendingLeavePath || '/employer/manage-jobs', {
-          state: { jobEditSuccess: true, successType: 'edit-draft' },
+          state: {
+            jobEditSuccess: true,
+            successType: savingExistingDraft ? 'edit-draft' : 'edit-save',
+          },
         });
       }
     } catch (err) {
       console.error(err);
       setShowCancelModal(false);
-      setError(getAxiosErrorMessage(err, 'Failed to save the job as draft. Please try again.'));
+      setError(
+        getAxiosErrorMessage(
+          err,
+          formData.isPublished === false
+            ? 'Failed to save the job as draft. Please try again.'
+            : 'Failed to save your changes. Please try again.'
+        )
+      );
     } finally {
       setSavingCancelDraft(false);
     }
@@ -2414,11 +2425,6 @@ const EditJob = () => {
                           </label>
                         </div>
 
-                        {formData.openToFreshGraduates && (
-                          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-                            Fresh graduates are welcome! Candidates will be evaluated based on their resume/CV regardless of high credential requirements.
-                          </div>
-                        )}
                       </div>
 
                       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -2735,14 +2741,16 @@ const EditJob = () => {
                   Cancel
                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleSaveDraft}
-                  disabled={savingDraft || publishing || savingChanges || deleting}
-                  className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2e66a6]"
-                >
-                  {savingDraft ? 'Saving…' : 'Save Draft'}
-                </button>
+                {isDraft && (
+                  <button
+                    type="button"
+                    onClick={handleSaveDraft}
+                    disabled={savingDraft || publishing || savingChanges || deleting}
+                    className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2e66a6]"
+                  >
+                    {savingDraft ? 'Saving…' : 'Save Draft'}
+                  </button>
+                )}
 
                 {activeStep > 1 && (
                   <button
@@ -2815,7 +2823,9 @@ const EditJob = () => {
                   </h2>
 
                   <p className="mt-2 text-sm leading-6 text-gray-600">
-                    Your current job post progress will be saved as a draft.
+                    {isDraft
+                      ? 'Your current job post progress will be saved as a draft.'
+                      : 'Your changes will be saved while the job remains published.'}
                   </p>
 
                   <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -2837,7 +2847,13 @@ const EditJob = () => {
                       disabled={savingCancelDraft}
                       className="rounded-xl bg-[#2e66a6] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#23508a] disabled:opacity-50"
                     >
-                      {savingCancelDraft ? 'Saving Draft…' : 'Save as Draft and Exit'}
+                      {savingCancelDraft
+                        ? isDraft
+                          ? 'Saving Draft…'
+                          : 'Saving Changes…'
+                        : isDraft
+                        ? 'Save as Draft and Exit'
+                        : 'Save Changes and Exit'}
                     </button>
                   </div>
                 </div>

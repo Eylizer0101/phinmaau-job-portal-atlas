@@ -867,11 +867,6 @@ const EmployerJobView = () => {
                   <CompanyLogo src={job.companyLogo} name={job.companyName} />
 
                   <div className="min-w-0 flex-1">
-                    {job?.isUrgent ? (
-                  <div className="mb-3 inline-flex items-center rounded-full bg-[#171717] px-4 text-xs font-bold text-white shadow-sm">
-                    Urgently Needed
-                  </div>
-                ) : null}
                 <h1 className="text-[28px] font-bold leading-tight text-[#111827] sm:text-[32px]" title={job.title || 'Untitled Position'}>
                       {String(job.title || '').trim() || 'Untitled Position'}
                     </h1>
