@@ -476,7 +476,22 @@ const getRequiredExperienceYears = (value = '') => {
 };
 
 const getApplicantExperienceYears = (workExperiences = [], profileExperience = '') => {
-  const dateBasedYears = (Array.isArray(workExperiences) ? workExperiences : []).reduce(
+  const normalized = normalizeMatchText(profileExperience);
+
+  // Use the experience level selected in the applicant profile as the source of truth.
+  // Only calculate from work dates when the profile experience field is empty.
+  if (normalized) {
+    if (normalized.includes('no experience')) return 0;
+    if (normalized.includes('less than 1')) return 0.5;
+
+    const rangeMatch = normalized.match(/(\d+)\s*[-–]\s*(\d+)/);
+    if (rangeMatch) return Number(rangeMatch[2]);
+
+    const numberMatch = normalized.match(/(\d+)/);
+    if (numberMatch) return Number(numberMatch[1]);
+  }
+
+  return (Array.isArray(workExperiences) ? workExperiences : []).reduce(
     (total, item) => {
       const start = new Date(item?.startDate);
       const end = item?.isPresent ? new Date() : new Date(item?.endDate);
@@ -489,18 +504,6 @@ const getApplicantExperienceYears = (workExperiences = [], profileExperience = '
     },
     0
   );
-
-  if (dateBasedYears > 0) return dateBasedYears;
-
-  const normalized = normalizeMatchText(profileExperience);
-  if (!normalized || normalized.includes('no experience')) return 0;
-  if (normalized.includes('less than 1')) return 0.5;
-
-  const rangeMatch = normalized.match(/(\d+)\s*[-–]\s*(\d+)/);
-  if (rangeMatch) return Number(rangeMatch[2]);
-
-  const numberMatch = normalized.match(/(\d+)/);
-  return numberMatch ? Number(numberMatch[1]) : 0;
 };
 
 const getEducationRank = (value = '') => {
@@ -685,7 +688,8 @@ const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work =
         : applicantYears > 0
           ? 'Less than 1 year'
           : profile.experience || profile.whatHaveYouDone || 'No experience',
-    applicantExperienceDisplay: formatYears(applicantYears),
+    applicantExperienceDisplay:
+      profile.experience || profile.whatHaveYouDone || formatYears(applicantYears),
     requiredExperienceDisplay: requiredYears ? formatYears(requiredYears) : 'No experience required',
     experienceMatched,
     courseMatched,
