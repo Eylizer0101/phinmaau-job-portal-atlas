@@ -12,6 +12,67 @@ const normalizeHiringStageName = (value) =>
 const isSameHiringStage = (first, second) =>
   normalizeHiringStageName(first) === normalizeHiringStageName(second);
 
+const getHiringStageOrderStorageKey = () => {
+  try {
+    const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
+    const userId = storedUser?._id || storedUser?.id || 'current';
+    return `agapay:hiring-stage-order:${userId}`;
+  } catch {
+    return 'agapay:hiring-stage-order:current';
+  }
+};
+
+const getUniqueHiringStages = (stages = []) => {
+  const uniqueStages = [];
+
+  stages.forEach((stage) => {
+    const cleanStage = String(stage || '').replace(/\s+/g, ' ').trim();
+    if (!cleanStage) return;
+
+    if (!uniqueStages.some((item) => isSameHiringStage(item, cleanStage))) {
+      uniqueStages.push(cleanStage);
+    }
+  });
+
+  return uniqueStages;
+};
+
+const reconcileHiringStageOrder = (currentOrder = [], availableStages = []) => {
+  const available = getUniqueHiringStages(availableStages);
+  const ordered = getUniqueHiringStages(currentOrder)
+    .map((savedStage) => available.find((stage) => isSameHiringStage(stage, savedStage)))
+    .filter(Boolean);
+
+  available.forEach((stage) => {
+    if (!ordered.some((item) => isSameHiringStage(item, stage))) {
+      ordered.push(stage);
+    }
+  });
+
+  return ordered;
+};
+
+const readSavedHiringStageOrder = () => {
+  try {
+    const savedValue = localStorage.getItem(getHiringStageOrderStorageKey());
+    const parsedValue = JSON.parse(savedValue || '[]');
+    return Array.isArray(parsedValue) ? parsedValue : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveHiringStageOrder = (stages = []) => {
+  try {
+    localStorage.setItem(
+      getHiringStageOrderStorageKey(),
+      JSON.stringify(getUniqueHiringStages(stages))
+    );
+  } catch {
+    // The page can continue even when browser storage is unavailable.
+  }
+};
+
 
 const EMPLOYER_DATE_FILTER_OPTIONS = [
   { value: 'all', label: 'All Time' },
@@ -919,8 +980,7 @@ const MessagePopup = ({ open, onClose, application }) => {
 const HiringStageModal = ({
   open,
   application,
-  defaultStages,
-  customStages,
+  stages,
   busy,
   onClose,
   onSelect,
@@ -940,7 +1000,6 @@ const HiringStageModal = ({
   if (!open || !application) return null;
 
   const currentStage = String(application?.hiringStage || '').trim();
-  const stages = [...defaultStages, ...customStages];
 
   const addCustomStage = async () => {
     const value = customStage.replace(/\s+/g, ' ').trim();
@@ -1281,6 +1340,7 @@ const ForInterview = () => {
     'Job Offer',
   ]);
   const [customHiringStages, setCustomHiringStages] = useState([]);
+  const [hiringStageOrder, setHiringStageOrder] = useState([]);
   const [loading, setLoading] = useState(true);
   const [jobsLoading, setJobsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -1393,12 +1453,26 @@ const ForInterview = () => {
 
       if (res.data?.success) {
         setApplications(res.data.applications || []);
-        if (Array.isArray(res.data.defaultHiringStages)) {
-          setDefaultHiringStages(res.data.defaultHiringStages);
-        }
-        setCustomHiringStages(
-          Array.isArray(res.data.customHiringStages) ? res.data.customHiringStages : []
+
+        const nextDefaultStages = Array.isArray(res.data.defaultHiringStages)
+          ? res.data.defaultHiringStages
+          : [];
+        const nextCustomStages = Array.isArray(res.data.customHiringStages)
+          ? res.data.customHiringStages
+          : [];
+        const availableStages = getUniqueHiringStages([
+          ...nextDefaultStages,
+          ...nextCustomStages,
+        ]);
+        const nextStageOrder = reconcileHiringStageOrder(
+          readSavedHiringStageOrder(),
+          availableStages
         );
+
+        setDefaultHiringStages(nextDefaultStages);
+        setCustomHiringStages(nextCustomStages);
+        setHiringStageOrder(nextStageOrder);
+        saveHiringStageOrder(nextStageOrder);
       } else {
         setApplications([]);
       }
@@ -1647,17 +1721,51 @@ const ForInterview = () => {
     );
   }, []);
 
-  const applyHiringStageResponse = useCallback((responseData) => {
-    if (Array.isArray(responseData?.defaultHiringStages)) {
+  const applyHiringStageResponse = useCallback((responseData, preferredLastStage = '') => {
+    const hasDefaultStages = Array.isArray(responseData?.defaultHiringStages);
+    const hasCustomStages = Array.isArray(responseData?.customHiringStages);
+
+    if (hasDefaultStages) {
       setDefaultHiringStages(responseData.defaultHiringStages);
     }
-    if (Array.isArray(responseData?.customHiringStages)) {
+    if (hasCustomStages) {
       setCustomHiringStages(responseData.customHiringStages);
     }
+
+    if (hasDefaultStages || hasCustomStages) {
+      const responseDefaultStages = hasDefaultStages
+        ? responseData.defaultHiringStages
+        : defaultHiringStages;
+      const responseCustomStages = hasCustomStages
+        ? responseData.customHiringStages
+        : customHiringStages;
+      const availableStages = getUniqueHiringStages([
+        ...responseDefaultStages,
+        ...responseCustomStages,
+      ]);
+
+      setHiringStageOrder((previousOrder) => {
+        let nextOrder = reconcileHiringStageOrder(previousOrder, availableStages);
+        const addedStage = availableStages.find((stage) =>
+          isSameHiringStage(stage, preferredLastStage)
+        );
+
+        if (addedStage) {
+          nextOrder = [
+            ...nextOrder.filter((stage) => !isSameHiringStage(stage, addedStage)),
+            addedStage,
+          ];
+        }
+
+        saveHiringStageOrder(nextOrder);
+        return nextOrder;
+      });
+    }
+
     if (responseData?.application) {
       updateApplicationInState(responseData.application);
     }
-  }, [updateApplicationInState]);
+  }, [customHiringStages, defaultHiringStages, updateApplicationInState]);
 
   const openHiringStageModal = (application) => {
     if (!application?._id) {
@@ -1720,7 +1828,7 @@ const ForInterview = () => {
         throw new Error(addResponseData.message || 'Failed to add custom hiring stage.');
       }
 
-      applyHiringStageResponse(addResponseData);
+      applyHiringStageResponse(addResponseData, stage);
       setSuccess('Custom hiring stage added. Select it from the list when you are ready.');
       return true;
     } catch (stageError) {
@@ -1771,6 +1879,14 @@ const ForInterview = () => {
           ? { ...previous, hiringStage: '' }
           : previous
       );
+
+      setHiringStageOrder((previousOrder) => {
+        const nextOrder = previousOrder.filter(
+          (item) => !isSameHiringStage(item, stage)
+        );
+        saveHiringStageOrder(nextOrder);
+        return nextOrder;
+      });
 
       setSuccess(responseData.message || 'Hiring stage deleted.');
     } catch (stageError) {
@@ -2199,8 +2315,7 @@ const selectBase =
       <HiringStageModal
         open={stageModalOpen}
         application={stageTarget}
-        defaultStages={defaultHiringStages}
-        customStages={customHiringStages}
+        stages={hiringStageOrder}
         busy={stageBusy}
         onClose={closeHiringStageModal}
         onSelect={handleSelectHiringStage}
