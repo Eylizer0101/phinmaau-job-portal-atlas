@@ -1342,12 +1342,6 @@ const ManageJobs = () => {
                                 {getStatusText(job)}
                               </span>
 
-                              {String(job._id) === recentlySavedDraftId && derivedStatus === 'draft' && (
-                                <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
-                                  <Icon name="check" className="h-3.5 w-3.5" />
-                                  Just saved
-                                </span>
-                              )}
                             </div>
                           </div>
                         </div>
@@ -1609,12 +1603,6 @@ const ManageJobs = () => {
                                   {getStatusText(job)}
                                 </span>
 
-                                {String(job._id) === recentlySavedDraftId && derivedStatus === 'draft' && (
-                                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
-                                    <Icon name="check" className="h-3.5 w-3.5" />
-                                    Just saved
-                                  </span>
-                                )}
                               </div>
                             </td>
 
