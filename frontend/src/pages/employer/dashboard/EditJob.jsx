@@ -829,6 +829,7 @@ const toFormSnapshot = (data) => ({
   jobType: data.jobType ?? '',
   salaryMin: data.salaryMin === null || data.salaryMin === undefined ? '' : String(data.salaryMin),
   salaryMax: data.salaryMax === null || data.salaryMax === undefined ? '' : String(data.salaryMax),
+  hideSalary: parseBooleanLike(data.hideSalary),
   workMode: data.workMode ?? '',
   applicationDeadline: data.applicationDeadline ?? '',
   vacancies: data.vacancies === null || data.vacancies === undefined || data.vacancies === '' ? '' : String(data.vacancies),
@@ -2102,8 +2103,8 @@ const EditJob = () => {
   const showReqCounterRed = (touched.requirements || submitted) && reqLen > 0 && reqLen < 40;
 
   const isDraft = formData.isPublished === false;
-  const primaryActionLabel = isDraft ? 'Publish Job' : 'Save changes';
-  const primaryActionHandler = isDraft ? handlePublish : handleSaveChanges;
+  const primaryActionLabel = 'Save Changes';
+  const primaryActionHandler = handleSaveChanges;
 
   if (loading) {
     return (
@@ -2752,6 +2753,24 @@ const EditJob = () => {
                   </button>
                 )}
 
+                {activeStep < JOB_FORM_STEPS.length && (
+                  <button
+                    type="button"
+                    onClick={handleSaveChanges}
+                    disabled={
+                      publishing ||
+                      savingDraft ||
+                      savingChanges ||
+                      deleting ||
+                      !requiredOk ||
+                      !isDirty
+                    }
+                    className="rounded-xl bg-[#2e66a6] px-5 py-2 text-sm font-semibold text-white hover:bg-[#25558a] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2e66a6]"
+                  >
+                    {savingChanges ? 'Saving…' : 'Save Changes'}
+                  </button>
+                )}
+
                 {activeStep > 1 && (
                   <button
                     type="button"
@@ -2782,17 +2801,11 @@ const EditJob = () => {
                       savingChanges ||
                       deleting ||
                       !requiredOk ||
-                      (isDraft ? false : !isDirty) ||
-                      (isDraft && !canPublish)
+                      !isDirty
                     }
-                    title={isDraft && !canPublish ? 'Verify your company to publish.' : ''}
                     className="rounded-xl bg-[#2e66a6] px-5 py-2 text-sm font-semibold text-white hover:bg-[#25558a] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2e66a6]"
                   >
-                    {publishing || savingChanges
-                      ? 'Saving…'
-                      : isDraft && !canPublish
-                      ? 'Verify to publish'
-                      : primaryActionLabel}
+                    {savingChanges ? 'Saving…' : primaryActionLabel}
                   </button>
                 )}
               </div>
