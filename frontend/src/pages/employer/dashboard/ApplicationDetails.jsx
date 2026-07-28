@@ -458,6 +458,11 @@ const normalizeMatchText = (value = '') =>
     .replace(/\s+/g, ' ')
     .trim();
 
+const normalizeEmploymentType = (value = '') =>
+  normalizeMatchText(value)
+    .replace(/[\s-]+/g, '')
+    .trim();
+
 const normalizeSkillName = (value = '') =>
   normalizeMatchText(value)
     .replace(/\s[—-]\s(?:basic|novice|intermediate|advanced|expert)$/i, '')
@@ -702,7 +707,8 @@ const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work =
     requiredEmploymentTypeDisplay: job.jobType || 'Not specified',
     employmentTypeMatched:
       Boolean(profile.employmentType && job.jobType) &&
-      normalizeMatchText(profile.employmentType) === normalizeMatchText(job.jobType),
+      normalizeEmploymentType(profile.employmentType) ===
+        normalizeEmploymentType(job.jobType),
     applicantLocationDisplay: profile.address || profile.currentAddress || 'Not provided',
     requiredLocationDisplay: job.location || 'Not specified',
     locationMatched:
