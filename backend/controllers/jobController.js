@@ -1258,6 +1258,7 @@ exports.updateJob = async (req, res) => {
       if (key === 'status') return;
       if (key === 'salaryMin') return;
       if (key === 'salaryMax') return;
+      if (key === 'statusBeforeArchive') return;
 
       if (key === 'experienceLevel') {
         const normalizedValue = normalizeExperienceLevel(req.body.experienceLevel);
@@ -1311,6 +1312,13 @@ exports.updateJob = async (req, res) => {
 
     if (employer?.employerProfile?.companyName && employer.employerProfile.companyName !== job.companyName) {
       job.companyName = employer.employerProfile.companyName;
+    }
+
+    if (
+      job.statusBeforeArchive === null ||
+      String(job.statusBeforeArchive || '').trim() === ''
+    ) {
+      job.statusBeforeArchive = undefined;
     }
 
     await job.save();

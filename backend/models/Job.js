@@ -221,7 +221,13 @@ const jobSchema = new mongoose.Schema({
     statusBeforeArchive: {
         type: String,
         enum: ['draft', 'open', 'closed', 'expired', 'filled'],
-        default: null
+        default: undefined,
+        set: (value) => {
+            if (value === null || value === undefined) return undefined;
+
+            const normalizedValue = String(value).trim().toLowerCase();
+            return normalizedValue || undefined;
+        }
     },
 
     archivedAt: {
@@ -252,6 +258,17 @@ const jobSchema = new mongoose.Schema({
     }
 }, {
     timestamps: true
+});
+
+jobSchema.pre('validate', function normalizeStatusBeforeArchive(next) {
+    if (
+        this.statusBeforeArchive === null ||
+        String(this.statusBeforeArchive || '').trim() === ''
+    ) {
+        this.statusBeforeArchive = undefined;
+    }
+
+    next();
 });
 
 jobSchema.index({ title: 'text', description: 'text', category: 'text' });
