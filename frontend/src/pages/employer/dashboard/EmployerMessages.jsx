@@ -9,7 +9,6 @@ import {
   faMapMarkerAlt,
   faVideo,
   faPaperclip,
-  faCheckDouble,
   faCheck,
   faComments,
   faEnvelope,
@@ -1694,17 +1693,12 @@ const EmployerMessages = () => {
     );
   }
 
-  const MessageMeta = ({ me, time, isRead }) => {
+  const MessageMeta = ({ me, time, isPending }) => {
     return (
-      <div className="mt-1 flex items-center gap-2 px-1">
-        <span className="text-[11px] text-gray-400">{time}</span>
-        {me && (
-          <FontAwesomeIcon
-            icon={isRead ? faCheckDouble : faCheck}
-            className={`text-[11px] ${isRead ? 'text-[#2e66a6]/90' : 'text-gray-400'}`}
-            aria-label={isRead ? 'Read' : 'Sent'}
-          />
-        )}
+      <div className="mt-1 flex items-center px-1">
+        <span className="text-[11px] text-gray-400">
+          {me && isPending ? 'Sent' : time}
+        </span>
       </div>
     );
   };
@@ -2371,7 +2365,7 @@ const EmployerMessages = () => {
                                   <MessageMeta
                                     me={me}
                                     time={formatMessageTime(msg.createdAt)}
-                                    isRead={msg.isRead}
+                                    isPending={msg.__optimistic}
                                   />
                                 </div>
                               </div>

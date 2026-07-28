@@ -10,8 +10,6 @@ import {
   faMapMarkerAlt,
   faVideo,
   faPaperclip,
-  faCheckDouble,
-  faCheck,
   faComments,
   faEnvelope,
   faFilePdf,
@@ -123,6 +121,8 @@ const UI = {
 
 const MAX_FILE_MB = 10;
 const CONVERSATIONS_PER_PAGE = 7;
+
+const makeClientId = () => `c_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
 const ALLOWED_MIMES = [
   'image/jpeg',
@@ -636,40 +636,76 @@ const JobseekerMessages = () => {
 
     if ((!newMessage.trim() && !selectedFile) || !selectedConversation) return;
 
+    const token = getToken();
+    const receiverId = selectedConversation.otherUser?._id;
+
+    if (!token) {
+      alert('Session expired. Please login again.');
+      navigate('/login');
+      return;
+    }
+    if (!receiverId) {
+      alert('Receiver not found.');
+      return;
+    }
+
+    const optimisticId = makeClientId();
+    const messageToSend = newMessage || '';
+    const fileToSend = selectedFile;
+    const localFilePreview = filePreview;
+    const optimisticMessage = {
+      _id: optimisticId,
+      clientId: optimisticId,
+      sender: { _id: currentUserId },
+      receiver: { _id: receiverId },
+      content: messageToSend,
+      createdAt: new Date().toISOString(),
+      isRead: false,
+      messageType: fileToSend ? 'file' : 'text',
+      file: fileToSend
+        ? {
+            originalName: fileToSend.name,
+            fileType: fileToSend.type,
+            fileSize: fileToSend.size,
+            fileUrl: null,
+          }
+        : null,
+      __localFilePreview: localFilePreview,
+      __optimistic: true,
+    };
+
+    setMessages((prev) => [...prev, optimisticMessage]);
+    setNewMessage('');
+    removeSelectedFile();
+    setTimeout(() => scrollToBottom(true), 0);
+
     try {
       setSending(true);
-      const token = getToken();
-      const receiverId = selectedConversation.otherUser?._id;
-
-      if (!token) {
-        alert('Session expired. Please login again.');
-        navigate('/login');
-        return;
-      }
-      if (!receiverId) {
-        alert('Receiver not found.');
-        return;
-      }
 
       const formData = new FormData();
-      if (selectedFile) formData.append('file', selectedFile);
+      if (fileToSend) formData.append('file', fileToSend);
       formData.append('receiverId', receiverId);
-      formData.append('content', newMessage || '');
+      formData.append('content', messageToSend);
 
       const response = await axios.post(`${API_BASE_URL}/messages/send`, formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
       });
 
       if (response.data?.success) {
-        setMessages((prev) => [...prev, response.data.data]);
-        setNewMessage('');
-        removeSelectedFile();
+        setMessages((prev) =>
+          prev.map((message) =>
+            message._id === optimisticId ? response.data.data : message
+          )
+        );
         fetchConversations('active');
         window.dispatchEvent(new Event('messages:unread-updated'));
         setTimeout(() => scrollToBottom(true), 0);
+      } else {
+        throw new Error('Send failed');
       }
     } catch (error) {
       console.error('Error sending message:', error.response?.data || error.message);
+      setMessages((prev) => prev.filter((message) => message._id !== optimisticId));
       alert('Failed to send message: ' + (error.response?.data?.message || error.message));
     } finally {
       setSending(false);
@@ -1019,7 +1055,7 @@ const JobseekerMessages = () => {
                                           <>
                                             <div className={UI.imgWrap}>
                                               <img
-                                                src={getFileUrl(f.fileUrl)}
+                                                src={msg.__localFilePreview || getFileUrl(f.fileUrl)}
                                                 alt={f.originalName}
                                                 className={UI.imgOnly}
                                                 loading="lazy"
@@ -1116,19 +1152,10 @@ const JobseekerMessages = () => {
                                     </div>
                                   )}
 
-                                  <div className="mt-1 flex items-center gap-2 px-1">
+                                  <div className="mt-1 flex items-center px-1">
                                     <span className="text-[11px] text-black/45">
-                                      {formatMessageTime(msg.createdAt)}
+                                      {me && msg.__optimistic ? 'Sent' : formatMessageTime(msg.createdAt)}
                                     </span>
-                                    {me && (
-                                      <FontAwesomeIcon
-                                        icon={msg.isRead ? faCheckDouble : faCheck}
-                                        className={`text-[11px] ${
-                                          msg.isRead ? 'text-[#2e66a6]/90' : 'text-black/35'
-                                        }`}
-                                        aria-label={msg.isRead ? 'Read' : 'Sent'}
-                                      />
-                                    )}
                                   </div>
                                 </div>
                               </div>
