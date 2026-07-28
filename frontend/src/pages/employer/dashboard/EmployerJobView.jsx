@@ -166,14 +166,15 @@ const getRelocationDisplayLabel = (value) => {
     return 'Possible to relocate';
   }
 
-  return String(value || '').trim() || 'Location Fixed';
+  return String(value || '').trim() || 'Relocation preference not specified';
 };
 
 const getExperienceDisplayLabel = (value) => {
   const raw = String(value || '').trim();
   const normalized = raw.toLowerCase();
 
-  if (!raw || normalized === 'no experience required') return 'No experience required';
+  if (!raw) return 'Experience not specified';
+  if (normalized === 'no experience required') return 'No experience required';
   if (['less than 1 yr', 'less than 1 year', 'less than 1 yr exp', 'less than 1 year exp'].includes(normalized)) {
     return 'Less than 1 Yr Exp';
   }
@@ -214,15 +215,6 @@ const normalizeLocation = (jobData) => {
     jobData?.location,
     jobData?.jobLocation,
     jobData?.address,
-    jobData?.employerDetails?.location,
-    jobData?.employerDetails?.companyAddress,
-    jobData?.employer?.companyAddress,
-    jobData?.employerId?.companyAddress,
-    jobData?.companyAddress,
-    jobData?.regionCity && jobData?.country ? `${jobData.regionCity}, ${jobData.country}` : '',
-    jobData?.employerDetails?.regionCity && jobData?.employerDetails?.country
-      ? `${jobData.employerDetails.regionCity}, ${jobData.employerDetails.country}`
-      : '',
   ];
 
   for (const c of candidates) {
@@ -251,7 +243,7 @@ const normalizeLocation = (jobData) => {
 
 const formatLocationDisplay = (loc) => {
   const v = String(loc || '').trim();
-  return v || '—';
+  return v || 'Location not specified';
 };
 
 const getJobCoordinates = (jobData) => {
@@ -268,7 +260,7 @@ const buildWorkLocationUrl = (jobData) => {
   }
 
   const locationText = formatLocationDisplay(jobData?.location);
-  if (!locationText || locationText === '—') return '';
+  if (!locationText || locationText === 'Location not specified') return '';
 
   return `https://www.openstreetmap.org/search?query=${encodeURIComponent(locationText)}`;
 };
@@ -287,7 +279,7 @@ const buildOpenStreetMapUrl = ({ coords, address }) => {
     return `https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=17/${coords.lat}/${coords.lng}`;
   }
 
-  if (cleanAddress && cleanAddress !== '—') {
+  if (cleanAddress && cleanAddress !== 'Location not specified' && cleanAddress !== 'Work address not specified') {
     return `https://www.openstreetmap.org/search?query=${encodeURIComponent(cleanAddress)}`;
   }
 
@@ -853,14 +845,9 @@ const EmployerJobView = () => {
                     Urgently Needed
                   </div>
                 ) : null}
-                <h1 className="text-[28px] font-bold leading-tight text-[#111827] sm:text-[32px]" title={job.title}>
-                      {job.title}
+                <h1 className="text-[28px] font-bold leading-tight text-[#111827] sm:text-[32px]" title={job.title || 'Untitled Position'}>
+                      {String(job.title || '').trim() || 'Untitled Position'}
                     </h1>
-
-                    <div className="mt-2 flex items-center gap-2 text-[#4b5563]">
-                      <SvgIcon name="building" className="h-4 w-4" />
-                      <span className="text-sm">{job.companyName || '—'}</span>
-                    </div>
 
                     <div className="mt-2 flex items-center gap-2 text-[#6b7280]">
                       <SvgIcon name="location" className="h-4 w-4" />
@@ -868,31 +855,26 @@ const EmployerJobView = () => {
                     </div>
 
                     <div className="mt-4 flex flex-wrap gap-2">
-                      {job.jobType && (
-                        <span className={UI.chip}>
-                          <SvgIcon name="briefcase" className="h-3.5 w-3.5" />
-                          {job.jobType}
-                        </span>
-                      )}
+                      <span className={UI.chip}>
+                        <SvgIcon name="briefcase" className="h-3.5 w-3.5" />
+                        {String(job.jobType || '').trim() || 'Employment type not specified'}
+                      </span>
 
-                      {job.workMode && (
-                        <span className={UI.chip}>
-                          <SvgIcon name="building" className="h-3.5 w-3.5" />
-                          {job.workMode}
-                        </span>
-                      )}
+                      <span className={UI.chip}>
+                        <SvgIcon name="building" className="h-3.5 w-3.5" />
+                        {String(job.workMode || '').trim() || 'Work mode not specified'}
+                      </span>
 
-                      {job.vacancies && (
-                        <span className={UI.chip}>
-                          <SvgIcon name="users" className="h-3.5 w-3.5" />
-                          {job.vacancies} Vacancies
-                        </span>
-                      )}
-                       {job.willingToRelocate && (
-      <span className="rounded-full border border-[#d9dbe3] bg-[#f3f4f6] px-3 py-1 text-xs font-medium text-[#374151]">
-        {getRelocationDisplayLabel(job.willingToRelocate)}
-      </span>
-    )}
+                      <span className={UI.chip}>
+                        <SvgIcon name="users" className="h-3.5 w-3.5" />
+                        {job.vacancies !== undefined && job.vacancies !== null && job.vacancies !== ''
+                          ? `${job.vacancies} Vacancies`
+                          : 'Number of vacancies not specified'}
+                      </span>
+
+                      <span className="rounded-full border border-[#d9dbe3] bg-[#f3f4f6] px-3 py-1 text-xs font-medium text-[#374151]">
+                        {getRelocationDisplayLabel(job.willingToRelocate)}
+                      </span>
                     </div>
 
                     <div className="mt-3 text-xs text-[#6b7280]">
@@ -900,7 +882,7 @@ const EmployerJobView = () => {
                         {formatPostedRelative(job.createdAt)}
                         {job.applicationDeadline
                           ? ` and deadline of application is on ${formatFullDate(job.applicationDeadline)}`
-                          : ''}
+                          : ' and no application deadline specified'}
                       </p>
                     </div>
                   </div>
@@ -964,7 +946,7 @@ const EmployerJobView = () => {
             <TopMetricCard
               icon="graduation"
               title="Educational Requirements"
-              value={job.educationLevel || 'Not specified'}
+              value={String(job.educationLevel || '').trim() || 'Education not specified'}
             />
             <TopMetricCard icon="external" title="Website Company URL" value={companyInfo?.companyWebsite || 'N/A'} />
           </div>
@@ -973,7 +955,7 @@ const EmployerJobView = () => {
             <div className={`${UI.sectionCard} p-5 sm:p-6`}>
               <SectionHeader icon="file" title="Job Description" />
               <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
-                <RichTextContent value={job.description} fallback="No description provided." />
+                <RichTextContent value={job.description} fallback="No job description provided" />
               </div>
             </div>
           </div>
@@ -982,7 +964,7 @@ const EmployerJobView = () => {
             <div className={`${UI.sectionCard} p-5 sm:p-6`}>
               <SectionHeader icon="tools" title="Qualification" />
               <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
-                <RichTextContent value={job.requirements} fallback="No requirements provided." />
+                <RichTextContent value={job.requirements} fallback="No qualifications specified" />
               </div>
             </div>
           </div>
@@ -998,7 +980,7 @@ const EmployerJobView = () => {
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-[#6b7280]">No required skills listed.</p>
+                  <p className="text-sm text-[#6b7280]">No skills specified</p>
                 )}
               </div>
             </div>
@@ -1031,10 +1013,10 @@ const EmployerJobView = () => {
                       className={`text-sm font-medium text-[#2e66a6] hover:underline ${UI.ring} rounded`}
                       title="Open work location in OpenStreetMap"
                     >
-                      {formatLocationDisplay(job.location)}
+                      {String(job.location || '').trim() || 'Work address not specified'}
                     </a>
                   ) : (
-                    <p className="text-sm">{formatLocationDisplay(job.location)}</p>
+                    <p className="text-sm">{String(job.location || '').trim() || 'Work address not specified'}</p>
                   )}
                 </div>
               </div>
@@ -1052,7 +1034,7 @@ const EmployerJobView = () => {
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-[#6b7280]">No perks and benefits listed.</p>
+                  <p className="text-sm text-[#6b7280]">No perks or benefits specified</p>
                 )}
               </div>
             </div>

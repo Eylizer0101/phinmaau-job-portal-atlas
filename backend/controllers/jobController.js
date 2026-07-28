@@ -218,6 +218,12 @@ const applyIfDefined = (obj, key, value) => {
   if (value !== undefined) obj[key] = value;
 };
 
+const applyIfNotBlank = (obj, key, value) => {
+  if (value === undefined || value === null) return;
+  if (typeof value === 'string' && !value.trim()) return;
+  obj[key] = value;
+};
+
 const EXPERIENCE_LEVEL_GROUPS = [
   {
     value: 'No experience required',
@@ -522,6 +528,12 @@ exports.createJob = async (req, res) => {
     }
 
     const normalizedExperience = normalizeExperienceLevel(experienceLevel);
+    if (!isDraft && !normalizedExperience) {
+      return res.status(400).json({
+        success: false,
+        message: 'Experience level is required.'
+      });
+    }
     if (normalizedExperience && !ALLOWED_EXPERIENCE_LEVELS.includes(normalizedExperience)) {
       return res.status(400).json({
         success: false,
@@ -534,7 +546,13 @@ exports.createJob = async (req, res) => {
       'No - position is fixed location',
       'Open to relocation if necessary',
     ];
-    const relocateValue = String(willingToRelocate || 'No - position is fixed location').trim() || 'No - position is fixed location';
+    const relocateValue = String(willingToRelocate || '').trim();
+    if (!isDraft && !relocateValue) {
+      return res.status(400).json({
+        success: false,
+        message: 'Willing to relocate option is required.'
+      });
+    }
     if (relocateValue && !allowedRelocateOptions.includes(relocateValue)) {
       return res.status(400).json({
         success: false,
@@ -562,14 +580,13 @@ exports.createJob = async (req, res) => {
       isArchived: false,
       archivedAt: null,
       category: companyCategory,
-      location: manualLocation || (isDraft ? buildCompanyLocation(employer.employerProfile) : manualLocation),
+      location: manualLocation,
       locationProvince: provinceValue,
       locationCity: cityValue,
 
       openToFreshGraduates: parseBool(openToFreshGraduates),
       perksAndBenefits: perksArray,
       otherBenefits: String(otherBenefits || '').trim(),
-      willingToRelocate: relocateValue,
       locationImage: locationImagePath,
       hideSalary: parseBool(hideSalary),
       isUrgent: parseBool(isUrgent),
@@ -578,13 +595,13 @@ exports.createJob = async (req, res) => {
     applyIfDefined(jobData, 'title', title);
     applyIfDefined(jobData, 'description', description);
     applyIfDefined(jobData, 'requirements', requirements);
-    applyIfDefined(jobData, 'jobType', jobType);
-    applyIfDefined(jobData, 'workMode', workMode);
-    applyIfDefined(jobData, 'applicationDeadline', applicationDeadline);
-    applyIfDefined(jobData, 'vacancies', vacancies);
-
-    jobData.experienceLevel = normalizedExperience || 'No experience required';
-    jobData.educationLevel = edu || "Bachelor’s / College degree graduate's";
+    applyIfNotBlank(jobData, 'jobType', jobType);
+    applyIfNotBlank(jobData, 'workMode', workMode);
+    applyIfNotBlank(jobData, 'applicationDeadline', applicationDeadline);
+    applyIfNotBlank(jobData, 'vacancies', vacancies);
+    applyIfNotBlank(jobData, 'experienceLevel', normalizedExperience);
+    applyIfNotBlank(jobData, 'educationLevel', edu);
+    applyIfNotBlank(jobData, 'willingToRelocate', relocateValue);
 
     if (salaryMin !== undefined && salaryMin !== '') jobData.salaryMin = normalizeSalaryAmount(salaryMin);
     if (salaryMax !== undefined && salaryMax !== '') jobData.salaryMax = normalizeSalaryAmount(salaryMax);
@@ -965,7 +982,6 @@ exports.getEmployerJobs = async (req, res) => {
   try {
     const employer = await User.findById(req.user._id);
     const employerLogo = employer?.employerProfile?.companyLogo || '';
-    const employerLocation = buildCompanyLocation(employer?.employerProfile);
 
     const archivedFilter = parseBool(req.query.archived);
 
@@ -1002,11 +1018,6 @@ exports.getEmployerJobs = async (req, res) => {
 
       if (!jobObj.companyLogo && employerLogo) {
         jobObj.companyLogo = employerLogo;
-      }
-
-      const loc = String(jobObj.location || '').trim();
-      if (!loc || loc === 'Not specified') {
-        jobObj.location = employerLocation;
       }
 
       return jobObj;
@@ -1114,6 +1125,37 @@ exports.updateJob = async (req, res) => {
       }
     }
 
+    if (wantsToPublish) {
+      const experienceValue = normalizeExperienceLevel(
+        req.body.experienceLevel !== undefined ? req.body.experienceLevel : job.experienceLevel
+      );
+
+      if (!experienceValue || !ALLOWED_EXPERIENCE_LEVELS.includes(experienceValue)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Experience level is required and must be valid.'
+        });
+      }
+
+      const allowedRelocateOptions = [
+        'Yes - willing to relocate',
+        'No - position is fixed location',
+        'Open to relocation if necessary',
+      ];
+      const relocateValue = String(
+        req.body.willingToRelocate !== undefined
+          ? req.body.willingToRelocate
+          : job.willingToRelocate || ''
+      ).trim();
+
+      if (!relocateValue || !allowedRelocateOptions.includes(relocateValue)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Willing to relocate option is required and must be valid.'
+        });
+      }
+    }
+
     if (req.body.experienceLevel !== undefined) {
       const expValue = normalizeExperienceLevel(req.body.experienceLevel);
       if (expValue && !ALLOWED_EXPERIENCE_LEVELS.includes(expValue)) {
@@ -1168,7 +1210,26 @@ exports.updateJob = async (req, res) => {
       if (key === 'salaryMax') return;
 
       if (key === 'experienceLevel') {
-        job.experienceLevel = normalizeExperienceLevel(req.body.experienceLevel);
+        const normalizedValue = normalizeExperienceLevel(req.body.experienceLevel);
+        job.set('experienceLevel', normalizedValue || undefined);
+        return;
+      }
+
+      if (['jobType', 'workMode', 'educationLevel', 'willingToRelocate'].includes(key)) {
+        const cleanValue = String(req.body[key] || '').trim();
+        job.set(key, cleanValue || undefined);
+        return;
+      }
+
+      if (key === 'applicationDeadline') {
+        const cleanValue = String(req.body.applicationDeadline || '').trim();
+        job.set('applicationDeadline', cleanValue || undefined);
+        return;
+      }
+
+      if (key === 'vacancies') {
+        const cleanValue = String(req.body.vacancies || '').trim();
+        job.set('vacancies', cleanValue ? Number(cleanValue) : undefined);
         return;
       }
 

@@ -826,24 +826,24 @@ const toFormSnapshot = (data) => ({
   locationCity: data.locationCity ?? '',
   description: data.description ?? '',
   requirements: data.requirements ?? '',
-  jobType: data.jobType ?? 'Full-time',
+  jobType: data.jobType ?? '',
   salaryMin: data.salaryMin === null || data.salaryMin === undefined ? '' : String(data.salaryMin),
   salaryMax: data.salaryMax === null || data.salaryMax === undefined ? '' : String(data.salaryMax),
-  workMode: data.workMode ?? 'On-site',
+  workMode: data.workMode ?? '',
   applicationDeadline: data.applicationDeadline ?? '',
-  vacancies: data.vacancies ? String(data.vacancies) : '1',
+  vacancies: data.vacancies === null || data.vacancies === undefined || data.vacancies === '' ? '' : String(data.vacancies),
   skillsRequired: Array.isArray(data.skillsRequired)
     ? data.skillsRequired.join(', ')
     : data.skillsRequired ?? '',
-  experienceLevel: normalizeExperienceLevel(data.experienceLevel ?? 'No experience required'),
-  educationLevel: normalizeEducationLevelValue(data.educationLevel ?? "Bachelor’s / College degree graduate's"),
+  experienceLevel: normalizeExperienceLevel(data.experienceLevel ?? ''),
+  educationLevel: normalizeEducationLevelValue(data.educationLevel ?? ''),
   isActive: data.isActive ?? true,
   isPublished: data.isPublished ?? true,
 
   openToFreshGraduates: parseBooleanLike(data.openToFreshGraduates),
   perksAndBenefits: normalizePerksAndBenefits(data.perksAndBenefits),
   otherBenefits: data.otherBenefits ?? '',
-  willingToRelocate: data.willingToRelocate ?? 'No - position is fixed location',
+  willingToRelocate: data.willingToRelocate ?? '',
   locationImage: data.locationImage ?? '',
   locationLatitude: data.locationLatitude === null || data.locationLatitude === undefined ? '' : String(data.locationLatitude),
   locationLongitude: data.locationLongitude === null || data.locationLongitude === undefined ? '' : String(data.locationLongitude),
@@ -1012,24 +1012,24 @@ const EditJob = () => {
     locationCity: '',
     description: '',
     requirements: '',
-    jobType: 'Full-time',
+    jobType: '',
     salaryMin: '',
     salaryMax: '',
     hideSalary: false,
     isUrgent: false,
-    workMode: 'On-site',
+    workMode: '',
     applicationDeadline: '',
-    vacancies: '1',
+    vacancies: '',
     skillsRequired: '',
-    experienceLevel: 'No experience required',
-    educationLevel: "Bachelor’s / College degree graduate's",
+    experienceLevel: '',
+    educationLevel: '',
     isActive: true,
     isPublished: true,
 
     openToFreshGraduates: false,
     perksAndBenefits: [],
     otherBenefits: '',
-    willingToRelocate: 'No - position is fixed location',
+    willingToRelocate: '',
     locationImage: '',
     locationLatitude: '',
     locationLongitude: '',
@@ -1269,12 +1269,16 @@ const EditJob = () => {
   const requiredOk = useMemo(() => {
     return (
       String(formData.title || '').trim() &&
+      String(formData.jobType || '').trim() &&
+      String(formData.workMode || '').trim() &&
       String(formData.location || '').trim() &&
       String(formData.locationProvince || '').trim() &&
       String(formData.locationCity || '').trim() &&
       getRichTextPlainText(formData.description).length >= 80 &&
       getRichTextPlainText(formData.requirements).length >= 40 &&
+      EXPERIENCE_LEVELS.includes(String(formData.experienceLevel || '').trim()) &&
       String(formData.educationLevel || '').trim() &&
+      WILLING_TO_RELOCATE_OPTIONS.includes(String(formData.willingToRelocate || '').trim()) &&
       vacanciesValid &&
       isDeadlineValid &&
       salaryValid &&
@@ -1285,6 +1289,8 @@ const EditJob = () => {
   const stepReady = useMemo(() => ({
     1: Boolean(
       String(formData.title || '').trim() &&
+      String(formData.jobType || '').trim() &&
+      String(formData.workMode || '').trim() &&
       vacanciesValid &&
       isDeadlineValid &&
       salaryValid
@@ -1296,7 +1302,12 @@ const EditJob = () => {
       String(formData.educationLevel || '').trim()
     ),
     3: Boolean(skillsCountValid),
-    4: Boolean(String(formData.location || '').trim() && String(formData.locationProvince || '').trim() && String(formData.locationCity || '').trim()),
+    4: Boolean(
+      String(formData.location || '').trim() &&
+      String(formData.locationProvince || '').trim() &&
+      String(formData.locationCity || '').trim() &&
+      WILLING_TO_RELOCATE_OPTIONS.includes(String(formData.willingToRelocate || '').trim())
+    ),
   }), [formData, vacanciesValid, isDeadlineValid, salaryValid, skillsCountValid]);
 
   const currentStep = JOB_FORM_STEPS[activeStep - 1];
@@ -1372,12 +1383,24 @@ const EditJob = () => {
       errors.locationCity = 'City / Municipality is required.';
     }
 
+    if ((touched.jobType || submitted) && !String(formData.jobType || '').trim()) {
+      errors.jobType = 'Employment type is required.';
+    }
+
+    if ((touched.workMode || submitted) && !String(formData.workMode || '').trim()) {
+      errors.workMode = 'Work mode is required.';
+    }
+
     if ((touched.experienceLevel || submitted) && !EXPERIENCE_LEVELS.includes(String(formData.experienceLevel || '').trim())) {
       errors.experienceLevel = 'Please select a valid experience requirement.';
     }
 
     if ((touched.educationLevel || submitted) && !String(formData.educationLevel || '').trim()) {
       errors.educationLevel = 'Education level is required.';
+    }
+
+    if ((touched.willingToRelocate || submitted) && !WILLING_TO_RELOCATE_OPTIONS.includes(String(formData.willingToRelocate || '').trim())) {
+      errors.willingToRelocate = 'Please choose a relocation option.';
     }
 
     const descriptionText = getRichTextPlainText(formData.description);
@@ -1457,6 +1480,8 @@ const EditJob = () => {
 
   const validateStrict = () => {
     if (!String(formData.title || '').trim()) return 'Job title is required';
+    if (!String(formData.jobType || '').trim()) return 'Employment type is required';
+    if (!String(formData.workMode || '').trim()) return 'Work mode is required';
     if (!String(formData.location || '').trim()) return 'Complete work address is required';
     if (!String(formData.locationProvince || '').trim()) return 'Province is required';
     if (!String(formData.locationCity || '').trim()) return 'City / Municipality is required';
@@ -1486,7 +1511,8 @@ const EditJob = () => {
     if (!EDUCATION_LEVELS.includes(edu)) return 'Invalid education level';
 
     const relocate = String(formData.willingToRelocate || '').trim();
-    if (relocate && !WILLING_TO_RELOCATE_OPTIONS.includes(relocate)) return 'Invalid relocate option';
+    if (!relocate) return 'Willing to relocate option is required';
+    if (!WILLING_TO_RELOCATE_OPTIONS.includes(relocate)) return 'Invalid relocate option';
 
     if (locationImageFile) {
       const allowed = ['image/jpeg', 'image/jpg', 'image/png'];
@@ -1499,9 +1525,12 @@ const EditJob = () => {
   const focusFirstError = useCallback((errors) => {
     const order = [
       'title',
+      'jobType',
+      'workMode',
       'location',
       'experienceLevel',
       'educationLevel',
+      'willingToRelocate',
       'description',
       'requirements',
       'vacancies',
@@ -1516,9 +1545,12 @@ const EditJob = () => {
 
     const idMap = {
       title: 'title',
+      jobType: 'jobType',
+      workMode: 'workMode',
       location: 'location',
       experienceLevel: 'experienceLevel',
       educationLevel: 'educationLevel',
+      willingToRelocate: 'willingToRelocate',
       description: 'description',
       requirements: 'requirements',
       vacancies: 'vacancies',
@@ -1551,7 +1583,7 @@ const EditJob = () => {
     payload.append('isUrgent', String(Boolean(formData.isUrgent)));
     payload.append('workMode', formData.workMode);
     payload.append('applicationDeadline', formData.applicationDeadline || '');
-    payload.append('vacancies', formData.vacancies ? String(Number(formData.vacancies)) : '1');
+    payload.append('vacancies', formData.vacancies ? String(Number(formData.vacancies)) : '');
     payload.append('experienceLevel', normalizeExperienceLevel(formData.experienceLevel));
     payload.append('skillsRequired', skills.join(', '));
     payload.append('educationLevel', String(formData.educationLevel || '').trim());
@@ -1704,7 +1736,7 @@ const EditJob = () => {
           perksAndBenefits: jobData.perksAndBenefits || [],
           openToFreshGraduates: jobData.openToFreshGraduates || false,
           otherBenefits: jobData.otherBenefits || '',
-          willingToRelocate: jobData.willingToRelocate || 'No - position is fixed location',
+          willingToRelocate: jobData.willingToRelocate || '',
           locationImage: jobData.locationImage || '',
           locationLatitude: jobData.locationLatitude === null || jobData.locationLatitude === undefined ? '' : String(jobData.locationLatitude || ''),
           locationLongitude: jobData.locationLongitude === null || jobData.locationLongitude === undefined ? '' : String(jobData.locationLongitude || ''),
@@ -2123,11 +2155,6 @@ const EditJob = () => {
                   Back
                 </button>
 
-                {isDirty && (
-                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 border border-amber-200">
-                    Unsaved changes
-                  </span>
-                )}
               </div>
 
               <h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">Edit Job Post</h1>
@@ -2210,30 +2237,32 @@ const EditJob = () => {
 
                         </div>
 
-                        <Field id="jobType" label="Employment Type">
+                        <Field id="jobType" label="Employment Type" error={fieldErrors.jobType}>
                           <select
                             name="jobType"
                             value={formData.jobType}
                             onChange={handleChange}
                             onBlur={() => markTouched('jobType')}
-                            className={selectClass}
+                            className={`${selectClass} ${fieldErrors.jobType ? 'border-red-300' : ''}`}
                             disabled={isBusy}
                           >
+                            <option value="" disabled>Choose employment type</option>
                             {jobTypes.map((type) => (
                               <option key={type} value={type}>{type}</option>
                             ))}
                           </select>
                         </Field>
 
-                        <Field id="workMode" label="Work Mode">
+                        <Field id="workMode" label="Work Mode" error={fieldErrors.workMode}>
                           <select
                             name="workMode"
                             value={formData.workMode}
                             onChange={handleChange}
                             onBlur={() => markTouched('workMode')}
-                            className={selectClass}
+                            className={`${selectClass} ${fieldErrors.workMode ? 'border-red-300' : ''}`}
                             disabled={isBusy}
                           >
+                            <option value="" disabled>Choose work mode</option>
                             {workModes.map((m) => (
                               <option key={m} value={m}>{m}</option>
                             ))}
@@ -2250,6 +2279,7 @@ const EditJob = () => {
                                 onChange={handleChange}
                                 onBlur={() => markTouched('vacancies')}
                                 min="1"
+                                placeholder="Enter number of vacancies"
                                 className={inputClass(!!fieldErrors.vacancies)}
                                 disabled={isBusy}
                               />
@@ -2267,6 +2297,7 @@ const EditJob = () => {
                                 onChange={handleChange}
                                 onBlur={() => markTouched('applicationDeadline')}
                                 min={minDeadlineISO}
+                                placeholder="Select application deadline"
                                 className={inputClass(!!fieldErrors.applicationDeadline)}
                                 disabled={isBusy}
                               />
@@ -2365,7 +2396,7 @@ const EditJob = () => {
                           <div>
                             <p className="text-sm font-semibold text-gray-900">Open to Fresh Graduates</p>
                             <p className="text-xs text-gray-500">
-                              Only candidates with the required experience and credentials for this position may apply.
+                              Candidates will be evaluated based on their Profile regardless of high credential requirements.
                             </p>
                           </div>
 
@@ -2400,6 +2431,7 @@ const EditJob = () => {
                             className={`${selectClass} ${fieldErrors.experienceLevel ? 'border-red-300' : ''}`}
                             disabled={isBusy}
                           >
+                            <option value="" disabled>Choose required experience</option>
                             {experienceLevels.map((level) => (
                               <option key={level} value={level}>{level}</option>
                             ))}
@@ -2412,9 +2444,10 @@ const EditJob = () => {
                             value={formData.educationLevel}
                             onChange={handleChange}
                             onBlur={() => markTouched('educationLevel')}
-                            className={selectClass}
+                            className={`${selectClass} ${fieldErrors.educationLevel ? 'border-red-300' : ''}`}
                             disabled={isBusy}
                           >
+                            <option value="" disabled>Choose educational requirement</option>
                             {educationLevels.map((lvl) => (
                               <option key={lvl} value={lvl}>{lvl}</option>
                             ))}
@@ -2578,15 +2611,16 @@ const EditJob = () => {
                       <h3 className="text-base font-bold text-gray-900">Additional Details</h3>
 
                       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                        <Field id="willingToRelocate" label="Willing to Relocate">
+                        <Field id="willingToRelocate" label="Willing to Relocate" error={fieldErrors.willingToRelocate}>
                           <select
                             name="willingToRelocate"
                             value={formData.willingToRelocate}
                             onChange={handleChange}
                             onBlur={() => markTouched('willingToRelocate')}
-                            className={selectClass}
+                            className={`${selectClass} ${fieldErrors.willingToRelocate ? 'border-red-300' : ''}`}
                             disabled={isBusy}
                           >
+                            <option value="" disabled>Choose an option</option>
                             {willingToRelocateOptions.map((option) => (
                               <option key={option} value={option}>{option}</option>
                             ))}

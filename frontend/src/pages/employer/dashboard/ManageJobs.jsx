@@ -684,7 +684,7 @@ const ManageJobs = () => {
     return d < new Date();
   };
 
-  const safeTitle = (job) => (job.title && job.title.trim() ? job.title : '(Untitled Draft)');
+  const safeTitle = (job) => (job.title && job.title.trim() ? job.title : '—');
   const safeCompany = (job) => (job.companyName && job.companyName.trim() ? job.companyName : '—');
 
   const getVacancyValue = (job) => {
@@ -1509,7 +1509,7 @@ const ManageJobs = () => {
                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Valid Until
                         </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        <th scope="col" className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Actions
                         </th>
                       </tr>
@@ -1622,8 +1622,8 @@ const ManageJobs = () => {
                               {formatDate(job.applicationDeadline)}
                             </td>
 
-                            <td className="px-6 py-4 align-middle">
-                              <div className="flex flex-nowrap items-center gap-2">
+                            <td className="px-6 py-4 text-center align-middle">
+                              <div className="flex flex-nowrap items-center justify-center gap-2">
                                 <Link
                                   to={`/employer/manage-jobs/${job._id}/view`}
                                   state={{

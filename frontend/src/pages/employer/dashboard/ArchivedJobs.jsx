@@ -599,7 +599,7 @@ const ArchivedJobs = () => {
     });
   };
 
-  const safeTitle = (job) => (job.title && job.title.trim() ? job.title : '(Untitled Draft)');
+  const safeTitle = (job) => (job.title && job.title.trim() ? job.title : '—');
   const safeCompany = (job) => (job.companyName && job.companyName.trim() ? job.companyName : '—');
 
   const getVacancyValue = (job) => {
@@ -615,6 +615,54 @@ const ArchivedJobs = () => {
 
     const found = candidates.find((value) => value !== undefined && value !== null && value !== '');
     return found ?? '—';
+  };
+
+  const getApplicantValue = (job) => {
+    const candidates = [
+      job?.applicationCount,
+      Array.isArray(job?.applications) ? job.applications.length : undefined,
+      job?.applicantCount,
+      job?.applicantsCount,
+      job?.totalApplicants,
+    ];
+
+    const found = candidates.find((value) => value !== undefined && value !== null && value !== '');
+    return found ?? 0;
+  };
+
+  const isExpired = (dateString) => {
+    if (!dateString) return false;
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return false;
+    return date < new Date();
+  };
+
+  const getDerivedStatus = (job) => {
+    const explicitStatus = String(job?.status || '').trim().toLowerCase();
+
+    if (explicitStatus === 'draft' || job.isPublished === false) return 'draft';
+    if (explicitStatus === 'filled') return 'filled';
+    if (job.isActive && isExpired(job.applicationDeadline)) return 'expired';
+    if (explicitStatus === 'closed' || job.isActive === false) return 'closed';
+    return 'open';
+  };
+
+  const getStatusPill = (job) => {
+    const status = getDerivedStatus(job);
+    if (status === 'draft') return 'border border-gray-200 bg-gray-100 text-gray-700';
+    if (status === 'open') return 'border border-blue-200 bg-blue-50 text-[#2e66a6]';
+    if (status === 'expired') return 'border border-amber-200 bg-amber-50 text-amber-700';
+    if (status === 'filled') return 'border border-orange-200 bg-orange-50 text-orange-700';
+    return 'border border-gray-300 bg-gray-50 text-gray-700';
+  };
+
+  const getStatusText = (job) => {
+    const status = getDerivedStatus(job);
+    if (status === 'draft') return 'Draft';
+    if (status === 'open') return 'Open';
+    if (status === 'expired') return 'Expired';
+    if (status === 'filled') return 'Filled';
+    return 'Closed';
   };
 
   const formatSalary = (job) => {
@@ -854,7 +902,7 @@ const ArchivedJobs = () => {
       });
     }
 
-    list.sort((a, b) => safeDate(b.createdAt) - safeDate(a.createdAt));
+    list.sort((a, b) => safeDate(b.archivedAt) - safeDate(a.archivedAt));
 
     return list;
   }, [jobs, jobFilter, q, sortBy, customDateFrom, customDateTo]);
@@ -1050,7 +1098,12 @@ const ArchivedJobs = () => {
 
                           <div className="min-w-0 flex-1">
                             <Link
-                              to={`/employer/edit-job/${job._id}`}
+                              to={`/employer/manage-jobs/${job._id}/view`}
+                              state={{
+                                from: 'archivedJobs',
+                                backPath: '/employer/manage-jobs/archived',
+                                backLabel: 'Archived Jobs',
+                              }}
                               className="block truncate text-sm font-semibold text-gray-900 hover:text-[#2e66a6]"
                               title={title}
                             >
@@ -1062,24 +1115,51 @@ const ArchivedJobs = () => {
 
                         <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                           <div className="rounded-xl bg-gray-50 p-3">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Date Archived</p>
+                            <p className="mt-1 font-medium text-gray-800">{formatDate(job.archivedAt)}</p>
+                          </div>
+                          <div className="rounded-xl bg-gray-50 p-3">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Valid Until</p>
+                            <p className="mt-1 font-medium text-gray-800">{formatDate(job.applicationDeadline)}</p>
+                          </div>
+                          <div className="rounded-xl bg-gray-50 p-3">
                             <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Vacancy</p>
                             <p className="mt-1 font-medium text-gray-800">{getVacancyValue(job)}</p>
                           </div>
                           <div className="rounded-xl bg-gray-50 p-3">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Deadline</p>
-                            <p className="mt-1 font-medium text-gray-800">{formatDate(job.applicationDeadline)}</p>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Applicant</p>
+                            <p className="mt-1 font-medium text-gray-800">{getApplicantValue(job)}</p>
                           </div>
-                          <div className="rounded-xl bg-gray-50 p-3">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Salary</p>
-                            <p className="mt-1 font-medium text-gray-800">{formatSalary(job)}</p>
-                          </div>
-                          <div className="rounded-xl bg-gray-50 p-3">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Archived</p>
-                            <p className="mt-1 font-medium text-gray-800">{formatDate(job.archivedAt)}</p>
+                          <div className="col-span-2 rounded-xl bg-gray-50 p-3">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Status</p>
+                            <span className={cn('mt-1 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold', getStatusPill(job))}>
+                              {getStatusText(job)}
+                            </span>
                           </div>
                         </div>
 
-                        <div className="mt-4 grid grid-cols-1 gap-2">
+                        <div className="mt-4 grid grid-cols-2 gap-2">
+                          <Link
+                            to={`/employer/manage-jobs/${job._id}/view`}
+                            state={{
+                              from: 'archivedJobs',
+                              backPath: '/employer/manage-jobs/archived',
+                              backLabel: 'Archived Jobs',
+                            }}
+                            className="inline-flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                            aria-label={`View ${title}`}
+                          >
+                            View
+                          </Link>
+
+                          <Link
+                            to={`/employer/edit-job/${job._id}`}
+                            className="inline-flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                            aria-label={`Edit ${title}`}
+                          >
+                            Edit
+                          </Link>
+
                           <button
                             onClick={() => handleRestore(job._id)}
                             disabled={busyThisRow}
@@ -1088,21 +1168,9 @@ const ArchivedJobs = () => {
                           >
                             {busyThisRow && action.type === 'restore' ? (
                               <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-b-2 border-t-2 border-current" />
-                            ) : (
-                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h11M3 10l4-4m-4 4l4 4m3 4h11" />
-                              </svg>
-                            )}
+                            ) : null}
                             Restore
                           </button>
-
-                          <Link
-                            to={`/employer/edit-job/${job._id}`}
-                            className="inline-flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-                            aria-label={`Edit ${title}`}
-                          >
-                            View / Edit
-                          </Link>
 
                           <button
                             onClick={() => {
@@ -1113,7 +1181,7 @@ const ArchivedJobs = () => {
                             className="inline-flex w-full items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             aria-label={`Permanently delete ${title}`}
                           >
-                            Permanent Delete
+                            Delete
                           </button>
                         </div>
                       </div>
@@ -1123,139 +1191,163 @@ const ArchivedJobs = () => {
 
                 <div className="hidden overflow-x-auto md:block">
                   <table className="min-w-full divide-y divide-gray-200">
-                  <colgroup>
-                    <col className="w-[31%]" />
-                    <col className="w-[10%]" />
-                    <col className="w-[15%]" />
-                    <col className="w-[14%]" />
-                    <col className="w-[12%]" />
-                    <col className="w-[22%]" />
-                  </colgroup>
+                    <colgroup>
+                      <col className="w-[13%]" />
+                      <col className="w-[22%]" />
+                      <col className="w-[8%]" />
+                      <col className="w-[9%]" />
+                      <col className="w-[11%]" />
+                      <col className="w-[13%]" />
+                      <col className="w-[24%]" />
+                    </colgroup>
 
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th scope="col" className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
-                        Job Title
-                      </th>
-                      <th scope="col" className="px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
-                        Vacancy
-                      </th>
-                      <th scope="col" className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
-                        Deadline
-                      </th>
-                      <th scope="col" className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
-                        Salary
-                      </th>
-                      <th scope="col" className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
-                        Date Archived
-                      </th>
-                      <th scope="col" className="px-4 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                          Date Archived
+                        </th>
+                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                          Job Title
+                        </th>
+                        <th scope="col" className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
+                          Vacancy
+                        </th>
+                        <th scope="col" className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
+                          Applicant
+                        </th>
+                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                          Status
+                        </th>
+                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                          Valid Until
+                        </th>
+                        <th scope="col" className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
 
-                  <tbody className="divide-y divide-gray-200 bg-white">
-                    {filteredJobs.map((job) => {
-                      const title = safeTitle(job);
-                      const busyThisRow = action.jobId === job._id;
-                      const logoUrl = job.companyLogo && String(job.companyLogo).trim() ? job.companyLogo : '';
+                    <tbody className="divide-y divide-gray-200 bg-white">
+                      {filteredJobs.map((job) => {
+                        const title = safeTitle(job);
+                        const busyThisRow = action.jobId === job._id;
+                        const logoUrl = job.companyLogo && String(job.companyLogo).trim() ? job.companyLogo : '';
 
-                      return (
-                        <tr key={job._id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 align-middle">
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-100">
-                                {logoUrl && !badLogos[job._id] ? (
-                                  <img
-                                    src={logoUrl}
-                                    alt={`${safeCompany(job)} logo`}
-                                    className="h-full w-full object-cover"
-                                    onError={() => setBadLogos((prev) => ({ ...prev, [job._id]: true }))}
-                                  />
-                                ) : (
-                                  <div className="flex h-full w-full items-center justify-center bg-gray-100">
-                                    <span className="text-sm font-bold text-gray-700">
-                                      {(safeCompany(job) || title || 'J').charAt(0)}
-                                    </span>
-                                  </div>
-                                )}
+                        return (
+                          <tr key={job._id} className="transition-colors hover:bg-[#2e66a6]/[0.06]">
+                            <td className="px-6 py-4 align-middle text-sm font-medium text-gray-700">
+                              {formatDate(job.archivedAt)}
+                            </td>
+
+                            <td className="px-6 py-4 align-middle">
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-100">
+                                  {logoUrl && !badLogos[job._id] ? (
+                                    <img
+                                      src={logoUrl}
+                                      alt={`${safeCompany(job)} logo`}
+                                      className="h-full w-full object-cover"
+                                      onError={() => setBadLogos((prev) => ({ ...prev, [job._id]: true }))}
+                                    />
+                                  ) : (
+                                    <div className="flex h-full w-full items-center justify-center bg-gray-100">
+                                      <span className="text-sm font-bold text-gray-700">
+                                        {(safeCompany(job) !== '—' ? safeCompany(job) : title !== '—' ? title : 'J').charAt(0)}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="min-w-0">
+                                  <Link
+                                    to={`/employer/manage-jobs/${job._id}/view`}
+                                    state={{
+                                      from: 'archivedJobs',
+                                      backPath: '/employer/manage-jobs/archived',
+                                      backLabel: 'Archived Jobs',
+                                    }}
+                                    className="block truncate text-sm font-semibold text-gray-900 hover:text-[#2e66a6]"
+                                    title={title}
+                                  >
+                                    {title}
+                                  </Link>
+                                  <div className="truncate text-sm text-gray-600">{safeCompany(job)}</div>
+                                </div>
                               </div>
+                            </td>
 
-                              <div className="min-w-0">
+                            <td className="px-6 py-4 text-center align-middle text-sm font-medium text-gray-800">
+                              {getVacancyValue(job)}
+                            </td>
+
+                            <td className="px-6 py-4 text-center align-middle text-sm font-medium text-gray-800">
+                              {getApplicantValue(job)}
+                            </td>
+
+                            <td className="px-6 py-4 align-middle">
+                              <span className={cn('inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold', getStatusPill(job))}>
+                                {getStatusText(job)}
+                              </span>
+                            </td>
+
+                            <td className="px-6 py-4 align-middle text-sm font-medium text-gray-600">
+                              {formatDate(job.applicationDeadline)}
+                            </td>
+
+                            <td className="px-6 py-4 text-center align-middle">
+                              <div className="flex flex-wrap items-center justify-center gap-2">
+                                <Link
+                                  to={`/employer/manage-jobs/${job._id}/view`}
+                                  state={{
+                                    from: 'archivedJobs',
+                                    backPath: '/employer/manage-jobs/archived',
+                                    backLabel: 'Archived Jobs',
+                                  }}
+                                  className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                                  aria-label={`View ${title}`}
+                                >
+                                  View
+                                </Link>
+
                                 <Link
                                   to={`/employer/edit-job/${job._id}`}
-                                  className="block truncate text-sm font-semibold text-gray-900 hover:text-[#2e66a6]"
-                                  title={title}
+                                  className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                                  aria-label={`Edit ${title}`}
                                 >
-                                  {title}
+                                  Edit
                                 </Link>
-                                <div className="truncate text-sm text-gray-600">{safeCompany(job)}</div>
-                              </div>
-                            </div>
-                          </td>
 
-                          <td className="px-6 py-4 text-center align-middle">
-                            <span className="text-sm font-medium text-gray-800">{getVacancyValue(job)}</span>
-                          </td>
-
-                          <td className="px-6 py-4 align-middle">
-                            <div className="text-sm font-medium text-gray-800">{formatDate(job.applicationDeadline)}</div>
-                          </td>
-
-                          <td className="px-6 py-4 align-middle">
-                            <div className="text-sm font-medium text-gray-800">{formatSalary(job)}</div>
-                          </td>
-
-                          <td className="px-6 py-4 align-middle">
-                            <div className="text-sm font-normal text-gray-600">{formatDate(job.archivedAt)}</div>
-                          </td>
-
-                          <td className="px-6 py-4 align-middle">
-                            <div className="flex flex-col items-center justify-center gap-2">
-                              <div className="flex flex-nowrap items-center justify-center gap-2">
                                 <button
+                                  type="button"
                                   onClick={() => handleRestore(job._id)}
                                   disabled={busyThisRow}
-                                  className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                  className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                   aria-label={`Restore ${title}`}
                                 >
                                   {busyThisRow && action.type === 'restore' ? (
                                     <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-b-2 border-t-2 border-current" />
-                                  ) : (
-                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h11M3 10l4-4m-4 4l4 4m3 4h11" />
-                                    </svg>
-                                  )}
+                                  ) : null}
                                   Restore
                                 </button>
 
-                                <Link
-                                  to={`/employer/edit-job/${job._id}`}
-                                  className="inline-flex shrink-0 items-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-                                  aria-label={`Edit ${title}`}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedJob(job);
+                                    setShowDeleteModal(true);
+                                  }}
+                                  disabled={busyThisRow}
+                                  className="inline-flex h-10 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                  aria-label={`Permanently delete ${title}`}
                                 >
-                                  View / Edit
-                                </Link>
+                                  Delete
+                                </button>
                               </div>
-
-                              <button
-                                onClick={() => {
-                                  setSelectedJob(job);
-                                  setShowDeleteModal(true);
-                                }}
-                                disabled={busyThisRow}
-                                className="inline-flex w-full max-w-[250px] items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                aria-label={`Permanently delete ${title}`}
-                              >
-                                Permanent Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
                   </table>
                 </div>
               </>

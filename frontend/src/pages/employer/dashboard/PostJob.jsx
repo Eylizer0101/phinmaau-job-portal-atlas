@@ -915,25 +915,25 @@ const PostJob = () => {
     title: '',
     description: '',
     requirements: '',
-    jobType: 'Full-time',
+    jobType: '',
     salaryMin: '',
     salaryMax: '',
     hideSalary: false,
     isUrgent: false,
-    workMode: 'On-site',
+    workMode: '',
     applicationDeadline: '',
-    vacancies: '1',
+    vacancies: '',
     skillsRequired: '',
-    experienceLevel: 'No experience required',
+    experienceLevel: '',
     location: '',
     locationProvince: '',
     locationCity: '',
-    educationLevel: "Bachelor’s / College degree graduate's",
+    educationLevel: '',
 
     openToFreshGraduates: false,
     perksAndBenefits: [],
     otherBenefits: '',
-    willingToRelocate: 'No - position is fixed location',
+    willingToRelocate: '',
     locationLatitude: '',
     locationLongitude: '',
   });
@@ -960,12 +960,12 @@ const PostJob = () => {
       formData.isUrgent ||
       formData.openToFreshGraduates ||
       (Array.isArray(formData.perksAndBenefits) && formData.perksAndBenefits.length > 0) ||
-      formData.jobType !== 'Full-time' ||
-      formData.workMode !== 'On-site' ||
-      formData.vacancies !== '1' ||
-      formData.experienceLevel !== 'No experience required' ||
-      formData.educationLevel !== "Bachelor’s / College degree graduate's" ||
-      formData.willingToRelocate !== 'No - position is fixed location' ||
+      String(formData.jobType || '').trim() ||
+      String(formData.workMode || '').trim() ||
+      String(formData.vacancies || '').trim() ||
+      String(formData.experienceLevel || '').trim() ||
+      String(formData.educationLevel || '').trim() ||
+      String(formData.willingToRelocate || '').trim() ||
       Boolean(locationImageFile)
     );
   }, [formData, locationImageFile]);
@@ -1152,11 +1152,17 @@ const PostJob = () => {
   const requiredOk = useMemo(() => {
     return (
       formData.title.trim() &&
+      String(formData.jobType || '').trim() &&
+      String(formData.workMode || '').trim() &&
+      Number(formData.vacancies) >= 1 &&
       getRichTextPlainText(formData.description).length >= 80 &&
       getRichTextPlainText(formData.requirements).length >= 40 &&
       formData.location.trim() &&
       formData.locationProvince.trim() &&
       formData.locationCity.trim() &&
+      EXPERIENCE_LEVELS.includes(String(formData.experienceLevel || '').trim()) &&
+      String(formData.educationLevel || '').trim() &&
+      WILLING_TO_RELOCATE_OPTIONS.includes(String(formData.willingToRelocate || '').trim()) &&
       isDeadlineValid &&
       salaryValid &&
       skillsCountValid
@@ -1166,6 +1172,8 @@ const PostJob = () => {
   const stepReady = useMemo(() => ({
     1: Boolean(
       formData.title.trim() &&
+      String(formData.jobType || '').trim() &&
+      String(formData.workMode || '').trim() &&
       Number(formData.vacancies) >= 1 &&
       isDeadlineValid &&
       salaryValid
@@ -1177,7 +1185,12 @@ const PostJob = () => {
       String(formData.educationLevel || '').trim()
     ),
     3: Boolean(skillsCountValid),
-    4: Boolean(formData.location.trim() && formData.locationProvince.trim() && formData.locationCity.trim()),
+    4: Boolean(
+      formData.location.trim() &&
+      formData.locationProvince.trim() &&
+      formData.locationCity.trim() &&
+      WILLING_TO_RELOCATE_OPTIONS.includes(String(formData.willingToRelocate || '').trim())
+    ),
   }), [formData, isDeadlineValid, salaryValid, skillsCountValid]);
 
   const currentStep = JOB_FORM_STEPS[activeStep - 1];
@@ -1270,8 +1283,28 @@ const PostJob = () => {
       errors.locationCity = 'City / Municipality is required.';
     }
 
+    if ((touched.jobType || submitted) && !String(formData.jobType || '').trim()) {
+      errors.jobType = 'Employment type is required.';
+    }
+
+    if ((touched.workMode || submitted) && !String(formData.workMode || '').trim()) {
+      errors.workMode = 'Work mode is required.';
+    }
+
+    if ((touched.vacancies || submitted) && Number(formData.vacancies) < 1) {
+      errors.vacancies = 'Vacancies must be 1 or more.';
+    }
+
     if ((touched.experienceLevel || submitted) && !EXPERIENCE_LEVELS.includes(String(formData.experienceLevel || '').trim())) {
       errors.experienceLevel = 'Please select a valid experience requirement.';
+    }
+
+    if ((touched.educationLevel || submitted) && !String(formData.educationLevel || '').trim()) {
+      errors.educationLevel = 'Education level is required.';
+    }
+
+    if ((touched.willingToRelocate || submitted) && !WILLING_TO_RELOCATE_OPTIONS.includes(String(formData.willingToRelocate || '').trim())) {
+      errors.willingToRelocate = 'Please choose a relocation option.';
     }
 
     if (
@@ -1310,6 +1343,9 @@ const PostJob = () => {
 
   const validateForPublish = () => {
     if (!formData.title.trim()) return 'Job title is required';
+    if (!String(formData.jobType || '').trim()) return 'Employment type is required';
+    if (!String(formData.workMode || '').trim()) return 'Work mode is required';
+    if (Number(formData.vacancies) < 1) return 'Vacancies must be 1 or more';
     const descriptionText = getRichTextPlainText(formData.description);
     const requirementsText = getRichTextPlainText(formData.requirements);
     if (!descriptionText) return 'Job description is required';
@@ -1337,7 +1373,8 @@ const PostJob = () => {
     if (!EDUCATION_LEVELS.includes(edu)) return 'Invalid education level';
 
     const relocate = String(formData.willingToRelocate || '').trim();
-    if (relocate && !WILLING_TO_RELOCATE_OPTIONS.includes(relocate)) return 'Invalid relocate option';
+    if (!relocate) return 'Willing to relocate option is required';
+    if (!WILLING_TO_RELOCATE_OPTIONS.includes(relocate)) return 'Invalid relocate option';
 
     if (locationImageFile) {
       const allowed = ['image/jpeg', 'image/jpg', 'image/png'];
@@ -1699,30 +1736,32 @@ const PostJob = () => {
 
                         </div>
 
-                        <Field id="jobType" label="Employment Type">
+                        <Field id="jobType" label="Employment Type" error={fieldErrors.jobType}>
                           <select
                             id="jobType"
                             name="jobType"
                             value={formData.jobType}
                             onChange={handleChange}
                             onBlur={() => markTouched('jobType')}
-                            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:border-[#2e66a6]"
+                            className={`w-full rounded-xl border px-4 py-3 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:border-[#2e66a6] ${fieldErrors.jobType ? 'border-red-300' : 'border-gray-300'}`}
                           >
+                            <option value="" disabled>Choose employment type</option>
                             {jobTypes.map(type => (
                               <option key={type} value={type}>{type}</option>
                             ))}
                           </select>
                         </Field>
 
-                        <Field id="workMode" label="Work Mode">
+                        <Field id="workMode" label="Work Mode" error={fieldErrors.workMode}>
                           <select
                             id="workMode"
                             name="workMode"
                             value={formData.workMode}
                             onChange={handleChange}
                             onBlur={() => markTouched('workMode')}
-                            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:border-[#2e66a6]"
+                            className={`w-full rounded-xl border px-4 py-3 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:border-[#2e66a6] ${fieldErrors.workMode ? 'border-red-300' : 'border-gray-300'}`}
                           >
+                            <option value="" disabled>Choose work mode</option>
                             {workModes.map(m => (
                               <option key={m} value={m}>{m}</option>
                             ))}
@@ -1731,7 +1770,7 @@ const PostJob = () => {
 
                         <div className="md:col-span-2">
                           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                            <Field id="vacancies" label="Vacancies">
+                            <Field id="vacancies" label="Vacancies" error={fieldErrors.vacancies}>
                               <input
                                 id="vacancies"
                                 type="number"
@@ -1740,7 +1779,8 @@ const PostJob = () => {
                                 onChange={handleChange}
                                 onBlur={() => markTouched('vacancies')}
                                 min="1"
-                                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:border-[#2e66a6]"
+                                placeholder="Enter number of vacancies"
+                                className={`w-full rounded-xl border px-4 py-3 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:border-[#2e66a6] ${fieldErrors.vacancies ? 'border-red-300' : 'border-gray-300'}`}
                                 required
                               />
                             </Field>
@@ -1759,6 +1799,7 @@ const PostJob = () => {
                                 onChange={handleChange}
                                 onBlur={() => markTouched('applicationDeadline')}
                                 min={minDeadlineISO}
+                                placeholder="Select application deadline"
                                 aria-invalid={!!fieldErrors.applicationDeadline}
                                 className={`w-full rounded-xl border px-4 py-3 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:border-[#2e66a6] ${
                                   fieldErrors.applicationDeadline ? 'border-red-300' : 'border-gray-300'
@@ -1864,7 +1905,7 @@ const PostJob = () => {
                           <div>
                             <p className="text-sm font-semibold text-gray-900">Open to Fresh Graduates</p>
                             <p className="text-xs text-gray-500">
-                              Only candidates with the required experience and credentials for this position may apply.
+                              Candidates will be evaluated based on their Profile regardless of high credential requirements.
                             </p>
                           </div>
 
@@ -1900,21 +1941,23 @@ const PostJob = () => {
                               fieldErrors.experienceLevel ? 'border-red-300' : 'border-gray-300'
                             }`}
                           >
+                            <option value="" disabled>Choose required experience</option>
                             {experienceLevels.map(level => (
                               <option key={level} value={level}>{level}</option>
                             ))}
                           </select>
                         </Field>
 
-                        <Field id="educationLevel" label="Educational Requirement">
+                        <Field id="educationLevel" label="Educational Requirement" error={fieldErrors.educationLevel}>
                           <select
                             id="educationLevel"
                             name="educationLevel"
                             value={formData.educationLevel}
                             onChange={handleChange}
                             onBlur={() => markTouched('educationLevel')}
-                            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:border-[#2e66a6]"
+                            className={`w-full rounded-xl border px-4 py-3 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:border-[#2e66a6] ${fieldErrors.educationLevel ? 'border-red-300' : 'border-gray-300'}`}
                           >
+                            <option value="" disabled>Choose educational requirement</option>
                             {educationLevels.map(level => (
                               <option key={level} value={level}>{level}</option>
                             ))}
@@ -2085,15 +2128,16 @@ const PostJob = () => {
                       <h3 className="text-base font-bold text-gray-900">Additional Details</h3>
 
                       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                        <Field id="willingToRelocate" label="Willing to Relocate">
+                        <Field id="willingToRelocate" label="Willing to Relocate" error={fieldErrors.willingToRelocate}>
                           <select
                             id="willingToRelocate"
                             name="willingToRelocate"
                             value={formData.willingToRelocate}
                             onChange={handleChange}
                             onBlur={() => markTouched('willingToRelocate')}
-                            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:border-[#2e66a6]"
+                            className={`w-full rounded-xl border px-4 py-3 text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:border-[#2e66a6] ${fieldErrors.willingToRelocate ? 'border-red-300' : 'border-gray-300'}`}
                           >
+                            <option value="" disabled>Choose an option</option>
                             {willingToRelocateOptions.map(option => (
                               <option key={option} value={option}>{option}</option>
                             ))}

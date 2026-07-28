@@ -144,7 +144,7 @@ const jobSchema = new mongoose.Schema({
             '5 years',
             '6+ years',
         ],
-        default: 'No experience required'
+        required: function () { return this.isPublished === true; }
     },
 
     openToFreshGraduates: {
@@ -167,7 +167,7 @@ const jobSchema = new mongoose.Schema({
           'No - position is fixed location',
           'Open to relocation if necessary',
         ],
-        default: 'No - position is fixed location'
+        required: function () { return this.isPublished === true; }
     },
     locationImage: {
         type: String,
