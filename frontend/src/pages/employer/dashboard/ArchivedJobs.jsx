@@ -1014,8 +1014,8 @@ const ArchivedJobs = () => {
 
         <div className="relative z-20 mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="p-5">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(300px,380px)_minmax(140px,1fr)_minmax(170px,1fr)_140px] xl:items-center">
-              <div className="relative min-w-0 sm:col-span-2 xl:col-span-1">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:items-center">
+              <div className="relative min-w-0 lg:col-span-6">
                 <svg className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
                 </svg>
@@ -1027,46 +1027,50 @@ const ArchivedJobs = () => {
                 />
               </div>
 
-              <select
-                value={jobFilter}
-                onChange={(e) => setJobFilter(e.target.value)}
-                className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-              >
-                <option value="all">All Jobs</option>
-                {jobOptions.map((job) => (
-                  <option key={job.id} value={job.id}>
-                    {job.title}
-                  </option>
-                ))}
-              </select>
-
-              <ArchivedDateFilterDropdown
-                value={sortBy}
-                startDate={customDateFrom}
-                endDate={customDateTo}
-                disabled={loading}
-                onSelect={(value) => {
-                  if (value === 'custom') {
-                    setShowCustomDateModal(true);
-                    return;
-                  }
-
-                  setSortBy(value);
-                  setCustomDateFrom('');
-                  setCustomDateTo('');
-                }}
-              />
-
-              {hasActiveFilters ? (
-                <button
-                  type="button"
-                  onClick={clearControls}
-                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 transition hover:bg-gray-50"
+              <div className="lg:col-span-3">
+                <select
+                  value={jobFilter}
+                  onChange={(e) => setJobFilter(e.target.value)}
+                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                 >
-                  Clear
-                </button>
-              ) : (
-                <div className="hidden xl:block" aria-hidden="true" />
+                  <option value="all">All Jobs</option>
+                  {jobOptions.map((job) => (
+                    <option key={job.id} value={job.id}>
+                      {job.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={hasActiveFilters ? 'lg:col-span-2' : 'lg:col-span-3'}>
+                <ArchivedDateFilterDropdown
+                  value={sortBy}
+                  startDate={customDateFrom}
+                  endDate={customDateTo}
+                  disabled={loading}
+                  onSelect={(value) => {
+                    if (value === 'custom') {
+                      setShowCustomDateModal(true);
+                      return;
+                    }
+
+                    setSortBy(value);
+                    setCustomDateFrom('');
+                    setCustomDateTo('');
+                  }}
+                />
+              </div>
+
+              {hasActiveFilters && (
+                <div className="lg:col-span-1">
+                  <button
+                    type="button"
+                    onClick={clearControls}
+                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 transition hover:bg-gray-50"
+                  >
+                    Clear
+                  </button>
+                </div>
               )}
             </div>
 
