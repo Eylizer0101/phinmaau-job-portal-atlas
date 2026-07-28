@@ -133,23 +133,23 @@ const JobSeekerLevelBadgeCard = ({
       <button
         type="button"
         onClick={() => setShowLevelModal(true)}
-        className="group flex w-full items-center gap-4 rounded-2xl border border-[#d8e2ee] bg-[#f7faff] px-4 py-4 text-left transition hover:border-[#2e66a6]/40 hover:bg-[#f2f7fd] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 sm:px-5 lg:w-auto lg:min-w-[250px]"
+        className="group inline-flex w-fit items-center gap-3 rounded-xl px-2 py-1.5 text-left transition hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
         aria-label="View all job seeker levels"
         aria-haspopup="dialog"
       >
-        <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-xl bg-white sm:h-[72px] sm:w-[72px]">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white">
           <img
             src={badgeImage}
             alt={`${currentRank} badge`}
-            className="h-[60px] w-[60px] object-contain transition duration-200 group-hover:scale-105 group-hover:drop-shadow-[0_5px_8px_rgba(46,102,166,0.22)] sm:h-16 sm:w-16"
+            className="h-11 w-11 object-contain transition duration-200 group-hover:scale-105 group-hover:drop-shadow-[0_5px_8px_rgba(46,102,166,0.22)]"
           />
         </div>
 
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-500 sm:text-[11px]">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-gray-500">
             Jobseeker Level
           </p>
-          <p className="mt-1 truncate text-lg font-bold text-[#2f3b8f] sm:text-xl">
+          <p className="mt-0.5 whitespace-nowrap text-sm font-bold text-[#2f3b8f] sm:text-[15px]">
             {currentRank}
           </p>
         </div>
@@ -954,123 +954,27 @@ const UserManagementDetails = () => {
     navigate(`/admin/users/${userId}/resume-preview`);
   };
 
-  const HeaderProfile = () => {
-    const avatarUrl = getFileUrl(user?.profileImage);
-    const locationText =
-      profile.address ||
-      [profile.cityProvince, profile.region].filter(Boolean).join(", ") ||
-      "Location not provided";
-    const initials = fullName
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((namePart) => namePart.charAt(0))
-      .join("")
-      .toUpperCase();
-    return (
-      <section className="overflow-hidden rounded-[20px] border border-[#d8e2ee] bg-white shadow-sm">
-        <div className="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between lg:gap-7">
-          <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:gap-5">
-            <div className="h-[84px] w-[84px] shrink-0 overflow-hidden rounded-2xl border border-[#d8e2ee] bg-gradient-to-br from-[#3875ff] to-[#4f38f5] shadow-sm sm:h-[96px] sm:w-[96px]">
-              {avatarUrl && !brokenAvatar ? (
-                <img
-                  src={avatarUrl}
-                  alt={fullName}
-                  className="h-full w-full object-cover"
-                  onError={() => setBrokenAvatar(true)}
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-white sm:text-3xl">
-                  {initials || "JS"}
-                </div>
-              )}
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="min-w-0 text-[26px] font-bold leading-tight text-black sm:text-[30px] lg:text-[32px]">
-                  {fullName}
-                </h1>
-
-                {profile.yearGraduated ? (
-                  <span className="rounded-full border border-[#b9cce1] bg-[#eef5fc] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[#2e66a6] sm:text-[11px]">
-                    Class of {profile.yearGraduated}
-                  </span>
-                ) : null}
-              </div>
-
-              <div className="mt-4 space-y-2.5 text-[14px] text-gray-600 sm:text-[15px]">
-                <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-                  <span className="inline-flex min-w-0 items-center gap-2">
-                    <Icon name="academic" className="h-4 w-4 shrink-0 text-[#2e66a6]" />
-                    <span className="truncate">
-                      {profile.campus || "Campus not specified"}
-                    </span>
-                  </span>
-
-                  <span className="inline-flex min-w-0 items-center gap-2">
-                    <Icon name="briefcase" className="h-4 w-4 shrink-0 text-[#2e66a6]" />
-                    <span className="truncate">
-                      {profile.course ||
-                        profile.studyField ||
-                        "Course not specified"}
-                    </span>
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-                  <span className="inline-flex min-w-0 items-center gap-2">
-                    <Icon name="mail" className="h-4 w-4 shrink-0 text-[#2e66a6]" />
-                    <span className="truncate">
-                      {user?.email || "Email not provided"}
-                    </span>
-                  </span>
-
-                  <span className="inline-flex min-w-0 items-center gap-2">
-                    <Icon name="phone" className="h-4 w-4 shrink-0 text-[#2e66a6]" />
-                    <span className="truncate">
-                      {profile.phoneNumber || "Phone not provided"}
-                    </span>
-                  </span>
-                </div>
-
-                <span className="inline-flex min-w-0 items-start gap-2">
-                  <Icon name="mapPin" className="mt-0.5 h-4 w-4 shrink-0 text-[#2e66a6]" />
-                  <span className="leading-relaxed">{locationText}</span>
-                </span>
-
-                <p className="pt-1 text-xs text-gray-500 sm:text-sm">
-                  <span className="font-semibold text-black">
-                    Date Registered:
-                  </span>{" "}
-                  {formatDate(user?.createdAt)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <JobSeekerLevelBadgeCard currentRank={jobSeekerLevel} />
-        </div>
-
-        <div className="border-t border-[#d8e2ee] px-5 sm:px-7">
-          <div className="flex gap-1 overflow-x-auto">
+  const HeaderProfile = () => (
+    <section className="overflow-hidden rounded-[20px] border border-[#d8e2ee] bg-white shadow-sm">
+      <div className="flex flex-col gap-4 px-5 pt-3 sm:px-7 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
+        <div className="min-w-0 flex-1 self-end">
+          <div className="flex gap-5 overflow-x-auto">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  "relative inline-flex h-14 shrink-0 items-center gap-2 px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 sm:text-[15px]",
+                  "relative inline-flex h-16 shrink-0 items-center px-1 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 sm:text-[15px]",
                   activeTab === tab.key
                     ? "text-[#174b91]"
                     : "text-gray-500 hover:text-black"
                 )}
               >
-                <Icon name={tab.icon} className="h-4 w-4" />
                 {tab.label}
                 <span
                   className={cn(
-                    "absolute bottom-0 left-0 right-0 h-[3px]",
+                    "absolute bottom-0 left-0 right-0 h-[2px]",
                     activeTab === tab.key ? "bg-[#174b91]" : "bg-transparent"
                   )}
                 />
@@ -1078,9 +982,20 @@ const UserManagementDetails = () => {
             ))}
           </div>
         </div>
-      </section>
-    );
-  };
+
+        <div className="flex shrink-0 flex-col items-start gap-1.5 pb-3 lg:items-end">
+          <JobSeekerLevelBadgeCard currentRank={jobSeekerLevel} />
+
+          <div className="inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] text-gray-500 sm:text-xs">
+            <Icon name="clock" className="h-3.5 w-3.5 shrink-0" />
+            <span>
+              Last profile update: {formatDate(user?.updatedAt, true)}
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 
   const ResumePreview = () => {
     const avatarUrl = getFileUrl(user?.profileImage);
