@@ -124,6 +124,8 @@ const JobSeekerLayout = ({ children }) => {
 
   const isActive = (path) => location.pathname === path;
   const isJobDetailsPage = location.pathname.startsWith('/jobseeker/job-details/');
+  const isBookmarksPage = location.pathname.startsWith('/jobseeker/bookmarks');
+  const allowsStickyContent = isJobDetailsPage || isBookmarksPage;
 
   const getDisplayFirstName = (user = {}) => {
     const firstName = String(user?.firstName || '').trim();
@@ -664,7 +666,7 @@ const JobSeekerLayout = ({ children }) => {
   };
 
   return (
-    <div className={`min-h-screen bg-gray-50 ${isJobDetailsPage ? 'overflow-x-clip' : 'overflow-x-hidden'}`} >
+    <div className={`min-h-screen bg-gray-50 ${allowsStickyContent ? 'overflow-x-clip' : 'overflow-x-hidden'}`} >
       {notificationDeleteConfirmation && (
         <div
           className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 px-4"

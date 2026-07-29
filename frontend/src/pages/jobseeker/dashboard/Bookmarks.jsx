@@ -2682,7 +2682,7 @@ const Bookmarks = () => {
                             </div>
                           </div>
 
-                          <div className="min-w-0">
+                          <div className="min-w-0 lg:sticky lg:top-24 lg:self-start">
                             <div className={UI.insetPanel}>
                               <div className={UI.insetHead}>
                                 <p className="text-sm font-semibold text-[#000000]">Job Overview</p>
