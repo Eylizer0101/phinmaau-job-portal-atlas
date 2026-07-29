@@ -2195,7 +2195,7 @@ const PostJob = () => {
                             latitude={formData.locationLatitude}
                             longitude={formData.locationLongitude}
                             error={fieldErrors.location}
-                            placeholder={companyLocationFromProfile !== 'Company location' ? companyLocationFromProfile : 'e.g., 123 Rizal Ave, Manila, Metro Manila'}
+                            placeholder={companyLocationFromProfile !== 'Company location' ? companyLocationFromProfile : 'e.g., Unit 201, ABC Building, 123 Rizal St., Brgy. San Roque, Cabanatuan City, Nueva Ecija.'}
                             onChange={({ address, lat, lng }) => {
                               setFormData((prev) => ({
                                 ...prev,

@@ -1008,7 +1008,7 @@ const JobseekerMessages = () => {
                         <button
                           type="button"
                           onClick={handleCompanyHeaderClick}
-                          className={`flex min-w-0 items-center gap-3 rounded-xl px-2 py-1 text-left hover:bg-[#f7faff] ${UI.ring}`}
+                          className={`flex w-full min-w-0 flex-1 items-center gap-3 rounded-xl px-2 py-1 text-left hover:bg-[#f7faff] ${UI.ring}`}
                           title="View company details"
                         >
                           {renderCompanyLogo(selectedConversation.otherUser, 'h-10 w-10', 'text-sm')}

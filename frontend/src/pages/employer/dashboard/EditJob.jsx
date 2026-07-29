@@ -2693,7 +2693,7 @@ const EditJob = () => {
                             longitude={formData.locationLongitude}
                             disabled={isBusy}
                             error={fieldErrors.location}
-                            placeholder="e.g., 123 Rizal Ave, Manila, Metro Manila"
+                            placeholder="e.g., Unit 201, ABC Building, 123 Rizal St., Brgy. San Roque, Cabanatuan City, Nueva Ecija."
                             onChange={({ address, lat, lng }) => {
                               setFormData((prev) => ({
                                 ...prev,

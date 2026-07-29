@@ -6219,7 +6219,7 @@ const MyProfile = () => {
                       </div>
                     ) : null}
 
-                    <div className="flex items-center gap-1 font-sans opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+                    <div className="flex items-center gap-1 font-sans opacity-100">
                       <button
                         type="button"
                         onClick={() => openEditWorkExperienceModal(item)}
@@ -6311,7 +6311,7 @@ const MyProfile = () => {
                   {getEducationYearText(item)}
                 </div>
 
-                <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+                <div className="flex items-center gap-1 opacity-100">
                   <button
                     type="button"
                     onClick={() => openProfileEditModal('education', index)}
@@ -6396,7 +6396,7 @@ const MyProfile = () => {
                     {item.email ? <div className="break-all text-[#2e66a6]">{item.email}</div> : null}
                   </div>
 
-                  <div className="absolute right-0 top-0 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+                  <div className="absolute right-0 top-0 flex items-center gap-1 opacity-100">
                     <button
                       type="button"
                       onClick={() => openProfileEditModal(sectionKey, index)}
@@ -6439,7 +6439,7 @@ const MyProfile = () => {
                       </div>
                     ) : null}
 
-                    <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+                    <div className="flex items-center gap-1 opacity-100">
                       <button
                         type="button"
                         onClick={() => openProfileEditModal(sectionKey, index)}
