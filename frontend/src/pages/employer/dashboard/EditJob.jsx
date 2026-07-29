@@ -458,7 +458,22 @@ const RichTextEditor = ({
   );
 };
 
-const DEFAULT_MAP_CENTER = { lat: 14.5995, lng: 120.9842 };
+const DEFAULT_MAP_CENTER = { lat: 12.8797, lng: 121.7740 };
+const PHILIPPINES_MAP_BOUNDS = L.latLngBounds(
+  [4.2, 116.8],
+  [21.3, 126.7]
+);
+
+const isInsidePhilippinesMapBounds = (lat, lng) => {
+  const nextLat = Number(lat);
+  const nextLng = Number(lng);
+
+  return (
+    Number.isFinite(nextLat) &&
+    Number.isFinite(nextLng) &&
+    PHILIPPINES_MAP_BOUNDS.contains([nextLat, nextLng])
+  );
+};
 
 const toCoordinate = (value) => {
   if (value === null || value === undefined || value === '') return null;
@@ -487,10 +502,13 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
 
   const lat = toCoordinate(latitude);
   const lng = toCoordinate(longitude);
-  const hasCoordinates = lat !== null && lng !== null;
+  const hasCoordinates =
+    lat !== null &&
+    lng !== null &&
+    isInsidePhilippinesMapBounds(lat, lng);
 
   const updateMarker = useCallback((nextLat, nextLng, shouldZoom = true) => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || !isInsidePhilippinesMapBounds(nextLat, nextLng)) return;
 
     const nextPoint = [nextLat, nextLng];
 
@@ -514,6 +532,12 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
   }, [disabled]);
 
   const reverseLookup = useCallback(async (nextLat, nextLng) => {
+    if (!isInsidePhilippinesMapBounds(nextLat, nextLng)) {
+      setResults([]);
+      setStatus('Please select a work location within the Philippines.');
+      return;
+    }
+
     const roundedLat = Number(nextLat.toFixed(6));
     const roundedLng = Number(nextLng.toFixed(6));
 
@@ -523,6 +547,14 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
       const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${roundedLat}&lon=${roundedLng}&accept-language=en`;
       const response = await fetch(url);
       const data = await response.json();
+      const countryCode = String(data?.address?.country_code || '').toLowerCase();
+
+      if (countryCode && countryCode !== 'ph') {
+        setResults([]);
+        setStatus('Please select a work location within the Philippines.');
+        return;
+      }
+
       const address = data?.display_name || `${roundedLat}, ${roundedLng}`;
 
       setQuery(address);
@@ -554,8 +586,11 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
       const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&countrycodes=ph&accept-language=en&q=${encodeURIComponent(clean)}`;
       const response = await fetch(url);
       const data = await response.json();
-      setResults(Array.isArray(data) ? data : []);
-      setStatus(Array.isArray(data) && data.length ? 'Choose a result below or click the map.' : 'No result found. Try a more specific address.');
+      const philippinesResults = (Array.isArray(data) ? data : []).filter((item) =>
+        isInsidePhilippinesMapBounds(item?.lat, item?.lon)
+      );
+      setResults(philippinesResults);
+      setStatus(philippinesResults.length ? 'Choose a Philippine result below or click the map.' : 'No Philippine result found. Try a more specific address.');
     } catch (err) {
       setResults([]);
       setStatus('Search failed. You can still click the map to set the pin.');
@@ -567,7 +602,14 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
   const handlePickResult = useCallback((item) => {
     const nextLat = Number(item.lat);
     const nextLng = Number(item.lon);
-    if (!Number.isFinite(nextLat) || !Number.isFinite(nextLng)) return;
+    if (
+      !Number.isFinite(nextLat) ||
+      !Number.isFinite(nextLng) ||
+      !isInsidePhilippinesMapBounds(nextLat, nextLng)
+    ) {
+      setStatus('Please select a work location within the Philippines.');
+      return;
+    }
 
     const address = item.display_name || `${nextLat}, ${nextLng}`;
     const roundedLat = Number(nextLat.toFixed(6));
@@ -588,14 +630,27 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
 
     mapRef.current = L.map(mapElRef.current, {
       center: [startLat, startLng],
-      zoom: hasCoordinates ? 16 : 12,
+      zoom: hasCoordinates ? 16 : 6,
+      minZoom: 6,
+      maxBounds: PHILIPPINES_MAP_BOUNDS,
+      maxBoundsViscosity: 1,
       scrollWheelZoom: true,
+      worldCopyJump: false,
     });
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      minZoom: 6,
       maxZoom: 19,
+      noWrap: true,
+      bounds: PHILIPPINES_MAP_BOUNDS,
       attribution: '&copy; OpenStreetMap contributors',
     }).addTo(mapRef.current);
+
+    if (!hasCoordinates) {
+      mapRef.current.fitBounds(PHILIPPINES_MAP_BOUNDS, {
+        padding: [18, 18],
+      });
+    }
 
     mapRef.current.on('click', async (e) => {
       if (disabled) return;
@@ -683,7 +738,7 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
       </div>
 
       <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-900">
-        Search a location, choose a result, or click/drag the pin on the map to set the exact work location.
+        Search a Philippine location, choose a result, or click/drag the pin within the Philippines to set the exact work location.
       </div>
 
     </div>
@@ -2683,7 +2738,7 @@ const EditJob = () => {
                         <div className="md:col-span-2">
                         <Field
                           id="location"
-                          label="Complete Work Address / OpenStreetMap"
+                          label="Complete Work Office Address"
                      
                           error={fieldErrors.location}
                         >
