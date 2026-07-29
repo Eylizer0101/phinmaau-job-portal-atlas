@@ -62,8 +62,9 @@ const navItems = useMemo(
     { name: "Employer Verification", path: "/admin/employer-verification" },// ✅ ADD THIS LINE
     { name: "Job Offers", path: "/admin/job-offers" },
     { name: "Applications", path: "/admin/applications" },
-    { name: "Archive", path: "/admin/archive" },
     { name: "System Log", path: "/admin/system-logs" },
+    { name: "Archive", path: "/admin/archive" },
+   
 
   ],
   []
