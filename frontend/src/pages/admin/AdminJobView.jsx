@@ -153,7 +153,7 @@ const getRelocationDisplayLabel = (value) => {
     return 'Possible to relocate';
   }
 
-  return String(value || '').trim() || 'Fixed location';
+  return String(value || '').trim() || 'Relocation preference not specified';
 };
 
 const UI = {
@@ -899,42 +899,32 @@ const AdminJobView = () => {
                       {job.title}
                     </h1>
 
-                    <div className="mt-2 flex items-center gap-2 text-[#4b5563]">
-                      <SvgIcon name="building" className="h-4 w-4" />
-                      <span className="text-sm">{job.companyName || '—'}</span>
-                    </div>
-
                     <div className="mt-2 flex items-center gap-2 text-[#6b7280]">
                       <SvgIcon name="location" className="h-4 w-4" />
                       <span className="text-sm">{formatLocationDisplay(job.location)}</span>
                     </div>
 
                     <div className="mt-4 flex flex-wrap gap-2">
-                      {job.jobType && (
-                        <span className={UI.chip}>
-                          <SvgIcon name="briefcase" className="h-3.5 w-3.5" />
-                          {job.jobType}
-                        </span>
-                      )}
+                      <span className={UI.chip}>
+                        <SvgIcon name="briefcase" className="h-3.5 w-3.5" />
+                        {job.jobType || 'Employment type not specified'}
+                      </span>
 
-                      {job.workMode && (
-                        <span className={UI.chip}>
-                          <SvgIcon name="building" className="h-3.5 w-3.5" />
-                          {job.workMode}
-                        </span>
-                      )}
+                      <span className={UI.chip}>
+                        <SvgIcon name="building" className="h-3.5 w-3.5" />
+                        {job.workMode || 'Work mode not specified'}
+                      </span>
 
-                      {job.vacancies && (
-                        <span className={UI.chip}>
-                          <SvgIcon name="users" className="h-3.5 w-3.5" />
-                          {job.vacancies} Vacancies
-                        </span>
-                      )}
-                       {job.willingToRelocate && (
-      <span className="rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#2e66a6]">
-        {getRelocationDisplayLabel(job.willingToRelocate)}
-      </span>
-    )}
+                      <span className={UI.chip}>
+                        <SvgIcon name="users" className="h-3.5 w-3.5" />
+                        {Number(job.vacancies) > 0
+                          ? `${job.vacancies} ${Number(job.vacancies) === 1 ? 'Vacancy' : 'Vacancies'}`
+                          : 'Number of vacancies not specified'}
+                      </span>
+
+                      <span className={UI.chip}>
+                        {getRelocationDisplayLabel(job.willingToRelocate)}
+                      </span>
                     </div>
 
                     <div className="mt-3 text-xs text-[#6b7280]">
