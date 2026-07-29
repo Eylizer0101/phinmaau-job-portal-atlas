@@ -59,13 +59,7 @@ const ActionIcon = ({ name, className = 'h-5 w-5' }) => {
           strokeLinecap="round"
           strokeLinejoin="round"
           strokeWidth={2}
-          d="M3 10h6V4"
-        />
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M3.51 15a9 9 0 102.13-9.36L3 8"
+          d="M3 10h11M3 10l4-4m-4 4l4 4m3 4h11"
         />
       </svg>
     );
@@ -1038,12 +1032,63 @@ const ArchivedJobs = () => {
   return (
     <EmployerLayout>
       <div className="mx-auto max-w-7xl px-1 py-8">
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(260px,auto)_minmax(320px,1fr)_auto] xl:items-start">
           <div>
             <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Archived Jobs</h1>
             <p className="mt-1 text-sm text-gray-600">View and restore your archived job postings</p>
           </div>
-          <div>{headerRight}</div>
+
+          <div className="min-w-0 xl:pt-1">
+            {error && (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-4" role="alert" aria-live="assertive">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <svg className="mt-0.5 h-5 w-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <p className="text-sm font-medium text-red-900">{error}</p>
+                  </div>
+                  <button
+                    onClick={() => setError('')}
+                    className="rounded-lg px-2 py-1 text-sm font-medium text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                    aria-label="Dismiss error"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {success && (
+              <div className="rounded-xl border border-[#2e66a6]/25 bg-[#2e66a6]/10 p-4" role="status" aria-live="polite">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <svg className="mt-0.5 h-5 w-5 text-[#2e66a6]" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <p className="text-sm font-medium text-gray-900">{success}</p>
+                  </div>
+                  <button
+                    onClick={() => setSuccess('')}
+                    className="rounded-lg px-2 py-1 text-sm font-medium text-[#2e66a6] hover:bg-[#2e66a6]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
+                    aria-label="Dismiss success"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="xl:pt-1">{headerRight}</div>
         </div>
 
         <div className="relative z-20 mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
@@ -1113,56 +1158,6 @@ const ArchivedJobs = () => {
             </p>
           </div>
         </div>
-
-        {error && (
-          <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4" role="alert" aria-live="assertive">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3">
-                <svg className="mt-0.5 h-5 w-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <p className="text-sm font-medium text-red-900">{error}</p>
-              </div>
-
-              <button
-                onClick={() => setError('')}
-                className="rounded-lg px-2 py-1 text-sm font-medium text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-                aria-label="Dismiss error"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        )}
-
-        {success && (
-          <div className="mb-5 rounded-xl border border-[#2e66a6]/25 bg-[#2e66a6]/10 p-4" role="status" aria-live="polite">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3">
-                <svg className="mt-0.5 h-5 w-5 text-[#2e66a6]" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <p className="text-sm font-medium text-gray-900">{success}</p>
-              </div>
-
-              <button
-                onClick={() => setSuccess('')}
-                className="rounded-lg px-2 py-1 text-sm font-medium text-[#2e66a6] hover:bg-[#2e66a6]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
-                aria-label="Dismiss success"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        )}
 
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="p-6">
@@ -1285,7 +1280,7 @@ const ArchivedJobs = () => {
                             type="button"
                             onClick={() => setRestoreJobCandidate(job)}
                             disabled={busyThisRow}
-                            className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/[0.06] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-[#2e66a6] transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             aria-label={`Restore ${title}`}
                             title="Restore"
                           >
@@ -1448,7 +1443,7 @@ const ArchivedJobs = () => {
                                   type="button"
                                   onClick={() => setRestoreJobCandidate(job)}
                                   disabled={busyThisRow}
-                                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/[0.06] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-[#2e66a6] transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                   aria-label={`Restore ${title}`}
                                   title="Restore"
                                 >

@@ -1043,24 +1043,27 @@ const ArchivedDeclinedApplicants = () => {
   return (
     <EmployerLayout>
       <div className="mx-auto max-w-7xl px-1 py-8">
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(360px,auto)_minmax(320px,1fr)_auto] xl:items-start">
           <div>
             <h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">Archived Declined Applicants</h1>
             <p className="mt-1 text-sm text-gray-600">Restore or permanently delete archived declined application records</p>
           </div>
-          <div>{headerRight}</div>
-        </div>
 
-        {error && (
-          <Alert type="error" onClose={() => setError('')}>
-            {error}
-          </Alert>
-        )}
-        {success && (
-          <Alert type="success" onClose={() => setSuccess('')}>
-            {success}
-          </Alert>
-        )}
+          <div className="min-w-0 xl:pt-1 [&>div]:mb-0">
+            {error && (
+              <Alert type="error" onClose={() => setError('')}>
+                {error}
+              </Alert>
+            )}
+            {success && (
+              <Alert type="success" onClose={() => setSuccess('')}>
+                {success}
+              </Alert>
+            )}
+          </div>
+
+          <div className="xl:pt-1">{headerRight}</div>
+        </div>
 
         <div className="mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="p-5">
@@ -1215,7 +1218,7 @@ const ArchivedDeclinedApplicants = () => {
                               </div>
                             </td>
 
-                            <td className="px-6 py-4">
+                            <td className="px-6 py-4 text-center">
                               <span className="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-800">
                                 {declinedStageLabel}
                               </span>
