@@ -3,6 +3,8 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import AdminLayout from '../../layouts/AdminLayout';
 
+const cn = (...classes) => classes.filter(Boolean).join(' ');
+
 
 const sanitizeRichTextHtml = (value = '') => {
   const raw = String(value || '').trim();
@@ -868,6 +870,31 @@ const AdminJobView = () => {
 
   if (!job) return null;
 
+  const isLocationMissing = !String(job.location || '').trim();
+  const isJobTypeMissing = !String(job.jobType || '').trim();
+  const isWorkModeMissing = !String(job.workMode || '').trim();
+  const isVacanciesMissing =
+    job.vacancies === undefined ||
+    job.vacancies === null ||
+    job.vacancies === '' ||
+    Number(job.vacancies) <= 0;
+  const isRelocationMissing = !String(job.willingToRelocate || '').trim();
+
+  const useSingleRowPlaceholders =
+    isJobTypeMissing &&
+    isWorkModeMissing &&
+    isVacanciesMissing &&
+    isRelocationMissing;
+
+  const regularDetailChipClass =
+    'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#2e66a6]';
+  const compactPlaceholderChipClass =
+    'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-2 py-1 text-[10px] font-semibold text-[#2e66a6]';
+  const regularRelocationChipClass =
+    'shrink-0 whitespace-nowrap rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#2e66a6]';
+  const compactRelocationChipClass =
+    'shrink-0 whitespace-nowrap rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-2 py-1 text-[10px] font-semibold text-[#2e66a6]';
+
   return (
     <AdminLayout>
       <div className={UI.page}>
@@ -901,28 +928,68 @@ const AdminJobView = () => {
 
                     <div className="mt-2 flex items-center gap-2 text-[#6b7280]">
                       <SvgIcon name="location" className="h-4 w-4" />
-                      <span className="text-sm">{formatLocationDisplay(job.location)}</span>
+                      <span className={isLocationMissing ? 'text-[11px]' : 'text-sm'}>
+                        {formatLocationDisplay(job.location)}
+                      </span>
                     </div>
 
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <span className={UI.chip}>
-                        <SvgIcon name="briefcase" className="h-3.5 w-3.5" />
-                        {job.jobType || 'Employment type not specified'}
+                    <div
+                      className={cn(
+                        'mt-4 flex flex-wrap gap-2',
+                        useSingleRowPlaceholders && 'lg:flex-nowrap lg:gap-1.5'
+                      )}
+                    >
+                      <span
+                        className={
+                          isJobTypeMissing
+                            ? compactPlaceholderChipClass
+                            : regularDetailChipClass
+                        }
+                      >
+                        <SvgIcon
+                          name="briefcase"
+                          className={isJobTypeMissing ? 'h-3 w-3' : 'h-3.5 w-3.5'}
+                        />
+                        {String(job.jobType || '').trim() || 'Employment type not specified'}
                       </span>
 
-                      <span className={UI.chip}>
-                        <SvgIcon name="building" className="h-3.5 w-3.5" />
-                        {job.workMode || 'Work mode not specified'}
+                      <span
+                        className={
+                          isWorkModeMissing
+                            ? compactPlaceholderChipClass
+                            : regularDetailChipClass
+                        }
+                      >
+                        <SvgIcon
+                          name="building"
+                          className={isWorkModeMissing ? 'h-3 w-3' : 'h-3.5 w-3.5'}
+                        />
+                        {String(job.workMode || '').trim() || 'Work mode not specified'}
                       </span>
 
-                      <span className={UI.chip}>
-                        <SvgIcon name="users" className="h-3.5 w-3.5" />
-                        {Number(job.vacancies) > 0
+                      <span
+                        className={
+                          isVacanciesMissing
+                            ? compactPlaceholderChipClass
+                            : regularDetailChipClass
+                        }
+                      >
+                        <SvgIcon
+                          name="users"
+                          className={isVacanciesMissing ? 'h-3 w-3' : 'h-3.5 w-3.5'}
+                        />
+                        {!isVacanciesMissing
                           ? `${job.vacancies} ${Number(job.vacancies) === 1 ? 'Vacancy' : 'Vacancies'}`
                           : 'Number of vacancies not specified'}
                       </span>
 
-                      <span className={UI.chip}>
+                      <span
+                        className={
+                          isRelocationMissing
+                            ? compactRelocationChipClass
+                            : regularRelocationChipClass
+                        }
+                      >
                         {getRelocationDisplayLabel(job.willingToRelocate)}
                       </span>
                     </div>
@@ -930,12 +997,9 @@ const AdminJobView = () => {
                     <div className="mt-3 text-xs text-[#6b7280]">
                       <p>
                         {formatPostedRelative(job.createdAt)}
-                        {job.applicationDeadline && (
-                          <>
-                            {' and '}
-                            deadline of application is on {formatFullDate(job.applicationDeadline)}
-                          </>
-                        )}
+                        {job.applicationDeadline
+                          ? ` and deadline of application is on ${formatFullDate(job.applicationDeadline)}`
+                          : ' and no application deadline specified'}
                       </p>
                     </div>
                   </div>
