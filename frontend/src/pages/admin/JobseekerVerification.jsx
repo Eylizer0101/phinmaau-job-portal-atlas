@@ -922,10 +922,10 @@ const JobseekerVerification = () => {
                   <table className="w-full min-w-[1000px]">
                     <thead className="bg-slate-50 border-b border-gray-100">
                       <tr>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Job Seeker</th>
+                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Registered</th>
+                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Name</th>
                         <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Campus</th>
                         <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Course</th>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Registered</th>
                         <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Status</th>
                         <th className="px-5 py-4 text-right text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Actions</th>
                       </tr>
@@ -957,6 +957,10 @@ const JobseekerVerification = () => {
                             }}
                             className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
                           >
+                            <td className="px-5 py-4 text-sm text-gray-700 whitespace-nowrap">
+                              {formatDate(item.createdAt)}
+                            </td>
+
                             <td className="px-5 py-4">
                               <div className="flex items-center gap-3 min-w-0">
                                 {item.profileImage ? (
@@ -983,7 +987,6 @@ const JobseekerVerification = () => {
 
                             <td className="px-5 py-4 text-sm text-gray-700">{campus}</td>
                             <td className="px-5 py-4 text-sm text-gray-700">{course}</td>
-                            <td className="px-5 py-4 text-sm text-gray-700">{formatDate(item.createdAt)}</td>
                             <td className="px-5 py-4">{statusBadge(status)}</td>
                             <td className="px-5 py-4">
                               <div className="flex items-center justify-end gap-2">

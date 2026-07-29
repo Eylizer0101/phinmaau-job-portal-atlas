@@ -678,6 +678,10 @@ exports.getAllUsers = async (req, res) => {
     const search = String(req.query.search || '').trim();
     const sort = String(req.query.sort || 'newest').trim().toLowerCase();
     const verificationStatus = String(req.query.verificationStatus || '').trim().toLowerCase();
+    const campus = String(req.query.campus || '').trim();
+    const course = String(req.query.course || '').trim();
+    const company = String(req.query.company || '').trim();
+    const industry = String(req.query.industry || '').trim();
     const verifiedParam = req.query.verified;
 
     const baseQuery = {
@@ -693,6 +697,22 @@ exports.getAllUsers = async (req, res) => {
 
     if (status && status !== 'all') {
       baseQuery.status = status;
+    }
+
+    if (campus && campus.toLowerCase() !== 'all') {
+      baseQuery['jobSeekerProfile.campus'] = campus;
+    }
+
+    if (course && course.toLowerCase() !== 'all') {
+      baseQuery['jobSeekerProfile.course'] = course;
+    }
+
+    if (company && company.toLowerCase() !== 'all') {
+      baseQuery['employerProfile.companyName'] = company;
+    }
+
+    if (industry && industry.toLowerCase() !== 'all') {
+      baseQuery['employerProfile.industry'] = industry;
     }
 
     if (typeof verifiedParam !== 'undefined') {
@@ -1183,6 +1203,7 @@ exports.getEmployersForVerification = async (req, res) => {
   try {
     const search = String(req.query.search || '').trim();
     const status = String(req.query.status || '').trim().toLowerCase();
+    const company = String(req.query.company || '').trim();
     const industry = String(req.query.industry || '').trim();
     const address = String(req.query.address || '').trim();
     const sort = String(req.query.sort || 'newest').trim().toLowerCase();

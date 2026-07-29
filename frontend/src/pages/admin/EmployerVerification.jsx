@@ -561,9 +561,9 @@ const CustomDateRangeModal = ({ open, startDate, endDate, onCancel, onApply }) =
 
 const DEFAULT_FILTERS = {
   search: "",
+  company: "all",
   industry: "all",
   status: "all",
-  address: "all",
   date: "all",
   dateFrom: "",
   dateTo: "",
@@ -731,8 +731,8 @@ const EmployerVerification = () => {
   });
 
   const [filterOptions, setFilterOptions] = useState({
+    companies: [],
     industries: [],
-    addresses: [],
     statuses: [],
   });
 
@@ -789,9 +789,9 @@ const EmployerVerification = () => {
         };
 
         if (filters.search) params.search = filters.search;
+        if (filters.company !== "all") params.company = filters.company;
         if (filters.industry !== "all") params.industry = filters.industry;
         if (filters.status !== "all") params.status = filters.status;
-        if (filters.address !== "all") params.address = filters.address;
         if (filters.dateFrom) params.dateFrom = filters.dateFrom;
         if (filters.dateTo) params.dateTo = filters.dateTo;
 
@@ -815,8 +815,8 @@ const EmployerVerification = () => {
         );
         setFilterOptions(
           payload.filters || {
+            companies: [],
             industries: [],
-            addresses: [],
             statuses: [],
           }
         );
@@ -941,9 +941,9 @@ const EmployerVerification = () => {
 
   const hasActiveFilters =
     searchDraft.trim() !== "" ||
+    filters.company !== "all" ||
     filters.industry !== "all" ||
     filters.status !== "all" ||
-    filters.address !== "all" ||
     filters.date !== "all" ||
     filters.dateFrom !== "" ||
     filters.dateTo !== "";
@@ -998,7 +998,23 @@ const EmployerVerification = () => {
                 </div>
               </div>
 
-              <div className="xl:col-span-3">
+              <div className="xl:col-span-2">
+                <select
+                  value={filters.company}
+                  onChange={(e) => onChangeFilter("company", e.target.value)}
+                  className={inputBase}
+                  disabled={loading}
+                >
+                  <option value="all">All Company</option>
+                  {(filterOptions.companies || []).map((company) => (
+                    <option key={company} value={company}>
+                      {company}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="xl:col-span-2">
                 <select
                   value={filters.industry}
                   onChange={(e) => onChangeFilter("industry", e.target.value)}
@@ -1070,22 +1086,24 @@ const EmployerVerification = () => {
                   <table className="w-full table-fixed">
                     <thead className="bg-slate-50 border-b border-gray-100">
                       <tr>
-                        <th className="w-[25%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Company</th>
-                        <th className="w-[15%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Industry</th>
-                        <th className="w-[18%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Region</th>
-                        <th className="w-[15%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">City / Province</th>
-                        <th className="w-[13%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Registered</th>
-                        <th className="w-[8%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Status</th>
-                        <th className="w-[6%] px-4 py-4 text-right text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Action</th>
+                        <th className="w-[14%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Registered</th>
+                        <th className="w-[24%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Name</th>
+                        <th className="w-[20%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Company</th>
+                        <th className="w-[18%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Industry</th>
+                        <th className="w-[14%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Status</th>
+                        <th className="w-[10%] px-4 py-4 text-right text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Actions</th>
                       </tr>
                     </thead>
 
                     <tbody className="divide-y divide-gray-100 bg-white">
                       {desktopRows.map((item) => {
                         const companyName = item.companyName || item.employerProfile?.companyName || "No Company";
+                        const contactName =
+                          item.fullName ||
+                          [item.firstName, item.middleName, item.lastName].filter(Boolean).join(" ") ||
+                          companyName;
                         const companyEmail = item.businessEmail || item.email || "—";
                         const industry = item.industry || item.employerProfile?.industry || "—";
-                        const { region, cityProvince } = buildLocationDisplay(item);
                         const status = item.overallStatus || "unverified";
 
                         return (
@@ -1106,6 +1124,10 @@ const EmployerVerification = () => {
                             }}
                             className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
                           >
+                            <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-700">
+                              {formatDate(item.createdAt)}
+                            </td>
+
                             <td className="px-4 py-4">
                               <div className="flex items-center gap-3 min-w-0">
                                 {item.companyLogo ? (
@@ -1119,33 +1141,25 @@ const EmployerVerification = () => {
                                   />
                                 ) : (
                                   <div className="h-11 w-11 rounded-xl border border-gray-200 bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-700">
-                                    {buildAvatar(item)}
+                                    {String(contactName || companyName).trim().charAt(0).toUpperCase() || "E"}
                                   </div>
                                 )}
 
                                 <div className="min-w-0">
-                                  <div className="text-sm font-semibold text-gray-900 leading-5 truncate">{companyName}</div>
+                                  <div className="text-sm font-semibold text-gray-900 leading-5 truncate">{contactName}</div>
                                   <div className="text-xs text-gray-500 truncate">{companyEmail}</div>
                                 </div>
                               </div>
                             </td>
 
                             <td className="px-4 py-4 text-sm text-gray-700">
-                              <div className="truncate whitespace-nowrap" title={industry}>
-                                {industry}
-                              </div>
+                              <div className="truncate whitespace-nowrap" title={companyName}>{companyName}</div>
                             </td>
+
                             <td className="px-4 py-4 text-sm text-gray-700">
-                              <div className="truncate whitespace-nowrap" title={region}>
-                                {region}
-                              </div>
+                              <div className="truncate whitespace-nowrap" title={industry}>{industry}</div>
                             </td>
-                            <td className="px-4 py-4 text-sm text-gray-700">
-                              <div className="truncate whitespace-nowrap" title={cityProvince}>
-                                {cityProvince}
-                              </div>
-                            </td>
-                            <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-700">{formatDate(item.createdAt)}</td>
+
                             <td className="px-4 py-4">{statusBadge(status)}</td>
                             <td className="px-4 py-4">
                               <div className="flex items-center justify-end gap-2">

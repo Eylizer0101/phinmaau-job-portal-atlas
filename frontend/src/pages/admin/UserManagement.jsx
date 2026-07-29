@@ -1061,6 +1061,10 @@ const UserManagement = () => {
 
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [roleFilter, setRoleFilter] = useState('all');
+  const [campusFilter, setCampusFilter] = useState('all');
+  const [courseFilter, setCourseFilter] = useState('all');
+  const [companyFilter, setCompanyFilter] = useState('all');
+  const [industryFilter, setIndustryFilter] = useState('all');
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState('newest');
   const [dateFilter, setDateFilter] = useState('all');
@@ -1092,6 +1096,10 @@ const UserManagement = () => {
         page: currentPage,
         limit: pageSize,
         role: roleFilter !== 'all' ? roleFilter : undefined,
+        campus: roleFilter === 'jobseeker' && campusFilter !== 'all' ? campusFilter : undefined,
+        course: roleFilter === 'jobseeker' && courseFilter !== 'all' ? courseFilter : undefined,
+        company: roleFilter === 'employer' && companyFilter !== 'all' ? companyFilter : undefined,
+        industry: roleFilter === 'employer' && industryFilter !== 'all' ? industryFilter : undefined,
         search: debouncedQuery || undefined,
         sort,
         dateFrom: dateFrom || undefined,
@@ -1120,7 +1128,16 @@ const UserManagement = () => {
           ),
           createdAt: user.createdAt,
           studentId: user.jobSeekerProfile?.studentId,
-          companyName: user.employerProfile?.companyName,
+          companyName: user.employerProfile?.companyName || '',
+          industry: user.employerProfile?.industry || '',
+          campus:
+            user.jobSeekerProfile?.campus ||
+            user.jobSeekerProfile?.educationEntries?.find((entry) => entry?.campus)?.campus ||
+            '',
+          course:
+            user.jobSeekerProfile?.course ||
+            user.jobSeekerProfile?.educationEntries?.find((entry) => entry?.course)?.course ||
+            '',
           contactNumber:
             user.role === 'employer'
               ? user.employerProfile?.mobileNumber || 'Not provided'
@@ -1161,7 +1178,20 @@ const UserManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize, roleFilter, debouncedQuery, sort, dateFrom, dateTo, clearMessages]);
+  }, [
+    currentPage,
+    pageSize,
+    roleFilter,
+    campusFilter,
+    courseFilter,
+    companyFilter,
+    industryFilter,
+    debouncedQuery,
+    sort,
+    dateFrom,
+    dateTo,
+    clearMessages,
+  ]);
 
   useEffect(() => {
     fetchUsers();
@@ -1267,6 +1297,22 @@ const UserManagement = () => {
       filtered = filtered.filter(user => user.role === roleFilter);
     }
 
+    if (roleFilter === 'jobseeker' && campusFilter !== 'all') {
+      filtered = filtered.filter((user) => user.campus === campusFilter);
+    }
+
+    if (roleFilter === 'jobseeker' && courseFilter !== 'all') {
+      filtered = filtered.filter((user) => user.course === courseFilter);
+    }
+
+    if (roleFilter === 'employer' && companyFilter !== 'all') {
+      filtered = filtered.filter((user) => user.companyName === companyFilter);
+    }
+
+    if (roleFilter === 'employer' && industryFilter !== 'all') {
+      filtered = filtered.filter((user) => user.industry === industryFilter);
+    }
+
     if (debouncedQuery) {
       const q = debouncedQuery.toLowerCase();
       filtered = filtered.filter(user =>
@@ -1299,7 +1345,38 @@ const UserManagement = () => {
         default: return 0;
       }
     });
-  }, [users, roleFilter, debouncedQuery, sort, dateFrom, dateTo]);
+  }, [
+    users,
+    roleFilter,
+    campusFilter,
+    courseFilter,
+    companyFilter,
+    industryFilter,
+    debouncedQuery,
+    sort,
+    dateFrom,
+    dateTo,
+  ]);
+
+  const campusOptions = useMemo(
+    () => [...new Set(users.map((user) => user.campus).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [users]
+  );
+
+  const courseOptions = useMemo(
+    () => [...new Set(users.map((user) => user.course).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [users]
+  );
+
+  const companyOptions = useMemo(
+    () => [...new Set(users.map((user) => user.companyName).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [users]
+  );
+
+  const industryOptions = useMemo(
+    () => [...new Set(users.map((user) => user.industry).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [users]
+  );
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
@@ -1334,6 +1411,10 @@ const UserManagement = () => {
   const clearFilters = () => {
     setQuery('');
     setRoleFilter('all');
+    setCampusFilter('all');
+    setCourseFilter('all');
+    setCompanyFilter('all');
+    setIndustryFilter('all');
     setSort('newest');
     setDateFilter('all');
     setDateFrom('');
@@ -1453,7 +1534,15 @@ const UserManagement = () => {
 
               <select
                 value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
+                onChange={(e) => {
+                  const nextRole = e.target.value;
+                  setRoleFilter(nextRole);
+                  setCampusFilter('all');
+                  setCourseFilter('all');
+                  setCompanyFilter('all');
+                  setIndustryFilter('all');
+                  setCurrentPage(1);
+                }}
                 className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
                 disabled={loading}
                 aria-label="Filter by role"
@@ -1462,6 +1551,78 @@ const UserManagement = () => {
                 <option value="jobseeker">Jobseeker</option>
                 <option value="employer">Employer</option>
               </select>
+
+              {roleFilter === 'jobseeker' && (
+                <>
+                  <select
+                    value={campusFilter}
+                    onChange={(e) => {
+                      setCampusFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
+                    disabled={loading}
+                    aria-label="Filter by campus"
+                  >
+                    <option value="all">All Campus</option>
+                    {campusOptions.map((campus) => (
+                      <option key={campus} value={campus}>{campus}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={courseFilter}
+                    onChange={(e) => {
+                      setCourseFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
+                    disabled={loading}
+                    aria-label="Filter by course"
+                  >
+                    <option value="all">All Course</option>
+                    {courseOptions.map((course) => (
+                      <option key={course} value={course}>{course}</option>
+                    ))}
+                  </select>
+                </>
+              )}
+
+              {roleFilter === 'employer' && (
+                <>
+                  <select
+                    value={companyFilter}
+                    onChange={(e) => {
+                      setCompanyFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
+                    disabled={loading}
+                    aria-label="Filter by company"
+                  >
+                    <option value="all">All Company</option>
+                    {companyOptions.map((company) => (
+                      <option key={company} value={company}>{company}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={industryFilter}
+                    onChange={(e) => {
+                      setIndustryFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
+                    disabled={loading}
+                    aria-label="Filter by industry"
+                  >
+                    <option value="all">All Industry</option>
+                    {industryOptions.map((industry) => (
+                      <option key={industry} value={industry}>{industry}</option>
+                    ))}
+                  </select>
+                </>
+              )}
 
               <DateFilterDropdown
                 value={dateFilter}
@@ -1485,7 +1646,16 @@ const UserManagement = () => {
                 <option value="name_desc">Z to A</option>
               </select>
 
-              {(query.trim() !== '' || roleFilter !== 'all' || sort !== 'newest' || dateFilter !== 'all' || dateFrom !== '' || dateTo !== '') && (
+              {(query.trim() !== '' ||
+                roleFilter !== 'all' ||
+                campusFilter !== 'all' ||
+                courseFilter !== 'all' ||
+                companyFilter !== 'all' ||
+                industryFilter !== 'all' ||
+                sort !== 'newest' ||
+                dateFilter !== 'all' ||
+                dateFrom !== '' ||
+                dateTo !== '') && (
                 <button
                   type="button"
                   onClick={clearFilters}
@@ -1540,16 +1710,28 @@ const UserManagement = () => {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                          Date Registered
+                        </th>
+                        <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Name
                         </th>
                         <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Role
                         </th>
+                        {roleFilter === 'jobseeker' && (
+                          <>
+                            <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">Campus</th>
+                            <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">Course</th>
+                          </>
+                        )}
+                        {roleFilter === 'employer' && (
+                          <>
+                            <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">Company</th>
+                            <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">Industry</th>
+                          </>
+                        )}
                         <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Contact Number
-                        </th>
-                        <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
-                          Date Registered
                         </th>
                         <th className="px-5 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Actions
@@ -1580,9 +1762,16 @@ const UserManagement = () => {
                             }}
                             className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
                           >
+                            <td className="px-5 py-4 text-sm text-gray-700 whitespace-nowrap">
+                              {formatDate(user.createdAt)}
+                            </td>
+
                             <td className="px-5 py-4">
                               <div className="flex items-center gap-3 min-w-0">
-                                <Avatar img={user.avatarImage} name={user.name} />
+                                <Avatar
+                                  img={user.avatarImage}
+                                  name={user.role === 'employer' ? user.companyName || user.name : user.name}
+                                />
                                 <div className="min-w-0">
                                   <div className="text-sm font-semibold text-gray-900 truncate">
                                     {user.name}
@@ -1601,12 +1790,22 @@ const UserManagement = () => {
                               </div>
                             </td>
 
+                            {roleFilter === 'jobseeker' && (
+                              <>
+                                <td className="px-5 py-4 text-sm text-gray-700">{user.campus || 'Not provided'}</td>
+                                <td className="px-5 py-4 text-sm text-gray-700">{user.course || 'Not provided'}</td>
+                              </>
+                            )}
+
+                            {roleFilter === 'employer' && (
+                              <>
+                                <td className="px-5 py-4 text-sm text-gray-700">{user.companyName || 'Not provided'}</td>
+                                <td className="px-5 py-4 text-sm text-gray-700">{user.industry || 'Not provided'}</td>
+                              </>
+                            )}
+
                             <td className="px-5 py-4 text-sm text-gray-700 whitespace-nowrap">
                               {user.contactNumber || 'Not provided'}
-                            </td>
-
-                            <td className="px-5 py-4 text-sm text-gray-700">
-                              {formatDate(user.createdAt)}
                             </td>
 
                             <td className="px-5 py-4">
@@ -1640,7 +1839,11 @@ const UserManagement = () => {
                       <Card key={user.key} hover padding={false}>
                         <div className="p-4">
                           <div className="flex items-start gap-3">
-                            <Avatar img={user.avatarImage} name={user.name} size={44} />
+                            <Avatar
+                              img={user.avatarImage}
+                              name={user.role === 'employer' ? user.companyName || user.name : user.name}
+                              size={44}
+                            />
 
                             <div className="min-w-0 flex-1">
                               <div className="text-sm font-semibold text-gray-900">{user.name}</div>
