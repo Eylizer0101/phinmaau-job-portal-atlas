@@ -1457,8 +1457,9 @@ const JobDetails = () => {
                 </div>
               </div>
 
-              <aside className={`${UI.right} lg:sticky lg:top-24`}>
-                <div className={UI.insetPanel}>
+              <aside className={`${UI.right} lg:sticky lg:top-24 lg:self-start lg:h-fit`}>
+                <div className={`${UI.insetPanel} lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto`}>
+
                   <div className={UI.insetHead}>
                     <p className="text-sm font-semibold text-black">Job Overview</p>
                   </div>
