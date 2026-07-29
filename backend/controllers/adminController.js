@@ -1222,7 +1222,15 @@ exports.getEmployersForVerification = async (req, res) => {
     const employers = await User.find(baseQuery).select('-password');
     const normalizedAll = employers.map(normalizeEmployerForList);
 
-    const stats = normalizedAll.reduce(
+    // Employer Verification must only contain accounts that still need an
+    // admin verification decision. Approved and declined accounts do not
+    // belong in this page or in its Company/Industry filter options.
+    const verificationQueue = normalizedAll.filter((item) => {
+      const currentStatus = String(item.overallStatus || 'unverified').toLowerCase();
+      return !['verified', 'approved', 'rejected', 'declined'].includes(currentStatus);
+    });
+
+    const stats = normalizedAll.reduce
       (acc, item) => {
         const currentStatus = String(item.overallStatus || 'unverified').toLowerCase();
         acc.total += 1;
@@ -1243,10 +1251,31 @@ exports.getEmployersForVerification = async (req, res) => {
       }
     );
 
-    const industries = [...new Set(normalizedAll.map((item) => item.industry).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-    const addresses = [...new Set(normalizedAll.map((item) => item.address).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const companies = [
+      ...new Set(
+        verificationQueue
+          .map((item) => String(item.companyName || '').trim())
+          .filter(Boolean)
+      ),
+    ].sort((a, b) => a.localeCompare(b));
 
-    let filtered = normalizedAll;
+    const industries = [
+      ...new Set(
+        verificationQueue
+          .map((item) => String(item.industry || '').trim())
+          .filter(Boolean)
+      ),
+    ].sort((a, b) => a.localeCompare(b));
+
+    const addresses = [
+      ...new Set(
+        verificationQueue
+          .map((item) => String(item.address || '').trim())
+          .filter(Boolean)
+      ),
+    ].sort((a, b) => a.localeCompare(b));
+
+    let filtered = verificationQueue;
 
     if (search) {
       const searchRegex = new RegExp(escapeRegex(search), 'i');
@@ -1263,6 +1292,14 @@ exports.getEmployersForVerification = async (req, res) => {
 
     if (status && status !== 'all') {
       filtered = filtered.filter((item) => String(item.overallStatus || '').toLowerCase() === status);
+    }
+
+    if (company && company.toLowerCase() !== 'all') {
+      filtered = filtered.filter(
+        (item) =>
+          String(item.companyName || '').trim().toLowerCase() ===
+          company.toLowerCase()
+      );
     }
 
     if (industry && industry !== 'all') {
@@ -1315,6 +1352,7 @@ exports.getEmployersForVerification = async (req, res) => {
       employers: paginated,
       stats,
       filters: {
+        companies,
         industries,
         addresses,
         statuses: [

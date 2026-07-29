@@ -970,8 +970,13 @@ const EmployerVerification = () => {
 
         <Card className="relative z-20 mb-6 overflow-visible" padding={false}>
           <div className="p-4 sm:p-5">
-            <div className="grid grid-cols-1 gap-3 xl:grid-cols-12 xl:items-end">
-              <div className="xl:col-span-4">
+            <div
+              className={cn(
+                "grid grid-cols-1 gap-3 xl:items-end",
+                hasActiveFilters ? "xl:grid-cols-6" : "xl:grid-cols-5"
+              )}
+            >
+              <div>
                 <div className="relative">
                   <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                     <Icon name="search" className="h-5 w-5" />
@@ -998,7 +1003,7 @@ const EmployerVerification = () => {
                 </div>
               </div>
 
-              <div className="xl:col-span-2">
+              <div>
                 <select
                   value={filters.company}
                   onChange={(e) => onChangeFilter("company", e.target.value)}
@@ -1014,7 +1019,7 @@ const EmployerVerification = () => {
                 </select>
               </div>
 
-              <div className="xl:col-span-2">
+              <div>
                 <select
                   value={filters.industry}
                   onChange={(e) => onChangeFilter("industry", e.target.value)}
@@ -1030,7 +1035,7 @@ const EmployerVerification = () => {
                 </select>
               </div>
 
-              <div className="xl:col-span-2">
+              <div>
                 <select
                   value={filters.status}
                   onChange={(e) => onChangeFilter("status", e.target.value)}
@@ -1046,7 +1051,7 @@ const EmployerVerification = () => {
                 </select>
               </div>
 
-              <div className={hasActiveFilters ? "xl:col-span-2" : "xl:col-span-3"}>
+              <div>
                 <DateFilterDropdown
                   value={filters.date}
                   startDate={filters.dateFrom}
@@ -1057,7 +1062,7 @@ const EmployerVerification = () => {
               </div>
 
               {hasActiveFilters ? (
-                <div className="xl:col-span-1">
+                <div>
                   <Button variant="secondary" className="h-11 w-full" onClick={clearAllFilters} disabled={loading}>
                     Clear All
                   </Button>
