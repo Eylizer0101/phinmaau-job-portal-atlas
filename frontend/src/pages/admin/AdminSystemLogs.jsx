@@ -890,7 +890,7 @@ const AdminSystemLogs = () => {
             />
           </div>
 
-          <div className="mt-3 flex flex-col gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+          <div className="mt-3 flex flex-col gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-start">
             <CustomDropdown
               value={filters.date}
               options={dateOptionsWithSelection}
@@ -908,14 +908,15 @@ const AdminSystemLogs = () => {
               widthClass="w-full sm:w-52"
               menuWidthClass="w-60"
             />
-            <button
-              type="button"
-              onClick={clearFilters}
-              disabled={!hasActiveFilters}
-              className="inline-flex h-11 w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
-            >
-              Clear Filters
-            </button>
+            {hasActiveFilters ? (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="inline-flex h-11 w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 sm:w-auto"
+              >
+                Clear Filters
+              </button>
+            ) : null}
           </div>
         </section>
 
