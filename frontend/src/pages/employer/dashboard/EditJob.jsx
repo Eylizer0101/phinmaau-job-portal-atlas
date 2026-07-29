@@ -637,6 +637,17 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
     });
 
     const primaryTileLayer = L.tileLayer(
+      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      {
+        minZoom: 5,
+        maxZoom: 19,
+        noWrap: true,
+        crossOrigin: true,
+        attribution: '&copy; OpenStreetMap contributors',
+      }
+    );
+
+    const fallbackTileLayer = L.tileLayer(
       'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
       {
         subdomains: 'abcd',
@@ -646,17 +657,6 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
         crossOrigin: true,
         attribution:
           '&copy; OpenStreetMap contributors &copy; CARTO',
-      }
-    );
-
-    const fallbackTileLayer = L.tileLayer(
-      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-      {
-        minZoom: 5,
-        maxZoom: 19,
-        noWrap: true,
-        crossOrigin: true,
-        attribution: '&copy; OpenStreetMap contributors',
       }
     );
 
