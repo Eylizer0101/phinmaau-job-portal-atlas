@@ -1398,7 +1398,7 @@ const JobDetails = () => {
 
             <div className={UI.grid}>
               <div className={UI.left}>
-                <div className="space-y-5">
+                <div className="space-y-5 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-2">
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     <TopMetricCard icon="money" title="Salary" value={formatSalary(job.salaryMin, job.salaryMax, job.hideSalary)} isPeso />
                     <TopMetricCard icon="clock" title="Experience" value={getExperienceDisplayLabel(job.experienceLevel)} />
