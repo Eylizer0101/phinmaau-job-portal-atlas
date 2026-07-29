@@ -180,15 +180,6 @@ const normalizeLocation = (jobData) => {
     jobData?.location,
     jobData?.jobLocation,
     jobData?.address,
-    jobData?.employerDetails?.location,
-    jobData?.employerDetails?.companyAddress,
-    jobData?.employer?.companyAddress,
-    jobData?.employerId?.companyAddress,
-    jobData?.companyAddress,
-    jobData?.regionCity && jobData?.country ? `${jobData.regionCity}, ${jobData.country}` : '',
-    jobData?.employerDetails?.regionCity && jobData?.employerDetails?.country
-      ? `${jobData.employerDetails.regionCity}, ${jobData.employerDetails.country}`
-      : '',
   ];
 
   for (const c of candidates) {
@@ -217,13 +208,30 @@ const normalizeLocation = (jobData) => {
 
 const formatLocationDisplay = (loc) => {
   const v = String(loc || '').trim();
-  return v || '—';
+  return v || 'Location not specified';
 };
 
 const getJobCoordinates = (jobData) => {
-  const lat = Number(jobData?.locationLatitude);
-  const lng = Number(jobData?.locationLongitude);
+  const rawLat = jobData?.locationLatitude;
+  const rawLng = jobData?.locationLongitude;
+
+  if (
+    rawLat === null ||
+    rawLat === undefined ||
+    rawLat === '' ||
+    rawLng === null ||
+    rawLng === undefined ||
+    rawLng === ''
+  ) {
+    return null;
+  }
+
+  const lat = Number(rawLat);
+  const lng = Number(rawLng);
+
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (Math.abs(lat) < 0.0001 && Math.abs(lng) < 0.0001) return null;
+
   return { lat, lng };
 };
 
@@ -234,7 +242,7 @@ const buildWorkLocationUrl = (jobData) => {
   }
 
   const locationText = formatLocationDisplay(jobData?.location);
-  if (!locationText || locationText === '—') return '';
+  if (!locationText || locationText === 'Location not specified') return '';
 
   return `https://www.openstreetmap.org/search?query=${encodeURIComponent(locationText)}`;
 };
@@ -253,7 +261,11 @@ const buildOpenStreetMapUrl = ({ coords, address }) => {
     return `https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=17/${coords.lat}/${coords.lng}`;
   }
 
-  if (cleanAddress && cleanAddress !== '—') {
+  if (
+    cleanAddress &&
+    cleanAddress !== 'Location not specified' &&
+    cleanAddress !== 'Work address not specified'
+  ) {
     return `https://www.openstreetmap.org/search?query=${encodeURIComponent(cleanAddress)}`;
   }
 
@@ -1029,7 +1041,7 @@ const AdminJobView = () => {
             <div className={`${UI.sectionCard} p-5 sm:p-6`}>
               <SectionHeader icon="file" title="Job Description" />
               <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
-                <RichTextContent value={job.description} fallback="No description provided." />
+                <RichTextContent value={job.description} fallback="No job description provided" />
               </div>
             </div>
           </div>
@@ -1038,7 +1050,7 @@ const AdminJobView = () => {
             <div className={`${UI.sectionCard} p-5 sm:p-6`}>
               <SectionHeader icon="tools" title="Qualification" />
               <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
-                <RichTextContent value={job.requirements} fallback="No requirements provided." />
+                <RichTextContent value={job.requirements} fallback="No qualifications specified" />
               </div>
             </div>
           </div>
@@ -1054,7 +1066,7 @@ const AdminJobView = () => {
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-[#6b7280]">No required skills listed.</p>
+                  <p className="text-sm text-[#6b7280]">No skills specified</p>
                 )}
               </div>
             </div>
@@ -1087,10 +1099,12 @@ const AdminJobView = () => {
                       className={`text-sm font-medium text-[#2e66a6] hover:underline ${UI.ring} rounded`}
                       title="Open work location in OpenStreetMap"
                     >
-                      {formatLocationDisplay(job.location)}
+                      {String(job.location || '').trim() || 'Work address not specified'}
                     </a>
                   ) : (
-                    <p className="text-sm">{formatLocationDisplay(job.location)}</p>
+                    <p className="text-sm">
+                      {String(job.location || '').trim() || 'Work address not specified'}
+                    </p>
                   )}
                 </div>
               </div>
@@ -1108,7 +1122,7 @@ const AdminJobView = () => {
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-[#6b7280]">No perks and benefits listed.</p>
+                  <p className="text-sm text-[#6b7280]">No perks or benefits specified</p>
                 )}
               </div>
             </div>
