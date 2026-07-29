@@ -1230,7 +1230,7 @@ exports.getEmployersForVerification = async (req, res) => {
       return !['verified', 'approved', 'rejected', 'declined'].includes(currentStatus);
     });
 
-    const stats = normalizedAll.reduce
+    const stats = normalizedAll.reduce(
       (acc, item) => {
         const currentStatus = String(item.overallStatus || 'unverified').toLowerCase();
         acc.total += 1;
