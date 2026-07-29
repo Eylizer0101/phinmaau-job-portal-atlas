@@ -580,12 +580,9 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
   useEffect(() => {
     if (!mapElRef.current || mapRef.current) return;
 
-    const startLat = hasCoordinates ? lat : DEFAULT_MAP_CENTER.lat;
-    const startLng = hasCoordinates ? lng : DEFAULT_MAP_CENTER.lng;
-
     mapRef.current = L.map(mapElRef.current, {
-      center: [startLat, startLng],
-      zoom: hasCoordinates ? 16 : 6,
+      center: [DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng],
+      zoom: 6,
       minZoom: 6,
       maxBounds: PHILIPPINES_MAP_BOUNDS,
       maxBoundsViscosity: 1,
@@ -597,15 +594,8 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
       minZoom: 6,
       maxZoom: 19,
       noWrap: true,
-      bounds: PHILIPPINES_MAP_BOUNDS,
       attribution: '&copy; OpenStreetMap contributors',
     }).addTo(mapRef.current);
-
-    if (!hasCoordinates) {
-      mapRef.current.fitBounds(PHILIPPINES_MAP_BOUNDS, {
-        padding: [18, 18],
-      });
-    }
 
     mapRef.current.on('click', async (e) => {
       if (disabled) return;
@@ -616,7 +606,16 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
       updateMarker(lat, lng, false);
     }
 
-    setTimeout(() => mapRef.current?.invalidateSize(), 250);
+    setTimeout(() => {
+      const map = mapRef.current;
+      if (!map) return;
+
+      map.invalidateSize();
+      map.fitBounds(PHILIPPINES_MAP_BOUNDS, {
+        padding: [12, 12],
+        animate: false,
+      });
+    }, 250);
 
     return () => {
       mapRef.current?.remove();
@@ -2250,7 +2249,7 @@ const PostJob = () => {
                             latitude={formData.locationLatitude}
                             longitude={formData.locationLongitude}
                             error={fieldErrors.location}
-                            placeholder={companyLocationFromProfile !== 'Company location' ? companyLocationFromProfile : 'e.g., Unit 201, ABC Building, 123 Rizal St., Brgy. San Roque, Cabanatuan City, Nueva Ecija.'}
+                            placeholder="e.g., Unit 201, ABC Building, 123 Rizal St., Brgy. San Roque, Cabanatuan City, Nueva Ecija."
                             onChange={({ address, lat, lng }) => {
                               setFormData((prev) => ({
                                 ...prev,
