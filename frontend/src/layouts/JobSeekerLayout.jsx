@@ -123,6 +123,7 @@ const JobSeekerLayout = ({ children }) => {
   );
 
   const isActive = (path) => location.pathname === path;
+  const isJobDetailsPage = location.pathname.startsWith('/jobseeker/job-details/');
 
   const getDisplayFirstName = (user = {}) => {
     const firstName = String(user?.firstName || '').trim();
@@ -663,7 +664,7 @@ const JobSeekerLayout = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+    <div className={`min-h-screen bg-gray-50 ${isJobDetailsPage ? 'overflow-x-clip' : 'overflow-x-hidden'}`} >
       {notificationDeleteConfirmation && (
         <div
           className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 px-4"
@@ -1248,7 +1249,7 @@ const JobSeekerLayout = ({ children }) => {
           </div>
         </div>
 
-        <main className="pt-28 pb-20 px-2 sm:px-4 overflow-x-hidden">{children}</main>
+        <main className={`pt-28 pb-20 px-2 sm:px-4 ${isJobDetailsPage ? 'overflow-x-clip' : 'overflow-x-hidden'}`}>{children}</main>
 
         <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
           <div className="flex justify-around py-2">
