@@ -628,6 +628,9 @@ const AdminApplications = () => {
   const [jobTitleFilter, setJobTitleFilter] = useState('All Job Title');
   const [companyFilter, setCompanyFilter] = useState('All Company');
   const [statusFilter, setStatusFilter] = useState('All Status');
+  const [dateFilter, setDateFilter] = useState('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
   const fetchApplications = useCallback(async () => {
@@ -721,6 +724,10 @@ const AdminApplications = () => {
         normalizeFilterKey(status) !== normalizeFilterKey(statusFilter)
       ) return false;
 
+      if (!isDateInRange(app.appliedAt || app.createdAt, dateFrom, dateTo)) {
+        return false;
+      }
+
       return true;
     });
 
@@ -737,6 +744,8 @@ const AdminApplications = () => {
     jobTitleFilter,
     companyFilter,
     statusFilter,
+    dateFrom,
+    dateTo,
   ]);
 
   useEffect(() => {
@@ -748,6 +757,8 @@ const AdminApplications = () => {
     jobTitleFilter,
     companyFilter,
     statusFilter,
+    dateFrom,
+    dateTo,
   ]);
 
   const totalPages = Math.max(Math.ceil(filteredApplications.length / ITEMS_PER_PAGE), 1);
@@ -767,6 +778,9 @@ const AdminApplications = () => {
     setJobTitleFilter('All Job Title');
     setCompanyFilter('All Company');
     setStatusFilter('All Status');
+    setDateFilter('all');
+    setDateFrom('');
+    setDateTo('');
   };
 
   const hasActiveFilters =
@@ -775,7 +789,10 @@ const AdminApplications = () => {
     courseFilter !== 'All Course' ||
     jobTitleFilter !== 'All Job Title' ||
     companyFilter !== 'All Company' ||
-    statusFilter !== 'All Status';
+    statusFilter !== 'All Status' ||
+    dateFilter !== 'all' ||
+    dateFrom !== '' ||
+    dateTo !== '';
 
   return (
     <AdminLayout>
@@ -788,7 +805,7 @@ const AdminApplications = () => {
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-black/5">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-[minmax(280px,1.8fr)_minmax(130px,1fr)_minmax(130px,1fr)_minmax(140px,1fr)_minmax(140px,1fr)_minmax(125px,0.9fr)_auto]">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-[minmax(250px,1.6fr)_repeat(6,minmax(120px,1fr))_auto]">
             <div className="relative min-w-0 sm:col-span-2 lg:col-span-2 xl:col-span-1">
               <Icon name="search" className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
               <input
@@ -828,6 +845,17 @@ const AdminApplications = () => {
               value={statusFilter}
               onChange={setStatusFilter}
               options={['All Status', ...STATUS_OPTIONS]}
+            />
+
+            <DateFilterDropdown
+              value={dateFilter}
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+              onChange={(next) => {
+                setDateFilter(next.date);
+                setDateFrom(next.dateFrom);
+                setDateTo(next.dateTo);
+              }}
             />
 
             {hasActiveFilters ? (
@@ -882,7 +910,8 @@ const AdminApplications = () => {
                       const course = getCourse(app);
                       const jobTitle = getJobTitle(app);
                       const company = getCompany(app);
-                                      return (
+                      const industry = getIndustry(app);
+                      return (
                         <tr
                           key={app._id}
                           role="link"
@@ -936,6 +965,9 @@ const AdminApplications = () => {
                           <td className="min-w-[170px] px-5 py-4">
                             <p className="text-sm font-bold text-slate-800">
                               {truncate(company, 22)}
+                            </p>
+                            <p className="mt-0.5 text-xs text-slate-500">
+                              {truncate(industry, 28)}
                             </p>
                           </td>
 
