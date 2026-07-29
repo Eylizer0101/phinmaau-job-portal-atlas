@@ -551,21 +551,6 @@ const RoleBadge = ({ role }) => {
   );
 };
 
-const SummaryCard = ({ label, value, icon, helper, accent = false }) => (
-  <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-    <div className="flex items-center justify-between gap-4">
-      <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">{label}</p>
-        <p className="mt-1 text-2xl font-bold tracking-tight text-slate-950">{Number(value || 0).toLocaleString()}</p>
-        <p className="mt-1 text-xs text-slate-500">{helper}</p>
-      </div>
-      <div className={cn('flex h-11 w-11 items-center justify-center rounded-xl', accent ? 'bg-[#212C61] text-white' : 'bg-[#212C61]/10 text-[#212C61]')}>
-        <Icon name={icon} className="h-5 w-5" />
-      </div>
-    </div>
-  </div>
-);
-
 const DetailRow = ({ label, children, full = false }) => {
   if (children === undefined || children === null || children === '') return null;
   return (
@@ -721,13 +706,11 @@ const LoadingRows = () => (
 const AdminSystemLogs = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedLog, setSelectedLog] = useState(null);
   const [showDateRangeModal, setShowDateRangeModal] = useState(false);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ page: 1, pageCount: 1, total: 0 });
-  const [summary, setSummary] = useState({ total: 0, success: 0, failed: 0, warning: 0, today: 0 });
   const [filterOptions, setFilterOptions] = useState({ actions: [], modules: [] });
   const [filters, setFilters] = useState({
     search: '',
@@ -752,10 +735,9 @@ const AdminSystemLogs = () => {
     setPage(1);
   };
 
-  const loadLogs = useCallback(async ({ silent = false } = {}) => {
+  const loadLogs = useCallback(async () => {
     try {
-      if (silent) setRefreshing(true);
-      else setLoading(true);
+      setLoading(true);
       setErrorMessage('');
 
       const response = await api.get('/admin/system-logs', {
@@ -778,7 +760,6 @@ const AdminSystemLogs = () => {
 
       setLogs(response.data.data || []);
       setPagination(response.data.pagination || { page: 1, pageCount: 1, total: 0 });
-      setSummary(response.data.summary || { total: 0, success: 0, failed: 0, warning: 0, today: 0 });
       setFilterOptions(response.data.filterOptions || { actions: [], modules: [] });
     } catch (error) {
       console.error('Error loading system logs:', error);
@@ -786,7 +767,6 @@ const AdminSystemLogs = () => {
       setErrorMessage(error.response?.data?.message || error.message || 'Failed to load system logs.');
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, [debouncedSearch, filters.action, filters.date, filters.dateFrom, filters.dateTo, filters.module, filters.role, filters.sort, filters.status, page]);
 
@@ -861,34 +841,15 @@ const AdminSystemLogs = () => {
   return (
     <AdminLayout>
       <main className="mx-auto w-full max-w-[1420px] px-1 py-8">
-        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#212C61]/60">Administration</p>
-            <h1 className="mt-1 text-2xl font-bold tracking-[-0.02em] text-slate-950 sm:text-3xl">System Logs</h1>
-            <p className="mt-1.5 max-w-3xl text-sm leading-6 text-slate-500">
-              Review important account, verification, job, application, archive, and community activities across the system.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => loadLogs({ silent: true })}
-            disabled={loading || refreshing}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61]/25 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Icon name="refresh" className={cn('h-4 w-4', refreshing && 'animate-spin')} />
-            {refreshing ? 'Refreshing…' : 'Refresh Logs'}
-          </button>
+        <header className="mb-5">
+          <h1 className="text-2xl font-bold tracking-[-0.02em] text-slate-950 sm:text-3xl">System Logs</h1>
+          <p className="mt-1.5 max-w-2xl text-sm leading-6 text-slate-500">
+            Review account, verification, job, application, archive, and community activity.
+          </p>
         </header>
 
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="System log summary">
-          <SummaryCard label="Filtered Logs" value={summary.total} helper="Matching the current filters" icon="activity" accent />
-          <SummaryCard label="Successful" value={summary.success} helper="Completed actions" icon="check" />
-          <SummaryCard label="Failed" value={summary.failed} helper="Actions that need review" icon="xCircle" />
-          <SummaryCard label="Today" value={summary.today} helper="Recorded today" icon="clock" />
-        </section>
-
-        <section className="relative z-30 mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-[minmax(260px,1.5fr)_minmax(135px,0.7fr)_minmax(170px,0.9fr)_minmax(150px,0.8fr)_minmax(145px,0.75fr)_minmax(165px,0.85fr)]">
+        <section className="relative z-30 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(280px,1.7fr)_150px_190px_180px_150px_170px]">
             <label className="relative block">
               <span className="sr-only">Search system logs</span>
               <Icon name="search" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -906,14 +867,12 @@ const AdminSystemLogs = () => {
               options={ROLE_OPTIONS}
               onChange={(value) => updateFilter('role', value)}
               label="Filter by role"
-              icon="user"
             />
             <CustomDropdown
               value={filters.action}
               options={actionOptions}
               onChange={(value) => updateFilter('action', value)}
               label="Filter by action"
-              icon="activity"
               menuWidthClass="min-w-full xl:w-72"
             />
             <CustomDropdown
@@ -921,7 +880,6 @@ const AdminSystemLogs = () => {
               options={moduleOptions}
               onChange={(value) => updateFilter('module', value)}
               label="Filter by module"
-              icon="shield"
               menuWidthClass="min-w-full xl:w-64"
             />
             <CustomDropdown
@@ -929,7 +887,6 @@ const AdminSystemLogs = () => {
               options={STATUS_OPTIONS}
               onChange={(value) => updateFilter('status', value)}
               label="Filter by status"
-              icon="check"
             />
             <CustomDropdown
               value={filters.date}
@@ -942,8 +899,8 @@ const AdminSystemLogs = () => {
           </div>
 
           <div className="mt-3 flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-slate-500">
-              Showing <span className="font-bold text-slate-800">{pagination.total || 0}</span> matching record(s). Logs are read-only and protected from direct modification.
+            <p className="text-xs font-medium text-slate-500">
+              <span className="font-bold text-slate-800">{pagination.total || 0}</span> record(s) found
             </p>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <CustomDropdown
