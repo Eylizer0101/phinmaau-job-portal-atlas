@@ -1888,9 +1888,28 @@ exports.getJobseekersForVerification = async (req, res) => {
       }
     );
 
-    const campuses = [...new Set(normalized.map((item) => item.campus).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-    const courses = [...new Set(normalized.map((item) => item.course).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-    const addresses = [...new Set(normalized.map((item) => item.address).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const uniqueNormalizedOptions = (values, normalizer = (value) => String(value || '').trim()) => {
+      const optionMap = new Map();
+
+      values.forEach((value) => {
+        const normalizedValue = normalizer(value);
+        if (!normalizedValue) return;
+
+        const duplicateKey = normalizedValue.toLocaleLowerCase();
+        if (!optionMap.has(duplicateKey)) {
+          optionMap.set(duplicateKey, normalizedValue);
+        }
+      });
+
+      return [...optionMap.values()].sort((a, b) => a.localeCompare(b));
+    };
+
+    const campuses = uniqueNormalizedOptions(
+      normalized.map((item) => item.campus),
+      normalizeDashboardCampus
+    );
+    const courses = uniqueNormalizedOptions(normalized.map((item) => item.course));
+    const addresses = uniqueNormalizedOptions(normalized.map((item) => item.address));
 
     let filtered = normalized;
 
