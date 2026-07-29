@@ -700,7 +700,15 @@ exports.getAllUsers = async (req, res) => {
     }
 
     if (campus && campus.toLowerCase() !== 'all') {
-      baseQuery['jobSeekerProfile.campus'] = campus;
+      const normalizedCampus = normalizeDashboardCampus(campus);
+      const campusRegex = new RegExp(`^${escapeRegex(normalizedCampus)}$`, 'i');
+
+      andConditions.push({
+        $or: [
+          { 'jobSeekerProfile.campus': campusRegex },
+          { 'jobSeekerProfile.educationEntries.campus': campusRegex },
+        ],
+      });
     }
 
     if (course && course.toLowerCase() !== 'all') {

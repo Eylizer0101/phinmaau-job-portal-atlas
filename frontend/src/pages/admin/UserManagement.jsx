@@ -1043,6 +1043,40 @@ const Avatar = React.memo(({ img, name, size = 40, className }) => {
 
 Avatar.displayName = 'Avatar';
 
+const normalizeCampusName = (value) => {
+  const text = String(value || '').trim();
+  if (!text) return '';
+
+  const compact = text
+    .toLowerCase()
+    .replace(/phinma/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (compact.includes('san jose') || compact.includes('sanjose')) return 'AU San Jose';
+  if (compact.includes('south')) return 'AU South';
+  if (compact.includes('main')) return 'AU Main';
+
+  return text.replace(/\s+/g, ' ');
+};
+
+const uniqueNormalizedOptions = (values, normalizer = (value) => String(value || '').trim()) => {
+  const optionMap = new Map();
+
+  values.forEach((value) => {
+    const normalizedValue = normalizer(value);
+    if (!normalizedValue) return;
+
+    const duplicateKey = normalizedValue.toLocaleLowerCase();
+    if (!optionMap.has(duplicateKey)) {
+      optionMap.set(duplicateKey, normalizedValue);
+    }
+  });
+
+  return [...optionMap.values()].sort((a, b) => a.localeCompare(b));
+};
+
 const UserManagement = () => {
   const navigate = useNavigate();
 
@@ -1130,10 +1164,11 @@ const UserManagement = () => {
           studentId: user.jobSeekerProfile?.studentId,
           companyName: user.employerProfile?.companyName || '',
           industry: user.employerProfile?.industry || '',
-          campus:
+          campus: normalizeCampusName(
             user.jobSeekerProfile?.campus ||
-            user.jobSeekerProfile?.educationEntries?.find((entry) => entry?.campus)?.campus ||
-            '',
+              user.jobSeekerProfile?.educationEntries?.find((entry) => entry?.campus)?.campus ||
+              ''
+          ),
           course:
             user.jobSeekerProfile?.course ||
             user.jobSeekerProfile?.educationEntries?.find((entry) => entry?.course)?.course ||
@@ -1359,7 +1394,7 @@ const UserManagement = () => {
   ]);
 
   const campusOptions = useMemo(
-    () => [...new Set(users.map((user) => user.campus).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    () => uniqueNormalizedOptions(users.map((user) => user.campus), normalizeCampusName),
     [users]
   );
 
