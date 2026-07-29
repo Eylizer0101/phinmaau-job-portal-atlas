@@ -872,7 +872,7 @@ const JobseekerVerification = () => {
                 </select>
               </div>
 
-              <div className="xl:col-span-2">
+              <div className={(searchDraft || filters.campus !== "all" || filters.course !== "all" || filters.status !== "all" || filters.date !== "all" || filters.dateFrom || filters.dateTo) ? "xl:col-span-2" : "xl:col-span-3"}>
                 <DateFilterDropdown
                   value={filters.date}
                   startDate={filters.dateFrom}

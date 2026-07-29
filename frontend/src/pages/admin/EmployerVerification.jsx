@@ -1030,7 +1030,7 @@ const EmployerVerification = () => {
                 </select>
               </div>
 
-              <div className="xl:col-span-2">
+              <div className={hasActiveFilters ? "xl:col-span-2" : "xl:col-span-3"}>
                 <DateFilterDropdown
                   value={filters.date}
                   startDate={filters.dateFrom}
