@@ -841,41 +841,34 @@ const DeclinedApplicants = () => {
       });
     }
 
-    const getSalaryValue = (app) => {
-      const job = app.job || {};
-      const directSalary = job.salary ?? job.salaryRange ?? job.compensation ?? '';
-      const values = [job.maxSalary, job.salaryMax, job.minSalary, job.salaryMin]
-        .map((value) => Number(String(value || '').replace(/[^0-9.]/g, '')))
-        .filter((value) => Number.isFinite(value) && value > 0);
-
-      if (values.length) return Math.max(...values);
-
-      const matches = String(directSalary).match(/\d[\d,]*(?:\.\d+)?/g) || [];
-      const parsed = matches
-        .map((value) => Number(value.replace(/,/g, '')))
-        .filter((value) => Number.isFinite(value) && value > 0);
-
-      return parsed.length ? Math.max(...parsed) : 0;
+    const getAppliedTime = (app) => {
+      const time = new Date(app?.appliedAt || 0).getTime();
+      return Number.isNaN(time) ? 0 : time;
     };
 
-    const getExpiryTime = (app) => {
-      const dateValue = app.job?.expiryDate || app.job?.expiresAt || app.job?.applicationDeadline || app.job?.deadline;
-      const time = new Date(dateValue || 0).getTime();
-      return Number.isNaN(time) || time <= 0 ? Number.MAX_SAFE_INTEGER : time;
+    const getDeclinedTime = (app) => {
+      const declinedActivityTimes = (Array.isArray(app?.activityHistory) ? app.activityHistory : [])
+        .filter((activity) => String(activity?.type || '').toLowerCase() === 'declined')
+        .map((activity) => new Date(activity?.occurredAt || 0).getTime())
+        .filter((time) => Number.isFinite(time));
+
+      const candidates = [
+        ...declinedActivityTimes,
+        new Date(app?.declinedAt || 0).getTime(),
+        new Date(app?.reviewedAt || 0).getTime(),
+        new Date(app?.updatedAt || 0).getTime(),
+        getAppliedTime(app),
+      ].filter((time) => Number.isFinite(time));
+
+      return candidates.length ? Math.max(...candidates) : 0;
     };
 
     return [...list].sort((a, b) => {
-      if (sortBy === 'salary_high_to_low') {
-        return getSalaryValue(b) - getSalaryValue(a);
-      }
+      if (sortBy === 'oldest_first') return getAppliedTime(a) - getAppliedTime(b);
+      if (sortBy === 'recently_declined') return getDeclinedTime(b) - getDeclinedTime(a);
+      if (sortBy === 'least_recently_declined') return getDeclinedTime(a) - getDeclinedTime(b);
 
-      if (sortBy === 'expiry_soonest') {
-        return getExpiryTime(a) - getExpiryTime(b);
-      }
-
-      const da = new Date(a.appliedAt || 0).getTime();
-      const db = new Date(b.appliedAt || 0).getTime();
-      return db - da;
+      return getAppliedTime(b) - getAppliedTime(a);
     });
   }, [applications, buildApplicantName, debouncedQuery, filterBy, customDateFrom, customDateTo, selectedJob, sortBy, getDeclinedStageLabel]);
 
@@ -1076,10 +1069,10 @@ const DeclinedApplicants = () => {
                   className={selectBase}
                   disabled={loading}
                 >
-                  <option value="newest">Sort By</option>
-                  <option value="salary_high_to_low">Salary Highest to Lowest</option>
-                  <option value="expiry_soonest">Expiry Date Soonest to Latest</option>
-                  <option value="newest">Most Recent Newest to Oldest</option>
+                  <option value="newest">Newest First</option>
+                  <option value="oldest_first">Oldest First</option>
+                  <option value="recently_declined">Recently Declined</option>
+                  <option value="least_recently_declined">Least Recently Declined</option>
                 </select>
               </div>
 

@@ -1588,30 +1588,35 @@ const ForInterview = () => {
       });
     }
 
-    const getSalaryValue = (app) => {
-      const job = app?.job || {};
-      const raw = job.salaryMax ?? job.maxSalary ?? job.salaryTo ?? job.salary ?? job.salaryMin ?? job.minSalary ?? job.salaryFrom ?? 0;
-      const numeric = Number(String(raw).replace(/[^0-9.]/g, ''));
-      return Number.isNaN(numeric) ? 0 : numeric;
-    };
-
-    const getExpiryValue = (app) => {
-      const raw = app?.job?.expiryDate || app?.job?.expiresAt || app?.job?.deadline || app?.job?.applicationDeadline || 0;
-      const time = new Date(raw).getTime();
-      return Number.isNaN(time) ? Number.MAX_SAFE_INTEGER : time;
-    };
-
-    const getRecentValue = (app) => {
+    const getAppliedTime = (app) => {
       const time = new Date(app?.appliedAt || 0).getTime();
       return Number.isNaN(time) ? 0 : time;
     };
 
-    if (sortBy === 'salary_highest') {
-      list.sort((a, b) => getSalaryValue(b) - getSalaryValue(a));
-    } else if (sortBy === 'expiry_soonest') {
-      list.sort((a, b) => getExpiryValue(a) - getExpiryValue(b));
+    const getUpdatedTime = (app) => {
+      const activityTimes = (Array.isArray(app?.activityHistory) ? app.activityHistory : [])
+        .map((activity) => new Date(activity?.occurredAt || 0).getTime())
+        .filter((time) => Number.isFinite(time));
+
+      const candidates = [
+        ...activityTimes,
+        new Date(app?.interviewSchedule?.setAt || 0).getTime(),
+        new Date(app?.reviewedAt || 0).getTime(),
+        new Date(app?.updatedAt || 0).getTime(),
+        getAppliedTime(app),
+      ].filter((time) => Number.isFinite(time));
+
+      return candidates.length ? Math.max(...candidates) : 0;
+    };
+
+    if (sortBy === 'oldest_first') {
+      list.sort((a, b) => getAppliedTime(a) - getAppliedTime(b));
+    } else if (sortBy === 'recently_updated') {
+      list.sort((a, b) => getUpdatedTime(b) - getUpdatedTime(a));
+    } else if (sortBy === 'least_recently_updated') {
+      list.sort((a, b) => getUpdatedTime(a) - getUpdatedTime(b));
     } else {
-      list.sort((a, b) => getRecentValue(b) - getRecentValue(a));
+      list.sort((a, b) => getAppliedTime(b) - getAppliedTime(a));
     }
 
     return list;
@@ -2036,9 +2041,10 @@ const selectBase =
                 {openFilterMenu === 'sort' && (
                   <div className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-xl border border-gray-200 bg-white py-2 shadow-lg">
                     {[
-                      ['salary_highest', 'Salary Highest to Lowest'],
-                      ['expiry_soonest', 'Expiry Date Soonest to Latest'],
-                      ['recent', 'Most Recent Newest to Oldest'],
+                      ['recent', 'Newest First'],
+                      ['oldest_first', 'Oldest First'],
+                      ['recently_updated', 'Recently Updated'],
+                      ['least_recently_updated', 'Least Recently Updated'],
                     ].map(([value, label]) => (
                       <button
                         key={value}

@@ -691,20 +691,34 @@ const HiredApplicants = () => {
       return true;
     });
 
-    const getSalaryValue = (app) => Math.max(Number(app.job?.salaryMax) || 0, Number(app.job?.salaryMin) || 0);
-    const getExpiryValue = (app) => {
-      const expiry = app.job?.expiryDate || app.job?.expiresAt || app.job?.deadline || app.job?.applicationDeadline || app.job?.validUntil;
-      const time = new Date(expiry || 0).getTime();
-      return Number.isNaN(time) || time === 0 ? Number.MAX_SAFE_INTEGER : time;
+    const getAppliedTime = (app) => {
+      const time = new Date(app?.appliedAt || 0).getTime();
+      return Number.isNaN(time) ? 0 : time;
+    };
+
+    const getHiredTime = (app) => {
+      const hiredActivityTimes = (Array.isArray(app?.activityHistory) ? app.activityHistory : [])
+        .filter((activity) => String(activity?.type || '').toLowerCase() === 'hired')
+        .map((activity) => new Date(activity?.occurredAt || 0).getTime())
+        .filter((time) => Number.isFinite(time));
+
+      const candidates = [
+        ...hiredActivityTimes,
+        new Date(app?.hiredAt || 0).getTime(),
+        new Date(app?.reviewedAt || 0).getTime(),
+        new Date(app?.updatedAt || 0).getTime(),
+        getAppliedTime(app),
+      ].filter((time) => Number.isFinite(time));
+
+      return candidates.length ? Math.max(...candidates) : 0;
     };
 
     const sorted = [...filteredByDate].sort((a, b) => {
-      if (sortBy === 'salary_desc') return getSalaryValue(b) - getSalaryValue(a);
-      if (sortBy === 'expiry_soonest') return getExpiryValue(a) - getExpiryValue(b);
+      if (sortBy === 'oldest_first') return getAppliedTime(a) - getAppliedTime(b);
+      if (sortBy === 'recently_hired') return getHiredTime(b) - getHiredTime(a);
+      if (sortBy === 'least_recently_hired') return getHiredTime(a) - getHiredTime(b);
 
-      const da = new Date(a.appliedAt || 0).getTime();
-      const db = new Date(b.appliedAt || 0).getTime();
-      return db - da;
+      return getAppliedTime(b) - getAppliedTime(a);
     });
 
     return sorted;
@@ -745,9 +759,10 @@ const HiredApplicants = () => {
 
 
   const sortOptions = [
-    { value: 'salary_desc', label: 'Salary Highest to Lowest' },
-    { value: 'expiry_soonest', label: 'Expiry Date Soonest to Latest' },
-    { value: 'recent', label: 'Most Recent Newest to Oldest' },
+    { value: 'recent', label: 'Newest First' },
+    { value: 'oldest_first', label: 'Oldest First' },
+    { value: 'recently_hired', label: 'Recently Hired' },
+    { value: 'least_recently_hired', label: 'Least Recently Hired' },
   ];
 
   const hasActiveFilters =

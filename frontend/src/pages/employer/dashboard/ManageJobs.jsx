@@ -1069,17 +1069,24 @@ const ManageJobs = () => {
     }
 
     list.sort((a, b) => {
-      if (sortBy === 'salary_high_to_low') {
-        const aSalary = Number(a?.salaryMax ?? a?.salaryMin ?? 0);
-        const bSalary = Number(b?.salaryMax ?? b?.salaryMin ?? 0);
-        return bSalary - aSalary;
-      }
+      const createdA = safeDate(a?.createdAt);
+      const createdB = safeDate(b?.createdAt);
+      const applicantsA = Number(getApplicantValue(a)) || 0;
+      const applicantsB = Number(getApplicantValue(b)) || 0;
+      const vacanciesA = Number(getVacancyValue(a)) || 0;
+      const vacanciesB = Number(getVacancyValue(b)) || 0;
+      const expiryA = safeDate(a?.applicationDeadline);
+      const expiryB = safeDate(b?.applicationDeadline);
 
-      if (sortBy === 'expiry_soonest_to_latest') {
-        return safeDate(a.applicationDeadline) - safeDate(b.applicationDeadline);
-      }
+      if (sortBy === 'oldest_first') return createdA - createdB;
+      if (sortBy === 'most_applicants') return applicantsB - applicantsA || createdB - createdA;
+      if (sortBy === 'fewest_applicants') return applicantsA - applicantsB || createdB - createdA;
+      if (sortBy === 'most_vacancies') return vacanciesB - vacanciesA || createdB - createdA;
+      if (sortBy === 'fewest_vacancies') return vacanciesA - vacanciesB || createdB - createdA;
+      if (sortBy === 'expiring_soon') return expiryA - expiryB || createdB - createdA;
+      if (sortBy === 'latest_expiration') return expiryB - expiryA || createdB - createdA;
 
-      return safeDate(b.createdAt) - safeDate(a.createdAt);
+      return createdB - createdA;
     });
 
     return list;
@@ -1261,10 +1268,14 @@ const ManageJobs = () => {
                   onChange={(e) => setSortBy(e.target.value)}
                   className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                 >
-                  <option value="most_recent">Sort By</option>
-                  <option value="salary_high_to_low">Salary Highest to Lowest</option>
-                  <option value="expiry_soonest_to_latest">Expiry Date Soonest to Latest</option>
-                  <option value="most_recent">Most Recent Newest to Oldest</option>
+                  <option value="most_recent">Newest First</option>
+                  <option value="oldest_first">Oldest First</option>
+                  <option value="most_applicants">Most Applicants</option>
+                  <option value="fewest_applicants">Fewest Applicants</option>
+                  <option value="most_vacancies">Most Vacancies</option>
+                  <option value="fewest_vacancies">Fewest Vacancies</option>
+                  <option value="expiring_soon">Expiring Soon</option>
+                  <option value="latest_expiration">Latest Expiration</option>
                 </select>
 
                 {hasActiveFilters && (
