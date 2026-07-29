@@ -849,7 +849,7 @@ const AdminSystemLogs = () => {
         </header>
 
         <section className="relative z-30 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(280px,1.7fr)_150px_190px_180px_150px_170px]">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(300px,1.8fr)_160px_200px_190px_160px]">
             <label className="relative block">
               <span className="sr-only">Search system logs</span>
               <Icon name="search" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -888,39 +888,34 @@ const AdminSystemLogs = () => {
               onChange={(value) => updateFilter('status', value)}
               label="Filter by status"
             />
+          </div>
+
+          <div className="mt-3 flex flex-col gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
             <CustomDropdown
               value={filters.date}
               options={dateOptionsWithSelection}
               onChange={handleDateChange}
               label="Filter by date"
               icon="calendar"
-              menuWidthClass="min-w-full xl:w-60"
+              widthClass="w-full sm:w-52"
+              menuWidthClass="min-w-full sm:w-60"
             />
-          </div>
-
-          <div className="mt-3 flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs font-medium text-slate-500">
-              <span className="font-bold text-slate-800">{pagination.total || 0}</span> record(s) found
-            </p>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <CustomDropdown
-                value={filters.sort}
-                options={SORT_OPTIONS}
-                onChange={(value) => updateFilter('sort', value)}
-                label="Sort system logs"
-                widthClass="w-full sm:w-52"
-                menuWidthClass="w-60"
-              />
-              <button
-                type="button"
-                onClick={clearFilters}
-                disabled={!hasActiveFilters}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <Icon name="clear" className="h-4 w-4" />
-                Clear Filters
-              </button>
-            </div>
+            <CustomDropdown
+              value={filters.sort}
+              options={SORT_OPTIONS}
+              onChange={(value) => updateFilter('sort', value)}
+              label="Sort system logs"
+              widthClass="w-full sm:w-52"
+              menuWidthClass="w-60"
+            />
+            <button
+              type="button"
+              onClick={clearFilters}
+              disabled={!hasActiveFilters}
+              className="inline-flex h-11 w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
+            >
+              Clear Filters
+            </button>
           </div>
         </section>
 
