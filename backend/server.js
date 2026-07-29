@@ -94,6 +94,10 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Read-only audit trail for important system actions.
+const { systemAuditMiddleware } = require('./utils/systemLogger');
+app.use(systemAuditMiddleware);
+
 // ✅ SERVE STATIC FILES FROM UPLOADS DIRECTORY
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -234,6 +238,7 @@ app.get('/', (req, res) => {
         quickAction: 'PUT /api/admin/users/:id/quick-action',
         deleteUser: 'DELETE /api/admin/users/:id',
         bulkUpdateStatus: 'PUT /api/admin/users/bulk-status',
+        systemLogs: 'GET /api/admin/system-logs',
       },
       jobs: {
         getJobs: 'GET /api/jobs',
@@ -296,6 +301,9 @@ app.use('/api/messages', require('./routes/messageRoutes'));
 app.use('/api/chatbot', require('./routes/chatbotRoutes'));
 app.use('/api/community', require('./routes/communityRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+
+// ✅ ADMIN SYSTEM LOGS (mount before the general admin router)
+app.use('/api/admin/system-logs', require('./routes/systemLogRoutes'));
 
 // ✅ ADD ADMIN ROUTES
 app.use('/api/admin', require('./routes/adminRoutes'));

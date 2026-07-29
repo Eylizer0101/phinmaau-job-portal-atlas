@@ -63,6 +63,7 @@ const navItems = useMemo(
     { name: "Job Offers", path: "/admin/job-offers" },
     { name: "Applications", path: "/admin/applications" },
     { name: "Archive", path: "/admin/archive" },
+    { name: "System Log", path: "/admin/system-logs" },
 
   ],
   []

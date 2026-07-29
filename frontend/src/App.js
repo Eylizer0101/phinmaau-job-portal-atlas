@@ -85,6 +85,7 @@ import AdminJobApplicants from './pages/admin/AdminJobApplicants';
 import AdminJobOffers from './pages/admin/AdminJobOffers';
 import AdminArchive from './pages/admin/AdminArchive';
 import AdminArchiveDetails from './pages/admin/AdminArchiveDetails';
+import AdminSystemLogs from './pages/admin/AdminSystemLogs';
 import AdminNotificationsPage from './pages/admin/AdminNotificationsPage';
 import AdminDashboardJobs from './pages/admin/AdminDashboardJobs';
 import AdminDashboardJobSeekers from './pages/admin/AdminDashboardJobSeekers';
@@ -630,6 +631,14 @@ function App() {
           element={
             <RequireRole role="admin" redirectTo="/login">
               <AdminArchiveDetails />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/admin/system-logs"
+          element={
+            <RequireRole role="admin" redirectTo="/login">
+              <AdminSystemLogs />
             </RequireRole>
           }
         />
