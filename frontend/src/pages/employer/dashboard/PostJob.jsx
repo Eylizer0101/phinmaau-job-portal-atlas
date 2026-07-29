@@ -582,20 +582,50 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
 
     mapRef.current = L.map(mapElRef.current, {
       center: [DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng],
-      zoom: 6,
-      minZoom: 6,
-      maxBounds: PHILIPPINES_MAP_BOUNDS,
+      zoom: 5,
+      minZoom: 5,
+      maxBounds: PHILIPPINES_MAP_BOUNDS.pad(0.12),
       maxBoundsViscosity: 1,
       scrollWheelZoom: true,
       worldCopyJump: false,
+      zoomControl: true,
     });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      minZoom: 6,
-      maxZoom: 19,
-      noWrap: true,
-      attribution: '&copy; OpenStreetMap contributors',
-    }).addTo(mapRef.current);
+    const primaryTileLayer = L.tileLayer(
+      'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+      {
+        subdomains: 'abcd',
+        minZoom: 5,
+        maxZoom: 19,
+        noWrap: true,
+        crossOrigin: true,
+        attribution:
+          '&copy; OpenStreetMap contributors &copy; CARTO',
+      }
+    );
+
+    const fallbackTileLayer = L.tileLayer(
+      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      {
+        minZoom: 5,
+        maxZoom: 19,
+        noWrap: true,
+        crossOrigin: true,
+        attribution: '&copy; OpenStreetMap contributors',
+      }
+    );
+
+    let fallbackAdded = false;
+
+    primaryTileLayer.on('tileerror', () => {
+      if (!fallbackAdded && mapRef.current) {
+        fallbackAdded = true;
+        mapRef.current.removeLayer(primaryTileLayer);
+        fallbackTileLayer.addTo(mapRef.current);
+      }
+    });
+
+    primaryTileLayer.addTo(mapRef.current);
 
     mapRef.current.on('click', async (e) => {
       if (disabled) return;
@@ -606,18 +636,27 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
       updateMarker(lat, lng, false);
     }
 
-    setTimeout(() => {
+    const fitPhilippinesMap = () => {
       const map = mapRef.current;
       if (!map) return;
 
-      map.invalidateSize();
+      map.invalidateSize({ pan: false });
       map.fitBounds(PHILIPPINES_MAP_BOUNDS, {
-        padding: [12, 12],
+        paddingTopLeft: [24, 18],
+        paddingBottomRight: [24, 18],
         animate: false,
+        maxZoom: 6,
       });
-    }, 250);
+    };
+
+    const firstRenderTimer = window.setTimeout(fitPhilippinesMap, 150);
+    const secondRenderTimer = window.setTimeout(fitPhilippinesMap, 600);
+    const thirdRenderTimer = window.setTimeout(fitPhilippinesMap, 1200);
 
     return () => {
+      window.clearTimeout(firstRenderTimer);
+      window.clearTimeout(secondRenderTimer);
+      window.clearTimeout(thirdRenderTimer);
       mapRef.current?.remove();
       mapRef.current = null;
       markerRef.current = null;
