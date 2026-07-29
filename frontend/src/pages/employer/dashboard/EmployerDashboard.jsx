@@ -4,7 +4,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 import EmployerLayout from '../../../layouts/EmployerLayout';
-import { EXPERIENCE_LEVELS } from '../../../constants/postJobDropdownOptions';
 
 const EmployerDashboard = () => {
   const navigate = useNavigate();
@@ -104,8 +103,8 @@ const EmployerDashboard = () => {
     const minNum = min ? Number(min) : null;
     const maxNum = max ? Number(max) : null;
 
-    const formattedMin = Number.isFinite(minNum) ? `₱${minNum.toLocaleString()}` : '';
-    const formattedMax = Number.isFinite(maxNum) ? `₱${maxNum.toLocaleString()}` : '';
+    const formattedMin = Number.isFinite(minNum) ? minNum.toLocaleString() : '';
+    const formattedMax = Number.isFinite(maxNum) ? maxNum.toLocaleString() : '';
 
     if (formattedMin && formattedMax) return `${formattedMin} - ${formattedMax}`;
     if (formattedMin) return `From ${formattedMin}`;
@@ -126,54 +125,37 @@ const EmployerDashboard = () => {
     const raw = String(value || '').trim();
     if (!raw) return '';
 
-    const normalized = raw
-      .toLowerCase()
-      .replace(/[–—]/g, '-')
-      .replace(/\s+/g, ' ')
-      .trim();
+    const normalized = raw.toLowerCase();
 
-    const exactOption = EXPERIENCE_LEVELS.find(
-      (option) => option.toLowerCase() === normalized
-    );
-    if (exactOption) return exactOption;
-
-    if (normalized.includes('no experience')) {
-      return EXPERIENCE_LEVELS[0];
-    }
-
+    if (normalized === 'no experience required') return 'No Experience';
     if (
-      normalized.includes('less than 1') ||
-      normalized.includes('below 1 year') ||
-      normalized.includes('under 1 year')
+      ['less than 1 yr', 'less than 1 year', 'less than 1 yr exp', 'less than 1 year exp'].includes(
+        normalized
+      )
     ) {
-      return EXPERIENCE_LEVELS[1];
+      return 'Less than 1 Yr Exp';
     }
-
-    if (/1\s*-\s*3\s*(?:year|years|yr|yrs)/.test(normalized)) {
-      return EXPERIENCE_LEVELS[2];
-    }
-
-    if (/4\s*-\s*5\s*(?:year|years|yr|yrs)/.test(normalized)) {
-      return EXPERIENCE_LEVELS[3];
-    }
-
     if (
-      normalized.includes('6+') ||
-      /(?:6|7|8|9|\d{2,})\s*(?:year|years|yr|yrs)/.test(normalized)
+      ['1 year', '1 years', '2 year', '2 years', '3 year', '3 years', '1-3 years', '1-3 years exp'].includes(
+        normalized
+      )
     ) {
-      return EXPERIENCE_LEVELS[4];
+      return '1-3 Years Exp';
+    }
+    if (
+      ['4 year', '4 years', '5 year', '5 years', '4-5 years', '4-5 years exp'].includes(
+        normalized
+      )
+    ) {
+      return '4-5 Years Exp';
+    }
+    if (
+      ['6+ year', '6+ years', '6+ year exp', '6+ years exp'].includes(normalized)
+    ) {
+      return '6+ Years Exp';
     }
 
-    const numberMatch = normalized.match(/(\d+)\s*(?:year|years|yr|yrs)/);
-    if (numberMatch) {
-      const years = Number(numberMatch[1]);
-
-      if (years >= 1 && years <= 3) return EXPERIENCE_LEVELS[2];
-      if (years >= 4 && years <= 5) return EXPERIENCE_LEVELS[3];
-      if (years >= 6) return EXPERIENCE_LEVELS[4];
-    }
-
-    return '';
+    return raw;
   };
 
   const isOpenToFreshGraduate = (job) => {
@@ -2415,7 +2397,14 @@ const EmployerDashboard = () => {
           <Panel
             title="Recent job posts"
             iconName="briefcase"
-            actionLabel="View all >"
+            actionLabel={
+              <span className="inline-flex items-center gap-1">
+                <span>View all</span>
+                <span className="text-[22px] font-bold leading-none" aria-hidden="true">
+                  &gt;
+                </span>
+              </span>
+            }
             onAction={handleManageJobs}
           >
             {dashboardData.recentJobs.length > 0 ? (
@@ -2433,7 +2422,7 @@ const EmployerDashboard = () => {
                     const recentJobBadges = [
                       expBadge,
                       wmLabel,
-                      isOpenToFreshGraduate(job) ? 'Open to Fresh Graduate' : '',
+                      isOpenToFreshGraduate(job) ? 'Open fresh grad' : '',
                     ]
                       .map((badge) => String(badge || '').trim())
                       .filter(Boolean)
