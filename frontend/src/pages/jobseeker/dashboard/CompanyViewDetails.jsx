@@ -265,7 +265,12 @@ const normalizeJobsResponse = (response) => {
 const formatLocationDisplay = (loc) => {
   const value = String(loc || "").trim();
   if (!value) return "Location not specified";
-  return value;
+
+  return value
+    .split(/\s+-\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(", ");
 };
 
 const formatShortLocation = (loc) => {
@@ -1545,7 +1550,7 @@ const CompanyViewDetails = () => {
                   <span className="text-black/50">
                     <SvgIcon name="location" className="w-4 h-4" />
                   </span>
-                  <span>{formatLocationDisplay(company.companyAddress || company.location)}</span>
+                  <span>{formatLocationDisplay(company.location || company.companyAddress)}</span>
                 </div>
 
                 {company.companyWebsite && (

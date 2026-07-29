@@ -1101,11 +1101,6 @@ const BookmarkCard = ({ job, selected, onClick, onRemove, removing }) => {
       }`}
     >
       <button type="button" onClick={onClick} className={`w-full text-left p-4 pr-14 ${UI.ring}`} aria-pressed={selected}>
-        {job.isUrgent ? (
-          <div className="mb-3 inline-flex w-fit items-center rounded-full bg-[#171717] px-3 py-2.5 text-xs font-bold leading-none text-white shadow-sm">
-            Urgently Needed
-          </div>
-        ) : null}
 
         <div className="flex items-start gap-3 min-w-0">
           <CompanyLogo src={job.companyLogo} name={job.companyName} />
@@ -1259,14 +1254,6 @@ const CompanyJobMiniCard = ({ job, onViewDetails, onApply, onSave, saving, isSav
 
   return (
     <div className="rounded-2xl p-7 bg-white shadow-sm hover:shadow-md transition flex flex-col min-h-[375px] relative border border-[#E5E7EB]">
-      {job.isUrgent ? (
-        <img
-          src="/images/urgentss.png"
-          alt="Urgent Hiring"
-          draggable="false"
-          className="pointer-events-none absolute -top-[66px] -left-[50px] z-10 w-[230px] max-w-none select-none"
-        />
-      ) : null}
 
       <button
         type="button"

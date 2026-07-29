@@ -172,6 +172,16 @@ const composeCompanyAddress = (province, city) =>
     .filter(Boolean)
     .join(', ');
 
+const formatCompanyLocation = (regionCity, companyAddress = '') => {
+  const parsed = parseRegionLocation(regionCity, companyAddress);
+  const fullLocation = [parsed.region, parsed.province, parsed.city]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean)
+    .join(', ');
+
+  return fullLocation || String(companyAddress || regionCity || '').trim() || 'Location not provided';
+};
+
 const normalizeUrl = (value) => {
   const raw = String(value || '').trim();
   if (!raw) return '';
@@ -1441,7 +1451,7 @@ const CompanyProfile = () => {
 
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-[15px] text-[#374151]">
                         <LocationIcon className="h-4 w-4 text-[#000000]" />
-                        <span>{companyData.companyAddress || companyData.regionCity || 'Location not provided'}</span>
+                        <span>{formatCompanyLocation(companyData.regionCity, companyData.companyAddress)}</span>
                       </div>
 
                       <div className="mt-2 flex flex-wrap items-center gap-2">

@@ -1281,11 +1281,6 @@ const JobDetails = () => {
                   <CompanyLogo src={job.companyLogo} name={job.companyName} />
 
                   <div className="min-w-0 flex-1">
-                    {job?.isUrgent ? (
-                  <div className="mb-3 inline-flex items-center rounded-full bg-[#171717] px-4 py-2.5 text-xs font-bold text-white shadow-sm">
-                    Urgently Needed
-                  </div>
-                ) : null}
                 <h1
                       className={`${UI.h1} overflow-hidden text-ellipsis sm:truncate`}
                       style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2 }}
