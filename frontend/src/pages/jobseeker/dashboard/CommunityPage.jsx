@@ -234,6 +234,14 @@ const CommunityPage = () => {
 
   const [likeLoading, setLikeLoading] = useState({});
   const [notice, setNotice] = useState('');
+  const [uiAlert, setUiAlert] = useState(null);
+
+  const showUiAlert = (message, title = 'Unable to Continue') => {
+    setUiAlert({
+      title,
+      message: String(message || 'Something went wrong. Please try again.'),
+    });
+  };
 
   const [guidelinesStatusLoading, setGuidelinesStatusLoading] = useState(true);
   const [showFirstTimeGuidelines, setShowFirstTimeGuidelines] = useState(false);
@@ -306,7 +314,7 @@ const CommunityPage = () => {
         }));
       }
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to accept the Community Guidelines.');
+      showUiAlert(error.response?.data?.message || 'Failed to accept the Community Guidelines.');
     } finally {
       setGuidelinesSubmitting(false);
     }
@@ -336,6 +344,17 @@ const CommunityPage = () => {
     const timer = setTimeout(() => setNotice(''), 2500);
     return () => clearTimeout(timer);
   }, [notice]);
+
+  useEffect(() => {
+    if (!uiAlert) return undefined;
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') setUiAlert(null);
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [uiAlert]);
 
   useEffect(() => () => {
     photoPreviews.forEach((preview) => {
@@ -453,17 +472,17 @@ const CommunityPage = () => {
     const acceptedFiles = files.slice(0, remainingSlots);
 
     if (files.length > remainingSlots) {
-      alert('Maximum of 10 images per post.');
+      showUiAlert('Maximum of 10 images per post.');
     }
 
     const validFiles = acceptedFiles.filter((file) => {
       if (!file.type.startsWith('image/')) {
-        alert(`${file.name}: Image files only ang puwedeng i-upload.`);
+        showUiAlert(`${file.name}: Image files only ang puwedeng i-upload.`);
         return false;
       }
 
       if (file.size > 8 * 1024 * 1024) {
-        alert(`${file.name}: Maximum image size is 8MB.`);
+        showUiAlert(`${file.name}: Maximum image size is 8MB.`);
         return false;
       }
 
@@ -503,13 +522,13 @@ const CommunityPage = () => {
     if (!file) return;
 
     if (!file.type.startsWith('video/')) {
-      alert('Video files only ang puwedeng i-upload.');
+      showUiAlert('Video files only ang puwedeng i-upload.');
       event.target.value = '';
       return;
     }
 
     if (file.size > 5 * 1024 * 1024 * 1024) {
-      alert('Maximum video file size is 5GB.');
+      showUiAlert('Maximum video file size is 5GB.');
       event.target.value = '';
       return;
     }
@@ -524,7 +543,7 @@ const CommunityPage = () => {
 
       if (duration > 600) {
         URL.revokeObjectURL(previewUrl);
-        alert('Maximum video duration is 10 minutes.');
+        showUiAlert('Maximum video duration is 10 minutes.');
         event.target.value = '';
         return;
       }
@@ -538,7 +557,7 @@ const CommunityPage = () => {
 
     video.onerror = () => {
       URL.revokeObjectURL(previewUrl);
-      alert('Unable to read the selected video.');
+      showUiAlert('Unable to read the selected video.');
       event.target.value = '';
     };
   };
@@ -552,7 +571,7 @@ const CommunityPage = () => {
       const extension = String(file.name || '').split('.').pop().toLowerCase();
 
       if (!allowedExtensions.includes(extension)) {
-        alert(`${file.name}: PDF, DOC, DOCX, PPT, at PPTX files lamang.`);
+        showUiAlert(`${file.name}: PDF, DOC, DOCX, PPT, at PPTX files lamang.`);
         return false;
       }
 
@@ -560,7 +579,7 @@ const CommunityPage = () => {
     });
 
     if (files.length > remainingSlots) {
-      alert('Maximum of 5 documents per post.');
+      showUiAlert('Maximum of 5 documents per post.');
     }
 
     setSelectedDocuments((prev) => [...prev, ...validFiles].slice(0, 5));
@@ -608,13 +627,13 @@ const CommunityPage = () => {
 
   const savePost = async () => {
     if (!form.content.trim()) {
-      alert('Post content is required.');
+      showUiAlert('Post content is required.');
       return;
     }
 
     if (!form.topics.trim()) {
       setShowTopicInput(true);
-      alert('Topic is required bago makapag-post.');
+      showUiAlert('Topic is required bago makapag-post.');
       return;
     }
 
@@ -677,7 +696,7 @@ const CommunityPage = () => {
         }
       }
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to save post.');
+      showUiAlert(error.response?.data?.message || 'Failed to save post.');
     } finally {
       setSubmitting(false);
     }
@@ -707,7 +726,7 @@ const CommunityPage = () => {
         )));
       }
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to update like.');
+      showUiAlert(error.response?.data?.message || 'Failed to update like.');
     } finally {
       setLikeLoading((prev) => ({ ...prev, [postId]: false }));
     }
@@ -725,7 +744,7 @@ const CommunityPage = () => {
         setPosts((prev) => prev.map((item) => (item._id === post._id ? nextPost : item)));
       }
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to load comments.');
+      showUiAlert(error.response?.data?.message || 'Failed to load comments.');
     }
   };
 
@@ -768,7 +787,7 @@ const CommunityPage = () => {
         setCommentDraft('');
       }
     } catch (error) {
-      alert(error.response?.data?.message || (replyTarget ? 'Failed to add reply.' : 'Failed to add comment.'));
+      showUiAlert(error.response?.data?.message || (replyTarget ? 'Failed to add reply.' : 'Failed to add comment.'));
     } finally {
       setCommentLoading(false);
     }
@@ -806,7 +825,7 @@ const CommunityPage = () => {
         setPosts((prev) => prev.map((post) => (post._id === nextPost._id ? nextPost : post)));
       }
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to update comment reaction.');
+      showUiAlert(error.response?.data?.message || 'Failed to update comment reaction.');
     } finally {
       setReactionLoading('');
     }
@@ -831,7 +850,7 @@ const CommunityPage = () => {
         setPosts((prev) => prev.map((post) => (post._id === nextPost._id ? nextPost : post)));
       }
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to update reply reaction.');
+      showUiAlert(error.response?.data?.message || 'Failed to update reply reaction.');
     } finally {
       setReactionLoading('');
     }
@@ -855,7 +874,7 @@ const CommunityPage = () => {
         setReportReason('');
       }
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to submit report.');
+      showUiAlert(error.response?.data?.message || 'Failed to submit report.');
     } finally {
       setReportLoading(false);
     }
@@ -887,7 +906,7 @@ const CommunityPage = () => {
         });
       }
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to load managed content.');
+      showUiAlert(error.response?.data?.message || 'Failed to load managed content.');
     } finally {
       setManagedLoading(false);
     }
@@ -936,7 +955,7 @@ const CommunityPage = () => {
         setNotice('Comment restored successfully.');
       }
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to restore comment.');
+      showUiAlert(error.response?.data?.message || 'Failed to restore comment.');
     }
   };
 
@@ -1000,7 +1019,7 @@ const CommunityPage = () => {
         fetchPosts();
       }
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to restore post.');
+      showUiAlert(error.response?.data?.message || 'Failed to restore post.');
     }
   };
 
@@ -1078,7 +1097,7 @@ const CommunityPage = () => {
 
       setEditTextModal(null);
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to save changes.');
+      showUiAlert(error.response?.data?.message || 'Failed to save changes.');
     } finally {
       setModalActionLoading(false);
     }
@@ -1187,7 +1206,7 @@ const CommunityPage = () => {
 
       setDeleteConfirmModal(null);
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to complete delete action.');
+      showUiAlert(error.response?.data?.message || 'Failed to complete delete action.');
     } finally {
       setModalActionLoading(false);
     }
@@ -1328,6 +1347,61 @@ const CommunityPage = () => {
 
   return (
     <div className="mx-auto w-full max-w-[1280px] px-4 pb-12 sm:px-6 lg:px-8">
+      {uiAlert && (
+        <div
+          className="fixed inset-0 z-[10080] flex items-center justify-center bg-slate-950/55 px-4 py-6 backdrop-blur-[2px]"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="community-alert-title"
+          aria-describedby="community-alert-message"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setUiAlert(null);
+          }}
+        >
+          <div className="w-full max-w-[460px] overflow-hidden rounded-[24px] border border-white/70 bg-white shadow-[0_28px_90px_rgba(15,23,42,0.35)]">
+            <div className="relative bg-gradient-to-r from-[#fff7ed] via-white to-[#fff7ed] px-6 pb-5 pt-7 text-center">
+              <button
+                type="button"
+                onClick={() => setUiAlert(null)}
+                className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Close message"
+              >
+                <FontAwesomeIcon icon={faXmark} />
+              </button>
+
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-2xl text-red-500 ring-8 ring-red-50/60">
+                <FontAwesomeIcon icon={faTriangleExclamation} />
+              </div>
+
+              <h2
+                id="community-alert-title"
+                className="mt-5 text-xl font-extrabold text-slate-900"
+              >
+                {uiAlert.title}
+              </h2>
+
+              <p
+                id="community-alert-message"
+                className="mx-auto mt-2 max-w-[360px] text-sm leading-6 text-slate-600"
+              >
+                {uiAlert.message}
+              </p>
+            </div>
+
+            <div className="border-t border-slate-100 bg-slate-50 px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setUiAlert(null)}
+                autoFocus
+                className="flex h-11 w-full items-center justify-center rounded-xl bg-[#2e66a6] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#24578f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+              >
+                Okay, I Understand
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {guidelinesStatusLoading && (
         <div className="fixed inset-0 z-[240] flex items-center justify-center bg-white/70">
           <FontAwesomeIcon icon={faSpinner} spin className="text-2xl text-[#2e66a6]" />
