@@ -1007,7 +1007,7 @@ const EmployerJobView = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 items-start gap-4">
+          <div className="grid grid-cols-1 items-start gap-5">
             <div className="min-w-0 space-y-5">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <TopMetricCard
@@ -1031,19 +1031,19 @@ const EmployerJobView = () => {
                   title="Website / Company URL"
                   value={companyInfo?.companyWebsite || 'N/A'}
                 />
-              </div>
-
-              <div className={`${UI.sectionCard} overflow-hidden`}>
-                <div className="space-y-6 p-5 sm:p-6">
+              </div>              <div className={`${UI.sectionCard} overflow-hidden`}>
+                <div className="p-5 sm:p-6">
                   <section>
                     <SectionHeader icon="file" title="Job Description" />
                     <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
                       <RichTextContent value={job.description} fallback="No job description provided" />
                     </div>
                   </section>
+                </div>
+              </div>
 
-                  <div className="border-t border-[#d9dbe3]" />
-
+              <div className={`${UI.sectionCard} overflow-hidden`}>
+                <div className="p-5 sm:p-6">
                   <section>
                     <SectionHeader icon="tools" title="Qualification" />
                     <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
@@ -1052,8 +1052,6 @@ const EmployerJobView = () => {
                   </section>
                 </div>
               </div>
-
-              
             </div>
 
             <aside className="min-w-0">
@@ -1076,11 +1074,6 @@ const EmployerJobView = () => {
                     ) : (
                       <p className={UI.muted}>No skills specified</p>
                     )}
-
-                    <div className="mt-4 border-t border-[#d9dbe3] pt-4">
-                      <p className={UI.label}>Willing to Relocate?</p>
-                      <p className={UI.muted}>{getRelocationDisplayLabel(job.willingToRelocate)}</p>
-                    </div>
                   </div>
 
                   <div className="overflow-hidden rounded-xl border border-[#d9dbe3] bg-white">
