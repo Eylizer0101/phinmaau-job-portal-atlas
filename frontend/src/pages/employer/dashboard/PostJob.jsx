@@ -2151,9 +2151,9 @@ const PostJob = () => {
                           {skills.map((skill, index) => (
                             <span
                               key={`${skill}-${index}`}
-                              className="group inline-flex items-center gap-1 rounded-full border border-[#cdddf0] bg-[#eef5fc] py-1 pl-3 pr-1 text-xs font-semibold text-[#24558d]"
+                              className="group inline-flex min-w-0 max-w-full items-start gap-1 rounded-xl border border-[#cdddf0] bg-[#eef5fc] py-1 pl-3 pr-1 text-xs font-semibold text-[#24558d]"
                             >
-                              <span>{skill}</span>
+                              <span className="min-w-0 flex-1 whitespace-normal break-all">{skill}</span>
                               <button
                                 type="button"
                                 onClick={() => removeRequiredSkill(index)}
