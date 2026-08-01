@@ -2376,7 +2376,13 @@ const CommunityPage = () => {
                                   ? 'Archived Comments'
                                   : 'Archived Posts & Comments'
                             )
-                            : 'Your Posts & Comments'}
+                            : (
+                              managedType === 'posts'
+                                ? 'Your Posts'
+                                : managedType === 'comments'
+                                  ? 'Your Comments'
+                                  : 'Your Posts & Comments'
+                            )}
                           <span className="ml-2 rounded-full bg-black/[0.06] px-2.5 py-1 align-middle text-xs font-semibold text-black/55">
                             {sourceItems.length}
                           </span>
