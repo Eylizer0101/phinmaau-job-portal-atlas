@@ -812,3 +812,66 @@ export const PH_CITIES_BY_REGION = {
   'Cordillera Administrative Region (CAR)': PH_PROVINCES_BY_REGION['Cordillera Administrative Region (CAR)'] || [],
   'Bangsamoro Autonomous Region in Muslim Mindanao (BARMM)': PH_PROVINCES_BY_REGION['Bangsamoro Autonomous Region in Muslim Mindanao (BARMM)'] || [],
 };
+
+const normalizeLocationLookupValue = (value) =>
+  String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\bcity of\b/g, '')
+    .replace(/\bcity\b/g, '')
+    .replace(/[^a-z0-9ñ\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const ALL_PH_PROVINCES = [...new Set(Object.values(PH_PROVINCES_BY_REGION).flat())];
+
+const PROVINCE_BY_NORMALIZED_NAME = ALL_PH_PROVINCES.reduce((acc, province) => {
+  acc[normalizeLocationLookupValue(province)] = province;
+  return acc;
+}, {});
+
+const PROVINCES_BY_NORMALIZED_CITY = Object.entries(PH_CITIES_BY_PROVINCE).reduce(
+  (acc, [province, cities]) => {
+    (cities || []).forEach((city) => {
+      const key = normalizeLocationLookupValue(city);
+      if (!key) return;
+      if (!acc[key]) acc[key] = [];
+      if (!acc[key].includes(province)) acc[key].push(province);
+    });
+    return acc;
+  },
+  {}
+);
+
+// Converts an employer location such as "Tabogon" or "Bongabon" into its province.
+// Existing province values are returned unchanged. Ambiguous city names fall back to
+// the original location unless the province is also present in the stored value.
+export const getProvinceFromLocation = (location) => {
+  const raw = String(location || '').trim();
+  if (!raw) return '';
+
+  const wholeKey = normalizeLocationLookupValue(raw);
+  if (PROVINCE_BY_NORMALIZED_NAME[wholeKey]) {
+    return PROVINCE_BY_NORMALIZED_NAME[wholeKey];
+  }
+
+  const parts = raw
+    .split(/\s+-\s+|,/g)
+    .map((part) => String(part || '').trim())
+    .filter(Boolean);
+
+  for (const part of parts) {
+    const province = PROVINCE_BY_NORMALIZED_NAME[normalizeLocationLookupValue(part)];
+    if (province) return province;
+  }
+
+  const possibleProvinces = PROVINCES_BY_NORMALIZED_CITY[wholeKey] || [];
+  if (possibleProvinces.length === 1) return possibleProvinces[0];
+
+  for (const part of parts) {
+    const matches = PROVINCES_BY_NORMALIZED_CITY[normalizeLocationLookupValue(part)] || [];
+    if (matches.length === 1) return matches[0];
+  }
+
+  return raw;
+};

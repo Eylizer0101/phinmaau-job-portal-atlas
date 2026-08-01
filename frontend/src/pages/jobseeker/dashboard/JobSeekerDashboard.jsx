@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
+import { getProvinceFromLocation } from "../../../constants/phLocations";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faClock,
@@ -154,18 +155,8 @@ const JobSeekerDashboard = () => {
   };
 
   const formatCompanyLocation = (loc) => {
-    const v = String(loc || '').trim();
-    if (!v) return '';
-    if (v.includes(' - ')) {
-      const parts = v.split(' - ');
-      const last = parts[parts.length - 1]?.trim();
-      return last || v;
-    }
-    if (v.includes(',')) {
-      const first = v.split(',')[0]?.trim();
-      return first || v;
-    }
-    return v;
+    const province = getProvinceFromLocation(loc);
+    return province || '';
   };
 
   const shortenIndustry = (value, max = 26) => {

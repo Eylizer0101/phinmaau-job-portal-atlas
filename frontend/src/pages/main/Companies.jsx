@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainNavbar from "../../components/shared/MainNavbar";
 import api from "../../services/api";
+import { getProvinceFromLocation } from "../../constants/phLocations";
 
 const MainFooter = () => {
   return (
@@ -240,21 +241,8 @@ const Companies = () => {
   };
 
   const formatCompanyLocation = (loc) => {
-    const v = String(loc || "").trim();
-    if (!v) return "Location not specified";
-
-    if (v.includes(" - ")) {
-      const parts = v.split(" - ");
-      const last = parts[parts.length - 1]?.trim();
-      return last || v;
-    }
-
-    if (v.includes(",")) {
-      const first = v.split(",")[0]?.trim();
-      return first || v;
-    }
-
-    return v;
+    const province = getProvinceFromLocation(loc);
+    return province || "Location not specified";
   };
 
   const shortenIndustry = (value, max = 24) => {
