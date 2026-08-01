@@ -133,20 +133,20 @@ const JobSeekerLevelBadgeCard = ({
       <button
         type="button"
         onClick={() => setShowLevelModal(true)}
-        className="group inline-flex w-fit items-center gap-2 rounded-xl px-1.5 py-1 text-left transition hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+        className="group inline-flex w-fit items-center gap-3 rounded-xl px-2 py-1.5 text-left transition hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
         aria-label="View all job seeker levels"
         aria-haspopup="dialog"
       >
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white">
           <img
             src={badgeImage}
             alt={`${currentRank} badge`}
-            className="h-9 w-9 object-contain transition duration-200 group-hover:scale-105 group-hover:drop-shadow-[0_5px_8px_rgba(46,102,166,0.22)]"
+            className="h-10 w-10 object-contain transition duration-200 group-hover:scale-105 group-hover:drop-shadow-[0_5px_8px_rgba(46,102,166,0.22)]"
           />
         </div>
 
         <div className="min-w-0">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-gray-500">
+          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-gray-500 sm:text-[15px]">
             Jobseeker Level
           </p>
           <p className="mt-0.5 whitespace-nowrap text-sm font-bold text-[#2f3b8f] sm:text-[15px]">
@@ -956,8 +956,8 @@ const UserManagementDetails = () => {
 
   const HeaderProfile = () => (
     <section className="overflow-hidden rounded-[20px] border border-[#d8e2ee] bg-white shadow-sm">
-      <div className="flex flex-col gap-2 px-5 sm:px-7 lg:flex-row lg:items-center lg:justify-between lg:gap-5">
-        <div className="min-w-0 flex-1">
+      <div className="flex flex-col gap-3 px-5 sm:px-7 lg:flex-row lg:items-center lg:gap-8">
+        <div className="min-w-0 shrink-0">
           <div className="flex gap-5 overflow-x-auto">
             {TABS.map((tab) => (
               <button
@@ -983,11 +983,11 @@ const UserManagementDetails = () => {
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-col items-start gap-0.5 py-1 lg:items-end">
+        <div className="flex min-w-0 flex-1 flex-col items-start gap-1 py-1 lg:ml-8 lg:flex-row lg:items-center lg:gap-6">
           <JobSeekerLevelBadgeCard currentRank={jobSeekerLevel} />
 
-          <div className="inline-flex items-center gap-1.5 whitespace-nowrap text-[10px] text-gray-500 sm:text-[11px]">
-            <Icon name="clock" className="h-3.5 w-3.5 shrink-0" />
+          <div className="inline-flex items-center gap-2 whitespace-nowrap text-sm font-semibold text-gray-500 sm:text-[15px]">
+            <Icon name="clock" className="h-4 w-4 shrink-0" />
             <span>
               Last profile update: {formatDate(user?.updatedAt, true)}
             </span>
