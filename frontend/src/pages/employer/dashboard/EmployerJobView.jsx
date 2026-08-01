@@ -836,7 +836,7 @@ const EmployerJobView = () => {
   return (
     <EmployerLayout>
       <div className={UI.page}>
-        <div className="mx-auto max-w-7xl px-1 py-8">
+        <div className="mx-auto w-full max-w-[1180px] px-4 py-8 sm:px-6">
           <div className="mb-5">
             <button
               onClick={handleBack}
@@ -849,7 +849,7 @@ const EmployerJobView = () => {
           </div>
 
           <div className={`${UI.card} mb-5 overflow-hidden`}>
-            <div className="relative h-[220px] w-full overflow-hidden sm:h-[260px] lg:h-[300px]">
+            <div className="relative h-[150px] w-full overflow-hidden sm:h-[180px] lg:h-[205px]">
               <img
                 src={resolveAssetUrl(job?.employerDetails?.coverPhoto) || '/images/jobback.png'}
                 alt={`${job.companyName || 'Company'} cover banner`}
@@ -1007,156 +1007,156 @@ const EmployerJobView = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-            <div className="min-w-0 space-y-5">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <TopMetricCard
-                  icon="money"
-                  title="Salary"
-                  value={formatSalary(job.salaryMin, job.salaryMax, job.hideSalary)}
-                  isPeso
-                />
-                <TopMetricCard
-                  icon="clock"
-                  title="Experience"
-                  value={getExperienceDisplayLabel(job.experienceLevel)}
-                />
-                <TopMetricCard
-                  icon="graduation"
-                  title="Educational Requirements"
-                  value={String(job.educationLevel || '').trim() || 'Education not specified'}
-                />
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <TopMetricCard
+                icon="money"
+                title="Salary"
+                value={formatSalary(job.salaryMin, job.salaryMax, job.hideSalary)}
+                isPeso
+              />
+              <TopMetricCard
+                icon="clock"
+                title="Experience"
+                value={getExperienceDisplayLabel(job.experienceLevel)}
+              />
+              <TopMetricCard
+                icon="graduation"
+                title="Educational Requirements"
+                value={String(job.educationLevel || '').trim() || 'Education not specified'}
+              />
+            </div>
+
+            <div className={`${UI.sectionCard} overflow-hidden`}>
+              <div className="border-b border-[#d9dbe3] bg-[#f9fafb] px-5 py-4 sm:px-6">
+                <SectionHeader icon="file" title="Job Description" />
               </div>
-
-              <div className={`${UI.sectionCard} overflow-hidden`}>
-                <div className="space-y-8 p-5 sm:p-6">
-                  <section>
-                    <SectionHeader icon="file" title="Job Description" />
-                    <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
-                      <RichTextContent value={job.description} fallback="No job description provided" />
-                    </div>
-                  </section>
-
-                  <div className="border-t border-[#d9dbe3]" />
-
-                  <section>
-                    <SectionHeader icon="tools" title="Qualification" />
-                    <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
-                      <RichTextContent value={job.requirements} fallback="No qualifications specified" />
-                    </div>
-                  </section>
-                </div>
-              </div>
-
-              <div className={`${UI.sectionCard} overflow-hidden`}>
-                <div className="border-b border-[#d9dbe3] px-5 py-4 sm:px-6">
-                  <h3 className={UI.title}>Perks and Benefits</h3>
-                </div>
-
-                <div className="p-5 sm:p-6">
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    {perksAndBenefitsList.length > 0 ? (
-                      perksAndBenefitsList.map((benefit, idx) => (
-                        <div key={`${benefit}-${idx}`} className={UI.skillChip}>
-                          {benefit}
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-[#6b7280]">No perks or benefits specified</p>
-                    )}
-                  </div>
-                </div>
+              <div className="px-5 py-5 text-sm leading-7 text-[#4b5563] sm:px-6 sm:text-[15px]">
+                <RichTextContent value={job.description} fallback="No job description provided" />
               </div>
             </div>
 
-            <aside className="min-w-0 lg:sticky lg:top-4 lg:self-start">
+            <div className={`${UI.sectionCard} overflow-hidden`}>
+              <div className="border-b border-[#d9dbe3] bg-[#f9fafb] px-5 py-4 sm:px-6">
+                <SectionHeader icon="tools" title="Qualification" />
+              </div>
+              <div className="px-5 py-5 text-sm leading-7 text-[#4b5563] sm:px-6 sm:text-[15px]">
+                <RichTextContent value={job.requirements} fallback="No qualifications specified" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
               <div className={`${UI.sectionCard} overflow-hidden`}>
-                <div className="border-b border-[#d9dbe3] bg-[#f9fafb] px-5 py-4">
-                  <h3 className={UI.title}>Job Overview</h3>
+                <div className="border-b border-[#d9dbe3] bg-[#f9fafb] px-5 py-4 sm:px-6">
+                  <h3 className={UI.title}>Required Skills</h3>
                 </div>
 
-                <div className="space-y-6 p-5">
-                  <div>
-                    <p className={UI.label}>Willing to Relocate?</p>
-                    <p className={UI.muted}>{getRelocationDisplayLabel(job.willingToRelocate)}</p>
+                <div className="p-5 sm:p-6">
+                  {requiredSkills.length > 0 ? (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                      {requiredSkills.map((skill, idx) => (
+                        <div key={`${skill}-${idx}`} className={UI.skillChip}>
+                          {skill}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[#6b7280]">No skills specified</p>
+                  )}
+                </div>
+              </div>
+
+              <aside className="min-w-0">
+                <div className={`${UI.sectionCard} overflow-hidden`}>
+                  <div className="border-b border-[#d9dbe3] bg-[#f9fafb] px-5 py-4">
+                    <h3 className={UI.title}>Job Overview</h3>
                   </div>
 
-                  <div>
-                    <p className={UI.label}>Website / Company URL</p>
-                    {companyInfo?.companyWebsite ? (
-                      <a
-                        href={companyInfo.companyWebsite}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`mt-1 inline-flex items-start gap-2 break-all text-sm font-semibold text-[#2e66a6] hover:underline ${UI.ring} rounded`}
-                      >
-                        <span>{companyInfo.companyWebsite}</span>
-                        <SvgIcon name="external" className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
-                      </a>
-                    ) : (
-                      <p className={UI.muted}>N/A</p>
-                    )}
-                  </div>
+                  <div className="space-y-5 p-5">
+                    <div>
+                      <p className={UI.label}>Willing to Relocate?</p>
+                      <p className={UI.muted}>{getRelocationDisplayLabel(job.willingToRelocate)}</p>
+                    </div>
 
-                  <div>
-                    <p className={UI.label}>Required Skills</p>
-                    {requiredSkills.length > 0 ? (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {requiredSkills.map((skill, idx) => (
-                          <span
-                            key={`${skill}-${idx}`}
-                            className="rounded-full border border-[#d9dbe3] bg-white px-2.5 py-1 text-[11px] font-medium text-[#4b5563]"
-                          >
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className={UI.muted}>No skills specified</p>
-                    )}
-                  </div>
+                    <div>
+                      <p className={UI.label}>Website / Company URL</p>
+                      {companyInfo?.companyWebsite ? (
+                        <a
+                          href={companyInfo.companyWebsite}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`mt-1 inline-flex items-start gap-2 break-all text-sm font-semibold text-[#2e66a6] hover:underline ${UI.ring} rounded`}
+                        >
+                          <span>{companyInfo.companyWebsite}</span>
+                          <SvgIcon name="external" className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+                        </a>
+                      ) : (
+                        <p className={UI.muted}>N/A</p>
+                      )}
+                    </div>
 
-                  <div>
-                    <p className={UI.label}>Work Location</p>
-                    <div className="mt-2 overflow-hidden rounded-xl border border-[#d9dbe3] bg-white">
-                      <div className="overflow-hidden">
-                        {getJobCoordinates(job) ? (
-                          <StaticLocationMap job={job} heightClass="h-[160px]" />
-                        ) : job.locationImage ? (
-                          <img
-                            src={`https://phinmaau-job-portal-atlas.onrender.com${job.locationImage}`}
-                            alt="Work location"
-                            className="h-[160px] w-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-[160px] items-center justify-center bg-[#eef2f7] text-[#9ca3af]">
-                            <SvgIcon name="location" className="h-8 w-8" />
-                          </div>
-                        )}
-                      </div>
+                    <div>
+                      <p className={UI.label}>Work Location</p>
+                      <div className="mt-2 overflow-hidden rounded-xl border border-[#d9dbe3] bg-white">
+                        <div className="overflow-hidden">
+                          {getJobCoordinates(job) ? (
+                            <StaticLocationMap job={job} heightClass="h-[170px]" />
+                          ) : job.locationImage ? (
+                            <img
+                              src={`https://phinmaau-job-portal-atlas.onrender.com${job.locationImage}`}
+                              alt="Work location"
+                              className="h-[170px] w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-[170px] items-center justify-center bg-[#eef2f7] text-[#9ca3af]">
+                              <SvgIcon name="location" className="h-8 w-8" />
+                            </div>
+                          )}
+                        </div>
 
-                      <div className="border-t border-[#d9dbe3] px-3 py-2">
-                        {buildWorkLocationUrl(job) ? (
-                          <a
-                            href={buildWorkLocationUrl(job)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={`text-xs font-medium text-[#2e66a6] hover:underline ${UI.ring} rounded`}
-                            title="Open work location in OpenStreetMap"
-                          >
-                            {String(job.location || '').trim() || 'Work address not specified'}
-                          </a>
-                        ) : (
-                          <p className="text-xs text-[#6b7280]">
-                            {String(job.location || '').trim() || 'Work address not specified'}
-                          </p>
-                        )}
+                        <div className="border-t border-[#d9dbe3] px-3 py-3">
+                          {buildWorkLocationUrl(job) ? (
+                            <a
+                              href={buildWorkLocationUrl(job)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`text-xs font-medium text-[#2e66a6] hover:underline ${UI.ring} rounded`}
+                              title="Open work location in OpenStreetMap"
+                            >
+                              {String(job.location || '').trim() || 'Work address not specified'}
+                            </a>
+                          ) : (
+                            <p className="text-xs text-[#6b7280]">
+                              {String(job.location || '').trim() || 'Work address not specified'}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
+              </aside>
+            </div>
+
+            <div className={`${UI.sectionCard} overflow-hidden`}>
+              <div className="border-b border-[#d9dbe3] bg-[#f9fafb] px-5 py-4 sm:px-6">
+                <h3 className={UI.title}>Perks and Benefits</h3>
               </div>
-            </aside>
+
+              <div className="p-5 sm:p-6">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {perksAndBenefitsList.length > 0 ? (
+                    perksAndBenefitsList.map((benefit, idx) => (
+                      <div key={`${benefit}-${idx}`} className={UI.skillChip}>
+                        {benefit}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-[#6b7280]">No perks or benefits specified</p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
