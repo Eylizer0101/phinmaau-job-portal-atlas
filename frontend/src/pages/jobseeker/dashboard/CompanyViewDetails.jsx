@@ -1747,7 +1747,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
                     >
                       {job.isUrgent ? (
                         <img
-                          src="/images/urgentss.png"
+                          src="/images/gentneeded.png"
                           alt="Urgent Hiring"
                           draggable="false"
                           className="pointer-events-none absolute -top-[66px] -left-[50px] z-10 w-[230px] max-w-none select-none"
