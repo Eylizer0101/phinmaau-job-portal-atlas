@@ -24,9 +24,14 @@ const {
   permanentlyDeleteArchivedPost,
   restoreArchivedComment,
   permanentlyDeleteArchivedComment,
+  getCommunityGuidelinesStatus,
+  acceptCommunityGuidelines,
 } = require('../controllers/communityController');
 
 router.use(protect);
+
+router.get('/guidelines/status', getCommunityGuidelinesStatus);
+router.post('/guidelines/accept', acceptCommunityGuidelines);
 
 router.get('/posts', getPosts);
 router.post('/posts', uploadCommunityImage.single('image'), createPost);

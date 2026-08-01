@@ -26,6 +26,12 @@ import {
   faRotateLeft,
   faBoxArchive,
   faTriangleExclamation,
+  faBookOpen,
+  faShieldHalved,
+  faCircleCheck,
+  faLock,
+  faBan,
+  faBriefcase,
 } from '@fortawesome/free-solid-svg-icons';
 import api from '../../../services/api';
 
@@ -212,6 +218,12 @@ const CommunityPage = () => {
   const [likeLoading, setLikeLoading] = useState({});
   const [notice, setNotice] = useState('');
 
+  const [guidelinesStatusLoading, setGuidelinesStatusLoading] = useState(true);
+  const [showFirstTimeGuidelines, setShowFirstTimeGuidelines] = useState(false);
+  const [showGuidelines, setShowGuidelines] = useState(false);
+  const [guidelinesAccepted, setGuidelinesAccepted] = useState(false);
+  const [guidelinesSubmitting, setGuidelinesSubmitting] = useState(false);
+
   const currentUser = useMemo(() => {
     try {
       return JSON.parse(localStorage.getItem('user') || '{}');
@@ -221,6 +233,67 @@ const CommunityPage = () => {
   }, []);
 
   const currentUserId = getUserId(currentUser);
+
+  useEffect(() => {
+    let active = true;
+
+    const fetchGuidelinesStatus = async () => {
+      try {
+        setGuidelinesStatusLoading(true);
+        const response = await api.get('/community/guidelines/status');
+        if (!active) return;
+
+        const hasAccepted = Boolean(response.data?.accepted);
+        setShowFirstTimeGuidelines(!hasAccepted);
+      } catch (error) {
+        console.error('Error checking community guidelines status:', error);
+      } finally {
+        if (active) setGuidelinesStatusLoading(false);
+      }
+    };
+
+    fetchGuidelinesStatus();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const shouldLockScroll = showFirstTimeGuidelines || showGuidelines;
+    if (!shouldLockScroll) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [showFirstTimeGuidelines, showGuidelines]);
+
+  const acceptCommunityGuidelines = async () => {
+    if (!guidelinesAccepted || guidelinesSubmitting) return;
+
+    try {
+      setGuidelinesSubmitting(true);
+      const response = await api.post('/community/guidelines/accept');
+      if (response.data?.success) {
+        setShowFirstTimeGuidelines(false);
+        setGuidelinesAccepted(false);
+        setNotice('Community Guidelines accepted.');
+
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        localStorage.setItem('user', JSON.stringify({
+          ...storedUser,
+          communityGuidelinesAcceptedAt: response.data.acceptedAt,
+        }));
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to accept the Community Guidelines.');
+    } finally {
+      setGuidelinesSubmitting(false);
+    }
+  };
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -1085,6 +1158,12 @@ const CommunityPage = () => {
 
   return (
     <div className="mx-auto w-full max-w-[1280px] px-4 pb-12 sm:px-6 lg:px-8">
+      {guidelinesStatusLoading && (
+        <div className="fixed inset-0 z-[240] flex items-center justify-center bg-white/70">
+          <FontAwesomeIcon icon={faSpinner} spin className="text-2xl text-[#2e66a6]" />
+        </div>
+      )}
+
       {notice && (
         <div className="fixed right-5 top-5 z-[170] rounded-xl bg-[#2e66a6] px-4 py-3 text-sm font-semibold text-white shadow-lg">
           {notice}
@@ -1117,6 +1196,15 @@ const CommunityPage = () => {
               className="h-11 w-full rounded-xl border border-[#d8e2ee] bg-white pl-10 pr-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
             />
           </div>
+          <button
+            type="button"
+            onClick={() => setShowGuidelines(true)}
+            className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 text-sm font-semibold text-black transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff]"
+          >
+            <FontAwesomeIcon icon={faBookOpen} />
+            <span className="hidden md:inline">Community Guidelines</span>
+            <span className="md:hidden">Guidelines</span>
+          </button>
         </div>
       </div>
 
@@ -2187,6 +2275,153 @@ const CommunityPage = () => {
               >
                 <FontAwesomeIcon icon={modalActionLoading ? faSpinner : faPaperPlane} spin={modalActionLoading} />
                 Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showFirstTimeGuidelines && (
+        <div className="fixed inset-0 z-[260] flex items-center justify-center bg-black/60 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="community-welcome-title"
+            className="w-full max-w-[640px] overflow-hidden rounded-2xl bg-white shadow-2xl"
+          >
+            <div className="relative px-6 pb-6 pt-7 sm:px-8">
+              <button
+                type="button"
+                onClick={() => navigate('/jobseeker/dashboard')}
+                className="absolute right-5 top-4 flex h-9 w-9 items-center justify-center rounded-full text-black/55 hover:bg-black/5"
+                aria-label="Leave Community page"
+              >
+                <FontAwesomeIcon icon={faXmark} />
+              </button>
+
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#eef0ff] text-2xl text-[#4f46e5]">
+                <FontAwesomeIcon icon={faShieldHalved} />
+              </div>
+
+              <h2 id="community-welcome-title" className="mt-4 text-center text-2xl font-bold text-black">
+                Welcome to the Community
+              </h2>
+              <p className="mt-2 text-center text-sm text-black/55">
+                Please help us maintain a safe and professional environment.
+              </p>
+
+              <div className="mt-6 space-y-3 rounded-2xl bg-[#f7f9fc] p-5">
+                {[
+                  'Be respectful to other members.',
+                  'Keep discussions career-related.',
+                  'Do not post spam, scams, or misleading information.',
+                  'Protect your personal information.',
+                  'Report content that violates our guidelines.',
+                ].map((item) => (
+                  <div key={item} className="flex items-start gap-3 text-sm text-black/75">
+                    <FontAwesomeIcon icon={faCircleCheck} className="mt-0.5 text-[#5b61ff]" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+
+              <p className="mt-6 text-sm leading-6 text-black/50">
+                By continuing in the Community, you agree to follow the Community Guidelines. Violations may result in content removal or account restrictions.
+              </p>
+
+              <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-[#dfe5ee] p-4 text-sm text-black/75">
+                <input
+                  type="checkbox"
+                  checked={guidelinesAccepted}
+                  onChange={(event) => setGuidelinesAccepted(event.target.checked)}
+                  className="mt-0.5 h-5 w-5 rounded border-gray-300 accent-[#5b61ff]"
+                />
+                <span>I have read and agree to follow the Community Guidelines.</span>
+              </label>
+            </div>
+
+            <div className="flex justify-end gap-3 border-t border-[#e6edf5] bg-[#fbfdff] px-6 py-4 sm:px-8">
+              <button
+                type="button"
+                onClick={() => navigate('/jobseeker/dashboard')}
+                disabled={guidelinesSubmitting}
+                className="h-11 rounded-xl border border-[#d8e2ee] bg-white px-5 text-sm font-semibold text-black/70 hover:bg-[#f7faff] disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={acceptCommunityGuidelines}
+                disabled={!guidelinesAccepted || guidelinesSubmitting}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#5b61e6] px-5 text-sm font-semibold text-white hover:bg-[#4f55d5] disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                {guidelinesSubmitting && <FontAwesomeIcon icon={faSpinner} spin />}
+                Agree &amp; Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showGuidelines && (
+        <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/60 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="community-guidelines-title"
+            className="w-full max-w-[760px] overflow-hidden rounded-2xl bg-white shadow-2xl"
+          >
+            <div className="relative max-h-[90vh] overflow-y-auto px-6 pb-7 pt-7 sm:px-8">
+              <button
+                type="button"
+                onClick={() => setShowGuidelines(false)}
+                className="absolute right-5 top-4 flex h-9 w-9 items-center justify-center rounded-full text-black/55 hover:bg-black/5"
+                aria-label="Close Community Guidelines"
+              >
+                <FontAwesomeIcon icon={faXmark} />
+              </button>
+
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#eef0ff] text-2xl text-[#4f46e5]">
+                <FontAwesomeIcon icon={faShieldHalved} />
+              </div>
+              <h2 id="community-guidelines-title" className="mt-4 text-center text-2xl font-bold text-black">
+                Community Guidelines
+              </h2>
+              <p className="mt-2 text-center text-sm text-black/55">
+                Please help us maintain a safe and professional environment.
+              </p>
+
+              <div className="mt-6 grid gap-5 rounded-2xl bg-[#f7f9fc] p-5 sm:grid-cols-2 sm:p-6">
+                {[
+                  { icon: faShieldHalved, title: 'Be Respectful', text: 'Treat everyone with courtesy. Harassment, hate speech, discrimination, or personal attacks are not allowed.' },
+                  { icon: faBriefcase, title: 'Keep It Career-Related', text: 'Share content related to jobs, internships, career advice, interviews, skills, and professional development.' },
+                  { icon: faLock, title: 'Protect Your Privacy', text: 'Do not post personal or confidential information such as passwords, bank details, or sensitive personal data.' },
+                  { icon: faBan, title: 'No Spam or Promotions', text: 'Avoid excessive self-promotion, advertisements, scams, or misleading content.' },
+                  { icon: faCircleCheck, title: 'Share Accurate Information', text: 'Only post information you believe is accurate. Avoid spreading false or misleading job opportunities.' },
+                  { icon: faFlag, title: 'Report Inappropriate Content', text: 'Help keep the community safe by reporting posts or comments that violate the guidelines.' },
+                ].map((item) => (
+                  <div key={item.title} className="flex items-start gap-3">
+                    <FontAwesomeIcon icon={item.icon} className="mt-1 w-5 shrink-0 text-[#5b61ff]" />
+                    <div>
+                      <h3 className="font-bold text-black">{item.title}</h3>
+                      <p className="mt-1 text-sm leading-6 text-black/55">{item.text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <p className="mt-6 text-sm leading-6 text-black/50">
+                By continuing in the Community, you agree to follow the Community Guidelines. Violations may result in content removal or account restrictions.
+              </p>
+            </div>
+
+            <div className="flex justify-end border-t border-[#e6edf5] bg-[#fbfdff] px-6 py-4 sm:px-8">
+              <button
+                type="button"
+                onClick={() => setShowGuidelines(false)}
+                className="h-11 rounded-xl border border-[#d8e2ee] bg-white px-5 text-sm font-semibold text-black/70 hover:bg-[#f7faff]"
+              >
+                Close
               </button>
             </div>
           </div>

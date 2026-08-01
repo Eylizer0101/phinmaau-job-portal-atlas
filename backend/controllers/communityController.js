@@ -1,4 +1,5 @@
 const CommunityPost = require('../models/CommunityPost');
+const User = require('../models/User');
 
 const authorFields = [
   'fullName',
@@ -826,3 +827,46 @@ exports.getManagedContent = async (req, res) => {
     res.status(500).json({ success: false, message: 'Error fetching managed content' });
   }
 };
+
+exports.getCommunityGuidelinesStatus = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('communityGuidelinesAcceptedAt');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    return res.json({
+      success: true,
+      accepted: Boolean(user.communityGuidelinesAcceptedAt),
+      acceptedAt: user.communityGuidelinesAcceptedAt || null,
+    });
+  } catch (error) {
+    console.error('Error fetching Community Guidelines status:', error);
+    return res.status(500).json({ success: false, message: 'Error fetching Community Guidelines status' });
+  }
+};
+
+exports.acceptCommunityGuidelines = async (req, res) => {
+  try {
+    const acceptedAt = new Date();
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: { communityGuidelinesAcceptedAt: acceptedAt } },
+      { new: true }
+    ).select('communityGuidelinesAcceptedAt');
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Community Guidelines accepted successfully',
+      acceptedAt: user.communityGuidelinesAcceptedAt,
+    });
+  } catch (error) {
+    console.error('Error accepting Community Guidelines:', error);
+    return res.status(500).json({ success: false, message: 'Error accepting Community Guidelines' });
+  }
+};
+

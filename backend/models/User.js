@@ -378,6 +378,9 @@ const userSchema = new mongoose.Schema(
     // ✅ NEW: force password change flag
     mustChangePassword: { type: Boolean, default: false },
 
+    // Saved once the user agrees to the Community Guidelines.
+    communityGuidelinesAcceptedAt: { type: Date, default: null },
+
     emailVerification: {
       tokenHash: { type: String, default: '' },
       expiresAt: { type: Date, default: null },
