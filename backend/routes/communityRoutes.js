@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
-const { uploadCommunityImage } = require('../middleware/uploadMiddleware');
+const { uploadCommunityMedia } = require('../middleware/uploadMiddleware');
 const {
   getPosts,
   createPost,
@@ -34,8 +34,24 @@ router.get('/guidelines/status', getCommunityGuidelinesStatus);
 router.post('/guidelines/accept', acceptCommunityGuidelines);
 
 router.get('/posts', getPosts);
-router.post('/posts', uploadCommunityImage.single('image'), createPost);
-router.put('/posts/:postId', uploadCommunityImage.single('image'), updatePost);
+router.post(
+  '/posts',
+  uploadCommunityMedia.fields([
+    { name: 'images', maxCount: 10 },
+    { name: 'video', maxCount: 1 },
+    { name: 'documents', maxCount: 5 },
+  ]),
+  createPost
+);
+router.put(
+  '/posts/:postId',
+  uploadCommunityMedia.fields([
+    { name: 'images', maxCount: 10 },
+    { name: 'video', maxCount: 1 },
+    { name: 'documents', maxCount: 5 },
+  ]),
+  updatePost
+);
 router.delete('/posts/:postId', deletePost);
 
 router.post('/posts/:postId/like', toggleLike);

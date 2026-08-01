@@ -192,6 +192,77 @@ const communityImageStorage = createCloudinaryStorage({
   resourceType: 'image',
 });
 
+
+const createStreamingCloudinaryStorage = ({ folderResolver, publicIdResolver }) => ({
+  _handleFile: async (req, file, cb) => {
+    try {
+      if (!isCloudinaryConfigured()) {
+        return cb(new Error('Cloudinary is not fully configured.'));
+      }
+
+      const folder = folderResolver(req, file);
+      const publicId = publicIdResolver(req, file);
+      const resourceType = file.mimetype.startsWith('video/') ? 'video'
+        : file.mimetype.startsWith('image/') ? 'image'
+        : 'raw';
+
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: `${CLOUDINARY_ROOT_FOLDER}/${folder}`,
+          public_id: publicId,
+          resource_type: resourceType,
+        },
+        (error, result) => {
+          if (error) return cb(error);
+          return cb(null, {
+            path: result.secure_url,
+            secure_url: result.secure_url,
+            url: result.secure_url,
+            filename: result.public_id,
+            public_id: result.public_id,
+            asset_id: result.asset_id,
+            bytes: result.bytes,
+            size: result.bytes || 0,
+            format: result.format,
+            resource_type: result.resource_type,
+            duration: Number(result.duration || 0),
+            originalname: file.originalname,
+            mimetype: file.mimetype,
+          });
+        }
+      );
+
+      file.stream.on('error', cb);
+      file.stream.pipe(uploadStream);
+    } catch (error) {
+      cb(error);
+    }
+  },
+
+  _removeFile: async (req, file, cb) => {
+    try {
+      if (file?.public_id) {
+        await cloudinary.uploader.destroy(file.public_id, {
+          resource_type: file.resource_type || 'raw',
+        });
+      }
+      cb(null);
+    } catch (error) {
+      cb(error);
+    }
+  },
+});
+
+const communityMediaStorage = createStreamingCloudinaryStorage({
+  folderResolver: (req, file) => {
+    if (file.fieldname === 'video') return 'community-posts/videos';
+    if (file.fieldname === 'documents') return 'community-posts/documents';
+    return 'community-posts/images';
+  },
+  publicIdResolver: (req, file) =>
+    createUniquePublicId(`${getOwnerId(req)}-community-${file.fieldname}`, file),
+});
+
 const alumniVerificationStorage = createCloudinaryStorage({
   resourceType: 'raw',
   folderResolver: (req) => {
@@ -319,6 +390,31 @@ const verificationFileFilter = (req, file, cb) => {
   else cb(new Error('Only PDF, Word, or image files (JPG, PNG, WEBP) are allowed'), false);
 };
 
+
+const COMMUNITY_DOCUMENT_MIME_TYPES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+]);
+
+const communityMediaFileFilter = (req, file, cb) => {
+  if (file.fieldname === 'images' && file.mimetype.startsWith('image/')) {
+    return cb(null, true);
+  }
+
+  if (file.fieldname === 'video' && file.mimetype.startsWith('video/')) {
+    return cb(null, true);
+  }
+
+  if (file.fieldname === 'documents' && COMMUNITY_DOCUMENT_MIME_TYPES.has(file.mimetype)) {
+    return cb(null, true);
+  }
+
+  return cb(new Error('Unsupported Community attachment type.'));
+};
+
 const uploadResume = multer({
   storage: resumeStorage,
   fileFilter: resumeFileFilter,
@@ -353,6 +449,15 @@ const uploadCommunityImage = multer({
   storage: communityImageStorage,
   fileFilter: imageFileFilter,
   limits: { fileSize: 8 * 1024 * 1024 },
+});
+
+const uploadCommunityMedia = multer({
+  storage: communityMediaStorage,
+  fileFilter: communityMediaFileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024 * 1024,
+    files: 16,
+  },
 });
 
 const uploadAlumniVerification = multer({
@@ -399,6 +504,7 @@ module.exports = {
   uploadProfileImage,
   uploadJobLocationImage,
   uploadCommunityImage,
+  uploadCommunityMedia,
   uploadAlumniVerification,
   uploadAlumniResubmit,
   uploadEmployerVerification,

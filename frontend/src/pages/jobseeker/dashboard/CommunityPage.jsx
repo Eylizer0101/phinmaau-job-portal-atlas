@@ -32,6 +32,10 @@ import {
   faLock,
   faBan,
   faBriefcase,
+  faVideo,
+  faFileArrowUp,
+  faEye,
+  faEyeSlash,
 } from '@fortawesome/free-solid-svg-icons';
 import api from '../../../services/api';
 
@@ -166,6 +170,8 @@ const Avatar = ({ user, size = 'h-11 w-11' }) => {
 const CommunityPage = () => {
   const navigate = useNavigate();
   const photoInputRef = useRef(null);
+  const videoInputRef = useRef(null);
+  const documentInputRef = useRef(null);
   const linkInputRef = useRef(null);
   const topicInputRef = useRef(null);
 
@@ -177,10 +183,21 @@ const CommunityPage = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({ content: '', category: 'insight', linkUrl: '', topics: '' });
+  const [form, setForm] = useState({
+    content: '',
+    category: 'insight',
+    linkUrl: '',
+    topics: '',
+    isSensitive: false,
+  });
   const [topicDraft, setTopicDraft] = useState('');
-  const [selectedPhoto, setSelectedPhoto] = useState(null);
-  const [photoPreview, setPhotoPreview] = useState('');
+  const [selectedPhotos, setSelectedPhotos] = useState([]);
+  const [photoPreviews, setPhotoPreviews] = useState([]);
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [videoPreview, setVideoPreview] = useState('');
+  const [videoDuration, setVideoDuration] = useState(0);
+  const [selectedDocuments, setSelectedDocuments] = useState([]);
+  const [revealedSensitivePosts, setRevealedSensitivePosts] = useState({});
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [showTopicInput, setShowTopicInput] = useState(false);
 
@@ -321,19 +338,39 @@ const CommunityPage = () => {
   }, [notice]);
 
   useEffect(() => () => {
-    if (photoPreview?.startsWith('blob:')) URL.revokeObjectURL(photoPreview);
-  }, [photoPreview]);
+    photoPreviews.forEach((preview) => {
+      if (preview?.url?.startsWith('blob:')) URL.revokeObjectURL(preview.url);
+    });
+    if (videoPreview?.startsWith('blob:')) URL.revokeObjectURL(videoPreview);
+  }, [photoPreviews, videoPreview]);
 
   const resetCreateForm = () => {
-    if (photoPreview?.startsWith('blob:')) URL.revokeObjectURL(photoPreview);
-    setForm({ content: '', category: 'insight', linkUrl: '', topics: '' });
+    photoPreviews.forEach((preview) => {
+      if (preview?.url?.startsWith('blob:')) URL.revokeObjectURL(preview.url);
+    });
+    if (videoPreview?.startsWith('blob:')) URL.revokeObjectURL(videoPreview);
+
+    setForm({
+      content: '',
+      category: 'insight',
+      linkUrl: '',
+      topics: '',
+      isSensitive: false,
+    });
     setTopicDraft('');
-    setSelectedPhoto(null);
-    setPhotoPreview('');
+    setSelectedPhotos([]);
+    setPhotoPreviews([]);
+    setSelectedVideo(null);
+    setVideoPreview('');
+    setVideoDuration(0);
+    setSelectedDocuments([]);
     setShowLinkInput(false);
     setShowTopicInput(false);
     setEditingPost(null);
+
     if (photoInputRef.current) photoInputRef.current.value = '';
+    if (videoInputRef.current) videoInputRef.current.value = '';
+    if (documentInputRef.current) documentInputRef.current.value = '';
   };
 
   const closeCreateModal = () => {
@@ -383,8 +420,25 @@ const CommunityPage = () => {
       category: post.category || 'insight',
       linkUrl: post.linkUrl || '',
       topics: (post.topics || []).join(', '),
+      isSensitive: Boolean(post.isSensitive),
     });
-    setPhotoPreview(resolveMediaUrl(post.imageUrl));
+
+    const existingImages = (
+      Array.isArray(post.imageUrls) && post.imageUrls.length
+        ? post.imageUrls
+        : [post.imageUrl].filter(Boolean)
+    ).map((url) => ({
+      url: resolveMediaUrl(url),
+      existing: true,
+      name: 'Existing image',
+    }));
+
+    setPhotoPreviews(existingImages);
+    setSelectedPhotos([]);
+    setVideoPreview(resolveMediaUrl(post.videoUrl));
+    setVideoDuration(Number(post.videoDuration || 0));
+    setSelectedVideo(null);
+    setSelectedDocuments([]);
     setShowLinkInput(Boolean(post.linkUrl));
     setShowTopicInput(true);
     setShowCreate(true);
@@ -392,22 +446,125 @@ const CommunityPage = () => {
   };
 
   const handlePhotoChange = (event) => {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+
+    const remainingSlots = Math.max(0, 10 - selectedPhotos.length);
+    const acceptedFiles = files.slice(0, remainingSlots);
+
+    if (files.length > remainingSlots) {
+      alert('Maximum of 10 images per post.');
+    }
+
+    const validFiles = acceptedFiles.filter((file) => {
+      if (!file.type.startsWith('image/')) {
+        alert(`${file.name}: Image files only ang puwedeng i-upload.`);
+        return false;
+      }
+
+      if (file.size > 8 * 1024 * 1024) {
+        alert(`${file.name}: Maximum image size is 8MB.`);
+        return false;
+      }
+
+      return true;
+    });
+
+    const nextPreviews = validFiles.map((file) => ({
+      url: URL.createObjectURL(file),
+      name: file.name,
+      existing: false,
+    }));
+
+    setSelectedPhotos((prev) => [...prev, ...validFiles].slice(0, 10));
+    setPhotoPreviews((prev) => [...prev, ...nextPreviews].slice(0, 10));
+    event.target.value = '';
+  };
+
+  const removePhotoPreview = (index) => {
+    setPhotoPreviews((prev) => {
+      const target = prev[index];
+      if (target?.url?.startsWith('blob:')) URL.revokeObjectURL(target.url);
+      return prev.filter((_, itemIndex) => itemIndex !== index);
+    });
+
+    setSelectedPhotos((prev) => {
+      const selectedIndex = photoPreviews
+        .slice(0, index)
+        .filter((preview) => !preview.existing).length;
+
+      if (photoPreviews[index]?.existing) return prev;
+      return prev.filter((_, itemIndex) => itemIndex !== selectedIndex);
+    });
+  };
+
+  const handleVideoChange = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      alert('Image files only ang puwedeng i-upload.');
-      event.target.value = '';
-      return;
-    }
-    if (file.size > 8 * 1024 * 1024) {
-      alert('Maximum image size is 8MB.');
+
+    if (!file.type.startsWith('video/')) {
+      alert('Video files only ang puwedeng i-upload.');
       event.target.value = '';
       return;
     }
 
-    if (photoPreview?.startsWith('blob:')) URL.revokeObjectURL(photoPreview);
-    setSelectedPhoto(file);
-    setPhotoPreview(URL.createObjectURL(file));
+    if (file.size > 5 * 1024 * 1024 * 1024) {
+      alert('Maximum video file size is 5GB.');
+      event.target.value = '';
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    video.src = previewUrl;
+
+    video.onloadedmetadata = () => {
+      const duration = Number(video.duration || 0);
+
+      if (duration > 600) {
+        URL.revokeObjectURL(previewUrl);
+        alert('Maximum video duration is 10 minutes.');
+        event.target.value = '';
+        return;
+      }
+
+      if (videoPreview?.startsWith('blob:')) URL.revokeObjectURL(videoPreview);
+      setSelectedVideo(file);
+      setVideoPreview(previewUrl);
+      setVideoDuration(duration);
+      event.target.value = '';
+    };
+
+    video.onerror = () => {
+      URL.revokeObjectURL(previewUrl);
+      alert('Unable to read the selected video.');
+      event.target.value = '';
+    };
+  };
+
+  const handleDocumentChange = (event) => {
+    const files = Array.from(event.target.files || []);
+    const allowedExtensions = ['pdf', 'doc', 'docx', 'ppt', 'pptx'];
+    const remainingSlots = Math.max(0, 5 - selectedDocuments.length);
+
+    const validFiles = files.slice(0, remainingSlots).filter((file) => {
+      const extension = String(file.name || '').split('.').pop().toLowerCase();
+
+      if (!allowedExtensions.includes(extension)) {
+        alert(`${file.name}: PDF, DOC, DOCX, PPT, at PPTX files lamang.`);
+        return false;
+      }
+
+      return true;
+    });
+
+    if (files.length > remainingSlots) {
+      alert('Maximum of 5 documents per post.');
+    }
+
+    setSelectedDocuments((prev) => [...prev, ...validFiles].slice(0, 5));
+    event.target.value = '';
   };
 
   const getTopicList = () => (
@@ -468,7 +625,20 @@ const CommunityPage = () => {
       payload.append('category', form.category);
       payload.append('linkUrl', normalizeUrl(form.linkUrl));
       payload.append('topics', form.topics);
-      if (selectedPhoto) payload.append('image', selectedPhoto, selectedPhoto.name);
+      payload.append('isSensitive', String(form.isSensitive));
+      payload.append('videoDuration', String(videoDuration || 0));
+
+      selectedPhotos.forEach((photo) => {
+        payload.append('images', photo, photo.name);
+      });
+
+      if (selectedVideo) {
+        payload.append('video', selectedVideo, selectedVideo.name);
+      }
+
+      selectedDocuments.forEach((documentFile) => {
+        payload.append('documents', documentFile, documentFile.name);
+      });
 
       const response = editingPost
         ? await api.put(`/community/posts/${editingPost._id}`, payload, {
@@ -1383,9 +1553,87 @@ const CommunityPage = () => {
                   );
                 })()}
 
-                {post.imageUrl && (
-                  <img src={resolveMediaUrl(post.imageUrl)} alt="Community post" className="mt-4 max-h-[460px] w-full rounded-xl object-cover" />
-                )}
+                {(() => {
+                  const postImages = (
+                    Array.isArray(post.imageUrls) && post.imageUrls.length
+                      ? post.imageUrls
+                      : [post.imageUrl].filter(Boolean)
+                  );
+                  const isHiddenSensitive =
+                    post.isSensitive && !revealedSensitivePosts[post._id];
+
+                  if (!postImages.length && !post.videoUrl && !(post.documents || []).length) {
+                    return null;
+                  }
+
+                  return (
+                    <div className="relative mt-4">
+                      {isHiddenSensitive && (
+                        <div className="absolute inset-0 z-20 flex min-h-[180px] flex-col items-center justify-center rounded-xl bg-slate-900/90 px-5 text-center text-white backdrop-blur-xl">
+                          <FontAwesomeIcon icon={faEyeSlash} className="text-3xl" />
+                          <p className="mt-3 font-bold">Sensitive Content</p>
+                          <p className="mt-1 max-w-sm text-xs text-white/75">
+                            This post contains media marked as sensitive or potentially disturbing.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setRevealedSensitivePosts((prev) => ({
+                              ...prev,
+                              [post._id]: true,
+                            }))}
+                            className="mt-4 rounded-lg bg-white px-4 py-2 text-xs font-bold text-slate-900"
+                          >
+                            <FontAwesomeIcon icon={faEye} className="mr-2" />
+                            Show Content
+                          </button>
+                        </div>
+                      )}
+
+                      <div className={isHiddenSensitive ? 'pointer-events-none select-none blur-xl' : ''}>
+                        {postImages.length > 0 && (
+                          <div className={`grid gap-2 ${postImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                            {postImages.slice(0, 10).map((image, imageIndex) => (
+                              <img
+                                key={`${image}-${imageIndex}`}
+                                src={resolveMediaUrl(image)}
+                                alt={`Community post ${imageIndex + 1}`}
+                                className="max-h-[460px] h-full w-full rounded-xl object-cover"
+                              />
+                            ))}
+                          </div>
+                        )}
+
+                        {post.videoUrl && (
+                          <video
+                            src={resolveMediaUrl(post.videoUrl)}
+                            controls
+                            preload="metadata"
+                            className="mt-3 max-h-[520px] w-full rounded-xl bg-black"
+                          />
+                        )}
+
+                        {(post.documents || []).length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            {post.documents.map((documentItem, documentIndex) => (
+                              <a
+                                key={`${documentItem.url}-${documentIndex}`}
+                                href={resolveMediaUrl(documentItem.url)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex items-center gap-3 rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-3 text-sm font-semibold text-[#2e66a6] hover:border-[#2e66a6]"
+                              >
+                                <FontAwesomeIcon icon={faFileArrowUp} />
+                                <span className="min-w-0 truncate">
+                                  {documentItem.name || `Document ${documentIndex + 1}`}
+                                </span>
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <div className="mt-4 flex items-center gap-6 border-t border-[#eef2f7] pt-4 text-sm text-black/50">
                   <button
@@ -1453,20 +1701,72 @@ const CommunityPage = () => {
                 ))}
               </div>
 
-              {photoPreview && (
-                <div className="relative mt-4 overflow-hidden rounded-xl border border-[#e6edf5]">
-                  <img src={photoPreview} alt="Post preview" className="max-h-72 w-full object-contain" />
+              {photoPreviews.length > 0 && (
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {photoPreviews.map((preview, index) => (
+                    <div
+                      key={`${preview.url}-${index}`}
+                      className="relative overflow-hidden rounded-xl border border-[#e6edf5]"
+                    >
+                      <img
+                        src={preview.url}
+                        alt={preview.name || `Post preview ${index + 1}`}
+                        className="h-36 w-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removePhotoPreview(index)}
+                        className="absolute right-2 top-2 h-8 w-8 rounded-full bg-white/95 shadow"
+                        aria-label={`Remove image ${index + 1}`}
+                      >
+                        <FontAwesomeIcon icon={faXmark} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {videoPreview && (
+                <div className="relative mt-4 overflow-hidden rounded-xl border border-[#e6edf5] bg-black">
+                  <video src={videoPreview} controls className="max-h-80 w-full" />
                   <button
                     type="button"
                     onClick={() => {
-                      if (photoPreview?.startsWith('blob:')) URL.revokeObjectURL(photoPreview);
-                      setPhotoPreview('');
-                      setSelectedPhoto(null);
+                      if (videoPreview?.startsWith('blob:')) URL.revokeObjectURL(videoPreview);
+                      setVideoPreview('');
+                      setSelectedVideo(null);
+                      setVideoDuration(0);
                     }}
                     className="absolute right-2 top-2 h-9 w-9 rounded-full bg-white/95 shadow"
+                    aria-label="Remove video"
                   >
                     <FontAwesomeIcon icon={faXmark} />
                   </button>
+                </div>
+              )}
+
+              {selectedDocuments.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  {selectedDocuments.map((documentFile, index) => (
+                    <div
+                      key={`${documentFile.name}-${index}`}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-3"
+                    >
+                      <span className="min-w-0 truncate text-sm font-medium">
+                        {documentFile.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedDocuments((prev) => (
+                          prev.filter((_, itemIndex) => itemIndex !== index)
+                        ))}
+                        className="h-8 w-8 shrink-0 rounded-full hover:bg-red-50 hover:text-red-600"
+                        aria-label={`Remove ${documentFile.name}`}
+                      >
+                        <FontAwesomeIcon icon={faXmark} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -1533,10 +1833,72 @@ const CommunityPage = () => {
                 </div>
               )}
 
+              {(photoPreviews.length > 0 || videoPreview) && (
+                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={form.isSensitive}
+                    onChange={(event) => setForm((prev) => ({
+                      ...prev,
+                      isSensitive: event.target.checked,
+                    }))}
+                    className="mt-0.5 h-4 w-4"
+                  />
+                  <span>
+                    <span className="block font-semibold text-amber-900">
+                      Mark uploaded media as sensitive
+                    </span>
+                    <span className="mt-0.5 block text-xs text-amber-800/80">
+                      Viewers will see a warning before opening the media.
+                    </span>
+                  </span>
+                </label>
+              )}
+
               <div className="mt-5 flex items-center gap-2 border-t border-[#e6edf5] pt-4">
-                <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotoChange}
+                  className="hidden"
+                />
+                <input
+                  ref={videoInputRef}
+                  type="file"
+                  accept="video/*"
+                  onChange={handleVideoChange}
+                  className="hidden"
+                />
+                <input
+                  ref={documentInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.ppt,.pptx"
+                  multiple
+                  onChange={handleDocumentChange}
+                  className="hidden"
+                />
                 <button type="button" onClick={() => photoInputRef.current?.click()} className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-[#f7faff]" aria-label="Add photo">
                   <FontAwesomeIcon icon={faImage} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => videoInputRef.current?.click()}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-[#f7faff]"
+                  aria-label="Add video"
+                  title="Upload 1 video, maximum 10 minutes"
+                >
+                  <FontAwesomeIcon icon={faVideo} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => documentInputRef.current?.click()}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-[#f7faff]"
+                  aria-label="Add document"
+                  title="Upload PDF, DOC, DOCX, PPT, or PPTX"
+                >
+                  <FontAwesomeIcon icon={faFileArrowUp} />
                 </button>
                 <button type="button" onClick={() => setShowLinkInput((value) => !value)} className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-[#f7faff]" aria-label="Add link">
                   <FontAwesomeIcon icon={faLink} />

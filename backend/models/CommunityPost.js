@@ -42,6 +42,21 @@ const communityPostSchema = new mongoose.Schema({
     default: 'insight',
   },
   imageUrl: { type: String, default: '' },
+  imageUrls: { type: [String], default: [] },
+  videoUrl: { type: String, default: '' },
+  videoDuration: { type: Number, default: 0, min: 0, max: 600 },
+  documents: {
+    type: [{
+      name: { type: String, default: '' },
+      url: { type: String, default: '' },
+      mimeType: { type: String, default: '' },
+      size: { type: Number, default: 0 },
+    }],
+    default: [],
+  },
+  isSensitive: { type: Boolean, default: false },
+  moderationFlags: { type: [String], default: [] },
+  contentFingerprint: { type: String, default: '', index: true },
   linkUrl: { type: String, default: '' },
   // New posts are still required to have a topic by communityController.
   // The schema allows an empty array so older posts without topics can still
