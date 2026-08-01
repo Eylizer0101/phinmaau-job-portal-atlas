@@ -1,79 +1,72 @@
-const mongoose = require('mongoose');
+const express = require('express');
+const router = express.Router();
+const { protect } = require('../middleware/authMiddleware');
+const { uploadCommunityMedia } = require('../middleware/uploadMiddleware');
+const {
+  getPosts,
+  createPost,
+  updatePost,
+  deletePost,
+  toggleLike,
+  getComments,
+  addComment,
+  deleteComment,
+  reactToComment,
+  reactToReply,
+  addReply,
+  reportContent,
+  getManagedContent,
+  updateComment,
+  updateReply,
+  deleteReply,
+  getArchivedPosts,
+  restoreArchivedPost,
+  restoreArchivedComment,
+  getCommunityGuidelinesStatus,
+  acceptCommunityGuidelines,
+} = require('../controllers/communityController');
 
-const reportSchema = new mongoose.Schema({
-  reporter: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  reason: {
-    type: String,
-    enum: ['spam', 'harassment', 'misleading', 'inappropriate', 'other'],
-    required: true,
-  },
-}, { timestamps: true });
+router.use(protect);
 
-const communityReplySchema = new mongoose.Schema({
-  author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  content: { type: String, required: true, trim: true, maxlength: 2000 },
-  parentReplyId: { type: mongoose.Schema.Types.ObjectId, default: null },
-  helpful: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  notHelpful: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  reports: { type: [reportSchema], default: [] },
-  isDeleted: { type: Boolean, default: false, index: true },
-  deletedAt: { type: Date, default: null },
-  deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
-}, { timestamps: true });
+router.get('/guidelines/status', getCommunityGuidelinesStatus);
+router.post('/guidelines/accept', acceptCommunityGuidelines);
 
-const communityCommentSchema = new mongoose.Schema({
-  author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  content: { type: String, required: true, trim: true, maxlength: 2000 },
-  helpful: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  notHelpful: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  replies: { type: [communityReplySchema], default: [] },
-  reports: { type: [reportSchema], default: [] },
-  isDeleted: { type: Boolean, default: false, index: true },
-  deletedAt: { type: Date, default: null },
-  deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
-}, { timestamps: true });
+router.get('/posts', getPosts);
+router.post(
+  '/posts',
+  uploadCommunityMedia.fields([
+    { name: 'images', maxCount: 10 },
+    { name: 'video', maxCount: 1 },
+    { name: 'documents', maxCount: 5 },
+  ]),
+  createPost
+);
+router.put(
+  '/posts/:postId',
+  uploadCommunityMedia.fields([
+    { name: 'images', maxCount: 10 },
+    { name: 'video', maxCount: 1 },
+    { name: 'documents', maxCount: 5 },
+  ]),
+  updatePost
+);
+router.delete('/posts/:postId', deletePost);
 
-const communityPostSchema = new mongoose.Schema({
-  author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  content: { type: String, required: true, trim: true, maxlength: 5000 },
-  category: {
-    type: String,
-    enum: ['insight', 'skill', 'question', 'resource'],
-    default: 'insight',
-  },
-  imageUrl: { type: String, default: '' },
-  imageUrls: { type: [String], default: [] },
-  videoUrl: { type: String, default: '' },
-  videoDuration: { type: Number, default: 0, min: 0, max: 600 },
-  documents: {
-    type: [{
-      name: { type: String, default: '' },
-      url: { type: String, default: '' },
-      mimeType: { type: String, default: '' },
-      size: { type: Number, default: 0 },
-    }],
-    default: [],
-  },
-  isSensitive: { type: Boolean, default: false },
-  moderationFlags: { type: [String], default: [] },
-  contentFingerprint: { type: String, default: '', index: true },
-  linkUrl: { type: String, default: '' },
-  // New posts are still required to have a topic by communityController.
-  // The schema allows an empty array so older posts without topics can still
-  // receive comments, replies, reactions, reports, and likes.
-  topics: {
-    type: [{ type: String, trim: true }],
-    default: [],
-  },
-  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  comments: { type: [communityCommentSchema], default: [] },
-  commentsCount: { type: Number, default: 0 },
-  reports: { type: [reportSchema], default: [] },
-  isDeleted: { type: Boolean, default: false, index: true },
-  deletedAt: { type: Date, default: null },
-  deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
-}, { timestamps: true });
+router.post('/posts/:postId/like', toggleLike);
+router.get('/posts/:postId/comments', getComments);
+router.post('/posts/:postId/comments', addComment);
+router.put('/posts/:postId/comments/:commentId', updateComment);
+router.delete('/posts/:postId/comments/:commentId', deleteComment);
+router.post('/posts/:postId/comments/:commentId/reaction', reactToComment);
+router.post('/posts/:postId/comments/:commentId/replies', addReply);
+router.put('/posts/:postId/comments/:commentId/replies/:replyId', updateReply);
+router.delete('/posts/:postId/comments/:commentId/replies/:replyId', deleteReply);
+router.post('/posts/:postId/comments/:commentId/replies/:replyId/reaction', reactToReply);
 
-communityPostSchema.index({ createdAt: -1 });
+router.post('/reports', reportContent);
+router.get('/managed', getManagedContent);
+router.get('/managed/archived', getArchivedPosts);
+router.patch('/managed/archived/comments/:postId/:commentId/restore', restoreArchivedComment);
+router.patch('/managed/archived/:postId/restore', restoreArchivedPost);
 
-module.exports = mongoose.model('CommunityPost', communityPostSchema);
+module.exports = router;

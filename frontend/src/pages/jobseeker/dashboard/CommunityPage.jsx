@@ -34,8 +34,6 @@ import {
   faBriefcase,
   faVideo,
   faFileArrowUp,
-  faEye,
-  faEyeSlash,
 } from '@fortawesome/free-solid-svg-icons';
 import api from '../../../services/api';
 
@@ -188,7 +186,6 @@ const CommunityPage = () => {
     category: 'insight',
     linkUrl: '',
     topics: '',
-    isSensitive: false,
   });
   const [topicDraft, setTopicDraft] = useState('');
   const [selectedPhotos, setSelectedPhotos] = useState([]);
@@ -197,7 +194,6 @@ const CommunityPage = () => {
   const [videoPreview, setVideoPreview] = useState('');
   const [videoDuration, setVideoDuration] = useState(0);
   const [selectedDocuments, setSelectedDocuments] = useState([]);
-  const [revealedSensitivePosts, setRevealedSensitivePosts] = useState({});
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [showTopicInput, setShowTopicInput] = useState(false);
 
@@ -225,6 +221,9 @@ const CommunityPage = () => {
   const [editingReply, setEditingReply] = useState(null);
   const [editingPostFromManaged, setEditingPostFromManaged] = useState(false);
   const [managedCategory, setManagedCategory] = useState('all');
+  const [managedSearch, setManagedSearch] = useState('');
+  const [managedPage, setManagedPage] = useState(1);
+  const [archivedPage, setArchivedPage] = useState(1);
   const [managedCommentPage, setManagedCommentPage] = useState(1);
   const [archivedComments, setArchivedComments] = useState([]);
   const [archivedTypeFilter, setArchivedTypeFilter] = useState('all');
@@ -374,7 +373,6 @@ const CommunityPage = () => {
       category: 'insight',
       linkUrl: '',
       topics: '',
-      isSensitive: false,
     });
     setTopicDraft('');
     setSelectedPhotos([]);
@@ -439,7 +437,6 @@ const CommunityPage = () => {
       category: post.category || 'insight',
       linkUrl: post.linkUrl || '',
       topics: (post.topics || []).join(', '),
-      isSensitive: Boolean(post.isSensitive),
     });
 
     const existingImages = (
@@ -631,12 +628,6 @@ const CommunityPage = () => {
       return;
     }
 
-    if (!form.topics.trim()) {
-      setShowTopicInput(true);
-      showUiAlert('Topic is required bago makapag-post.');
-      return;
-    }
-
     try {
       setSubmitting(true);
       const payload = new FormData();
@@ -644,7 +635,6 @@ const CommunityPage = () => {
       payload.append('category', form.category);
       payload.append('linkUrl', normalizeUrl(form.linkUrl));
       payload.append('topics', form.topics);
-      payload.append('isSensitive', String(form.isSensitive));
       payload.append('videoDuration', String(videoDuration || 0));
 
       selectedPhotos.forEach((photo) => {
@@ -918,7 +908,17 @@ const CommunityPage = () => {
 
   useEffect(() => {
     setManagedCommentPage(1);
-  }, [managedSort, managedType, showManaged]);
+    setManagedPage(1);
+    setArchivedPage(1);
+  }, [
+    managedSort,
+    managedType,
+    managedCategory,
+    managedSearch,
+    archivedTypeFilter,
+    managedView,
+    showManaged,
+  ]);
 
 
 
@@ -1626,85 +1626,59 @@ const CommunityPage = () => {
                     </a>
                   );
                 })()}
-
                 {(() => {
                   const postImages = (
                     Array.isArray(post.imageUrls) && post.imageUrls.length
                       ? post.imageUrls
                       : [post.imageUrl].filter(Boolean)
                   );
-                  const isHiddenSensitive =
-                    post.isSensitive && !revealedSensitivePosts[post._id];
 
                   if (!postImages.length && !post.videoUrl && !(post.documents || []).length) {
                     return null;
                   }
 
                   return (
-                    <div className="relative mt-4">
-                      {isHiddenSensitive && (
-                        <div className="absolute inset-0 z-20 flex min-h-[180px] flex-col items-center justify-center rounded-xl bg-slate-900/90 px-5 text-center text-white backdrop-blur-xl">
-                          <FontAwesomeIcon icon={faEyeSlash} className="text-3xl" />
-                          <p className="mt-3 font-bold">Sensitive Content</p>
-                          <p className="mt-1 max-w-sm text-xs text-white/75">
-                            This post contains media marked as sensitive or potentially disturbing.
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => setRevealedSensitivePosts((prev) => ({
-                              ...prev,
-                              [post._id]: true,
-                            }))}
-                            className="mt-4 rounded-lg bg-white px-4 py-2 text-xs font-bold text-slate-900"
-                          >
-                            <FontAwesomeIcon icon={faEye} className="mr-2" />
-                            Show Content
-                          </button>
+                    <div className="mt-4">
+                      {postImages.length > 0 && (
+                        <div className={`grid gap-2 ${postImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                          {postImages.slice(0, 10).map((image, imageIndex) => (
+                            <img
+                              key={`${image}-${imageIndex}`}
+                              src={resolveMediaUrl(image)}
+                              alt={`Community post ${imageIndex + 1}`}
+                              className="max-h-[460px] h-full w-full rounded-xl object-cover"
+                            />
+                          ))}
                         </div>
                       )}
 
-                      <div className={isHiddenSensitive ? 'pointer-events-none select-none blur-xl' : ''}>
-                        {postImages.length > 0 && (
-                          <div className={`grid gap-2 ${postImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                            {postImages.slice(0, 10).map((image, imageIndex) => (
-                              <img
-                                key={`${image}-${imageIndex}`}
-                                src={resolveMediaUrl(image)}
-                                alt={`Community post ${imageIndex + 1}`}
-                                className="max-h-[460px] h-full w-full rounded-xl object-cover"
-                              />
-                            ))}
-                          </div>
-                        )}
+                      {post.videoUrl && (
+                        <video
+                          src={resolveMediaUrl(post.videoUrl)}
+                          controls
+                          preload="metadata"
+                          className="mt-3 max-h-[520px] w-full rounded-xl bg-black"
+                        />
+                      )}
 
-                        {post.videoUrl && (
-                          <video
-                            src={resolveMediaUrl(post.videoUrl)}
-                            controls
-                            preload="metadata"
-                            className="mt-3 max-h-[520px] w-full rounded-xl bg-black"
-                          />
-                        )}
-
-                        {(post.documents || []).length > 0 && (
-                          <div className="mt-3 space-y-2">
-                            {post.documents.map((documentItem, documentIndex) => (
-                              <a
-                                key={`${documentItem.url}-${documentIndex}`}
-                                href={resolveMediaUrl(documentItem.url)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="flex items-center gap-3 rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-3 text-sm font-semibold text-[#2e66a6] hover:border-[#2e66a6]"
-                              >
-                                <FontAwesomeIcon icon={faFileArrowUp} />
-                                <span className="min-w-0 truncate">
-                                  {documentItem.name || `Document ${documentIndex + 1}`}
-                                </span>
-                              </a>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      {(post.documents || []).length > 0 && (
+                        <div className="mt-3 space-y-2">
+                          {post.documents.map((documentItem, documentIndex) => (
+                            <a
+                              key={`${documentItem.url}-${documentIndex}`}
+                              href={resolveMediaUrl(documentItem.url)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center gap-3 rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-3 text-sm font-semibold text-[#2e66a6] hover:border-[#2e66a6]"
+                            >
+                              <FontAwesomeIcon icon={faFileArrowUp} />
+                              <span className="min-w-0 truncate">
+                                {documentItem.name || `Document ${documentIndex + 1}`}
+                              </span>
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
@@ -1743,7 +1717,7 @@ const CommunityPage = () => {
             </div>
 
             <div className="p-6">
-              <div className="mb-4 flex items-center gap-3">
+              <div className="mb-5 flex items-center gap-3">
                 <Avatar user={currentUser} />
                 <div>
                   <p className="font-bold">{getDisplayName(currentUser)}</p>
@@ -1751,16 +1725,8 @@ const CommunityPage = () => {
                 </div>
               </div>
 
-              <textarea
-                value={form.content}
-                onChange={(event) => setForm((prev) => ({ ...prev, content: event.target.value }))}
-                placeholder="What insight or skill would you like to share with the community?"
-                rows={6}
-                className="w-full resize-none rounded-xl border border-[#d8e2ee] p-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
-              />
-
-              <p className="mb-2 mt-5 text-sm font-semibold">Category</p>
-              <div className="flex flex-wrap gap-2">
+              <p className="mb-2 text-sm font-semibold">Category</p>
+              <div className="mb-5 flex flex-wrap gap-2">
                 {createCategories.map((item) => (
                   <button
                     key={item.key}
@@ -1774,6 +1740,15 @@ const CommunityPage = () => {
                   </button>
                 ))}
               </div>
+
+              <label className="mb-2 block text-sm font-semibold">Post</label>
+              <textarea
+                value={form.content}
+                onChange={(event) => setForm((prev) => ({ ...prev, content: event.target.value }))}
+                placeholder="Share something with the community..."
+                rows={6}
+                className="w-full resize-none rounded-xl border border-[#d8e2ee] p-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+              />
 
               {photoPreviews.length > 0 && (
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -1845,20 +1820,21 @@ const CommunityPage = () => {
               )}
 
               {showLinkInput && (
-                <input
-                  ref={linkInputRef}
-                  value={form.linkUrl}
-                  onChange={(event) => setForm((prev) => ({ ...prev, linkUrl: event.target.value }))}
-                  placeholder="Paste website or article link"
-                  className="mt-4 h-11 w-full rounded-xl border border-[#d8e2ee] px-4 text-sm outline-none focus:border-[#2e66a6]"
-                />
+                <div className="mt-4">
+                  <label className="mb-1.5 block text-sm font-semibold">Link</label>
+                  <input
+                    ref={linkInputRef}
+                    value={form.linkUrl}
+                    onChange={(event) => setForm((prev) => ({ ...prev, linkUrl: event.target.value }))}
+                    placeholder="Paste website or article link"
+                    className="h-11 w-full rounded-xl border border-[#d8e2ee] px-4 text-sm outline-none focus:border-[#2e66a6]"
+                  />
+                </div>
               )}
 
               {showTopicInput && (
                 <div className="mt-4">
-                  <label className="mb-1 block text-sm font-semibold">
-                    Topic <span className="text-red-500">*</span>
-                  </label>
+                  <label className="mb-1 block text-sm font-semibold">Topic <span className="font-normal text-black/45">(Optional)</span></label>
 
                   <div className="flex overflow-hidden rounded-xl border border-[#d8e2ee] bg-white focus-within:border-[#2e66a6] focus-within:ring-2 focus-within:ring-[#2e66a6]/20">
                     <input
@@ -1907,28 +1883,6 @@ const CommunityPage = () => {
                 </div>
               )}
 
-              {(photoPreviews.length > 0 || videoPreview) && (
-                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={form.isSensitive}
-                    onChange={(event) => setForm((prev) => ({
-                      ...prev,
-                      isSensitive: event.target.checked,
-                    }))}
-                    className="mt-0.5 h-4 w-4"
-                  />
-                  <span>
-                    <span className="block font-semibold text-amber-900">
-                      Mark uploaded media as sensitive
-                    </span>
-                    <span className="mt-0.5 block text-xs text-amber-800/80">
-                      Viewers will see a warning before opening the media.
-                    </span>
-                  </span>
-                </label>
-              )}
-
               <div className="mt-5 flex items-center gap-2 border-t border-[#e6edf5] pt-4">
                 <input
                   ref={photoInputRef}
@@ -1953,7 +1907,7 @@ const CommunityPage = () => {
                   onChange={handleDocumentChange}
                   className="hidden"
                 />
-                <button type="button" onClick={() => photoInputRef.current?.click()} className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-[#f7faff]" aria-label="Add photo">
+                <button type="button" onClick={() => photoInputRef.current?.click()} className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-[#f7faff]" aria-label="Add photo" title="Up to 10 images">
                   <FontAwesomeIcon icon={faImage} />
                 </button>
                 <button
@@ -1987,7 +1941,7 @@ const CommunityPage = () => {
               <button
                 type="button"
                 onClick={savePost}
-                disabled={submitting || !form.content.trim() || !form.topics.trim()}
+                disabled={submitting || !form.content.trim()}
                 className="inline-flex items-center gap-2 rounded-xl bg-[#2e66a6] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
               >
                 <FontAwesomeIcon icon={submitting ? faSpinner : faPaperPlane} spin={submitting} />
@@ -2218,14 +2172,16 @@ const CommunityPage = () => {
               <div className="min-w-0">
                 <div className="flex items-center gap-3">
                   <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#2e66a6] text-white sm:flex">
-                    <FontAwesomeIcon icon={faSliders} />
+                    <FontAwesomeIcon icon={managedView === 'archived' ? faBoxArchive : faSliders} />
                   </div>
                   <div className="min-w-0">
                     <h2 id="managed-posts-title" className="text-xl font-bold tracking-tight text-black sm:text-2xl">
-                      Manage Your Content
+                      {managedView === 'archived' ? 'Archive' : 'Manage Your Content'}
                     </h2>
                     <p className="mt-0.5 text-sm text-black/55">
-                      Review, update, archive, or restore your community activity.
+                      {managedView === 'archived'
+                        ? 'Hidden from the community feed until restored.'
+                        : 'Review, update, or archive your community activity.'}
                     </p>
                   </div>
                 </div>
@@ -2234,7 +2190,7 @@ const CommunityPage = () => {
               <button
                 type="button"
                 onClick={() => setShowManaged(false)}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-transparent text-black/55 transition hover:border-black/10 hover:bg-black/[0.04] hover:text-black focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/30"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-transparent text-black/55 transition hover:border-black/10 hover:bg-black/[0.04] hover:text-black"
                 aria-label="Close managed content"
               >
                 <FontAwesomeIcon icon={faXmark} />
@@ -2242,87 +2198,89 @@ const CommunityPage = () => {
             </header>
 
             <div className="shrink-0 border-b border-black/10 bg-[#fbfdff] px-5 py-4 sm:px-7">
-              {managedView === 'active' ? (
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    <label className="block">
-                      <span className="mb-1.5 block text-xs font-semibold text-black/55">Sort order</span>
-                      <select
-                        value={managedSort}
-                        onChange={(event) => setManagedSort(event.target.value)}
-                        className="h-11 w-full min-w-0 rounded-xl border border-black/15 bg-white px-3.5 text-sm font-medium text-black outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15 sm:min-w-[150px]"
-                      >
-                        <option value="newest">Newest first</option>
-                        <option value="oldest">Oldest first</option>
-                      </select>
-                    </label>
+              {managedView === 'archived' && (
+                <button
+                  type="button"
+                  onClick={() => setManagedView('active')}
+                  className="mb-3 inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-black/15 bg-white px-4 text-sm font-semibold text-black/70 transition hover:border-[#2e66a6]/35 hover:text-[#2e66a6]"
+                >
+                  <FontAwesomeIcon icon={faArrowLeft} />
+                  Back to Active Content
+                </button>
+              )}
 
-                    <label className="block">
-                      <span className="mb-1.5 block text-xs font-semibold text-black/55">Content type</span>
-                      <select
-                        value={managedType}
-                        onChange={(event) => setManagedType(event.target.value)}
-                        className="h-11 w-full min-w-0 rounded-xl border border-black/15 bg-white px-3.5 text-sm font-medium text-black outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15 sm:min-w-[150px]"
-                      >
-                        <option value="all">All content</option>
-                        <option value="posts">Posts only</option>
-                        <option value="comments">Comments only</option>
-                      </select>
-                    </label>
-
-                    <label className="block">
-                      <span className="mb-1.5 block text-xs font-semibold text-black/55">Category</span>
-                      <select
-                        value={managedCategory}
-                        onChange={(event) => setManagedCategory(event.target.value)}
-                        className="h-11 w-full min-w-0 rounded-xl border border-black/15 bg-white px-3.5 text-sm font-medium text-black outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15 sm:min-w-[150px]"
-                      >
-                        <option value="all">All categories</option>
-                        <option value="insight">Insight</option>
-                        <option value="skill">Skill</option>
-                        <option value="question">Question</option>
-                        <option value="resource">Resource</option>
-                      </select>
-                    </label>
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+                <label className="block min-w-0 flex-1">
+                  <span className="mb-1.5 block text-xs font-semibold text-black/55">Search</span>
+                  <div className="relative">
+                    <FontAwesomeIcon icon={faSearch} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-black/35" />
+                    <input
+                      value={managedSearch}
+                      onChange={(event) => setManagedSearch(event.target.value)}
+                      placeholder={managedView === 'archived' ? 'Search archived posts and comments' : 'Search your posts and comments'}
+                      className="h-11 w-full rounded-xl border border-black/15 bg-white pl-10 pr-4 text-sm outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                    />
                   </div>
+                </label>
 
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold text-black/55">Sort Order</span>
+                  <select
+                    value={managedSort}
+                    onChange={(event) => setManagedSort(event.target.value)}
+                    className="h-11 w-full rounded-xl border border-black/15 bg-white px-3.5 text-sm font-medium outline-none focus:border-[#2e66a6] sm:min-w-[145px]"
+                  >
+                    <option value="newest">Newest first</option>
+                    <option value="oldest">Oldest first</option>
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold text-black/55">Content Type</span>
+                  <select
+                    value={managedView === 'archived' ? archivedTypeFilter : managedType}
+                    onChange={(event) => (
+                      managedView === 'archived'
+                        ? setArchivedTypeFilter(event.target.value)
+                        : setManagedType(event.target.value)
+                    )}
+                    className="h-11 w-full rounded-xl border border-black/15 bg-white px-3.5 text-sm font-medium outline-none focus:border-[#2e66a6] sm:min-w-[150px]"
+                  >
+                    <option value="all">All content</option>
+                    <option value="posts">Posts only</option>
+                    <option value="comments">Comments only</option>
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold text-black/55">Category</span>
+                  <select
+                    value={managedCategory}
+                    onChange={(event) => setManagedCategory(event.target.value)}
+                    className="h-11 w-full rounded-xl border border-black/15 bg-white px-3.5 text-sm font-medium outline-none focus:border-[#2e66a6] sm:min-w-[145px]"
+                  >
+                    <option value="all">All categories</option>
+                    <option value="insight">Insight</option>
+                    <option value="skill">Skill</option>
+                    <option value="question">Question</option>
+                    <option value="resource">Resource</option>
+                  </select>
+                </label>
+
+                {managedView === 'active' && (
                   <button
                     type="button"
                     onClick={() => setManagedView('archived')}
-                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#2e66a6]/25 bg-white px-4 text-sm font-semibold text-[#2e66a6] transition hover:border-[#2e66a6]/45 hover:bg-[#2e66a6]/[0.05] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20 lg:w-auto"
+                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#2e66a6]/25 bg-white px-3 text-xs font-semibold text-[#2e66a6] transition hover:bg-[#2e66a6]/[0.05]"
                   >
                     <FontAwesomeIcon icon={faBoxArchive} />
                     View Archived
-                    <span className="rounded-full bg-[#2e66a6]/10 px-2 py-0.5 text-xs">
+                    <span className="rounded-full bg-[#2e66a6]/10 px-1.5 py-0.5 text-[10px]">
                       {archivedPosts.length + archivedComments.length}
                     </span>
                   </button>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <button
-                    type="button"
-                    onClick={() => setManagedView('active')}
-                    className="inline-flex h-11 items-center justify-center gap-2 self-start rounded-xl border border-black/15 bg-white px-4 text-sm font-semibold text-black/70 transition hover:border-[#2e66a6]/35 hover:bg-[#2e66a6]/[0.04] hover:text-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
-                  >
-                    <FontAwesomeIcon icon={faArrowLeft} />
-                    Back to Active Content
-                  </button>
-
-                  <label className="block w-full sm:w-auto">
-                    <span className="sr-only">Archived content type</span>
-                    <select
-                      value={archivedTypeFilter}
-                      onChange={(event) => setArchivedTypeFilter(event.target.value)}
-                      className="h-11 w-full rounded-xl border border-black/15 bg-white px-3.5 text-sm font-medium text-black outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15 sm:min-w-[180px]"
-                    >
-                      <option value="all">All archived content</option>
-                      <option value="posts">Archived posts</option>
-                      <option value="comments">Archived comments</option>
-                    </select>
-                  </label>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto bg-white px-5 py-5 sm:px-7 sm:py-6">
@@ -2334,326 +2292,293 @@ const CommunityPage = () => {
                   <p className="mt-4 font-semibold text-black">Loading your content</p>
                   <p className="mt-1 text-sm text-black/50">Please wait for a moment.</p>
                 </div>
-              ) : managedView === 'archived' ? (
-                <div className="space-y-8">
-                  {archivedTypeFilter !== 'comments' && (
-                    <section aria-labelledby="archived-posts-heading">
-                      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                        <div>
-                          <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#2e66a6]">Archive</p>
-                          <h3 id="archived-posts-heading" className="mt-1 text-xl font-bold tracking-tight text-black">
-                            Archived Posts
-                            <span className="ml-2 rounded-full bg-black/[0.06] px-2.5 py-1 align-middle text-xs font-semibold text-black/55">
-                              {filteredArchivedPosts.length}
-                            </span>
-                          </h3>
-                          <p className="mt-1 text-sm text-black/50">Hidden from the community feed until restored.</p>
-                        </div>
+              ) : (
+                (() => {
+                  const searchValue = managedSearch.trim().toLowerCase();
+                  const itemsPerPage = 7;
 
-                        <label className="block w-full sm:w-auto">
-                          <span className="mb-1.5 block text-xs font-semibold text-black/50">Sort archived posts</span>
-                          <select
-                            value={managedSort}
-                            onChange={(event) => setManagedSort(event.target.value)}
-                            className="h-10 w-full rounded-xl border border-black/15 bg-white px-3 text-sm font-medium outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15 sm:min-w-[150px]"
-                          >
-                            <option value="newest">Newest first</option>
-                            <option value="oldest">Oldest first</option>
-                          </select>
-                        </label>
-                      </div>
+                  const activeItems = [
+                    ...(managedData.posts || []).map((post) => ({
+                      key: `post-${post._id}`,
+                      type: 'post',
+                      category: post.category || '',
+                      date: new Date(post.createdAt || 0).getTime(),
+                      searchable: [
+                        post.content,
+                        post.linkUrl,
+                        ...(post.topics || []),
+                      ].join(' ').toLowerCase(),
+                      post,
+                    })),
+                    ...(managedData.comments || []).map((item) => ({
+                      key: `comment-${item.postId}-${item.comment._id}`,
+                      type: 'comment',
+                      category: item.postCategory || '',
+                      date: new Date(item.comment.createdAt || 0).getTime(),
+                      searchable: [item.comment.content, item.postContent].join(' ').toLowerCase(),
+                      item,
+                    })),
+                  ]
+                    .filter((entry) => managedType === 'all' || entry.type === managedType.replace(/s$/, ''))
+                    .filter((entry) => managedCategory === 'all' || entry.category === managedCategory)
+                    .filter((entry) => !searchValue || entry.searchable.includes(searchValue))
+                    .sort((a, b) => managedSort === 'oldest' ? a.date - b.date : b.date - a.date);
 
-                      <div className="space-y-3">
-                        {filteredArchivedPosts.length === 0 ? (
-                          <div className="rounded-2xl border border-dashed border-black/15 bg-black/[0.015] px-6 py-10 text-center">
-                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#2e66a6]/10 text-[#2e66a6]">
-                              <FontAwesomeIcon icon={faBoxArchive} />
-                            </div>
-                            <p className="mt-3 font-semibold text-black">No archived posts</p>
-                            <p className="mt-1 text-sm text-black/50">Posts you archive will appear here.</p>
-                          </div>
-                        ) : filteredArchivedPosts.map((post) => (
-                          <article key={post._id} className="rounded-2xl border border-black/10 bg-white p-4 shadow-[0_4px_18px_rgba(0,0,0,0.045)] transition hover:border-[#2e66a6]/25 sm:p-5">
-                            <div className="grid gap-4 lg:grid-cols-[52px_minmax(0,1fr)_170px_172px] lg:items-center">
-                              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#2e66a6]/10 text-[#2e66a6]">
-                                <FontAwesomeIcon icon={faBoxArchive} />
-                              </div>
+                  const archivedItems = [
+                    ...(archivedPosts || []).map((post) => ({
+                      key: `archived-post-${post._id}`,
+                      type: 'post',
+                      category: post.category || '',
+                      date: new Date(post.deletedAt || post.updatedAt || 0).getTime(),
+                      searchable: [
+                        post.content,
+                        post.linkUrl,
+                        ...(post.topics || []),
+                      ].join(' ').toLowerCase(),
+                      post,
+                    })),
+                    ...(archivedComments || []).map((item) => ({
+                      key: `archived-comment-${item.postId}-${item.comment._id}`,
+                      type: 'comment',
+                      category: item.postCategory || '',
+                      date: new Date(item.comment.deletedAt || item.comment.updatedAt || 0).getTime(),
+                      searchable: [item.comment.content, item.postContent].join(' ').toLowerCase(),
+                      item,
+                    })),
+                  ]
+                    .filter((entry) => archivedTypeFilter === 'all' || entry.type === archivedTypeFilter.replace(/s$/, ''))
+                    .filter((entry) => managedCategory === 'all' || entry.category === managedCategory)
+                    .filter((entry) => !searchValue || entry.searchable.includes(searchValue))
+                    .sort((a, b) => managedSort === 'oldest' ? a.date - b.date : b.date - a.date);
 
-                              <div className="min-w-0">
-                                <p className="line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-black/75">{post.content}</p>
-                                <div className="mt-3 flex flex-wrap items-center gap-2">
-                                  <span className="rounded-full bg-[#2e66a6]/10 px-2.5 py-1 text-[11px] font-semibold capitalize text-[#2e66a6]">{post.category}</span>
-                                  <span className="rounded-full bg-black/[0.05] px-2.5 py-1 text-[11px] font-semibold text-black/50">Archived</span>
-                                </div>
-                              </div>
+                  const sourceItems = managedView === 'archived' ? archivedItems : activeItems;
+                  const requestedPage = managedView === 'archived' ? archivedPage : managedPage;
+                  const pageCount = Math.max(1, Math.ceil(sourceItems.length / itemsPerPage));
+                  const safePage = Math.min(requestedPage, pageCount);
+                  const visibleItems = sourceItems.slice(
+                    (safePage - 1) * itemsPerPage,
+                    safePage * itemsPerPage
+                  );
+                  const setPage = managedView === 'archived' ? setArchivedPage : setManagedPage;
 
-                              <div className="border-t border-black/10 pt-3 text-xs text-black/45 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
-                                <p className="font-medium">Archived on</p>
-                                <p className="mt-1 leading-5 text-black/65">{formatArchivedDate(post.deletedAt)}</p>
-                              </div>
-
-                              <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
-                                <button
-                                  type="button"
-                                  onClick={() => restoreArchivedPost(post._id)}
-                                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#2e66a6]/25 bg-white px-3 text-sm font-semibold text-[#2e66a6] transition hover:bg-[#2e66a6]/[0.05] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
-                                >
-                                  <FontAwesomeIcon icon={faRotateLeft} /> Restore
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => permanentlyDeleteArchivedPost(post._id)}
-                                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-3 text-sm font-semibold text-red-600 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200"
-                                >
-                                  <FontAwesomeIcon icon={faTrash} /> Delete
-                                </button>
-                              </div>
-                            </div>
-                          </article>
-                        ))}
-                      </div>
-                    </section>
-                  )}
-
-                  {archivedTypeFilter !== 'posts' && (
-                    <section aria-labelledby="archived-comments-heading">
+                  return (
+                    <section aria-labelledby="combined-community-content-heading">
                       <div className="mb-4">
-                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#2e66a6]">Archive</p>
-                        <h3 id="archived-comments-heading" className="mt-1 text-xl font-bold tracking-tight text-black">
-                          Archived Comments
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#2e66a6]">
+                          {managedView === 'archived' ? 'Archive' : 'Community Activity'}
+                        </p>
+                        <h3 id="combined-community-content-heading" className="mt-1 text-xl font-bold tracking-tight text-black">
+                          {managedView === 'archived' ? 'Archived Posts & Comments' : 'Your Posts & Comments'}
                           <span className="ml-2 rounded-full bg-black/[0.06] px-2.5 py-1 align-middle text-xs font-semibold text-black/55">
-                            {filteredArchivedComments.length}
+                            {sourceItems.length}
                           </span>
                         </h3>
-                        <p className="mt-1 text-sm text-black/50">Restore a comment or remove it permanently.</p>
+                        <p className="mt-1 text-sm text-black/50">
+                          {managedView === 'archived'
+                            ? 'Posts and comments you archive will appear here.'
+                            : 'Your community posts and comments will appear here.'}
+                        </p>
                       </div>
 
                       <div className="space-y-3">
-                        {filteredArchivedComments.length === 0 ? (
-                          <div className="rounded-2xl border border-dashed border-black/15 bg-black/[0.015] px-6 py-10 text-center">
-                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#2e66a6]/10 text-[#2e66a6]">
-                              <FontAwesomeIcon icon={faComment} />
-                            </div>
-                            <p className="mt-3 font-semibold text-black">No archived comments</p>
-                            <p className="mt-1 text-sm text-black/50">Deleted comments that can be restored will appear here.</p>
+                        {visibleItems.length === 0 ? (
+                          <div className="rounded-2xl border border-dashed border-black/15 bg-black/[0.015] px-6 py-12 text-center">
+                            <p className="font-semibold text-black">
+                              {managedView === 'archived'
+                                ? 'No archived posts and comments'
+                                : 'No posts and comments found'}
+                            </p>
+                            <p className="mt-1 text-sm text-black/50">
+                              {managedView === 'archived'
+                                ? 'Posts and comments you archive will appear here.'
+                                : 'Your community posts and comments will appear here.'}
+                            </p>
                           </div>
-                        ) : filteredArchivedComments.map((item) => (
-                          <article key={`${item.postId}-${item.comment._id}`} className="rounded-2xl border border-black/10 bg-white p-4 shadow-[0_4px_18px_rgba(0,0,0,0.045)] transition hover:border-[#2e66a6]/25 sm:p-5">
-                            <div className="grid gap-4 lg:grid-cols-[52px_minmax(0,1fr)_170px_172px] lg:items-center">
-                              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#2e66a6]/10 text-[#2e66a6]">
-                                <FontAwesomeIcon icon={faComment} />
-                              </div>
+                        ) : visibleItems.map((entry) => {
+                          if (entry.type === 'post') {
+                            const post = entry.post;
+                            const images = (
+                              Array.isArray(post.imageUrls) && post.imageUrls.length
+                                ? post.imageUrls
+                                : [post.imageUrl].filter(Boolean)
+                            );
 
-                              <div className="min-w-0">
-                                <p className="line-clamp-2 text-sm leading-6 text-black/75">{item.comment.content}</p>
-                                <p className="mt-2 line-clamp-1 text-xs text-black/45">
-                                  <span className="font-medium text-black/55">On post:</span> {item.postContent}
-                                </p>
-                                <span className="mt-3 inline-flex rounded-full bg-black/[0.05] px-2.5 py-1 text-[11px] font-semibold text-black/50">Archived</span>
-                              </div>
+                            return (
+                              <article key={entry.key} className="rounded-2xl border border-black/10 bg-white p-4 transition hover:border-[#2e66a6]/25 hover:shadow-[0_5px_20px_rgba(0,0,0,0.05)] sm:p-5">
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                  <div className="min-w-0 flex-1">
+                                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                                      <span className="rounded-full bg-[#2e66a6]/10 px-2.5 py-1 text-[11px] font-bold text-[#2e66a6]">Post</span>
+                                      <span className="rounded-full bg-black/[0.05] px-2.5 py-1 text-[11px] font-semibold capitalize text-black/55">{post.category}</span>
+                                    </div>
+                                    <p className="whitespace-pre-wrap text-sm leading-6 text-black/75">{post.content}</p>
 
-                              <div className="border-t border-black/10 pt-3 text-xs text-black/45 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
-                                <p className="font-medium">Archived on</p>
-                                <p className="mt-1 leading-5 text-black/65">{formatArchivedDate(item.comment.deletedAt)}</p>
-                              </div>
+                                    {(images.length > 0 || post.videoUrl || (post.documents || []).length > 0 || post.linkUrl) && (
+                                      <div className="mt-3 rounded-xl border border-[#e6edf5] bg-[#f8fbff] p-3">
+                                        {images.length > 0 && (
+                                          <div className="flex gap-2 overflow-x-auto">
+                                            {images.slice(0, 10).map((image, index) => (
+                                              <img
+                                                key={`${image}-${index}`}
+                                                src={resolveMediaUrl(image)}
+                                                alt={`Archived attachment ${index + 1}`}
+                                                className="h-20 w-24 shrink-0 rounded-lg object-cover"
+                                              />
+                                            ))}
+                                          </div>
+                                        )}
+                                        <div className="mt-2 flex flex-wrap gap-2 text-xs text-black/55">
+                                          {post.videoUrl && <span className="rounded-full bg-white px-2.5 py-1">1 video</span>}
+                                          {(post.documents || []).length > 0 && (
+                                            <span className="rounded-full bg-white px-2.5 py-1">{post.documents.length} document(s)</span>
+                                          )}
+                                          {post.linkUrl && <span className="rounded-full bg-white px-2.5 py-1">Link included</span>}
+                                        </div>
+                                      </div>
+                                    )}
 
-                              <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
-                                <button
-                                  type="button"
-                                  onClick={() => restoreArchivedComment(item)}
-                                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#2e66a6]/25 bg-white px-3 text-sm font-semibold text-[#2e66a6] transition hover:bg-[#2e66a6]/[0.05] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
-                                >
-                                  <FontAwesomeIcon icon={faRotateLeft} /> Restore
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => permanentlyDeleteArchivedComment(item)}
-                                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-3 text-sm font-semibold text-red-600 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200"
-                                >
-                                  <FontAwesomeIcon icon={faTrash} /> Delete
-                                </button>
-                              </div>
-                            </div>
-                          </article>
-                        ))}
-                      </div>
-                    </section>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-8">
-                  {(managedType === 'all' || managedType === 'posts') && (
-                    <section aria-labelledby="active-posts-heading">
-                      <div className="mb-4 flex items-end justify-between gap-4">
-                        <div>
-                          <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#2e66a6]">Published content</p>
-                          <h3 id="active-posts-heading" className="mt-1 text-xl font-bold tracking-tight text-black">
-                            Your Posts
-                            <span className="ml-2 rounded-full bg-black/[0.06] px-2.5 py-1 align-middle text-xs font-semibold text-black/55">
-                              {managedData.posts.filter((post) => managedCategory === 'all' || post.category === managedCategory).length}
-                            </span>
-                          </h3>
-                        </div>
+                                    {(post.topics || []).length > 0 && (
+                                      <div className="mt-3 flex flex-wrap gap-2">
+                                        {post.topics.map((topic) => (
+                                          <span key={topic} className="rounded-full bg-[#eef5fd] px-2.5 py-1 text-[11px] font-semibold text-[#2e66a6]">#{topic}</span>
+                                        ))}
+                                      </div>
+                                    )}
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowManaged(false);
-                            openCreateWith('content');
-                          }}
-                          className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white transition hover:bg-[#285b94] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/30 focus:ring-offset-2"
-                        >
-                          + Create Post
-                        </button>
-                      </div>
+                                    <p className="mt-3 text-xs text-black/45">
+                                      {managedView === 'archived'
+                                        ? `Archived on ${formatArchivedDate(post.deletedAt)}`
+                                        : formatTime(post.createdAt)}
+                                    </p>
+                                  </div>
 
-                      <div className="space-y-3">
-                        {managedData.posts.filter((post) => managedCategory === 'all' || post.category === managedCategory).length === 0 ? (
-                          <div className="rounded-2xl border border-dashed border-black/15 bg-black/[0.015] px-6 py-10 text-center">
-                            <p className="font-semibold text-black">No posts found</p>
-                            <p className="mt-1 text-sm text-black/50">Try another category or create a new post.</p>
-                          </div>
-                        ) : managedData.posts
-                          .filter((post) => managedCategory === 'all' || post.category === managedCategory)
-                          .map((post) => (
-                            <article key={post._id} className="rounded-2xl border border-black/10 bg-white p-4 transition hover:border-[#2e66a6]/25 hover:shadow-[0_5px_20px_rgba(0,0,0,0.05)] sm:p-5">
-                              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="min-w-0 flex-1">
-                                  <p className="line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-black/75">{post.content}</p>
-                                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                                    <span className="text-xs text-black/45">{formatTime(post.createdAt)}</span>
-                                    <span className="rounded-full bg-[#2e66a6]/10 px-2.5 py-1 text-[11px] font-semibold capitalize text-[#2e66a6]">{post.category}</span>
+                                  <div className="flex shrink-0 items-center gap-2 border-t border-black/10 pt-3 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
+                                    {managedView === 'archived' ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => restoreArchivedPost(post._id)}
+                                        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#2e66a6]/25 bg-white px-4 text-sm font-semibold text-[#2e66a6] hover:bg-[#2e66a6]/[0.05]"
+                                      >
+                                        <FontAwesomeIcon icon={faRotateLeft} /> Restore
+                                      </button>
+                                    ) : (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => openEditPost(post, true)}
+                                          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-black/15 bg-white px-4 text-sm font-semibold text-black/70 hover:text-[#2e66a6]"
+                                        >
+                                          <FontAwesomeIcon icon={faPen} /> Edit
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => deletePost(post)}
+                                          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 hover:bg-red-50"
+                                        >
+                                          <FontAwesomeIcon icon={faBoxArchive} /> Archive
+                                        </button>
+                                      </>
+                                    )}
                                   </div>
                                 </div>
+                              </article>
+                            );
+                          }
 
-                                <div className="flex shrink-0 items-center gap-2 border-t border-black/10 pt-3 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
-                                  <button
-                                    type="button"
-                                    onClick={() => openEditPost(post, true)}
-                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-black/15 bg-white px-4 text-sm font-semibold text-black/70 transition hover:border-[#2e66a6]/30 hover:bg-[#2e66a6]/[0.04] hover:text-[#2e66a6]"
-                                  >
-                                    <FontAwesomeIcon icon={faPen} /> Edit
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => deletePost(post)}
-                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 transition hover:bg-red-50"
-                                  >
-                                    <FontAwesomeIcon icon={faTrash} /> Archive
-                                  </button>
-                                </div>
-                              </div>
-                            </article>
-                          ))}
-                      </div>
-                    </section>
-                  )}
-
-                  {(managedType === 'all' || managedType === 'comments') && (() => {
-                    const commentsPerPage = 7;
-                    const pageCount = Math.max(1, Math.ceil(managedData.comments.length / commentsPerPage));
-                    const safePage = Math.min(managedCommentPage, pageCount);
-                    const visibleComments = managedData.comments.slice(
-                      (safePage - 1) * commentsPerPage,
-                      safePage * commentsPerPage
-                    );
-
-                    return (
-                      <section aria-labelledby="active-comments-heading">
-                        <div className="mb-4">
-                          <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#2e66a6]">Community activity</p>
-                          <h3 id="active-comments-heading" className="mt-1 text-xl font-bold tracking-tight text-black">
-                            Your Comments
-                            <span className="ml-2 rounded-full bg-black/[0.06] px-2.5 py-1 align-middle text-xs font-semibold text-black/55">
-                              {managedData.comments.length}
-                            </span>
-                          </h3>
-                        </div>
-
-                        <div className="space-y-3">
-                          {visibleComments.length === 0 ? (
-                            <div className="rounded-2xl border border-dashed border-black/15 bg-black/[0.015] px-6 py-10 text-center">
-                              <p className="font-semibold text-black">No comments found</p>
-                              <p className="mt-1 text-sm text-black/50">Your community comments will appear here.</p>
-                            </div>
-                          ) : visibleComments.map((item) => (
-                            <article key={`${item.postId}-${item.comment._id}`} className="rounded-2xl border border-black/10 bg-white p-4 transition hover:border-[#2e66a6]/25 hover:shadow-[0_5px_20px_rgba(0,0,0,0.05)] sm:p-5">
+                          const item = entry.item;
+                          return (
+                            <article key={entry.key} className="rounded-2xl border border-black/10 bg-white p-4 transition hover:border-[#2e66a6]/25 hover:shadow-[0_5px_20px_rgba(0,0,0,0.05)] sm:p-5">
                               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="min-w-0 flex-1">
-                                  <p className="line-clamp-2 text-sm leading-6 text-black/75">{item.comment.content}</p>
-                                  <p className="mt-2 line-clamp-1 text-xs text-black/45">
+                                  <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-700">Comment</span>
+                                  <p className="mt-3 text-sm leading-6 text-black/75">{item.comment.content}</p>
+                                  <p className="mt-2 line-clamp-2 text-xs text-black/45">
                                     <span className="font-medium text-black/55">On post:</span>{' '}
                                     <span className="text-[#2e66a6]">{item.postContent}</span>
-                                    <span className="mx-1.5">•</span>{formatTime(item.comment.createdAt)}
+                                  </p>
+                                  <p className="mt-2 text-xs text-black/45">
+                                    {managedView === 'archived'
+                                      ? `Archived on ${formatArchivedDate(item.comment.deletedAt)}`
+                                      : formatTime(item.comment.createdAt)}
                                   </p>
                                 </div>
 
                                 <div className="flex shrink-0 items-center gap-2 border-t border-black/10 pt-3 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
-                                  <button
-                                    type="button"
-                                    onClick={() => editManagedComment(item)}
-                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-black/15 bg-white px-4 text-sm font-semibold text-black/70 transition hover:border-[#2e66a6]/30 hover:bg-[#2e66a6]/[0.04] hover:text-[#2e66a6]"
-                                  >
-                                    <FontAwesomeIcon icon={faPen} /> Edit
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => deleteManagedComment(item)}
-                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 transition hover:bg-red-50"
-                                  >
-                                    <FontAwesomeIcon icon={faTrash} /> Archive
-                                  </button>
+                                  {managedView === 'archived' ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => restoreArchivedComment(item)}
+                                      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#2e66a6]/25 bg-white px-4 text-sm font-semibold text-[#2e66a6] hover:bg-[#2e66a6]/[0.05]"
+                                    >
+                                      <FontAwesomeIcon icon={faRotateLeft} /> Restore
+                                    </button>
+                                  ) : (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() => editManagedComment(item)}
+                                        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-black/15 bg-white px-4 text-sm font-semibold text-black/70 hover:text-[#2e66a6]"
+                                      >
+                                        <FontAwesomeIcon icon={faPen} /> Edit
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => deleteManagedComment(item)}
+                                        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 hover:bg-red-50"
+                                      >
+                                        <FontAwesomeIcon icon={faBoxArchive} /> Archive
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
                               </div>
                             </article>
-                          ))}
-                        </div>
+                          );
+                        })}
+                      </div>
 
-                        {pageCount > 1 && (
-                          <nav className="mt-5 flex flex-wrap items-center justify-center gap-2" aria-label="Comments pagination">
+                      {pageCount > 1 && (
+                        <nav className="mt-5 flex flex-wrap items-center justify-center gap-2" aria-label="Community content pagination">
+                          <button
+                            type="button"
+                            disabled={safePage === 1}
+                            onClick={() => setPage((current) => Math.max(1, current - 1))}
+                            className="h-9 rounded-xl border border-black/15 bg-white px-3 text-xs font-semibold text-black/65 disabled:cursor-not-allowed disabled:opacity-35"
+                          >
+                            Previous
+                          </button>
+                          {Array.from({ length: pageCount }, (_, index) => index + 1).map((pageNumber) => (
                             <button
+                              key={pageNumber}
                               type="button"
-                              disabled={safePage === 1}
-                              onClick={() => setManagedCommentPage((page) => Math.max(1, page - 1))}
-                              className="h-9 min-w-9 rounded-xl border border-black/15 bg-white px-3 text-xs font-semibold text-black/65 transition hover:bg-black/[0.03] disabled:cursor-not-allowed disabled:opacity-35"
+                              onClick={() => setPage(pageNumber)}
+                              className={`h-9 min-w-9 rounded-xl px-3 text-xs font-semibold ${
+                                safePage === pageNumber
+                                  ? 'bg-[#2e66a6] text-white'
+                                  : 'border border-black/15 bg-white text-black/65'
+                              }`}
                             >
-                              Previous
+                              {pageNumber}
                             </button>
-                            {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => (
-                              <button
-                                key={page}
-                                type="button"
-                                onClick={() => setManagedCommentPage(page)}
-                                aria-current={safePage === page ? 'page' : undefined}
-                                className={`h-9 min-w-9 rounded-xl px-3 text-xs font-semibold transition ${
-                                  safePage === page
-                                    ? 'bg-[#2e66a6] text-white shadow-sm'
-                                    : 'border border-black/15 bg-white text-black/65 hover:border-[#2e66a6]/30 hover:text-[#2e66a6]'
-                                }`}
-                              >
-                                {page}
-                              </button>
-                            ))}
-                            <button
-                              type="button"
-                              disabled={safePage === pageCount}
-                              onClick={() => setManagedCommentPage((page) => Math.min(pageCount, page + 1))}
-                              className="h-9 min-w-9 rounded-xl border border-black/15 bg-white px-3 text-xs font-semibold text-black/65 transition hover:bg-black/[0.03] disabled:cursor-not-allowed disabled:opacity-35"
-                            >
-                              Next
-                            </button>
-                          </nav>
-                        )}
-                      </section>
-                    );
-                  })()}
-                </div>
+                          ))}
+                          <button
+                            type="button"
+                            disabled={safePage === pageCount}
+                            onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
+                            className="h-9 rounded-xl border border-black/15 bg-white px-3 text-xs font-semibold text-black/65 disabled:cursor-not-allowed disabled:opacity-35"
+                          >
+                            Next
+                          </button>
+                        </nav>
+                      )}
+                    </section>
+                  );
+                })()
               )}
             </div>
           </div>
         </div>
       )}
-
 
       {editTextModal && (
         <div className="fixed inset-0 z-[220] flex items-center justify-center bg-black/55 p-4">
