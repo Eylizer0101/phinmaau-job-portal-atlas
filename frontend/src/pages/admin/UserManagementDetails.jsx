@@ -146,10 +146,10 @@ const JobSeekerLevelBadgeCard = ({
         </div>
 
         <div className="min-w-0">
-          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-gray-500 sm:text-[15px]">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-gray-500 sm:text-[13px]">
             Jobseeker Level
           </p>
-          <p className="mt-0.5 whitespace-nowrap text-sm font-bold text-[#2f3b8f] sm:text-[15px]">
+          <p className="mt-0.5 whitespace-nowrap text-[12px] font-bold text-[#2f3b8f] sm:text-[13px]">
             {currentRank}
           </p>
         </div>
