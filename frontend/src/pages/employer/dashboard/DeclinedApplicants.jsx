@@ -594,7 +594,7 @@ const DeclinedApplicants = () => {
   const [customDateFrom, setCustomDateFrom] = useState('');
   const [customDateTo, setCustomDateTo] = useState('');
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
-  const [sortBy, setSortBy] = useState('newest');
+  const [sortBy, setSortBy] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -887,7 +887,7 @@ const DeclinedApplicants = () => {
   }, [currentPage, totalPages]);
 
   const hasActiveFilters = useMemo(() => {
-    return query.trim() !== '' || filterBy !== 'all' || sortBy !== 'newest' || selectedJob !== 'all';
+    return query.trim() !== '' || filterBy !== 'all' || sortBy !== '' || selectedJob !== 'all';
   }, [query, filterBy, sortBy, selectedJob]);
 
   const handleDelete = async () => {
@@ -929,7 +929,7 @@ const DeclinedApplicants = () => {
     setFilterBy('all');
     setCustomDateFrom('');
     setCustomDateTo('');
-    setSortBy('newest');
+    setSortBy('');
   };
 
   const headerRight = useMemo(() => {
@@ -1069,6 +1069,7 @@ const DeclinedApplicants = () => {
                   className={selectBase}
                   disabled={loading}
                 >
+                  <option value="" disabled>Sort By</option>
                   <option value="newest">Newest First</option>
                   <option value="oldest_first">Oldest First</option>
                   <option value="recently_declined">Recently Declined</option>

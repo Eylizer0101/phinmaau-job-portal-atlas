@@ -983,7 +983,7 @@ const UserManagementDetails = () => {
           </div>
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col items-start gap-1 py-1 lg:ml-8 lg:flex-row lg:items-center lg:gap-6">
+        <div className="flex min-w-0 flex-1 flex-col items-start gap-1 py-1 lg:flex-row lg:items-center lg:justify-end lg:gap-6">
           <JobSeekerLevelBadgeCard currentRank={jobSeekerLevel} />
 
           <div className="inline-flex items-center gap-2 whitespace-nowrap text-sm font-semibold text-gray-500 sm:text-[15px]">

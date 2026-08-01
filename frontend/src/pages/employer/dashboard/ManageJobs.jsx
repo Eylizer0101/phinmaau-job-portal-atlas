@@ -474,7 +474,7 @@ const ManageJobs = () => {
   const [customDateTo, setCustomDateTo] = useState('');
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
   const [q, setQ] = useState('');
-  const [sortBy, setSortBy] = useState('most_recent');
+  const [sortBy, setSortBy] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
   const [badLogos, setBadLogos] = useState({});
@@ -1112,7 +1112,7 @@ const ManageJobs = () => {
       jobFilter !== 'all' ||
       statusFilter !== 'all' ||
       dateFilter !== 'all' ||
-      sortBy !== 'most_recent'
+      sortBy !== ''
     );
   }, [q, jobFilter, statusFilter, dateFilter, sortBy]);
 
@@ -1123,7 +1123,7 @@ const ManageJobs = () => {
     setCustomDateFrom('');
     setCustomDateTo('');
     setQ('');
-    setSortBy('most_recent');
+    setSortBy('');
   };
 
   useEffect(() => {
@@ -1268,6 +1268,7 @@ const ManageJobs = () => {
                   onChange={(e) => setSortBy(e.target.value)}
                   className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                 >
+                  <option value="" disabled>Sort By</option>
                   <option value="most_recent">Newest First</option>
                   <option value="oldest_first">Oldest First</option>
                   <option value="most_applicants">Most Applicants</option>

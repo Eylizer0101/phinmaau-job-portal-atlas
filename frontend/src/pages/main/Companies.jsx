@@ -2,11 +2,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainNavbar from "../../components/shared/MainNavbar";
+import AboutUsModal from "../../components/shared/AboutUsModal";
 import api from "../../services/api";
 import { getProvinceFromLocation } from "../../constants/phLocations";
 
 const MainFooter = () => {
+  const [showAboutUsModal, setShowAboutUsModal] = useState(false);
+
   return (
+    <>
     <footer className="bg-[#212C61] border-t-4 border-[#FFD000]">
       <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-12 md:py-14">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
@@ -99,7 +103,15 @@ const MainFooter = () => {
             </h4>
 
             <ul className="mt-6 space-y-4 text-white/80 text-[15px]">
-              <li>About Us</li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setShowAboutUsModal(true)}
+                  className="text-left transition hover:text-[#FFD000] focus-visible:outline-none focus-visible:text-[#FFD000] focus-visible:underline"
+                >
+                  About Us
+                </button>
+              </li>
               <li>Contact Us</li>
               <li>Careers</li>
               <li>Partners with Us</li>
@@ -121,6 +133,12 @@ const MainFooter = () => {
         </div>
       </div>
     </footer>
+
+      <AboutUsModal
+        open={showAboutUsModal}
+        onClose={() => setShowAboutUsModal(false)}
+      />
+    </>
   );
 };
 
