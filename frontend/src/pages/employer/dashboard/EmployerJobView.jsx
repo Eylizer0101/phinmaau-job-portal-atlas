@@ -1053,6 +1053,77 @@ const EmployerJobView = () => {
                 </div>
               </div>
 
+              
+            </div>
+
+            <aside className="min-w-0">
+              <div className={`${UI.sectionCard} overflow-hidden`}>
+                <div className="border-b border-[#d9dbe3] bg-[#f9fafb] px-5 py-4">
+                  <h3 className={UI.title}>Required Skills & Work Location</h3>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+                  <div className="rounded-xl border border-[#d9dbe3] bg-white p-4">
+                    <p className={UI.label}>Required Skills</p>
+                    {requiredSkills.length > 0 ? (
+                      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {requiredSkills.map((skill, idx) => (
+                          <div key={`${skill}-${idx}`} className={UI.skillChip}>
+                            {skill}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className={UI.muted}>No skills specified</p>
+                    )}
+
+                    <div className="mt-4 border-t border-[#d9dbe3] pt-4">
+                      <p className={UI.label}>Willing to Relocate?</p>
+                      <p className={UI.muted}>{getRelocationDisplayLabel(job.willingToRelocate)}</p>
+                    </div>
+                  </div>
+
+                  <div className="overflow-hidden rounded-xl border border-[#d9dbe3] bg-white">
+                    <div className="px-4 pt-4">
+                      <p className={UI.label}>Work Location</p>
+                    </div>
+                    <div className="mt-3 overflow-hidden">
+                      {getJobCoordinates(job) ? (
+                        <StaticLocationMap job={job} heightClass="h-[180px]" />
+                      ) : job.locationImage ? (
+                        <img
+                          src={`https://phinmaau-job-portal-atlas.onrender.com${job.locationImage}`}
+                          alt="Work location"
+                          className="h-[180px] w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-[180px] items-center justify-center bg-[#eef2f7] text-[#9ca3af]">
+                          <SvgIcon name="location" className="h-8 w-8" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="border-t border-[#d9dbe3] px-3 py-3">
+                      {buildWorkLocationUrl(job) ? (
+                        <a
+                          href={buildWorkLocationUrl(job)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`text-xs font-medium text-[#2e66a6] hover:underline ${UI.ring} rounded`}
+                          title="Open work location in OpenStreetMap"
+                        >
+                          {String(job.location || '').trim() || 'Work address not specified'}
+                        </a>
+                      ) : (
+                        <p className="text-xs text-[#6b7280]">
+                          {String(job.location || '').trim() || 'Work address not specified'}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
+
               <div className={`${UI.sectionCard} overflow-hidden`}>
                 <div className="border-b border-[#d9dbe3] px-5 py-4 sm:px-6">
                   <h3 className={UI.title}>Perks and Benefits</h3>
@@ -1072,79 +1143,6 @@ const EmployerJobView = () => {
                   </div>
                 </div>
               </div>
-            </div>
-
-            <aside className="min-w-0">
-              <div className={`${UI.sectionCard} overflow-hidden`}>
-                <div className="border-b border-[#d9dbe3] bg-[#f9fafb] px-5 py-4">
-                  <h3 className={UI.title}>Required Skills & Work Location</h3>
-                </div>
-
-                <div className="grid grid-cols-1 gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-                  <div>
-                    <p className={UI.label}>Willing to Relocate?</p>
-                    <p className={UI.muted}>{getRelocationDisplayLabel(job.willingToRelocate)}</p>
-                  </div>
-
-                  <div>
-                    <p className={UI.label}>Required Skills</p>
-                    {requiredSkills.length > 0 ? (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {requiredSkills.map((skill, idx) => (
-                          <span
-                            key={`${skill}-${idx}`}
-                            className="rounded-full border border-[#d9dbe3] bg-white px-2.5 py-1 text-[11px] font-medium text-[#4b5563]"
-                          >
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className={UI.muted}>No skills specified</p>
-                    )}
-                  </div>
-
-                  <div className="sm:col-span-2 lg:col-span-2">
-                    <p className={UI.label}>Work Location</p>
-                    <div className="mt-2 overflow-hidden rounded-xl border border-[#d9dbe3] bg-white">
-                      <div className="overflow-hidden">
-                        {getJobCoordinates(job) ? (
-                          <StaticLocationMap job={job} heightClass="h-[160px]" />
-                        ) : job.locationImage ? (
-                          <img
-                            src={`https://phinmaau-job-portal-atlas.onrender.com${job.locationImage}`}
-                            alt="Work location"
-                            className="h-[160px] w-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-[160px] items-center justify-center bg-[#eef2f7] text-[#9ca3af]">
-                            <SvgIcon name="location" className="h-8 w-8" />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="border-t border-[#d9dbe3] px-3 py-2">
-                        {buildWorkLocationUrl(job) ? (
-                          <a
-                            href={buildWorkLocationUrl(job)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={`text-xs font-medium text-[#2e66a6] hover:underline ${UI.ring} rounded`}
-                            title="Open work location in OpenStreetMap"
-                          >
-                            {String(job.location || '').trim() || 'Work address not specified'}
-                          </a>
-                        ) : (
-                          <p className="text-xs text-[#6b7280]">
-                            {String(job.location || '').trim() || 'Work address not specified'}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </aside>
           </div>
         </div>
       </div>
