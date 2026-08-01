@@ -2368,7 +2368,15 @@ const CommunityPage = () => {
                           {managedView === 'archived' ? 'Archive' : 'Community Activity'}
                         </p>
                         <h3 id="combined-community-content-heading" className="mt-1 text-xl font-bold tracking-tight text-black">
-                          {managedView === 'archived' ? 'Archived Posts & Comments' : 'Your Posts & Comments'}
+                          {managedView === 'archived'
+                            ? (
+                              archivedTypeFilter === 'posts'
+                                ? 'Archived Posts'
+                                : archivedTypeFilter === 'comments'
+                                  ? 'Archived Comments'
+                                  : 'Archived Posts & Comments'
+                            )
+                            : 'Your Posts & Comments'}
                           <span className="ml-2 rounded-full bg-black/[0.06] px-2.5 py-1 align-middle text-xs font-semibold text-black/55">
                             {sourceItems.length}
                           </span>
