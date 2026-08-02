@@ -673,17 +673,17 @@ const JobseekerCompanies = () => {
                     />
                   </div>
 
-                  <LocationDropdown />
+                  {LocationDropdown()}
 
-                  <DropdownPill
-                    id="industry"
-                    label="Industry"
-                    items={industries}
-                    selectedValue={selectedIndustry}
-                    onSelect={setSelectedIndustry}
-                    menuWidth="w-[240px]"
-                    showClearOption={false}
-                  />
+                  {DropdownPill({
+                    id: "industry",
+                    label: "Industry",
+                    items: industries,
+                    selectedValue: selectedIndustry,
+                    onSelect: setSelectedIndustry,
+                    menuWidth: "w-[240px]",
+                    showClearOption: false,
+                  })}
 
                   {hasAnyFilter && (
                     <button type="button" className={pillBtn} onClick={clearAll}>

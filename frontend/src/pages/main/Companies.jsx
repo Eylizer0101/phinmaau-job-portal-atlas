@@ -825,8 +825,8 @@ const Companies = () => {
 
                   {filtersOpen ? (
                     <>
-                      <LocationDropdown />
-                      <IndustryDropdown />
+                      {LocationDropdown()}
+                      {IndustryDropdown()}
                     </>
                   ) : null}
 
