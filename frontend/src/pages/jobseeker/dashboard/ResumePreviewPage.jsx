@@ -807,9 +807,9 @@ const ResumePreviewPage = () => {
               </Section>
             ) : null}
 
-            <Section title="Education">
-              {educationEntries.length ? (
-                educationEntries.map((entry, index) => (
+            {educationEntries.length ? (
+              <Section title="Education">
+                {educationEntries.map((entry, index) => (
                   <DatedItem
                     key={`${entry.level || 'education'}-${entry.campus || entry.school || 'campus'}-${index}`}
                     title={getText(entry.level || entry.educationalAttainment, 'Education')}
@@ -818,17 +818,9 @@ const ResumePreviewPage = () => {
                     date={getEducationDateRange(entry)}
                     description={entry.description}
                   />
-                ))
-              ) : (
-                <DatedItem
-                  title={getText(formData.educationalAttainment, 'Education')}
-                  subtitle={getText(formData.campus)}
-                  meta={[formData.course, formData.studyField].filter(isMeaningfulResumeValue).join(' / ')}
-                  date={getText(formData.yearGraduated)}
-                  description={formData.eduDescription || formData.description}
-                />
-              )}
-            </Section>
+                ))}
+              </Section>
+            ) : null}
 
             <ProfileListSection title="Certifications" items={certifications} />
             <ProfileListSection title="Projects" items={projects} />

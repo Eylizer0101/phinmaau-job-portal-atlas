@@ -238,8 +238,8 @@ const RegisterPage = () => {
   const validateStep2 = () => validateCareerMain();
 
   // ✅ UPDATED: Step 3 validation
-  // Required lang: CV, Diploma, Valid ID
-  // Optional: TOR, SSS, PhilHealth, Pag-IBIG, TIN
+  // Required: CV, Diploma, Valid ID, TOR
+  // Optional: SSS, PhilHealth, Pag-IBIG, TIN
   const validateStep3 = () => {
     const errors = {};
 
@@ -262,8 +262,10 @@ const RegisterPage = () => {
     if (!formData.validIdFile) errors.validIdFile = 'Valid ID is required';
     else validateFileIfExists(formData.validIdFile, 'validIdFile');
 
+    if (!formData.torFile) errors.torFile = 'Transcript of Records (TOR) is required';
+    else validateFileIfExists(formData.torFile, 'torFile');
+
     // ✅ Optional documents
-    validateFileIfExists(formData.torFile, 'torFile');
     validateFileIfExists(formData.sssFile, 'sssFile');
     validateFileIfExists(formData.philhealthFile, 'philhealthFile');
     validateFileIfExists(formData.pagibigFile, 'pagibigFile');
@@ -322,7 +324,7 @@ const RegisterPage = () => {
       fd.append('validId', formData.validIdFile);
 
       // ✅ Optional files (append only if meron)
-      if (formData.torFile) fd.append('tor', formData.torFile);
+      fd.append('tor', formData.torFile);
       if (formData.sssFile) fd.append('sss', formData.sssFile);
       if (formData.philhealthFile) fd.append('philhealth', formData.philhealthFile);
       if (formData.pagibigFile) fd.append('pagibig', formData.pagibigFile);
@@ -965,7 +967,7 @@ const RegisterPage = () => {
               <FileRow k="cvFile" title="Upload CV or Resume (Required)" />
               <FileRow k="diplomaFile" title="Diploma (Required)" />
               <FileRow k="validIdFile" title="Valid ID (Required)" />
-              <FileRow k="torFile" title="Transcript of Records (TOR) (Optional)" />
+              <FileRow k="torFile" title="Transcript of Records (TOR) (Required)" />
 
               <FileRow k="sssFile" title="SSS (Optional)" />
               <FileRow k="philhealthFile" title="PhilHealth (Optional)" />

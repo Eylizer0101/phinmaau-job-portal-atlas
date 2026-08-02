@@ -370,8 +370,8 @@ const normalizeGalleryImagesInput = (incoming, current = []) => {
 };
 
 // ✅ NEW: required docs for jobseeker registration/verification
-const REQUIRED_ALUMNI_DOC_TYPES = ['cv', 'diploma', 'validId'];
-const OPTIONAL_ALUMNI_DOC_TYPES = ['tor', 'sss', 'philhealth', 'pagibig', 'tin'];
+const REQUIRED_ALUMNI_DOC_TYPES = ['cv', 'diploma', 'validId', 'tor'];
+const OPTIONAL_ALUMNI_DOC_TYPES = ['sss', 'philhealth', 'pagibig', 'tin'];
 const ALL_ALUMNI_DOC_TYPES = [...REQUIRED_ALUMNI_DOC_TYPES, ...OPTIONAL_ALUMNI_DOC_TYPES];
 
 const getAlumniOverallStatus = (verificationDocs = {}, forceVerified = false) => {
@@ -686,7 +686,7 @@ exports.register = async (req, res) => {
     }
 
     const files = req.files || {};
-    const requiredDocs = ['cv', 'diploma', 'validId'];
+    const requiredDocs = ['cv', 'diploma', 'validId', 'tor'];
     const missing = requiredDocs.filter((k) => !(files?.[k]?.[0]));
     if (missing.length) {
       return res.status(400).json({ message: `Missing required documents: ${missing.join(', ')}` });
@@ -3134,7 +3134,7 @@ const buildResumeHtmlForPdf = (user = {}) => {
     { label: 'Preferred Work Mode', value: profile.preferredWorkMode },
     { label: 'Employment Type', value: profile.employmentType },
     { label: 'Educational Attainment', value: profile.educationalAttainment },
-    { label: 'Field / Study', value: profile.studyField || profile.course },
+    { label: 'Field / Study', value: profile.studyField },
     { label: 'Civil Status', value: profile.civilStatus },
     { label: 'Birthday', value: profile.birthday },
     { label: 'Salary', value: [profile.minimumSalary, profile.maximumSalary].filter(Boolean).join(' - ') },
@@ -3186,10 +3186,10 @@ const buildResumeHtmlForPdf = (user = {}) => {
       )
     : '';
 
-  const educationHtml = renderResumeSection(
-    'Education',
-    educationEntries.length
-      ? educationEntries
+  const educationHtml = educationEntries.length
+    ? renderResumeSection(
+        'Education',
+        educationEntries
           .map((entry) =>
             renderResumeDatedItem({
               title: resumeText(entry.level || entry.educationalAttainment, 'Education'),
@@ -3200,14 +3200,8 @@ const buildResumeHtmlForPdf = (user = {}) => {
             })
           )
           .join('')
-      : renderResumeDatedItem({
-          title: resumeText(profile.educationalAttainment, 'Education'),
-          subtitle: resumeText(profile.campus),
-          meta: [profile.course, profile.studyField].filter(isMeaningfulResumeValue).join(' / '),
-          date: resumeText(profile.yearGraduated),
-          description: profile.eduDescription || profile.description,
-        })
-  );
+      )
+    : '';
 
   return `
     <!doctype html>

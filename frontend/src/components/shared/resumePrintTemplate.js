@@ -678,10 +678,10 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
     !allSkills.length
   );
 
-  const educationHtml = sectionHtml(
-    'Education',
-    educationEntries.length
-      ? educationEntries
+  const educationHtml = educationEntries.length
+    ? sectionHtml(
+        'Education',
+        educationEntries
           .map((entry) =>
             datedItemHtml({
               title: getText(entry.level || entry.educationalAttainment, 'Education'),
@@ -692,14 +692,8 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
             })
           )
           .join('')
-      : datedItemHtml({
-          title: getText(formData.educationalAttainment, 'Education'),
-          subtitle: getText(formData.campus),
-          meta: [formData.course, formData.studyField].filter(isMeaningfulResumeValue).join(' / '),
-          date: getText(formData.yearGraduated),
-          description: formData.eduDescription || formData.description,
-        })
-  );
+      )
+    : '';
 
   return `<!doctype html>
 <html>
@@ -912,7 +906,7 @@ export const normalizeUserToResumeData = ({ userData = {}, profile = {}, workExp
     employmentType: profile.employmentType || '',
     educationalAttainment: profile.educationalAttainment || '',
     willingToRelocate: profile.willingToRelocate || '',
-    studyField: profile.studyField || profile.course || '',
+    studyField: profile.studyField || '',
     experience: profile.experience || '',
 
     certifications: Array.isArray(profile.certifications) ? profile.certifications : [],

@@ -454,21 +454,7 @@ const normalizeEducationEntries = (entries = [], keepEmpty = false) => {
 const buildEducationDraftEntries = (baseState = {}) => {
   const existingEntries = normalizeEducationEntries(baseState.educationEntries || [], false);
   const hasExistingEntries = existingEntries.some(hasEducationEntryValue);
-  if (hasExistingEntries) return existingEntries;
-
-  const fallbackEntry = normalizeEducationEntry({
-    level: baseState.eduLevel || baseState.educationalAttainment || '',
-    educationalAttainment: baseState.eduEducationalAttainment || baseState.educationalAttainment || '',
-    school: baseState.eduSchool || baseState.eduCampus || baseState.campus || '',
-    startMonth: baseState.eduStartMonth || '',
-    startYear: baseState.eduStartYear || '',
-    endMonth: baseState.eduEndMonth || '',
-    endYear: baseState.eduEndYear || baseState.yearGraduated || '',
-    yearGraduated: baseState.eduEndYear || baseState.yearGraduated || '',
-    description: baseState.eduDescription || '',
-  });
-
-  return hasEducationEntryValue(fallbackEntry) ? [fallbackEntry] : [createEmptyEducationEntry()];
+  return hasExistingEntries ? existingEntries : [createEmptyEducationEntry()];
 };
 
 const cleanEducationEntriesForSave = (entries = []) =>
@@ -4962,7 +4948,7 @@ const MyProfile = () => {
             profile.educationalAttainment
           ),
           willingToRelocate: profile.willingToRelocate || '',
-          studyField: profile.studyField || profile.course || '',
+          studyField: profile.studyField || '',
           experience: normalizeExperienceValue(profile.experience),
 
           certifications: normalizeProfileList(profile.certifications),
@@ -6271,7 +6257,7 @@ const MyProfile = () => {
     { label: 'Preferred Work Mode', value: formData.preferredWorkMode },
     { label: 'Employment Type', value: formData.employmentType },
     { label: 'Educational Attainment', value: formData.educationalAttainment },
-    { label: 'Study Field', value: formData.studyField || formData.course },
+    { label: 'Study Field', value: formData.studyField },
     { label: 'Willing to Relocate', value: formData.willingToRelocate },
     { label: 'How Soon Can You Start', value: formData.howSoonCanYouStart },
     { label: 'Work Experience ', value: formData.whatHaveYouDone },
@@ -6366,7 +6352,7 @@ const MyProfile = () => {
         formData.gender,
         formData.educationalAttainment,
         formData.civilStatus,
-        formData.studyField || formData.course,
+        formData.studyField,
         formData.birthday,
       ].some((value) => String(value || '').trim());
 
@@ -6385,7 +6371,7 @@ const MyProfile = () => {
           <div className="space-y-1">
             <div><b>Preferred Language:</b> {textOrEmpty(formData.preferredLanguage, 'Not provided')}</div>
             <div><b>Educational Attainment:</b> {textOrEmpty(formData.educationalAttainment, 'Not provided')}</div>
-            <div><b>Double Degree:</b> {textOrEmpty(formData.studyField || formData.course, 'Not provided')}</div>
+            <div><b>Double Degree:</b> {textOrEmpty(formData.studyField, 'Not provided')}</div>
             <div><b>Salary:</b> {salaryText || 'Not provided'}</div>
             <div><b>Nationality:</b> {textOrEmpty(formData.nationality, 'Not provided')}</div>
           </div>
@@ -6492,17 +6478,7 @@ const MyProfile = () => {
     }
 
     if (sectionKey === 'education') {
-      const items = hasEducationEntries ? educationEntries : [{
-        school: formData.eduSchool || formData.campus,
-        campus: formData.eduSchool || formData.campus,
-        level: formData.eduEducationalAttainment || formData.educationalAttainment,
-        educationalAttainment: formData.eduEducationalAttainment || formData.educationalAttainment,
-        startMonth: formData.eduStartMonth,
-        startYear: formData.eduStartYear,
-        endMonth: formData.eduEndMonth,
-        endYear: formData.eduEndYear || formData.yearGraduated,
-        description: formData.eduDescription,
-      }];
+      const items = hasEducationEntries ? educationEntries : [];
       const hasAny = items.some((item) => item.school || item.campus || item.level || item.educationalAttainment || item.startMonth || item.startYear || item.endMonth || item.endYear || item.description);
       if (!hasAny) return renderEmptyLine(EMPTY_SECTION_MESSAGES.education);
       return (
