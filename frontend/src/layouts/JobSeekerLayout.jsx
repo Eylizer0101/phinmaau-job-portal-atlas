@@ -667,7 +667,7 @@ const JobSeekerLayout = ({ children }) => {
   };
 
   return (
-    <div className={`min-h-screen bg-gray-50 ${allowsStickyContent ? 'overflow-x-clip' : 'overflow-x-hidden'}`} >
+    <div className={`min-h-screen bg-gray-50 ${allowsStickyContent ? '' : 'overflow-x-hidden'}`} >
       {notificationDeleteConfirmation && (
         <div
           className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 px-4"
