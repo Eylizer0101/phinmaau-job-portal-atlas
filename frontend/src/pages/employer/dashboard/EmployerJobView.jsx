@@ -201,7 +201,7 @@ const getExperienceDisplayLabel = (value) => {
 
 const UI = {
   page: 'min-h-screen ',
-  container: 'mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8',
+  container: 'mx-auto max-w-7xl px-1 py-8',
   card: 'w-full rounded-2xl border border-[#d9dbe3] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]',
   sectionCard: 'w-full rounded-xl border border-[#d9dbe3] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]',
   metricCard: 'rounded-xl border border-[#d9dbe3] bg-white px-4 py-3.5 min-h-[86px] shadow-[0_3px_12px_rgba(15,23,42,0.04)]',
