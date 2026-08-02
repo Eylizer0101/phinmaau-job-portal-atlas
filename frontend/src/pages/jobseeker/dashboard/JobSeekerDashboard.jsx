@@ -1645,6 +1645,7 @@ const JobSeekerDashboard = () => {
                       app.job?.companyVerified == null;
                     const recentWorkMode = normalizeWorkModeLabel(app.job?.workMode);
                     const recentEmploymentType = normalizeEmploymentTypeLabel(app.job?.jobType);
+                    const recentApplicationTags = getJobOfferTags(app.job || {});
 
                     return (
                       <div
@@ -1754,22 +1755,10 @@ const JobSeekerDashboard = () => {
                               )}
                             </div>
 
-                            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#D9E3F2] pt-3 text-xs">
-                              <div className="flex items-center gap-2 text-gray-500">
-                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={1.5}
-                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                  />
-                                </svg>
-                                <span>Applied on {formatAppliedDateTime(app.appliedAt || app.createdAt)}</span>
-                              </div>
-
-                              {getEffectiveApplicationStatus(app) === 'for interview' && app.interviewDate && (
-                                <div className="flex items-center gap-2 text-[#2D9CDB] font-medium">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div className="mt-4 border-t border-[#D9E3F2] pt-3">
+                              <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+                                <div className="flex items-center gap-2 text-gray-500">
+                                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path
                                       strokeLinecap="round"
                                       strokeLinejoin="round"
@@ -1777,7 +1766,35 @@ const JobSeekerDashboard = () => {
                                       d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                                     />
                                   </svg>
-                                  <span>Interview {formatDate(app.interviewDate)}</span>
+                                  <span>Applied on {formatAppliedDateTime(app.appliedAt || app.createdAt)}</span>
+                                </div>
+
+                                {getEffectiveApplicationStatus(app) === 'for interview' && app.interviewDate && (
+                                  <div className="flex items-center gap-2 text-[#2D9CDB] font-medium">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={1.5}
+                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                      />
+                                    </svg>
+                                    <span>Interview {formatDate(app.interviewDate)}</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {recentApplicationTags.length > 0 && (
+                                <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2">
+                                  {recentApplicationTags.map((tag, index) => (
+                                    <span
+                                      key={`${tag.label}-${index}`}
+                                      className={`inline-flex h-6 max-w-full items-center rounded-full px-2.5 text-[11px] font-medium ${tag.className}`}
+                                      title={tag.label}
+                                    >
+                                      <span className="truncate">{tag.label}</span>
+                                    </span>
+                                  ))}
                                 </div>
                               )}
                             </div>
@@ -2263,7 +2280,7 @@ const JobSeekerDashboard = () => {
                             e.stopPropagation();
                             handleViewCompanyJobs(c);
                           }}
-                          className="px-4 h-[38px] rounded-full text-[12px] font-semibold bg-[#EAF2FB] text-[#2e66a6] border border-[#BFD4EA] whitespace-nowrap inline-flex items-center transition hover:bg-[#DDEBFA] hover:border-[#9EBFE2]"
+                          className="whitespace-nowrap text-[13px] font-semibold text-[#2e66a6] transition hover:text-[#245387]"
                         >
                           {jobCount} New Job Offer{jobCount === 1 ? '' : 's'}
                         </button>
