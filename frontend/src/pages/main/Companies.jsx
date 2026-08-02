@@ -1132,10 +1132,7 @@ const Companies = () => {
           </div>
         </div>
       </div>
-
-      <MainFooter />
-
-      {showGuestModal && (
+{showGuestModal && (
         <div className="fixed inset-0 z-[80]">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" onClick={() => setShowGuestModal(false)} aria-hidden="true" />
 

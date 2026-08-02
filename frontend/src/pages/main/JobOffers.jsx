@@ -1511,7 +1511,7 @@ const JobOffers = () => {
                   return (
                     <div
                       key={jobId}
-                      className="group relative overflow-visible rounded-[22px] p-5 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[372px]"
+                      className={`group relative overflow-hidden rounded-[22px] p-5 ${job.isUrgent ? "pt-[66px]" : ""} bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[372px]`}
                       style={{ border: `1px solid ${COLORS.border}` }}
                     >
                       {job.isUrgent ? (
@@ -1519,7 +1519,7 @@ const JobOffers = () => {
                           src="/images/gentneeded.png"
                           alt="Urgent Hiring"
                           draggable="false"
-                          className="pointer-events-none absolute -top-[52px] -left-[50px] z-10 w-[230px] max-w-none select-none"
+                          className="pointer-events-none absolute left-4 top-3 z-10 h-auto w-[145px] select-none object-contain"
                         />
                       ) : null}
 
@@ -1750,10 +1750,7 @@ const JobOffers = () => {
           </div>
         </div>
       </div>
-
-      <MainFooter />
-
-      {showGuestModal && (
+{showGuestModal && (
         <div className="fixed inset-0 z-[80]">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" onClick={() => setShowGuestModal(false)} aria-hidden="true" />
 

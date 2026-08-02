@@ -593,9 +593,7 @@ const MainLandingPage = () => {
           />
         </section>
       </main>
-
-      <MainFooter />
-    </div>
+</div>
   );
 };
 

@@ -631,6 +631,61 @@ const JobSearch = () => {
     })}`;
   };
 
+  const jobMatchesSearch = (job, term) => {
+    const searchText = String(term || '').trim().toLowerCase();
+    if (!searchText) return true;
+
+    const compactSearchText = searchText.replace(/[^a-z0-9ñ]+/g, '');
+    const workModeLabel = normalizeWorkModeLabel(job?.workMode);
+    const experienceLabel = getExperienceBadgeLabel(job?.experienceLevel);
+    const locationLabels = getJobLocationLabels(job);
+
+    const searchableValues = [
+      job?.title,
+      job?.companyName,
+      job?.location,
+      job?.locationCity,
+      job?.locationProvince,
+      ...locationLabels,
+      job?.jobType,
+      job?.workMode,
+      workModeLabel,
+      job?.experienceLevel,
+      experienceLabel,
+      job?.educationLevel,
+      job?.category,
+      job?.industry,
+      job?.description,
+      job?.requirements,
+      ...(Array.isArray(job?.skillsRequired) ? job.skillsRequired : [job?.skillsRequired]),
+      ...(Array.isArray(job?.perksAndBenefits) ? job.perksAndBenefits : [job?.perksAndBenefits]),
+      job?.otherBenefits,
+      job?.salaryMin,
+      job?.salaryMax,
+      formatSalary(job?.salaryMin, job?.salaryMax, job?.hideSalary),
+      formatApplicationDeadline(job?.applicationDeadline),
+      isFreshGraduateJob(job) ? 'fresh graduate fresh grads open to fresh graduates' : '',
+      isNoExperienceJob(job?.experienceLevel) ? 'no experience no experience required' : '',
+      job?.isUrgent ? 'urgent hiring urgently needed' : ''
+    ]
+      .filter((value) => value !== undefined && value !== null && value !== '')
+      .map((value) => String(value).toLowerCase());
+
+    const combinedText = searchableValues.join(' ');
+
+    if (combinedText.includes(searchText)) return true;
+
+    if (compactSearchText) {
+      const compactCombinedText = combinedText.replace(/[^a-z0-9ñ]+/g, '');
+      if (compactCombinedText.includes(compactSearchText)) return true;
+    }
+
+    return searchText
+      .split(/\s+/)
+      .filter(Boolean)
+      .every((word) => combinedText.includes(word));
+  };
+
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchTerm.trim()), 400);
     return () => clearTimeout(t);
@@ -643,8 +698,9 @@ const JobSearch = () => {
 
   useEffect(() => {
     fetchJobs();
+    // Initial fetch only; search and filters are applied together client-side.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, debouncedSearch, debouncedLocation]);
+  }, []);
 
   useEffect(() => {
     const onClick = (e) => {
@@ -742,12 +798,7 @@ const JobSearch = () => {
       setLoading(true);
       const params = new URLSearchParams();
 
-      if (debouncedSearch) params.append('search', debouncedSearch);
-      if (debouncedLocation) params.append('location', debouncedLocation);
-      if (filters.jobType) params.append('jobType', filters.jobType);
-      if (filters.industry) params.append('industry', filters.industry);
-      if (filters.workMode) params.append('workMode', filters.workMode);
-      if (filters.experienceLevel) params.append('experienceLevel', filters.experienceLevel);
+      // Kunin ang available jobs once. Search at filters are combined below.
 
       let response;
       try {
@@ -805,26 +856,6 @@ const JobSearch = () => {
       setDebouncedLocation('');
     }
   }, [selectedLocations]);
-
-  useEffect(() => {
-    if (selectedJobTitles.length > 0) {
-      setSearchTerm(selectedJobTitles[0]);
-      setDebouncedSearch(selectedJobTitles[0]);
-    } else if (selectedCompanies.length === 0) {
-      setSearchTerm('');
-      setDebouncedSearch('');
-    }
-  }, [selectedJobTitles, selectedCompanies.length]);
-
-  useEffect(() => {
-    if (selectedCompanies.length > 0) {
-      setSearchTerm(selectedCompanies[0]);
-      setDebouncedSearch(selectedCompanies[0]);
-    } else if (selectedJobTitles.length === 0) {
-      setSearchTerm('');
-      setDebouncedSearch('');
-    }
-  }, [selectedCompanies, selectedJobTitles.length]);
 
   useEffect(() => {
     handleFilterChange('jobType', selectedEmploymentTypes[0] || '');
@@ -891,10 +922,41 @@ const JobSearch = () => {
       String(a?.title || '').localeCompare(String(b?.title || ''));
 
     const filtered = jobs
+      .filter((job) => jobMatchesSearch(job, debouncedSearch))
       .filter((job) => jobMatchesSelectedLocations(job, selectedLocations))
+      .filter((job) =>
+        selectedJobTitles.length
+          ? selectedJobTitles.includes(String(job?.title || '').replaceAll('"', '').trim())
+          : true
+      )
+      .filter((job) =>
+        selectedEmploymentTypes.length
+          ? selectedEmploymentTypes.includes(String(job?.jobType || '').trim())
+          : true
+      )
       .filter((job) =>
         selectedEducationLevels.length
           ? selectedEducationLevels.includes(String(job?.educationLevel || '').trim())
+          : true
+      )
+      .filter((job) =>
+        selectedCompanies.length
+          ? selectedCompanies.includes(String(job?.companyName || '').trim())
+          : true
+      )
+      .filter((job) =>
+        filters.industry
+          ? String(job?.industry || job?.category || '').trim() === filters.industry
+          : true
+      )
+      .filter((job) =>
+        filters.experienceLevel
+          ? String(job?.experienceLevel || '').trim() === filters.experienceLevel
+          : true
+      )
+      .filter((job) =>
+        filters.workMode
+          ? normalizeWorkModeLabel(job?.workMode) === normalizeWorkModeLabel(filters.workMode)
           : true
       )
       .filter((job) => {
@@ -967,7 +1029,22 @@ const JobSearch = () => {
     }
 
     return sorted;
-  }, [jobs, selectedLocations, selectedEducationLevels, salaryMinInput, freshGraduate, noExperience, sortBy]);
+  }, [
+    jobs,
+    debouncedSearch,
+    selectedLocations,
+    selectedJobTitles,
+    selectedEmploymentTypes,
+    selectedEducationLevels,
+    selectedCompanies,
+    filters.industry,
+    filters.workMode,
+    filters.experienceLevel,
+    salaryMinInput,
+    freshGraduate,
+    noExperience,
+    sortBy
+  ]);
 
   const visibleJobs = useMemo(
     () => filteredJobs.slice(0, visibleJobCount),
@@ -1520,7 +1597,7 @@ const JobSearch = () => {
                     return (
                       <div
                         key={jobId}
-                        className="relative overflow-visible rounded-2xl p-7 bg-white shadow-sm hover:shadow-md transition flex flex-col min-h-[375px]"
+                        className={`relative overflow-hidden rounded-2xl p-7 ${job.isUrgent ? "pt-[72px]" : ""} bg-white shadow-sm hover:shadow-md transition flex flex-col min-h-[375px]`}
                         style={{ border: `1px solid ${COLORS.border}` }}
                       >
                         {job.isUrgent ? (
@@ -1528,7 +1605,7 @@ const JobSearch = () => {
                             src="/images/gentneeded.png"
                             alt="Urgent Hiring"
                             draggable="false"
-                            className="pointer-events-none absolute -top-[52px] -left-[50px] z-10 w-[230px] max-w-none select-none"
+                            className="pointer-events-none absolute left-4 top-3 z-10 h-auto w-[145px] select-none object-contain"
                           />
                         ) : null}
 
