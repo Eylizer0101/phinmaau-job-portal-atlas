@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import JobSeekerLayout from '../../../layouts/JobSeekerLayout';
@@ -3633,9 +3634,10 @@ const JobSeekerLevelCard = ({
         </div>
       </section>
 
-      {showLevelModal ? (
-        <div
-          className="fixed inset-0 z-[10060] flex items-center justify-center bg-black/50 px-4 py-6"
+      {showLevelModal && typeof document !== 'undefined'
+        ? createPortal(
+          <div
+            className="fixed inset-0 z-[10060] flex items-center justify-center bg-black/50 px-4 py-6"
           role="dialog"
           aria-modal="true"
           aria-labelledby="job-seeker-levels-title"
@@ -3734,8 +3736,10 @@ const JobSeekerLevelCard = ({
               </div>
             </div>
           </div>
-        </div>
-      ) : null}
+        </div>,
+          document.body
+        )
+        : null}
     </>
   );
 };
@@ -3910,7 +3914,7 @@ const AddSectionsCard = ({ onAddSections, reminder = '' }) => (
 );
 
 const ProfileRightPanel = ({ jobSeekerLevel, onAddSections, addSectionsReminder }) => (
-  <aside className="w-full space-y-6 lg:sticky lg:top-24">
+  <aside className="w-full space-y-6">
     <JobSeekerLevelCard
       currentRank={jobSeekerLevel.currentRank}
       nextTier={jobSeekerLevel.nextTier}
@@ -6711,7 +6715,7 @@ const MyProfile = () => {
           <div className="bg-transparent overflow-visible">
             <div className="relative z-0 w-full max-w-full px-0 pt-0 pb-10">
               <div className="grid grid-cols-1 lg:grid-cols-[minmax(310px,340px)_minmax(0,1fr)] gap-8 items-start">
-                <div className="order-2 lg:order-1">
+                <div className="order-2 lg:order-1 lg:sticky lg:top-24 lg:self-start">
                   <ProfileRightPanel
                     jobSeekerLevel={jobSeekerLevel}
                     onAddSections={() => setAddSectionsModalOpen(true)}
