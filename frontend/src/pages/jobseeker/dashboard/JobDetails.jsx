@@ -189,6 +189,12 @@ const resolveAssetUrl = (value = '') => {
     : `${getApiOrigin()}/${cleanValue}`;
 };
 
+const normalizeExternalUrl = (value = '') => {
+  const cleanValue = String(value || '').trim();
+  if (!cleanValue || cleanValue.toLowerCase() === 'n/a') return '';
+  return /^https?:\/\//i.test(cleanValue) ? cleanValue : `https://${cleanValue}`;
+};
+
 const getExperienceDisplayLabel = (value) => {
   const raw = String(value || '').trim();
   const normalized = raw.toLowerCase();
@@ -214,15 +220,16 @@ const UI = {
   page: 'bg-white min-h-screen',
 
   container:
-    'relative left-1/2 right-1/2 w-[min(94vw,1280px)] max-w-none -translate-x-1/2 px-4 sm:px-6 lg:px-8 pb-10',
+    'mx-auto w-full max-w-6xl px-4 pb-10 sm:px-6 lg:px-8',
 
-  card: 'bg-white border border-[#e6edf5] rounded-[1.35rem] shadow-[0_18px_45px_rgba(46,102,166,0.08)] w-full',
+  card: 'w-full rounded-2xl border border-[#e6edf5] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]',
+  metricCard: 'h-full min-h-[96px] rounded-xl border border-[#d9e2ec] bg-white px-4 py-4 shadow-[0_4px_14px_rgba(15,23,42,0.08)]',
   pad: 'p-5 sm:p-7 lg:p-8',
-  insetPanel: 'rounded-[1.25rem] border border-[#e6edf5] overflow-hidden bg-white shadow-[0_12px_32px_rgba(46,102,166,0.06)] w-full',
-  insetHead: 'px-5 sm:px-6 py-4 bg-[#f7faff] border-b border-[#e6edf5]',
-  insetBody: 'px-5 sm:px-6 py-6',
+  insetPanel: 'w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]',
+  insetHead: 'border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6',
+  insetBody: 'px-5 py-5 sm:px-6',
 
-  grid: 'grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_370px] gap-6 xl:gap-8 items-start',
+  grid: 'grid grid-cols-1 gap-5 items-start',
   left: 'min-w-0',
   right: 'min-w-0',
 
@@ -689,19 +696,28 @@ const IconBadge = ({ icon }) => (
   </span>
 );
 
-const TopMetricCard = ({ icon, title, value, isPeso = false }) => (
-  <div className="rounded-[1.15rem] border border-[#e6edf5] bg-white px-5 py-5 min-h-[108px] shadow-[0_10px_24px_rgba(46,102,166,0.05)] hover:shadow-[0_14px_30px_rgba(46,102,166,0.08)] transition">
-    <div className="flex items-start gap-3">
-      <div className="w-10 h-10 rounded-2xl border border-[#2e66a6]/20 bg-[#2e66a6]/10 flex items-center justify-center text-[#2e66a6] flex-shrink-0">
-        {isPeso ? (
-          <span className="font-bold text-sm leading-none">₱</span>
-        ) : (
-          <SvgIcon name={icon} className="w-4 h-4" />
-        )}
+const TopMetricCard = ({ icon, title, value, isPeso = false, href = '' }) => (
+  <div className={`${UI.metricCard} min-w-0`}>
+    <div className="flex h-full min-w-0 items-start gap-3">
+      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[#d9dbe3] bg-[#f9fafb] text-[#6b7280]">
+        {isPeso ? <span className="text-sm font-bold">₱</span> : <SvgIcon name={icon} className="h-4 w-4" />}
       </div>
+
       <div className="min-w-0">
-        <p className="text-[11px] uppercase tracking-wide font-semibold text-black/45">{title}</p>
-        <p className="mt-1.5 text-sm sm:text-[15px] leading-6 font-semibold text-black break-words">{value}</p>
+        <p className={UI.label}>{title}</p>
+        {href ? (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`mt-1.5 block break-all text-[15px] font-semibold leading-6 text-[#2e66a6] hover:underline ${UI.ring} rounded`}
+            title={`Open ${title}`}
+          >
+            {value}
+          </a>
+        ) : (
+          <p className={UI.value}>{value}</p>
+        )}
       </div>
     </div>
   </div>
@@ -1397,158 +1413,139 @@ const JobDetails = () => {
             </div>
 
             <div className={UI.grid}>
-              <div className={UI.left}>
-                <div className="space-y-5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    <TopMetricCard icon="money" title="Salary" value={formatSalary(job.salaryMin, job.salaryMax, job.hideSalary)} isPeso />
-                    <TopMetricCard icon="clock" title="Experience" value={getExperienceDisplayLabel(job.experienceLevel)} />
-                    <TopMetricCard icon="graduation" title="Educational Requirements" value={job.educationLevel || 'Not specified'} />
-                  </div>
-
-                  <div className={UI.insetPanel}>
-                    <div className={`${UI.insetBody} space-y-8`}>
-                      <section>
-                        <div className="flex items-center gap-3 pt-2">
-                          <IconBadge icon="file" />
-                          <div className="min-w-0">
-                            <h3 className={UI.h3}>Job Description</h3>
-                          </div>
-                        </div>
-
-                        <div className="mt-4 text-sm sm:text-base text-black/70 leading-relaxed">
-                          <RichTextContent value={job.description} fallback="No description provided." />
-                        </div>
-                      </section>
-
-                      <div className={UI.divider} />
-
-                      <section>
-                        <div className="flex items-center gap-3 pt-2">
-                          <IconBadge icon="tools" />
-                          <div className="min-w-0">
-                            <h3 className={UI.h3}>Qualification</h3>
-                          </div>
-                        </div>
-
-                        <div className="mt-4 text-sm sm:text-base text-black/70 leading-relaxed">
-                          <RichTextContent value={job.requirements} fallback="No requirements provided." />
-                        </div>
-                      </section>
-                    </div>
-                  </div>
-
-                  <div className={UI.insetPanel}>
-                    <div className={UI.insetHead}>
-                      <p className="text-sm font-semibold text-black">Perks and Benefits</p>
+                <div className={UI.left}>
+                  <div className="space-y-5">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                      <TopMetricCard
+                        icon="money"
+                        title="Salary"
+                        value={formatSalary(job.salaryMin, job.salaryMax, job.hideSalary)}
+                        isPeso
+                      />
+                      <TopMetricCard
+                        icon="clock"
+                        title="Experience"
+                        value={getExperienceDisplayLabel(job.experienceLevel)}
+                      />
+                      <TopMetricCard
+                        icon="briefcase"
+                        title="Employment Type"
+                        value={String(job.jobType || '').trim() || 'Employment type not specified'}
+                      />
+                      <TopMetricCard
+                        icon="external"
+                        title="Website / Company URL"
+                        value={companyInfo?.companyWebsite || 'N/A'}
+                        href={normalizeExternalUrl(companyInfo?.companyWebsite)}
+                      />
                     </div>
 
-                    <div className={UI.insetBody}>
-                      {perksAndBenefitsList.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                          {perksAndBenefitsList.map((benefit, idx) => (
-                            <BenefitItem key={`${benefit}-${idx}`}>{benefit}</BenefitItem>
-                          ))}
+                    <div className={UI.insetPanel}>
+                      <div className={UI.insetBody}>
+                        <section>
+                          <div className="flex items-center gap-3 pt-2">
+                            <IconBadge icon="file" />
+                            <div className="min-w-0">
+                              <h3 className={UI.h3}>Job Description</h3>
+                            </div>
+                          </div>
+                          <div className="mt-4 text-sm leading-relaxed text-black/70 sm:text-base">
+                            <RichTextContent value={job.description} fallback="No description provided." />
+                          </div>
+                        </section>
+                      </div>
+                    </div>
+
+                    <div className={UI.insetPanel}>
+                      <div className={UI.insetBody}>
+                        <section>
+                          <div className="flex items-center gap-3 pt-2">
+                            <IconBadge icon="tools" />
+                            <div className="min-w-0">
+                              <h3 className={UI.h3}>Qualification</h3>
+                            </div>
+                          </div>
+                          <div className="mt-4 text-sm leading-relaxed text-black/70 sm:text-base">
+                            <RichTextContent value={job.requirements} fallback="No requirements provided." />
+                          </div>
+                        </section>
+                      </div>
+                    </div>
+
+                    <section className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+                      <div className={UI.insetPanel}>
+                        <div className={UI.insetHead}>
+                          <p className="text-sm font-semibold text-black">Required Skills</p>
                         </div>
-                      ) : (
-                        <p className={UI.meta}>No perks or benefits specified</p>
-                      )}
+                        <div className={UI.insetBody}>
+                          {Array.isArray(job.skillsRequired) && job.skillsRequired.length > 0 ? (
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                              {job.skillsRequired.map((skill, idx) => (
+                                <BenefitItem key={`${skill}-${idx}`}>{skill}</BenefitItem>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className={UI.meta}>No skills specified</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className={UI.insetPanel}>
+                        <div className={UI.insetHead}>
+                          <p className="text-sm font-semibold text-black">Work Location</p>
+                        </div>
+                        <div className="overflow-hidden">
+                          {getJobCoordinates(job) ? (
+                            <StaticLocationMap job={job} heightClass="h-[180px]" />
+                          ) : job.locationImage ? (
+                            <img
+                              src={resolveAssetUrl(job.locationImage)}
+                              alt="Work location"
+                              className="h-[180px] w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-[180px] items-center justify-center bg-black/5 text-black/40">
+                              <SvgIcon name="location" className="h-7 w-7" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="border-t border-[#e6edf5] px-4 py-3">
+                          {buildWorkLocationUrl(job) ? (
+                            <a
+                              href={buildWorkLocationUrl(job)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`rounded text-xs font-medium text-[#2e66a6] hover:underline ${UI.ring}`}
+                              title="Open work location in OpenStreetMap"
+                            >
+                              {formatLocationDisplay(job.location)}
+                            </a>
+                          ) : (
+                            <p className="text-xs text-black/65">{formatLocationDisplay(job.location)}</p>
+                          )}
+                        </div>
+                      </div>
+                    </section>
+
+                    <div className={UI.insetPanel}>
+                      <div className={UI.insetHead}>
+                        <p className="text-sm font-semibold text-black">Perks and Benefits</p>
+                      </div>
+                      <div className={UI.insetBody}>
+                        {perksAndBenefitsList.length > 0 ? (
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                            {perksAndBenefitsList.map((benefit, idx) => (
+                              <BenefitItem key={`${benefit}-${idx}`}>{benefit}</BenefitItem>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className={UI.meta}>No perks or benefits specified</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-
-              <aside className={`${UI.right} lg:sticky lg:top-24`}>
-                <div className={UI.insetPanel}>
-
-                  <div className={UI.insetHead}>
-                    <p className="text-sm font-semibold text-black">Job Overview</p>
-                  </div>
-
-                  <div className={`${UI.insetBody} space-y-6`}>
-                    <div>
-                      <p className={UI.caption}>Willing to Relocate?</p>
-                      <p className={UI.meta}>{getRelocationDisplayLabel(job.willingToRelocate)}</p>
-                    </div>
-
-                    <div>
-                      <p className={UI.caption}>Website / Company URL</p>
-                      {companyInfo?.companyWebsite ? (
-                        <a
-                          href={companyInfo.companyWebsite}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`inline-flex items-center gap-2 font-semibold text-[#2e66a6] hover:underline ${UI.ring} rounded mt-1`}
-                        >
-                          <span className="break-all">{companyInfo.companyWebsite}</span>
-                          <SvgIcon name="external" className="w-3.5 h-3.5" />
-                        </a>
-                      ) : (
-                        <p className={UI.meta}>N/A</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <p className={UI.caption}>Required Skills</p>
-                      {Array.isArray(job.skillsRequired) && job.skillsRequired.length > 0 ? (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {job.skillsRequired.map((skill, idx) => (
-                            <span
-                              key={`${skill}-${idx}`}
-                              className="px-2.5 py-1 rounded-full text-[11px] font-medium border border-black/10 bg-white text-black/70"
-                            >
-                              {skill}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className={UI.meta}>No skills specified</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <p className={UI.caption}>Work Location</p>
-                      <div className="mt-2 rounded-xl border border-black/10 overflow-hidden bg-white">
-                        {getJobCoordinates(job) ? (
-                          <StaticLocationMap job={job} heightClass="h-[130px]" />
-                        ) : job.locationImage ? (
-                          <img
-                            src={`${getApiOrigin()}${job.locationImage}`}
-                            alt="Work location"
-                            className="w-full h-[130px] object-cover"
-                          />
-                        ) : (
-                          <div className="h-[130px] bg-black/5 flex items-center justify-center text-black/40">
-                            <SvgIcon name="location" className="w-6 h-6" />
-                          </div>
-                        )}
-                        <div className="px-3 py-2 border-t border-black/10">
-                          <p className="text-xs text-black/65">{formatLocationDisplay(job.location)}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-2xl bg-[#f7faff] border border-[#d8e2ee] p-5 text-center">
-                      <h3 className="text-sm font-medium text-black/50">Interested in this role?</h3>
-
-                      <button
-                        onClick={handleApplyClick}
-                        disabled={isApplyDisabled}
-                        className={`${UI.btnBase} ${isApplyDisabled ? primaryCtaClassName : UI.btnPrimary} ${UI.ring} ${UI.btnLg} w-full mt-4`}
-                        type="button"
-                        aria-disabled={isApplyDisabled}
-                        title={hasApplied ? 'You already applied for this job' : !jobActive ? 'This job is no longer accepting applications' : 'Apply now'}
-                      >
-                        {primaryCtaLabel}
-                      </button>
-
-                      <p className="text-xs text-black/45 mt-4">
-                        Deadline: {job.applicationDeadline ? new Date(job.applicationDeadline).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Not specified'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </aside>
-            </div>
 
             <div className={UI.srOnly} aria-live="polite" aria-atomic="true">
               {toast.show ? toast.message : ''}

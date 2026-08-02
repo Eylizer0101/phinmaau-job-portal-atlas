@@ -201,6 +201,7 @@ const UI = {
     'mx-auto w-full max-w-6xl px-4 pb-10 sm:px-6 lg:px-8',
 
   card: 'w-full rounded-2xl border border-[#e6edf5] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]',
+  metricCard: 'h-full min-h-[96px] rounded-xl border border-[#d9e2ec] bg-white px-4 py-4 shadow-[0_4px_14px_rgba(15,23,42,0.08)]',
   pad: 'p-5 sm:p-7 lg:p-8',
   insetPanel: 'w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]',
   insetHead: 'border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6',
@@ -667,8 +668,8 @@ const IconBadge = ({ icon }) => (
 );
 
 const TopMetricCard = ({ icon, title, value, isPeso = false, href = '' }) => (
-  <div className={UI.metricCard}>
-    <div className="flex items-start gap-3">
+  <div className={`${UI.metricCard} min-w-0`}>
+    <div className="flex h-full min-w-0 items-start gap-3">
       <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[#d9dbe3] bg-[#f9fafb] text-[#6b7280]">
         {isPeso ? <span className="text-sm font-bold">₱</span> : <SvgIcon name={icon} className="h-4 w-4" />}
       </div>
@@ -1290,7 +1291,7 @@ const JobOfferDetails = () => {
               <div className={UI.grid}>
                 <div className={UI.left}>
                   <div className="space-y-5">
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                       <TopMetricCard
                         icon="money"
                         title="Salary"
