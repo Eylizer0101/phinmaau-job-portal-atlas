@@ -1711,15 +1711,13 @@ The company also values transparency, teamwork, and continuous improvement, crea
                 </p>
               </div>
 
-              {companyJobs.length > 6 ? (
-                <button
-                  type="button"
-                  onClick={() => navigate(`/jobseeker/company-details/${id}/jobs`)}
-                  className="text-[15px] font-medium text-black/70 hover:text-black inline-flex items-center gap-2"
-                >
-                  View all jobs <span aria-hidden="true">→</span>
-                </button>
-              ) : null}
+              <button
+                type="button"
+                onClick={() => navigate("/jobseeker/job-search")}
+                className="text-[15px] font-medium text-black/70 hover:text-black inline-flex items-center gap-2"
+              >
+                View all jobs <span aria-hidden="true">→</span>
+              </button>
             </div>
 
             {companyJobs.length === 0 ? (
@@ -1730,7 +1728,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
               />
             ) : (
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {companyJobs.slice(0, 6).map((job) => {
+                {companyJobs.map((job) => {
                   const jobId = job._id || job.id;
                   const experienceBadgeLabel = getExperienceBadgeLabel(job.experienceLevel);
                   const tagFreshGrad = isFreshGraduateJob(job);
@@ -2003,58 +2001,13 @@ The company also values transparency, teamwork, and continuous improvement, crea
                 </p>
               </div>
 
-              {reviews.length > 6 ? (
-                <button
-                  type="button"
-                  onClick={() => navigate(`/jobseeker/company-details/${id}/reviews`)}
-                  className="text-[15px] font-medium text-[#2e66a6] hover:text-[#25578f] inline-flex items-center gap-2"
-                >
-                  See all reviews <span aria-hidden="true">→</span>
-                </button>
-              ) : null}
-            </div>
-
-            <div className="mt-6 rounded-2xl border border-[#dfe7f0] bg-[#fbfcfe] p-5 sm:p-6">
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr] lg:items-center">
-                <div className="text-center lg:border-r lg:border-[#dfe7f0] lg:pr-6">
-                  <p className="text-5xl font-bold text-black">{Number(accurateReviewSummary.rating || 0).toFixed(1)}</p>
-                  <div className="mt-3 flex items-center justify-center gap-1" aria-label={`${Number(accurateReviewSummary.rating || 0).toFixed(1)} out of 5 stars`}>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <svg
-                        key={star}
-                        className="h-6 w-6 text-[#2e66a6]"
-                        viewBox="0 0 20 20"
-                        fill={star <= Math.round(Number(accurateReviewSummary.rating || 0)) ? "currentColor" : "none"}
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        aria-hidden="true"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.539 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.783.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81H7.03a1 1 0 00.95-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                  </div>
-                  <p className="mt-2 text-sm text-black/60">{reviewCount} rating{reviewCount === 1 ? "" : "s"} in total</p>
-                </div>
-
-                <div className="space-y-3">
-                  {[5, 4, 3, 2, 1].map((star) => {
-                    const count = Number(company?.ratingBreakdown?.[star] || 0);
-                    const percentage = reviewCount > 0 ? Math.round((count / reviewCount) * 100) : 0;
-                    return (
-                      <div key={star} className="grid grid-cols-[20px_1fr_32px] items-center gap-3">
-                        <span className="text-sm font-semibold text-black/70">{star}</span>
-                        <div className="h-3 overflow-hidden rounded-full bg-[#e8edf3]">
-                          <div
-                            className="h-full rounded-full bg-[#2e66a6] transition-all"
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
-                        <span className="text-right text-sm text-black/60">{count}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              <button
+                type="button"
+                onClick={() => reviewsListRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                className="text-[15px] font-medium text-[#2e66a6] hover:text-[#25578f] inline-flex items-center gap-2"
+              >
+                See all reviews <span aria-hidden="true">→</span>
+              </button>
             </div>
 
             <div ref={reviewsListRef} className="mt-6 space-y-5 scroll-mt-24">
@@ -2065,7 +2018,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
                   description="Be the first to share your hiring process experience with this company."
                 />
               ) : (
-                reviews.slice(0, 6).map((review) => (
+                reviews.map((review) => (
                   <article
                     key={review.id || review._id}
                     className="rounded-2xl border border-[#dfe7f0] bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-[0_10px_28px_rgba(46,102,166,0.06)]"
