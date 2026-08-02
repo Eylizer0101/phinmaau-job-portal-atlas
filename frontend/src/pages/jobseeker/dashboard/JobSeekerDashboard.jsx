@@ -454,6 +454,16 @@ const JobSeekerDashboard = () => {
     return `Up to ${formattedMax}`;
   };
 
+  const formatSalaryWithoutCurrency = (min, max) => {
+    if (!min && !max) return 'Salary not specified';
+    const formattedMin = min ? Number(min).toLocaleString() : '';
+    const formattedMax = max ? Number(max).toLocaleString() : '';
+
+    if (formattedMin && formattedMax) return `${formattedMin} - ${formattedMax}`;
+    if (formattedMin) return `From ${formattedMin}`;
+    return `Up to ${formattedMax}`;
+  };
+
   const normalizeWorkModeLabel = (value) => {
     const v = String(value || '').trim().toLowerCase();
 
@@ -1754,9 +1764,12 @@ const JobSeekerDashboard = () => {
                               )}
 
                               {(app.job?.salaryMin || app.job?.salaryMax || recentWorkMode || recentEmploymentType) && (
-                                <div className="mt-3 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 font-normal leading-none text-black">
+                                <div className="mt-3 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 font-semibold leading-none text-black">
                                   {(app.job?.salaryMin || app.job?.salaryMax) && (
-                                    <span>{formatSalary(app.job?.salaryMin, app.job?.salaryMax)}</span>
+                                    <span className="inline-flex items-center gap-1.5">
+                                      <span aria-hidden="true" className="font-bold">₱</span>
+                                      <span>{formatSalaryWithoutCurrency(app.job?.salaryMin, app.job?.salaryMax)}</span>
+                                    </span>
                                   )}
 
                                   {recentWorkMode && (
@@ -2031,9 +2044,10 @@ const JobSeekerDashboard = () => {
                               </span>
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 font-semibold text-black">
+                              <span aria-hidden="true" className="shrink-0 font-bold">₱</span>
                               <span className="truncate">
-                                {formatSalary(job.salaryMin, job.salaryMax)}
+                                {formatSalaryWithoutCurrency(job.salaryMin, job.salaryMax)}
                               </span>
                             </div>
 
