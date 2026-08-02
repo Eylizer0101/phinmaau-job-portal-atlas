@@ -631,6 +631,21 @@ const JobSearch = () => {
     })}`;
   };
 
+  const formatSalary = (min, max, hideSalary = false) => {
+    if (hideSalary) return 'Salary Undisclosed';
+    if (!min && !max) return 'Salary not specified';
+
+    const minNum = min ? Number(min) : null;
+    const maxNum = max ? Number(max) : null;
+
+    const formattedMin = Number.isFinite(minNum) ? minNum.toLocaleString() : '';
+    const formattedMax = Number.isFinite(maxNum) ? maxNum.toLocaleString() : '';
+
+    if (formattedMin && formattedMax) return `${formattedMin} - ${formattedMax}`;
+    if (formattedMin) return `From ${formattedMin}`;
+    return `Up to ${formattedMax}`;
+  };
+
   const jobMatchesSearch = (job, term) => {
     const searchText = String(term || '').trim().toLowerCase();
     if (!searchText) return true;
@@ -1104,21 +1119,6 @@ const JobSearch = () => {
       experienceLevel: ''
     });
     setOpenDropdown(null);
-  };
-
-  const formatSalary = (min, max, hideSalary = false) => {
-    if (hideSalary) return 'Salary Undisclosed';
-    if (!min && !max) return 'Salary not specified';
-
-    const minNum = min ? Number(min) : null;
-    const maxNum = max ? Number(max) : null;
-
-    const formattedMin = Number.isFinite(minNum) ? minNum.toLocaleString() : '';
-    const formattedMax = Number.isFinite(maxNum) ? maxNum.toLocaleString() : '';
-
-    if (formattedMin && formattedMax) return `${formattedMin} - ${formattedMax}`;
-    if (formattedMin) return `From ${formattedMin}`;
-    return `Up to ${formattedMax}`;
   };
 
   const handleSaveJob = async (job) => {
@@ -1597,7 +1597,7 @@ const JobSearch = () => {
                     return (
                       <div
                         key={jobId}
-                        className={`relative overflow-hidden rounded-2xl p-7 ${job.isUrgent ? "pt-[72px]" : ""} bg-white shadow-sm hover:shadow-md transition flex flex-col min-h-[375px]`}
+                        className={`relative overflow-hidden rounded-2xl p-7 ${job.isUrgent ? "pt-[68px]" : ""} bg-white shadow-sm hover:shadow-md transition flex flex-col min-h-[375px]`}
                         style={{ border: `1px solid ${COLORS.border}` }}
                       >
                         {job.isUrgent ? (
@@ -1605,7 +1605,7 @@ const JobSearch = () => {
                             src="/images/gentneeded.png"
                             alt="Urgent Hiring"
                             draggable="false"
-                            className="pointer-events-none absolute left-4 top-3 z-10 h-auto w-[145px] select-none object-contain"
+                            className="pointer-events-none absolute left-7 top-4 z-10 h-auto w-[118px] select-none object-contain"
                           />
                         ) : null}
 
