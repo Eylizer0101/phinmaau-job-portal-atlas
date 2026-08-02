@@ -3914,7 +3914,10 @@ const AddSectionsCard = ({ onAddSections, reminder = '' }) => (
 );
 
 const ProfileRightPanel = ({ jobSeekerLevel, onAddSections, addSectionsReminder }) => (
-  <aside className="w-full space-y-6">
+  <aside
+    className="w-full space-y-6 lg:sticky lg:top-24 lg:self-start"
+    style={{ height: 'fit-content' }}
+  >
     <JobSeekerLevelCard
       currentRank={jobSeekerLevel.currentRank}
       nextTier={jobSeekerLevel.nextTier}
@@ -6686,7 +6689,7 @@ const MyProfile = () => {
         onChangeProfileItem={updateProfileListItem}
       />
 
-      <div className="min-h-[100dvh] h-auto bg-transparent overflow-x-hidden overflow-y-visible pb-6">
+      <div className="min-h-[100dvh] h-auto bg-transparent overflow-visible pb-6">
         <div className="max-w-[1420px] mx-auto px-4 sm:px-6 lg:px-8">
           {error ? <Alert type="error" title="Error" message={error} onClose={() => setError('')} /> : null}
 
@@ -6715,7 +6718,7 @@ const MyProfile = () => {
           <div className="bg-transparent overflow-visible">
             <div className="relative z-0 w-full max-w-full px-0 pt-0 pb-10">
               <div className="grid grid-cols-1 lg:grid-cols-[minmax(310px,340px)_minmax(0,1fr)] gap-8 items-start">
-                <div className="order-2 lg:order-1 lg:sticky lg:top-24 lg:self-start">
+                <div className="order-2 lg:order-1 lg:self-stretch">
                   <ProfileRightPanel
                     jobSeekerLevel={jobSeekerLevel}
                     onAddSections={() => setAddSectionsModalOpen(true)}
