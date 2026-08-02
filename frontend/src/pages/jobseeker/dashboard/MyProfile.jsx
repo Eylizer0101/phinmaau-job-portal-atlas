@@ -3927,6 +3927,67 @@ const ProfileRightPanel = ({ jobSeekerLevel, onAddSections, addSectionsReminder 
 );
 
 const MyProfile = () => {
+  const profileGridRef = useRef(null);
+  const sidebarColumnRef = useRef(null);
+  const sidebarPanelRef = useRef(null);
+  const [sidebarFixedStyle, setSidebarFixedStyle] = useState(null);
+  const [sidebarPlaceholderHeight, setSidebarPlaceholderHeight] = useState(0);
+
+  useEffect(() => {
+    const STICKY_TOP = 88;
+    let frameId = null;
+
+    const updateStickySidebar = () => {
+      if (window.innerWidth < 1024) {
+        setSidebarFixedStyle(null);
+        setSidebarPlaceholderHeight(0);
+        return;
+      }
+
+      const grid = profileGridRef.current;
+      const column = sidebarColumnRef.current;
+      const panel = sidebarPanelRef.current;
+
+      if (!grid || !column || !panel) return;
+
+      const gridRect = grid.getBoundingClientRect();
+      const columnRect = column.getBoundingClientRect();
+      const panelHeight = panel.offsetHeight;
+
+      setSidebarPlaceholderHeight(panelHeight);
+
+      if (gridRect.top > STICKY_TOP) {
+        setSidebarFixedStyle(null);
+        return;
+      }
+
+      const top = Math.min(STICKY_TOP, gridRect.bottom - panelHeight);
+
+      setSidebarFixedStyle({
+        position: 'fixed',
+        top: `${top}px`,
+        left: `${columnRect.left}px`,
+        width: `${columnRect.width}px`,
+        zIndex: 20,
+      });
+    };
+
+    const scheduleUpdate = () => {
+      if (frameId) window.cancelAnimationFrame(frameId);
+      frameId = window.requestAnimationFrame(updateStickySidebar);
+    };
+
+    scheduleUpdate();
+    window.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('resize', scheduleUpdate);
+
+    return () => {
+      if (frameId) window.cancelAnimationFrame(frameId);
+      window.removeEventListener('scroll', scheduleUpdate);
+      window.removeEventListener('resize', scheduleUpdate);
+    };
+  }, []);
+
   useEffect(() => {
     const previousHtmlOverflowY = document.documentElement.style.overflowY;
     const previousBodyOverflowY = document.body.style.overflowY;
@@ -6714,13 +6775,22 @@ const MyProfile = () => {
 
           <div className="bg-transparent overflow-visible">
             <div className="relative z-0 w-full max-w-full px-0 pt-0 pb-10">
-              <div className="grid grid-cols-1 lg:grid-cols-[minmax(310px,340px)_minmax(0,1fr)] gap-8 items-start">
-                <div className="order-2 lg:order-1 lg:self-start lg:sticky lg:top-[88px] h-fit">
-                  <ProfileRightPanel
-                    jobSeekerLevel={jobSeekerLevel}
-                    onAddSections={() => setAddSectionsModalOpen(true)}
-                    addSectionsReminder={sectionReminders.additional}
-                  />
+              <div
+                ref={profileGridRef}
+                className="grid grid-cols-1 lg:grid-cols-[minmax(310px,340px)_minmax(0,1fr)] gap-8 items-start"
+              >
+                <div
+                  ref={sidebarColumnRef}
+                  className="order-2 lg:order-1 lg:self-start h-fit"
+                  style={sidebarPlaceholderHeight ? { minHeight: `${sidebarPlaceholderHeight}px` } : undefined}
+                >
+                  <div ref={sidebarPanelRef} style={sidebarFixedStyle || undefined}>
+                    <ProfileRightPanel
+                      jobSeekerLevel={jobSeekerLevel}
+                      onAddSections={() => setAddSectionsModalOpen(true)}
+                      addSectionsReminder={sectionReminders.additional}
+                    />
+                  </div>
                 </div>
 
                 <div className="order-1 lg:order-2 relative bg-white border border-[#d8e2ee] rounded-[18px] shadow-[0_8px_30px_rgba(46,102,166,0.10)] min-h-[760px] px-6 sm:px-10 lg:px-12 py-10">
@@ -6752,7 +6822,7 @@ const MyProfile = () => {
                         className="h-10 px-4 rounded-md bg-[#2e66a6] text-white text-sm font-bold inline-flex items-center gap-2 hover:bg-[#255484]"
                       >
                         <FaDownload className="text-xs" />
-                        Download CV
+                        Export CV
                       </button>
                     </div>
                   </div>
