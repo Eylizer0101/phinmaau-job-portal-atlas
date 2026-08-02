@@ -1767,7 +1767,7 @@ const JobSeekerDashboard = () => {
                                 <div className="mt-3 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 font-semibold leading-none text-black">
                                   {(app.job?.salaryMin || app.job?.salaryMax) && (
                                     <span className="inline-flex items-center gap-1.5">
-                                      <span aria-hidden="true" className="font-semibold text-gray-400 text-[15px]">₱</span>
+                                      <span aria-hidden="true" className="font-normal text-gray-500">₱</span>
                                       <span className="font-semibold">{formatSalaryWithoutCurrency(app.job?.salaryMin, app.job?.salaryMax)}</span>
                                     </span>
                                   )}
@@ -1776,7 +1776,7 @@ const JobSeekerDashboard = () => {
                                     <>
                                       {(app.job?.salaryMin || app.job?.salaryMax) && <span aria-hidden="true">|</span>}
                                       <span className="inline-flex items-center gap-1.5">
-                                        <svg className="h-4.5 w-4.5 shrink-0 font-semibold" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 21h16M6 21V7a2 2 0 012-2h8a2 2 0 012 2v14M9 9h.01M9 13h.01M12 9h.01M12 13h.01M15 9h.01M15 13h.01" />
                                         </svg>
                                         {recentWorkMode}
@@ -1788,7 +1788,7 @@ const JobSeekerDashboard = () => {
                                     <>
                                       {(app.job?.salaryMin || app.job?.salaryMax || recentWorkMode) && <span aria-hidden="true">|</span>}
                                       <span className="inline-flex items-center gap-1.5">
-                                        <svg className="h-4.5 w-4.5 shrink-0 font-semibold" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 7V5a2 2 0 012-2h4a2 2 0 012 2v2m-9 0h12a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2V9a2 2 0 012-2zm0 5h12" />
                                         </svg>
                                         {recentEmploymentType}
