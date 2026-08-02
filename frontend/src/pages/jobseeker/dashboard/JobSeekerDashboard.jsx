@@ -1754,7 +1754,7 @@ const JobSeekerDashboard = () => {
                               )}
 
                               {(app.job?.salaryMin || app.job?.salaryMax || recentWorkMode || recentEmploymentType) && (
-                                <div className="mt-3 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 font-medium leading-none text-black">
+                                <div className="mt-3 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 font-normal leading-none text-black">
                                   {(app.job?.salaryMin || app.job?.salaryMax) && (
                                     <span>{formatSalary(app.job?.salaryMin, app.job?.salaryMax)}</span>
                                   )}
@@ -2032,9 +2032,6 @@ const JobSeekerDashboard = () => {
                             </div>
 
                             <div className="flex items-center gap-2">
-                              <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center text-xs font-extrabold text-gray-600">
-                                ₱
-                              </span>
                               <span className="truncate">
                                 {formatSalary(job.salaryMin, job.salaryMax)}
                               </span>
