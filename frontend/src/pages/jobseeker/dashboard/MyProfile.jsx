@@ -3885,7 +3885,31 @@ const TodoProgressCard = ({
   );
 };
 
-const ProfileRightPanel = ({ jobSeekerLevel, todoProgress }) => (
+const AddSectionsCard = ({ onAddSections, reminder = '' }) => (
+  <section className="w-full rounded-[18px] border border-[#d8e2ee] bg-white p-6 shadow-[0_8px_30px_rgba(46,102,166,0.10)]">
+    <h2 className="text-[25px] font-bold leading-tight text-[#0f2545]">
+      Showcase your full potential
+    </h2>
+    <p className="mt-3 text-[16px] leading-6 text-gray-500">
+      with additional resume sections.
+    </p>
+    {reminder ? (
+      <p className="mt-3 text-sm font-semibold text-amber-700">{reminder}</p>
+    ) : null}
+    <button
+      type="button"
+      onClick={onAddSections}
+      className="mt-6 h-12 rounded-xl bg-[#1658d3] px-6 text-[15px] font-bold text-white shadow-sm transition hover:bg-[#1249b2] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1658d3] focus-visible:ring-offset-2"
+    >
+      <span className="inline-flex items-center gap-2">
+        <FaPlus className="text-sm" />
+        Add Sections
+      </span>
+    </button>
+  </section>
+);
+
+const ProfileRightPanel = ({ jobSeekerLevel, onAddSections, addSectionsReminder }) => (
   <aside className="w-full space-y-6 lg:sticky lg:top-24">
     <JobSeekerLevelCard
       currentRank={jobSeekerLevel.currentRank}
@@ -3894,12 +3918,7 @@ const ProfileRightPanel = ({ jobSeekerLevel, todoProgress }) => (
       suggestions={jobSeekerLevel.suggestions}
     />
 
-    <TodoProgressCard
-      percentage={todoProgress.percentage}
-      credentialItems={todoProgress.credentialItems}
-      profileItems={todoProgress.profileItems}
-      additionalItems={todoProgress.additionalItems}
-    />
+    <AddSectionsCard onAddSections={onAddSections} reminder={addSectionsReminder} />
   </aside>
 );
 
@@ -4309,6 +4328,66 @@ const MyProfile = () => {
       additionalItems,
     };
   }, [formData, educationEntries, verificationDocs, workExperiences]);
+
+  const sectionReminders = useMemo(() => {
+    const countMissing = (values = []) => values.filter((value) => !isCompletedProfileValue(value)).length;
+
+    const parsedAddress = parseAddressString(formData.address || '');
+    const basicMissingCount = countMissing([
+      formData.firstName,
+      formData.lastName,
+      formData.email,
+      formData.phoneNumber,
+      formData.campus,
+      formData.course,
+      formData.yearGraduated,
+      formData.region || parsedAddress.region,
+      formData.province || parsedAddress.province,
+      formData.cityMunicipality || parsedAddress.cityMunicipality,
+      formData.streetAddress || parsedAddress.streetAddress,
+    ]);
+
+    const personalMissingCount = countMissing([
+      formData.preferredWorkMode,
+      formData.employmentType,
+      formData.willingToRelocate,
+      formData.howSoonCanYouStart,
+      formData.experience,
+      formData.preferredLanguage,
+      formData.educationalAttainment,
+      formData.minimumSalary,
+      formData.maximumSalary,
+      formData.nationality,
+      formData.height,
+      formData.weight,
+      formData.gender,
+      formData.civilStatus,
+      formData.birthday,
+    ]);
+
+    const uploadedCredentialCount = todoProgress.credentialItems.filter((item) => item.completed).length;
+    const credentialTotal = todoProgress.credentialItems.length || REQUIRED_DOC_TYPES.length;
+    const skillsCount = [
+      ...normalizeSkillsFromProfile(formData.technicalSkills),
+      ...normalizeSkillsFromProfile(formData.softSkills),
+    ].filter(Boolean).length;
+    const hasAdditionalHighlight = todoProgress.additionalItems.some((item) => item.completed);
+
+    return {
+      personal: basicMissingCount > 0 ? `${basicMissingCount} Incomplete Basic Information` : '',
+      about: String(formData.aboutMe || '').trim() ? '' : 'Career objective missing',
+      career: personalMissingCount > 0 ? `${personalMissingCount} Missing Personal Information` : '',
+      work: workExperiences.length > 0 ? '' : 'Showcase 1 of your Experience',
+      skills: skillsCount > 0 ? '' : 'Showcase 1 of your Skills',
+      education: educationEntries.some(isCompleteEducationEntry) ? '' : 'Share 1 of your Education',
+      credentials: uploadedCredentialCount >= credentialTotal
+        ? ''
+        : `${uploadedCredentialCount}/${credentialTotal} Credentials Completed`,
+      certifications: hasMeaningfulListContent(formData.certifications) ? '' : 'Highlight 1 of your Certifications',
+      projects: hasMeaningfulListContent(formData.projects) ? '' : 'Showcase 1 of your Projects',
+      additional: hasAdditionalHighlight ? '' : 'Add 1 More Highlights',
+    };
+  }, [formData, workExperiences, educationEntries, todoProgress]);
 
   const jobSeekerLevel = useMemo(() => {
     const counts = {
@@ -6632,22 +6711,24 @@ const MyProfile = () => {
           <div className="bg-transparent overflow-visible">
             <div className="relative z-0 w-full max-w-full px-0 pt-0 pb-10">
               <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(310px,340px)] gap-8 items-start">
-                <div className="bg-white border border-[#d8e2ee] rounded-[18px] shadow-[0_8px_30px_rgba(46,102,166,0.10)] min-h-[760px] px-6 sm:px-10 lg:px-12 py-10">
+                <div className="relative bg-white border border-[#d8e2ee] rounded-[18px] shadow-[0_8px_30px_rgba(46,102,166,0.10)] min-h-[760px] px-6 sm:px-10 lg:px-12 py-10">
+                  <div
+                    className="absolute left-4 top-4 z-10 flex h-14 w-14 items-center justify-center rounded-full border-[5px] border-[#dbeafe] bg-white text-[14px] font-extrabold text-[#1658d3] shadow-sm sm:left-5 sm:top-5"
+                    role="progressbar"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow={todoProgress.percentage}
+                    aria-label="Resume completion percentage"
+                    title={`${todoProgress.percentage}% Resume Complete`}
+                  >
+                    {todoProgress.percentage}%
+                  </div>
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
                     <div>
                       <h2 className="text-[22px] font-bold text-gray-900 sr-only">Profile</h2>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={handlePreviewResume}
-                        className="h-10 px-4 rounded-md bg-white text-gray-500 text-sm font-semibold inline-flex items-center gap-2 hover:bg-gray-50"
-                      >
-                        <FaEye className="text-xs" />
-                        Preview
-                      </button>
-
+                    <div className="flex flex-wrap items-center gap-3 pl-16 sm:pl-20">
                       <button
                         type="button"
                         onClick={handleDownloadResume}
@@ -6655,15 +6736,6 @@ const MyProfile = () => {
                       >
                         <FaDownload className="text-xs" />
                         Download CV
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setAddSectionsModalOpen(true)}
-                        className="h-10 px-4 rounded-md border border-[#d8e2ee] bg-white text-black font-semibold inline-flex items-center justify-center gap-2 hover:bg-[#f7faff]"
-                      >
-                        <FaPlus className="text-sm" />
-                        Add Sections
                       </button>
                     </div>
                   </div>
@@ -6755,7 +6827,14 @@ const MyProfile = () => {
                                   />
                                 </svg>
                               </span>
-                              <span className="font-serif text-[16px] font-bold uppercase tracking-wide text-gray-900 truncate">{section.label}</span>
+                              <span className="min-w-0">
+                                <span className="block font-serif text-[16px] font-bold uppercase tracking-wide text-gray-900 truncate">{section.label}</span>
+                                {sectionReminders[section.key] ? (
+                                  <span className="mt-0.5 block text-[12px] font-medium normal-case tracking-normal text-amber-700">
+                                    {sectionReminders[section.key]}
+                                  </span>
+                                ) : null}
+                              </span>
                             </button>
 
                             <div className="relative flex items-center gap-3 shrink-0">
@@ -6829,7 +6908,8 @@ const MyProfile = () => {
 
                 <ProfileRightPanel
                   jobSeekerLevel={jobSeekerLevel}
-                  todoProgress={todoProgress}
+                  onAddSections={() => setAddSectionsModalOpen(true)}
+                  addSectionsReminder={sectionReminders.additional}
                 />
               </div>
             </div>
