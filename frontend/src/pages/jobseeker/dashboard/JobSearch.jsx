@@ -1311,13 +1311,13 @@ const JobSearch = () => {
               <form
                 onSubmit={handleSearch}
                 ref={filterBoxRef}
-                className="
-                  relative rounded-[26px] border border-gray-200 p-6 md:p-8
+                className={`
+                  relative ${openDropdown ? "z-[1000]" : "z-20"} rounded-[26px] border border-gray-200 p-6 md:p-8
                   shadow-[0_4px_20px_rgba(0,0,0,0.08)]
                   overflow-visible text-white bg-gradient-to-br
                   from-[#061e4e] via-[#244e7f] to-[#52b2db]
                   transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]
-                "
+                `}
               >
                 <div className="pointer-events-none absolute inset-0 z-0">
                   <div
@@ -1605,7 +1605,7 @@ const JobSearch = () => {
                           src="/images/gentneeded.png"
                           alt="Urgent Hiring"
                           draggable="false"
-                         className="pointer-events-none absolute -top-[40px] -left-[50px] z-10 w-[230px] max-w-none select-none"
+                         className={`pointer-events-none absolute -top-[40px] -left-[50px] z-10 w-[230px] max-w-none select-none transition-opacity ${openDropdown ? "invisible opacity-0" : "visible opacity-100"}`}
                         />
                       ) : null}
 

@@ -1245,7 +1245,7 @@ const JobOffers = () => {
           <div className="bg-transparent">
             <div
               ref={filterBoxRef}
-              className="relative rounded-[26px] border border-[#FFD000] p-6 md:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.08)] overflow-visible text-white bg-[#212C61] transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]"
+              className={`relative ${openDropdown ? "z-[1000]" : "z-20"} rounded-[26px] border border-[#FFD000] p-6 md:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.08)] overflow-visible text-white bg-[#212C61] transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]`}
             >
               <div className="mb-6">
                 <h1 className="text-[28px] md:text-[30px] font-semibold leading-tight text-white">Job Offers</h1>
@@ -1519,7 +1519,7 @@ const JobOffers = () => {
                           src="/images/gentneeded.png"
                           alt="Urgent Hiring"
                           draggable="false"
-                          className="pointer-events-none absolute -top-[40px] -left-[50px] z-10 w-[230px] max-w-none select-none"
+                          className={`pointer-events-none absolute -top-[40px] -left-[50px] z-10 w-[230px] max-w-none select-none transition-opacity ${openDropdown ? "invisible opacity-0" : "visible opacity-100"}`}
                         />
                       ) : null}
 
