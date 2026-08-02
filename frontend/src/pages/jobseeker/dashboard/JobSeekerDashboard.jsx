@@ -112,7 +112,6 @@ const JobSeekerDashboard = () => {
   const [companies, setCompanies] = useState([]);
   const [companiesLoading, setCompaniesLoading] = useState(true);
   const [jobCountByEmployerId, setJobCountByEmployerId] = useState({});
-  const [expandedCompanyCardId, setExpandedCompanyCardId] = useState(null);
 
   const [jobOffers, setJobOffers] = useState([]);
   const [jobOffersLoading, setJobOffersLoading] = useState(true);
@@ -247,21 +246,6 @@ const JobSeekerDashboard = () => {
     );
   };
 
-  const getBreakdownRows = (company) => {
-    const breakdown = company?.ratingBreakdown || {};
-    const total = Number(company?.reviewCount) || 0;
-
-    return [5, 4, 3, 2, 1].map((star) => {
-      const count = Number(breakdown?.[star] || 0);
-      const percent = total > 0 ? (count / total) * 100 : 0;
-
-      return {
-        star,
-        count,
-        percent,
-      };
-    });
-  };
 
   const fetchCompaniesPreview = async () => {
     try {
@@ -617,8 +601,13 @@ const JobSeekerDashboard = () => {
     navigate(`/jobseeker/company-details/${companyId}`);
   };
 
-  const handleToggleCompanyBreakdown = (companyId) => {
-    setExpandedCompanyCardId((prev) => (prev === companyId ? null : companyId));
+  const handleViewCompanyJobs = (company) => {
+    const companyId = company?._id || company?.id;
+    if (!companyId) return;
+
+    navigate(`/jobseeker/company-details/${companyId}`, {
+      state: { activeTab: 'jobs' },
+    });
   };
 
   // ✅ MUST CHANGE PASSWORD CHECK
@@ -1500,7 +1489,7 @@ const JobSeekerDashboard = () => {
                     key={item}
                     className="rounded-2xl p-5 animate-pulse h-full min-h-[250px] bg-white border border-[#D9E3F2]"
                   >
-                    <div className="flex items-start gap-4">
+                    <div className="flex w-full items-center gap-3">
                       <div className="w-12 h-12 rounded-full bg-gray-200"></div>
                       <div className="flex-1">
                         <div className="h-5 bg-gray-200 rounded w-3/4 mb-3"></div>
@@ -1660,12 +1649,12 @@ const JobSeekerDashboard = () => {
                     return (
                       <div
                         key={app._id}
-                        className="px-6 py-5 transition-all duration-300 ease-out hover:bg-gray-50/80 group cursor-pointer active:bg-[#F8FAFC]"
+                        className="group relative mx-6 flex min-h-[138px] cursor-pointer items-center gap-3 py-3 pr-12 transition-colors hover:bg-[#F8FAFC] active:bg-[#F8FAFC]"
                         onClick={() => navigate('/jobseeker/my-applications')}
                       >
                         <div className="flex items-start gap-4">
                           <div className="flex-shrink-0">
-                            <div className="w-14 h-14 rounded-xl overflow-hidden border border-[#D9E3F2] bg-white shadow-xs transition-all duration-300 group-hover:shadow-sm group-hover:border-[#D9E3F2]">
+                            <div className="h-16 w-16 overflow-hidden rounded-xl border border-[#D9E3F2] bg-white shadow-xs transition-all duration-300 group-hover:shadow-sm sm:h-[68px] sm:w-[68px]">
                               {logoUrl ? (
                                 <img
                                   src={logoUrl}
@@ -1689,9 +1678,9 @@ const JobSeekerDashboard = () => {
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-3">
+                            <div className="flex min-w-0 items-start justify-between gap-3 mb-2">
                               <div className="min-w-0">
-                                <h4 className="font-semibold text-black text-base leading-snug mb-1 line-clamp-1">
+                                <h4 className="truncate text-sm font-bold leading-snug text-black sm:text-base">
                                   {app.job?.title}
                                 </h4>
                                 <div className="flex min-w-0 items-center gap-1.5">
@@ -1722,7 +1711,7 @@ const JobSeekerDashboard = () => {
                               </div>
                             </div>
 
-                            <div className="flex flex-wrap items-center gap-4 text-sm mb-4 min-w-0">
+                            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs sm:text-[13px] mb-3 min-w-0">
                               {app.job?.location && (
                                 <div className="flex items-center gap-2 text-gray-600 min-w-0 w-full max-w-full">
                                   <div className="w-4 h-4 flex-shrink-0 flex items-center justify-center text-gray-400">
@@ -1765,7 +1754,7 @@ const JobSeekerDashboard = () => {
                               )}
                             </div>
 
-                            <div className="flex flex-wrap items-center justify-between gap-3 text-sm pt-3 border-t border-[#D9E3F2]">
+                            <div className="flex flex-wrap items-center justify-between gap-3 text-xs pt-3 border-t border-[#D9E3F2]">
                               <div className="flex items-center gap-2 text-gray-500">
                                 <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path
@@ -2137,8 +2126,6 @@ const JobSeekerDashboard = () => {
                   const accurateRatingSummary = getAccurateRatingSummary(c);
                   const averageRating = accurateRatingSummary.rating;
                   const reviewCount = accurateRatingSummary.reviewCount;
-                  const isExpanded = expandedCompanyCardId === employerId;
-                  const breakdownRows = getBreakdownRows(c);
 
                   return (
                     <div
@@ -2238,76 +2225,21 @@ const JobSeekerDashboard = () => {
                         </div>
                       </div>
 
-                      {/* RATING SECTION - laging visible */}
-                      <div className="mt-6 flex items-center justify-between gap-3 shrink-0">
-                        <div className="flex items-center gap-4 min-w-0">
-                          <div className="text-[22px] leading-none font-semibold text-black shrink-0">
-                            {formatRatingValue(averageRating)}
-                          </div>
-
-                          <div className="w-px h-[46px] bg-[#D6D6D6] shrink-0" />
-
-                          <div className="min-w-0">
-                            <StarRating rating={averageRating} size="w-[15px] h-[15px]" />
-                            <p className="mt-2 text-[12px] leading-none text-black whitespace-nowrap">
-                              {formatReviewText(averageRating, reviewCount)}
-                            </p>
-                          </div>
+                      {/* RATING SUMMARY - details remain available on the company review page */}
+                      <div className="mt-6 flex items-center gap-4 shrink-0">
+                        <div className="text-[22px] leading-none font-semibold text-black shrink-0">
+                          {formatRatingValue(averageRating)}
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleCompanyBreakdown(employerId);
-                          }}
-                          className="w-[30px] h-[30px] rounded-[9px] border border-[#CFCFCF] flex items-center justify-center shrink-0 bg-white"
-                          aria-label={isExpanded ? 'Hide rating breakdown' : 'Show rating breakdown'}
-                          aria-expanded={isExpanded}
-                        >
-                          <svg
-                            className={`w-[16px] h-[16px] text-[#999999] transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 10l5 5 5-5" />
-                          </svg>
-                        </button>
+                        <div className="w-px h-[46px] bg-[#D6D6D6] shrink-0" />
+
+                        <div className="min-w-0">
+                          <StarRating rating={averageRating} size="w-[15px] h-[15px]" />
+                          <p className="mt-2 text-[12px] leading-none text-black whitespace-nowrap">
+                            {formatReviewText(averageRating, reviewCount)}
+                          </p>
+                        </div>
                       </div>
-
-                      {isExpanded && (
-                        <div className="mt-5 pt-4 border-t border-[#E8E8E8]">
-                          <div className="space-y-[8px]">
-                            {breakdownRows.map((row) => (
-                              <div
-                                key={row.star}
-                                className="flex items-center gap-[10px]"
-                                aria-label={`${row.star}.0 stars, ${row.count} ${row.count === 1 ? 'review' : 'reviews'}`}
-                              >
-                                <div className="w-[30px] shrink-0 text-[12px] font-medium text-black/70">
-                                  {row.star}.0
-                                </div>
-
-                                <div className="h-[10px] flex-1 overflow-hidden rounded-full bg-[#EFEFEF]">
-                                  <div
-                                    className="h-full rounded-full bg-[#2e66a6] transition-all duration-300"
-                                    style={{ width: `${row.percent}%` }}
-                                  />
-                                </div>
-
-                                <div
-                                  className="w-[28px] shrink-0 text-right text-[12px] font-semibold text-black/70"
-                                  title={`${row.count} ${row.count === 1 ? 'review' : 'reviews'}`}
-                                >
-                                  {row.count}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
 
                       <div className="mt-5 pt-5 border-t border-transparent flex items-center justify-between gap-3">
                         <button
@@ -2330,9 +2262,16 @@ const JobSeekerDashboard = () => {
                           </svg>
                         </button>
 
-                        <span className="px-4 h-[38px] rounded-full text-[12px] font-medium bg-[#EAF2FB] text-[#2e66a6] border border-[#BFD4EA] whitespace-nowrap inline-flex items-center">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewCompanyJobs(c);
+                          }}
+                          className="px-4 h-[38px] rounded-full text-[12px] font-semibold bg-[#EAF2FB] text-[#2e66a6] border border-[#BFD4EA] whitespace-nowrap inline-flex items-center transition hover:bg-[#DDEBFA] hover:border-[#9EBFE2]"
+                        >
                           {jobCount} New Job Offer{jobCount === 1 ? '' : 's'}
-                        </span>
+                        </button>
                       </div>
                     </div>
                   );

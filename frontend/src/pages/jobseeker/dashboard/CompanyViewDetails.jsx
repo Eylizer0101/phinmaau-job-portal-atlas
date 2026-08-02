@@ -1,6 +1,6 @@
 // src/pages/jobseeker/dashboard/CompanyViewDetails.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import api from "../../../services/api";
 import ApplyJobModal from "../../../components/jobseeker/ApplyJobModal";
 
@@ -662,10 +662,13 @@ const GalleryImageCard = ({ item, index }) => {
 const CompanyViewDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [company, setCompany] = useState(null);
   const [companyJobs, setCompanyJobs] = useState([]);
-  const [activeTab, setActiveTab] = useState("about");
+  const [activeTab, setActiveTab] = useState(
+    location.state?.activeTab === "jobs" ? "jobs" : "about"
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
