@@ -2601,6 +2601,7 @@ const BasicInfoModal = ({
   cityOptions,
   yearOptions,
   onEmailUpdate,
+  error,
 }) => {
   if (!open) return null;
 
@@ -2620,6 +2621,7 @@ const BasicInfoModal = ({
         </div>
 
         <div className="px-5 sm:px-7 py-7 max-h-[80vh] overflow-y-auto">
+          {error ? <Alert type="error" message={error} /> : null}
           <div className="grid grid-cols-1 lg:grid-cols-[150px_1fr] gap-6">
             <div className="flex lg:block justify-center">
               <div className="relative w-[92px] h-[92px]">
@@ -2656,9 +2658,10 @@ const BasicInfoModal = ({
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4">
                 <div className="grid grid-cols-[120px_1fr] items-center gap-3">
-                  <label className="text-sm text-gray-500">First Name</label>
+                  <label className="text-sm text-gray-500">First Name*</label>
                   <input
                     value={drafts.firstName || ''}
+                    required
                     onChange={(e) => onChange('firstName', e.target.value)}
                     className="h-11 px-3 border border-gray-300 rounded-[3px] outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                   />
@@ -2666,8 +2669,9 @@ const BasicInfoModal = ({
 
                 <input
                   value={drafts.lastName || ''}
+                  required
                   onChange={(e) => onChange('lastName', e.target.value)}
-                  placeholder="Last Name"
+                  placeholder="Last Name*"
                   className="h-11 px-3 border border-gray-300 rounded-[3px] outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                 />
 
@@ -2693,9 +2697,10 @@ const BasicInfoModal = ({
               </div>
 
               <div className="grid grid-cols-[120px_1fr] items-center gap-3">
-                <label className="text-sm text-gray-500">Region</label>
+                <label className="text-sm text-gray-500">Region*</label>
                 <select
                   value={drafts.region || ''}
+                  required
                   onChange={(e) => onChange('region', e.target.value)}
                   className="h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                 >
@@ -2708,6 +2713,7 @@ const BasicInfoModal = ({
                 <label className="text-sm text-gray-500">Province*</label>
                 <select
                   value={drafts.province || ''}
+                  required
                   onChange={(e) => onChange('province', e.target.value)}
                   disabled={!drafts.region}
                   className="h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6] disabled:bg-gray-50 disabled:text-gray-400"
@@ -2721,6 +2727,7 @@ const BasicInfoModal = ({
                 <label className="text-sm text-gray-500">City / Municipality*</label>
                 <select
                   value={drafts.cityMunicipality || ''}
+                  required
                   onChange={(e) => onChange('cityMunicipality', e.target.value)}
                   disabled={!drafts.province}
                   className="h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6] disabled:bg-gray-50 disabled:text-gray-400"
@@ -2731,9 +2738,10 @@ const BasicInfoModal = ({
               </div>
 
               <div className="grid grid-cols-[120px_1fr] items-center gap-3">
-                <label className="text-sm text-gray-500">Street Address</label>
+                <label className="text-sm text-gray-500">Street Address*</label>
                 <input
                   value={drafts.streetAddress || ''}
+                  required
                   onChange={(e) => onChange('streetAddress', e.target.value)}
                   placeholder="e.g. #89 Garcia St"
                   className="h-11 px-3 border border-gray-300 rounded-[3px] outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
@@ -2758,9 +2766,10 @@ const BasicInfoModal = ({
                 </div>
 
                 <div className="grid grid-cols-[120px_1fr] items-center gap-3">
-                  <label className="text-sm text-gray-500">Mobile Number</label>
+                  <label className="text-sm text-gray-500">Mobile Number*</label>
                   <input
                     value={drafts.phoneNumber || ''}
+                    required
                     onChange={(e) => onChange('phoneNumber', e.target.value)}
                     className="h-11 px-3 border border-gray-300 rounded-[3px] outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                   />
@@ -2769,9 +2778,10 @@ const BasicInfoModal = ({
                 <div className="pt-4 border-t border-gray-200">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm text-gray-500 mb-2">Campus</label>
+                      <label className="block text-sm text-gray-500 mb-2">Campus*</label>
                       <select
                         value={drafts.campus || ''}
+                        required
                         onChange={(e) => onChange('campus', e.target.value)}
                         className="w-full h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                       >
@@ -2783,9 +2793,10 @@ const BasicInfoModal = ({
                     </div>
 
                     <div>
-                      <label className="block text-sm text-gray-500 mb-2">Course</label>
+                      <label className="block text-sm text-gray-500 mb-2">Course*</label>
                       <select
                         value={drafts.course || ''}
+                        required
                         onChange={(e) => onChange('course', e.target.value)}
                         className="w-full h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                       >
@@ -2797,9 +2808,10 @@ const BasicInfoModal = ({
                     </div>
 
                     <div>
-                      <label className="block text-sm text-gray-500 mb-2">Year Graduated</label>
+                      <label className="block text-sm text-gray-500 mb-2">Year Graduated*</label>
                       <select
                         value={drafts.yearGraduated || ''}
+                        required
                         onChange={(e) => onChange('yearGraduated', e.target.value)}
                         className="w-full h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                       >
@@ -3206,23 +3218,23 @@ const ProfileEditModal = ({
     if (sectionKey === 'career') {
       return (
         <div className="grid md:grid-cols-2 gap-5">
-          <Select label="Preferred Work Mode" value={drafts.preferredWorkMode} onChange={(e) => onChange('preferredWorkMode', e.target.value)} options={PREFERRED_WORK_MODE_OPTIONS} placeholder="Select preferred work mode" />
-          <Select label="Employment Type" value={drafts.employmentType} onChange={(e) => onChange('employmentType', e.target.value)} options={EMPLOYMENT_TYPE_OPTIONS} placeholder="Select employment type" />
-          <Select label="Willing to Relocate" value={drafts.willingToRelocate} onChange={(e) => onChange('willingToRelocate', e.target.value)} options={WILLING_TO_RELOCATE_OPTIONS} placeholder="Select relocation preference" />
-          <Select label="How Soon Can Start" value={drafts.howSoonCanYouStart} onChange={(e) => onChange('howSoonCanYouStart', e.target.value)} options={HOW_SOON_CAN_START_OPTIONS} placeholder="Select availability" />
-          <Select label="Experience" value={drafts.experience} onChange={(e) => onChange('experience', e.target.value)} options={EXPERIENCE_OPTIONS} placeholder="Select experience" />
-          <Input label="Preferred Language" value={drafts.preferredLanguage} onChange={(e) => onChange('preferredLanguage', e.target.value)} placeholder="Enter preferred language" />
-          <Select label="Educational Attainment" value={drafts.educationalAttainment} onChange={(e) => onChange('educationalAttainment', e.target.value)} options={EDUCATIONAL_ATTAINMENT_OPTIONS} placeholder="Select educational attainment" />
-          <Select label="Double Degree" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} options={FIELD_OF_STUDY_OPTIONS} placeholder="Select study field" />
-          <Input label="Minimum Salary" value={drafts.minimumSalary} onChange={(e) => onChange('minimumSalary', formatSalaryInput(e.target.value))} placeholder="Minimum Salary" />
-          <Input label="Maximum Salary" value={drafts.maximumSalary} onChange={(e) => onChange('maximumSalary', formatSalaryInput(e.target.value))} placeholder="Maximum Salary" />
+          <Select label="Preferred Work Mode *" value={drafts.preferredWorkMode} onChange={(e) => onChange('preferredWorkMode', e.target.value)} options={PREFERRED_WORK_MODE_OPTIONS} placeholder="Select preferred work mode" />
+          <Select label="Employment Type *" value={drafts.employmentType} onChange={(e) => onChange('employmentType', e.target.value)} options={EMPLOYMENT_TYPE_OPTIONS} placeholder="Select employment type" />
+          <Select label="Willing to Relocate *" value={drafts.willingToRelocate} onChange={(e) => onChange('willingToRelocate', e.target.value)} options={WILLING_TO_RELOCATE_OPTIONS} placeholder="Select relocation preference" />
+          <Select label="How Soon Can Start *" value={drafts.howSoonCanYouStart} onChange={(e) => onChange('howSoonCanYouStart', e.target.value)} options={HOW_SOON_CAN_START_OPTIONS} placeholder="Select availability" />
+          <Select label="Experience *" value={drafts.experience} onChange={(e) => onChange('experience', e.target.value)} options={EXPERIENCE_OPTIONS} placeholder="Select experience" />
+          <Input label="Preferred Language *" value={drafts.preferredLanguage} onChange={(e) => onChange('preferredLanguage', e.target.value)} placeholder="Enter preferred language" />
+          <Select label="Educational Attainment *" value={drafts.educationalAttainment} onChange={(e) => onChange('educationalAttainment', e.target.value)} options={EDUCATIONAL_ATTAINMENT_OPTIONS} placeholder="Select educational attainment" />
+          <Select label="Double Degree *" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} options={FIELD_OF_STUDY_OPTIONS} placeholder="Select study field" />
+          <Input label="Minimum Salary *" value={drafts.minimumSalary} onChange={(e) => onChange('minimumSalary', formatSalaryInput(e.target.value))} placeholder="Minimum Salary" />
+          <Input label="Maximum Salary *" value={drafts.maximumSalary} onChange={(e) => onChange('maximumSalary', formatSalaryInput(e.target.value))} placeholder="Maximum Salary" />
           <SalaryPrivacySelect value={drafts.salaryPrivacy} onChange={(value) => onChange('salaryPrivacy', value)} />
-          <Input label="Height" value={drafts.height} onChange={(e) => onChange('height', e.target.value)} placeholder="Height" />
-          <Input label="Weight" value={drafts.weight} onChange={(e) => onChange('weight', e.target.value)} placeholder="Weight" />
-          <Input label="Nationality" value={drafts.nationality} onChange={(e) => onChange('nationality', e.target.value)} placeholder="Nationality" />
-          <Select label="Gender" value={drafts.gender} onChange={(e) => onChange('gender', e.target.value)} options={GENDER_OPTIONS} placeholder="Select gender" />
-          <Select label="Civil Status" value={drafts.civilStatus} onChange={(e) => onChange('civilStatus', e.target.value)} options={CIVIL_STATUS_OPTIONS} placeholder="Select civil status" />
-          <Input label="Birthday" type="date" value={drafts.birthday} onChange={(e) => onChange('birthday', e.target.value)} />
+          <Input label="Height *" value={drafts.height} onChange={(e) => onChange('height', e.target.value)} placeholder="Height" />
+          <Input label="Weight *" value={drafts.weight} onChange={(e) => onChange('weight', e.target.value)} placeholder="Weight" />
+          <Input label="Nationality *" value={drafts.nationality} onChange={(e) => onChange('nationality', e.target.value)} placeholder="Nationality" />
+          <Select label="Gender *" value={drafts.gender} onChange={(e) => onChange('gender', e.target.value)} options={GENDER_OPTIONS} placeholder="Select gender" />
+          <Select label="Civil Status *" value={drafts.civilStatus} onChange={(e) => onChange('civilStatus', e.target.value)} options={CIVIL_STATUS_OPTIONS} placeholder="Select civil status" />
+          <Input label="Birthday *" type="date" value={drafts.birthday} onChange={(e) => onChange('birthday', e.target.value)} />
         </div>
       );
     }
@@ -3556,7 +3568,20 @@ const JobSeekerLevelCard = ({
 
   return (
     <>
-      <section className="w-full rounded-[18px] border border-[#d8e2ee] bg-white p-5 shadow-[0_8px_30px_rgba(46,102,166,0.10)]">
+      <section
+        className="w-full cursor-pointer rounded-[18px] border border-[#d8e2ee] bg-white p-5 shadow-[0_8px_30px_rgba(46,102,166,0.10)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_34px_rgba(46,102,166,0.16)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/40"
+        role="button"
+        tabIndex={0}
+        aria-label="View all job seeker levels"
+        aria-haspopup="dialog"
+        onClick={() => setShowLevelModal(true)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            setShowLevelModal(true);
+          }
+        }}
+      >
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-500">
@@ -3567,19 +3592,16 @@ const JobSeekerLevelCard = ({
             </h2>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setShowLevelModal(true)}
-            className="group flex h-[68px] w-[68px] shrink-0 items-center justify-center border-0 bg-transparent p-0 outline-none transition-transform duration-200 hover:scale-105 focus-visible:rounded-xl focus-visible:ring-2 focus-visible:ring-[#2e66a6]/40"
-            aria-label="View all job seeker levels"
-            aria-haspopup="dialog"
+          <div
+            className="group flex h-[68px] w-[68px] shrink-0 items-center justify-center border-0 bg-transparent p-0 transition-transform duration-200 group-hover:scale-105"
+            aria-hidden="true"
           >
             <img
               src={badgeImage}
               alt={`${currentRank} badge`}
               className="h-full w-full object-contain transition group-hover:drop-shadow-[0_5px_8px_rgba(46,102,166,0.22)]"
             />
-          </button>
+          </div>
         </div>
 
         <div className="mt-6 flex items-center justify-between gap-3">
@@ -4317,13 +4339,13 @@ const MyProfile = () => {
       completed: Boolean(String(verificationDocs?.[key]?.url || '').trim()),
     }));
 
-    const basicInformationComplete = Boolean(
-      String(formData.firstName || '').trim() &&
-      String(formData.lastName || '').trim() &&
-      String(formData.email || '').trim() &&
-      String(formData.phoneNumber || '').trim() &&
-      String(formData.address || buildAddressString(formData) || '').trim()
-    );
+    const parsedBasicAddress = parseAddressString(formData.address || '');
+    const basicInformationComplete = [
+      formData.region || parsedBasicAddress.region,
+      formData.province || parsedBasicAddress.province,
+      formData.cityMunicipality || parsedBasicAddress.cityMunicipality,
+      formData.streetAddress || parsedBasicAddress.streetAddress,
+    ].every(isCompletedProfileValue);
 
     const personalInformationRequiredValues = [
       formData.preferredWorkMode,
@@ -4399,13 +4421,6 @@ const MyProfile = () => {
 
     const parsedAddress = parseAddressString(formData.address || '');
     const basicMissingCount = countMissing([
-      formData.firstName,
-      formData.lastName,
-      formData.email,
-      formData.phoneNumber,
-      formData.campus,
-      formData.course,
-      formData.yearGraduated,
       formData.region || parsedAddress.region,
       formData.province || parsedAddress.province,
       formData.cityMunicipality || parsedAddress.cityMunicipality,
@@ -5109,6 +5124,59 @@ const MyProfile = () => {
 
   const saveSection = async (sectionKey, draftOverride = null) => {
     const activeDrafts = draftOverride || drafts;
+
+    if (sectionKey === 'basic') {
+      const requiredBasicFields = [
+        ['First Name', activeDrafts.firstName],
+        ['Last Name', activeDrafts.lastName],
+        ['Email', activeDrafts.email],
+        ['Mobile Number', activeDrafts.phoneNumber],
+        ['Campus', activeDrafts.campus],
+        ['Course', activeDrafts.course],
+        ['Year Graduated', activeDrafts.yearGraduated],
+        ['Region', activeDrafts.region],
+        ['Province', activeDrafts.province],
+        ['City / Municipality', activeDrafts.cityMunicipality],
+        ['Street Address', activeDrafts.streetAddress],
+      ];
+      const missingBasicFields = requiredBasicFields
+        .filter(([, value]) => !isCompletedProfileValue(value))
+        .map(([label]) => label);
+
+      if (missingBasicFields.length) {
+        setError(`Please complete the required fields before saving: ${missingBasicFields.join(', ')}.`);
+        return;
+      }
+    }
+
+    if (sectionKey === 'career') {
+      const requiredPersonalFields = [
+        ['Preferred Work Mode', activeDrafts.preferredWorkMode],
+        ['Employment Type', activeDrafts.employmentType],
+        ['Willing to Relocate', activeDrafts.willingToRelocate],
+        ['How Soon Can Start', activeDrafts.howSoonCanYouStart],
+        ['Experience', activeDrafts.experience],
+        ['Preferred Language', activeDrafts.preferredLanguage],
+        ['Educational Attainment', activeDrafts.educationalAttainment],
+        ['Field of Study', activeDrafts.studyField],
+        ['Minimum Salary', normalizeSalaryDigits(activeDrafts.minimumSalary)],
+        ['Maximum Salary', normalizeSalaryDigits(activeDrafts.maximumSalary)],
+        ['Height', activeDrafts.height],
+        ['Weight', activeDrafts.weight],
+        ['Nationality', activeDrafts.nationality],
+        ['Gender', activeDrafts.gender],
+        ['Civil Status', activeDrafts.civilStatus],
+        ['Birthday', activeDrafts.birthday],
+      ];
+      const missingPersonalFields = requiredPersonalFields
+        .filter(([, value]) => !isCompletedProfileValue(value))
+        .map(([label]) => label);
+
+      if (missingPersonalFields.length) {
+        setError(`Please complete the required personal information before saving: ${missingPersonalFields.join(', ')}.`);
+        return;
+      }
+    }
 
     try {
       setSavingSection(sectionKey);
@@ -6694,6 +6762,7 @@ const MyProfile = () => {
         cityOptions={cityOptions}
         yearOptions={yearOptions}
         onEmailUpdate={openEmailUpdateModal}
+        error={error}
       />
 
       <EmailUpdateModal

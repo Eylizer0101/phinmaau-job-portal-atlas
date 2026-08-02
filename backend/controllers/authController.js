@@ -1215,6 +1215,10 @@ exports.updateProfile = async (req, res) => {
 
     if (updateData.jobSeekerProfile) {
       const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+
       const existingProfile = user.jobSeekerProfile || {};
       updateData.jobSeekerProfile = {
         ...(existingProfile.toObject?.() || existingProfile),
@@ -1223,6 +1227,72 @@ exports.updateProfile = async (req, res) => {
 
       if (Object.prototype.hasOwnProperty.call(updateData.jobSeekerProfile, 'course')) {
         updateData.jobSeekerProfile.course = normalizeCourseValue(updateData.jobSeekerProfile.course);
+      }
+
+      const cleanRequiredValue = (value) => String(value ?? '').trim();
+      const requestedProfileKeys = Object.keys(req.body?.jobSeekerProfile || {});
+      const basicProfileKeys = ['phoneNumber', 'address', 'campus', 'course', 'yearGraduated'];
+      const personalProfileKeys = [
+        'preferredWorkMode', 'employmentType', 'willingToRelocate', 'howSoonCanYouStart',
+        'experience', 'preferredLanguage', 'educationalAttainment', 'studyField',
+        'minimumSalary', 'maximumSalary', 'height', 'weight', 'nationality',
+        'gender', 'civilStatus', 'birthday',
+      ];
+
+      const isBasicProfileUpdate = basicProfileKeys.some((key) => requestedProfileKeys.includes(key))
+        || ['firstName', 'lastName'].some((key) => Object.prototype.hasOwnProperty.call(req.body || {}, key));
+
+      if (isBasicProfileUpdate) {
+        const requiredBasicValues = {
+          'First Name': updateData.firstName ?? user.firstName,
+          'Last Name': updateData.lastName ?? user.lastName,
+          Email: user.email,
+          'Mobile Number': updateData.jobSeekerProfile.phoneNumber,
+          Campus: updateData.jobSeekerProfile.campus,
+          Course: updateData.jobSeekerProfile.course,
+          'Year Graduated': updateData.jobSeekerProfile.yearGraduated,
+          Address: updateData.jobSeekerProfile.address,
+        };
+        const missingBasic = Object.entries(requiredBasicValues)
+          .filter(([, value]) => !cleanRequiredValue(value))
+          .map(([label]) => label);
+        const addressParts = cleanRequiredValue(updateData.jobSeekerProfile.address)
+          .split(',')
+          .map((part) => part.trim())
+          .filter(Boolean);
+        if (addressParts.length < 4 && !missingBasic.includes('Address')) {
+          missingBasic.push('Region, Province, City / Municipality, and Street Address');
+        }
+
+        if (missingBasic.length) {
+          return res.status(400).json({
+            success: false,
+            message: `Please complete the required fields before saving: ${missingBasic.join(', ')}.`,
+          });
+        }
+      }
+
+      const isPersonalProfileUpdate = personalProfileKeys.some((key) => requestedProfileKeys.includes(key));
+      if (isPersonalProfileUpdate) {
+        const personalLabels = {
+          preferredWorkMode: 'Preferred Work Mode', employmentType: 'Employment Type',
+          willingToRelocate: 'Willing to Relocate', howSoonCanYouStart: 'How Soon Can Start',
+          experience: 'Experience', preferredLanguage: 'Preferred Language',
+          educationalAttainment: 'Educational Attainment', studyField: 'Field of Study',
+          minimumSalary: 'Minimum Salary', maximumSalary: 'Maximum Salary',
+          height: 'Height', weight: 'Weight', nationality: 'Nationality', gender: 'Gender',
+          civilStatus: 'Civil Status', birthday: 'Birthday',
+        };
+        const missingPersonal = personalProfileKeys
+          .filter((key) => !cleanRequiredValue(updateData.jobSeekerProfile[key]))
+          .map((key) => personalLabels[key]);
+
+        if (missingPersonal.length) {
+          return res.status(400).json({
+            success: false,
+            message: `Please complete the required personal information before saving: ${missingPersonal.join(', ')}.`,
+          });
+        }
       }
 
       if (!updateData.jobSeekerProfile.salaryCurrency) {
