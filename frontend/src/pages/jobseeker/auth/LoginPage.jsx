@@ -999,7 +999,7 @@ const LoginPage = () => {
                       Signing in...
                     </div>
                   ) : (
-                    'Log in'
+                    'Sign in'
                   )}
                 </button>
               </form>
