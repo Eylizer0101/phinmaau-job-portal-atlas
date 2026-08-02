@@ -1597,16 +1597,18 @@ const JobSearch = () => {
                     return (
                       <div
                         key={jobId}
-                        className={`relative overflow-hidden rounded-2xl p-7 ${job.isUrgent ? "pt-[68px]" : ""} bg-white shadow-sm hover:shadow-md transition flex flex-col min-h-[375px]`}
+                        className="relative overflow-hidden rounded-2xl p-7 bg-white shadow-sm hover:shadow-md transition flex flex-col min-h-[375px]"
                         style={{ border: `1px solid ${COLORS.border}` }}
                       >
                         {job.isUrgent ? (
-                          <img
-                            src="/images/gentneeded.png"
-                            alt="Urgent Hiring"
-                            draggable="false"
-                            className="pointer-events-none absolute left-7 top-4 z-10 h-auto w-[118px] select-none object-contain"
-                          />
+                          <div className="mb-3 flex h-[32px] items-center">
+                            <img
+                              src="/images/gentneeded.png"
+                              alt="Urgent Hiring"
+                              draggable="false"
+                              className="pointer-events-none h-auto w-[118px] select-none object-contain"
+                            />
+                          </div>
                         ) : null}
 
                         <button
