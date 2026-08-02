@@ -1519,7 +1519,7 @@ const JobOffers = () => {
                           src="/images/gentneeded.png"
                           alt="Urgent Hiring"
                           draggable="false"
-                          className={`pointer-events-none absolute -top-[40px] -left-[50px] z-10 w-[230px] max-w-none select-none transition-opacity ${openDropdown ? "invisible opacity-0" : "visible opacity-100"}`}
+                          className={`pointer-events-none absolute -top-[48px] -left-[50px] z-10 w-[230px] max-w-none select-none transition-opacity ${openDropdown ? "invisible opacity-0" : "visible opacity-100"}`}
                         />
                       ) : null}
 
