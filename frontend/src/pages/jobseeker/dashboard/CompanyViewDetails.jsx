@@ -54,8 +54,6 @@ const calculateAccurateReviewSummary = ({
   };
 };
 
-const COMPANY_PREVIEW_LIMIT = 6;
-
 const UI = {
   container:
     "relative left-1/2 right-1/2 w-[min(94vw,1280px)] max-w-none -translate-x-1/2 px-4 sm:px-6 lg:px-8 pb-12",
@@ -157,15 +155,6 @@ const SvgIcon = ({ name, className = "w-4 h-4" }) => {
             strokeWidth="1.8"
             d="M16.862 3.487a2.1 2.1 0 112.97 2.97L8.75 17.54 4 19l1.46-4.75 11.402-10.763z"
           />
-        </svg>
-      );
-    case "repeat":
-      return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M17 2l4 4-4 4" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M3 11V9a3 3 0 013-3h15" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M7 22l-4-4 4-4" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M21 13v2a3 3 0 01-3 3H3" />
         </svg>
       );
     case "briefcase":
@@ -1415,21 +1404,6 @@ const CompanyViewDetails = () => {
   });
   const ratingValue = accurateReviewSummary.rating;
   const reviewCount = accurateReviewSummary.reviewCount;
-  const ratingBreakdown = {
-    5: Number(company?.ratingBreakdown?.[5] || 0),
-    4: Number(company?.ratingBreakdown?.[4] || 0),
-    3: Number(company?.ratingBreakdown?.[3] || 0),
-    2: Number(company?.ratingBreakdown?.[2] || 0),
-    1: Number(company?.ratingBreakdown?.[1] || 0),
-  };
-  const highestRatingCount = Math.max(
-    ratingBreakdown[5],
-    ratingBreakdown[4],
-    ratingBreakdown[3],
-    ratingBreakdown[2],
-    ratingBreakdown[1],
-    1
-  );
 
   const socialLinks = useMemo(() => {
     if (!company) return [];
@@ -1737,11 +1711,11 @@ The company also values transparency, teamwork, and continuous improvement, crea
                 </p>
               </div>
 
-              {companyJobs.length > COMPANY_PREVIEW_LIMIT ? (
+              {companyJobs.length > 6 ? (
                 <button
                   type="button"
                   onClick={() => navigate(`/jobseeker/company-details/${id}/jobs`)}
-                  className="text-[15px] font-medium text-[#2e66a6] hover:text-[#25578f] inline-flex items-center gap-2"
+                  className="text-[15px] font-medium text-black/70 hover:text-black inline-flex items-center gap-2"
                 >
                   View all jobs <span aria-hidden="true">→</span>
                 </button>
@@ -1756,7 +1730,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
               />
             ) : (
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {companyJobs.slice(0, COMPANY_PREVIEW_LIMIT).map((job) => {
+                {companyJobs.slice(0, 6).map((job) => {
                   const jobId = job._id || job.id;
                   const experienceBadgeLabel = getExperienceBadgeLabel(job.experienceLevel);
                   const tagFreshGrad = isFreshGraduateJob(job);
@@ -2029,7 +2003,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
                 </p>
               </div>
 
-              {reviews.length > COMPANY_PREVIEW_LIMIT ? (
+              {reviews.length > 6 ? (
                 <button
                   type="button"
                   onClick={() => navigate(`/jobseeker/company-details/${id}/reviews`)}
@@ -2041,19 +2015,16 @@ The company also values transparency, teamwork, and continuous improvement, crea
             </div>
 
             <div className="mt-6 rounded-2xl border border-[#dfe7f0] bg-[#fbfcfe] p-5 sm:p-6">
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr] lg:items-center">
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr] lg:items-center">
                 <div className="text-center lg:border-r lg:border-[#dfe7f0] lg:pr-6">
-                  <p className="text-5xl font-bold tracking-tight text-[#172033]">
-                    {Number(ratingValue || 0).toFixed(1)}
-                  </p>
-
-                  <div className="mt-3 flex justify-center gap-1">
+                  <p className="text-5xl font-bold text-black">{Number(accurateReviewSummary.rating || 0).toFixed(1)}</p>
+                  <div className="mt-3 flex items-center justify-center gap-1" aria-label={`${Number(accurateReviewSummary.rating || 0).toFixed(1)} out of 5 stars`}>
                     {[1, 2, 3, 4, 5].map((star) => (
                       <svg
                         key={star}
                         className="h-6 w-6 text-[#2e66a6]"
                         viewBox="0 0 20 20"
-                        fill={star <= Math.round(Number(ratingValue) || 0) ? "currentColor" : "none"}
+                        fill={star <= Math.round(Number(accurateReviewSummary.rating || 0)) ? "currentColor" : "none"}
                         stroke="currentColor"
                         strokeWidth="1.5"
                         aria-hidden="true"
@@ -2062,24 +2033,20 @@ The company also values transparency, teamwork, and continuous improvement, crea
                       </svg>
                     ))}
                   </div>
-
-                  <p className="mt-3 text-sm text-black/60">
-                    {reviewCount} rating{reviewCount === 1 ? "" : "s"} in total
-                  </p>
+                  <p className="mt-2 text-sm text-black/60">{reviewCount} rating{reviewCount === 1 ? "" : "s"} in total</p>
                 </div>
 
                 <div className="space-y-3">
                   {[5, 4, 3, 2, 1].map((star) => {
-                    const count = ratingBreakdown[star];
-                    const width = `${Math.max(0, Math.min(100, (count / highestRatingCount) * 100))}%`;
-
+                    const count = Number(company?.ratingBreakdown?.[star] || 0);
+                    const percentage = reviewCount > 0 ? Math.round((count / reviewCount) * 100) : 0;
                     return (
                       <div key={star} className="grid grid-cols-[20px_1fr_32px] items-center gap-3">
-                        <span className="text-sm font-semibold text-[#172033]">{star}</span>
-                        <div className="h-3 overflow-hidden rounded-full bg-[#e9eef5]">
+                        <span className="text-sm font-semibold text-black/70">{star}</span>
+                        <div className="h-3 overflow-hidden rounded-full bg-[#e8edf3]">
                           <div
                             className="h-full rounded-full bg-[#2e66a6] transition-all"
-                            style={{ width }}
+                            style={{ width: `${percentage}%` }}
                           />
                         </div>
                         <span className="text-right text-sm text-black/60">{count}</span>
@@ -2098,7 +2065,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
                   description="Be the first to share your hiring process experience with this company."
                 />
               ) : (
-                reviews.slice(0, COMPANY_PREVIEW_LIMIT).map((review) => (
+                reviews.slice(0, 6).map((review) => (
                   <article
                     key={review.id || review._id}
                     className="rounded-2xl border border-[#dfe7f0] bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-[0_10px_28px_rgba(46,102,166,0.06)]"
@@ -2176,7 +2143,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
 
                       <div className="rounded-xl border border-[#dfe7f0] bg-[#fbfcfe] px-4 py-3">
                         <div className="flex items-center gap-2 text-black/50">
-                          <SvgIcon name="repeat" className="w-5 h-5" />
+                          <span className="text-lg leading-none">♧</span>
                           <span className="text-sm">Apply again?</span>
                         </div>
                         <p className="mt-1 text-[18px] font-bold text-black">
