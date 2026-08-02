@@ -1515,13 +1515,15 @@ const JobOffers = () => {
                       style={{ border: `1px solid ${COLORS.border}` }}
                     >
                       {job.isUrgent ? (
-                        <div className="mb-3 flex h-[32px] items-center">
-                          <img
-                            src="/images/gentneeded.png"
-                            alt="Urgent Hiring"
-                            draggable="false"
-                            className="pointer-events-none h-auto w-[112px] select-none object-contain"
-                          />
+                        <div className="mb-3 flex h-[38px] items-center overflow-hidden">
+                          <div className="relative h-[34px] w-[150px] overflow-hidden">
+                            <img
+                              src="/images/gentneeded.png"
+                              alt="Urgent Hiring"
+                              draggable="false"
+                              className="pointer-events-none absolute left-0 top-1/2 h-auto w-[112px] -translate-y-1/2 scale-[2.2] origin-left select-none object-contain"
+                            />
+                          </div>
                         </div>
                       ) : null}
 
