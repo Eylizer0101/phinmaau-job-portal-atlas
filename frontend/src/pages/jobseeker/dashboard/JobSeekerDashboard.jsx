@@ -1767,7 +1767,20 @@ const JobSeekerDashboard = () => {
                                 <div className="mt-3 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 font-semibold leading-none text-black">
                                   {(app.job?.salaryMin || app.job?.salaryMax) && (
                                     <span className="inline-flex items-center gap-1.5">
-                                      <span aria-hidden="true" className="font-normal text-gray-500">₱</span>
+                                     <span
+  aria-hidden="true"
+  className="inline-flex items-center justify-center shrink-0 text-[17px]"
+  style={{
+    fontWeight: "400",
+    color: "#9CA3AF",
+    fontFamily: "Arial, Helvetica, sans-serif",
+    WebkitTextStroke: "0",
+    textShadow: "none",
+    lineHeight: 1,
+  }}
+>
+  ₱
+</span>
                                       <span className="font-semibold">{formatSalaryWithoutCurrency(app.job?.salaryMin, app.job?.salaryMax)}</span>
                                     </span>
                                   )}
