@@ -1304,16 +1304,6 @@ const JobSeekerDashboard = () => {
                     autoComplete="current-password"
                   />
                   <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewCompanyJobs(c);
-                          }}
-                          className="whitespace-nowrap border-0 bg-transparent p-0 text-[13px] font-semibold text-[#2e66a6] shadow-none transition hover:text-[#245387]"
-                        >
-                          {jobCount} New Job Offer{jobCount === 1 ? '' : 's'}
-                        </button>
-                  <button
                     type="button"
                     onClick={() => togglePasswordVisibility('currentPassword')}
                     className="absolute inset-y-0 right-0 inline-flex items-center px-4 text-gray-500"
@@ -2320,6 +2310,17 @@ const JobSeekerDashboard = () => {
                       </div>
 
                       <div className="mt-5 pt-5 border-t border-transparent flex items-center justify-between gap-3">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewCompanyJobs(c);
+                          }}
+                          className="whitespace-nowrap border-0 bg-transparent p-0 text-[13px] font-semibold text-[#2e66a6] shadow-none transition hover:text-[#245387]"
+                        >
+                          {jobCount} New Job Offer{jobCount === 1 ? '' : 's'}
+                        </button>
+
                         <button
                           type="button"
                           onClick={(e) => {
