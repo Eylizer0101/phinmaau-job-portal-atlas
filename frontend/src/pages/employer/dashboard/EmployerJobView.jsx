@@ -201,7 +201,7 @@ const getExperienceDisplayLabel = (value) => {
 
 const UI = {
   page: 'min-h-screen ',
-  container: 'mx-auto max-w-7xl px-1 py-8',
+  container: 'mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8',
   card: 'w-full rounded-2xl border border-[#d9dbe3] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]',
   sectionCard: 'w-full rounded-xl border border-[#d9dbe3] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]',
   metricCard: 'rounded-xl border border-[#d9dbe3] bg-white px-4 py-3.5 min-h-[86px] shadow-[0_3px_12px_rgba(15,23,42,0.04)]',
@@ -1025,7 +1025,7 @@ const EmployerJobView = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 items-start gap-4">
+          <div className="grid grid-cols-1 items-start gap-5">
             <div className="min-w-0 space-y-5">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <TopMetricCard
@@ -1053,16 +1053,18 @@ const EmployerJobView = () => {
               </div>
 
               <div className={`${UI.sectionCard} overflow-hidden`}>
-                <div className="space-y-6 p-5 sm:p-6">
+                <div className="p-5 sm:p-6">
                   <section>
                     <SectionHeader icon="file" title="Job Description" />
                     <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
                       <RichTextContent value={job.description} fallback="No job description provided" />
                     </div>
                   </section>
+                </div>
+              </div>
 
-                  <div className="border-t border-[#d9dbe3]" />
-
+              <div className={`${UI.sectionCard} overflow-hidden`}>
+                <div className="p-5 sm:p-6">
                   <section>
                     <SectionHeader icon="tools" title="Qualification" />
                     <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
@@ -1071,74 +1073,62 @@ const EmployerJobView = () => {
                   </section>
                 </div>
               </div>
-
-              
             </div>
 
-            <aside className="min-w-0">
+            <aside className="grid min-w-0 grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+              <div className={`${UI.sectionCard} p-5 sm:p-6`}>
+                <SectionHeader icon="tools" title="Required Skills" />
+
+                {requiredSkills.length > 0 ? (
+                  <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {requiredSkills.map((skill, idx) => (
+                      <div key={`${skill}-${idx}`} className={UI.skillChip}>
+                        {skill}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className={`mt-4 ${UI.muted}`}>No skills specified</p>
+                )}
+              </div>
+
               <div className={`${UI.sectionCard} overflow-hidden`}>
-                <div className="border-b border-[#d9dbe3] bg-[#f9fafb] px-5 py-4">
-                  <h3 className={UI.title}>Required Skills & Work Location</h3>
+                <div className="px-5 pt-5 sm:px-6 sm:pt-6">
+                  <SectionHeader icon="location" title="Work Location" />
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-                  <div className="rounded-xl border border-[#d9dbe3] bg-white p-4">
-                    <p className={UI.label}>Required Skills</p>
-                    {requiredSkills.length > 0 ? (
-                      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                        {requiredSkills.map((skill, idx) => (
-                          <div key={`${skill}-${idx}`} className={UI.skillChip}>
-                            {skill}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className={UI.muted}>No skills specified</p>
-                    )}
+                <div className="mt-4 overflow-hidden">
+                  {getJobCoordinates(job) ? (
+                    <StaticLocationMap job={job} heightClass="h-[180px]" />
+                  ) : job.locationImage ? (
+                    <img
+                      src={`https://phinmaau-job-portal-atlas.onrender.com${job.locationImage}`}
+                      alt="Work location"
+                      className="h-[180px] w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-[180px] items-center justify-center bg-[#eef2f7] text-[#9ca3af]">
+                      <SvgIcon name="location" className="h-8 w-8" />
+                    </div>
+                  )}
+                </div>
 
-                    <div className="mt-4 border-t border-[#d9dbe3] pt-4">
-                      <p className={UI.label}>Willing to Relocate?</p>
-                      <p className={UI.muted}>{getRelocationDisplayLabel(job.willingToRelocate)}</p>
-                    </div>
-                  </div>
-
-                  <div className="overflow-hidden rounded-xl border border-[#d9dbe3] bg-white">
-                    <div className="px-4 pt-4">
-                      <p className={UI.label}>Work Location</p>
-                    </div>
-                    <div className="mt-3 overflow-hidden">
-                      {getJobCoordinates(job) ? (
-                        <StaticLocationMap job={job} heightClass="h-[180px]" />
-                      ) : job.locationImage ? (
-                        <img
-                          src={`https://phinmaau-job-portal-atlas.onrender.com${job.locationImage}`}
-                          alt="Work location"
-                          className="h-[180px] w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-[180px] items-center justify-center bg-[#eef2f7] text-[#9ca3af]">
-                          <SvgIcon name="location" className="h-8 w-8" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="border-t border-[#d9dbe3] px-3 py-3">
-                      {buildWorkLocationUrl(job) ? (
-                        <a
-                          href={buildWorkLocationUrl(job)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`text-xs font-medium text-[#2e66a6] hover:underline ${UI.ring} rounded`}
-                          title="Open work location in OpenStreetMap"
-                        >
-                          {String(job.location || '').trim() || 'Work address not specified'}
-                        </a>
-                      ) : (
-                        <p className="text-xs text-[#6b7280]">
-                          {String(job.location || '').trim() || 'Work address not specified'}
-                        </p>
-                      )}
-                    </div>
-                  </div>
+                <div className="border-t border-[#d9dbe3] px-4 py-3 sm:px-5">
+                  {buildWorkLocationUrl(job) ? (
+                    <a
+                      href={buildWorkLocationUrl(job)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`rounded text-xs font-medium text-[#2e66a6] hover:underline ${UI.ring}`}
+                      title="Open work location in OpenStreetMap"
+                    >
+                      {String(job.location || '').trim() || 'Work address not specified'}
+                    </a>
+                  ) : (
+                    <p className="text-xs text-[#6b7280]">
+                      {String(job.location || '').trim() || 'Work address not specified'}
+                    </p>
+                  )}
                 </div>
               </div>
             </aside>
