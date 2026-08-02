@@ -450,7 +450,6 @@ const JobseekerCompanies = () => {
               onChange={(event) => setLocationSearch(event.target.value)}
               placeholder="Search location"
               className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
-              autoFocus
             />
 
             <div className="mt-4 max-h-[280px] overflow-auto pr-1">
