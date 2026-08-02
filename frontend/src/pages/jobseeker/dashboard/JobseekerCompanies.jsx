@@ -79,7 +79,6 @@ const JobseekerCompanies = () => {
 
   const [openDropdown, setOpenDropdown] = useState(null);
   const [locationSearch, setLocationSearch] = useState("");
-  const [expandedCardId, setExpandedCardId] = useState(null);
   const filterBoxRef = useRef(null);
 
   const debounceRef = useRef(null);
@@ -207,22 +206,6 @@ const JobseekerCompanies = () => {
         })}
       </div>
     );
-  };
-
-  const getBreakdownRows = (company) => {
-    const breakdown = company?.ratingBreakdown || {};
-    const total = Number(company?.reviewCount) || 0;
-
-    return [5, 4, 3, 2, 1].map((star) => {
-      const count = Number(breakdown?.[star] || 0);
-      const percent = total > 0 ? (count / total) * 100 : 0;
-
-      return {
-        star,
-        count,
-        percent,
-      };
-    });
   };
 
   const fetchCompanies = async (opts = {}) => {
@@ -386,7 +369,6 @@ const JobseekerCompanies = () => {
     setSelectedLocation("");
     setSelectedIndustry("");
     setOpenDropdown(null);
-    setExpandedCardId(null);
   };
 
   const searchBox =
@@ -403,10 +385,6 @@ const JobseekerCompanies = () => {
     const companyId = company?._id || company?.id;
     if (!companyId) return;
     navigate(`/jobseeker/company-details/${companyId}`);
-  };
-
-  const handleToggleBreakdown = (companyId) => {
-    setExpandedCardId((prev) => (prev === companyId ? null : companyId));
   };
 
   const LocationDropdown = () => {
@@ -765,15 +743,11 @@ const JobseekerCompanies = () => {
                   const accurateRatingSummary = getAccurateRatingSummary(c);
                   const averageRating = accurateRatingSummary.rating;
                   const reviewCount = accurateRatingSummary.reviewCount;
-                  const isExpanded = expandedCardId === employerId;
-                  const breakdownRows = getBreakdownRows(c);
 
                   return (
                     <div
                       key={c._id}
-                      className={`rounded-[24px] bg-white border shadow-[0_12px_28px_rgba(46,102,166,0.06)] hover:shadow-[0_16px_34px_rgba(46,102,166,0.10)] transition flex flex-col px-6 pt-6 pb-7 ${
-                        isExpanded ? "min-h-[470px]" : "h-[320px]"
-                      }`}
+                      className="h-[320px] rounded-[24px] bg-white border shadow-[0_12px_28px_rgba(46,102,166,0.06)] hover:shadow-[0_16px_34px_rgba(46,102,166,0.10)] transition flex flex-col px-6 pt-6 pb-7"
                       style={{ borderColor: COLORS.border }}
                     >
                       <div className="flex items-center justify-between gap-3">
@@ -876,62 +850,20 @@ const JobseekerCompanies = () => {
                           </div>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => handleToggleBreakdown(employerId)}
-                          className="w-[30px] h-[30px] rounded-[9px] border border-[#CFCFCF] flex items-center justify-center shrink-0 bg-white"
-                          aria-label={isExpanded ? "Hide rating breakdown" : "Show rating breakdown"}
-                          aria-expanded={isExpanded}
-                        >
-                          <svg
-                            className={`w-[16px] h-[16px] text-black/45 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 10l5 5 5-5" />
-                          </svg>
-                        </button>
+
                       </div>
 
-                      {isExpanded && (
-                        <div className="mt-5 pt-4 border-t border-[#E8E8E8]">
-                          <div className="space-y-[8px]">
-                            {breakdownRows.map((row) => (
-                              <div
-                                key={row.star}
-                                className="flex items-center gap-[10px]"
-                                aria-label={`${row.star}.0 stars, ${row.count} ${row.count === 1 ? "review" : "reviews"}`}
-                              >
-                                <div className="w-[30px] shrink-0 text-[12px] font-medium text-black/70">
-                                  {row.star}.0
-                                </div>
 
-                                <div className="h-[10px] flex-1 overflow-hidden rounded-full bg-[#EFEFEF]">
-                                  <div
-                                    className="h-full rounded-full bg-[#2e66a6] transition-all duration-300"
-                                    style={{ width: `${row.percent}%` }}
-                                  />
-                                </div>
-
-                                <div
-                                  className="w-[28px] shrink-0 text-right text-[12px] font-semibold text-black/70"
-                                  title={`${row.count} ${row.count === 1 ? "review" : "reviews"}`}
-                                >
-                                  {row.count}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
 
                       <div className="mt-auto pt-5 flex items-center justify-between gap-3">
+                        <span className="min-w-0 truncate text-[13px] font-semibold text-[#2e66a6]">
+                          {jobCount} New Job Offer{jobCount === 1 ? "" : "s"}
+                        </span>
+
                         <button
                           type="button"
                           onClick={() => handleViewCompanyDetails(c)}
-                          className="text-[15px] font-medium text-black inline-flex items-center gap-2 leading-none transition hover:opacity-80"
+                          className="shrink-0 text-[15px] font-medium text-black inline-flex items-center gap-2 leading-none transition hover:opacity-80"
                         >
                           <span className="leading-none">View details</span>
                           <svg
@@ -944,10 +876,6 @@ const JobseekerCompanies = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                           </svg>
                         </button>
-
-                        <span className="px-4 h-[38px] rounded-full text-[12px] font-medium bg-[#f7faff] text-[#2e66a6] border border-[#d8e2ee] whitespace-nowrap inline-flex items-center">
-                          {jobCount} New Job Offer{jobCount === 1 ? "" : "s"}
-                        </span>
                       </div>
                     </div>
                   );

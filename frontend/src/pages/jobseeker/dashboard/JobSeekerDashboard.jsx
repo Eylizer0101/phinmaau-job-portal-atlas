@@ -13,7 +13,7 @@ import {
   faMapMarkerAlt,
 } from '@fortawesome/free-solid-svg-icons';
 
-const TOP_CARD_HEIGHT = 'lg:h-[460px]';
+const TOP_CARD_HEIGHT = 'lg:h-[560px]';
 const PROFILE_REMINDER_ICON = '/images/clock.png';
 
 const normalizeBoolean = (value) => {
@@ -1649,10 +1649,10 @@ const JobSeekerDashboard = () => {
                     return (
                       <div
                         key={app._id}
-                        className="group relative mx-6 flex min-h-[138px] cursor-pointer items-center gap-3 py-3 pr-12 transition-colors hover:bg-[#F8FAFC] active:bg-[#F8FAFC]"
+                        className="group relative mx-6 min-h-[215px] cursor-pointer py-5 transition-colors hover:bg-[#F8FAFC] active:bg-[#F8FAFC]"
                         onClick={() => navigate('/jobseeker/my-applications')}
                       >
-                        <div className="flex items-start gap-4">
+                        <div className="flex w-full items-start gap-4">
                           <div className="flex-shrink-0">
                             <div className="h-16 w-16 overflow-hidden rounded-xl border border-[#D9E3F2] bg-white shadow-xs transition-all duration-300 group-hover:shadow-sm sm:h-[68px] sm:w-[68px]">
                               {logoUrl ? (
@@ -1678,7 +1678,7 @@ const JobSeekerDashboard = () => {
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <div className="flex min-w-0 items-start justify-between gap-3 mb-2">
+                            <div className="flex min-w-0 items-start justify-between gap-4">
                               <div className="min-w-0">
                                 <h4 className="truncate text-sm font-bold leading-snug text-black sm:text-base">
                                   {app.job?.title}
@@ -1711,9 +1711,9 @@ const JobSeekerDashboard = () => {
                               </div>
                             </div>
 
-                            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs sm:text-[13px] mb-3 min-w-0">
+                            <div className="mt-4 min-w-0 rounded-2xl bg-[#F7F9FC] px-4 py-3 text-xs sm:text-[13px]">
                               {app.job?.location && (
-                                <div className="flex items-center gap-2 text-gray-600 min-w-0 w-full max-w-full">
+                                <div className="flex min-w-0 items-center gap-2 text-gray-600">
                                   <div className="w-4 h-4 flex-shrink-0 flex items-center justify-center text-gray-400">
                                     <FontAwesomeIcon icon={faMapMarkerAlt} className="w-3.5 h-3.5 flex-shrink-0" />
                                   </div>
@@ -1722,7 +1722,7 @@ const JobSeekerDashboard = () => {
                               )}
 
                               {(app.job?.salaryMin || app.job?.salaryMax || recentWorkMode || recentEmploymentType) && (
-                                <div className="ml-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-semibold leading-none text-[#2e66a6]">
+                                <div className="mt-3 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 font-medium leading-none text-black">
                                   {(app.job?.salaryMin || app.job?.salaryMax) && (
                                     <span>{formatSalary(app.job?.salaryMin, app.job?.salaryMax)}</span>
                                   )}
@@ -1754,7 +1754,7 @@ const JobSeekerDashboard = () => {
                               )}
                             </div>
 
-                            <div className="flex flex-wrap items-center justify-between gap-3 text-xs pt-3 border-t border-[#D9E3F2]">
+                            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#D9E3F2] pt-3 text-xs">
                               <div className="flex items-center gap-2 text-gray-500">
                                 <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path
@@ -1783,11 +1783,6 @@ const JobSeekerDashboard = () => {
                             </div>
                           </div>
 
-                          <div className="flex-shrink-0 ml-2">
-                            <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                          </div>
                         </div>
                       </div>
                     );
@@ -1827,13 +1822,13 @@ const JobSeekerDashboard = () => {
               </button>
             </div>
 
-            <div className="flex-1 px-6 py-2">
+            <div className="flex-1 px-6">
               {jobOffersLoading ? (
                 <div className="h-full divide-y divide-[#D9E3F2]">
                   {[1, 2].map((item) => (
                     <div
                       key={item}
-                      className="flex min-h-[138px] animate-pulse items-center gap-3 py-3"
+                      className="flex min-h-[215px] animate-pulse items-start gap-4 py-5"
                     >
                       <div className="h-16 w-16 shrink-0 rounded-xl bg-gray-200" />
 
@@ -1870,7 +1865,7 @@ const JobSeekerDashboard = () => {
                     return (
                       <div
                         key={jobId}
-                        className="group relative flex min-h-[138px] cursor-pointer items-center gap-3 py-3 pr-12 transition-colors hover:bg-[#F8FAFC] sm:px-1 sm:pr-12"
+                        className="group relative flex min-h-[215px] cursor-pointer items-start gap-4 py-5 pr-12 transition-colors hover:bg-[#F8FAFC] sm:px-1 sm:pr-12"
                         onClick={() => handleViewJobDetails(job)}
                         role="button"
                         tabIndex={0}
@@ -1960,7 +1955,7 @@ const JobSeekerDashboard = () => {
                             </button>
                           </div>
 
-                          <div className="mt-2 space-y-1.5 text-xs text-black sm:text-[13px]">
+                          <div className="mt-4 space-y-2 rounded-2xl bg-[#F7F9FC] px-4 py-3 text-xs text-black sm:text-[13px]">
                             <div className="flex min-w-0 items-center gap-2">
                               <svg
                                 className="h-3.5 w-3.5 shrink-0 text-gray-600"
@@ -2017,12 +2012,12 @@ const JobSeekerDashboard = () => {
                             </div>
                           </div>
 
-                          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
                             {tags.length > 0
                               ? tags.map((tag, index) => (
                                   <span
                                     key={`${jobId}-tag-${index}`}
-                                    className={`rounded-full px-2 py-0.5 text-[9px] font-semibold whitespace-nowrap ${tag.className}`}
+                                    className={`rounded-full px-2.5 py-1 text-[10px] font-semibold whitespace-nowrap ${tag.className}`}
                                   >
                                     {tag.label}
                                   </span>
@@ -2037,7 +2032,7 @@ const JobSeekerDashboard = () => {
                             event.stopPropagation();
                             handleViewJobDetails(job);
                           }}
-                          className="absolute bottom-3 right-2 inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-semibold text-[#2e66a6] transition hover:bg-[#EAF2FB] sm:right-3"
+                          className="absolute bottom-5 right-2 inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-semibold text-[#2e66a6] transition hover:bg-[#EAF2FB] sm:right-3"
                         >
                           View Details
                           <svg
