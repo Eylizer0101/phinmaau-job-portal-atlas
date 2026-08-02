@@ -856,7 +856,7 @@ const JobseekerCompanies = () => {
 
 
                       <div className="mt-auto pt-5 flex items-center justify-between gap-3">
-                        <span className="min-w-0 truncate text-[13px] font-semibold text-[#2e66a6]">
+                        <span className="min-w-0 truncate border-0 bg-transparent p-0 text-[13px] font-semibold text-[#2e66a6] shadow-none">
                           {jobCount} New Job Offer{jobCount === 1 ? "" : "s"}
                         </span>
 

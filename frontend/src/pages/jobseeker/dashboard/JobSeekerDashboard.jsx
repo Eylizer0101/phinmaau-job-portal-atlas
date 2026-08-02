@@ -543,8 +543,20 @@ const JobSeekerDashboard = () => {
       job?.setup ||
       '';
     const wmLabel = normalizeWorkModeLabel(wmSource);
-    const experienceBadgeLabel = getExperienceBadgeLabel(job?.experienceLevel);
-    const freshGraduate = isFreshGraduateJob(job);
+    const experienceSource =
+      job?.experienceLevel ||
+      job?.experience ||
+      job?.requiredExperience ||
+      job?.experienceRequired ||
+      '';
+    const experienceBadgeLabel = getExperienceBadgeLabel(experienceSource);
+    const freshGraduate = normalizeBoolean(
+      job?.openToFreshGraduates ??
+      job?.openForFreshGraduates ??
+      job?.openFreshGraduate ??
+      job?.freshGraduateFriendly ??
+      job?.acceptsFreshGraduates
+    );
 
     if (experienceBadgeLabel) {
       tags.push({
@@ -1645,7 +1657,26 @@ const JobSeekerDashboard = () => {
                       app.job?.companyVerified == null;
                     const recentWorkMode = normalizeWorkModeLabel(app.job?.workMode);
                     const recentEmploymentType = normalizeEmploymentTypeLabel(app.job?.jobType);
-                    const recentApplicationTags = getJobOfferTags(app.job || {});
+                    const recentApplicationJobData = {
+                      ...(app?.jobSnapshot || {}),
+                      ...(app?.jobDetails || {}),
+                      ...(app?.job || {}),
+                      experienceLevel:
+                        app?.job?.experienceLevel ||
+                        app?.jobSnapshot?.experienceLevel ||
+                        app?.jobDetails?.experienceLevel ||
+                        app?.experienceLevel ||
+                        app?.experience ||
+                        '',
+                      openToFreshGraduates:
+                        app?.job?.openToFreshGraduates ??
+                        app?.jobSnapshot?.openToFreshGraduates ??
+                        app?.jobDetails?.openToFreshGraduates ??
+                        app?.openToFreshGraduates ??
+                        app?.openForFreshGraduates ??
+                        false,
+                    };
+                    const recentApplicationTags = getJobOfferTags(recentApplicationJobData);
 
                     return (
                       <div
@@ -1755,7 +1786,21 @@ const JobSeekerDashboard = () => {
                               )}
                             </div>
 
-                            <div className="mt-4 border-t border-[#D9E3F2] pt-3">
+                            {recentApplicationTags.length > 0 && (
+                              <div className="mt-3 flex min-h-6 min-w-0 flex-wrap items-center gap-2">
+                                {recentApplicationTags.map((tag, index) => (
+                                  <span
+                                    key={`${tag.label}-${index}`}
+                                    className={`inline-flex h-6 max-w-full items-center rounded-full px-2.5 text-[11px] font-medium ${tag.className}`}
+                                    title={tag.label}
+                                  >
+                                    <span className="truncate">{tag.label}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            <div className="mt-3 border-t border-[#D9E3F2] pt-3">
                               <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
                                 <div className="flex items-center gap-2 text-gray-500">
                                   <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1784,19 +1829,6 @@ const JobSeekerDashboard = () => {
                                 )}
                               </div>
 
-                              {recentApplicationTags.length > 0 && (
-                                <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2">
-                                  {recentApplicationTags.map((tag, index) => (
-                                    <span
-                                      key={`${tag.label}-${index}`}
-                                      className={`inline-flex h-6 max-w-full items-center rounded-full px-2.5 text-[11px] font-medium ${tag.className}`}
-                                      title={tag.label}
-                                    >
-                                      <span className="truncate">{tag.label}</span>
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
                             </div>
                           </div>
 
@@ -2280,7 +2312,7 @@ const JobSeekerDashboard = () => {
                             e.stopPropagation();
                             handleViewCompanyJobs(c);
                           }}
-                          className="whitespace-nowrap text-[13px] font-semibold text-[#2e66a6] transition hover:text-[#245387]"
+                          className="whitespace-nowrap border-0 bg-transparent p-0 text-[13px] font-semibold text-[#2e66a6] shadow-none transition hover:text-[#245387]"
                         >
                           {jobCount} New Job Offer{jobCount === 1 ? '' : 's'}
                         </button>
