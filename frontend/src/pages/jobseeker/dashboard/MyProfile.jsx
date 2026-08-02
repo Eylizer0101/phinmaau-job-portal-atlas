@@ -6710,10 +6710,21 @@ const MyProfile = () => {
 
           <div className="bg-transparent overflow-visible">
             <div className="relative z-0 w-full max-w-full px-0 pt-0 pb-10">
-              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(310px,340px)] gap-8 items-start">
-                <div className="relative bg-white border border-[#d8e2ee] rounded-[18px] shadow-[0_8px_30px_rgba(46,102,166,0.10)] min-h-[760px] px-6 sm:px-10 lg:px-12 py-10">
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(310px,340px)_minmax(0,1fr)] gap-8 items-start">
+                <div className="order-2 lg:order-1">
+                  <ProfileRightPanel
+                    jobSeekerLevel={jobSeekerLevel}
+                    onAddSections={() => setAddSectionsModalOpen(true)}
+                    addSectionsReminder={sectionReminders.additional}
+                  />
+                </div>
+
+                <div className="order-1 lg:order-2 relative bg-white border border-[#d8e2ee] rounded-[18px] shadow-[0_8px_30px_rgba(46,102,166,0.10)] min-h-[760px] px-6 sm:px-10 lg:px-12 py-10">
                   <div
-                    className="absolute left-4 top-4 z-10 flex h-14 w-14 items-center justify-center rounded-full border-[5px] border-[#dbeafe] bg-white text-[14px] font-extrabold text-[#1658d3] shadow-sm sm:left-5 sm:top-5"
+                    className="absolute left-4 top-4 z-10 flex h-16 w-16 items-center justify-center rounded-full p-[5px] shadow-sm sm:left-5 sm:top-5"
+                    style={{
+                      background: `conic-gradient(#1658d3 ${todoProgress.percentage * 3.6}deg, #dbeafe 0deg)`,
+                    }}
                     role="progressbar"
                     aria-valuemin="0"
                     aria-valuemax="100"
@@ -6721,7 +6732,9 @@ const MyProfile = () => {
                     aria-label="Resume completion percentage"
                     title={`${todoProgress.percentage}% Resume Complete`}
                   >
-                    {todoProgress.percentage}%
+                    <span className="flex h-full w-full items-center justify-center rounded-full bg-white text-[14px] font-extrabold text-[#1658d3]">
+                      {todoProgress.percentage}%
+                    </span>
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
                     <div>
@@ -6906,11 +6919,6 @@ const MyProfile = () => {
                   </div>
                 </div>
 
-                <ProfileRightPanel
-                  jobSeekerLevel={jobSeekerLevel}
-                  onAddSections={() => setAddSectionsModalOpen(true)}
-                  addSectionsReminder={sectionReminders.additional}
-                />
               </div>
             </div>
 
