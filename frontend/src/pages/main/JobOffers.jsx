@@ -1509,22 +1509,18 @@ const JobOffers = () => {
                   const verified = isCompanyVerified(job) || job?.companyVerified == null;
 
                   return (
-                    <div
+                   <div
                       key={jobId}
-                      className="group relative overflow-hidden rounded-[22px] p-5 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[372px]"
+                      className="group relative overflow-visible rounded-[22px] p-5 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[372px]"
                       style={{ border: `1px solid ${COLORS.border}` }}
                     >
                       {job.isUrgent ? (
-                        <div className="mb-3 flex h-[38px] items-center overflow-hidden">
-                          <div className="relative h-[34px] w-[150px] overflow-hidden">
-                            <img
-                              src="/images/gentneeded.png"
-                              alt="Urgent Hiring"
-                              draggable="false"
-                              className="pointer-events-none absolute left-0 top-1/2 h-auto w-[112px] -translate-y-1/2 scale-[2.2] origin-left select-none object-contain"
-                            />
-                          </div>
-                        </div>
+                        <img
+                          src="/images/gentneeded.png"
+                          alt="Urgent Hiring"
+                          draggable="false"
+                          className="pointer-events-none absolute -top-[52px] -left-[50px] z-10 w-[230px] max-w-none select-none"
+                        />
                       ) : null}
 
                       <div className="flex items-start justify-between gap-3">
