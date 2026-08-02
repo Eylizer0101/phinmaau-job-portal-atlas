@@ -125,7 +125,8 @@ const JobSeekerLayout = ({ children }) => {
   const isActive = (path) => location.pathname === path;
   const isJobDetailsPage = location.pathname.startsWith('/jobseeker/job-details/');
   const isBookmarksPage = location.pathname.startsWith('/jobseeker/bookmarks');
-  const allowsStickyContent = isJobDetailsPage || isBookmarksPage;
+  const isMyProfilePage = location.pathname.startsWith('/jobseeker/my-profile');
+  const allowsStickyContent = isJobDetailsPage || isBookmarksPage || isMyProfilePage;
 
   const getDisplayFirstName = (user = {}) => {
     const firstName = String(user?.firstName || '').trim();
