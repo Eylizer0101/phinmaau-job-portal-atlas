@@ -13,7 +13,7 @@ import {
   faMapMarkerAlt,
 } from '@fortawesome/free-solid-svg-icons';
 
-const TOP_CARD_HEIGHT = 'lg:min-h-[560px]';
+const TOP_CARD_HEIGHT = '';
 const PROFILE_REMINDER_ICON = '/images/clock.png';
 
 const normalizeBoolean = (value) => {
@@ -1691,7 +1691,7 @@ const JobSeekerDashboard = () => {
                     return (
                       <div
                         key={app._id}
-                        className="group relative min-h-[215px] cursor-pointer px-6 py-5 transition-colors hover:bg-[#F8FAFC] active:bg-[#F8FAFC]"
+                        className="group relative cursor-pointer px-6 py-5 transition-colors hover:bg-[#F8FAFC] active:bg-[#F8FAFC]"
                         onClick={() => navigate('/jobseeker/my-applications')}
                       >
                         <div className="flex w-full items-start gap-4">
@@ -1890,13 +1890,13 @@ const JobSeekerDashboard = () => {
               </button>
             </div>
 
-            <div className="flex-1 px-6">
+            <div className="flex-1">
               {jobOffersLoading ? (
                 <div className="h-full divide-y divide-[#D9E3F2]">
                   {[1, 2].map((item) => (
                     <div
                       key={item}
-                      className="flex min-h-[215px] animate-pulse items-start gap-4 py-5"
+                      className="flex animate-pulse items-start gap-4 px-6 py-5"
                     >
                       <div className="h-16 w-16 shrink-0 rounded-xl bg-gray-200" />
 
@@ -1933,7 +1933,7 @@ const JobSeekerDashboard = () => {
                     return (
                       <div
                         key={jobId}
-                        className="group relative flex min-h-[215px] cursor-pointer items-start gap-4 py-5 pr-12 transition-colors hover:bg-[#F8FAFC] sm:px-1 sm:pr-12"
+                        className="group relative flex cursor-pointer items-start gap-4 px-6 py-5 pr-12 transition-colors hover:bg-[#F8FAFC] sm:px-6 sm:pr-12"
                         onClick={() => handleViewJobDetails(job)}
                         role="button"
                         tabIndex={0}
