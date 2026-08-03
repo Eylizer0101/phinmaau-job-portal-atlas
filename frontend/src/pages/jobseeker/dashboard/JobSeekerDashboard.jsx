@@ -571,7 +571,7 @@ const JobSeekerDashboard = () => {
     if (experienceBadgeLabel) {
       tags.push({
         label: experienceBadgeLabel,
-        className: 'px-2 bg-[#EAF2FB] text-[#2e66a6] border border-[#BFD4EA]',
+        className: 'px-1.5 bg-[#EAF2FB] text-[#2e66a6] border border-[#BFD4EA]',
       });
     }
 
@@ -606,7 +606,7 @@ const JobSeekerDashboard = () => {
     if (freshGraduate) {
       tags.push({
         label: 'Open fresh grad',
-        className: 'px-2 bg-[#EAF2FB] text-[#2e66a6] border border-[#BFD4EA]',
+        className: 'px-1.5 bg-[#EAF2FB] text-[#2e66a6] border border-[#BFD4EA]',
       });
     }
 
