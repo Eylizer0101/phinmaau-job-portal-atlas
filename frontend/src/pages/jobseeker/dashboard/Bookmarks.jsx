@@ -1255,6 +1255,15 @@ const CompanyJobMiniCard = ({ job, onViewDetails, onApply, onSave, saving, isSav
   return (
     <div className="rounded-2xl p-7 bg-white shadow-sm hover:shadow-md transition flex flex-col min-h-[375px] relative border border-[#E5E7EB]">
 
+      {normalizeBoolean(job?.isUrgent) ? (
+        <img
+          src="/images/neededd.png"
+          alt="Urgent Hiring"
+          draggable="false"
+          className="pointer-events-none mb-4 h-auto w-[150px] max-w-full select-none object-contain"
+        />
+      ) : null}
+
       <button
         type="button"
         onClick={() => onSave(job)}
