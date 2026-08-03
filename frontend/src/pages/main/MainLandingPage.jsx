@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainNavbar from "../../components/shared/MainNavbar";
-import AboutUsModal from "../../components/shared/AboutUsModal";
 import api from "../../services/api";
 
 const API_ORIGIN = String(
@@ -18,342 +17,8 @@ const resolveCompanyLogoUrl = (logo) => {
   return `${API_ORIGIN}/${value.replace(/^\/+/, "")}`;
 };
 
-const truncateCompanyDescription = (value, maxLength = 120) => {
-  const description = String(value || "").trim().replace(/\s+/g, " ");
-
-  if (!description) return "No company description available.";
-  if (description.length <= maxLength) return description;
-
-  return `${description.slice(0, maxLength).trimEnd()}...`;
-};
-
-const PartnersSection = ({ partners, loading, error }) => {
-  const [visibleCount, setVisibleCount] = useState(4);
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  useEffect(() => {
-    const update = () => {
-      const w = window.innerWidth;
-      if (w < 640) setVisibleCount(1);
-      else if (w < 1024) setVisibleCount(2);
-      else setVisibleCount(4);
-    };
-
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
-  useEffect(() => {
-    setCurrentIndex(0);
-  }, [visibleCount, partners.length]);
-
-  const displayPartners = useMemo(() => {
-    if (!partners.length) return [];
-
-    const numberOfCards = Math.min(visibleCount, partners.length);
-    const items = [];
-
-    for (let i = 0; i < numberOfCards; i++) {
-      items.push(partners[(currentIndex + i) % partners.length]);
-    }
-
-    return items;
-  }, [partners, visibleCount, currentIndex]);
-
-  const showCarouselControls = partners.length > 1;
-
-  const handlePrev = () => {
-    if (!showCarouselControls) return;
-    setCurrentIndex((prev) => (prev - 1 + partners.length) % partners.length);
-  };
-
-  const handleNext = () => {
-    if (!showCarouselControls) return;
-    setCurrentIndex((prev) => (prev + 1) % partners.length);
-  };
-
-  return (
-    <div className="relative w-full max-w-[1550px] mx-auto">
-      <h2 className="text-center text-3xl md:text-4xl font-semibold text-black">
-        Find your next job with one of Our Partners
-      </h2>
-
-      <div className="relative mt-10 px-6 md:px-12">
-        {showCarouselControls && !loading && !error && (
-          <>
-            <button
-              type="button"
-              onClick={handlePrev}
-              aria-label="Previous partners"
-              className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full leading-none bg-white border border-[#212C61]/25 shadow-md flex items-center justify-center text-2xl text-[#212C61] hover:bg-[#FFD000] hover:text-black transition"
-            >
-              ‹
-            </button>
-
-            <button
-              type="button"
-              onClick={handleNext}
-              aria-label="Next partners"
-              className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full leading-none bg-white border border-[#212C61]/25 shadow-md flex items-center justify-center text-2xl text-[#212C61] hover:bg-[#FFD000] hover:text-black transition"
-            >
-              ›
-            </button>
-          </>
-        )}
-
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 px-10 md:px-14">
-            {Array.from({ length: visibleCount }).map((_, index) => (
-              <div
-                key={`partner-loading-${index}`}
-                className="h-[260px] md:h-[280px] rounded-2xl bg-[#212C61]/15 animate-pulse shadow-lg border border-[#212C61]/20"
-                aria-hidden="true"
-              />
-            ))}
-          </div>
-        ) : error ? (
-          <div className="mx-10 md:mx-14 rounded-2xl border border-[#FFD000] bg-white px-6 py-10 text-center text-black shadow-sm">
-            {error}
-          </div>
-        ) : displayPartners.length === 0 ? (
-          <div className="mx-10 md:mx-14 rounded-2xl border border-[#212C61]/20 bg-white px-6 py-10 text-center text-black/70 shadow-sm">
-            No partner companies are available right now.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 px-10 md:px-14">
-            {displayPartners.map((partner) => (
-              <article
-                key={partner.id}
-                className="relative rounded-2xl overflow-hidden shadow-lg border border-[#212C61]/20 h-[260px] md:h-[280px] bg-[#212C61]"
-                aria-label={`${partner.name} partner card`}
-              >
-                <img
-                  src="/images/helloww.png"
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-cover"
-                  loading="lazy"
-                  decoding="async"
-                  aria-hidden="true"
-                />
-
-                <div className="absolute inset-0 bg-gradient-to-r from-[#212C61]/95 via-[#212C61]/85 to-[#212C61]/50" />
-                <div className="absolute inset-0 bg-black/10" />
-
-                <div className="absolute top-4 right-4 z-10 w-12 h-12 md:w-14 md:h-14 flex items-center justify-center">
-                  <img
-                    src={partner.img}
-                    alt={`${partner.name} logo`}
-                    className="w-full h-full object-contain drop-shadow-md"
-                    loading="lazy"
-                    decoding="async"
-                    onError={(event) => {
-                      event.currentTarget.onerror = null;
-                      event.currentTarget.src = "/images/agapay.png";
-                    }}
-                  />
-                </div>
-
-                <div className="relative h-full p-5 text-white flex flex-col">
-                  <h3 className="pr-16 md:pr-20 text-xl md:text-2xl font-extrabold leading-tight drop-shadow line-clamp-2">
-                    {partner.name}
-                  </h3>
-
-                  <p className="mt-1 text-sm text-white/90 font-semibold drop-shadow line-clamp-2">
-                    {partner.industry}
-                  </p>
-
-                  <p className="mt-2 text-sm md:text-base text-white/85 leading-snug line-clamp-3 max-w-[95%]">
-                    {partner.description}
-                  </p>
-
-                  <div className="mt-auto pt-4 text-sm md:text-base font-semibold text-white/95 drop-shadow">
-                    {partner.openings} {partner.openings === 1 ? "Opening" : "Openings"}
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const MainFooter = () => {
-  const [showAboutUsModal, setShowAboutUsModal] = useState(false);
-
-  return (
-    <>
-    <footer className="bg-[#212C61] border-t-4 border-[#FFD000]">
-      <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-12 md:py-14">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-          {/* Left Column */}
-          <div>
-            <img src="/images/agapay.png" alt="AGAPAY" className="h-10 w-auto brightness-0 invert" />
-
-            <h3 className="mt-6 text-[20px] md:text-[22px] font-bold text-white leading-tight max-w-[320px]">
-              Your Future Employer is Looking for Someone Exactly Like You!
-            </h3>
-
-            <p className="mt-4 text-white/80 text-base leading-relaxed max-w-[340px]">
-              The job market is competitive but you are prepared.
-            </p>
-
-            <div className="mt-6 space-y-3 text-white/80 text-sm md:text-[15px]">
-              <p>✉ agapay@au.phinma.edu.ph</p>
-              <p>☎ +63 (2) 8123-4567</p>
-              <p className="flex items-start gap-2">
-                <svg
-                  className="w-6 h-6 text-[#FFD000] mt-1"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z" />
-                </svg>
-
-                <span>
-                  PHINMA - Araullo University, Cabanatuan City, Nueva Ecija
-                </span>
-              </p>
-            </div>
-
-            <div className="mt-6 flex items-center gap-4">
-              {/* Facebook */}
-              <div className="w-9 h-9 rounded-full bg-white border border-[#FFD000] flex items-center justify-center shadow-sm">
-                <svg
-                  className="w-4 h-4 text-[#212C61]"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path d="M22 12a10 10 0 1 0-11.5 9.9v-7h-2.6v-2.9h2.6V9.8c0-2.6 1.5-4 3.9-4 1.1 0 2.3.2 2.3.2v2.5h-1.3c-1.3 0-1.7.8-1.7 1.6v2h2.9l-.5 2.9h-2.4v7A10 10 0 0 0 22 12z" />
-                </svg>
-              </div>
-
-              {/* LinkedIn */}
-              <div className="w-9 h-9 rounded-full bg-white border border-[#FFD000] flex items-center justify-center shadow-sm">
-                <svg
-                  className="w-4 h-4 text-[#212C61]"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8h4v12h-4V8zm7.5 0h3.6v1.6h.1c.5-.9 1.7-1.8 3.5-1.8 3.7 0 4.4 2.4 4.4 5.6V20h-4v-5.3c0-1.3 0-3-1.9-3s-2.2 1.5-2.2 2.9V20h-4V8z" />
-                </svg>
-              </div>
-
-              {/* Twitter/X style */}
-              <div className="w-9 h-9 rounded-full bg-white border border-[#FFD000] flex items-center justify-center shadow-sm">
-                <svg
-                  className="w-4 h-4 text-[#212C61]"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path d="M24 4.6a9.8 9.8 0 0 1-2.8.8 4.9 4.9 0 0 0 2.2-2.7 9.8 9.8 0 0 1-3.1 1.2 4.9 4.9 0 0 0-8.4 4.5A13.9 13.9 0 0 1 1.7 3.1 4.9 4.9 0 0 0 3.2 9a4.8 4.8 0 0 1-2.2-.6v.1a4.9 4.9 0 0 0 3.9 4.8 4.9 4.9 0 0 1-2.2.1 4.9 4.9 0 0 0 4.6 3.4A9.9 9.9 0 0 1 0 19.5 13.9 13.9 0 0 0 7.5 22c9 0 13.9-7.5 13.9-14v-.6A9.7 9.7 0 0 0 24 4.6z" />
-                </svg>
-              </div>
-
-              {/* YouTube */}
-              <div className="w-9 h-9 rounded-full bg-white border border-[#FFD000] flex items-center justify-center shadow-sm">
-                <svg
-                  className="w-4 h-4 text-[#212C61]"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31.6 31.6 0 0 0 0 12a31.6 31.6 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.6 31.6 0 0 0 24 12a31.6 31.6 0 0 0-.5-5.8zM9.8 15.5v-7l6.2 3.5-6.2 3.5z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          {/* Job Seeker */}
-          <div>
-            <h4 className="text-sm font-extrabold tracking-[0.16em] text-[#FFD000] uppercase">
-              Job Seeker
-            </h4>
-
-            <ul className="mt-6 space-y-4 text-white/80 text-[15px]">
-              <li>Job Search</li>
-              <li>Job Offers</li>
-              <li>Job Application</li>
-              <li>Saved Jobs</li>
-              <li>Companies</li>
-              <li>Job Seeker Profile</li>
-            </ul>
-          </div>
-
-          {/* Employers */}
-          <div>
-            <h4 className="text-sm font-extrabold tracking-[0.16em] text-[#FFD000] uppercase">
-              Employers
-            </h4>
-
-            <ul className="mt-6 space-y-4 text-white/80 text-[15px]">
-              <li>Post Job</li>
-              <li>Find Talent</li>
-              <li>Company Profile</li>
-              <li>Manage Talent</li>
-            </ul>
-          </div>
-
-          {/* About Agapay */}
-          <div>
-            <h4 className="text-sm font-extrabold tracking-[0.16em] text-[#FFD000] uppercase">
-              About Agapay
-            </h4>
-
-            <ul className="mt-6 space-y-4 text-white/80 text-[15px]">
-              <li>
-                <button
-                  type="button"
-                  onClick={() => setShowAboutUsModal(true)}
-                  className="text-left transition hover:text-[#FFD000] focus-visible:outline-none focus-visible:text-[#FFD000] focus-visible:underline"
-                >
-                  About Us
-                </button>
-              </li>
-              <li>Contact Us</li>
-              <li>Careers</li>
-              <li>Partners with Us</li>
-              <li>Help Center</li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="mt-10 border-t border-white/30 pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <p className="text-white/70 text-sm">
-            © 2026 PHINMA ARAULLO UNIVERSITY. All rights reserved.
-          </p>
-
-          <div className="flex items-center gap-4 text-white/70 text-sm">
-            <span>Privacy Policy</span>
-            <span>|</span>
-            <span>Terms of Use</span>
-          </div>
-        </div>
-      </div>
-    </footer>
-
-      <AboutUsModal
-        open={showAboutUsModal}
-        onClose={() => setShowAboutUsModal(false)}
-      />
-    </>
-  );
-};
-
 const MainLandingPage = () => {
   const navigate = useNavigate();
-
-  const BLUE = {
-    primary: "#212C61",
-    hover: "#212C61",
-    active: "#000000",
-  };
-
   const [partners, setPartners] = useState([]);
   const [partnersLoading, setPartnersLoading] = useState(true);
   const [partnersError, setPartnersError] = useState("");
@@ -372,19 +37,23 @@ const MainLandingPage = () => {
           : [];
 
         const normalizedPartners = companies
-          .filter((company) => company?._id && String(company?.companyName || "").trim())
+          .filter(
+            (company) =>
+              company?._id &&
+              String(company?.companyName || "").trim() &&
+              String(company?.companyLogo || "").trim()
+          )
           .map((company) => ({
             id: company._id,
             name: String(company.companyName || "").trim(),
-            industry: String(company.industry || "").trim() || "Industry not specified",
-            description: truncateCompanyDescription(company.about),
             openings: Math.max(0, Number(company.openingsCount) || 0),
-            img: resolveCompanyLogoUrl(company.companyLogo),
+            logo: resolveCompanyLogoUrl(company.companyLogo),
           }))
           .sort(
             (a, b) =>
               b.openings - a.openings || a.name.localeCompare(b.name)
-          );
+          )
+          .slice(0, 9);
 
         if (isMounted) {
           setPartners(normalizedPartners);
@@ -394,7 +63,9 @@ const MainLandingPage = () => {
 
         if (isMounted) {
           setPartners([]);
-          setPartnersError("We couldn't load partner companies right now. Please try again later.");
+          setPartnersError(
+            "We couldn't load partner company logos right now."
+          );
         }
       } finally {
         if (isMounted) {
@@ -407,6 +78,20 @@ const MainLandingPage = () => {
 
     return () => {
       isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const updateBodyScroll = () => {
+      document.body.style.overflow = window.innerWidth >= 1024 ? "hidden" : "";
+    };
+
+    updateBodyScroll();
+    window.addEventListener("resize", updateBodyScroll);
+
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("resize", updateBodyScroll);
     };
   }, []);
 
@@ -435,165 +120,160 @@ const MainLandingPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white lg:h-screen lg:overflow-hidden">
       <MainNavbar />
 
-      <main>
-        {/* HERO */}
-        <section className="px-4 pt-16 md:pt-20 pb-10 min-h-[calc(100dvh-4rem)] md:min-h-0 flex items-center md:block">
-          <div className="max-w-6xl mx-auto w-full">
-            <div className="mt-0 md:mt-8 text-center">
-              <div className="flex justify-center">
-                <img
-                  src="/images/agpay.png"
-                  alt="AGAPAY"
-                  className="h-28 md:h-44 w-auto"
-                  decoding="async"
-                  fetchPriority="high"
-                />
-              </div>
+      <main className="relative min-h-screen overflow-hidden bg-white pt-16 lg:h-[calc(100vh-64px)] lg:min-h-0">
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-[72%]"
+          aria-hidden="true"
+          style={{
+            background:
+              "radial-gradient(circle at 8% 58%, rgba(114,181,238,0.34), transparent 31%), radial-gradient(circle at 94% 42%, rgba(121,190,240,0.32), transparent 31%), linear-gradient(180deg, #ffffff 0%, #f7fbff 48%, #ffffff 100%)",
+          }}
+        />
 
-              <h1 className="font-sans font-semibold text-black text-2xl md:text-4xl lg:text-5xl max-w-4xl mx-auto leading-tight">
-                Your Dream Job and Team is{" "}
-                <span className="block md:inline" style={{ color: BLUE.primary }}>
-                  Just <br className="hidden md:block" />A Click Away
-                </span>
-              </h1>
-
-              <p className="mt-4 text-black/70 max-w-2xl mx-auto leading-relaxed text-lg">
-                Create an account or sign in to explore jobs and top talent all in one place.
-                <br />
-                <span className="font-semibold" style={{ color: BLUE.primary }}>
-                  The simplest way to career opportunities starts here.
-                </span>
-              </p>
-
-              <div className="mt-7">
-                <button
-                  type="button"
-                  onClick={() => navigate("/jobs")}
-                  className={[
-                    "w-[220px] inline-flex items-center justify-center gap-3 py-3 rounded-xl font-semibold",
-                    "text-white transition-colors shadow-sm",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD000] focus-visible:ring-offset-2",
-                  ].join(" ")}
-                  style={{ backgroundColor: BLUE.primary }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = BLUE.hover)}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = BLUE.primary)}
-                  onMouseDown={(e) => (e.currentTarget.style.backgroundColor = BLUE.active)}
-                  onMouseUp={(e) => (e.currentTarget.style.backgroundColor = BLUE.hover)}
-                >
-                  <span>Find your job</span>
-                  <svg
-                    className="h-5 w-5 shrink-0"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M5 12h14M13 6l6 6-6 6"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
-              </div>
-
-            <div className="mt-10 flex justify-center">
-  <div
-    className="inline-flex items-center gap-1 text-black/70 select-none"
-    aria-hidden="true"
-  >
-    <span className="text-[13px] md:text-sm font-normal">
-      Explore more
-    </span>
-
-    <svg
-      className="w-5 h-5"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      aria-hidden="true"
-    >
-      <path
-        d="M6 9l6 6 6-6"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  </div>
-</div>
-            </div>
-          </div>
-        </section>
-
-        {/* OUR CAMPUSES */}
-        <section id="campuses-section" className="px-4 pb-16 md:pb-20 mt-24 md:mt-28">
-          <div className="max-w-[1400px] mx-auto">
-            <div className="mb-8 md:mb-10">
-              <h2 className="text-3xl md:text-4xl font-semibold text-black"></h2>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {campuses.map((campus) => (
-                <article
-                  key={campus.id}
-                  className="group relative h-[260px] md:h-[300px] rounded-2xl overflow-hidden shadow-lg border border-black/10 bg-white"
-                  aria-label={`${campus.name} campus card`}
-                >
-                  <img
-                    src={campus.img}
-                    alt={campus.name}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    loading="lazy"
-                    decoding="async"
-                  />
-
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-black/10" />
-
-                  <div className="relative h-full flex flex-col justify-end p-5 md:p-6 text-white">
-                    <h3 className="text-xl md:text-2xl font-semibold leading-tight drop-shadow">
-                      {campus.name}
-                    </h3>
-
-                    <p className="mt-2 text-sm md:text-base text-white/90 drop-shadow flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        className="w-4 h-4 shrink-0"
-                        aria-hidden="true"
-                      >
-                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z" />
-                      </svg>
-                      <span>{campus.location}</span>
-                    </p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* PARTNERS */}
-        <section
-          className={[
-            "px-4",
-            "py-16 sm:py-20 md:py-24",
-            "bg-white",
-          ].join(" ")}
+        <div
+          className="pointer-events-none absolute -left-20 top-[18%] h-72 w-72 rounded-full border-[26px] border-white/50"
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-none absolute right-5 top-24 grid grid-cols-4 gap-3 opacity-25"
+          aria-hidden="true"
         >
-          <PartnersSection
-            partners={partners}
-            loading={partnersLoading}
-            error={partnersError}
-          />
-        </section>
+          {Array.from({ length: 16 }).map((_, index) => (
+            <span
+              key={`hero-dot-${index}`}
+              className="h-1.5 w-1.5 rounded-full bg-[#1e4ba0]"
+            />
+          ))}
+        </div>
+
+        <div className="relative mx-auto flex min-h-[calc(100vh-64px)] w-full max-w-[1450px] flex-col px-5 pb-6 pt-8 sm:px-8 lg:h-full lg:min-h-0 lg:px-12 lg:pb-4 lg:pt-5">
+          <section className="shrink-0 text-center">
+            <h1 className="mx-auto max-w-4xl text-[34px] font-extrabold leading-[1.08] tracking-tight text-black sm:text-5xl lg:text-[54px]">
+              Your Future Employer is
+              <span className="block">
+                Looking for{" "}
+                <span className="text-[#1e4ba0]">
+                  Someone Exactly Like You!
+                </span>
+              </span>
+            </h1>
+
+            <p className="mt-4 text-base font-medium text-slate-700 sm:text-lg lg:mt-3">
+              The job market is competitive but you are prepared.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => navigate("/jobs")}
+              className="mt-5 inline-flex h-14 min-w-[290px] items-center justify-center gap-5 rounded-2xl bg-[#212C61] px-8 text-lg font-semibold text-white shadow-sm transition hover:bg-[#17224f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1e4ba0] focus-visible:ring-offset-2 lg:mt-4 lg:h-12 lg:min-w-[270px]"
+            >
+              <span>Find your job</span>
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  d="M5 12h14M13 6l6 6-6 6"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </section>
+
+          <section className="mx-auto mt-7 grid w-full max-w-[1240px] grid-cols-1 gap-5 sm:grid-cols-2 lg:mt-5 lg:grid-cols-3 lg:gap-6">
+            {campuses.map((campus) => (
+              <article
+                key={campus.id}
+                className="group relative h-[230px] overflow-hidden rounded-2xl border border-black/10 bg-slate-100 shadow-md sm:last:col-span-2 lg:h-[210px] lg:last:col-span-1"
+              >
+                <img
+                  src={campus.img}
+                  alt={campus.name}
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="eager"
+                  decoding="async"
+                />
+
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
+
+                <div className="relative flex h-full flex-col justify-end p-5 text-left text-white">
+                  <h2 className="text-2xl font-bold leading-none drop-shadow">
+                    {campus.name}
+                  </h2>
+
+                  <p className="mt-2 flex items-center gap-2 text-sm font-medium text-white/95 drop-shadow">
+                    <svg
+                      className="h-4 w-4 shrink-0"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z" />
+                    </svg>
+                    <span>{campus.location}</span>
+                  </p>
+                </div>
+              </article>
+            ))}
+          </section>
+
+          <section className="mt-8 shrink-0 text-center lg:mt-5">
+            <h2 className="text-2xl font-extrabold text-black lg:text-[28px]">
+              Find your next job with one of Our Partners
+            </h2>
+
+            <div className="mx-auto mt-5 grid w-full max-w-[1380px] grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5 lg:mt-3 lg:grid-cols-9 lg:gap-3">
+              {partnersLoading
+                ? Array.from({ length: 9 }).map((_, index) => (
+                    <div
+                      key={`partner-loading-${index}`}
+                      className="flex h-[92px] items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm"
+                    >
+                      <div className="h-12 w-20 animate-pulse rounded bg-slate-200" />
+                    </div>
+                  ))
+                : partners.map((partner) => (
+                    <div
+                      key={partner.id}
+                      className="flex h-[92px] items-center justify-center rounded-xl border border-slate-200 bg-white px-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                      title={partner.name}
+                    >
+                      <img
+                        src={partner.logo}
+                        alt={`${partner.name} logo`}
+                        className="max-h-[58px] max-w-full object-contain"
+                        loading="lazy"
+                        decoding="async"
+                        onError={(event) => {
+                          event.currentTarget.onerror = null;
+                          event.currentTarget.src = "/images/agapay.png";
+                        }}
+                      />
+                    </div>
+                  ))}
+            </div>
+
+            {!partnersLoading && partnersError ? (
+              <p className="mt-3 text-sm text-slate-500">{partnersError}</p>
+            ) : null}
+
+            {!partnersLoading && !partnersError && partners.length === 0 ? (
+              <p className="mt-3 text-sm text-slate-500">
+                No partner company logos are available right now.
+              </p>
+            ) : null}
+          </section>
+        </div>
       </main>
-</div>
+    </div>
   );
 };
 
