@@ -1404,6 +1404,15 @@ const CompanyViewDetails = () => {
   });
   const ratingValue = accurateReviewSummary.rating;
   const reviewCount = accurateReviewSummary.reviewCount;
+  const ratingBreakdown = {
+    5: Number(company?.ratingBreakdown?.[5] || 0),
+    4: Number(company?.ratingBreakdown?.[4] || 0),
+    3: Number(company?.ratingBreakdown?.[3] || 0),
+    2: Number(company?.ratingBreakdown?.[2] || 0),
+    1: Number(company?.ratingBreakdown?.[1] || 0),
+  };
+  const previewJobs = companyJobs.slice(0, 6);
+  const previewReviews = reviews.slice(0, 6);
 
   const socialLinks = useMemo(() => {
     if (!company) return [];
@@ -1711,13 +1720,15 @@ The company also values transparency, teamwork, and continuous improvement, crea
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => navigate("/jobseeker/job-search")}
-                className="text-[15px] font-medium text-black/70 hover:text-black inline-flex items-center gap-2"
-              >
-                View all jobs <span aria-hidden="true">→</span>
-              </button>
+              {jobsCount > 6 ? (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/jobseeker/company-details/${id}/jobs`)}
+                  className="text-[15px] font-medium text-black/70 hover:text-black inline-flex items-center gap-2"
+                >
+                  View all jobs <span aria-hidden="true">→</span>
+                </button>
+              ) : null}
             </div>
 
             {companyJobs.length === 0 ? (
@@ -1728,7 +1739,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
               />
             ) : (
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {companyJobs.map((job) => {
+                {previewJobs.map((job) => {
                   const jobId = job._id || job.id;
                   const experienceBadgeLabel = getExperienceBadgeLabel(job.experienceLevel);
                   const tagFreshGrad = isFreshGraduateJob(job);
@@ -1991,24 +2002,60 @@ The company also values transparency, teamwork, and continuous improvement, crea
 
         {activeTab === "reviews" && (
           <div className={`${UI.card} ${UI.pad} mt-6`}>
-            <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_520px] xl:items-start">
               <div>
                 <h2 className="text-[24px] font-bold text-black">
-              Application process at {company.companyName || "Company"}
+                  Application process at {company.companyName || "Company"}
                 </h2>
                 <p className="mt-1 text-black/65 text-[16px]">
                   {reviewCount} review{reviewCount === 1 ? "" : "s"}
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => reviewsListRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                className="text-[15px] font-medium text-[#2e66a6] hover:text-[#25578f] inline-flex items-center gap-2"
-              >
-                See all reviews <span aria-hidden="true">→</span>
-              </button>
+              <div className="rounded-2xl border border-[#dfe7f0] bg-[#fbfcfe] p-5 sm:p-6">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-[170px_minmax(0,1fr)] sm:items-center">
+                  <div className="text-center sm:border-r sm:border-[#dfe7f0] sm:pr-5">
+                    <p className="text-5xl font-bold leading-none text-[#27364a]">
+                      {Number(ratingValue || 0).toFixed(1)}
+                    </p>
+                    <div className="mt-3 flex justify-center gap-1" aria-label={`${Number(ratingValue || 0).toFixed(1)} out of 5 stars`}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <span key={star} className={`text-2xl ${star <= Math.round(ratingValue) ? "text-[#f2b313]" : "text-[#d9e0e8]"}`}>★</span>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-sm text-black/65">{reviewCount} ratings in total</p>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {[5, 4, 3, 2, 1].map((star) => {
+                      const count = ratingBreakdown[star] || 0;
+                      const percent = reviewCount > 0 ? Math.min(100, (count / reviewCount) * 100) : 0;
+                      return (
+                        <div key={star} className="grid grid-cols-[16px_minmax(0,1fr)_28px] items-center gap-3">
+                          <span className="text-sm font-medium text-black/70">{star}</span>
+                          <div className="h-3 overflow-hidden rounded-full bg-[#e9edf2]">
+                            <div className="h-full rounded-full bg-[#f2b313]" style={{ width: `${percent}%` }} />
+                          </div>
+                          <span className="text-right text-sm text-black/65">{count}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {reviewCount > 6 ? (
+              <div className="mt-5 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/jobseeker/company-details/${id}/reviews`)}
+                  className="text-[15px] font-medium text-[#2e66a6] hover:text-[#25578f] inline-flex items-center gap-2"
+                >
+                  See all reviews <span aria-hidden="true">→</span>
+                </button>
+              </div>
+            ) : null}
 
             <div ref={reviewsListRef} className="mt-6 space-y-5 scroll-mt-24">
               {reviews.length === 0 ? (
@@ -2018,7 +2065,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
                   description="Be the first to share your hiring process experience with this company."
                 />
               ) : (
-                reviews.map((review) => (
+                previewReviews.map((review) => (
                   <article
                     key={review.id || review._id}
                     className="rounded-2xl border border-[#dfe7f0] bg-white px-5 py-5 sm:px-6 sm:py-6 shadow-[0_10px_28px_rgba(46,102,166,0.06)]"
