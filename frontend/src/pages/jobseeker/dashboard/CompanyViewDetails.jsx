@@ -2002,7 +2002,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
 
         {activeTab === "reviews" && (
           <div className={`${UI.card} ${UI.pad} mt-6`}>
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_520px] xl:items-start">
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[430px_440px] xl:items-start xl:justify-start">
               <div>
                 <h2 className="text-[24px] font-bold text-black">
                   Application process at {company.companyName || "Company"}
@@ -2012,28 +2012,28 @@ The company also values transparency, teamwork, and continuous improvement, crea
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-[#dfe7f0] bg-[#fbfcfe] p-5 sm:p-6">
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-[170px_minmax(0,1fr)] sm:items-center">
-                  <div className="text-center sm:border-r sm:border-[#dfe7f0] sm:pr-5">
-                    <p className="text-5xl font-bold leading-none text-[#27364a]">
+              <div className="w-full max-w-[440px] rounded-2xl border border-[#dfe7f0] bg-[#fbfcfe] p-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-[145px_minmax(0,1fr)] sm:items-center">
+                  <div className="text-center sm:border-r sm:border-[#dfe7f0] sm:pr-4">
+                    <p className="text-4xl font-bold leading-none text-[#27364a]">
                       {Number(ratingValue || 0).toFixed(1)}
                     </p>
-                    <div className="mt-3 flex justify-center gap-1" aria-label={`${Number(ratingValue || 0).toFixed(1)} out of 5 stars`}>
+                    <div className="mt-2 flex justify-center gap-0.5" aria-label={`${Number(ratingValue || 0).toFixed(1)} out of 5 stars`}>
                       {[1, 2, 3, 4, 5].map((star) => (
-                        <span key={star} className={`text-2xl ${star <= Math.round(ratingValue) ? "text-[#f2b313]" : "text-[#d9e0e8]"}`}>★</span>
+                        <span key={star} className={`text-xl ${star <= Math.round(ratingValue) ? "text-[#f2b313]" : "text-[#d9e0e8]"}`}>★</span>
                       ))}
                     </div>
-                    <p className="mt-2 text-sm text-black/65">{reviewCount} ratings in total</p>
+                    <p className="mt-1.5 text-[13px] text-black/65">{reviewCount} ratings in total</p>
                   </div>
 
-                  <div className="space-y-2.5">
+                  <div className="space-y-2">
                     {[5, 4, 3, 2, 1].map((star) => {
                       const count = ratingBreakdown[star] || 0;
                       const percent = reviewCount > 0 ? Math.min(100, (count / reviewCount) * 100) : 0;
                       return (
                         <div key={star} className="grid grid-cols-[16px_minmax(0,1fr)_28px] items-center gap-3">
                           <span className="text-sm font-medium text-black/70">{star}</span>
-                          <div className="h-3 overflow-hidden rounded-full bg-[#e9edf2]">
+                          <div className="h-2.5 overflow-hidden rounded-full bg-[#e9edf2]">
                             <div className="h-full rounded-full bg-[#f2b313]" style={{ width: `${percent}%` }} />
                           </div>
                           <span className="text-right text-sm text-black/65">{count}</span>
