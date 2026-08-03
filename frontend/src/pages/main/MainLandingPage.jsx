@@ -137,11 +137,11 @@ const MainLandingPage = () => {
       <main className="relative min-h-screen overflow-hidden bg-white pt-16 lg:h-[calc(100vh-64px)] lg:min-h-0">
         <div className="relative mx-auto flex min-h-[calc(100vh-64px)] w-full max-w-[1450px] flex-col px-5 pb-6 pt-8 sm:px-8 lg:h-full lg:min-h-0 lg:px-12 lg:pb-4 lg:pt-5">
           <section className="shrink-0 text-center">
-            <h1 className="mx-auto max-w-[1240px] text-[34px] font-extrabold leading-[1.08] tracking-tight text-black sm:text-5xl lg:text-[50px] xl:text-[54px]">
+            <h1 className="mx-auto max-w-[1240px] text-[34px] font-bold leading-[1.12] tracking-tight text-[#111111] sm:text-5xl lg:text-[50px] xl:text-[54px]">
               <span className="block">Your Future Employer is</span>
               <span className="block lg:whitespace-nowrap">
                 Looking for{" "}
-                <span className="font-semibold text-[#2F5FBF]">
+                <span className="font-semibold tracking-[-0.02em] text-[#3558A8]">
                   Someone Exactly Like You!
                 </span>
               </span>
