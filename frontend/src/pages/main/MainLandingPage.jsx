@@ -147,7 +147,7 @@ const MainLandingPage = () => {
               </span>
             </h1>
 
-            <p className="mt-4 text-base font-medium text-[#202020]  sm:text-lg lg:mt-3">
+            <p className="mt-4 text-base font-semibold text-[#202020]  sm:text-lg lg:mt-3">
               The job market is competitive but you are prepared.
             </p>
 
