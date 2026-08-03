@@ -1793,50 +1793,34 @@ const JobSearch = () => {
 
                         <div className="mt-3 w-full h-px bg-gray-300/80" />
 
-                        <div className="pt-4 flex items-center justify-between">
-                          <button onClick={() => handleViewJobDetails(job)} className={ghostLink}>
-                            View Details
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              aria-hidden="true"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                            </svg>
+                        <div className="pt-4">
+                          <button
+                            type="button"
+                            onClick={() => handleViewJobDetails(job)}
+                            disabled={hasApplied || isJobClosed}
+                            className={`${primaryBtn} w-full min-h-[44px] justify-center`}
+                            style={{
+                              backgroundColor: hasApplied ? '#dbeafe' : isJobClosed ? '#e5e7eb' : COLORS.primary,
+                              color: hasApplied ? '#1d4ed8' : isJobClosed ? '#6b7280' : '#ffffff',
+                              border: hasApplied ? '1px solid #bfdbfe' : isJobClosed ? '1px solid #d1d5db' : '1px solid transparent'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!hasApplied && !isJobClosed) e.currentTarget.style.backgroundColor = COLORS.primaryHover;
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!hasApplied && !isJobClosed) e.currentTarget.style.backgroundColor = COLORS.primary;
+                            }}
+                            onMouseDown={(e) => {
+                              if (!hasApplied && !isJobClosed) e.currentTarget.style.backgroundColor = COLORS.primaryActive;
+                            }}
+                            onMouseUp={(e) => {
+                              if (!hasApplied && !isJobClosed) e.currentTarget.style.backgroundColor = COLORS.primaryHover;
+                            }}
+                            aria-disabled={hasApplied || isJobClosed}
+                            title={hasApplied ? 'You already applied for this job' : isFilled ? 'The vacancy is already full' : isJobClosed ? 'This job is no longer accepting applications' : 'Open job details to apply'}
+                          >
+                            {hasApplied ? 'Already Applied' : isFilled ? 'Vacancy Full' : isJobClosed ? 'Closed' : 'Apply Now'}
                           </button>
-
-                          <div className="flex flex-col items-end">
-                            <button
-                              onClick={() => handleApplyClick(job)}
-                              disabled={hasApplied || isJobClosed}
-                              className={primaryBtn}
-                              style={{
-                                backgroundColor: hasApplied ? '#dbeafe' : isJobClosed ? '#e5e7eb' : COLORS.primary,
-                                color: hasApplied ? '#1d4ed8' : isJobClosed ? '#6b7280' : '#ffffff',
-                                border: hasApplied ? '1px solid #bfdbfe' : isJobClosed ? '1px solid #d1d5db' : '1px solid transparent'
-                              }}
-                              onMouseEnter={(e) => {
-                                if (!hasApplied && !isJobClosed) e.currentTarget.style.backgroundColor = COLORS.primaryHover;
-                              }}
-                              onMouseLeave={(e) => {
-                                if (!hasApplied && !isJobClosed) e.currentTarget.style.backgroundColor = COLORS.primary;
-                              }}
-                              onMouseDown={(e) => {
-                                if (!hasApplied && !isJobClosed) e.currentTarget.style.backgroundColor = COLORS.primaryActive;
-                              }}
-                              onMouseUp={(e) => {
-                                if (!hasApplied && !isJobClosed) e.currentTarget.style.backgroundColor = COLORS.primaryHover;
-                              }}
-                              aria-disabled={hasApplied || isJobClosed}
-                              title={hasApplied ? 'You already applied for this job' : isFilled ? 'The vacancy is already full' : isJobClosed ? 'This job is no longer accepting applications' : 'Apply now'}
-                            >
-                              {hasApplied ? 'Already Applied' : isFilled ? 'Vacancy Full' : isJobClosed ? 'Closed' : 'Apply Now'}
-                            </button>
-
-                          
-                          </div>
                         </div>
                       </div>
                     );

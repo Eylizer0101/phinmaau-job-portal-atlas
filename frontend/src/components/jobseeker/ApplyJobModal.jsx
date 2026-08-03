@@ -452,26 +452,28 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                         </p>
                       </div>
 
-                      <div className="mt-12">
-                        {renderHeader('small')}
-                      </div>
-
-                      <div className="mt-10 space-y-4">
+                      <div className="mt-6">
                         <button
                           type="button"
                           onClick={handleGoToProfile}
-                          className="w-full h-[58px] rounded-[16px] text-white text-[18px] font-bold shadow-[0_14px_30px_rgba(46,102,166,0.24)] hover:opacity-95 active:scale-[0.99] transition"
-                          style={{ backgroundColor: COLORS.primary }}
+                          className="inline-flex items-center gap-1 text-[14px] font-semibold text-[#2e66a6] underline underline-offset-4 transition hover:text-[#25578f]"
                         >
                           Take me there! →
                         </button>
+                      </div>
 
+                      <div className="mt-8">
+                        {renderHeader('small')}
+                      </div>
+
+                      <div className="mt-8">
                         <button
                           type="button"
                           onClick={handleContinueToPrivacy}
-                          className="w-full h-[58px] rounded-[16px] border border-[#d8e2ee] bg-[#f7faff] text-[18px] font-semibold text-black/65 hover:bg-[#eaf2fb] active:scale-[0.99] transition"
+                          className="w-full h-[58px] rounded-[16px] text-white text-[18px] font-bold shadow-[0_14px_30px_rgba(46,102,166,0.24)] hover:bg-[#25578f] active:bg-[#1f4b7c] active:scale-[0.99] transition"
+                          style={{ backgroundColor: COLORS.primary }}
                         >
-                          Continue to apply
+                          Continue to Apply
                         </button>
                       </div>
                     </div>
@@ -535,7 +537,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                       </div>
 
                       <h3 className="mt-8 text-[32px] sm:text-[38px] font-medium text-black leading-tight">
-                        Your Application has Been Delivered
+                        Application Submitted
                       </h3>
 
                       <div className="mt-8 text-[17px] text-black/55 leading-8 max-w-[500px] mx-auto">
@@ -544,8 +546,9 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                       </div>
 
                       <p className="mt-8 text-[15px] text-black/45 leading-7 max-w-[480px] mx-auto">
-                        They will be in touch should your qualifications align with their needs.
-                        In the meantime, your application is safely on file.
+                        The employer will contact you if your qualifications align with their hiring needs.
+                        <br />
+                        In the meantime, your application is on file and awaiting review.
                       </p>
 
                       <div className="mt-10 h-px bg-[#e6edf5] max-w-[320px] mx-auto" />
@@ -554,25 +557,17 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                         What&apos;s next?
                       </div>
 
-                      <div className="mt-5 max-w-[300px] mx-auto space-y-3">
-                        <button
-                          type="button"
-                          onClick={() => closeAndReset()}
-                          className="w-full h-[48px] rounded-xl text-white text-[15px] font-bold shadow-[0_10px_22px_rgba(46,102,166,0.18)] hover:opacity-95 transition"
-                          style={{ backgroundColor: COLORS.primary }}
-                        >
-                          Browse More Opportunities
-                        </button>
-
+                      <div className="mt-5 max-w-[300px] mx-auto">
                         <button
                           type="button"
                           onClick={() => {
                             closeAndReset();
-                            navigate('/jobseeker/dashboard');
+                            navigate('/jobseeker/job-search');
                           }}
-                          className="w-full h-[48px] rounded-xl border border-[#d8e2ee] bg-[#f7faff] text-black/70 text-[15px] font-semibold hover:bg-[#eaf2fb] transition"
+                          className="w-full h-[48px] rounded-xl text-white text-[15px] font-bold shadow-[0_10px_22px_rgba(46,102,166,0.18)] hover:opacity-95 transition"
+                          style={{ backgroundColor: COLORS.primary }}
                         >
-                          Return to Dashboard
+                          Browse More Opportunities
                         </button>
                       </div>
                     </div>
