@@ -274,62 +274,6 @@ const LoadingSkeleton = () => (
   </div>
 );
 
-const DropdownMenu = ({ isOpen, onToggle, onClose, onWithdraw, disabled }) => {
-  const wrapperRef = useRef(null);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleOutsideClick = (event) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-        onClose();
-      }
-    };
-
-    const handleEscape = (event) => {
-      if (event.key === 'Escape') onClose();
-    };
-
-    document.addEventListener('mousedown', handleOutsideClick);
-    document.addEventListener('keydown', handleEscape);
-
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [isOpen, onClose]);
-
-  return (
-    <div ref={wrapperRef} className="relative">
-      <button
-        type="button"
-        onClick={onToggle}
-        className={`${UI.btnBase} ${UI.ring} h-10 w-10 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50`}
-        aria-haspopup="menu"
-        aria-expanded={isOpen}
-        aria-label="Open application actions"
-      >
-        <SvgIcon name="dots" className="w-5 h-5" />
-      </button>
-
-      {isOpen && (
-        <div className="absolute right-0 top-12 z-20 min-w-[170px] rounded-xl border border-gray-200 bg-white shadow-lg p-1">
-          <button
-            type="button"
-            onClick={onWithdraw}
-            disabled={disabled}
-            className={`w-full text-left rounded-lg px-3 py-2 text-sm font-medium ${UI.ring} ${
-              disabled ? 'text-gray-400 cursor-not-allowed' : 'text-red-700 hover:bg-red-50'
-            }`}
-          >
-            Withdraw
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
-
 const MyApplications = () => {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -337,13 +281,13 @@ const MyApplications = () => {
   const [error, setError] = useState('');
   const [lastUpdated, setLastUpdated] = useState(null);
   const [needsLogin, setNeedsLogin] = useState(false);
-  const [openMenuId, setOpenMenuId] = useState('');
   const [actionLoadingId, setActionLoadingId] = useState('');
   const [actionMessage, setActionMessage] = useState('');
   const [mainTab, setMainTab] = useState('active');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [visibleApplicationCount, setVisibleApplicationCount] = useState(7);
-  const [loadingMoreApplications, setLoadingMoreApplications] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -441,7 +385,7 @@ const MyApplications = () => {
     if (statusValue === 'pending') {
       return {
         text: 'Pending',
-        badgeClass: 'bg-black/5 text-black/80 border-black/20',
+        badgeClass: 'text-amber-700',
       };
     }
 
@@ -495,20 +439,20 @@ const MyApplications = () => {
 
     switch (normalizedStatus) {
       case 'for interview':
-        return 'bg-[#2e66a6]/10 text-[#2e66a6] border-[#2e66a6]/25';
+        return 'text-[#2e66a6]';
       case 'hired':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        return 'text-emerald-700';
       case 'withdrawn':
-        return 'bg-red-50 text-red-700 border-red-200';
+        return 'text-red-700';
       case 'cancelled':
-        return 'bg-gray-100 text-gray-700 border-gray-200';
+        return 'text-gray-600';
       case 'declined':
-        return 'bg-black/5 text-black/80 border-black/20';
+        return 'text-gray-700';
       case 'vacancy full':
-        return 'bg-orange-50 text-orange-700 border-orange-200';
+        return 'text-orange-700';
       case 'pending':
       default:
-        return 'bg-black/5 text-black/80 border-black/20';
+        return 'text-gray-700';
     }
   };
 
@@ -573,7 +517,6 @@ const MyApplications = () => {
 
   const handleMainTabChange = (nextTab) => {
     setMainTab(nextTab);
-    setOpenMenuId('');
     setActionMessage('');
 
     if (nextTab === 'inactive') {
@@ -592,7 +535,6 @@ const MyApplications = () => {
   };
 
   const handleStatusFilterChange = (nextStatus) => {
-    setOpenMenuId('');
     setActionMessage('');
 
     if (nextStatus === 'declined') {
@@ -662,30 +604,48 @@ const MyApplications = () => {
     return activeApps.filter((app) => (app.status || '').toLowerCase() === statusFilter);
   }, [applications, mainTab, statusFilter]);
 
-  const visibleApplications = useMemo(
-    () => filteredApplications.slice(0, visibleApplicationCount),
-    [filteredApplications, visibleApplicationCount]
-  );
+  const searchedApplications = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return filteredApplications;
 
-  const hasMoreApplications = visibleApplicationCount < filteredApplications.length;
+    return filteredApplications.filter((application) => {
+      const statusText = getStatusText(application);
+      const salaryText = formatPesoRange(application.job?.salaryMin, application.job?.salaryMax) || '';
+      const searchableValues = [
+        application.job?.title,
+        application.job?.companyName,
+        application.job?.location,
+        application.job?.jobType,
+        application.job?.workMode,
+        salaryText,
+        statusText,
+      ];
+
+      return searchableValues.some((value) =>
+        String(value || '').toLowerCase().includes(query)
+      );
+    });
+  }, [filteredApplications, searchQuery]);
+
+  const totalPages = pageSize === 'all'
+    ? 1
+    : Math.max(1, Math.ceil(searchedApplications.length / pageSize));
+
+  const paginatedApplications = useMemo(() => {
+    if (pageSize === 'all') return searchedApplications;
+    const startIndex = (currentPage - 1) * pageSize;
+    return searchedApplications.slice(startIndex, startIndex + pageSize);
+  }, [searchedApplications, currentPage, pageSize]);
+
+  const showPagination = pageSize !== 'all' && searchedApplications.length > pageSize;
 
   useEffect(() => {
-    setVisibleApplicationCount(7);
-    setLoadingMoreApplications(false);
-  }, [mainTab, statusFilter]);
+    setCurrentPage(1);
+  }, [mainTab, statusFilter, searchQuery, pageSize]);
 
-  const handleSeeMoreApplications = () => {
-    if (loadingMoreApplications || !hasMoreApplications) return;
-
-    setLoadingMoreApplications(true);
-
-    window.setTimeout(() => {
-      setVisibleApplicationCount((current) =>
-        Math.min(current + 7, filteredApplications.length)
-      );
-      setLoadingMoreApplications(false);
-    }, 500);
-  };
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   const filterLabel = useMemo(() => {
     if (statusFilter === 'declined') return 'Declined Applications';
@@ -759,8 +719,7 @@ const MyApplications = () => {
       setActionLoadingId(applicationId);
       setActionMessage('');
       setError('');
-      setOpenMenuId('');
-
+  
       const response = await api.put(`/applications/${applicationId}/withdraw`);
 
       if (response.data.success) {
@@ -945,12 +904,8 @@ const MyApplications = () => {
                       ].join(' ')}
                       type="button"
                     >
-                      <span
-                        className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
-                          active ? 'bg-[#2e66a6]/10 text-[#2e66a6]' : 'bg-gray-200 text-gray-700'
-                        }`}
-                      >
-                        <SvgIcon name={item.icon} className="w-4 h-4" />
+                      <span className={`flex-shrink-0 ${active ? 'text-[#2e66a6]' : 'text-gray-700'}`}>
+                        <SvgIcon name={item.icon} className="w-5 h-5" />
                       </span>
                       <span>{item.label}</span>
                       <span className="ml-1 inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded-full text-xs bg-gray-200 text-gray-800">
@@ -973,8 +928,8 @@ const MyApplications = () => {
                   <div className="mt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                     <div className="p-4 rounded-xl border border-gray-200 bg-white">
                       <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-black/5 border border-black/15 flex items-center justify-center text-black/70">
-                          <SvgIcon name="clock" className="w-5 h-5" />
+                        <div className="flex-shrink-0 text-black/70">
+                          <SvgIcon name="clock" className="w-6 h-6" />
                         </div>
                         <div>
                           <p className={`font-semibold ${UI.textPrimary}`}>Pending</p>
@@ -985,8 +940,8 @@ const MyApplications = () => {
 
                     <div className="p-4 rounded-xl border border-gray-200 bg-white">
                       <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-[#2e66a6]/10 border border-[#2e66a6]/20 flex items-center justify-center text-[#2e66a6]">
-                          <SvgIcon name="star" className="w-5 h-5" />
+                        <div className="flex-shrink-0 text-[#2e66a6]">
+                          <SvgIcon name="star" className="w-6 h-6" />
                         </div>
                         <div>
                           <p className={`font-semibold ${UI.textPrimary}`}>For Interview</p>
@@ -997,8 +952,8 @@ const MyApplications = () => {
 
                     <div className="p-4 rounded-xl border border-gray-200 bg-white">
                       <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700">
-                          <SvgIcon name="checkCircle" className="w-5 h-5" />
+                        <div className="flex-shrink-0 text-emerald-700">
+                          <SvgIcon name="checkCircle" className="w-6 h-6" />
                         </div>
                         <div>
                           <p className={`font-semibold ${UI.textPrimary}`}>Hired</p>
@@ -1009,8 +964,8 @@ const MyApplications = () => {
 
                     <div className="p-4 rounded-xl border border-gray-200 bg-white">
                       <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-black/5 border border-black/15 flex items-center justify-center text-black/70">
-                          <SvgIcon name="timesCircle" className="w-5 h-5" />
+                        <div className="flex-shrink-0 text-black/70">
+                          <SvgIcon name="timesCircle" className="w-6 h-6" />
                         </div>
                         <div>
                           <p className={`font-semibold ${UI.textPrimary}`}>Declined</p>
@@ -1060,11 +1015,45 @@ const MyApplications = () => {
             </div>
           </div>
 
+          <div className={`${UI.card} p-4`}>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="relative w-full sm:max-w-xl">
+                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="m21 21-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </span>
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search applications..."
+                  className={`h-11 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 placeholder:text-gray-400 ${UI.ring}`}
+                  aria-label="Search applications"
+                />
+              </div>
+
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <span className="whitespace-nowrap">Display per page</span>
+                <select
+                  value={pageSize}
+                  onChange={(event) => setPageSize(event.target.value === 'all' ? 'all' : Number(event.target.value))}
+                  className={`h-11 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-800 ${UI.ring}`}
+                >
+                  <option value={10}>10</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value="all">All</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
           {loading ? (
             <div aria-live="polite" aria-busy="true">
               <LoadingSkeleton />
             </div>
-          ) : filteredApplications.length === 0 ? (
+          ) : searchedApplications.length === 0 ? (
             <div className={`${UI.card} p-8 sm:p-10 text-center`}>
               <div className="mx-auto w-16 h-16 rounded-2xl bg-black/5 flex items-center justify-center mb-5 text-black/60">
                 <SvgIcon name="file" className="w-7 h-7" />
@@ -1115,9 +1104,9 @@ const MyApplications = () => {
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="grid gap-4">
-                {visibleApplications.map((application) => {
+            <div className="space-y-6">
+              <div className="grid gap-6">
+                {paginatedApplications.map((application) => {
                   const statusValue = (application.status || '').toLowerCase();
                   const statusText = getStatusText(application);
                   const statusBadge = getStatusBadgeClass(application);
@@ -1150,149 +1139,94 @@ const MyApplications = () => {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start gap-4">
                               <CompanyLogo logoUrl={logoUrl} companyName={companyName} />
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                  <h3 className={`${UI.heading3} ${UI.textPrimary}`} title={jobTitle}>
+                                    {jobTitle}
+                                  </h3>
+                                  <span className={`text-sm font-semibold ${statusBadge}`} aria-label={`Status: ${statusText}`}>
+                                    {statusText}
+                                  </span>
+                                </div>
 
-                              <div className="min-w-0">
-                                <h3 className={`${UI.heading3} ${UI.textPrimary} truncate`} title={jobTitle}>
-                                  {jobTitle}
-                                </h3>
+                                <div className={`mt-1 inline-flex items-center gap-2 text-sm ${UI.textSecondary} min-w-0`}>
+                                  <span className="text-gray-500"><SvgIcon name="building" className="w-4 h-4" /></span>
+                                  <span className="truncate" title={companyName}>{companyName}</span>
+                                </div>
 
-                                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-sm">
-                                  <div className={`inline-flex items-center gap-2 ${UI.textSecondary} min-w-0`}>
-                                    <span className="text-gray-500">
-                                      <SvgIcon name="building" className="w-4 h-4" />
-                                    </span>
-                                    <span className="truncate" title={companyName}>
-                                      {companyName}
-                                    </span>
+                                {locationText && (
+                                  <div className={`mt-1 inline-flex w-full items-start gap-2 text-sm ${UI.textSecondary}`}>
+                                    <span className="mt-0.5 text-gray-500"><SvgIcon name="location" className="w-4 h-4" /></span>
+                                    <span>{formatLocationDisplay(locationText)}</span>
                                   </div>
+                                )}
 
-                                  <div className={`inline-flex items-center gap-2 ${UI.textSecondary}`}>
-                                    <span className="text-gray-500">
-                                      <SvgIcon name="calendar" className="w-4 h-4" />
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                  {jobTypeText && (
+                                    <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
+                                      <span className="text-gray-500"><SvgIcon name="briefcase" className="w-3.5 h-3.5" /></span>
+                                      {jobTypeText}
                                     </span>
-                                    <span>Applied on {appliedAt}</span>
-                                  </div>
+                                  )}
+                                  {workModeText && (
+                                    <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
+                                      <span className="text-gray-500"><SvgIcon name="building" className="w-3.5 h-3.5" /></span>
+                                      {workModeText}
+                                    </span>
+                                  )}
+                                  {salaryText && (
+                                    <span className={`${UI.chipBase} bg-[#2e66a6]/10 text-[#2e66a6] border-[#2e66a6]/20`}>
+                                      {salaryText}
+                                    </span>
+                                  )}
+                                  <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
+                                    <span className="text-gray-500"><SvgIcon name="calendar" className="w-3.5 h-3.5" /></span>
+                                    Applied on {appliedAt}
+                                  </span>
                                 </div>
                               </div>
                             </div>
+                          </div>
+                          <div className="flex flex-col items-stretch gap-2 sm:flex-row lg:items-center lg:justify-end">
+                            {isActiveCard && (
+                              <button
+                                type="button"
+                                onClick={() => handleWithdraw(application._id)}
+                                disabled={isActionLoading}
+                                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnDangerSoft} ${UI.ring} w-full sm:w-auto`}
+                              >
+                                Withdraw
+                              </button>
+                            )}
 
-                            {(jobTypeText || locationText || workModeText || salaryText) && (
-                              <div className="mt-3 flex flex-wrap gap-2">
-                                {jobTypeText && (
-                                  <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
-                                    <span className="text-gray-500">
-                                      <SvgIcon name="briefcase" className="w-3.5 h-3.5" />
-                                    </span>
-                                    {jobTypeText}
-                                  </span>
-                                )}
+                            {isReactivatableCard && (
+                              <button
+                                type="button"
+                                onClick={() => handleReactivate(application._id)}
+                                disabled={isActionLoading}
+                                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSuccessSoft} ${UI.ring} w-full sm:w-auto`}
+                              >
+                                <SvgIcon name="arrowPath" className="w-4 h-4" />
+                                Reactivate
+                              </button>
+                            )}
 
-                                {locationText && (
-                                  <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
-                                    <span className="text-gray-500">
-                                      <SvgIcon name="location" className="w-3.5 h-3.5" />
-                                    </span>
-                                    {formatLocationDisplay(locationText)}
-                                  </span>
-                                )}
-
-                                {workModeText && (
-                                  <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
-                                    <span className="text-gray-500">
-                                      <SvgIcon name="building" className="w-3.5 h-3.5" />
-                                    </span>
-                                    {workModeText}
-                                  </span>
-                                )}
-
-                                {salaryText && (
-                                  <span className={`${UI.chipBase} bg-[#2e66a6]/10 text-[#2e66a6] border-[#2e66a6]/20`}>
-                                    {salaryText}
-                                  </span>
-                                )}
-                              </div>
+                            {jobId ? (
+                              <Link
+                                to={`/jobseeker/job-details/${jobId}`}
+                                state={{ sourcePage: 'myapplications' }}
+                                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnInfo} ${UI.ring} w-full sm:w-auto`}
+                              >
+                                <SvgIcon name="eye" className="w-4 h-4" />
+                                View Job
+                              </Link>
+                            ) : (
+                              <span className={`${UI.btnBase} ${UI.btnMd} ${UI.btnInfo} opacity-60 cursor-not-allowed w-full sm:w-auto`} aria-disabled="true">
+                                <SvgIcon name="eye" className="w-4 h-4" />
+                                View Job
+                              </span>
                             )}
                           </div>
-
-                     <div className="flex flex-col items-start lg:items-end gap-3">
-  <div className="flex items-center gap-2">
-    {isActiveCard && (
-      <DropdownMenu
-        isOpen={openMenuId === application._id}
-        onToggle={() => setOpenMenuId((prev) => (prev === application._id ? '' : application._id))}
-        onClose={() => setOpenMenuId('')}
-        onWithdraw={() => handleWithdraw(application._id)}
-        disabled={isActionLoading}
-      />
-    )}
-  </div>
-
-  <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full lg:w-auto">
-    <span className={`${UI.badgeBase} ${statusBadge}`} aria-label={`Status: ${statusText}`}>
-      {statusText}
-    </span>
-
-    {jobId ? (
-      <Link
-        to={`/jobseeker/job-details/${jobId}`}
-        state={{ sourcePage: 'myapplications' }}
-        className={`${UI.btnBase} ${UI.btnMd} ${UI.btnInfo} ${UI.ring} w-full sm:w-auto`}
-      >
-        <span className="inline-flex items-center justify-center w-5 h-5">
-          <SvgIcon name="eye" className="w-4 h-4" />
-        </span>
-        View Job
-      </Link>
-    ) : (
-      <span
-        className={`${UI.btnBase} ${UI.btnMd} ${UI.btnInfo} opacity-60 cursor-not-allowed w-full sm:w-auto`}
-        aria-disabled="true"
-        title="Job is not available"
-      >
-        <span className="inline-flex items-center justify-center w-5 h-5">
-          <SvgIcon name="eye" className="w-4 h-4" />
-        </span>
-        View Job
-      </span>
-    )}
-
-    {resumeUrl && (
-      <a
-        href={resumeUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSecondary} ${UI.ring} w-full sm:w-auto`}
-      >
-        <span className="inline-flex items-center justify-center w-5 h-5">
-          <SvgIcon name="download" className="w-4 h-4" />
-        </span>
-        View Resume
-      </a>
-    )}
-
-    {isReactivatableCard && (
-      <button
-        type="button"
-        onClick={() => handleReactivate(application._id)}
-        disabled={isActionLoading}
-        className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSuccessSoft} ${UI.ring} w-full sm:w-auto`}
-      >
-        <span className="inline-flex items-center justify-center w-5 h-5">
-          {isActionLoading ? (
-            <svg className={`w-4 h-4 ${UI.spinner}`} viewBox="0 0 24 24" fill="none">
-              <path d="M12 2a10 10 0 1010 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          ) : (
-            <SvgIcon name="arrowPath" className="w-4 h-4" />
-          )}
-        </span>
-        Reactivate
-      </button>
-    )}
-
-    {isDeclinedCard && null}
-  </div>
-</div>
                         </div>
 
                         {isDeclinedCard && (
@@ -1342,24 +1276,24 @@ const MyApplications = () => {
                   );
                 })}
               </div>
-
-              {hasMoreApplications && (
-                <div className="mt-8 flex justify-center">
-                  <button
-                    type="button"
-                    onClick={handleSeeMoreApplications}
-                    disabled={loadingMoreApplications}
-                    className={`${UI.btnBase} ${UI.btnLg} ${UI.btnSecondary} ${UI.ring} min-w-[180px]`}
-                  >
-                    {loadingMoreApplications && (
-                      <span
-                        className={`h-4 w-4 rounded-full border-2 border-[#2e66a6] border-r-transparent ${UI.spinner}`}
-                        aria-hidden="true"
-                      />
-                    )}
-                    {loadingMoreApplications ? 'Loading applications...' : 'See More'}
-                  </button>
-                </div>
+              {showPagination && (
+                <nav className="mt-8 flex flex-wrap items-center justify-center gap-2" aria-label="Application pagination">
+                  <button type="button" onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className={`${UI.btnBase} ${UI.btnSm} ${UI.btnSecondary} ${UI.ring}`}>First</button>
+                  <button type="button" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1} className={`${UI.btnBase} ${UI.btnSm} ${UI.btnSecondary} ${UI.ring}`}>Previous</button>
+                  {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
+                    <button
+                      key={pageNumber}
+                      type="button"
+                      onClick={() => setCurrentPage(pageNumber)}
+                      aria-current={currentPage === pageNumber ? 'page' : undefined}
+                      className={`${UI.btnBase} h-9 min-w-9 px-3 text-sm ${UI.ring} ${currentPage === pageNumber ? UI.btnPrimary : UI.btnSecondary}`}
+                    >
+                      {pageNumber}
+                    </button>
+                  ))}
+                  <button type="button" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage === totalPages} className={`${UI.btnBase} ${UI.btnSm} ${UI.btnSecondary} ${UI.ring}`}>Next</button>
+                  <button type="button" onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className={`${UI.btnBase} ${UI.btnSm} ${UI.btnSecondary} ${UI.ring}`}>Last</button>
+                </nav>
               )}
             </div>
           )}
