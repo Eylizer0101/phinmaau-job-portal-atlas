@@ -2263,6 +2263,7 @@ const Bookmarks = () => {
     () => (Array.isArray(selectedCompany?.reviews) ? selectedCompany.reviews : []),
     [selectedCompany]
   );
+  const selectedCompanyPreviewReviews = selectedCompanyReviews.slice(0, 6);
 
   const selectedCompanyRating = Number(selectedCompany?.rating) || 0;
   const selectedCompanyReviewCount = Number(selectedCompany?.reviewCount) || selectedCompanyReviews.length || 0;
@@ -3009,7 +3010,9 @@ const Bookmarks = () => {
 
                             <button
                               type="button"
-                              onClick={() => navigate('/jobseeker/job-search')}
+                              onClick={() =>
+                                navigate(`/jobseeker/company-details/${selectedCompany._id}/jobs`)
+                              }
                               className="text-[15px] font-medium text-black/70 hover:text-black inline-flex items-center gap-2"
                             >
                               View all jobs <span aria-hidden="true">→</span>
@@ -3126,13 +3129,17 @@ const Bookmarks = () => {
                               </p>
                             </div>
 
-                            <button
-                              type="button"
-                              onClick={handleOpenCompanyReviewModal}
-                              className="text-[15px] font-medium text-[#2e66a6] hover:text-[#25578f] inline-flex items-center gap-2"
-                            >
-                              Write a review <span aria-hidden="true">→</span>
-                            </button>
+                            {selectedCompanyReviewCount > 6 ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  navigate(`/jobseeker/company-details/${selectedCompany._id}/reviews`)
+                                }
+                                className="text-[15px] font-medium text-[#2e66a6] hover:text-[#25578f] inline-flex items-center gap-2"
+                              >
+                                See all reviews <span aria-hidden="true">→</span>
+                              </button>
+                            ) : null}
                           </div>
 
                           <div className="mt-6 space-y-5">
@@ -3143,7 +3150,7 @@ const Bookmarks = () => {
                                 description="Be the first to share your hiring process experience with this company."
                               />
                             ) : (
-                              selectedCompanyReviews.map((review) => (
+                              selectedCompanyPreviewReviews.map((review) => (
                                 <article
                                   key={review.id || review._id}
                                   className="rounded-2xl border border-[#dfe6ee] bg-white px-5 py-5 sm:px-6"
