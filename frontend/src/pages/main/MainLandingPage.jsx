@@ -141,7 +141,7 @@ const MainLandingPage = () => {
               <span className="block">Your Future Employer is</span>
               <span className="block lg:whitespace-nowrap">
                 Looking for{" "}
-                <span className="text-[#1e4ba0]">
+                <span className="font-semibold text-[#2F5FBF]">
                   Someone Exactly Like You!
                 </span>
               </span>
