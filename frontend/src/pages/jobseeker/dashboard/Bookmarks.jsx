@@ -3008,15 +3008,17 @@ const Bookmarks = () => {
                               </p>
                             </div>
 
-                            <button
-                              type="button"
-                              onClick={() =>
-                                navigate(`/jobseeker/company-details/${selectedCompany._id}/jobs`)
-                              }
-                              className="text-[15px] font-medium text-black/70 hover:text-black inline-flex items-center gap-2"
-                            >
-                              View all jobs <span aria-hidden="true">→</span>
-                            </button>
+                            {selectedCompanyJobs.length > 6 ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  navigate(`/jobseeker/company-details/${selectedCompany._id}/jobs`)
+                                }
+                                className="text-[15px] font-medium text-black/70 hover:text-black inline-flex items-center gap-2"
+                              >
+                                View all jobs <span aria-hidden="true">→</span>
+                              </button>
+                            ) : null}
                           </div>
 
                           {selectedCompanyJobs.length === 0 ? (
