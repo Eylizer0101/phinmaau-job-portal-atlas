@@ -618,6 +618,36 @@ const JobSeekerLayout = ({ children }) => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
+  const getNotificationGroupLabel = (dateString) => {
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return 'Last Week';
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfNotificationDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const diffDays = Math.floor((startOfToday - startOfNotificationDay) / 86400000);
+
+    if (diffDays <= 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    return 'Last Week';
+  };
+
+  const groupedDropdownNotifications = useMemo(() => {
+    const groups = {
+      Today: [],
+      Yesterday: [],
+      'Last Week': [],
+    };
+
+    notifications.slice(0, 10).forEach((notification) => {
+      groups[getNotificationGroupLabel(notification.createdAt)].push(notification);
+    });
+
+    return ['Today', 'Yesterday', 'Last Week']
+      .map((label) => ({ label, items: groups[label] }))
+      .filter((group) => group.items.length > 0);
+  }, [notifications]);
+
   const MessageIcon = ({ className = 'w-5 h-5' }) => (
     <svg
       className={className}
@@ -962,139 +992,90 @@ const JobSeekerLayout = ({ children }) => {
                           <p className="text-gray-400 text-xs mt-1">You're all caught up!</p>
                         </div>
                       ) : (
-                        <div className="space-y-1">
-                          {notifications.slice(0, 10).map((n) => (
-                            <div
-                              key={n._id}
-                              role="menuitem"
-                              tabIndex={0}
-                              className={`
-                                px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer outline-none
-                                ${!n.isRead ? 'bg-blue-50' : ''}
-                                ${focusRing} rounded-lg mx-1
-                              `}
-                              onClick={async () => {
-                                if (!n.isRead) await handleMarkAsRead(n._id);
-                                if (n.link) {
-                                  navigate(n.link);
-                                  setIsNotificationOpen(false);
-                                }
-                              }}
-                              onKeyDown={async (e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                  e.preventDefault();
-                                  if (!n.isRead) await handleMarkAsRead(n._id);
-                                  if (n.link) {
-                                    navigate(n.link);
-                                    setIsNotificationOpen(false);
-                                  }
-                                }
-                              }}
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <div className="space-y-3 px-1">
+                          {groupedDropdownNotifications.map((group) => (
+                            <section key={group.label} aria-labelledby={`notification-group-${group.label.replace(/\s+/g, '-').toLowerCase()}`}>
+                              <h4
+                                id={`notification-group-${group.label.replace(/\s+/g, '-').toLowerCase()}`}
+                                className="px-3 pb-1 pt-2 text-xs font-bold uppercase tracking-wide text-gray-500"
+                              >
+                                {group.label}
+                              </h4>
+
+                              <div className="space-y-1">
+                                {group.items.map((n) => (
                                   <div
-                                    className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-105 ${
-                                      !n.isRead
-                                        ? 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                    }`}
-                                  >
-                                    {(() => {
-                                      switch (n.type) {
-                                        case 'job_match':
-                                          return (
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                            </svg>
-                                          );
-                                        case 'application_update':
-                                          return (
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                          );
-                                        case 'new_message':
-                                          return (
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                                            </svg>
-                                          );
-                                        case 'interview':
-                                          return (
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                            </svg>
-                                          );
-                                        default:
-                                          return (
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                                            </svg>
-                                          );
+                                    key={n._id}
+                                    role="menuitem"
+                                    tabIndex={0}
+                                    className={`rounded-lg px-3 py-3 outline-none transition-colors hover:bg-gray-50 ${
+                                      !n.isRead ? 'bg-blue-50' : 'bg-white'
+                                    } ${focusRing}`}
+                                    onClick={async () => {
+                                      if (!n.isRead) await handleMarkAsRead(n._id);
+                                      if (n.link) {
+                                        navigate(n.link);
+                                        setIsNotificationOpen(false);
                                       }
-                                    })()}
-                                  </div>
-
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between gap-3 mb-1">
-                                      <h4 className="text-sm font-semibold text-gray-900 truncate">
-                                        {n.title}
-                                      </h4>
-                                      <span className="text-xs text-gray-500 shrink-0">
-                                        {formatTime(n.createdAt)}
-                                      </span>
-                                    </div>
-
-                                    <p className="text-sm text-gray-700 mb-2 line-clamp-2">
-                                      {n.message}
-                                    </p>
-
-                                    {n.type === 'application_update' && n.metadata?.newStatus && (
-                                      <div
-                                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getApplicationStatusBadgeStyle(
-                                          n.metadata.newStatus
-                                        )}`}
-                                      >
-                                        <FontAwesomeIcon
-                                          icon={getApplicationStatusIcon(n.metadata.newStatus)}
-                                          className="w-3 h-3 mr-1"
-                                        />
-                                        {getApplicationStatusLabel(n.metadata.newStatus)}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-1">
-                                  {!n.isRead && (
-                                    <button
-                                      type="button"
-                                      onClick={async (e) => {
-                                        e.stopPropagation();
-                                        await handleMarkAsRead(n._id);
-                                      }}
-                                      className={`text-gray-500 hover:text-[#2e66a6] p-2 rounded-lg ${focusRing}`}
-                                      aria-label="Mark as read"
-                                    >
-                                      <FontAwesomeIcon icon={faCheck} className="w-3 h-3" />
-                                    </button>
-                                  )}
-
-                                  <button
-                                    type="button"
-                                    onClick={async (e) => {
-                                      e.stopPropagation();
-                                      openNotificationDeleteConfirmation(n._id);
                                     }}
-                                    className={`text-gray-500 hover:text-red-600 p-2 rounded-lg ${focusRing}`}
-                                    aria-label="Delete notification"
+                                    onKeyDown={async (e) => {
+                                      if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        if (!n.isRead) await handleMarkAsRead(n._id);
+                                        if (n.link) {
+                                          navigate(n.link);
+                                          setIsNotificationOpen(false);
+                                        }
+                                      }
+                                    }}
                                   >
-                                    <FontAwesomeIcon icon={faTrash} className="w-3 h-3" />
-                                  </button>
-                                </div>
+                                    <div className="flex items-start gap-3">
+                                      <div
+                                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
+                                          !n.isRead ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
+                                        }`}
+                                      >
+                                        {n.type === 'job_match' ? (
+                                          <FontAwesomeIcon icon={faBriefcase} className="h-4 w-4" />
+                                        ) : n.type === 'new_message' ? (
+                                          <MessageIcon className="h-4 w-4" />
+                                        ) : n.type === 'application_update' ? (
+                                          <FontAwesomeIcon icon={faFileAlt} className="h-4 w-4" />
+                                        ) : (
+                                          <FontAwesomeIcon icon={faBell} className="h-4 w-4" />
+                                        )}
+                                      </div>
+
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-start justify-between gap-3">
+                                          <h5 className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900">
+                                            {n.title}
+                                          </h5>
+                                          <span className="shrink-0 text-xs text-gray-500">
+                                            {formatTime(n.createdAt)}
+                                          </span>
+                                        </div>
+                                        <p className="mt-1 line-clamp-2 text-sm text-gray-700">{n.message}</p>
+
+                                        {n.type === 'application_update' && n.metadata?.newStatus && (
+                                          <div
+                                            className={`mt-2 inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${getApplicationStatusBadgeStyle(
+                                              n.metadata.newStatus
+                                            )}`}
+                                          >
+                                            <FontAwesomeIcon
+                                              icon={getApplicationStatusIcon(n.metadata.newStatus)}
+                                              className="mr-1 h-3 w-3"
+                                            />
+                                            {getApplicationStatusLabel(n.metadata.newStatus)}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
-                            </div>
+                            </section>
                           ))}
                         </div>
                       )}
@@ -1447,7 +1428,6 @@ const JobSeekerLayout = ({ children }) => {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-3 mb-1">
                                 <h4 className="text-sm font-semibold text-gray-900 truncate">{n.title}</h4>
-                                <span className="text-xs text-gray-500 shrink-0">{formatTime(n.createdAt)}</span>
                               </div>
                               <p className="text-sm text-gray-700 line-clamp-2">{n.message}</p>
 
@@ -1466,18 +1446,7 @@ const JobSeekerLayout = ({ children }) => {
                               )}
                             </div>
                           </div>
-
-                          <button
-                            type="button"
-                            className={`text-gray-500 hover:text-red-600 p-2 rounded-lg ${focusRing}`}
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              openNotificationDeleteConfirmation(n._id);
-                            }}
-                            aria-label="Delete notification"
-                          >
-                            <FontAwesomeIcon icon={faTrash} className="w-3 h-3" />
-                          </button>
+                          <span className="shrink-0 text-xs text-gray-500">{formatTime(n.createdAt)}</span>
                         </div>
                       </div>
                     ))}
