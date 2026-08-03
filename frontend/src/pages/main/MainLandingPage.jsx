@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainNavbar from "../../components/shared/MainNavbar";
 import api from "../../services/api";
@@ -22,6 +22,7 @@ const MainLandingPage = () => {
   const [partners, setPartners] = useState([]);
   const [partnersLoading, setPartnersLoading] = useState(true);
   const [partnersError, setPartnersError] = useState("");
+  const partnersScrollRef = useRef(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -52,8 +53,7 @@ const MainLandingPage = () => {
           .sort(
             (a, b) =>
               b.openings - a.openings || a.name.localeCompare(b.name)
-          )
-          .slice(0, 9);
+          );
 
         if (isMounted) {
           setPartners(normalizedPartners);
@@ -94,6 +94,17 @@ const MainLandingPage = () => {
       window.removeEventListener("resize", updateBodyScroll);
     };
   }, []);
+
+  const scrollPartners = (direction) => {
+    const container = partnersScrollRef.current;
+    if (!container) return;
+
+    const amount = Math.max(320, container.clientWidth * 0.75);
+    container.scrollBy({
+      left: direction === "next" ? amount : -amount,
+      behavior: "smooth",
+    });
+  };
 
   const campuses = useMemo(
     () => [
@@ -136,7 +147,7 @@ const MainLandingPage = () => {
               </span>
             </h1>
 
-            <p className="mt-4 text-base font-medium text-slate-700 sm:text-lg lg:mt-3">
+            <p className="mt-4 text-base font-medium text-black sm:text-lg lg:mt-3">
               The job market is competitive but you are prepared.
             </p>
 
@@ -205,43 +216,98 @@ const MainLandingPage = () => {
               Find your next job with one of Our Partners
             </h2>
 
-            <div className="mx-auto mt-5 grid w-full max-w-[1380px] grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5 lg:mt-3 lg:grid-cols-9 lg:gap-3">
-              {partnersLoading
-                ? Array.from({ length: 9 }).map((_, index) => (
-                    <div
-                      key={`partner-loading-${index}`}
-                      className="flex h-[92px] items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm"
+            <div className="relative mx-auto mt-5 w-full max-w-[1380px] lg:mt-3">
+              {!partnersLoading && partners.length > 11 ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => scrollPartners("previous")}
+                    className="absolute left-0 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-[#212C61] text-white shadow-md transition hover:bg-[#17224f]"
+                    aria-label="Previous partner logos"
+                  >
+                    <svg
+                      className="h-5 w-5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      aria-hidden="true"
                     >
-                      <div className="h-12 w-20 animate-pulse rounded bg-slate-200" />
-                    </div>
-                  ))
-                : partners.map((partner) => (
-                    <div
-                      key={partner.id}
-                      className="flex h-[92px] items-center justify-center rounded-xl border border-slate-200 bg-white px-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-                      title={partner.name}
-                    >
-                      <img
-                        src={partner.logo}
-                        alt={`${partner.name} logo`}
-                        className="max-h-[58px] max-w-full object-contain"
-                        loading="lazy"
-                        decoding="async"
-                        onError={(event) => {
-                          event.currentTarget.onerror = null;
-                          event.currentTarget.src = "/images/agapay.png";
-                        }}
+                      <path
+                        d="M15 18l-6-6 6-6"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                       />
-                    </div>
-                  ))}
+                    </svg>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => scrollPartners("next")}
+                    className="absolute right-0 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-[#212C61] text-white shadow-md transition hover:bg-[#17224f]"
+                    aria-label="Next partner logos"
+                  >
+                    <svg
+                      className="h-5 w-5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M9 6l6 6-6 6"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                </>
+              ) : null}
+
+              <div
+                ref={partnersScrollRef}
+                className={`flex w-full items-center gap-7 overflow-x-auto px-2 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+                  partners.length <= 11 ? "justify-center" : "justify-start px-14"
+                }`}
+              >
+                {partnersLoading
+                  ? Array.from({ length: 9 }).map((_, index) => (
+                      <div
+                        key={`partner-loading-${index}`}
+                        className="flex h-[76px] min-w-[110px] items-center justify-center"
+                      >
+                        <div className="h-12 w-20 animate-pulse rounded bg-slate-200" />
+                      </div>
+                    ))
+                  : partners.map((partner) => (
+                      <div
+                        key={partner.id}
+                        className="flex h-[76px] min-w-[110px] items-center justify-center bg-transparent"
+                        title={partner.name}
+                      >
+                        <img
+                          src={partner.logo}
+                          alt={`${partner.name} logo`}
+                          className="max-h-[62px] max-w-[100px] object-contain"
+                          loading="lazy"
+                          decoding="async"
+                          onError={(event) => {
+                            event.currentTarget.onerror = null;
+                            event.currentTarget.src = "/images/agapay.png";
+                          }}
+                        />
+                      </div>
+                    ))}
+              </div>
             </div>
 
             {!partnersLoading && partnersError ? (
-              <p className="mt-3 text-sm text-slate-500">{partnersError}</p>
+              <p className="mt-3 text-sm text-black">{partnersError}</p>
             ) : null}
 
             {!partnersLoading && !partnersError && partners.length === 0 ? (
-              <p className="mt-3 text-sm text-slate-500">
+              <p className="mt-3 text-sm text-black">
                 No partner company logos are available right now.
               </p>
             ) : null}
