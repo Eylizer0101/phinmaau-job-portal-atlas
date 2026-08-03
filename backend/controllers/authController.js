@@ -3386,7 +3386,7 @@ exports.downloadResume = async (req, res) => {
 
     res.set({
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${safeFileName}"`,
+      'Content-Disposition': `inline; filename="${safeFileName}"`,
       'Content-Length': pdfBuffer.length,
       'Cache-Control': 'no-store',
     });

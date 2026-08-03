@@ -4,7 +4,6 @@ import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import JobSeekerLayout from '../../../layouts/JobSeekerLayout';
 import ProfileMoreDropdown from '../../../components/jobseeker/ProfileMoreDropdown';
-import { openResumePrintWindow } from '../../../components/shared/resumePrintTemplate';
 import {
   MAJOR_COURSE_OPTIONS,
   CAMPUS_OPTIONS,
@@ -4690,17 +4689,64 @@ const MyProfile = () => {
   };
 
   const downloadResumePdf = async () => {
-    const resumeData = {
-      userData,
-      formData,
-      workExperiences,
-      verificationDocs,
-    };
+    const token = localStorage.getItem('token');
+    const pdfWindow = window.open('', '_blank');
 
-    const downloaded = await openResumePrintWindow(resumeData);
+    if (pdfWindow) {
+      pdfWindow.document.title = 'Preparing CV PDF...';
+      pdfWindow.document.body.innerHTML = `
+        <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:Arial,sans-serif;color:#4b5563;">
+          Preparing your CV PDF...
+        </div>
+      `;
+    }
 
-    if (!downloaded) {
-      setError('Failed to generate CV PDF. Please try again.');
+    try {
+      const response = await axios.get(`${API_BASE}/auth/resume/download`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        responseType: 'blob',
+      });
+
+      const contentType = String(response.headers?.['content-type'] || 'application/pdf');
+      const pdfBlob = response.data instanceof Blob
+        ? new Blob([response.data], { type: contentType })
+        : new Blob([response.data], { type: 'application/pdf' });
+      const pdfUrl = window.URL.createObjectURL(pdfBlob);
+
+      if (pdfWindow) {
+        pdfWindow.location.replace(pdfUrl);
+      } else {
+        const previewLink = document.createElement('a');
+        previewLink.href = pdfUrl;
+        previewLink.target = '_blank';
+        previewLink.rel = 'noopener noreferrer';
+        document.body.appendChild(previewLink);
+        previewLink.click();
+        previewLink.remove();
+      }
+
+      window.setTimeout(() => window.URL.revokeObjectURL(pdfUrl), 5 * 60 * 1000);
+    } catch (err) {
+      if (pdfWindow && !pdfWindow.closed) {
+        pdfWindow.close();
+      }
+
+      let message = 'Failed to generate CV PDF. Please try again.';
+      if (err.response?.data instanceof Blob) {
+        try {
+          const errorText = await err.response.data.text();
+          const parsedError = JSON.parse(errorText);
+          message = parsedError?.message || message;
+        } catch {
+          // Keep the default PDF generation error message.
+        }
+      } else if (err.response?.data?.message) {
+        message = err.response.data.message;
+      }
+
+      setError(message);
     }
   };
 
