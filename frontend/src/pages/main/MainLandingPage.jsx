@@ -135,9 +135,9 @@ const MainLandingPage = () => {
       <MainNavbar />
 
       <main className="relative min-h-screen overflow-hidden bg-white pt-16 lg:h-[calc(100vh-64px)] lg:min-h-0">
-        <div className="relative mx-auto flex min-h-[calc(100vh-64px)] w-full max-w-[1450px] flex-col px-5 pb-6 pt-8 sm:px-8 lg:h-full lg:min-h-0 lg:px-12 lg:pb-4 lg:pt-5">
+        <div className="relative mx-auto flex min-h-[calc(100vh-64px)] w-full max-w-[1450px] flex-col px-5 pb-4 pt-6 sm:px-8 lg:h-full lg:min-h-0 lg:px-12 lg:pb-2 lg:pt-3">
           <section className="shrink-0 text-center">
-            <h1 className="mx-auto max-w-[1240px] text-[34px] font-semibold leading-[1.12] tracking-tight text-[#202020] sm:text-5xl lg:text-[50px] xl:text-[54px]">
+            <h1 className="mx-auto max-w-[1240px] text-[34px] font-semibold leading-[1.1] tracking-tight text-[#202020] sm:text-5xl lg:text-[46px] xl:text-[50px]">
               <span className="block">Your Future Employer is</span>
               <span className="block lg:whitespace-nowrap">
                 Looking for{" "}
@@ -147,14 +147,14 @@ const MainLandingPage = () => {
               </span>
             </h1>
 
-            <p className="mt-4 text-base font-semibold text-[#202020]  sm:text-lg lg:mt-3">
+            <p className="mt-3 text-base font-semibold text-[#202020] sm:text-lg lg:mt-2">
               The job market is competitive but you are prepared.
             </p>
 
             <button
               type="button"
               onClick={() => navigate("/jobs")}
-              className="mt-5 inline-flex h-14 min-w-[290px] items-center justify-center gap-5 rounded-2xl bg-[#212C61] px-8 text-lg font-semibold text-white shadow-sm transition hover:bg-[#17224f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1e4ba0] focus-visible:ring-offset-2 lg:mt-4 lg:h-12 lg:min-w-[270px]"
+              className="mt-4 inline-flex h-14 min-w-[290px] items-center justify-center gap-5 rounded-2xl bg-[#212C61] px-8 text-lg font-semibold text-white shadow-sm transition hover:bg-[#17224f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1e4ba0] focus-visible:ring-offset-2 lg:mt-3 lg:h-11 lg:min-w-[270px]"
             >
               <span>Find your job</span>
               <svg
@@ -174,11 +174,11 @@ const MainLandingPage = () => {
             </button>
           </section>
 
-          <section className="mx-auto mt-7 grid w-full max-w-[1240px] grid-cols-1 gap-5 sm:grid-cols-2 lg:mt-5 lg:grid-cols-3 lg:gap-6">
+          <section className="mx-auto mt-6 grid w-full max-w-[1240px] grid-cols-1 gap-5 sm:grid-cols-2 lg:mt-4 lg:grid-cols-3 lg:gap-6">
             {campuses.map((campus) => (
               <article
                 key={campus.id}
-                className="group relative h-[230px] overflow-hidden rounded-2xl border border-black/10 bg-slate-100 shadow-md sm:last:col-span-2 lg:h-[210px] lg:last:col-span-1"
+                className="group relative h-[220px] overflow-hidden rounded-2xl border border-black/10 bg-slate-100 shadow-md sm:last:col-span-2 lg:h-[190px] lg:last:col-span-1"
               >
                 <img
                   src={campus.img}
@@ -211,12 +211,12 @@ const MainLandingPage = () => {
             ))}
           </section>
 
-          <section className="mt-8 shrink-0 text-center lg:mt-5">
+          <section className="mt-6 shrink-0 text-center lg:mt-3">
             <h2 className="text-2xl font-semibold text-[#202020] lg:text-[28px]">
               Find your next job with one of Our Partners
             </h2>
 
-            <div className="relative mx-auto mt-5 w-full max-w-[1380px] lg:mt-3">
+            <div className="relative mx-auto mt-4 w-full max-w-[1380px] lg:mt-2">
               {!partnersLoading && partners.length > 11 ? (
                 <>
                   <button
@@ -275,7 +275,7 @@ const MainLandingPage = () => {
                   ? Array.from({ length: 9 }).map((_, index) => (
                       <div
                         key={`partner-loading-${index}`}
-                        className="flex h-[88px] min-w-[110px] items-center justify-center rounded-2xl border border-[#E5E7EB] bg-white shadow-sm"
+                        className="flex h-[74px] min-w-[104px] items-center justify-center rounded-xl border border-[#E5E7EB] bg-white shadow-sm"
                       >
                         <div className="h-12 w-20 animate-pulse rounded bg-slate-200" />
                       </div>
@@ -283,13 +283,13 @@ const MainLandingPage = () => {
                   : partners.map((partner) => (
                       <div
                         key={partner.id}
-                        className="flex h-[88px] min-w-[110px] items-center justify-center rounded-2xl border border-[#E5E7EB] bg-white px-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                        className="flex h-[74px] min-w-[104px] items-center justify-center rounded-xl border border-[#E5E7EB] bg-white px-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
                         title={partner.name}
                       >
                         <img
                           src={partner.logo}
                           alt={`${partner.name} logo`}
-                          className="max-h-[48px] max-w-[72px] object-contain"
+                          className="max-h-[44px] max-w-[68px] object-contain"
                           loading="lazy"
                           decoding="async"
                           onError={(event) => {
