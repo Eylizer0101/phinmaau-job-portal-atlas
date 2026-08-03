@@ -1260,7 +1260,7 @@ const CompanyJobMiniCard = ({ job, onViewDetails, onApply, onSave, saving, isSav
           src="/images/neededd.png"
           alt="Urgent Hiring"
           draggable="false"
-          className="pointer-events-none absolute left-4 -top-3 z-10 w-[175px] max-w-none select-none object-contain"
+          className="pointer-events-none absolute left-4 -top-3 z-10 w-[205px] max-w-none select-none object-contain"
         />
       ) : null}
 
