@@ -147,7 +147,7 @@ const MainLandingPage = () => {
               </span>
             </h1>
 
-            <p className="mt-4 text-base font-medium text-black sm:text-lg lg:mt-3">
+            <p className="mt-4 text-base font-medium text-[#202020]  sm:text-lg lg:mt-3">
               The job market is competitive but you are prepared.
             </p>
 
@@ -212,7 +212,7 @@ const MainLandingPage = () => {
           </section>
 
           <section className="mt-8 shrink-0 text-center lg:mt-5">
-            <h2 className="text-2xl font-extrabold text-black lg:text-[28px]">
+            <h2 className="text-2xl font-extrabold text-[#202020] lg:text-[28px]">
               Find your next job with one of Our Partners
             </h2>
 
