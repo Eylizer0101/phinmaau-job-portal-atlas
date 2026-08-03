@@ -870,8 +870,18 @@ export const openResumePrintWindow = async (resumeData = {}) => {
       .from(paper);
 
     const pdfBlob = await pdfWorker.outputPdf('blob');
-    const pdfUrl = URL.createObjectURL(pdfBlob);
+    const pdfFileName = buildResumeFileName(resumeData);
 
+    // Convert the generated Blob into a named File so the browser PDF viewer
+    // and its Download action can use the correct CV filename instead of a
+    // random blob identifier.
+    const pdfFile = new File([pdfBlob], pdfFileName, {
+      type: 'application/pdf',
+      lastModified: Date.now(),
+    });
+    const pdfUrl = URL.createObjectURL(pdfFile);
+
+    previewWindow.document.title = pdfFileName;
     previewWindow.location.replace(pdfUrl);
 
     // Keep the object URL long enough for the browser PDF viewer to load it.
