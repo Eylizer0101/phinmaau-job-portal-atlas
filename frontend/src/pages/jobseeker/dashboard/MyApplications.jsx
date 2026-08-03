@@ -1035,19 +1035,7 @@ const MyApplications = () => {
                 />
               </div>
 
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <span className="whitespace-nowrap">Display per page</span>
-                <select
-                  value={pageSize}
-                  onChange={(event) => setPageSize(event.target.value === 'all' ? 'all' : Number(event.target.value))}
-                  className={`h-11 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-800 ${UI.ring}`}
-                >
-                  <option value={10}>10</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                  <option value="all">All</option>
-                </select>
-              </label>
+
             </div>
           </div>
 
@@ -1279,23 +1267,64 @@ const MyApplications = () => {
                 })}
               </div>
               {showPagination && (
-                <nav className="mt-8 flex flex-wrap items-center justify-center gap-2" aria-label="Application pagination">
-                  <button type="button" onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className={`${UI.btnBase} ${UI.btnSm} ${UI.btnSecondary} ${UI.ring}`}>First</button>
-                  <button type="button" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1} className={`${UI.btnBase} ${UI.btnSm} ${UI.btnSecondary} ${UI.ring}`}>Previous</button>
-                  {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
+                <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row sm:flex-wrap" aria-label="Application pagination">
+                  <nav
+                    className="inline-flex min-h-11 items-center overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+                    aria-label="Application pagination controls"
+                  >
                     <button
-                      key={pageNumber}
                       type="button"
-                      onClick={() => setCurrentPage(pageNumber)}
-                      aria-current={currentPage === pageNumber ? 'page' : undefined}
-                      className={`${UI.btnBase} h-9 min-w-9 px-3 text-sm ${UI.ring} ${currentPage === pageNumber ? UI.btnPrimary : UI.btnSecondary}`}
+                      onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                      disabled={currentPage === 1}
+                      className={`inline-flex h-11 items-center gap-2 border-r border-gray-200 px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 ${UI.ring}`}
                     >
-                      {pageNumber}
+                      <span aria-hidden="true">‹</span>
+                      Previous
                     </button>
-                  ))}
-                  <button type="button" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage === totalPages} className={`${UI.btnBase} ${UI.btnSm} ${UI.btnSecondary} ${UI.ring}`}>Next</button>
-                  <button type="button" onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className={`${UI.btnBase} ${UI.btnSm} ${UI.btnSecondary} ${UI.ring}`}>Last</button>
-                </nav>
+
+                    <div className="flex h-11 items-center px-2">
+                      {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
+                        <button
+                          key={pageNumber}
+                          type="button"
+                          onClick={() => setCurrentPage(pageNumber)}
+                          aria-current={currentPage === pageNumber ? 'page' : undefined}
+                          className={`h-9 min-w-9 rounded-lg px-3 text-sm font-semibold transition ${UI.ring} ${
+                            currentPage === pageNumber
+                              ? 'bg-[#2e66a6] text-white shadow-sm'
+                              : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          {pageNumber}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                      disabled={currentPage === totalPages}
+                      className={`inline-flex h-11 items-center gap-2 border-l border-gray-200 px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 ${UI.ring}`}
+                    >
+                      Next
+                      <span aria-hidden="true">›</span>
+                    </button>
+                  </nav>
+
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <span className="whitespace-nowrap">Display per page</span>
+                    <select
+                      value={pageSize}
+                      onChange={(event) => setPageSize(event.target.value === 'all' ? 'all' : Number(event.target.value))}
+                      className={`h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 shadow-sm ${UI.ring}`}
+                    >
+                      <option value={10}>10</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                      <option value="all">All</option>
+                    </select>
+                  </label>
+                </div>
               )}
             </div>
           )}

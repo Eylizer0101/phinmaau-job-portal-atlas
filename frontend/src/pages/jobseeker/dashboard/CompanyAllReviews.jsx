@@ -163,24 +163,86 @@ const Metric = ({ label, value }) => (
 const Pagination = ({ page, totalPages, setPage, perPage, setPerPage, pageNumbers, totalItems }) => (
   <div className="mt-8 flex flex-col gap-4 border-t border-[#e6edf5] pt-6 xl:flex-row xl:items-center xl:justify-between">
     <div className="text-sm text-black/60">Page {page} of {totalPages} · {totalItems} total</div>
-    <div className="flex flex-wrap items-center gap-2">
-      <PageButton label="First" disabled={page === 1} onClick={() => setPage(1)} />
-      <PageButton label="Previous" disabled={page === 1} onClick={() => setPage((current) => Math.max(1, current - 1))} />
-      {pageNumbers.map((number) => <PageButton key={number} label={String(number)} active={number === page} onClick={() => setPage(number)} />)}
-      <PageButton label="Next" disabled={page === totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} />
-      <PageButton label="Last" disabled={page === totalPages} onClick={() => setPage(totalPages)} />
-      <label className="ml-0 flex items-center gap-2 text-sm font-medium text-black/70 sm:ml-2">
-        Display per page
-        <select value={perPage} onChange={(event) => setPerPage(event.target.value)} className="h-10 rounded-lg border border-[#d8e2ee] bg-white px-3 outline-none focus:border-[#2e66a6]">
-          {PAGE_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+
+    <div className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+      <nav
+        className="inline-flex min-h-11 items-center overflow-hidden rounded-xl border border-[#d8e2ee] bg-white shadow-sm"
+        aria-label="Pagination controls"
+      >
+        <PageButton
+          label="Previous"
+          direction="previous"
+          disabled={page === 1}
+          onClick={() => setPage((current) => Math.max(1, current - 1))}
+        />
+
+        <div className="flex h-11 items-center px-2">
+          {pageNumbers.map((number) => (
+            <PageButton
+              key={number}
+              label={String(number)}
+              active={number === page}
+              onClick={() => setPage(number)}
+            />
+          ))}
+        </div>
+
+        <PageButton
+          label="Next"
+          direction="next"
+          disabled={page === totalPages}
+          onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+        />
+      </nav>
+
+      <label className="flex items-center gap-2 text-sm font-medium text-black/70">
+        <span className="whitespace-nowrap">Display per page</span>
+        <select
+          value={perPage}
+          onChange={(event) => setPerPage(event.target.value)}
+          className="h-11 rounded-xl border border-[#d8e2ee] bg-white px-3 outline-none shadow-sm focus:border-[#2e66a6]"
+        >
+          {PAGE_OPTIONS.map((option) => (
+            <option key={option} value={option}>{option}</option>
+          ))}
         </select>
       </label>
     </div>
   </div>
 );
 
-const PageButton = ({ label, disabled, active, onClick }) => (
-  <button type="button" disabled={disabled} onClick={onClick} className={`h-10 rounded-lg border px-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${active ? "border-[#2e66a6] bg-[#2e66a6] text-white" : "border-[#d8e2ee] bg-white text-black/70 hover:border-[#2e66a6]/50 hover:bg-[#f7faff]"}`}>{label}</button>
-);
+const PageButton = ({ label, disabled, active, direction, onClick }) => {
+  if (direction) {
+    return (
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onClick}
+        className={`inline-flex h-11 items-center gap-2 px-4 text-sm font-semibold text-black/70 transition hover:bg-[#f7faff] disabled:cursor-not-allowed disabled:opacity-40 ${
+          direction === "previous" ? "border-r border-[#d8e2ee]" : "border-l border-[#d8e2ee]"
+        }`}
+      >
+        {direction === "previous" ? <span aria-hidden="true">‹</span> : null}
+        {label}
+        {direction === "next" ? <span aria-hidden="true">›</span> : null}
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-current={active ? "page" : undefined}
+      className={`h-9 min-w-9 rounded-lg px-3 text-sm font-semibold transition ${
+        active
+          ? "bg-[#2e66a6] text-white shadow-sm"
+          : "text-black/70 hover:bg-[#f7faff]"
+      }`}
+    >
+      {label}
+    </button>
+  );
+};
 
 export default CompanyAllReviews;
