@@ -871,23 +871,36 @@ export const openResumePrintWindow = async (resumeData = {}) => {
 
     const pdfBlob = await pdfWorker.outputPdf('blob');
     const pdfFileName = buildResumeFileName(resumeData);
+    const apiBase = (
+      process.env.REACT_APP_API_URL ||
+      'https://phinmaau-job-portal-atlas.onrender.com/api'
+    ).replace(/\/$/, '');
+    const token = localStorage.getItem('token');
 
-    // Convert the generated Blob into a named File so the browser PDF viewer
-    // and its Download action can use the correct CV filename instead of a
-    // random blob identifier.
-    const pdfFile = new File([pdfBlob], pdfFileName, {
-      type: 'application/pdf',
-      lastModified: Date.now(),
+    if (!token) {
+      throw new Error('Your session has expired. Please log in again.');
+    }
+
+    const uploadResponse = await fetch(`${apiBase}/auth/resume/preview`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/pdf',
+        'X-Resume-Filename': encodeURIComponent(pdfFileName),
+      },
+      body: pdfBlob,
     });
-    const pdfUrl = URL.createObjectURL(pdfFile);
+
+    const uploadResult = await uploadResponse.json().catch(() => ({}));
+
+    if (!uploadResponse.ok || !uploadResult?.previewUrl) {
+      throw new Error(
+        uploadResult?.message || 'Unable to prepare the named PDF preview.'
+      );
+    }
 
     previewWindow.document.title = pdfFileName;
-    previewWindow.location.replace(pdfUrl);
-
-    // Keep the object URL long enough for the browser PDF viewer to load it.
-    window.setTimeout(() => {
-      URL.revokeObjectURL(pdfUrl);
-    }, 5 * 60 * 1000);
+    previewWindow.location.replace(uploadResult.previewUrl);
 
     wrapper.remove();
     return true;

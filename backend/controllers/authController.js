@@ -3277,6 +3277,118 @@ const buildResumeHtmlForPdf = (user = {}) => {
 };
 
 
+
+const RESUME_PREVIEW_TTL_MS = 5 * 60 * 1000;
+const resumePreviewStore = new Map();
+
+const sanitizeResumePreviewFileName = (value = 'Resume_CV.pdf') => {
+  let decoded = String(value || '').trim();
+
+  try {
+    decoded = decodeURIComponent(decoded);
+  } catch {
+    // Keep the original value when it is not URI encoded.
+  }
+
+  const clean = decoded
+    .replace(/[\\/:*?"<>|]+/g, '_')
+    .replace(/\s+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+  const baseName = clean || 'Resume_CV.pdf';
+  return baseName.toLowerCase().endsWith('.pdf') ? baseName : `${baseName}.pdf`;
+};
+
+const clearExpiredResumePreviews = () => {
+  const now = Date.now();
+
+  for (const [token, item] of resumePreviewStore.entries()) {
+    if (!item || item.expiresAt <= now) {
+      resumePreviewStore.delete(token);
+    }
+  }
+};
+
+exports.createResumePreview = async (req, res) => {
+  try {
+    if (req.user.role !== 'jobseeker') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only job seekers can create a resume preview.',
+      });
+    }
+
+    if (!Buffer.isBuffer(req.body) || !req.body.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'The generated resume PDF is required.',
+      });
+    }
+
+    clearExpiredResumePreviews();
+
+    const previewToken = crypto.randomBytes(32).toString('hex');
+    const fileName = sanitizeResumePreviewFileName(
+      req.get('X-Resume-Filename') || 'Resume_CV.pdf'
+    );
+
+    resumePreviewStore.set(previewToken, {
+      buffer: Buffer.from(req.body),
+      fileName,
+      userId: String(req.user._id),
+      expiresAt: Date.now() + RESUME_PREVIEW_TTL_MS,
+    });
+
+    const apiBase = `${req.protocol}://${req.get('host')}${req.baseUrl}`;
+    const previewUrl = `${apiBase}/resume/preview/${previewToken}/${encodeURIComponent(fileName)}`;
+
+    return res.status(201).json({
+      success: true,
+      previewUrl,
+      fileName,
+      expiresInMs: RESUME_PREVIEW_TTL_MS,
+    });
+  } catch (error) {
+    console.error('Error creating named resume preview:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Unable to create resume preview.',
+    });
+  }
+};
+
+exports.viewResumePreview = async (req, res) => {
+  try {
+    clearExpiredResumePreviews();
+
+    const preview = resumePreviewStore.get(req.params.previewToken);
+
+    if (!preview || preview.expiresAt <= Date.now()) {
+      resumePreviewStore.delete(req.params.previewToken);
+      return res.status(404).send('This resume preview has expired. Please generate it again.');
+    }
+
+    const requestedFileName = sanitizeResumePreviewFileName(
+      req.params.fileName || preview.fileName
+    );
+    const fileName = requestedFileName || preview.fileName;
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `inline; filename="${fileName}"`,
+      'Content-Length': preview.buffer.length,
+      'Cache-Control': 'private, no-store, max-age=0',
+      'X-Content-Type-Options': 'nosniff',
+    });
+
+    return res.end(preview.buffer);
+  } catch (error) {
+    console.error('Error opening named resume preview:', error);
+    return res.status(500).send('Unable to open resume preview.');
+  }
+};
+
 exports.verifyResumeDownloadPassword = async (req, res) => {
   try {
     if (req.user.role !== 'jobseeker') {

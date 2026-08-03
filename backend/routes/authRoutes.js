@@ -87,6 +87,19 @@ router.get(
   authController.downloadResume
 );
 
+router.post(
+  '/resume/preview',
+  protect,
+  authorize('jobseeker'),
+  express.raw({ type: 'application/pdf', limit: '15mb' }),
+  authController.createResumePreview
+);
+
+router.get(
+  '/resume/preview/:previewToken/:fileName',
+  authController.viewResumePreview
+);
+
 // -------------------------------
 // SALARY EXPECTATION APIs
 // -------------------------------
