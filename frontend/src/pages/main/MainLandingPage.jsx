@@ -81,20 +81,6 @@ const MainLandingPage = () => {
     };
   }, []);
 
-  useEffect(() => {
-    const updateBodyScroll = () => {
-      document.body.style.overflow = window.innerWidth >= 1024 ? "hidden" : "";
-    };
-
-    updateBodyScroll();
-    window.addEventListener("resize", updateBodyScroll);
-
-    return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("resize", updateBodyScroll);
-    };
-  }, []);
-
   const scrollPartners = (direction) => {
     const container = partnersScrollRef.current;
     if (!container) return;
@@ -131,11 +117,11 @@ const MainLandingPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-white lg:h-screen lg:overflow-hidden">
+    <div className="min-h-screen bg-white">
       <MainNavbar />
 
-      <main className="relative min-h-screen overflow-hidden bg-white pt-16 lg:h-[calc(100vh-64px)] lg:min-h-0">
-        <div className="relative mx-auto flex min-h-[calc(100vh-64px)] w-full max-w-[1450px] flex-col px-5 pb-6 pt-8 sm:px-8 lg:h-full lg:min-h-0 lg:px-12 lg:pb-4 lg:pt-5">
+      <main className="relative min-h-screen bg-white pt-16">
+        <div className="relative mx-auto flex w-full max-w-[1450px] flex-col px-5 pb-8 pt-8 sm:px-8 lg:px-12 lg:pb-8 lg:pt-5">
           <section className="shrink-0 text-center">
             <h1 className="mx-auto max-w-[1240px] text-[34px] font-semibold leading-[1.12] tracking-tight text-[#202020] sm:text-5xl lg:text-[50px] xl:text-[54px]">
               <span className="block">Your Future Employer is</span>
