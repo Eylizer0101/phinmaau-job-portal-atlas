@@ -341,16 +341,31 @@ const getExperienceBadgeLabel = (experienceLevel) => {
 
   const normalized = normalizeExperienceLevelValue(raw);
 
-  if (normalized === "no experience required") {
-    return "No experience required";
+  if (normalized === "no experience required") return "No Experience";
+  if (
+    ["less than 1 yr", "less than 1 year", "less than 1 yr exp", "less than 1 year exp"].includes(
+      normalized
+    )
+  ) {
+    return "Less than 1 Yr Exp";
   }
-
-  if (normalized === "1 year") return "1 Year Experience";
-  if (normalized === "2 years") return "2 Years Experience";
-  if (normalized === "3 years") return "3 Years Experience";
-  if (normalized === "4 years") return "4 Years Experience";
-  if (normalized === "5 years") return "5 Years Experience";
-  if (normalized === "6+ years") return "6+ Years Experience";
+  if (
+    ["1 year", "1 years", "2 year", "2 years", "3 year", "3 years", "1-3 years", "1-3 years exp"].includes(
+      normalized
+    )
+  ) {
+    return "1-3 Years Exp";
+  }
+  if (
+    ["4 year", "4 years", "5 year", "5 years", "4-5 years", "4-5 years exp"].includes(
+      normalized
+    )
+  ) {
+    return "4-5 Years Exp";
+  }
+  if (["6+ year", "6+ years", "6+ year exp", "6+ years exp"].includes(normalized)) {
+    return "6+ Years Exp";
+  }
 
   return raw;
 };
@@ -1738,7 +1753,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
                 description="New openings from this company will appear here once available."
               />
             ) : (
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                 {previewJobs.map((job) => {
                   const jobId = job._id || job.id;
                   const experienceBadgeLabel = getExperienceBadgeLabel(job.experienceLevel);
@@ -1757,14 +1772,14 @@ The company also values transparency, teamwork, and continuous improvement, crea
                   return (
                     <div
                       key={jobId}
-                      className="rounded-2xl p-7 bg-white shadow-sm hover:shadow-md transition flex flex-col min-h-[375px] relative border border-[#E5E7EB]"
+                      className="group relative overflow-visible rounded-[22px] p-5 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[372px] border border-[#E5E7EB]"
                     >
                       {job.isUrgent ? (
                         <img
                           src="/images/gentneeded.png"
                           alt="Urgent Hiring"
                           draggable="false"
-                          className="pointer-events-none absolute -top-[52px] -left-[50px] z-10 w-[230px] max-w-none select-none"
+                          className="pointer-events-none absolute -top-[48px] -left-[50px] z-10 w-[230px] max-w-none select-none"
                         />
                       ) : null}
 
@@ -1891,32 +1906,19 @@ The company also values transparency, teamwork, and continuous improvement, crea
 
                         {tagFreshGrad && (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap bg-blue-50 text-[#2e66a6] border border-blue-200">
-                            Open Fresh Grads
+                            Open fresh grad
                           </span>
                         )}
                       </div>
 
                       <div className="mt-4 w-full h-px bg-gray-300/80" />
 
-                      <div className="mt-auto pt-5 flex items-center justify-between gap-4">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            navigate(`/jobseeker/job-details/${jobId}`, {
-                              state: { sourcePage: "jobsearch" },
-                            })
-                          }
-                          className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition"
-                        >
-                          <span>View Details</span>
-                          <span aria-hidden="true" className="text-lg leading-none">›</span>
-                        </button>
-
+                      <div className="mt-auto pt-5">
                         <button
                           type="button"
                           onClick={() => handleApplyClick(job)}
                           disabled={hasApplied}
-                          className={`px-5 py-2 rounded-lg text-sm font-semibold transition disabled:pointer-events-none ${
+                          className={`w-full min-h-10 px-5 py-2 rounded-lg text-sm font-semibold transition disabled:pointer-events-none ${
                             hasApplied
                               ? "bg-blue-100 text-blue-700 border border-blue-200"
                               : "bg-[#1e4ba0] text-white border border-transparent hover:bg-[#1b4290]"
