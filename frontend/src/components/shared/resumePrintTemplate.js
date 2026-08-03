@@ -803,6 +803,18 @@ export const openResumePrintWindow = async (resumeData = {}) => {
     existingWrapper.remove();
   }
 
+  // Open the tab immediately so the browser will not block it after the
+  // asynchronous PDF generation finishes.
+  const previewWindow = window.open('', '_blank');
+
+  if (!previewWindow) {
+    return false;
+  }
+
+  previewWindow.document.title = buildResumeFileName(resumeData);
+  previewWindow.document.body.innerHTML =
+    '<div style="font-family:Arial,sans-serif;padding:24px;color:#374151;">Preparing your CV PDF...</div>';
+
   const wrapper = document.createElement('div');
   wrapper.id = 'agapay-resume-pdf-wrapper';
   wrapper.style.position = 'fixed';
@@ -835,7 +847,7 @@ export const openResumePrintWindow = async (resumeData = {}) => {
     const html2pdf = await loadHtml2Pdf();
     const paper = wrapper.querySelector('.resume-paper') || wrapper;
 
-    await html2pdf()
+    const pdfWorker = html2pdf()
       .set({
         margin: 0,
         filename: buildResumeFileName(resumeData),
@@ -855,14 +867,28 @@ export const openResumePrintWindow = async (resumeData = {}) => {
         },
         pagebreak: { mode: ['css', 'legacy'] },
       })
-      .from(paper)
-      .save();
+      .from(paper);
+
+    const pdfBlob = await pdfWorker.outputPdf('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+
+    previewWindow.location.replace(pdfUrl);
+
+    // Keep the object URL long enough for the browser PDF viewer to load it.
+    window.setTimeout(() => {
+      URL.revokeObjectURL(pdfUrl);
+    }, 5 * 60 * 1000);
 
     wrapper.remove();
     return true;
   } catch (error) {
-    console.error('Resume PDF download failed:', error);
+    console.error('Resume PDF preview failed:', error);
     wrapper.remove();
+
+    try {
+      previewWindow.close();
+    } catch {}
+
     return false;
   }
 };
