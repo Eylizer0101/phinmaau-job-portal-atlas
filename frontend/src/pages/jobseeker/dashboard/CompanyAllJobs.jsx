@@ -160,7 +160,7 @@ const CompanyAllJobs = () => {
               {visibleJobs.map((job) => {
                 const applied = appliedIds.includes(job._id);
                 return (
-                  <article key={job._id} className="relative flex min-h-[375px] flex-col rounded-2xl border border-[#E5E7EB] bg-white p-7 shadow-sm transition hover:shadow-md">
+                  <article key={job._id} className="relative flex self-start flex-col rounded-2xl border border-[#E5E7EB] bg-white p-7 shadow-sm transition hover:shadow-md">
                     {job.isUrgent ? <img src="/images/gentneeded.png" alt="Urgent Hiring" className="pointer-events-none absolute -left-[50px] -top-[52px] z-10 w-[230px] max-w-none select-none" /> : null}
                     <div className="flex items-start gap-4 pr-10">
                       <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#d8e2ee] bg-white">
@@ -249,8 +249,8 @@ const CompanyAllJobs = () => {
                       ) : null}
                     </div>
 
-                    <div className="mt-auto pt-5">
-                      <div className="mb-5 h-px w-full bg-gray-300/80" />
+                    <div className="mt-5">
+                      <div className="mb-4 h-px w-full bg-gray-300/80" />
                       <div className="flex items-center justify-between gap-4">
                         <button type="button" onClick={() => navigate(`/jobseeker/job-details/${job._id}`, { state: { sourcePage: "company-all-jobs", companyId: id } })} className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-800">View Details <span aria-hidden="true">›</span></button>
                         <button type="button" onClick={() => handleApply(job)} disabled={applied} className={`rounded-lg px-5 py-2 text-sm font-semibold transition disabled:pointer-events-none ${applied ? "border border-blue-200 bg-blue-100 text-blue-700" : "bg-[#1e4ba0] text-white hover:bg-[#1b4290]"}`}>{applied ? "Already Applied" : "Apply Now"}</button>
