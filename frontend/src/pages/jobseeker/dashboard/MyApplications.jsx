@@ -879,7 +879,7 @@ const MyApplications = () => {
               <div
                 role="tablist"
                 aria-label="Application status filters"
-                className="inline-flex flex-wrap gap-2 bg-gray-100 p-1 rounded-xl"
+                className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:w-auto lg:grid-cols-4"
               >
                 {topFilters.map((item) => {
                   const active =
@@ -898,9 +898,11 @@ const MyApplications = () => {
                       onClick={() => handleStatusFilterChange(item.key)}
                       className={[
                         UI.btnBase,
-                        UI.btnSm,
+                        'min-h-[48px] justify-start rounded-xl border px-4 py-3 text-sm',
                         UI.ring,
-                        active ? 'bg-white shadow-sm text-[#2e66a6]' : 'text-gray-700 hover:bg-gray-200',
+                        active
+                          ? 'border-[#2e66a6]/30 bg-[#2e66a6]/5 text-[#2e66a6] shadow-sm'
+                          : 'border-gray-200 bg-white text-gray-700 shadow-sm hover:border-gray-300 hover:bg-gray-50',
                       ].join(' ')}
                       type="button"
                     >
@@ -1135,7 +1137,7 @@ const MyApplications = () => {
                   return (
                     <div key={application._id} className={`${UI.card} ${UI.cardHover} overflow-hidden`}>
                       <div className="p-5 sm:p-6">
-                        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                        <div className="flex min-h-[142px] flex-col gap-4 lg:flex-row lg:items-stretch lg:justify-between">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start gap-4">
                               <CompanyLogo logoUrl={logoUrl} companyName={companyName} />
@@ -1187,7 +1189,7 @@ const MyApplications = () => {
                               </div>
                             </div>
                           </div>
-                          <div className="flex flex-col items-stretch gap-2 sm:flex-row lg:items-center lg:justify-end">
+                          <div className="flex flex-col items-stretch gap-2 sm:flex-row lg:self-end lg:items-center lg:justify-end">
                             {isActiveCard && (
                               <button
                                 type="button"
