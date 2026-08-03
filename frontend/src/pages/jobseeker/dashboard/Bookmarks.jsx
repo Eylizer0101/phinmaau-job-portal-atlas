@@ -1260,7 +1260,7 @@ const CompanyJobMiniCard = ({ job, onViewDetails, onApply, onSave, saving, isSav
           src="/images/neededd.png"
           alt="Urgent Hiring"
           draggable="false"
-          className="pointer-events-none mb-4 h-auto w-[150px] max-w-full select-none object-contain"
+          className="pointer-events-none absolute -left-[42px] -top-[38px] z-10 w-[190px] max-w-none select-none object-contain"
         />
       ) : null}
 
@@ -1285,7 +1285,7 @@ const CompanyJobMiniCard = ({ job, onViewDetails, onApply, onSave, saving, isSav
         )}
       </button>
 
-      <div className="flex items-start gap-4 pr-12">
+      <div className={`flex items-start gap-4 pr-12 ${normalizeBoolean(job?.isUrgent) ? 'pt-8' : ''}`}>
         <CompanyLogo src={job.companyLogo} name={job.companyName} />
         <div className="min-w-0 flex-1">
           <h3 className="min-w-0 truncate whitespace-nowrap text-lg font-bold text-gray-800 leading-snug">
