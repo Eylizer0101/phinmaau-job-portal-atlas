@@ -1916,15 +1916,22 @@ The company also values transparency, teamwork, and continuous improvement, crea
                       <div className="pt-4">
                         <button
                           type="button"
-                          onClick={() => handleApplyClick(job)}
+                          onClick={() =>
+                            navigate(`/jobseeker/job-details/${job._id || job.id}`, {
+                              state: {
+                                sourcePage: "company-details",
+                                companyId: id,
+                              },
+                            })
+                          }
                           disabled={hasApplied}
-                          className={`w-full min-h-10 px-5 py-2 rounded-lg text-sm font-semibold transition disabled:pointer-events-none ${
+                          className={`w-full h-[40px] px-5 rounded-xl text-sm font-semibold transition disabled:pointer-events-none ${
                             hasApplied
                               ? "bg-blue-100 text-blue-700 border border-blue-200"
                               : "bg-[#1e4ba0] text-white border border-transparent hover:bg-[#1b4290]"
                           }`}
                           aria-disabled={hasApplied}
-                          title={hasApplied ? "You already applied for this job" : "Apply now"}
+                          title={hasApplied ? "You already applied for this job" : "Open job details to apply"}
                         >
                           {hasApplied ? "Already Applied" : "Apply Now"}
                         </button>

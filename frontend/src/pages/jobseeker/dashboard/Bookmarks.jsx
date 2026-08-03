@@ -1371,27 +1371,18 @@ const CompanyJobMiniCard = ({ job, onViewDetails, onApply, onSave, saving, isSav
 
       <div className="mt-4 w-full h-px bg-gray-300/80" />
 
-      <div className="mt-auto pt-5 flex items-center justify-between gap-4">
+      <div className="mt-auto pt-5">
         <button
           type="button"
           onClick={onViewDetails}
-          className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition"
-        >
-          <span>View Details</span>
-          <span aria-hidden="true" className="text-lg leading-none">›</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onApply(job)}
           disabled={alreadyApplied}
-          className={`px-5 py-2 rounded-lg text-sm font-semibold transition disabled:pointer-events-none ${
+          className={`h-[40px] w-full rounded-xl px-5 text-sm font-semibold transition disabled:pointer-events-none ${
             alreadyApplied
               ? 'bg-blue-100 text-blue-700 border border-blue-200'
               : 'bg-[#1e4ba0] text-white border border-transparent hover:bg-[#1b4290]'
           }`}
           aria-disabled={alreadyApplied}
-          title={alreadyApplied ? 'You already applied for this job' : 'Apply now'}
+          title={alreadyApplied ? 'You already applied for this job' : 'Open job details to apply'}
         >
           {alreadyApplied ? 'Already Applied' : 'Apply Now'}
         </button>
