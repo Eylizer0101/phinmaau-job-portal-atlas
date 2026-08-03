@@ -14,6 +14,43 @@ const normalizeJobsResponse = (response) => {
 const formatSalary = (min, max, hidden) => hidden ? "Salary not disclosed" : (min || max) ? `₱${Number(min || 0).toLocaleString("en-PH")} - ₱${Number(max || min || 0).toLocaleString("en-PH")}` : "Salary not specified";
 const shortLocation = (value) => String(value || "Location not specified").split(",").slice(0, 3).join(", ");
 
+const normalizeBoolean = (value) => {
+  if (typeof value === "boolean") return value;
+  const normalized = String(value || "").trim().toLowerCase();
+  return normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "on";
+};
+
+const normalizeExperienceLevelValue = (value) => String(value || "").trim().toLowerCase();
+
+const isFreshGraduateJob = (job) => normalizeBoolean(job?.openToFreshGraduates);
+
+const getExperienceBadgeLabel = (experienceLevel) => {
+  const raw = String(experienceLevel || "").trim();
+  if (!raw) return "";
+
+  const normalized = normalizeExperienceLevelValue(raw);
+
+  if (normalized === "no experience required") return "No Experience";
+  if (["less than 1 yr", "less than 1 year", "less than 1 yr exp", "less than 1 year exp"].includes(normalized)) return "Less than 1 Yr Exp";
+  if (["1 year", "1 years", "2 year", "2 years", "3 year", "3 years", "1-3 years", "1-3 years exp"].includes(normalized)) return "1-3 Years Exp";
+  if (["4 year", "4 years", "5 year", "5 years", "4-5 years", "4-5 years exp"].includes(normalized)) return "4-5 Years Exp";
+  if (["6+ year", "6+ years", "6+ year exp", "6+ years exp"].includes(normalized)) return "6+ Years Exp";
+
+  return raw;
+};
+
+const normalizeWorkModeLabel = (value) => {
+  const normalized = String(value || "").trim().toLowerCase();
+
+  if (!normalized) return "";
+  if (normalized.includes("hybrid") || normalized.includes("blended")) return "Blended";
+  if (normalized.includes("work from home") || normalized.includes("wfh")) return "Work from Home";
+  if (normalized.includes("remote")) return "Remote";
+  if (normalized.includes("on-site") || normalized.includes("onsite") || normalized.includes("on site")) return "On-site";
+
+  return "";
+};
+
 const CompanyAllJobs = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -136,13 +173,80 @@ const CompanyAllJobs = () => {
                     </div>
 
                     <div className="mt-4 overflow-hidden rounded-xl bg-[#F3F4F6] p-4 text-sm text-gray-700">
-                      <p className="truncate">⌖ {shortLocation(job.location || company.location)}</p>
-                      <p className="mt-2 truncate">₱ {formatSalary(job.salaryMin, job.salaryMax, job.hideSalary).replace(/^₱\s*/, "")}</p>
-                      <p className="mt-2 truncate">▣ {job.jobType || "Employment type not specified"}</p>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <svg
+                          className="h-4 w-4 shrink-0 text-gray-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                        </svg>
+                        <span className="min-w-0 flex-1 truncate">
+                          {shortLocation(job.location || company.location)}
+                        </span>
+                      </div>
+
+                      <div className="mt-2 flex min-w-0 items-center gap-2">
+                        <span className="flex h-4 w-4 shrink-0 items-center justify-center text-[14px] font-extrabold leading-none text-gray-600">
+                          ₱
+                        </span>
+                        <span className="min-w-0 flex-1 truncate">
+                          {formatSalary(job.salaryMin, job.salaryMax, job.hideSalary).replace(/^₱\s*/, "")}
+                        </span>
+                      </div>
+
+                      <div className="mt-2 flex min-w-0 items-center gap-2">
+                        <svg
+                          className="h-4 w-4 shrink-0 text-gray-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                          />
+                        </svg>
+                        <span className="min-w-0 flex-1 truncate">
+                          {job.jobType || "Full Time Work"}
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {[job.experienceLevel, job.workMode, job.openToFreshGraduates ? "Open Fresh Grads" : ""].filter(Boolean).map((tag) => <span key={tag} className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-[#2e66a6]">{tag}</span>)}
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      {getExperienceBadgeLabel(job.experienceLevel) ? (
+                        <span className="whitespace-nowrap rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-[#2e66a6]">
+                          {getExperienceBadgeLabel(job.experienceLevel)}
+                        </span>
+                      ) : null}
+
+                      {normalizeWorkModeLabel(job.workMode || job.workArrangement || job.workSetup || job.setup) ? (
+                        <span className="whitespace-nowrap rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-[#2e66a6]">
+                          {normalizeWorkModeLabel(job.workMode || job.workArrangement || job.workSetup || job.setup)}
+                        </span>
+                      ) : null}
+
+                      {isFreshGraduateJob(job) ? (
+                        <span className="whitespace-nowrap rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-[#2e66a6]">
+                          Open fresh grad
+                        </span>
+                      ) : null}
                     </div>
 
                     <div className="mt-auto pt-5">
