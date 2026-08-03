@@ -1857,14 +1857,36 @@ const JobSeekerDashboard = () => {
                   })}
                 </div>
               ) : (
-                <div className="h-full px-8 py-12 text-center flex flex-col items-center justify-center">
-                  <p className="text-sm text-gray-500">No applications yet</p>
+                <div className="flex min-h-[330px] h-full flex-col items-center justify-center px-8 py-12 text-center">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#EAF2FB] text-[#2e66a6]">
+                    <svg
+                      className="h-8 w-8"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="1.8"
+                        d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m-9 4h10m-12 9h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v9a2 2 0 002 2z"
+                      />
+                    </svg>
+                  </div>
+
+                  <p className="mt-5 max-w-sm text-sm font-medium leading-6 text-gray-700">
+                    Oops, looks like you don&apos;t have applications here yet.
+                    <br />
+                    Explore jobs and get started.
+                  </p>
 
                   <button
                     type="button"
-                    className="mt-5 inline-flex items-center justify-center px-5 py-2 rounded-lg bg-[#2e66a6] text-white text-sm font-semibold hover:bg-[#245387] transition-colors"
+                    className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#245387]"
                     onClick={() => navigate('/jobseeker/job-search')}
                   >
+                    <span className="text-lg leading-none" aria-hidden="true">+</span>
                     Apply now
                   </button>
                 </div>
