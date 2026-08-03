@@ -161,7 +161,7 @@ const CompanyAllJobs = () => {
                 const applied = appliedIds.includes(job._id);
                 return (
                   <article key={job._id} className="group relative flex self-start flex-col overflow-visible rounded-[22px] border border-[#E5E7EB] bg-white p-5 shadow-[0_6px_18px_rgba(0,0,0,0.045)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)]">
-                    {job.isUrgent ? <img src="/images/gentneeded.png" alt="Urgent Hiring" className="pointer-events-none absolute -top-[48px] -left-[50px] z-10 w-[230px] max-w-none select-none" /> : null}
+                    {job.isUrgent ? <img src="/images/neededd.png" alt="Urgent Hiring" className="pointer-events-none absolute -top-[48px] -left-[50px] z-10 w-[230px] max-w-none select-none" /> : null}
                     <div className="flex items-start gap-4 pr-10">
                       <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#d8e2ee] bg-white">
                         {company.companyLogo ? <img src={company.companyLogo} alt={company.companyName || "Company"} className="h-full w-full object-contain p-1" /> : <span className="text-xl font-bold text-[#2e66a6]">{String(company.companyName || "C").charAt(0)}</span>}
