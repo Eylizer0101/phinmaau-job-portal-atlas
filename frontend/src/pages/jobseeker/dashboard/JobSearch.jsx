@@ -1243,7 +1243,7 @@ const JobSearch = () => {
     noExperience;
 
   const primaryBtn =
-    'px-5 py-2 rounded-lg text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 transition disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none';
+    'px-5 py-2 h-[40px] rounded-xl text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 transition disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none';
 
   const ghostLink =
     'text-sm font-medium text-gray-600 hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400 inline-flex items-center gap-2 transition';
@@ -1798,7 +1798,7 @@ const JobSearch = () => {
                             type="button"
                             onClick={() => handleViewJobDetails(job)}
                             disabled={hasApplied || isJobClosed}
-                            className={`${primaryBtn} w-full min-h-[44px] justify-center`}
+                            className={`${primaryBtn} w-full justify-center`}
                             style={{
                               backgroundColor: hasApplied ? '#dbeafe' : isJobClosed ? '#e5e7eb' : COLORS.primary,
                               color: hasApplied ? '#1d4ed8' : isJobClosed ? '#6b7280' : '#ffffff',
