@@ -137,7 +137,7 @@ const MainLandingPage = () => {
       <main className="relative min-h-screen overflow-hidden bg-white pt-16 lg:h-[calc(100vh-64px)] lg:min-h-0">
         <div className="relative mx-auto flex min-h-[calc(100vh-64px)] w-full max-w-[1450px] flex-col px-5 pb-6 pt-8 sm:px-8 lg:h-full lg:min-h-0 lg:px-12 lg:pb-4 lg:pt-5">
           <section className="shrink-0 text-center">
-            <h1 className="mx-auto max-w-[1240px] text-[34px] font-bold leading-[1.12] tracking-tight text-[#202020] sm:text-5xl lg:text-[50px] xl:text-[54px]">
+            <h1 className="mx-auto max-w-[1240px] text-[34px] font-semibold leading-[1.12] tracking-tight text-[#202020] sm:text-5xl lg:text-[50px] xl:text-[54px]">
               <span className="block">Your Future Employer is</span>
               <span className="block lg:whitespace-nowrap">
                 Looking for{" "}
@@ -212,7 +212,7 @@ const MainLandingPage = () => {
           </section>
 
           <section className="mt-8 shrink-0 text-center lg:mt-5">
-            <h2 className="text-2xl font-extrabold text-[#202020] lg:text-[28px]">
+            <h2 className="text-2xl font-semibold text-[#202020] lg:text-[28px]">
               Find your next job with one of Our Partners
             </h2>
 
