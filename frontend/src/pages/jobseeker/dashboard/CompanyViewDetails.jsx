@@ -1753,7 +1753,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
                 description="New openings from this company will appear here once available."
               />
             ) : (
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {previewJobs.map((job) => {
                   const jobId = job._id || job.id;
                   const experienceBadgeLabel = getExperienceBadgeLabel(job.experienceLevel);
