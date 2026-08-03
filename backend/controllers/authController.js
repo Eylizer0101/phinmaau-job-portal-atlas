@@ -1117,7 +1117,7 @@ exports.forgotPassword = async (req, res) => {
 
     await user.save();
 
-    const appUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://phinmaau-job-portal-atlas-1.onrender.com';
+    const appUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://agapayy.onrender.com';
     const resetUrl = `${appUrl}/reset-password?token=${encodeURIComponent(resetToken)}`;
 
     try {

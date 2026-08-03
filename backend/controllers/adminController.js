@@ -1647,7 +1647,7 @@ exports.holdEmployerVerification = async (req, res) => {
 
     await employer.save();
 
-    const frontendUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://phinmaau-job-portal-atlas-1.onrender.com';
+    const frontendUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://agapayy.onrender.com';
     const resubmitUrl = `${frontendUrl}/resubmit-document?token=${rawToken}`;
 
     sendResubmitDocumentEmail({
@@ -2351,7 +2351,7 @@ exports.holdJobseekerVerification = async (req, res) => {
 
     await jobseeker.save();
 
-    const frontendUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://phinmaau-job-portal-atlas-1.onrender.com';
+    const frontendUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://agapayy.onrender.com';
     const resubmitUrl = `${frontendUrl}/resubmit-document?token=${rawToken}`;
 
     sendResubmitDocumentEmail({
