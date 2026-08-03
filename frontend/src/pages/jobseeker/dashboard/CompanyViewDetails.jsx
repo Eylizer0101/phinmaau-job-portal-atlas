@@ -1772,7 +1772,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
                   return (
                     <div
                       key={jobId}
-                      className="group relative overflow-visible rounded-[22px] p-5 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[372px] border border-[#E5E7EB]"
+                      className="group relative overflow-visible rounded-[22px] p-5 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[350px] border border-[#E5E7EB]"
                     >
                       {job.isUrgent ? (
                         <img
@@ -1911,9 +1911,9 @@ The company also values transparency, teamwork, and continuous improvement, crea
                         )}
                       </div>
 
-                      <div className="mt-4 w-full h-px bg-gray-300/80" />
+                      <div className="mt-3 w-full h-px bg-gray-300/80" />
 
-                      <div className="mt-auto pt-5">
+                      <div className="pt-4">
                         <button
                           type="button"
                           onClick={() => handleApplyClick(job)}

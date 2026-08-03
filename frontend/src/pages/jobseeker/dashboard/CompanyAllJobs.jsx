@@ -160,8 +160,8 @@ const CompanyAllJobs = () => {
               {visibleJobs.map((job) => {
                 const applied = appliedIds.includes(job._id);
                 return (
-                  <article key={job._id} className="relative flex self-start flex-col rounded-2xl border border-[#E5E7EB] bg-white p-7 shadow-sm transition hover:shadow-md">
-                    {job.isUrgent ? <img src="/images/gentneeded.png" alt="Urgent Hiring" className="pointer-events-none absolute -left-[50px] -top-[52px] z-10 w-[230px] max-w-none select-none" /> : null}
+                  <article key={job._id} className="group relative flex self-start flex-col overflow-visible rounded-[22px] border border-[#E5E7EB] bg-white p-5 shadow-[0_6px_18px_rgba(0,0,0,0.045)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)]">
+                    {job.isUrgent ? <img src="/images/gentneeded.png" alt="Urgent Hiring" className="pointer-events-none absolute -top-[48px] -left-[50px] z-10 w-[230px] max-w-none select-none" /> : null}
                     <div className="flex items-start gap-4 pr-10">
                       <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#d8e2ee] bg-white">
                         {company.companyLogo ? <img src={company.companyLogo} alt={company.companyName || "Company"} className="h-full w-full object-contain p-1" /> : <span className="text-xl font-bold text-[#2e66a6]">{String(company.companyName || "C").charAt(0)}</span>}
@@ -249,7 +249,7 @@ const CompanyAllJobs = () => {
                       ) : null}
                     </div>
 
-                    <div className="mt-5">
+                    <div className="mt-3">
                       <div className="mb-4 h-px w-full bg-gray-300/80" />
                       <div className="flex items-center justify-between gap-4">
                         <button type="button" onClick={() => navigate(`/jobseeker/job-details/${job._id}`, { state: { sourcePage: "company-all-jobs", companyId: id } })} className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-800">View Details <span aria-hidden="true">›</span></button>
