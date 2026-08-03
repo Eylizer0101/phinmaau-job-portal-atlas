@@ -121,7 +121,7 @@ const MainLandingPage = () => {
       <MainNavbar />
 
       <main className="relative min-h-screen bg-white pt-16">
-        <div className="relative mx-auto flex w-full max-w-[1450px] flex-col px-5 pb-8 pt-8 sm:px-8 lg:px-12 lg:pb-8 lg:pt-5">
+        <div className="relative mx-auto flex w-full max-w-[1450px] flex-col px-5 pb-8 pt-14 sm:px-8 lg:px-12 lg:pb-8 lg:pt-12">
           <section className="shrink-0 text-center">
             <h1 className="mx-auto max-w-[1240px] text-[34px] font-semibold leading-[1.12] tracking-tight text-[#202020] sm:text-5xl lg:text-[50px] xl:text-[54px]">
               <span className="block">Your Future Employer is</span>
