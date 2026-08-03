@@ -13,7 +13,7 @@ import {
   faMapMarkerAlt,
 } from '@fortawesome/free-solid-svg-icons';
 
-const TOP_CARD_HEIGHT = 'lg:h-[560px]';
+const TOP_CARD_HEIGHT = 'lg:min-h-[560px]';
 const PROFILE_REMINDER_ICON = '/images/clock.png';
 
 const normalizeBoolean = (value) => {
@@ -1637,7 +1637,7 @@ const JobSeekerDashboard = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 xl:gap-8 mb-8">
           {/* RECENT APPLICATIONS */}
-          <div className={`bg-white rounded-3xl shadow-sm border border-[#D9E3F2] overflow-hidden transition-all duration-300 hover:shadow-lg flex flex-col ${TOP_CARD_HEIGHT}`}>
+          <div className={`bg-white rounded-3xl shadow-sm border border-[#D9E3F2] overflow-visible transition-all duration-300 hover:shadow-lg flex flex-col ${TOP_CARD_HEIGHT}`}>
             <div className="px-6 py-5 border-b border-[#D9E3F2] flex items-center justify-between shrink-0">
               <div>
                 <h3 className="text-lg font-bold text-black">Recent Application</h3>
