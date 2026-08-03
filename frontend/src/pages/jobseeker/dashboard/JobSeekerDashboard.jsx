@@ -1753,61 +1753,65 @@ const JobSeekerDashboard = () => {
                               </div>
                             </div>
 
-                            <div className="mt-4 min-w-0 rounded-2xl bg-[#F7F9FC] px-4 py-3 text-xs sm:text-[13px]">
+                            <div className="mt-4 rounded-xl bg-[#F3F4F6] p-4">
                               {app.job?.location && (
-                                <div className="flex min-w-0 items-center gap-2 text-gray-600">
-                                  <div className="w-4 h-4 flex-shrink-0 flex items-center justify-center text-gray-400">
-                                    <FontAwesomeIcon icon={faMapMarkerAlt} className="w-3.5 h-3.5 flex-shrink-0" />
-                                  </div>
-                                  <span className="leading-none block min-w-0 max-w-full truncate">{formatLocationDisplay(app.job.location)}</span>
+                                <div className="flex min-w-0 items-center gap-2 text-sm text-gray-700">
+                                  <svg
+                                    className="h-4 w-4 shrink-0 text-gray-600"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    aria-hidden="true"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth="2"
+                                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                                    />
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth="2"
+                                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                    />
+                                  </svg>
+                                  <span className="min-w-0 flex-1 truncate">
+                                    {formatLocationDisplay(app.job.location)}
+                                  </span>
                                 </div>
                               )}
 
-                              {(app.job?.salaryMin || app.job?.salaryMax || recentWorkMode || recentEmploymentType) && (
-                                <div className="mt-3 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 font-semibold leading-none text-black">
-                                  {(app.job?.salaryMin || app.job?.salaryMax) && (
-                                    <span className="inline-flex items-center gap-1.5">
-                                     <span
-  aria-hidden="true"
-  className="inline-flex items-center justify-center shrink-0 text-[17px]"
-  style={{
-    fontWeight: "400",
-    color: "#9CA3AF",
-    fontFamily: "Arial, Helvetica, sans-serif",
-    WebkitTextStroke: "0",
-    textShadow: "none",
-    lineHeight: 1,
-  }}
->
-  ₱
-</span>
-                                      <span className="font-semibold">{formatSalaryWithoutCurrency(app.job?.salaryMin, app.job?.salaryMax)}</span>
-                                    </span>
-                                  )}
+                              {(app.job?.salaryMin || app.job?.salaryMax) && (
+                                <div className="mt-2 flex min-w-0 items-center gap-2 text-sm text-gray-700">
+                                  <span className="flex h-4 w-4 shrink-0 items-center justify-center text-[14px] font-extrabold leading-none text-gray-600">
+                                    ₱
+                                  </span>
+                                  <span className="min-w-0 flex-1 truncate">
+                                    {formatSalaryWithoutCurrency(app.job?.salaryMin, app.job?.salaryMax)}
+                                  </span>
+                                </div>
+                              )}
 
-                                  {recentWorkMode && (
-                                    <>
-                                      {(app.job?.salaryMin || app.job?.salaryMax) && <span aria-hidden="true">|</span>}
-                                      <span className="inline-flex items-center gap-1.5">
-                                        <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 21h16M6 21V7a2 2 0 012-2h8a2 2 0 012 2v14M9 9h.01M9 13h.01M12 9h.01M12 13h.01M15 9h.01M15 13h.01" />
-                                        </svg>
-                                        {recentWorkMode}
-                                      </span>
-                                    </>
-                                  )}
-
-                                  {recentEmploymentType && (
-                                    <>
-                                      {(app.job?.salaryMin || app.job?.salaryMax || recentWorkMode) && <span aria-hidden="true">|</span>}
-                                      <span className="inline-flex items-center gap-1.5">
-                                        <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 7V5a2 2 0 012-2h4a2 2 0 012 2v2m-9 0h12a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2V9a2 2 0 012-2zm0 5h12" />
-                                        </svg>
-                                        {recentEmploymentType}
-                                      </span>
-                                    </>
-                                  )}
+                              {recentEmploymentType && (
+                                <div className="mt-2 flex min-w-0 items-center gap-2 text-sm text-gray-700">
+                                  <svg
+                                    className="h-4 w-4 shrink-0 text-gray-600"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    aria-hidden="true"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth="2"
+                                      d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                    />
+                                  </svg>
+                                  <span className="min-w-0 flex-1 truncate">
+                                    {recentEmploymentType}
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -2030,10 +2034,10 @@ const JobSeekerDashboard = () => {
                             </button>
                           </div>
 
-                          <div className="mt-4 space-y-2 rounded-2xl bg-[#F7F9FC] px-4 py-3 text-xs text-black sm:text-[13px]">
-                            <div className="flex min-w-0 items-center gap-2">
+                          <div className="mt-4 rounded-xl bg-[#F3F4F6] p-4">
+                            <div className="flex min-w-0 items-center gap-2 text-sm text-gray-700">
                               <svg
-                                className="h-3.5 w-3.5 shrink-0 text-gray-600"
+                                className="h-4 w-4 shrink-0 text-gray-600"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -2052,19 +2056,21 @@ const JobSeekerDashboard = () => {
                                   d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                                 />
                               </svg>
-                              <span className="truncate">
+                              <span className="min-w-0 flex-1 truncate">
                                 {formatLocationDisplay(job.location)}
                               </span>
                             </div>
 
-                            <div className="flex items-center gap-2 font-semibold text-black">
-                              <span aria-hidden="true" className="shrink-0 font-bold">₱</span>
-                              <span className="truncate">
+                            <div className="mt-2 flex min-w-0 items-center gap-2 text-sm text-gray-700">
+                              <span className="flex h-4 w-4 shrink-0 items-center justify-center text-[14px] font-extrabold leading-none text-gray-600">
+                                ₱
+                              </span>
+                              <span className="min-w-0 flex-1 truncate">
                                 {formatSalaryWithoutCurrency(job.salaryMin, job.salaryMax)}
                               </span>
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="mt-2 flex min-w-0 items-center gap-2 text-sm text-gray-700">
                               <svg
                                 className="h-4 w-4 shrink-0 text-gray-600"
                                 fill="none"
@@ -2079,7 +2085,7 @@ const JobSeekerDashboard = () => {
                                   d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                                 />
                               </svg>
-                              <span className="truncate">
+                              <span className="min-w-0 flex-1 truncate">
                                 {job.jobType || 'Full Time Work'}
                               </span>
                             </div>
