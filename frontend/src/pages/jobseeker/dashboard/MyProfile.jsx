@@ -2690,7 +2690,7 @@ const BasicInfoModal = ({
                   onChange={(e) => onChange('region', e.target.value)}
                   className="h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                 >
-                  <option value="">Select region</option>
+                  <option value="" disabled={Boolean(drafts.region)}>Select region</option>
                   {regionOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
               </div>
@@ -2704,7 +2704,7 @@ const BasicInfoModal = ({
                   disabled={!drafts.region}
                   className="h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6] disabled:bg-gray-50 disabled:text-gray-400"
                 >
-                  <option value="">Select province</option>
+                  <option value="" disabled={Boolean(drafts.province)}>Select province</option>
                   {provinceOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
               </div>
@@ -2718,7 +2718,7 @@ const BasicInfoModal = ({
                   disabled={!drafts.province}
                   className="h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6] disabled:bg-gray-50 disabled:text-gray-400"
                 >
-                  <option value="">Select city / municipality</option>
+                  <option value="" disabled={Boolean(drafts.cityMunicipality)}>Select city / municipality</option>
                   {cityOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
               </div>
