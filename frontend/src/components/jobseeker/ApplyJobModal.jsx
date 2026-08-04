@@ -452,7 +452,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                         </p>
                       </div>
 
-                      <div className="mt-6">
+                      <div className="mt-3">
                         <button
                           type="button"
                           onClick={handleGoToProfile}
@@ -545,19 +545,17 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                         <span className="font-semibold text-black/75">{job.title || 'selected role'}</span> position.
                       </div>
 
-                      <p className="mt-8 text-[15px] text-black/45 leading-7 max-w-[480px] mx-auto">
-                        The employer will contact you if your qualifications align with their hiring needs.
-                        <br />
-                        In the meantime, your application is on file and awaiting review.
+                      <p className="mt-8 text-[15px] text-black/45 leading-7 max-w-[560px] mx-auto text-center">
+                        The employer will contact you if your qualifications align with
+                        <br className="hidden sm:block" />
+                        their hiring needs. In the meantime, your application is on file
+                        <br className="hidden sm:block" />
+                        and awaiting review.
                       </p>
 
                       <div className="mt-10 h-px bg-[#e6edf5] max-w-[320px] mx-auto" />
 
-                      <div className="mt-8 text-[11px] tracking-[0.2em] uppercase font-bold text-black/40">
-                        What&apos;s next?
-                      </div>
-
-                      <div className="mt-5 max-w-[300px] mx-auto">
+                      <div className="mt-8 max-w-[300px] mx-auto">
                         <button
                           type="button"
                           onClick={() => {
