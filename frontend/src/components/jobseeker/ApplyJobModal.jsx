@@ -448,21 +448,18 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                           Before you proceed, ensure your profile reflects your current qualifications.
                           <br />
                           A complete profile helps employers learn more about your skills, qualifications,
-                          and experience. Update your information to increase your chances of getting hired.
+                          and experience. Update your information to increase your chances of getting hired.{' '}
+                          <button
+                            type="button"
+                            onClick={handleGoToProfile}
+                            className="inline-flex items-center gap-1 whitespace-nowrap text-[14px] font-semibold text-[#2e66a6] underline underline-offset-4 transition hover:text-[#25578f]"
+                          >
+                            Take me there! →
+                          </button>
                         </p>
                       </div>
 
-                      <div className="mt-6 mb-5">
-                        <button
-                          type="button"
-                          onClick={handleGoToProfile}
-                          className="inline-flex items-center gap-1 text-[14px] font-semibold text-[#2e66a6] underline underline-offset-4 transition hover:text-[#25578f]"
-                        >
-                          Take me there! →
-                        </button>
-                      </div>
-
-                      <div className="mt-2">
+                      <div className="mt-8">
                         {renderHeader('small')}
                       </div>
 
