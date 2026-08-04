@@ -1433,48 +1433,48 @@ const ManageJobs = () => {
                             <Icon name="edit" className="h-4 w-4" />
                           </Link>
 
-                          {['open', 'closed'].includes(derivedStatus) && (
-                            <button
-                              type="button"
-                              onClick={() => setStatusConfirmationJob(job)}
-                              disabled={busyThisRow}
-                              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                              aria-label={`${derivedStatus === 'open' ? 'Close Job' : 'Open Job'} ${title}`}
-                              title={derivedStatus === 'open' ? 'Close Job' : 'Open Job'}
-                            >
-                              {busyThisRow && ['open', 'close'].includes(action.type) ? (
-                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#2e66a6]" />
-                              ) : (
-                                <Icon name={derivedStatus === 'open' ? 'closeJob' : 'openJob'} className="h-5 w-5" />
-                              )}
-                            </button>
-                          )}
-
                           <button
                             onClick={() => {
                               setSelectedJob(job);
                               setShowDeleteModal(true);
                             }}
                             disabled={busyThisRow}
-                            className="col-span-2 inline-flex h-10 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex h-10 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             aria-label={`Archive ${title}`}
                             title="Archive"
                           >
                             <Icon name="trash" className="h-4 w-4" />
                           </button>
 
+                          {['open', 'closed'].includes(derivedStatus) && (
+                            <button
+                              type="button"
+                              onClick={() => setStatusConfirmationJob(job)}
+                              disabled={busyThisRow}
+                              className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              aria-label={`${derivedStatus === 'open' ? 'Close Job' : 'Open Job'} ${title}`}
+                              title={derivedStatus === 'open' ? 'Close Job' : 'Open Job'}
+                            >
+                              {busyThisRow && ['open', 'close'].includes(action.type) ? (
+                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#2e66a6]" />
+                              ) : (
+                                derivedStatus === 'open' ? 'Close' : 'Open'
+                              )}
+                            </button>
+                          )}
+
                           {derivedStatus === 'draft' && (
                             <button
                               onClick={() => handlePublish(job._id)}
                               disabled={busyThisRow || !isEmployerVerified}
                               title={!isEmployerVerified ? 'Verify your company to publish jobs.' : 'Publish'}
-                              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex h-10 items-center justify-center rounded-lg bg-[#173f8a] px-4 text-sm font-semibold text-white transition hover:bg-[#12336f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#173f8a] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                               aria-label={`Publish ${title}`}
                             >
                               {busyThisRow && action.type === 'publish' ? (
                                 <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-current" />
                               ) : (
-                                <Icon name="publish" className="h-5 w-5" />
+                                'Publish'
                               )}
                             </button>
                           )}
@@ -1535,10 +1535,10 @@ const ManageJobs = () => {
                             key={job._id}
                             role="link"
                             className={cn(
-                              'transition',
+                              'group cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]',
                               String(job._id) === recentlySavedDraftId
                                 ? 'bg-amber-50 ring-2 ring-inset ring-amber-200'
-                                : 'hover:bg-gray-50'
+                                : 'hover:bg-[#2e66a6]/[0.06] focus-visible:bg-[#2e66a6]/[0.08]'
                             )}
                             tabIndex={0}
                             aria-label={`View ${title}`}
@@ -1566,7 +1566,6 @@ const ManageJobs = () => {
                                 },
                               });
                             }}
-                            className="group cursor-pointer transition-colors hover:bg-[#2e66a6]/[0.06] focus-visible:bg-[#2e66a6]/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
                           >
                             <td className="px-6 py-4 align-middle text-sm font-medium text-gray-700">
                               {formatDate(job.createdAt)}
@@ -1657,23 +1656,6 @@ const ManageJobs = () => {
                                   <Icon name="edit" className="h-4 w-4" />
                                 </Link>
 
-                                {['open', 'closed'].includes(derivedStatus) && (
-                            <button
-                              type="button"
-                              onClick={() => setStatusConfirmationJob(job)}
-                              disabled={busyThisRow}
-                              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                              aria-label={`${derivedStatus === 'open' ? 'Close Job' : 'Open Job'} ${title}`}
-                              title={derivedStatus === 'open' ? 'Close Job' : 'Open Job'}
-                            >
-                              {busyThisRow && ['open', 'close'].includes(action.type) ? (
-                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#2e66a6]" />
-                              ) : (
-                                <Icon name={derivedStatus === 'open' ? 'closeJob' : 'openJob'} className="h-5 w-5" />
-                              )}
-                            </button>
-                          )}
-
                                 <button
                                   onClick={() => {
                                     setSelectedJob(job);
@@ -1687,19 +1669,41 @@ const ManageJobs = () => {
                                   <Icon name="trash" className="h-4 w-4" />
                                 </button>
 
+                                {['open', 'closed'].includes(derivedStatus) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setStatusConfirmationJob(job)}
+                                    disabled={busyThisRow}
+                                    className={cn(
+                                      'inline-flex h-10 min-w-[88px] shrink-0 items-center justify-center rounded-lg px-4 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+                                      derivedStatus === 'closed'
+                                        ? 'bg-amber-400 text-gray-900 hover:bg-amber-500 focus-visible:ring-amber-500'
+                                        : 'border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 focus-visible:ring-[#2e66a6]'
+                                    )}
+                                    aria-label={`${derivedStatus === 'open' ? 'Close Job' : 'Open Job'} ${title}`}
+                                    title={derivedStatus === 'open' ? 'Close Job' : 'Open Job'}
+                                  >
+                                    {busyThisRow && ['open', 'close'].includes(action.type) ? (
+                                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#2e66a6]" />
+                                    ) : (
+                                      derivedStatus === 'open' ? 'Close' : 'Open'
+                                    )}
+                                  </button>
+                                )}
+
                                 {derivedStatus === 'draft' && (
                                   <button
                                     onClick={() => handlePublish(job._id)}
                                     disabled={busyThisRow || !isEmployerVerified}
                                     title={!isEmployerVerified ? 'Verify your company to publish jobs.' : 'Publish'}
-                                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex h-10 min-w-[88px] shrink-0 items-center justify-center rounded-lg bg-[#173f8a] px-4 text-sm font-semibold text-white transition hover:bg-[#12336f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#173f8a] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                     aria-label={`Publish ${title}`}
                                   >
                                     {busyThisRow && action.type === 'publish' ? (
-                                <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-current" />
-                              ) : (
-                                <Icon name="publish" className="h-5 w-5" />
-                              )}
+                                      <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-current" />
+                                    ) : (
+                                      'Publish'
+                                    )}
                                   </button>
                                 )}
                               </div>
