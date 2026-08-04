@@ -1267,8 +1267,27 @@ const MyApplications = () => {
                 })}
               </div>
               {showPagination && (
-                <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row sm:flex-wrap" aria-label="Application pagination">
-                  <nav
+                <div className="mt-8 flex flex-col gap-4 border-t border-gray-100 pt-6 lg:flex-row lg:items-center lg:justify-between" aria-label="Application pagination">
+                  <div className="text-sm text-gray-500">
+                    Page {currentPage} of {totalPages} · {searchedApplications.length} total
+                  </div>
+
+                  <div className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:flex-nowrap">
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                      <span className="whitespace-nowrap">Display per page</span>
+                      <select
+                        value={pageSize}
+                        onChange={(event) => setPageSize(event.target.value === 'all' ? 'all' : Number(event.target.value))}
+                        className={`h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 shadow-sm ${UI.ring}`}
+                      >
+                        <option value={10}>10</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                        <option value="all">All</option>
+                      </select>
+                    </label>
+
+                    <nav
                     className="inline-flex min-h-11 items-center overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
                     aria-label="Application pagination controls"
                   >
@@ -1309,21 +1328,8 @@ const MyApplications = () => {
                       Next
                       <span aria-hidden="true">›</span>
                     </button>
-                  </nav>
-
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <span className="whitespace-nowrap">Display per page</span>
-                    <select
-                      value={pageSize}
-                      onChange={(event) => setPageSize(event.target.value === 'all' ? 'all' : Number(event.target.value))}
-                      className={`h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 shadow-sm ${UI.ring}`}
-                    >
-                      <option value={10}>10</option>
-                      <option value={50}>50</option>
-                      <option value={100}>100</option>
-                      <option value="all">All</option>
-                    </select>
-                  </label>
+                    </nav>
+                  </div>
                 </div>
               )}
             </div>

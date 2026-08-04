@@ -148,8 +148,22 @@ const CompanyAllJobs = () => {
               <p className="mt-1 text-black/60">{filtered.length} open position{filtered.length === 1 ? "" : "s"}</p>
             </div>
             <div className="w-full lg:max-w-md">
-              <label htmlFor="job-search" className="mb-2 block text-sm font-semibold text-black/70">Search jobs</label>
-              <input id="job-search" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search title, location, type, or work mode" className="h-12 w-full rounded-xl border border-[#d8e2ee] px-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15" />
+              <div className="relative">
+                <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-black/35">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="m21 21-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </span>
+                <input
+                  id="job-search"
+                  type="search"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search jobs, title, or location"
+                  className="h-12 w-full rounded-xl border border-[#d8e2ee] pl-12 pr-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                  aria-label="Search jobs"
+                />
+              </div>
             </div>
           </div>
 
@@ -296,10 +310,23 @@ const CompanyAllJobs = () => {
 };
 
 const Pagination = ({ page, totalPages, setPage, perPage, setPerPage, pageNumbers, totalItems }) => (
-  <div className="mt-8 flex flex-col gap-4 border-t border-[#e6edf5] pt-6 xl:flex-row xl:items-center xl:justify-between">
+  <div className="mt-8 flex flex-col gap-4 border-t border-[#e6edf5] pt-6 lg:flex-row lg:items-center lg:justify-between">
     <div className="text-sm text-black/60">Page {page} of {totalPages} · {totalItems} total</div>
 
-    <div className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+    <div className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:flex-nowrap">
+      <label className="flex items-center gap-2 text-sm font-medium text-black/70">
+        <span className="whitespace-nowrap">Display per page</span>
+        <select
+          value={perPage}
+          onChange={(event) => setPerPage(event.target.value)}
+          className="h-11 rounded-xl border border-[#d8e2ee] bg-white px-3 outline-none shadow-sm focus:border-[#2e66a6]"
+        >
+          {PAGE_OPTIONS.map((option) => (
+            <option key={option} value={option}>{option}</option>
+          ))}
+        </select>
+      </label>
+
       <nav
         className="inline-flex min-h-11 items-center overflow-hidden rounded-xl border border-[#d8e2ee] bg-white shadow-sm"
         aria-label="Pagination controls"
@@ -329,19 +356,6 @@ const Pagination = ({ page, totalPages, setPage, perPage, setPerPage, pageNumber
           onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
         />
       </nav>
-
-      <label className="flex items-center gap-2 text-sm font-medium text-black/70">
-        <span className="whitespace-nowrap">Display per page</span>
-        <select
-          value={perPage}
-          onChange={(event) => setPerPage(event.target.value)}
-          className="h-11 rounded-xl border border-[#d8e2ee] bg-white px-3 outline-none shadow-sm focus:border-[#2e66a6]"
-        >
-          {PAGE_OPTIONS.map((option) => (
-            <option key={option} value={option}>{option}</option>
-          ))}
-        </select>
-      </label>
     </div>
   </div>
 );
