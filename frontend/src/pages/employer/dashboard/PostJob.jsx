@@ -933,6 +933,23 @@ const formatSalaryInput = (value = '') => {
   return Number(clean).toLocaleString('en-PH');
 };
 
+const getRelocationDisplayLabel = (value = '') => {
+  const cleanValue = String(value || '').trim();
+  const normalized = cleanValue.toLowerCase();
+
+  if (normalized === 'yes - willing to relocate') return 'Willing to relocate';
+  if (normalized === 'no - position is fixed location') return 'Location Fixed';
+  if (normalized === 'open to relocation if necessary') return 'Possible to relocate';
+
+  return cleanValue;
+};
+
+const normalizeExternalUrl = (value = '') => {
+  const cleanValue = String(value || '').trim();
+  if (!cleanValue || cleanValue.toLowerCase() === 'n/a') return '';
+  return /^https?:\/\//i.test(cleanValue) ? cleanValue : `https://${cleanValue}`;
+};
+
 const PostJob = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -1002,6 +1019,18 @@ const PostJob = () => {
     String(storedUser?.employerProfile?.companyAddress || '').trim() || 'Company location';
 
   const companyCategoryDefault = normalizeCategory(storedUser?.employerProfile?.industry);
+
+  const companyWebsite = useMemo(() => {
+    const profile = storedUser?.employerProfile || {};
+    return String(
+      profile.companyWebsite ||
+        profile.website ||
+        profile.websiteUrl ||
+        profile.companyUrl ||
+        profile.companyURL ||
+        ''
+    ).trim();
+  }, [storedUser]);
 
   const verificationStatus =
     storedUser?.employerProfile?.verificationDocs?.overallStatus || 'unverified';
@@ -2495,7 +2524,7 @@ const PostJob = () => {
                                 : '',
                               icon: 'users',
                             },
-                            { value: formData.willingToRelocate, icon: 'location' },
+                            { value: getRelocationDisplayLabel(formData.willingToRelocate), icon: 'location' },
                           ]
                             .filter((item) => item.value)
                             .map((item) => (
@@ -2561,7 +2590,7 @@ const PostJob = () => {
                     },
                     {
                       title: 'Website / Company URL',
-                      value: storedUser?.employerProfile?.companyWebsite || 'N/A',
+                      value: companyWebsite || 'N/A',
                       icon: 'external',
                     },
                   ].map((metric) => (
@@ -2589,7 +2618,21 @@ const PostJob = () => {
                         </div>
                         <div className="min-w-0 pt-0.5">
                           <p className="text-sm font-semibold text-black">{metric.title}</p>
-                          <p className="mt-1 truncate text-sm text-black/80" title={metric.value}>{metric.value}</p>
+                          {metric.title === 'Website / Company URL' && companyWebsite ? (
+                            <a
+                              href={normalizeExternalUrl(companyWebsite)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-1 block truncate text-sm text-[#2e66a6] hover:underline"
+                              title={companyWebsite}
+                            >
+                              {companyWebsite}
+                            </a>
+                          ) : (
+                            <p className="mt-1 truncate text-sm text-black/80" title={metric.value}>
+                              {metric.value}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -2734,38 +2777,92 @@ const PostJob = () => {
             role="dialog"
             aria-modal="true"
             aria-labelledby="privacy-notice-title"
-            className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+            className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
           >
-            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-              <h2 id="privacy-notice-title" className="text-xl font-bold text-gray-900">Privacy Notice & Posting Agreement</h2>
+            <div className="relative border-b border-slate-200 bg-gradient-to-b from-[#f7fbff] to-white px-6 pb-6 pt-7 text-center sm:px-9">
               <button
                 type="button"
                 onClick={() => setShowPrivacyModal(false)}
-                className="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                className="absolute right-4 top-4 rounded-full p-2 text-slate-500 transition hover:bg-white hover:text-slate-800 hover:shadow-sm"
                 aria-label="Close privacy notice"
               >
                 ✕
               </button>
+
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-[#bcd3ee] bg-[#eaf3fd] text-[#2e66a6] shadow-sm">
+                <svg
+                  className="h-7 w-7"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.6"
+                    d="M12 3l7 3v5c0 4.8-2.9 8.2-7 10-4.1-1.8-7-5.2-7-10V6l7-3z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.6"
+                    d="M9.5 11V9.5a2.5 2.5 0 015 0V11m-5 0h5a1 1 0 011 1v3a1 1 0 01-1 1h-5a1 1 0 01-1-1v-3a1 1 0 011-1z"
+                  />
+                </svg>
+              </div>
+
+              <p className="mt-4 text-xs font-bold uppercase tracking-[0.2em] text-[#2e66a6]">
+                Privacy Notice
+              </p>
+              <h2
+                id="privacy-notice-title"
+                className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900"
+              >
+                Privacy Notice &amp; Posting Agreement
+              </h2>
+              <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-600">
+                Please review the agreement before publishing your job post.
+              </p>
             </div>
 
-            <div className="max-h-[68vh] overflow-y-auto px-6 py-5 text-sm leading-7 text-gray-700">
-              <p>By publishing this job post, you confirm that all information provided is accurate and complies with our platform policies.</p>
-              <p className="mt-4">Once published, your job post will be visible to eligible job seekers. Applicants may view the information you provide, including the job title, company name, job description, qualifications, work location, salary (if disclosed), and other hiring details.</p>
-              <p className="mt-4">You may access applicants&apos; submitted information solely for recruitment purposes and must keep all personal information confidential.</p>
-              <p className="mt-4">To maintain the integrity of job listings, this post cannot be edited after one (1) hour from publication. Any changes after this period require approval from the platform administrator.</p>
+            <div className="overflow-y-auto px-6 py-6 sm:px-9">
+              <div className="space-y-4 text-justify text-sm leading-7 text-slate-700">
+                <p>
+                  By publishing this job post, you confirm that all information provided is
+                  accurate and complies with our platform policies.
+                </p>
+                <p>
+                  Once published, your job post will be visible to eligible job seekers.
+                  Applicants may view the information you provide, including the job title,
+                  company name, job description, qualifications, work location, salary
+                  (if disclosed), and other hiring details.
+                </p>
+                <p>
+                  You may access applicants&apos; submitted information solely for recruitment
+                  purposes and must keep all personal information confidential.
+                </p>
+                <p>
+                  To maintain the integrity of job listings, this post cannot be edited after
+                  one (1) hour from publication. Any changes after this period require approval
+                  from the platform administrator.
+                </p>
+              </div>
 
-              <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
+              <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-[#cdddf0] bg-[#f5f9fe] p-4 transition hover:border-[#9ebee2]">
                 <input
                   type="checkbox"
                   checked={privacyAccepted}
                   onChange={(event) => setPrivacyAccepted(event.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-gray-300 text-[#2e66a6] focus:ring-[#2e66a6]"
+                  className="mt-1 h-4 w-4 flex-shrink-0 rounded border-gray-300 text-[#2e66a6] focus:ring-[#2e66a6]"
                 />
-                <span className="font-medium text-gray-900">I have read and agree to the Privacy Notice & Posting Agreement.</span>
+                <span className="text-left text-sm font-semibold leading-6 text-slate-900">
+                  I have read and agree to the Privacy Notice &amp; Posting Agreement.
+                </span>
               </label>
             </div>
 
-            <div className="flex flex-col-reverse gap-3 border-t border-gray-200 px-6 py-4 sm:flex-row sm:justify-end">
+            <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50/70 px-6 py-4 sm:flex-row sm:justify-end sm:px-9">
               <button
                 type="button"
                 onClick={() => {
@@ -2773,7 +2870,7 @@ const PostJob = () => {
                   setShowPreviewModal(true);
                 }}
                 disabled={loading}
-                className="rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+                className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-50"
               >
                 Back to Preview
               </button>
@@ -2781,7 +2878,7 @@ const PostJob = () => {
                 type="button"
                 onClick={(event) => handleSubmit(event)}
                 disabled={!privacyAccepted || loading}
-                className="rounded-xl bg-[#2e66a6] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#23508a] disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-xl bg-[#2e66a6] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#23508a] disabled:cursor-not-allowed disabled:bg-[#9bb8d8] disabled:shadow-none"
               >
                 {loading ? 'Publishing…' : 'Publish Job'}
               </button>
