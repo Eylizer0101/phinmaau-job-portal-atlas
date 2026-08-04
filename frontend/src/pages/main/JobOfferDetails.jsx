@@ -681,7 +681,7 @@ const TopMetricCard = ({ icon, title, value, isPeso = false, href = '' }) => (
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className={`mt-1.5 block break-all text-[15px] font-semibold leading-6 text-[#2e66a6] hover:underline ${UI.ring} rounded`}
+            className={`mt-1.5 block max-w-full truncate whitespace-nowrap text-[15px] font-semibold leading-6 text-[#2e66a6] hover:underline ${UI.ring} rounded`}
             title={`Open ${title}`}
           >
             {value}
@@ -845,7 +845,7 @@ const JobOfferDetails = () => {
     const hasMax = typeof max === 'number';
     if (!hasMin && !hasMax) return 'Salary not specified';
 
-    const fmt = (n) => `₱${Number(n).toLocaleString('en-PH')}`;
+    const fmt = (n) => Number(n).toLocaleString('en-PH');
     if (hasMin && hasMax) return `${fmt(min)} – ${fmt(max)}`;
     if (hasMin) return `From ${fmt(min)}`;
     return `Up to ${fmt(max)}`;
