@@ -1774,15 +1774,6 @@ The company also values transparency, teamwork, and continuous improvement, crea
                       key={jobId}
                       className="group relative overflow-visible rounded-[22px] p-5 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[350px] border border-[#E5E7EB]"
                     >
-                      {job.isUrgent ? (
-                        <img
-                          src="/images/neededd.png"
-                          alt="Urgent Hiring"
-                          draggable="false"
-                          className="pointer-events-none absolute -top-[48px] -left-[50px] z-10 w-[230px] max-w-none select-none"
-                        />
-                      ) : null}
-
                       <button
                         type="button"
                         onClick={() => handleSaveJob(job)}
@@ -1834,7 +1825,19 @@ The company also values transparency, teamwork, and continuous improvement, crea
                         </div>
                       </div>
 
-                      <div className="mt-4 rounded-xl bg-[#F3F4F6] p-4 overflow-hidden">
+                      <div
+                        className={`relative mt-4 rounded-xl bg-[#F3F4F6] p-4 overflow-hidden ${
+                          normalizeBoolean(job?.isUrgent) ? "pr-[108px]" : ""
+                        }`}
+                      >
+                        {normalizeBoolean(job?.isUrgent) ? (
+                          <img
+                            src="/images/neededd.png"
+                            alt="Urgent Hiring"
+                            draggable="false"
+                            className="pointer-events-none absolute right-0 bottom-2 z-10 w-[92px] select-none object-contain"
+                          />
+                        ) : null}
                         <div className="flex items-center gap-2 text-sm text-gray-700 min-w-0">
                           <SvgIcon name="location" className="w-4 h-4 text-gray-600 shrink-0" />
                           <span className="min-w-0 flex-1 truncate" title={formatShortLocation(job.location || company.location)}>

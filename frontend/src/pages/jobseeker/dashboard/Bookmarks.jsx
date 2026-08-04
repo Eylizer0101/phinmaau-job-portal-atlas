@@ -1255,15 +1255,6 @@ const CompanyJobMiniCard = ({ job, onViewDetails, onApply, onSave, saving, isSav
   return (
     <div className="rounded-2xl p-7 bg-white shadow-sm hover:shadow-md transition flex flex-col min-h-[375px] relative border border-[#E5E7EB]">
 
-      {normalizeBoolean(job?.isUrgent) ? (
-        <img
-          src="/images/neededd.png"
-          alt="Urgent Hiring"
-          draggable="false"
-          className="pointer-events-none absolute left-4 -top-3 z-10 w-[205px] max-w-none select-none object-contain"
-        />
-      ) : null}
-
       <button
         type="button"
         onClick={() => onSave(job)}
@@ -1285,7 +1276,7 @@ const CompanyJobMiniCard = ({ job, onViewDetails, onApply, onSave, saving, isSav
         )}
       </button>
 
-      <div className={`flex items-start gap-4 pr-12 ${normalizeBoolean(job?.isUrgent) ? 'pt-5' : ''}`}>
+      <div className="flex items-start gap-4 pr-12">
         <CompanyLogo src={job.companyLogo} name={job.companyName} />
         <div className="min-w-0 flex-1">
           <h3 className="min-w-0 truncate whitespace-nowrap text-lg font-bold text-gray-800 leading-snug">
@@ -1301,7 +1292,19 @@ const CompanyJobMiniCard = ({ job, onViewDetails, onApply, onSave, saving, isSav
         </div>
       </div>
 
-      <div className="mt-4 rounded-xl bg-[#F3F4F6] p-4 overflow-hidden">
+      <div
+        className={`relative mt-4 rounded-xl bg-[#F3F4F6] p-4 overflow-hidden ${
+          normalizeBoolean(job?.isUrgent) ? 'pr-[112px]' : ''
+        }`}
+      >
+        {normalizeBoolean(job?.isUrgent) ? (
+          <img
+            src="/images/neededd.png"
+            alt="Urgent Hiring"
+            draggable="false"
+            className="pointer-events-none absolute right-0 bottom-2 z-10 w-[96px] select-none object-contain"
+          />
+        ) : null}
         <div className="flex items-center gap-2 text-sm text-gray-700 min-w-0">
           <SvgIcon name="location" className="w-4 h-4 text-gray-600 shrink-0" />
           <span className="min-w-0 flex-1 truncate" title={locationText}>
