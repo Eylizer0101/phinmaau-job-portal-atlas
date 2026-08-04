@@ -944,6 +944,9 @@ const PostJob = () => {
   const [touched, setTouched] = useState({});
   const [activeStep, setActiveStep] = useState(1);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [savingCancelDraft, setSavingCancelDraft] = useState(false);
   const [pendingLeavePath, setPendingLeavePath] = useState('/employer/manage-jobs');
   const allowNavigationRef = useRef(false);
@@ -1651,6 +1654,34 @@ const PostJob = () => {
     } finally {
       setSavingCancelDraft(false);
     }
+  };
+
+  const handleOpenPreview = () => {
+    setSubmitted(true);
+    setError('');
+    setSuccess('');
+
+    if (!isCompanyProfileComplete) {
+      setError('You have not yet completed your company profile. A complete company profile is required to post a job.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    if (!isEmployerVerified) {
+      setError('Your company is not verified yet. You can save drafts, but you can’t publish until verified.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    const msg = validateForPublish();
+    if (msg) {
+      setError('Please fix the highlighted fields.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    setPrivacyAccepted(false);
+    setShowPreviewModal(true);
   };
 
   const handleSubmit = async (e) => {
@@ -2373,12 +2404,13 @@ const PostJob = () => {
                     </button>
                   ) : (
                     <button
-                      type="submit"
+                      type="button"
+                      onClick={handleOpenPreview}
                       disabled={loading || !requiredOk || !isCompanyProfileComplete || !isEmployerVerified}
-                      title={!isCompanyProfileComplete ? 'Complete your company profile to publish.' : !isEmployerVerified ? 'Verify your company to publish.' : ''}
+                      title={!isCompanyProfileComplete ? 'Complete your company profile to continue.' : !isEmployerVerified ? 'Verify your company to continue.' : ''}
                       className="rounded-xl bg-[#2e66a6] px-5 py-2 text-sm font-semibold text-white hover:bg-[#23508a] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
                     >
-                      {loading ? 'Publishing…' : !isCompanyProfileComplete ? 'Complete Profile' : isEmployerVerified ? 'Publish Job' : 'Verify to publish'}
+                      {!isCompanyProfileComplete ? 'Complete Profile' : isEmployerVerified ? 'Continue →' : 'Verify to continue'}
                     </button>
                   )}
                 </div>
@@ -2390,6 +2422,219 @@ const PostJob = () => {
           </div>
         </div>
       </div>
+
+      {showPreviewModal && (
+        <div className="fixed inset-0 z-[2100] flex items-center justify-center bg-black/60 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="job-preview-title"
+            className="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+          >
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#2e66a6]">Job Post Preview</p>
+                <h2 id="job-preview-title" className="mt-1 text-xl font-bold text-gray-900">Review your job post before continuing</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPreviewModal(false)}
+                className="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                aria-label="Close preview"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="overflow-y-auto bg-gray-50 p-6">
+              <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-4">
+                      {storedUser?.employerProfile?.companyLogo ? (
+                        <img
+                          src={storedUser.employerProfile.companyLogo}
+                          alt="Company logo"
+                          className="h-16 w-16 rounded-xl border border-gray-200 object-cover"
+                        />
+                      ) : null}
+                      <div className="min-w-0">
+                        <h3 className="break-words text-3xl font-bold text-gray-950">{formData.title || 'Untitled Job'}</h3>
+                        <p className="mt-1 text-sm text-gray-600">{storedUser?.employerProfile?.companyName || 'Company name'}</p>
+                        <p className="mt-1 text-sm text-gray-500">{formData.location || companyLocationFromProfile}</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      {[
+                        formData.jobType,
+                        formData.workMode,
+                        formData.vacancies ? `${formData.vacancies} ${Number(formData.vacancies) === 1 ? 'Vacancy' : 'Vacancies'}` : '',
+                        formData.willingToRelocate,
+                      ].filter(Boolean).map((item) => (
+                        <span key={item} className="rounded-full border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700">
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid min-w-[260px] grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                    <div className="rounded-xl border border-gray-200 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Salary</p>
+                      <p className="mt-1 font-semibold text-gray-900">{formData.hideSalary ? 'Salary not specified' : salaryPreview}</p>
+                    </div>
+                    <div className="rounded-xl border border-gray-200 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Application Deadline</p>
+                      <p className="mt-1 font-semibold text-gray-900">{formData.applicationDeadline || 'Not specified'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-5 lg:grid-cols-3">
+                <div className="space-y-5 lg:col-span-2">
+                  <section className="rounded-2xl border border-gray-200 bg-white p-6">
+                    <h3 className="text-lg font-bold text-gray-900">Job Description</h3>
+                    <div className="mt-3 whitespace-pre-wrap text-sm leading-7 text-gray-700">{getRichTextPlainText(formData.description) || 'No description provided.'}</div>
+                  </section>
+                  <section className="rounded-2xl border border-gray-200 bg-white p-6">
+                    <h3 className="text-lg font-bold text-gray-900">Requirements & Qualifications</h3>
+                    <div className="mt-3 whitespace-pre-wrap text-sm leading-7 text-gray-700">{getRichTextPlainText(formData.requirements) || 'No requirements provided.'}</div>
+                  </section>
+                  <section className="rounded-2xl border border-gray-200 bg-white p-6">
+                    <h3 className="text-lg font-bold text-gray-900">Skills & Benefits</h3>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {skills.length ? skills.map((skill) => (
+                        <span key={skill} className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700">{skill}</span>
+                      )) : <span className="text-sm text-gray-500">No skills listed.</span>}
+                    </div>
+                    {formData.perksAndBenefits?.length ? (
+                      <div className="mt-5">
+                        <p className="text-sm font-semibold text-gray-900">Perks and Benefits</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {formData.perksAndBenefits.map((benefit) => (
+                            <span key={benefit} className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700">{benefit}</span>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                    {formData.otherBenefits ? <p className="mt-4 text-sm leading-6 text-gray-700">{formData.otherBenefits}</p> : null}
+                  </section>
+                </div>
+
+                <aside className="space-y-5">
+                  <section className="rounded-2xl border border-gray-200 bg-white p-6">
+                    <h3 className="text-lg font-bold text-gray-900">Job Details</h3>
+                    <dl className="mt-4 space-y-4 text-sm">
+                      {[
+                        ['Employment Type', formData.jobType],
+                        ['Work Mode', formData.workMode],
+                        ['Experience', formData.experienceLevel],
+                        ['Education', formData.educationLevel],
+                        ['Industry', companyCategoryDefault],
+                        ['Fresh Graduates', formData.openToFreshGraduates ? 'Open to fresh graduates' : 'Not specified'],
+                      ].map(([label, value]) => (
+                        <div key={label}>
+                          <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</dt>
+                          <dd className="mt-1 font-medium text-gray-900">{value || 'Not specified'}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </section>
+                  <section className="rounded-2xl border border-gray-200 bg-white p-6">
+                    <h3 className="text-lg font-bold text-gray-900">Work Location</h3>
+                    <p className="mt-3 text-sm leading-6 text-gray-700">{formData.location || 'No work address provided.'}</p>
+                    <p className="mt-2 text-xs text-gray-500">{[formData.locationCity, formData.locationProvince].filter(Boolean).join(', ')}</p>
+                  </section>
+                </aside>
+              </div>
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 border-t border-gray-200 bg-white px-6 py-4 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setShowPreviewModal(false)}
+                className="rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50"
+              >
+                Back to Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPreviewModal(false);
+                  setShowPrivacyModal(true);
+                }}
+                className="rounded-xl bg-[#2e66a6] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#23508a]"
+              >
+                Continue →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPrivacyModal && (
+        <div className="fixed inset-0 z-[2200] flex items-center justify-center bg-black/60 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="privacy-notice-title"
+            className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+          >
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <h2 id="privacy-notice-title" className="text-xl font-bold text-gray-900">Privacy Notice & Posting Agreement</h2>
+              <button
+                type="button"
+                onClick={() => setShowPrivacyModal(false)}
+                className="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                aria-label="Close privacy notice"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="max-h-[68vh] overflow-y-auto px-6 py-5 text-sm leading-7 text-gray-700">
+              <p>By publishing this job post, you confirm that all information provided is accurate and complies with our platform policies.</p>
+              <p className="mt-4">Once published, your job post will be visible to eligible job seekers. Applicants may view the information you provide, including the job title, company name, job description, qualifications, work location, salary (if disclosed), and other hiring details.</p>
+              <p className="mt-4">You may access applicants&apos; submitted information solely for recruitment purposes and must keep all personal information confidential.</p>
+              <p className="mt-4">To maintain the integrity of job listings, this post cannot be edited after one (1) hour from publication. Any changes after this period require approval from the platform administrator.</p>
+
+              <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <input
+                  type="checkbox"
+                  checked={privacyAccepted}
+                  onChange={(event) => setPrivacyAccepted(event.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-gray-300 text-[#2e66a6] focus:ring-[#2e66a6]"
+                />
+                <span className="font-medium text-gray-900">I have read and agree to the Privacy Notice & Posting Agreement.</span>
+              </label>
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 border-t border-gray-200 px-6 py-4 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPrivacyModal(false);
+                  setShowPreviewModal(true);
+                }}
+                disabled={loading}
+                className="rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Back to Preview
+              </button>
+              <button
+                type="button"
+                onClick={(event) => handleSubmit(event)}
+                disabled={!privacyAccepted || loading}
+                className="rounded-xl bg-[#2e66a6] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#23508a] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading ? 'Publishing…' : 'Publish Job'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showCancelModal && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50 p-4">

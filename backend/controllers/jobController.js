@@ -1084,6 +1084,23 @@ exports.updateJob = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to update this job' });
     }
 
+    const isPublishedJob = job.isPublished === true || String(job.status || '').toLowerCase() === 'published';
+    const publishedAt = job.createdAt ? new Date(job.createdAt) : null;
+    const oneHourInMilliseconds = 60 * 60 * 1000;
+    const editingWindowExpired =
+      isPublishedJob &&
+      publishedAt &&
+      !Number.isNaN(publishedAt.getTime()) &&
+      Date.now() - publishedAt.getTime() >= oneHourInMilliseconds;
+
+    if (editingWindowExpired) {
+      return res.status(403).json({
+        success: false,
+        code: 'JOB_EDIT_WINDOW_EXPIRED',
+        message: 'This published job can no longer be edited because the one-hour editing period has expired. Please contact the platform administrator for further changes.',
+      });
+    }
+
     const employer = await User.findById(req.user._id);
     const currentLogo = employer?.employerProfile?.companyLogo || '';
 
