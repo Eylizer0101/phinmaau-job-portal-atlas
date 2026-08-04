@@ -1766,9 +1766,14 @@ const PostJob = () => {
           {error && <Alert type="error">{error}</Alert>}
           {success && <Alert type="success">{success}</Alert>}
 
-          <JobFormProgress activeStep={activeStep} onStepChange={handleStepChange} canOpenStep={canOpenStep} />
+          <div
+            aria-disabled={!isCompanyProfileComplete}
+            inert={!isCompanyProfileComplete ? '' : undefined}
+            className={!isCompanyProfileComplete ? 'pointer-events-none select-none opacity-60' : ''}
+          >
+            <JobFormProgress activeStep={activeStep} onStepChange={handleStepChange} canOpenStep={canOpenStep} />
 
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-12">
             <div className="lg:col-span-12">
               <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
                 <div className="border-b border-gray-200 px-6 py-5">
@@ -2381,7 +2386,8 @@ const PostJob = () => {
               </div>
             </div>
         </div>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
 
