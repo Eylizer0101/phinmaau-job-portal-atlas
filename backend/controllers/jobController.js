@@ -720,7 +720,20 @@ exports.getAllJobs = async (req, res) => {
     else if (req.query.category) query.category = normalizeCategory(req.query.category);
 
     if (req.query.workMode) query.workMode = req.query.workMode;
-    if (req.query.location) query.location = { $regex: req.query.location, $options: 'i' };
+    if (req.query.location) {
+      const rawLocation = String(req.query.location || '').trim();
+      const escapedLocation = escapeRegExp(rawLocation);
+      const locationPattern = `(^|,\\s*)${escapedLocation}(?:\\s+City)?(\\s*,|$)`;
+
+      query.$and = query.$and || [];
+      query.$and.push({
+        $or: [
+          { locationCity: { $regex: `^${escapedLocation}$`, $options: 'i' } },
+          { locationProvince: { $regex: `^${escapedLocation}$`, $options: 'i' } },
+          { location: { $regex: locationPattern, $options: 'i' } }
+        ]
+      });
+    }
     if (req.query.experienceLevel) query.experienceLevel = buildExperienceLevelQuery(req.query.experienceLevel);
 
     const wantFreshGraduate = parseBool(req.query.freshGraduate);

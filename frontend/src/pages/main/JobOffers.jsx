@@ -62,32 +62,38 @@ const findCanonicalLocation = (value, preferredType = '') => {
 };
 
 const getJobLocationLabels = (job) => {
+  // The full job address is the source of truth for location filtering.
+  // Saved city/province fields are used only when the full address is missing.
+  const address = normalizeLocationPart(job?.location);
+
+  if (address) {
+    const parts = address
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .reverse();
+
+    const addressProvince = parts
+      .map((part) => findCanonicalLocation(part, 'province'))
+      .find(Boolean) || '';
+
+    const addressCity = parts
+      .map((part) => findCanonicalLocation(part, 'city'))
+      .find((label) =>
+        label && normalizeLocationKey(label) !== normalizeLocationKey(addressProvince)
+      ) || '';
+
+    const addressLabels = Array.from(
+      new Set([addressCity, addressProvince].filter(Boolean))
+    );
+
+    if (addressLabels.length) return addressLabels;
+  }
+
   const city = findCanonicalLocation(job?.locationCity, 'city');
   const province = findCanonicalLocation(job?.locationProvince, 'province');
-  const savedLabels = [city, province].filter(Boolean);
 
-  if (savedLabels.length) return Array.from(new Set(savedLabels));
-
-  const address = normalizeLocationPart(job?.location);
-  if (!address) return [];
-
-  const parts = address
-    .split(',')
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .reverse();
-
-  const fallbackProvince = parts
-    .map((part) => findCanonicalLocation(part, 'province'))
-    .find(Boolean) || '';
-
-  const fallbackCity = parts
-    .map((part) => findCanonicalLocation(part, 'city'))
-    .find((label) =>
-      label && normalizeLocationKey(label) !== normalizeLocationKey(fallbackProvince)
-    ) || '';
-
-  return Array.from(new Set([fallbackCity, fallbackProvince].filter(Boolean)));
+  return Array.from(new Set([city, province].filter(Boolean)));
 };
 
 const jobMatchesSelectedLocations = (job, selectedLocations) => {
