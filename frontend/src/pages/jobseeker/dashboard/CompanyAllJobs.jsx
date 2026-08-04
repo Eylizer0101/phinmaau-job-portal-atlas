@@ -191,12 +191,12 @@ const CompanyAllJobs = () => {
                       }`}
                     >
                       {normalizeBoolean(job?.isUrgent) ? (
-                        <img
-                          src="/images/neededd.png"
-                          alt="Urgent Hiring"
-                          draggable="false"
-                          className="pointer-events-none absolute right-0 bottom-2 z-10 w-[92px] select-none object-contain"
-                        />
+                       <img
+                              src="/images/urgentneed.png"
+                              alt="Urgent Hiring"
+                              draggable="false"
+                             className="pointer-events-none absolute -right-5 bottom-1 w-[112px] max-w-[38%] h-auto object-contain select-none"
+                            />
                       ) : null}
                       <div className="flex min-w-0 items-center gap-2">
                         <svg

@@ -1298,12 +1298,12 @@ const CompanyJobMiniCard = ({ job, onViewDetails, onApply, onSave, saving, isSav
         }`}
       >
         {normalizeBoolean(job?.isUrgent) ? (
-          <img
-            src="/images/neededd.png"
-            alt="Urgent Hiring"
-            draggable="false"
-            className="pointer-events-none absolute right-0 bottom-2 z-10 w-[96px] select-none object-contain"
-          />
+         <img
+                              src="/images/urgentneed.png"
+                              alt="Urgent Hiring"
+                              draggable="false"
+                             className="pointer-events-none absolute -right-5 bottom-1 w-[112px] max-w-[38%] h-auto object-contain select-none"
+                            />
         ) : null}
         <div className="flex items-center gap-2 text-sm text-gray-700 min-w-0">
           <SvgIcon name="location" className="w-4 h-4 text-gray-600 shrink-0" />
