@@ -1324,7 +1324,7 @@ const Select = ({ label, value, onChange, options = [], placeholder = 'Select op
         disabled={disabled}
         className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6] disabled:bg-gray-50 disabled:text-gray-500"
       >
-        <option value="">{placeholder}</option>
+        <option value="" disabled={Boolean(value)}>{placeholder}</option>
         {options.map((opt) => (
           <option key={opt} value={opt}>
             {opt}
