@@ -27,6 +27,12 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>;
     case 'trash':
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14M10 11v5m4-5v5" /></svg>;
+    case 'publish':
+      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 16V4m0 0L7 9m5-5 5 5M5 20h14" /></svg>;
+    case 'openJob':
+      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V8a4 4 0 018 0m-9 3h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg>;
+    case 'closeJob':
+      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11V8a5 5 0 0110 0v3m-10 0h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg>;
     case 'more':
       return <svg {...common}><circle cx="12" cy="5" r="1.5" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" /><circle cx="12" cy="19" r="1.5" fill="currentColor" stroke="none" /></svg>;
     default:
@@ -1428,47 +1434,20 @@ const ManageJobs = () => {
                           </Link>
 
                           {['open', 'closed'].includes(derivedStatus) && (
-                            <div className="relative col-span-2" data-job-status-menu>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setOpenStatusMenuId((current) =>
-                                    current === job._id ? '' : job._id
-                                  )
-                                }
-                                disabled={busyThisRow}
-                                className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                aria-label={`More actions for ${title}`}
-                                aria-haspopup="menu"
-                                aria-expanded={openStatusMenuId === job._id}
-                                title="More actions"
-                              >
-                                <Icon name="more" className="h-5 w-5" />
-                              </button>
-
-                              {openStatusMenuId === job._id && (
-                                <div
-                                  role="menu"
-                                  className="absolute right-0 top-12 z-50 w-full min-w-[180px] rounded-xl border border-gray-200 bg-white p-1.5 shadow-xl ring-1 ring-black/5"
-                                >
-                                  <button
-                                    type="button"
-                                    role="menuitem"
-                                    onClick={() => {
-                                      setOpenStatusMenuId('');
-                                      setStatusConfirmationJob(job);
-                                    }}
-                                    disabled={busyThisRow}
-                                    className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-gray-800 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
-                                  >
-                                    <span>{derivedStatus === 'open' ? 'Close Job' : 'Open Job'}</span>
-                                    {busyThisRow && ['open', 'close'].includes(action.type) && (
-                                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#2e66a6]" />
-                                    )}
-                                  </button>
-                                </div>
+                            <button
+                              type="button"
+                              onClick={() => setStatusConfirmationJob(job)}
+                              disabled={busyThisRow}
+                              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              aria-label={`${derivedStatus === 'open' ? 'Close Job' : 'Open Job'} ${title}`}
+                              title={derivedStatus === 'open' ? 'Close Job' : 'Open Job'}
+                            >
+                              {busyThisRow && ['open', 'close'].includes(action.type) ? (
+                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#2e66a6]" />
+                              ) : (
+                                <Icon name={derivedStatus === 'open' ? 'closeJob' : 'openJob'} className="h-5 w-5" />
                               )}
-                            </div>
+                            </button>
                           )}
 
                           <button
@@ -1488,18 +1467,15 @@ const ManageJobs = () => {
                             <button
                               onClick={() => handlePublish(job._id)}
                               disabled={busyThisRow || !isEmployerVerified}
-                              title={!isEmployerVerified ? 'Verify your company to publish jobs.' : 'Publish this job'}
-                              className="col-span-2 inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              title={!isEmployerVerified ? 'Verify your company to publish jobs.' : 'Publish'}
+                              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                               aria-label={`Publish ${title}`}
                             >
                               {busyThisRow && action.type === 'publish' ? (
-                                <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-b-2 border-t-2 border-current" />
+                                <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-current" />
                               ) : (
-                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
+                                <Icon name="publish" className="h-5 w-5" />
                               )}
-                              Publish
                             </button>
                           )}
                         </div>
@@ -1682,48 +1658,21 @@ const ManageJobs = () => {
                                 </Link>
 
                                 {['open', 'closed'].includes(derivedStatus) && (
-                                  <div className="relative shrink-0" data-job-status-menu>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        setOpenStatusMenuId((current) =>
-                                          current === job._id ? '' : job._id
-                                        )
-                                      }
-                                      disabled={busyThisRow}
-                                      className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                      aria-label={`More actions for ${title}`}
-                                      aria-haspopup="menu"
-                                      aria-expanded={openStatusMenuId === job._id}
-                                      title="More actions"
-                                    >
-                                      <Icon name="more" className="h-5 w-5" />
-                                    </button>
-
-                                    {openStatusMenuId === job._id && (
-                                      <div
-                                        role="menu"
-                                        className="absolute right-0 top-12 z-50 w-44 rounded-xl border border-gray-200 bg-white p-1.5 shadow-xl ring-1 ring-black/5"
-                                      >
-                                        <button
-                                          type="button"
-                                          role="menuitem"
-                                          onClick={() => {
-                                      setOpenStatusMenuId('');
-                                      setStatusConfirmationJob(job);
-                                    }}
-                                          disabled={busyThisRow}
-                                          className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-gray-800 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
-                                        >
-                                          <span>{derivedStatus === 'open' ? 'Close Job' : 'Open Job'}</span>
-                                          {busyThisRow && ['open', 'close'].includes(action.type) && (
-                                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#2e66a6]" />
-                                          )}
-                                        </button>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
+                            <button
+                              type="button"
+                              onClick={() => setStatusConfirmationJob(job)}
+                              disabled={busyThisRow}
+                              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              aria-label={`${derivedStatus === 'open' ? 'Close Job' : 'Open Job'} ${title}`}
+                              title={derivedStatus === 'open' ? 'Close Job' : 'Open Job'}
+                            >
+                              {busyThisRow && ['open', 'close'].includes(action.type) ? (
+                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#2e66a6]" />
+                              ) : (
+                                <Icon name={derivedStatus === 'open' ? 'closeJob' : 'openJob'} className="h-5 w-5" />
+                              )}
+                            </button>
+                          )}
 
                                 <button
                                   onClick={() => {
@@ -1742,18 +1691,15 @@ const ManageJobs = () => {
                                   <button
                                     onClick={() => handlePublish(job._id)}
                                     disabled={busyThisRow || !isEmployerVerified}
-                                    title={!isEmployerVerified ? 'Verify your company to publish jobs.' : 'Publish this job'}
-                                    className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    title={!isEmployerVerified ? 'Verify your company to publish jobs.' : 'Publish'}
+                                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                     aria-label={`Publish ${title}`}
                                   >
                                     {busyThisRow && action.type === 'publish' ? (
-                                      <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-b-2 border-t-2 border-current" />
-                                    ) : (
-                                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                      </svg>
-                                    )}
-                                    Publish
+                                <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-current" />
+                              ) : (
+                                <Icon name="publish" className="h-5 w-5" />
+                              )}
                                   </button>
                                 )}
                               </div>

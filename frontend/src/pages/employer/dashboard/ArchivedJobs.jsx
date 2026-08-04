@@ -1290,20 +1290,6 @@ const ArchivedJobs = () => {
                               <ActionIcon name="restore" />
                             )}
                           </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedJob(job);
-                              setShowDeleteModal(true);
-                            }}
-                            disabled={busyThisRow}
-                            className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            aria-label={`Permanently delete ${title}`}
-                            title="Delete"
-                          >
-                            <ActionIcon name="delete" />
-                          </button>
                         </div>
                       </div>
                     );
@@ -1453,20 +1439,6 @@ const ArchivedJobs = () => {
                                     <ActionIcon name="restore" />
                                   )}
                                 </button>
-
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedJob(job);
-                                    setShowDeleteModal(true);
-                                  }}
-                                  disabled={busyThisRow}
-                                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                  aria-label={`Permanently delete ${title}`}
-                                  title="Delete"
-                                >
-                                  <ActionIcon name="delete" />
-                                </button>
                               </div>
                             </td>
                           </tr>
@@ -1547,75 +1519,7 @@ const ArchivedJobs = () => {
           </div>
         )}
 
-        {showDeleteModal && selectedJob && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-            onMouseDown={(e) => {
-              if (e.target === e.currentTarget) closeModal();
-            }}
-          >
-            <div
-              ref={modalRef}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="permanent-delete-title"
-              aria-describedby="permanent-delete-desc"
-              className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl"
-            >
-              <div className="p-6">
-                <div className="mb-4 flex items-start gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-100">
-                    <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </div>
 
-                  <div className="min-w-0">
-                    <h3 id="permanent-delete-title" className="text-lg font-semibold text-gray-900">
-                      Permanently Delete Job
-                    </h3>
-                    <p className="mt-1 text-sm text-gray-600">This action cannot be undone.</p>
-                  </div>
-                </div>
-
-                <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4">
-                  <p className="font-semibold text-red-900">
-                    “{selectedJob.title || 'Untitled Draft'}”
-                  </p>
-                  <p id="permanent-delete-desc" className="mt-1 text-sm text-red-800">
-                    This job and its related archived record will be permanently deleted from the system.
-                  </p>
-                </div>
-
-                <div className="flex justify-end gap-3">
-                  <button
-                    ref={cancelBtnRef}
-                    onClick={closeModal}
-                    disabled={action.type === 'permanent-delete' && action.jobId === selectedJob._id}
-                    className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    onClick={() => handlePermanentDelete(selectedJob._id)}
-                    disabled={action.type === 'permanent-delete' && action.jobId === selectedJob._id}
-                    className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-50"
-                  >
-                    {action.type === 'permanent-delete' && action.jobId === selectedJob._id ? (
-                      <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-white" />
-                    ) : (
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    )}
-                    Permanent Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       <ArchivedCustomDateRangeModal

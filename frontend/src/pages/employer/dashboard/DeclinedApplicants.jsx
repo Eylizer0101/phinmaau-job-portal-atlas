@@ -1200,16 +1200,16 @@ const DeclinedApplicants = () => {
                                   <span className="sr-only">View</span>
                                 </Link>
 
-                                <Button
-                                  variant="dangerSoft"
-                                  size="xs"
+                                <button
+                                  type="button"
                                   onClick={() => setDeleteTarget(app)}
                                   disabled={rowBusy}
                                   aria-label={`Archive declined application of ${name}`}
+                                  title="Archive"
+                                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   <Icon name="trash" className="h-4 w-4" />
-                                  Archive
-                                </Button>
+                                </button>
 
                                 {rowBusy && (
                                   <span className="inline-flex items-center gap-2 text-xs font-semibold text-gray-500">

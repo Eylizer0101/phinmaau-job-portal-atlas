@@ -1046,7 +1046,7 @@ const ArchivedDeclinedApplicants = () => {
         <div className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(360px,auto)_minmax(320px,1fr)_auto] xl:items-start">
           <div>
             <h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">Archived Declined Applicants</h1>
-            <p className="mt-1 text-sm text-gray-600">Restore or permanently delete archived declined application records</p>
+            <p className="mt-1 text-sm text-gray-600">Restore archived declined application records</p>
           </div>
 
           <div className="min-w-0 xl:pt-1 [&>div]:mb-0">
@@ -1250,17 +1250,6 @@ const ArchivedDeclinedApplicants = () => {
                                 >
                                   <Icon name="restore" className="h-4 w-4" />
                                 </button>
-
-                                <button
-                                  type="button"
-                                  title="Delete"
-                                  aria-label={`Permanently delete declined application of ${name}`}
-                                  onClick={() => setDeleteTarget(app)}
-                                  disabled={busy}
-                                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                  <Icon name="trash" className="h-4 w-4" />
-                                </button>
                               </div>
                             </td>
                           </tr>
@@ -1337,17 +1326,6 @@ const ArchivedDeclinedApplicants = () => {
                           >
                             <Icon name="restore" className="h-5 w-5" />
                           </button>
-
-                          <button
-                            type="button"
-                            title="Delete"
-                            aria-label={`Permanently delete declined application of ${name}`}
-                            onClick={() => setDeleteTarget(app)}
-                            disabled={busy}
-                            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            <Icon name="trash" className="h-5 w-5" />
-                          </button>
                         </div>
                       </div>
                     );
@@ -1375,26 +1353,6 @@ const ArchivedDeclinedApplicants = () => {
             setRestoreTarget(null);
           }}
           onConfirm={handleRestore}
-        />
-
-        <Modal
-          open={!!deleteTarget}
-          title="Permanently delete declined applicant?"
-          description={
-            deleteTarget
-              ? `This will permanently delete ${buildApplicantName(deleteTarget.jobseeker)}'s archived declined application record. This action cannot be undone.`
-              : ''
-          }
-          confirmText="Permanent Delete"
-          cancelText="Cancel"
-          danger
-          loading={action.type === 'delete' && !!action.id}
-          loadingText="Deleting…"
-          onClose={() => {
-            if (action.type === 'delete') return;
-            setDeleteTarget(null);
-          }}
-          onConfirm={handlePermanentDelete}
         />
       </div>
 
