@@ -760,7 +760,7 @@ const JobOfferDetails = () => {
           title: 'Save this job with an AGAPAY account',
           body: 'Create your profile, save this job, and come back to it anytime with an AGAPAY account.',
           primary: 'Sign Up',
-          secondary: 'Login',
+          secondary: 'Sign In',
           primaryAction: 'signup',
         };
       }
@@ -769,7 +769,7 @@ const JobOfferDetails = () => {
         return {
           title: 'Jobseeker account required',
           body: 'This action is only available for Jobseekers. Please login using a Jobseeker account.',
-          primary: 'Go to Login',
+          primary: 'Go to Sign In',
           secondary: 'Close',
           primaryAction: 'login',
         };
@@ -779,7 +779,7 @@ const JobOfferDetails = () => {
         title: 'Save this job with an AGAPAY account',
         body: 'Create your profile, save this job, and come back to it anytime with an AGAPAY account.',
         primary: 'Sign Up',
-        secondary: 'Login',
+        secondary: 'Sign In',
         primaryAction: 'signup',
       };
     }
@@ -789,7 +789,7 @@ const JobOfferDetails = () => {
         title: 'Apply to this job with an AGAPAY account',
         body: 'Build your profile, apply to this job, and track your application status with a AGAPAY account.',
         primary: 'Sign Up',
-        secondary: 'Login',
+        secondary: 'Sign In',
         primaryAction: 'signup',
       };
     }
@@ -798,7 +798,7 @@ const JobOfferDetails = () => {
       return {
         title: 'Jobseeker account required',
         body: 'This action is only available for Jobseekers. Please login using a Jobseeker account.',
-        primary: 'Go to Login',
+        primary: 'Go to Sign In',
         secondary: 'Close',
         primaryAction: 'login',
       };
@@ -808,7 +808,7 @@ const JobOfferDetails = () => {
       title: 'Apply to this job with an AGAPAY account',
       body: 'Build your profile, apply to this job, and track your application status with a AGAPAY account.',
       primary: 'Sign Up',
-      secondary: 'Login',
+      secondary: 'Sign In',
       primaryAction: 'signup',
     };
   }, [isGuest, user?.role, modalMode]);
@@ -1496,7 +1496,7 @@ const JobOfferDetails = () => {
                                          border border-gray-200 bg-gray-100 hover:bg-gray-200 transition
                                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400"
                             >
-                              {gateReason?.secondary || 'Login'}
+                              {gateReason?.secondary || 'Sign In'}
                             </button>
                           </>
                         ) : (
@@ -1508,7 +1508,7 @@ const JobOfferDetails = () => {
                               className="w-full h-11 rounded-lg text-sm font-semibold text-white
                                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 transition bg-[#2e66a6] hover:bg-[#25578f]"
                             >
-                              {gateReason?.primary || 'Go to Login'}
+                              {gateReason?.primary || 'Go to Sign In'}
                             </button>
 
                             <button

@@ -218,7 +218,6 @@ const Companies = () => {
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [locationSearch, setLocationSearch] = useState("");
-  const [expandedCardId, setExpandedCardId] = useState(null);
   const filterBoxRef = useRef(null);
 
   const [showGuestModal, setShowGuestModal] = useState(false);
@@ -517,7 +516,6 @@ const Companies = () => {
     setSelectedIndustry("");
     setOpenDropdown(null);
     setLocationSearch("");
-    setExpandedCardId(null);
   };
 
   const visibleCompanies = useMemo(
@@ -544,9 +542,6 @@ const Companies = () => {
 
   const hasAnyFilter = Boolean(search.trim() || selectedLocation || selectedIndustry);
 
-  const handleToggleBreakdown = (companyId) => {
-    setExpandedCardId((prev) => (prev === companyId ? null : companyId));
-  };
 
   const LocationDropdown = () => {
     const isOpen = openDropdown === "location";
@@ -716,7 +711,7 @@ const Companies = () => {
       title: "View company details with an AGAPAY account",
       body: "Create an account or login to view more company information and discover available job offers.",
       primary: "Sign Up",
-      secondary: "Login",
+      secondary: "Sign In",
     };
   }, []);
 
@@ -926,15 +921,11 @@ const Companies = () => {
                   const accurateRatingSummary = getAccurateRatingSummary(c);
                   const averageRating = accurateRatingSummary.rating;
                   const reviewCount = accurateRatingSummary.reviewCount;
-                  const isExpanded = expandedCardId === employerId;
-                  const breakdownRows = getBreakdownRows(c);
 
                   return (
                     <div
                       key={c._id}
-                      className={`group self-start rounded-[22px] bg-white border shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col px-6 pt-6 pb-7 ${
-                        isExpanded ? "min-h-[470px]" : "min-h-[342px]"
-                      }`}
+                      className="group self-start min-h-[342px] rounded-[22px] bg-white border shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col px-6 pt-6 pb-7"
                       style={{ borderColor: COLORS.border }}
                     >
                       <div className="flex items-center justify-between gap-3">
@@ -1037,58 +1028,13 @@ const Companies = () => {
                           </div>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => handleToggleBreakdown(employerId)}
-                          className="w-[34px] h-[34px] rounded-xl border border-[#212C61]/20 flex items-center justify-center shrink-0 bg-white hover:bg-[#212C61]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD000] focus-visible:ring-offset-2 transition"
-                          aria-label={isExpanded ? "Hide rating breakdown" : "Show rating breakdown"}
-                          aria-expanded={isExpanded}
-                        >
-                          <svg
-                            className={`w-[16px] h-[16px] text-black/55 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 10l5 5 5-5" />
-                          </svg>
-                        </button>
                       </div>
 
-                      {isExpanded && (
-                        <div className="mt-5 pt-4 border-t border-[#212C61]/20">
-                          <div className="space-y-[8px]">
-                            {breakdownRows.map((row) => (
-                              <div
-                                key={row.star}
-                                className="flex items-center gap-[10px]"
-                                aria-label={`${row.star}.0 stars, ${row.count} ${row.count === 1 ? "review" : "reviews"}`}
-                              >
-                                <div className="w-[30px] shrink-0 text-[12px] font-medium text-black/60">
-                                  {row.star}.0
-                                </div>
-
-                                <div className="h-[10px] flex-1 overflow-hidden rounded-full bg-[#212C61]/10">
-                                  <div
-                                    className="h-full rounded-full bg-[#212C61] transition-all duration-300"
-                                    style={{ width: `${row.percent}%` }}
-                                  />
-                                </div>
-
-                                <div
-                                  className="w-[28px] shrink-0 text-right text-[12px] font-semibold text-black/60"
-                                  title={`${row.count} ${row.count === 1 ? "review" : "reviews"}`}
-                                >
-                                  {row.count}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
                       <div className="mt-auto pt-5 flex items-center justify-between gap-3">
+                        <span className="text-[12px] font-semibold text-black whitespace-nowrap">
+                          {jobCount} New Job Offer{jobCount === 1 ? "" : "s"}
+                        </span>
+
                         <button type="button" onClick={() => handleViewDetails(c)} className={ghostLink}>
                           <span className="leading-none">View Details</span>
                           <svg
@@ -1101,10 +1047,6 @@ const Companies = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                           </svg>
                         </button>
-
-                        <span className="px-4 h-[38px] rounded-full text-[12px] font-semibold bg-[#FFD000]/20 text-black border border-[#FFD000] whitespace-nowrap inline-flex items-center">
-                          {jobCount} New Job Offer{jobCount === 1 ? "" : "s"}
-                        </span>
                       </div>
                     </div>
                   );
@@ -1197,7 +1139,7 @@ const Companies = () => {
                                border border-[#212C61]/20 bg-[#212C61]/5 hover:bg-[#212C61]/10 transition
                                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#212C61]"
                   >
-                    {gateReason?.secondary || "Login"}
+                    {gateReason?.secondary || "Sign In"}
                   </button>
                 </div>
               </div>

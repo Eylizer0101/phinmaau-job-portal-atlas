@@ -1215,7 +1215,7 @@ const JobOffers = () => {
       title: "Apply to this job with an AGAPAY account",
       body: "Build your profile, apply to this job, and track your application status with a AGAPAY account.",
       primary: "Sign Up",
-      secondary: "Login",
+      secondary: "Sign In",
       primaryAction: "signup",
     };
   }, []);
@@ -1895,7 +1895,7 @@ const JobOffers = () => {
                                border border-[#212C61]/20 bg-[#212C61]/5 hover:bg-[#212C61]/10 transition
                                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#212C61]"
                   >
-                    {gateReason?.secondary || "Login"}
+                    {gateReason?.secondary || "Sign In"}
                   </button>
                 </div>
               </div>
