@@ -447,7 +447,7 @@ const MyApplications = () => {
       case 'cancelled':
         return 'text-gray-600';
       case 'declined':
-        return 'text-gray-700';
+        return 'text-red-700';
       case 'vacancy full':
         return 'text-orange-700';
       case 'pending':
@@ -1106,7 +1106,17 @@ const MyApplications = () => {
                   const companyName = application.job?.companyName || 'Company Not Specified';
                   const appliedAt = formatAppliedDateTime(application.appliedAt);
 
-                  const locationText = application.job?.location || null;
+                  const industryText =
+                    application.job?.industry ||
+                    application.job?.companyIndustry ||
+                    application.employer?.employerProfile?.industry ||
+                    null;
+                  const workOfficeAddressText =
+                    application.job?.workOfficeAddress ||
+                    application.job?.officeAddress ||
+                    application.job?.location ||
+                    application.employer?.employerProfile?.companyAddress ||
+                    null;
                   const workModeText = application.job?.workMode || null;
                   const salaryText = formatPesoRange(application.job?.salaryMin, application.job?.salaryMax);
                   const jobTypeText = application.job?.jobType || null;
@@ -1139,17 +1149,23 @@ const MyApplications = () => {
                                   </span>
                                 </div>
 
-                                <div className={`mt-1 inline-flex items-center gap-2 text-sm ${UI.textSecondary} min-w-0`}>
-                                  <span className="text-gray-500"><SvgIcon name="building" className="w-4 h-4" /></span>
-                                  <span className="truncate" title={companyName}>{companyName}</span>
+                                <div className={`mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm ${UI.textSecondary}`}>
+                                  <span className="min-w-0 truncate" title={companyName}>{companyName}</span>
+                                  {industryText && (
+                                    <>
+                                      <span className="text-gray-400" aria-hidden="true">•</span>
+                                      <span className="min-w-0 truncate" title={industryText}>{industryText}</span>
+                                    </>
+                                  )}
+                                  {workOfficeAddressText && (
+                                    <>
+                                      <span className="text-gray-400" aria-hidden="true">•</span>
+                                      <span className="min-w-0 truncate" title={formatLocationDisplay(workOfficeAddressText)}>
+                                        {formatLocationDisplay(workOfficeAddressText)}
+                                      </span>
+                                    </>
+                                  )}
                                 </div>
-
-                                {locationText && (
-                                  <div className={`mt-1 inline-flex w-full items-start gap-2 text-sm ${UI.textSecondary}`}>
-                                    <span className="mt-0.5 text-gray-500"><SvgIcon name="location" className="w-4 h-4" /></span>
-                                    <span>{formatLocationDisplay(locationText)}</span>
-                                  </div>
-                                )}
 
                                 <div className="mt-3 flex flex-wrap gap-2">
                                   {jobTypeText && (
