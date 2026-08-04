@@ -2482,7 +2482,7 @@ const PostJob = () => {
                   <div className="grid min-w-[260px] grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
                     <div className="rounded-xl border border-gray-200 p-4">
                       <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Salary</p>
-                      <p className="mt-1 font-semibold text-gray-900">{formData.hideSalary ? 'Salary not specified' : salaryPreview}</p>
+                      <p className="mt-1 font-semibold text-gray-900">{formData.hideSalary ? 'Salary not specified' : salaryRangeText}</p>
                     </div>
                     <div className="rounded-xl border border-gray-200 p-4">
                       <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Application Deadline</p>
