@@ -3478,7 +3478,11 @@ const ProfileEditModal = ({
         </div>
 
         <div className="px-6 py-6 max-h-[calc(86vh-112px)] overflow-y-auto">
-          {error ? <Alert type="error" message={error} /> : null}
+          {error ? (
+            <div className="sticky top-0 z-20 -mx-1 mb-5 bg-white pb-2">
+              <Alert type="error" message={error} />
+            </div>
+          ) : null}
           {renderContent()}
         </div>
 
@@ -5238,9 +5242,16 @@ const MyProfile = () => {
             willingToRelocate: activeDrafts.willingToRelocate,
             studyField: activeDrafts.studyField,
             experience: activeDrafts.experience,
+            preferredLanguage: activeDrafts.preferredLanguage,
             minimumSalary: normalizeSalaryDigits(activeDrafts.minimumSalary),
             maximumSalary: normalizeSalaryDigits(activeDrafts.maximumSalary),
             salaryPrivacy: activeDrafts.salaryPrivacy || 'only_me',
+            height: activeDrafts.height,
+            weight: activeDrafts.weight,
+            nationality: activeDrafts.nationality,
+            gender: activeDrafts.gender,
+            civilStatus: activeDrafts.civilStatus,
+            birthday: activeDrafts.birthday,
           },
         };
       }
