@@ -1023,7 +1023,8 @@ const PostJob = () => {
   const companyWebsite = useMemo(() => {
     const profile = storedUser?.employerProfile || {};
     return String(
-      profile.companyWebsite ||
+      profile.companyWebsiteUrl ||
+        profile.companyWebsite ||
         profile.website ||
         profile.websiteUrl ||
         profile.companyUrl ||
@@ -2812,18 +2813,12 @@ const PostJob = () => {
                 </svg>
               </div>
 
-              <p className="mt-4 text-xs font-bold uppercase tracking-[0.2em] text-[#2e66a6]">
-                Privacy Notice
-              </p>
               <h2
                 id="privacy-notice-title"
-                className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900"
+                className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900"
               >
                 Privacy Notice &amp; Posting Agreement
               </h2>
-              <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-600">
-                Please review the agreement before publishing your job post.
-              </p>
             </div>
 
             <div className="overflow-y-auto px-6 py-6 sm:px-9">
