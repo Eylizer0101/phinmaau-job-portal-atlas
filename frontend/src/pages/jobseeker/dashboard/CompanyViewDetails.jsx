@@ -288,7 +288,7 @@ const ensureUrlProtocol = (url) => {
 const formatSalary = (min, max) => {
   const hasMin = min !== undefined && min !== null && min !== "";
   const hasMax = max !== undefined && max !== null && max !== "";
-  const money = (n) => `₱${Number(n).toLocaleString("en-PH")}`;
+  const money = (n) => Number(n).toLocaleString("en-PH");
 
   if (hasMin && hasMax) return `${money(min)} - ${money(max)}`;
   if (hasMin) return `From ${money(min)}`;

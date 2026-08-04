@@ -11,7 +11,7 @@ const normalizeJobsResponse = (response) => {
   if (Array.isArray(data?.data)) return data.data;
   return [];
 };
-const formatSalary = (min, max, hidden) => hidden ? "Salary not disclosed" : (min || max) ? `₱${Number(min || 0).toLocaleString("en-PH")} - ₱${Number(max || min || 0).toLocaleString("en-PH")}` : "Salary not specified";
+const formatSalary = (min, max, hidden) => hidden ? "Salary not disclosed" : (min || max) ? `${Number(min || 0).toLocaleString("en-PH")} - ${Number(max || min || 0).toLocaleString("en-PH")}` : "Salary not specified";
 const shortLocation = (value) => String(value || "Location not specified").split(",").slice(0, 3).join(", ");
 
 const normalizeBoolean = (value) => {
@@ -204,7 +204,7 @@ const CompanyAllJobs = () => {
                           ₱
                         </span>
                         <span className="min-w-0 flex-1 truncate">
-                          {formatSalary(job.salaryMin, job.salaryMax, job.hideSalary).replace(/^₱\s*/, "")}
+                          {formatSalary(job.salaryMin, job.salaryMax, job.hideSalary)}
                         </span>
                       </div>
 
