@@ -1593,14 +1593,6 @@ const JobOffers = () => {
                       className="group relative overflow-visible rounded-[22px] p-5 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[372px]"
                       style={{ border: `1px solid ${COLORS.border}` }}
                     >
-                      {job.isUrgent ? (
-                        <img
-                          src="/images/neededd.png"
-                          alt="Urgent Hiring"
-                          draggable="false"
-                          className={`pointer-events-none absolute -top-[48px] -left-[50px] z-10 w-[230px] max-w-none select-none transition-opacity ${openDropdown ? "invisible opacity-0" : "visible opacity-100"}`}
-                        />
-                      ) : null}
 
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-4 min-w-0 flex-1">
@@ -1671,7 +1663,18 @@ const JobOffers = () => {
                         </button>
                       </div>
 
-                      <div className="mt-4 rounded-2xl p-3.5" style={{ backgroundColor: COLORS.mutedBox }}>
+                      <div
+                        className={`mt-4 rounded-2xl p-3.5 relative overflow-hidden ${job.isUrgent ? 'pr-[132px]' : ''}`}
+                        style={{ backgroundColor: COLORS.mutedBox }}
+                      >
+                        {job.isUrgent ? (
+                          <img
+                            src="/images/urgentneed.png"
+                            alt="Urgent Hiring"
+                            draggable="false"
+                            className="pointer-events-none absolute right-3 bottom-3 w-[112px] max-w-[38%] h-auto object-contain select-none"
+                          />
+                        ) : null}
                         <div className="flex items-center gap-2 text-sm text-black/75 min-h-[20px] min-w-0">
                           <svg
                             className="w-4 h-4 text-black/65 flex-shrink-0"
