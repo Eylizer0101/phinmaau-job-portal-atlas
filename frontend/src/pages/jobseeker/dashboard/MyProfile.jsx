@@ -855,6 +855,12 @@ const ResumePasswordModal = ({
   onClose,
   onSubmit,
 }) => {
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (!open) setShowPassword(false);
+  }, [open]);
+
   if (!open) return null;
 
   return (
@@ -886,13 +892,29 @@ const ResumePasswordModal = ({
         </div>
 
         <form onSubmit={onSubmit} className="px-6 py-6 space-y-4">
-          <Input
-            label="Password"
-            type="password"
-            value={password}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="Enter your password"
-          />
+          <div>
+            <label className="block text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">
+              Password
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password || ''}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder="Enter your password"
+                className="w-full h-12 pl-4 pr-12 rounded-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6]"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((current) => !current)}
+                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-gray-500 transition hover:text-[#2e66a6]"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                <FaEye className={`text-base ${showPassword ? 'text-[#2e66a6]' : ''}`} />
+              </button>
+            </div>
+          </div>
 
           {error ? <Alert type="error" message={error} /> : null}
 
@@ -3660,10 +3682,7 @@ const JobSeekerLevelCard = ({
           <div className="w-full max-w-[980px] overflow-hidden rounded-[22px] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
             <div className="flex items-center justify-between gap-4 bg-[#2e66a6] px-5 py-4 sm:px-7">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/75">
-                  Job Seeker Ranking
-                </p>
-                <h2 id="job-seeker-levels-title" className="mt-1 text-[21px] font-bold text-white sm:text-[24px]">
+                <h2 id="job-seeker-levels-title" className="text-[21px] font-bold text-white sm:text-[24px]">
                   Job Seeker Levels
                 </h2>
               </div>
@@ -3682,21 +3701,6 @@ const JobSeekerLevelCard = ({
               <p className="text-sm leading-6 text-gray-600">
                 Improve your profile to progress through each job seeker level.
               </p>
-
-              <div className="mt-4 overflow-x-auto rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-3">
-                <div className="flex min-w-max items-center gap-2 text-sm font-semibold text-[#2e66a6]">
-                  {jobSeekerLevels.map(([levelName], index) => (
-                    <React.Fragment key={levelName}>
-                      <span className={levelName === currentRank ? 'font-extrabold text-black' : ''}>
-                        {levelName}
-                      </span>
-                      {index < jobSeekerLevels.length - 1 ? (
-                        <span className="text-gray-400" aria-hidden="true">→</span>
-                      ) : null}
-                    </React.Fragment>
-                  ))}
-                </div>
-              </div>
 
               <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
                 {jobSeekerLevels.map(([levelName, levelBadge], index) => {
@@ -3737,15 +3741,6 @@ const JobSeekerLevelCard = ({
                 })}
               </div>
 
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setShowLevelModal(false)}
-                  className="h-11 rounded-lg bg-[#2e66a6] px-6 text-sm font-semibold text-white transition hover:opacity-90"
-                >
-                  Close
-                </button>
-              </div>
             </div>
           </div>
         </div>,
@@ -3912,16 +3907,18 @@ const AddSectionsCard = ({ onAddSections, reminder = '' }) => (
     {reminder ? (
       <p className="mt-3 text-sm font-semibold text-amber-700">{reminder}</p>
     ) : null}
-    <button
-      type="button"
-      onClick={onAddSections}
-      className="mt-6 h-12 rounded-xl bg-[#1658d3] px-6 text-[15px] font-bold text-white shadow-sm transition hover:bg-[#1249b2] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1658d3] focus-visible:ring-offset-2"
-    >
-      <span className="inline-flex items-center gap-2">
-        <FaPlus className="text-sm" />
-        Add Sections
-      </span>
-    </button>
+    <div className="mt-6 flex justify-center">
+      <button
+        type="button"
+        onClick={onAddSections}
+        className="h-12 rounded-xl bg-[#1658d3] px-6 text-[15px] font-bold text-white shadow-sm transition hover:bg-[#1249b2] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1658d3] focus-visible:ring-offset-2"
+      >
+        <span className="inline-flex items-center gap-2">
+          <FaPlus className="text-sm" />
+          Add Sections
+        </span>
+      </button>
+    </div>
   </section>
 );
 
