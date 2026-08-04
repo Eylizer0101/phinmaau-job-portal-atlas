@@ -2214,15 +2214,6 @@ const EmployerDashboard = () => {
                         style={{ border: '1px solid #E5E7EB' }}
                         aria-label={`View job details for ${String(job?.title || 'Job Title').replaceAll('"', '')}`}
                       >
-                        {job?.isUrgent ? (
-                          <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full bg-[#171717] pr-4 text-sm font-bold leading-none text-white shadow-sm">
-                            <span className="flex h-9 w-12 items-center justify-center overflow-visible">
-                              <img src="/images/fire.png" alt="" className="h-14 w-14 max-w-none object-contain" />
-                            </span>
-                            Urgently Needed
-                          </div>
-                        ) : null}
-
                         <div className="flex items-start gap-4">
                           <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border border-gray-200 bg-white">
                             {job?.companyLogo ? (
@@ -2267,7 +2258,16 @@ const EmployerDashboard = () => {
                           </div>
                         </div>
 
-                        <div className="mt-4 rounded-xl p-4 bg-gray-100">
+                        <div className={`relative mt-4 rounded-xl p-4 bg-gray-100 ${job?.isUrgent ? 'pr-24' : ''}`}>
+                          {job?.isUrgent ? (
+                           <img
+                              src="/images/urgentneed.png"
+                              alt="Urgent Hiring"
+                              draggable="false"
+                             className="pointer-events-none absolute -right-5 bottom-1 w-[112px] max-w-[38%] h-auto object-contain select-none"
+                            />
+                          ) : null}
+
                           <div className="flex items-center gap-2 text-sm text-gray-700 min-w-0">
                             <svg
                               className="w-4 h-4 min-w-[16px] min-h-[16px] flex-shrink-0 text-gray-600"
