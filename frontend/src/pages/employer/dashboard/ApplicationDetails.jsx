@@ -105,7 +105,7 @@ const AutoFitApplicationHeaderName = ({ children, maxFontSize = 30, minFontSize 
   }, [children, maxFontSize, minFontSize]);
 
   return (
-    <div ref={containerRef} className="min-w-0 flex-1 overflow-hidden">
+    <div ref={containerRef} className="min-w-0 max-w-full overflow-hidden">
       <h1
         ref={textRef}
         className="whitespace-nowrap font-bold leading-tight text-gray-900"
@@ -1229,9 +1229,11 @@ const ApplicationDetails = () => {
   ).trim();
   const meaningfulWork = work.filter(hasMeaningfulObjectValue);
   const meaningfulEducation = education.filter(hasMeaningfulObjectValue);
+  const meaningfulCertifications = (Array.isArray(profile.certifications) ? profile.certifications : [])
+    .filter(hasMeaningfulObjectValue);
+  const meaningfulProjects = (Array.isArray(profile.projects) ? profile.projects : [])
+    .filter(hasMeaningfulObjectValue);
   const meaningfulProfileSections = [
-    ['Certifications', profile.certifications || []],
-    ['Projects', profile.projects || []],
     ['Seminars and Trainings', profile.seminars || []],
     ['Awards and Achievements', profile.awards || []],
     ['Affiliations', profile.affiliations || []],
@@ -1242,23 +1244,28 @@ const ApplicationDetails = () => {
   ]).filter(([, items]) => items.length > 0);
   const meaningfulReferences = (Array.isArray(profile.references) ? profile.references : [])
     .filter(hasMeaningfulObjectValue);
-  const personalInformationRows = [
-    ['Preferred Work Mode', profile.preferredWorkMode],
-    ['Employment Type', profile.employmentType],
-    ['Willing to Relocate', profile.willingToRelocate],
-    ['How Soon Can Start', profile.howSoonCanYouStart],
-    ['Experience', profile.experience || profile.whatHaveYouDone],
-    ['Preferred Language', profile.preferredLanguage],
-    ['Educational Attainment', profile.educationalAttainment],
-    ['Double Degree', profile.studyField || profile.course],
-    ['Salary', salary],
-    ['Nationality', profile.nationality],
-    ['Height', profile.height],
-    ['Weight', profile.weight],
-    ['Gender', profile.gender],
-    ['Civil Status', profile.civilStatus],
-    ['Birthday', profile.birthday],
-  ].filter(([, value]) => String(value || '').trim());
+  const personalInformationColumns = [
+    [
+      ['Preferred Work Mode', profile.preferredWorkMode],
+      ['Employment Type', profile.employmentType],
+      ['Willing to Relocate', profile.willingToRelocate],
+      ['How Soon Can Start', profile.howSoonCanYouStart],
+      ['Preferred Language', profile.preferredLanguage],
+    ],
+    [
+      ['Educational Attainment', profile.educationalAttainment],
+      ['Double Degree', profile.studyField || profile.course],
+      ['Salary', salary],
+      ['Nationality', profile.nationality],
+      ['Height', profile.height],
+    ],
+    [
+      ['Weight', profile.weight],
+      ['Gender', profile.gender],
+      ['Civil Status', profile.civilStatus],
+      ['Birthday', profile.birthday],
+    ],
+  ];
   const activities = Array.isArray(application.activityHistory) && application.activityHistory.length
     ? [...application.activityHistory].sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt))
     : [
@@ -1298,7 +1305,7 @@ const ApplicationDetails = () => {
             <div className="flex min-w-0 flex-1 items-center gap-5">
               <div className="h-[108px] w-[108px] shrink-0 overflow-hidden rounded-full bg-[#eef5fc]">{image && !avatarBroken ? <img src={image} alt={name} onError={() => setAvatarBroken(true)} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-[#2e66a6]">{name[0]}</div>}</div>
               <div className="min-w-0 flex-1">
-                <div className="flex min-w-0 items-center gap-3">
+                <div className="flex min-w-0 flex-wrap items-center gap-3">
                   <AutoFitApplicationHeaderName>{name}</AutoFitApplicationHeaderName>
                   <span className={`shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-xs font-semibold ${isAlreadyEmployed ? 'bg-amber-100 text-amber-800' : 'bg-green-50 text-green-700'}`}>
                     {visibleStatusLabel}
@@ -1380,29 +1387,33 @@ const ApplicationDetails = () => {
                   ) : null}
                 </header>
 
-                {String(profile.aboutMe || '').trim() ? (
-                  <section className="pt-2">
-                    <h3 className="border-b border-black text-[11px] font-bold uppercase">Objective</h3>
+                <section className="pt-2">
+                  <h3 className="border-b border-black text-[11px] font-bold uppercase">Objective</h3>
+                  {String(profile.aboutMe || '').trim() ? (
                     <div className="pt-1 text-justify">{richText(profile.aboutMe)}</div>
-                  </section>
-                ) : null}
+                  ) : null}
+                </section>
 
-                {personalInformationRows.length ? (
-                  <section className="pt-2">
-                    <h3 className="border-b border-black text-[11px] font-bold uppercase">Personal Information</h3>
-                    <div className="grid grid-cols-1 gap-x-7 gap-y-0.5 pt-1 sm:grid-cols-3">
-                      {personalInformationRows.map(([label, value]) => (
-                        <div key={label}>
-                          <b>{label}:</b> {value}
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                ) : null}
+                <section className="pt-2">
+                  <h3 className="border-b border-black text-[11px] font-bold uppercase">Personal Information</h3>
+                  <div className="grid grid-cols-1 gap-x-7 gap-y-0.5 pt-1 sm:grid-cols-3">
+                    {personalInformationColumns.map((column, columnIndex) => (
+                      <div key={`personal-column-${columnIndex}`}>
+                        {column.map(([label, value]) =>
+                          String(value || '').trim() ? (
+                            <div key={label}>
+                              <b>{label}:</b> {value}
+                            </div>
+                          ) : null
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
 
-                {meaningfulWork.length ? (
-                  <section className="pt-2">
-                    <h3 className="border-b border-black text-[11px] font-bold uppercase">Work Experience</h3>
+                <section className="pt-2">
+                  <h3 className="border-b border-black text-[11px] font-bold uppercase">Work Experience</h3>
+                  {meaningfulWork.length ? (
                     <div className="space-y-1 pt-1">
                       {meaningfulWork.map((item, index) => (
                         <div key={item._id || index}>
@@ -1423,12 +1434,12 @@ const ApplicationDetails = () => {
                         </div>
                       ))}
                     </div>
-                  </section>
-                ) : null}
+                  ) : null}
+                </section>
 
-                {skills.length ? (
-                  <section className="pt-2">
-                    <h3 className="border-b border-black text-[11px] font-bold uppercase">Skills</h3>
+                <section className="pt-2">
+                  <h3 className="border-b border-black text-[11px] font-bold uppercase">Skills</h3>
+                  {skills.length ? (
                     <ul className="grid list-disc grid-cols-1 gap-x-8 gap-y-0 pl-4 pt-1 sm:grid-cols-3">
                       {skills.map((item, index) => (
                         <li key={`${item.skill}-${index}`}>
@@ -1436,8 +1447,8 @@ const ApplicationDetails = () => {
                         </li>
                       ))}
                     </ul>
-                  </section>
-                ) : null}
+                  ) : null}
+                </section>
 
                 {meaningfulEducation.length ? (
                   <section className="pt-2">
@@ -1464,6 +1475,54 @@ const ApplicationDetails = () => {
                     </div>
                   </section>
                 ) : null}
+
+                <section className="pt-2">
+                  <h3 className="border-b border-black text-[11px] font-bold uppercase">Certifications</h3>
+                  {meaningfulCertifications.length ? (
+                    <div className="space-y-1 pt-1">
+                      {meaningfulCertifications.map((item, index) => (
+                        <div key={item._id || `certification-${index}`}>
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0">
+                              {item.title || item.name || item.organization ? (
+                                <div className="font-bold">{item.title || item.name || item.organization}</div>
+                              ) : null}
+                              {item.issuer || item.role || item.company || item.organization ? (
+                                <div className="italic">{item.issuer || item.role || item.company || item.organization}</div>
+                              ) : null}
+                            </div>
+                            {entryDate(item) ? <div className="shrink-0 whitespace-nowrap italic">{entryDate(item)}</div> : null}
+                          </div>
+                          {item.description ? <div className="mt-0.5 text-justify">{richText(item.description)}</div> : null}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </section>
+
+                <section className="pt-2">
+                  <h3 className="border-b border-black text-[11px] font-bold uppercase">Projects</h3>
+                  {meaningfulProjects.length ? (
+                    <div className="space-y-1 pt-1">
+                      {meaningfulProjects.map((item, index) => (
+                        <div key={item._id || `project-${index}`}>
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0">
+                              {item.title || item.name || item.organization ? (
+                                <div className="font-bold">{item.title || item.name || item.organization}</div>
+                              ) : null}
+                              {item.issuer || item.role || item.company || item.organization ? (
+                                <div className="italic">{item.issuer || item.role || item.company || item.organization}</div>
+                              ) : null}
+                            </div>
+                            {entryDate(item) ? <div className="shrink-0 whitespace-nowrap italic">{entryDate(item)}</div> : null}
+                          </div>
+                          {item.description ? <div className="mt-0.5 text-justify">{richText(item.description)}</div> : null}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </section>
 
                 {meaningfulProfileSections.map(([sectionTitle, items]) => (
                   <section key={sectionTitle} className="pt-2">
@@ -1516,7 +1575,9 @@ const ApplicationDetails = () => {
           ) : <div className="border-t border-[#d8e2ee] px-6 py-8 sm:px-10"><div className="relative ml-3 border-l-2 border-gray-200 pl-8">{activities.map((item, index) => { const dt = formatDateTime(item.occurredAt || item.createdAt); return <div key={item._id || `${item.type}-${index}`} className="relative pb-10 last:pb-0"><div className="absolute -left-[43px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-4 border-white bg-[#2e66a6] shadow"><SvgIcon name={item.type === 'message' ? 'message' : item.type === 'submitted' ? 'resume' : 'activity'} className="h-3 w-3 text-white" /></div><h3 className="text-lg font-semibold text-gray-900">{item.title || 'Application updated'}</h3><p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">{item.description || 'The application record was updated.'}</p><div className="mt-2 text-xs font-bold tracking-wide text-gray-500">{dt.date}{dt.time ? ` · ${dt.time}` : ''}</div></div>; })}</div></div>}
         </main>
 
-        <aside className="space-y-5"><div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5 sm:p-6">
+        <aside className="space-y-5">
+          <div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5"><h2 className="text-lg font-bold">Employer Actions</h2>{isAlreadyEmployed ? <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">This applicant is already employed through another job application.</p> : null}<div className="mt-5 space-y-3">{!isAlreadyEmployed && currentStatus === 'pending' ? <button onClick={() => setConfirmationAction('for interview')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="calendar" /> Move to Interview</button> : null}{!isAlreadyEmployed && currentStatus === 'for interview' ? <button onClick={() => setConfirmationAction('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="check" /> Hired</button> : null}{!isAlreadyEmployed ? <button onClick={() => setMessageOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91]"><SvgIcon name="message" /> Send Message</button> : null}{(isAlreadyEmployed || ['pending', 'for interview'].includes(currentStatus)) ? <button onClick={() => setDeclineOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400 px-4 py-3 text-sm font-semibold text-red-600"><SvgIcon name="x" /> Decline Application</button> : null}</div></div>
+          <div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5 sm:p-6">
             <h2 className="text-[18px] font-bold text-gray-900">Application Summary</h2>
 
             <div className="mt-5 border-b border-gray-200 pb-5">
@@ -1826,7 +1887,7 @@ const ApplicationDetails = () => {
               </div>
             </div>
           </div>
-          <div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5"><h2 className="text-lg font-bold">Employer Actions</h2>{isAlreadyEmployed ? <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">This applicant is already employed through another job application.</p> : null}<div className="mt-5 space-y-3">{!isAlreadyEmployed && currentStatus === 'pending' ? <button onClick={() => setConfirmationAction('for interview')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="calendar" /> Move to Interview</button> : null}{!isAlreadyEmployed && currentStatus === 'for interview' ? <button onClick={() => setConfirmationAction('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="check" /> Hired</button> : null}{!isAlreadyEmployed ? <button onClick={() => setMessageOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91]"><SvgIcon name="message" /> Send Message</button> : null}{(isAlreadyEmployed || ['pending', 'for interview'].includes(currentStatus)) ? <button onClick={() => setDeclineOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400 px-4 py-3 text-sm font-semibold text-red-600"><SvgIcon name="x" /> Decline Application</button> : null}</div></div></aside>
+        </aside>
       </div>
       <DeclineReasonModal open={declineOpen} applicantName={name} reasons={declineReasons} selectedReason={declineReason} comment={declineComment} onReasonChange={setDeclineReason} onCommentChange={setDeclineComment} onClose={() => { setDeclineOpen(false); setDeclineReason(''); setDeclineComment(''); }} onConfirm={async () => { const from = currentStatus === 'for interview' ? 'forInterview' : 'applicants'; setDeclineOpen(false); await updateStatus('declined', { declineReason, declineComment, declinedFrom: from }); }} submitting={statusUpdating} />
       <StatusConfirmationModal

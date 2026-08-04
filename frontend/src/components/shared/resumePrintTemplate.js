@@ -169,12 +169,19 @@ const sectionHtml = (title, children, hidden = false) => {
   `;
 };
 
-const threeColumnRowsHtml = (rows = []) => {
-  const cleanRows = rows.filter((row) => getText(row.value));
-  if (!cleanRows.length) return '';
-  const columns = [cleanRows.slice(0, 5), cleanRows.slice(5, 10), cleanRows.slice(10, 15)];
-  return `<div class="three-column-rows">${columns.map((column) => `<div class="info-column">${column.map((row) => `<div class="info-row"><span class="info-label">${escapeHtml(row.label)}:</span><span class="info-value">${escapeHtml(row.value)}</span></div>`).join('')}</div>`).join('')}</div>`;
-};
+const threeColumnRowsHtml = (columns = []) =>
+  `<div class="three-column-rows">${columns
+    .map(
+      (column) =>
+        `<div class="info-column">${column
+          .filter((row) => getText(row.value))
+          .map(
+            (row) =>
+              `<div class="info-row"><span class="info-label">${escapeHtml(row.label)}:</span><span class="info-value">${escapeHtml(row.value)}</span></div>`
+          )
+          .join('')}</div>`
+    )
+    .join('')}</div>`;
 
 const datedItemHtml = ({ title, subtitle, date, description, details, meta }) => {
   const detailItems = Array.isArray(details) ? details.filter(isMeaningfulResumeValue) : [];
@@ -182,12 +189,12 @@ const datedItemHtml = ({ title, subtitle, date, description, details, meta }) =>
   return `<div class="dated-item"><div class="dated-header"><div class="dated-main"><div class="item-title">${escapeHtml(title)}</div>${subtitle ? `<div class="item-subtitle">${escapeHtml(subtitle)}</div>` : ''}${meta ? `<div class="item-meta">${escapeHtml(meta)}</div>` : ''}</div>${date ? `<div class="item-date">${escapeHtml(formatShortResumeDate(date))}</div>` : ''}</div>${detailItems.length ? `<ul class="resume-bullets">${detailItems.map((detail) => `<li>${escapeHtml(detail)}</li>`).join('')}</ul>` : descriptionHtml ? `<div class="resume-rich-text">${descriptionHtml}</div>` : ''}</div>`;
 };
 
-const profileListSectionHtml = ({ title, items = [], type = 'default' }) => {
+const profileListSectionHtml = ({ title, items = [], type = 'default', alwaysShow = false }) => {
   const cleanItems = Array.isArray(items)
     ? items.filter((item) => Object.values(item || {}).some((value) => getText(value)))
     : [];
 
-  if (!cleanItems.length) return '';
+  if (!cleanItems.length) return alwaysShow ? sectionHtml(title, '') : '';
 
   if (type === 'references') {
     return sectionHtml(
@@ -615,22 +622,27 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
     .filter(Boolean)
     .join(', ');
 
-  const availabilityRows = [
-    { label: 'Preferred Work Mode', value: formData.preferredWorkMode },
-    { label: 'Employment Type', value: formData.employmentType },
-    { label: 'Willing to Relocate', value: formData.willingToRelocate },
-    { label: 'How Soon Can Start', value: formData.howSoonCanYouStart },
-    { label: 'Experience', value: formData.experience },
-    { label: 'Preferred Language', value: formData.preferredLanguage },
-    { label: 'Educational Attainment', value: formData.educationalAttainment },
-    { label: 'Double Degree', value: formData.studyField },
-    { label: 'Salary', value: [formData.minimumSalary, formData.maximumSalary].filter(Boolean).join(' - ') },
-    { label: 'Nationality', value: formData.nationality },
-    { label: 'Height', value: formData.height },
-    { label: 'Weight', value: formData.weight ? `${String(formData.weight).replace(/\s*(kg|kgs|kilogram|kilograms)$/i, '').trim()} kg` : '' },
-    { label: 'Gender', value: formData.gender },
-    { label: 'Civil Status', value: formData.civilStatus },
-    { label: 'Birthday', value: formData.birthday },
+  const personalInformationColumns = [
+    [
+      { label: 'Preferred Work Mode', value: formData.preferredWorkMode },
+      { label: 'Employment Type', value: formData.employmentType },
+      { label: 'Willing to Relocate', value: formData.willingToRelocate },
+      { label: 'How Soon Can Start', value: formData.howSoonCanYouStart },
+      { label: 'Preferred Language', value: formData.preferredLanguage },
+    ],
+    [
+      { label: 'Educational Attainment', value: formData.educationalAttainment },
+      { label: 'Double Degree', value: formData.studyField },
+      { label: 'Salary', value: [formData.minimumSalary, formData.maximumSalary].filter(Boolean).join(' - ') },
+      { label: 'Nationality', value: formData.nationality },
+      { label: 'Height', value: formData.height },
+    ],
+    [
+      { label: 'Weight', value: formData.weight ? `${String(formData.weight).replace(/\s*(kg|kgs|kilogram|kilograms)$/i, '').trim()} kg` : '' },
+      { label: 'Gender', value: formData.gender },
+      { label: 'Civil Status', value: formData.civilStatus },
+      { label: 'Birthday', value: formData.birthday },
+    ],
   ];
 
   const imageUrl = getProfileImageUrl(profileImage);
@@ -650,7 +662,7 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
         })
       )
       .join(''),
-    !workExperiences.length
+    false
   );
 
   const allSkills = [...technicalSkills, ...softSkills].filter(isMeaningfulResumeValue);
@@ -675,7 +687,7 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
           .join('')}
       </div>
     `,
-    !allSkills.length
+    false
   );
 
   const educationHtml = educationEntries.length
@@ -731,13 +743,13 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
             ${photoHtml}
           </header>
 
-          ${getText(formData.aboutMe) ? sectionHtml('Objective', `<div class="objective-text resume-rich-text">${sanitizeResumeRichText(formData.aboutMe)}</div>`) : ''}
-          ${sectionHtml('Personal Information', threeColumnRowsHtml(availabilityRows))}
+          ${sectionHtml('Objective', getText(formData.aboutMe) ? `<div class="objective-text resume-rich-text">${sanitizeResumeRichText(formData.aboutMe)}</div>` : '')}
+          ${sectionHtml('Personal Information', threeColumnRowsHtml(personalInformationColumns))}
           ${workExperienceHtml}
           ${skillsHtml}
           ${educationHtml}
-          ${profileListSectionHtml({ title: 'Certifications', items: certifications })}
-          ${profileListSectionHtml({ title: 'Projects', items: projects })}
+          ${profileListSectionHtml({ title: 'Certifications', items: certifications, alwaysShow: true })}
+          ${profileListSectionHtml({ title: 'Projects', items: projects, alwaysShow: true })}
           ${profileListSectionHtml({ title: 'Seminars and Trainings', items: seminars })}
           ${profileListSectionHtml({ title: 'Awards and Achievements', items: awards, type: 'awards' })}
           ${profileListSectionHtml({ title: 'Affiliations', items: affiliations })}

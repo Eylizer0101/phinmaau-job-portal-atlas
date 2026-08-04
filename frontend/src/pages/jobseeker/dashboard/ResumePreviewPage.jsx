@@ -191,12 +191,22 @@ const Section = ({ title, children, hidden = false }) => {
   );
 };
 
-const ThreeColumnRows = ({ rows = [] }) => {
-  const cleanRows = rows.filter((row) => getText(row.value));
-  if (!cleanRows.length) return null;
-  const columns = [cleanRows.slice(0, 5), cleanRows.slice(5, 10), cleanRows.slice(10, 15)];
-  return <div className="three-column-rows">{columns.map((column, columnIndex) => <div className="info-column" key={`info-column-${columnIndex}`}>{column.map((row) => <div className="info-row" key={row.label}><span className="info-label">{row.label}:</span><span className="info-value">{row.value}</span></div>)}</div>)}</div>;
-};
+const ThreeColumnRows = ({ columns = [] }) => (
+  <div className="three-column-rows">
+    {columns.map((column, columnIndex) => (
+      <div className="info-column" key={`info-column-${columnIndex}`}>
+        {column.map((row) =>
+          getText(row.value) ? (
+            <div className="info-row" key={row.label}>
+              <span className="info-label">{row.label}:</span>
+              <span className="info-value">{row.value}</span>
+            </div>
+          ) : null
+        )}
+      </div>
+    ))}
+  </div>
+);
 
 const DatedItem = ({ title, subtitle, date, description, details, meta }) => {
   const detailItems = Array.isArray(details) ? details.filter(isMeaningfulResumeValue) : [];
@@ -208,12 +218,12 @@ const DatedItem = ({ title, subtitle, date, description, details, meta }) => {
   );
 };
 
-const ProfileListSection = ({ title, items = [], type = 'default' }) => {
+const ProfileListSection = ({ title, items = [], type = 'default', alwaysShow = false }) => {
   const cleanItems = Array.isArray(items)
     ? items.filter((item) => Object.values(item || {}).some((value) => getText(value)))
     : [];
 
-  if (!cleanItems.length) return null;
+  if (!cleanItems.length) return alwaysShow ? <Section title={title} /> : null;
 
   return (
     <Section title={title}>
@@ -327,22 +337,27 @@ const ResumePreviewPage = () => {
     );
   }
 
-  const availabilityRows = [
-    { label: 'Preferred Work Mode', value: formData.preferredWorkMode },
-    { label: 'Employment Type', value: formData.employmentType },
-    { label: 'Willing to Relocate', value: formData.willingToRelocate },
-    { label: 'How Soon Can Start', value: formData.howSoonCanYouStart },
-    { label: 'Experience', value: formData.experience },
-    { label: 'Preferred Language', value: formData.preferredLanguage },
-    { label: 'Educational Attainment', value: formData.educationalAttainment },
-    { label: 'Double Degree', value: formData.studyField },
-    { label: 'Salary', value: [formData.minimumSalary, formData.maximumSalary].filter(Boolean).join(' - ') },
-    { label: 'Nationality', value: formData.nationality },
-    { label: 'Height', value: formData.height },
-    { label: 'Weight', value: formData.weight ? `${String(formData.weight).replace(/\s*(kg|kgs|kilogram|kilograms)$/i, '').trim()} kg` : '' },
-    { label: 'Gender', value: formData.gender },
-    { label: 'Civil Status', value: formData.civilStatus },
-    { label: 'Birthday', value: formData.birthday },
+  const personalInformationColumns = [
+    [
+      { label: 'Preferred Work Mode', value: formData.preferredWorkMode },
+      { label: 'Employment Type', value: formData.employmentType },
+      { label: 'Willing to Relocate', value: formData.willingToRelocate },
+      { label: 'How Soon Can Start', value: formData.howSoonCanYouStart },
+      { label: 'Preferred Language', value: formData.preferredLanguage },
+    ],
+    [
+      { label: 'Educational Attainment', value: formData.educationalAttainment },
+      { label: 'Double Degree', value: formData.studyField },
+      { label: 'Salary', value: [formData.minimumSalary, formData.maximumSalary].filter(Boolean).join(' - ') },
+      { label: 'Nationality', value: formData.nationality },
+      { label: 'Height', value: formData.height },
+    ],
+    [
+      { label: 'Weight', value: formData.weight ? `${String(formData.weight).replace(/\s*(kg|kgs|kilogram|kilograms)$/i, '').trim()} kg` : '' },
+      { label: 'Gender', value: formData.gender },
+      { label: 'Civil Status', value: formData.civilStatus },
+      { label: 'Birthday', value: formData.birthday },
+    ],
   ];
 
   return (
@@ -772,10 +787,10 @@ const ResumePreviewPage = () => {
             </Section>
 
             <Section title="Personal Information">
-              <ThreeColumnRows rows={availabilityRows} />
+              <ThreeColumnRows columns={personalInformationColumns} />
             </Section>
 
-            <Section title="Work Experience" hidden={!workExperiences.length}>
+            <Section title="Work Experience">
               {workExperiences.map((item, index) => (
                 <DatedItem
                   key={item._id || item.id || `${item.companyName}-${item.positionTitle}-${index}`}
@@ -787,8 +802,7 @@ const ResumePreviewPage = () => {
               ))}
             </Section>
 
-            {allSkills.length ? (
-              <Section title="Skills">
+            <Section title="Skills">
                 <div className="skills-groups">
                   {Array.from({ length: Math.ceil(allSkills.length / 9) }, (_, groupIndex) => {
                     const skillGroup = allSkills.slice(groupIndex * 9, groupIndex * 9 + 9);
@@ -803,9 +817,7 @@ const ResumePreviewPage = () => {
                       </ul>
                     );
                   })}
-                </div>
-              </Section>
-            ) : null}
+                </div>              </Section>
 
             {educationEntries.length ? (
               <Section title="Education">
@@ -822,8 +834,8 @@ const ResumePreviewPage = () => {
               </Section>
             ) : null}
 
-            <ProfileListSection title="Certifications" items={certifications} />
-            <ProfileListSection title="Projects" items={projects} />
+            <ProfileListSection title="Certifications" items={certifications} alwaysShow />
+            <ProfileListSection title="Projects" items={projects} alwaysShow />
             <ProfileListSection title="Seminars and Trainings" items={seminars} />
             <ProfileListSection title="Awards and Achievements" items={awards} type="awards" />
             <ProfileListSection title="Affiliations" items={affiliations} />
