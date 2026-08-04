@@ -1664,7 +1664,7 @@ const JobOffers = () => {
                       </div>
 
                       <div
-                        className={`mt-4 rounded-2xl p-3.5 relative overflow-hidden ${job.isUrgent ? 'pr-[132px]' : ''}`}
+                        className="mt-4 rounded-2xl p-3.5 relative overflow-hidden"
                         style={{ backgroundColor: COLORS.mutedBox }}
                       >
                         {job.isUrgent ? (
@@ -1699,14 +1699,14 @@ const JobOffers = () => {
                           <span className="truncate min-w-0 flex-1">{formatLocationDisplay(job.location)}</span>
                         </div>
 
-                        <div className="mt-2 flex items-center gap-2 text-sm text-black/75">
+                        <div className={`mt-2 flex items-center gap-2 text-sm text-black/75 ${job.isUrgent ? 'pr-[112px]' : ''}`}>
                           <span className="w-4 h-4 text-black/65 flex items-center justify-center font-extrabold text-[14px] leading-none">
                             ₱
                           </span>
                           <span className="truncate">{formatSalary(job.salaryMin, job.salaryMax, job.hideSalary)}</span>
                         </div>
 
-                        <div className="mt-2 flex items-center gap-2 text-sm text-black/75">
+                        <div className={`mt-2 flex items-center gap-2 text-sm text-black/75 ${job.isUrgent ? 'pr-[112px]' : ''}`}>
                           <svg
                             className="w-4 h-4 text-black/65"
                             fill="none"

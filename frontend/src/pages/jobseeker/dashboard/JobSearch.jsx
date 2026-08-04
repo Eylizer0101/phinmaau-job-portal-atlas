@@ -1758,7 +1758,7 @@ const JobSearch = () => {
                         </div>
 
                         <div
-                          className={`mt-4 rounded-xl p-4 relative overflow-hidden ${job.isUrgent ? 'pr-[132px]' : ''}`}
+                          className="mt-4 rounded-xl p-4 relative overflow-hidden"
                           style={{ backgroundColor: COLORS.mutedBox }}
                         >
                           {job.isUrgent ? (
@@ -1766,7 +1766,7 @@ const JobSearch = () => {
                               src="/images/urgentneed.png"
                               alt="Urgent Hiring"
                               draggable="false"
-                             className="pointer-events-none absolute -right-5 bottom-3 w-[112px] max-w-[38%] h-auto object-contain select-none"
+                             className="pointer-events-none absolute -right-5 bottom-1 w-[112px] max-w-[38%] h-auto object-contain select-none"
                             />
                           ) : null}
                           <div className="flex items-center gap-2 text-sm text-gray-700 min-w-0">
@@ -1793,14 +1793,14 @@ const JobSearch = () => {
                             <span className="min-w-0 flex-1 truncate">{formatLocationDisplay(job.location)}</span>
                           </div>
 
-                          <div className="mt-2 flex items-center gap-2 text-sm text-gray-700">
+                          <div className={`mt-2 flex items-center gap-2 text-sm text-gray-700 ${job.isUrgent ? 'pr-[112px]' : ''}`}>
                             <span className="w-4 h-4 text-gray-600 flex flex-shrink-0 items-center justify-center font-extrabold text-[14px] leading-none">
                               ₱
                             </span>
                             <span className="min-w-0 flex-1 truncate">{formatSalary(job.salaryMin, job.salaryMax, job.hideSalary)}</span>
                           </div>
 
-                          <div className="mt-2 flex items-center gap-2 text-sm text-gray-700">
+                          <div className={`mt-2 flex items-center gap-2 text-sm text-gray-700 ${job.isUrgent ? 'pr-[112px]' : ''}`}>
                             <svg
                               className="w-4 h-4 text-gray-600 flex-shrink-0"
                               fill="none"
