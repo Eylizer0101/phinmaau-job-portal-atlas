@@ -736,11 +736,19 @@ const JobseekerVerificationDetails = () => {
       .slice(-6)
       .toUpperCase()}`;
 
+  const completeName = [
+    jobseeker.firstName,
+    jobseeker.middleName,
+    jobseeker.lastName,
+    jobseeker.extensionName,
+  ]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean)
+    .join(" ");
+
   const infoRowsLeft = [
-    ["First Name", jobseeker.firstName],
-    ["Middle Name", jobseeker.middleName],
-    ["Last Name", jobseeker.lastName],
-    ["Suffix", jobseeker.extensionName],
+    ["Full Name", completeName],
+    ["Registration ID", registrationId],
     ["Campus", profile.campus],
     ["Course", profile.course],
     ["Year Graduated", profile.yearGraduated],
@@ -788,24 +796,49 @@ const JobseekerVerificationDetails = () => {
               Back to List
             </Link>
 
-            <div className="text-left sm:text-right">
-              <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                <span className="text-xs font-semibold text-black/60">Registration ID</span>
-                <span className="rounded-md bg-[#2e66a6]/10 px-2.5 py-1 text-xs font-bold text-[#2e66a6]">
-                  {registrationId}
-                </span>
-              </div>
-              <p className="mt-1 text-xs text-black/60">
-                <span className="font-semibold text-black/70">Date Registered:</span>{" "}
-                {formatDate(jobseeker.createdAt, true)}
-              </p>
-            </div>
+
           </div>
 
           <section className="rounded-xl border border-black/15 bg-white p-4 sm:p-5">
-            <div className="mb-4 flex items-center gap-2 text-[#2e66a6]">
-              <SvgIcon name="user" className="h-5 w-5" />
-              <h2 className="text-base font-bold">Job Seeker Information</h2>
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2 text-[#2e66a6]">
+                <SvgIcon name="user" className="h-5 w-5" />
+                <h2 className="text-base font-bold">Job Seeker Information</h2>
+              </div>
+
+              {canShowActionButtons ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowApproveModal(true)}
+                    disabled={actionLoading}
+                    className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white hover:bg-[#255587] disabled:opacity-50", UI.ring)}
+                  >
+                    <SvgIcon name="check" className="h-4 w-4" />
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowDeclineModal(true)}
+                    disabled={actionLoading}
+                    className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#2e66a6] bg-white px-4 text-sm font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:opacity-50", UI.ring)}
+                  >
+                    <SvgIcon name="x" className="h-4 w-4" />
+                    Decline
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowHoldModal(true)}
+                    disabled={actionLoading}
+                    className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-black px-4 text-sm font-bold text-white hover:bg-black/90 disabled:opacity-50", UI.ring)}
+                  >
+                    <SvgIcon name="pause" className="h-4 w-4" />
+                    Hold
+                  </button>
+                </div>
+              ) : (
+                getStatusBadge(overallStatus)
+              )}
             </div>
 
             <div className="grid gap-5 lg:grid-cols-[1fr_1fr_220px]">
@@ -848,8 +881,8 @@ const JobseekerVerificationDetails = () => {
                     className="h-36 w-36 rounded-full border-4 border-black/10 object-cover shadow-sm"
                   />
                 ) : (
-                  <div className="flex h-36 w-36 items-center justify-center rounded-full border-4 border-black/10 bg-black/5 text-4xl font-bold text-black/60">
-                    {(fullName || "?").charAt(0).toUpperCase()}
+                  <div className="flex h-36 w-36 items-center justify-center rounded-full border-4 border-black/10 bg-white text-[#94A3B8] shadow-sm">
+                    <SvgIcon name="user" className="h-16 w-16" />
                   </div>
                 )}
 
@@ -969,71 +1002,20 @@ const JobseekerVerificationDetails = () => {
           </section>
 
           <section className="mt-4 rounded-xl border border-black/15 bg-white p-4 sm:p-5">
-            <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
-              <div>
-                <label htmlFor="reviewNotes" className="text-xs font-semibold text-black/70">
-                  Review Notes <span className="font-normal text-black/45">(Optional)</span>
-                </label>
-                <textarea
-                  id="reviewNotes"
-                  value={reviewNotes}
-                  onChange={(event) => setReviewNotes(event.target.value)}
-                  placeholder="Add notes here..."
-                  rows={3}
-                  className={cn(
-                    "mt-2 w-full resize-none rounded-lg border border-black/15 bg-white px-3 py-2 text-sm text-black placeholder-slate-400",
-                    UI.ring
-                  )}
-                />
-              </div>
-
-              <div className="grid gap-2 sm:grid-cols-3 lg:mt-6 lg:min-w-[540px]">
-                {canShowActionButtons ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setShowApproveModal(true)}
-                      disabled={actionLoading || submittedCount === 0}
-                      className={cn(
-                        "flex min-h-[58px] items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-5 text-sm font-bold text-white shadow-sm hover:bg-[#2e66a6]/90 disabled:cursor-not-allowed disabled:opacity-50",
-                        UI.ring
-                      )}
-                    >
-                      <SvgIcon name="check" className="h-5 w-5" />
-                      Approve
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setShowDeclineModal(true)}
-                      disabled={actionLoading}
-                      className={cn(
-                        "flex min-h-[58px] items-center justify-center gap-2 rounded-lg border border-[#2e66a6] bg-white px-5 text-sm font-bold text-[#2e66a6] shadow-sm hover:bg-[#2e66a6]/10 disabled:cursor-not-allowed disabled:opacity-50",
-                        UI.ring
-                      )}
-                    >
-                      <SvgIcon name="x" className="h-5 w-5" />
-                      Decline
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setShowHoldModal(true)}
-                      disabled={actionLoading || submittedCount === 0}
-                      className={cn(
-                        "flex min-h-[58px] items-center justify-center gap-2 rounded-lg bg-black px-5 text-sm font-bold text-white shadow-sm hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-50",
-                        UI.ring
-                      )}
-                    >
-                      <SvgIcon name="pause" className="h-5 w-5" />
-                      Hold
-                    </button>
-                  </>
-                ) : (
-                  <div className="sm:col-span-3 flex justify-end">{getStatusBadge(overallStatus)}</div>
-                )}
-              </div>
-            </div>
+            <label htmlFor="reviewNotes" className="text-xs font-semibold text-black/70">
+              Review Notes <span className="font-normal text-black/45">(Optional)</span>
+            </label>
+            <textarea
+              id="reviewNotes"
+              value={reviewNotes}
+              onChange={(event) => setReviewNotes(event.target.value)}
+              placeholder="Add notes here..."
+              rows={3}
+              className={cn(
+                "mt-2 w-full resize-none rounded-lg border border-black/15 bg-white px-3 py-2 text-sm text-black placeholder-black/35",
+                UI.ring
+              )}
+            />
           </section>
         </div>
       </div>
