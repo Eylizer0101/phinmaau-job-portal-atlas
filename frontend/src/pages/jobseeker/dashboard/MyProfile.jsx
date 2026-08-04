@@ -1314,7 +1314,7 @@ const TextArea = ({ label, value, onChange, placeholder = '', rows = 4 }) => {
   );
 };
 
-const Select = ({ label, value, onChange, options = [], placeholder = 'Select option', disabled = false, disablePlaceholderWhenSelected = false }) => {
+const Select = ({ label, value, onChange, options = [], placeholder = 'Select option', disabled = false }) => {
   return (
     <div>
       <label className="block text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">{label}</label>
@@ -1324,7 +1324,7 @@ const Select = ({ label, value, onChange, options = [], placeholder = 'Select op
         disabled={disabled}
         className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6] disabled:bg-gray-50 disabled:text-gray-500"
       >
-        <option value="" disabled={disablePlaceholderWhenSelected && Boolean(value)}>{placeholder}</option>
+        <option value="">{placeholder}</option>
         {options.map((opt) => (
           <option key={opt} value={opt}>
             {opt}
@@ -2690,7 +2690,7 @@ const BasicInfoModal = ({
                   onChange={(e) => onChange('region', e.target.value)}
                   className="h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                 >
-                  <option value="" disabled={Boolean(drafts.region)}>Select region</option>
+                  <option value="">Select region</option>
                   {regionOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
               </div>
@@ -2704,7 +2704,7 @@ const BasicInfoModal = ({
                   disabled={!drafts.region}
                   className="h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6] disabled:bg-gray-50 disabled:text-gray-400"
                 >
-                  <option value="" disabled={Boolean(drafts.province)}>Select province</option>
+                  <option value="">Select province</option>
                   {provinceOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
               </div>
@@ -2718,7 +2718,7 @@ const BasicInfoModal = ({
                   disabled={!drafts.province}
                   className="h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6] disabled:bg-gray-50 disabled:text-gray-400"
                 >
-                  <option value="" disabled={Boolean(drafts.cityMunicipality)}>Select city / municipality</option>
+                  <option value="">Select city / municipality</option>
                   {cityOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
               </div>
@@ -3204,22 +3204,22 @@ const ProfileEditModal = ({
     if (sectionKey === 'career') {
       return (
         <div className="grid md:grid-cols-2 gap-5">
-          <Select label="Preferred Work Mode *" value={drafts.preferredWorkMode} onChange={(e) => onChange('preferredWorkMode', e.target.value)} options={PREFERRED_WORK_MODE_OPTIONS} placeholder="Select preferred work mode" disablePlaceholderWhenSelected />
-          <Select label="Employment Type *" value={drafts.employmentType} onChange={(e) => onChange('employmentType', e.target.value)} options={EMPLOYMENT_TYPE_OPTIONS} placeholder="Select employment type" disablePlaceholderWhenSelected />
-          <Select label="Willing to Relocate *" value={drafts.willingToRelocate} onChange={(e) => onChange('willingToRelocate', e.target.value)} options={WILLING_TO_RELOCATE_OPTIONS} placeholder="Select relocation preference" disablePlaceholderWhenSelected />
-          <Select label="How Soon Can Start *" value={drafts.howSoonCanYouStart} onChange={(e) => onChange('howSoonCanYouStart', e.target.value)} options={HOW_SOON_CAN_START_OPTIONS} placeholder="Select availability" disablePlaceholderWhenSelected />
-          <Select label="Experience *" value={drafts.experience} onChange={(e) => onChange('experience', e.target.value)} options={EXPERIENCE_OPTIONS} placeholder="Select experience" disablePlaceholderWhenSelected />
+          <Select label="Preferred Work Mode *" value={drafts.preferredWorkMode} onChange={(e) => onChange('preferredWorkMode', e.target.value)} options={PREFERRED_WORK_MODE_OPTIONS} placeholder="Select preferred work mode" />
+          <Select label="Employment Type *" value={drafts.employmentType} onChange={(e) => onChange('employmentType', e.target.value)} options={EMPLOYMENT_TYPE_OPTIONS} placeholder="Select employment type" />
+          <Select label="Willing to Relocate *" value={drafts.willingToRelocate} onChange={(e) => onChange('willingToRelocate', e.target.value)} options={WILLING_TO_RELOCATE_OPTIONS} placeholder="Select relocation preference" />
+          <Select label="How Soon Can Start *" value={drafts.howSoonCanYouStart} onChange={(e) => onChange('howSoonCanYouStart', e.target.value)} options={HOW_SOON_CAN_START_OPTIONS} placeholder="Select availability" />
+          <Select label="Experience *" value={drafts.experience} onChange={(e) => onChange('experience', e.target.value)} options={EXPERIENCE_OPTIONS} placeholder="Select experience" />
           <Input label="Preferred Language *" value={drafts.preferredLanguage} onChange={(e) => onChange('preferredLanguage', e.target.value)} placeholder="Enter preferred language" />
-          <Select label="Educational Attainment *" value={drafts.educationalAttainment} onChange={(e) => onChange('educationalAttainment', e.target.value)} options={EDUCATIONAL_ATTAINMENT_OPTIONS} placeholder="Select educational attainment" disablePlaceholderWhenSelected />
-          <Select label="Double Degree *" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} options={FIELD_OF_STUDY_OPTIONS} placeholder="Select study field" disablePlaceholderWhenSelected />
+          <Select label="Educational Attainment *" value={drafts.educationalAttainment} onChange={(e) => onChange('educationalAttainment', e.target.value)} options={EDUCATIONAL_ATTAINMENT_OPTIONS} placeholder="Select educational attainment" />
+          <Select label="Double Degree *" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} options={FIELD_OF_STUDY_OPTIONS} placeholder="Select study field" />
           <Input label="Minimum Salary *" value={drafts.minimumSalary} onChange={(e) => onChange('minimumSalary', formatSalaryInput(e.target.value))} placeholder="Minimum Salary" />
           <Input label="Maximum Salary *" value={drafts.maximumSalary} onChange={(e) => onChange('maximumSalary', formatSalaryInput(e.target.value))} placeholder="Maximum Salary" />
           <SalaryPrivacySelect value={drafts.salaryPrivacy} onChange={(value) => onChange('salaryPrivacy', value)} />
           <Input label="Height *" value={drafts.height} onChange={(e) => onChange('height', e.target.value)} placeholder="Height" />
           <Input label="Weight *" value={drafts.weight} onChange={(e) => onChange('weight', e.target.value)} placeholder="Weight" />
           <Input label="Nationality *" value={drafts.nationality} onChange={(e) => onChange('nationality', e.target.value)} placeholder="Nationality" />
-          <Select label="Gender *" value={drafts.gender} onChange={(e) => onChange('gender', e.target.value)} options={GENDER_OPTIONS} placeholder="Select gender" disablePlaceholderWhenSelected />
-          <Select label="Civil Status *" value={drafts.civilStatus} onChange={(e) => onChange('civilStatus', e.target.value)} options={CIVIL_STATUS_OPTIONS} placeholder="Select civil status" disablePlaceholderWhenSelected />
+          <Select label="Gender *" value={drafts.gender} onChange={(e) => onChange('gender', e.target.value)} options={GENDER_OPTIONS} placeholder="Select gender" />
+          <Select label="Civil Status *" value={drafts.civilStatus} onChange={(e) => onChange('civilStatus', e.target.value)} options={CIVIL_STATUS_OPTIONS} placeholder="Select civil status" />
           <Input label="Birthday *" type="date" value={drafts.birthday} onChange={(e) => onChange('birthday', e.target.value)} />
         </div>
       );
@@ -5131,7 +5131,7 @@ const MyProfile = () => {
 
       if (missingBasicFields.length) {
         setError(`Please complete the required fields before saving: ${missingBasicFields.join(', ')}.`);
-        return;
+        return false;
       }
     }
 
@@ -5160,7 +5160,7 @@ const MyProfile = () => {
 
       if (missingPersonalFields.length) {
         setError(`Please complete the required personal information before saving: ${missingPersonalFields.join(', ')}.`);
-        return;
+        return false;
       }
     }
 
@@ -5251,14 +5251,14 @@ const MyProfile = () => {
         if (!nextEducationEntries.length) {
           setError('Please add at least one education entry before saving.');
           setSavingSection('');
-          return;
+          return false;
         }
 
         const incompleteEntry = nextEducationEntries.find((entry) => !(entry.level || entry.educationalAttainment) || !entry.school);
         if (incompleteEntry) {
           setError('Please complete the educational attainment and school / university fields for each education entry.');
           setSavingSection('');
-          return;
+          return false;
         }
 
         const monthNumber = (value) => MONTH_OPTIONS.indexOf(value) + 1;
@@ -5274,7 +5274,7 @@ const MyProfile = () => {
         if (invalidYearEntry) {
           setError('From date cannot be later than To date.');
           setSavingSection('');
-          return;
+          return false;
         }
 
         const primaryEducation = nextEducationEntries[0] || {};
@@ -5383,17 +5383,20 @@ const MyProfile = () => {
         }
 
         showSuccess('Saved Successfully', 'Your profile section has been updated.');
+        return true;
       }
+
+      return false;
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || 'Failed to save changes.');
+      return false;
     } finally {
       setSavingSection('');
     }
   };
 
   const cancelEdit = (sectionKey) => {
-    setError('');
     if (sectionKey === 'education') {
       setDrafts(resetEducationDraftFields(formData));
       setEditing((prev) => ({ ...prev, [sectionKey]: false }));
@@ -5406,7 +5409,6 @@ const MyProfile = () => {
 
 
   const openProfileEditModal = (sectionKey, itemIndex = null) => {
-    setError('');
     if (sectionKey === 'personal') {
       setProfileEntryModalContext({ sectionKey: '', mode: 'edit', index: -1, originalItems: [] });
       setDrafts(formData);
@@ -5525,7 +5527,8 @@ const MyProfile = () => {
           educationEntries: nextItems,
         };
 
-        await saveSection('education', mergedDrafts);
+        const saved = await saveSection('education', mergedDrafts);
+        if (!saved) return;
       } else {
         const selectedEntry = Array.isArray(drafts[editModalSection])
           ? drafts[editModalSection][0]
@@ -5548,7 +5551,8 @@ const MyProfile = () => {
           [editModalSection]: nextItems,
         };
 
-        await saveSection(editModalSection, mergedDrafts);
+        const saved = await saveSection(editModalSection, mergedDrafts);
+        if (!saved) return;
       }
 
       setEditModalSection('');
@@ -5556,8 +5560,10 @@ const MyProfile = () => {
       return;
     }
 
-    await saveSection(editModalSection === 'skills' ? 'career' : editModalSection);
-    setEditModalSection('');
+    const saved = await saveSection(editModalSection === 'skills' ? 'career' : editModalSection);
+    if (saved) {
+      setEditModalSection('');
+    }
   };
 
   const handleDeleteEducationEntryFromProfile = (index) => {
@@ -6796,7 +6802,9 @@ const MyProfile = () => {
 
       <div className="min-h-[100dvh] h-auto bg-transparent overflow-visible pb-6">
         <div className="max-w-[1420px] mx-auto px-4 sm:px-6 lg:px-8">
-          {error && !editing.basic && !editModalSection ? <Alert type="error" title="Error" message={error} onClose={() => setError('')} /> : null}
+          {error && !editModalSection && !editing.basic ? (
+            <Alert type="error" title="Error" message={error} onClose={() => setError('')} />
+          ) : null}
 
           {isApplyFlow ? (
             <div className="mb-4 rounded-2xl border border-[#d8e2ee] bg-white px-4 sm:px-6 py-4 shadow-sm">
