@@ -172,7 +172,7 @@ const getRelocationDisplayLabel = (value) => {
     return 'Possible to relocate';
   }
 
-  return String(value || '').trim() || 'Location Fixed';
+  return String(value || '').trim();
 };
 
 const getApiOrigin = () =>
@@ -1350,6 +1350,15 @@ const JobDetails = () => {
                             <SvgIcon name="users" className="w-3.5 h-3.5" />
                           </span>
                           {job.vacancies} Vacancies
+                        </span>
+                      )}
+
+                      {job.willingToRelocate && (
+                        <span className={UI.chip}>
+                          <span className="text-black/60">
+                            <SvgIcon name="location" className="w-3.5 h-3.5" />
+                          </span>
+                          {getRelocationDisplayLabel(job.willingToRelocate)}
                         </span>
                       )}
                     </div>

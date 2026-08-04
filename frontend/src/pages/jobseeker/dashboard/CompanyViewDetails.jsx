@@ -2021,7 +2021,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
                 </p>
               </div>
 
-              <div className="w-full max-w-[390px] rounded-xl border border-[#dfe7f0] bg-[#fbfcfe] px-3 py-2.5">
+              <div className="w-full max-w-[390px]">
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-[125px_minmax(0,1fr)] sm:items-center">
                   <div className="text-center sm:border-r sm:border-[#dfe7f0] sm:pr-3">
                     <p className="text-4xl font-bold leading-none text-[#27364a]">

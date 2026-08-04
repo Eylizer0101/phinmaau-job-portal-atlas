@@ -996,6 +996,13 @@ const JobSeekerDashboard = () => {
         text: 'text-red-800',
         border: 'border-red-200',
       },
+      withdrawn: {
+        icon: faTimesCircle,
+        label: 'Withdrawn',
+        bg: 'bg-gray-100',
+        text: 'text-gray-700',
+        border: 'border-gray-300',
+      },
     };
 
     return configs[normalized] || configs.pending;
