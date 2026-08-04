@@ -296,6 +296,7 @@ app.use('/api/auth/google', googleAuthRoutes);
 // API Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/jobs', require('./routes/jobRoutes'));
+app.use('/api/job-edit-requests', require('./routes/jobEditRequestRoutes'));
 app.use('/api/applications', applicationRoutes);
 app.use('/api/messages', require('./routes/messageRoutes'));
 app.use('/api/chatbot', require('./routes/chatbotRoutes'));
