@@ -617,6 +617,9 @@ const MyApplications = () => {
         application.job?.location,
         application.job?.jobType,
         application.job?.workMode,
+        application.job?.industry,
+        application.job?.companyIndustry,
+        application.employer?.employerProfile?.industry,
         salaryText,
         statusText,
       ];
@@ -1135,103 +1138,115 @@ const MyApplications = () => {
                   return (
                     <div key={application._id} className={`${UI.card} ${UI.cardHover} overflow-hidden`}>
                       <div className="p-5 sm:p-6">
-                        <div className="flex min-h-[142px] flex-col gap-4 lg:flex-row lg:items-stretch lg:justify-between">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start gap-4">
-                              <CompanyLogo logoUrl={logoUrl} companyName={companyName} />
-                              <div className="min-w-0 flex-1">
-                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                                  <h3 className={`${UI.heading3} ${UI.textPrimary}`} title={jobTitle}>
-                                    {jobTitle}
-                                  </h3>
-                                  <span className={`text-sm font-semibold ${statusBadge}`} aria-label={`Status: ${statusText}`}>
-                                    {statusText}
+                        <div className="flex items-start gap-4">
+                          <CompanyLogo logoUrl={logoUrl} companyName={companyName} />
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                              <h3 className={`${UI.heading3} ${UI.textPrimary}`} title={jobTitle}>
+                                {jobTitle}
+                              </h3>
+                              <span className={`text-sm font-semibold ${statusBadge}`} aria-label={`Status: ${statusText}`}>
+                                {statusText}
+                              </span>
+                            </div>
+
+                            <div className={`mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm ${UI.textSecondary}`}>
+                              <span className="inline-flex min-w-0 items-center gap-1.5" title={companyName}>
+                                <SvgIcon name="building" className="h-4 w-4 flex-shrink-0 text-gray-500" />
+                                <span className="truncate">{companyName}</span>
+                              </span>
+
+                              {industryText && (
+                                <>
+                                  <span className="text-gray-400" aria-hidden="true">•</span>
+                                  <span className="inline-flex min-w-0 items-center gap-1.5" title={industryText}>
+                                    <SvgIcon name="briefcase" className="h-4 w-4 flex-shrink-0 text-gray-500" />
+                                    <span className="truncate">{industryText}</span>
                                   </span>
-                                </div>
+                                </>
+                              )}
 
-                                <div className={`mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm ${UI.textSecondary}`}>
-                                  <span className="min-w-0 truncate" title={companyName}>{companyName}</span>
-                                  {industryText && (
-                                    <>
-                                      <span className="text-gray-400" aria-hidden="true">•</span>
-                                      <span className="min-w-0 truncate" title={industryText}>{industryText}</span>
-                                    </>
-                                  )}
-                                  {workOfficeAddressText && (
-                                    <>
-                                      <span className="text-gray-400" aria-hidden="true">•</span>
-                                      <span className="min-w-0 truncate" title={formatLocationDisplay(workOfficeAddressText)}>
-                                        {formatLocationDisplay(workOfficeAddressText)}
-                                      </span>
-                                    </>
-                                  )}
-                                </div>
+                              {workOfficeAddressText && (
+                                <>
+                                  <span className="text-gray-400" aria-hidden="true">•</span>
+                                  <span
+                                    className="inline-flex min-w-0 items-center gap-1.5"
+                                    title={formatLocationDisplay(workOfficeAddressText)}
+                                  >
+                                    <SvgIcon name="location" className="h-4 w-4 flex-shrink-0 text-gray-500" />
+                                    <span className="truncate">{formatLocationDisplay(workOfficeAddressText)}</span>
+                                  </span>
+                                </>
+                              )}
+                            </div>
 
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                  {jobTypeText && (
-                                    <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
-                                      <span className="text-gray-500"><SvgIcon name="briefcase" className="w-3.5 h-3.5" /></span>
-                                      {jobTypeText}
-                                    </span>
-                                  )}
-                                  {workModeText && (
-                                    <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
-                                      <span className="text-gray-500"><SvgIcon name="building" className="w-3.5 h-3.5" /></span>
-                                      {workModeText}
-                                    </span>
-                                  )}
-                                  {salaryText && (
-                                    <span className={`${UI.chipBase} bg-[#2e66a6]/10 text-[#2e66a6] border-[#2e66a6]/20`}>
-                                      {salaryText}
-                                    </span>
-                                  )}
+                            <div className="mt-3 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                              <div className="flex min-w-0 flex-wrap gap-2">
+                                {jobTypeText && (
                                   <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
-                                    <span className="text-gray-500"><SvgIcon name="calendar" className="w-3.5 h-3.5" /></span>
-                                    Applied on {appliedAt}
+                                    <span className="text-gray-500"><SvgIcon name="briefcase" className="w-3.5 h-3.5" /></span>
+                                    {jobTypeText}
                                   </span>
-                                </div>
+                                )}
+                                {workModeText && (
+                                  <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
+                                    <span className="text-gray-500"><SvgIcon name="building" className="w-3.5 h-3.5" /></span>
+                                    {workModeText}
+                                  </span>
+                                )}
+                                {salaryText && (
+                                  <span className={`${UI.chipBase} bg-[#2e66a6]/10 text-[#2e66a6] border-[#2e66a6]/20`}>
+                                    {salaryText}
+                                  </span>
+                                )}
+                                <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
+                                  <span className="text-gray-500"><SvgIcon name="calendar" className="w-3.5 h-3.5" /></span>
+                                  Applied on {appliedAt}
+                                </span>
+                              </div>
+
+                              <div className="flex flex-wrap items-center gap-2 xl:flex-shrink-0 xl:justify-end">
+                                {isActiveCard && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleWithdraw(application._id)}
+                                    disabled={isActionLoading}
+                                    className={`${UI.btnBase} ${UI.btnMd} ${UI.btnDangerSoft} ${UI.ring}`}
+                                  >
+                                    Withdraw
+                                  </button>
+                                )}
+
+                                {isReactivatableCard && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleReactivate(application._id)}
+                                    disabled={isActionLoading}
+                                    className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSuccessSoft} ${UI.ring}`}
+                                  >
+                                    <SvgIcon name="arrowPath" className="w-4 h-4" />
+                                    Reactivate
+                                  </button>
+                                )}
+
+                                {jobId ? (
+                                  <Link
+                                    to={`/jobseeker/job-details/${jobId}`}
+                                    state={{ sourcePage: 'myapplications' }}
+                                    className={`${UI.btnBase} ${UI.btnMd} ${UI.btnInfo} ${UI.ring}`}
+                                  >
+                                    <SvgIcon name="eye" className="w-4 h-4" />
+                                    View Job
+                                  </Link>
+                                ) : (
+                                  <span className={`${UI.btnBase} ${UI.btnMd} ${UI.btnInfo} opacity-60 cursor-not-allowed`} aria-disabled="true">
+                                    <SvgIcon name="eye" className="w-4 h-4" />
+                                    View Job
+                                  </span>
+                                )}
                               </div>
                             </div>
-                          </div>
-                          <div className="flex flex-col items-stretch gap-2 sm:flex-row lg:self-end lg:items-center lg:justify-end">
-                            {isActiveCard && (
-                              <button
-                                type="button"
-                                onClick={() => handleWithdraw(application._id)}
-                                disabled={isActionLoading}
-                                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnDangerSoft} ${UI.ring} w-full sm:w-auto`}
-                              >
-                                Withdraw
-                              </button>
-                            )}
-
-                            {isReactivatableCard && (
-                              <button
-                                type="button"
-                                onClick={() => handleReactivate(application._id)}
-                                disabled={isActionLoading}
-                                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSuccessSoft} ${UI.ring} w-full sm:w-auto`}
-                              >
-                                <SvgIcon name="arrowPath" className="w-4 h-4" />
-                                Reactivate
-                              </button>
-                            )}
-
-                            {jobId ? (
-                              <Link
-                                to={`/jobseeker/job-details/${jobId}`}
-                                state={{ sourcePage: 'myapplications' }}
-                                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnInfo} ${UI.ring} w-full sm:w-auto`}
-                              >
-                                <SvgIcon name="eye" className="w-4 h-4" />
-                                View Job
-                              </Link>
-                            ) : (
-                              <span className={`${UI.btnBase} ${UI.btnMd} ${UI.btnInfo} opacity-60 cursor-not-allowed w-full sm:w-auto`} aria-disabled="true">
-                                <SvgIcon name="eye" className="w-4 h-4" />
-                                View Job
-                              </span>
-                            )}
                           </div>
                         </div>
 
