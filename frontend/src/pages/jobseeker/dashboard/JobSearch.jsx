@@ -1766,7 +1766,7 @@ const JobSearch = () => {
                               src="/images/urgentneed.png"
                               alt="Urgent Hiring"
                               draggable="false"
-                             className="pointer-events-none absolute -right-3 bottom-3 w-[112px] max-w-[38%] h-auto object-contain select-none"
+                             className="pointer-events-none absolute -right-5 bottom-3 w-[112px] max-w-[38%] h-auto object-contain select-none"
                             />
                           ) : null}
                           <div className="flex items-center gap-2 text-sm text-gray-700 min-w-0">
