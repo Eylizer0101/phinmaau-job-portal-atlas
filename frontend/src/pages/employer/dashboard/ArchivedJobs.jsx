@@ -54,14 +54,12 @@ const ActionIcon = ({ name, className = 'h-5 w-5' }) => {
 
   if (name === 'restore') {
     return (
-      <svg {...common}>
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M3 10h11M3 10l4-4m-4 4l4 4m3 4h11"
-        />
-      </svg>
+      <img
+        src="/images/restorebutton.png"
+        alt=""
+        aria-hidden="true"
+        className={cn(className, 'object-contain')}
+      />
     );
   }
 

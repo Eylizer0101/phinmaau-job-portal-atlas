@@ -40,9 +40,13 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
       );
     case 'restore':
       return (
-        <svg {...common}>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h11M3 10l4-4m-4 4l4 4m3 4h11" />
-        </svg>
+        <img
+          src="/images/restorebutton.png"
+          alt=""
+          aria-hidden="true"
+          className={cn(className, 'object-contain')}
+          {...props}
+        />
       );
     default:
       return null;
