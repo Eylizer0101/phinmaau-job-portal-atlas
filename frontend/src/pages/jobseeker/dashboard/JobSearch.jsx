@@ -707,6 +707,66 @@ const JobSearch = () => {
       .every((word) => combinedText.includes(word));
   };
 
+  const getSearchRelevanceScore = (job, term) => {
+    const searchText = String(term || '').trim().toLowerCase();
+    if (!searchText) return 0;
+
+    const compactSearchText = searchText.replace(/[^a-z0-9ñ]+/g, '');
+    const experienceLabel = getExperienceBadgeLabel(job?.experienceLevel).toLowerCase();
+    const workModeLabel = normalizeWorkModeLabel(job?.workMode).toLowerCase();
+    const freshGraduateLabel = isFreshGraduateJob(job) ? 'open to fresh graduates' : '';
+    const exactBadgeValues = [experienceLabel, workModeLabel, freshGraduateLabel]
+      .filter(Boolean);
+
+    let score = 0;
+
+    exactBadgeValues.forEach((value) => {
+      if (value === searchText) score = Math.max(score, 1000);
+      else if (value.startsWith(searchText)) score = Math.max(score, 900);
+      else if (value.includes(searchText)) score = Math.max(score, 800);
+    });
+
+    const priorityValues = [
+      job?.title,
+      job?.companyName,
+      job?.location,
+      job?.locationCity,
+      job?.locationProvince,
+      job?.jobType,
+      job?.educationLevel,
+      job?.category,
+    ]
+      .filter((value) => value !== undefined && value !== null && value !== '')
+      .map((value) => String(value).toLowerCase());
+
+    priorityValues.forEach((value) => {
+      if (value === searchText) score = Math.max(score, 700);
+      else if (value.startsWith(searchText)) score = Math.max(score, 600);
+      else if (value.includes(searchText)) score = Math.max(score, 500);
+    });
+
+    const allText = [
+      job?.description,
+      job?.requirements,
+      ...(Array.isArray(job?.skillsRequired) ? job.skillsRequired : [job?.skillsRequired]),
+      ...(Array.isArray(job?.perksAndBenefits) ? job.perksAndBenefits : [job?.perksAndBenefits]),
+      job?.otherBenefits,
+    ]
+      .filter((value) => value !== undefined && value !== null && value !== '')
+      .join(' ')
+      .toLowerCase();
+
+    if (allText.includes(searchText)) score = Math.max(score, 100);
+
+    if (compactSearchText) {
+      const compactBadgeValues = exactBadgeValues.map((value) => value.replace(/[^a-z0-9ñ]+/g, ''));
+      if (compactBadgeValues.some((value) => value === compactSearchText)) score = Math.max(score, 1000);
+      else if (compactBadgeValues.some((value) => value.startsWith(compactSearchText))) score = Math.max(score, 900);
+    }
+
+    return score;
+  };
+
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchTerm.trim()), 400);
     return () => clearTimeout(t);
@@ -999,8 +1059,24 @@ const JobSearch = () => {
       });
 
     const sorted = [...filtered];
+    const hasSearchTerm = Boolean(String(debouncedSearch || '').trim());
 
-    if (sortBy === 'salary_desc') {
+    if (hasSearchTerm && !sortBy) {
+      sorted.sort((a, b) => {
+        const relevanceDifference =
+          getSearchRelevanceScore(b, debouncedSearch) -
+          getSearchRelevanceScore(a, debouncedSearch);
+        if (relevanceDifference !== 0) return relevanceDifference;
+
+        const matchDiff = Number(b?.matchScore || 0) - Number(a?.matchScore || 0);
+        if (matchDiff !== 0) return matchDiff;
+
+        const freshnessDifference = getFreshnessComparable(b) - getFreshnessComparable(a);
+        if (freshnessDifference !== 0) return freshnessDifference;
+
+        return compareByTitle(a, b);
+      });
+    } else if (sortBy === 'salary_desc') {
       sorted.sort((a, b) => {
         const maxDifference = getSalaryMaxComparable(b) - getSalaryMaxComparable(a);
         if (maxDifference !== 0) return maxDifference;
