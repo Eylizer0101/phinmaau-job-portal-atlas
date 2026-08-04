@@ -1590,7 +1590,7 @@ const JobOffers = () => {
                   return (
                    <div
                       key={jobId}
-                      className="group relative overflow-visible rounded-[22px] p-5 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[350px]"
+                      className="group relative overflow-visible rounded-[22px] p-5 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col h-fit"
                       style={{ border: `1px solid ${COLORS.border}` }}
                     >
 
@@ -1778,9 +1778,9 @@ const JobOffers = () => {
                         )}
                       </div>
 
-                      <div className="mt-4 w-full h-px bg-[#212C61]/20" />
+                      <div className="mt-3 w-full h-px bg-[#212C61]/20" />
 
-                      <div className="mt-3 pt-3 flex items-center justify-between gap-3">
+                      <div className="pt-3 flex items-center justify-between gap-3">
                         <button type="button" onClick={() => handleLearnMore(job)} className={ghostLink}>
                           <span className="leading-none">View Details</span>
                           <svg
