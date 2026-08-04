@@ -452,7 +452,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                         </p>
                       </div>
 
-                      <div className="mt-3">
+                      <div className="mt-6 mb-5">
                         <button
                           type="button"
                           onClick={handleGoToProfile}
@@ -462,7 +462,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                         </button>
                       </div>
 
-                      <div className="mt-8">
+                      <div className="mt-2">
                         {renderHeader('small')}
                       </div>
 
