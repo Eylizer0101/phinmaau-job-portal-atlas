@@ -1820,6 +1820,35 @@ const EditJob = () => {
         }
 
         const jobData = res.data.job;
+        const publishedAtValue = jobData.publishedAt || jobData.createdAt;
+        const publishedAt = publishedAtValue ? new Date(publishedAtValue) : null;
+        const editUnlockedUntil = jobData.editUnlockedUntil ? new Date(jobData.editUnlockedUntil) : null;
+        const hasTemporaryEditAccess =
+          editUnlockedUntil &&
+          !Number.isNaN(editUnlockedUntil.getTime()) &&
+          editUnlockedUntil.getTime() > Date.now();
+        const isPublishedJob =
+          jobData.isPublished === true ||
+          String(jobData.status || '').toLowerCase() === 'published';
+        const editingLocked =
+          isPublishedJob &&
+          publishedAt &&
+          !Number.isNaN(publishedAt.getTime()) &&
+          Date.now() - publishedAt.getTime() >= 60 * 60 * 1000 &&
+          !hasTemporaryEditAccess;
+
+        if (editingLocked) {
+          navigate('/employer/manage-jobs', {
+            replace: true,
+            state: {
+              lockedJobId: jobData._id,
+              lockedJobTitle: jobData.title,
+              editLocked: true,
+            },
+          });
+          return;
+        }
+
         setJob(jobData);
 
         const nextForm = toFormSnapshot({

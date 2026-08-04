@@ -190,6 +190,15 @@ const jobSchema = new mongoose.Schema({
         default: null
     },
 
+    publishedAt: {
+        type: Date,
+        default: null
+    },
+    editUnlockedUntil: {
+        type: Date,
+        default: null
+    },
+
     employer: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

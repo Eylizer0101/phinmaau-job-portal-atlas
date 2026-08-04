@@ -9,7 +9,7 @@ const notificationSchema = new mongoose.Schema({
     type: {
         type: String,
         // ✅ UPDATED: add verification-related notification type
-        enum: ['job_match', 'application_update', 'new_message', 'interview', 'system', 'new_application', 'job_expiring', 'verification'],
+        enum: ['job_match', 'application_update', 'new_message', 'interview', 'system', 'new_application', 'job_expiring', 'verification', 'job_edit_request'],
         required: true
     },
     title: {

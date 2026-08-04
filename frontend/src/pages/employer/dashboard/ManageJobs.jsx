@@ -35,6 +35,12 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11V8a5 5 0 0110 0v3m-10 0h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg>;
     case 'more':
       return <svg {...common}><circle cx="12" cy="5" r="1.5" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" /><circle cx="12" cy="19" r="1.5" fill="currentColor" stroke="none" /></svg>;
+    case 'lock':
+      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11V8a5 5 0 0110 0v3m-10 0h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg>;
+    case 'shield':
+      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.5 12l1.6 1.6 3.7-4" /></svg>;
+    case 'send':
+      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M22 2L11 13" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M22 2l-7 20-4-9-9-4 20-7z" /></svg>;
     default:
       return null;
   }
@@ -469,6 +475,13 @@ const ManageJobs = () => {
   const [statusConfirmationJob, setStatusConfirmationJob] = useState(null);
 
   const [action, setAction] = useState({ type: '', jobId: '' });
+  const [editRequests, setEditRequests] = useState([]);
+  const [lockedJob, setLockedJob] = useState(null);
+  const [showLockedModal, setShowLockedModal] = useState(false);
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [requestSections, setRequestSections] = useState([]);
+  const [requestReason, setRequestReason] = useState('');
+  const [requestSubmitting, setRequestSubmitting] = useState(false);
 
   const modalRef = useRef(null);
   const cancelBtnRef = useRef(null);
@@ -578,9 +591,16 @@ const ManageJobs = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
 
-      const response = await axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/jobs/employer/my-jobs?archived=false', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const [response, requestResponse] = await Promise.all([
+        axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/jobs/employer/my-jobs?archived=false', {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/job-edit-requests/employer', {
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => ({ data: { requests: [] } })),
+      ]);
+
+      setEditRequests(Array.isArray(requestResponse.data?.requests) ? requestResponse.data.requests : []);
 
       if (response.data.success) {
         setJobs(response.data.jobs || []);
@@ -607,6 +627,18 @@ const ManageJobs = () => {
     fetchJobs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!location.state?.editLocked || !location.state?.lockedJobId || !jobs.length) return;
+
+    const job = jobs.find((item) => String(item._id) === String(location.state.lockedJobId));
+    if (job) {
+      openEditRequestFlow(job);
+    }
+
+    navigate(location.pathname, { replace: true, state: {} });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobs, location.pathname, location.state, navigate]);
 
   useEffect(() => {
     const successType = location.state?.successType;
@@ -788,6 +820,110 @@ const ManageJobs = () => {
     if (postedDate.getTime() !== new Date(0).getTime()) return postedDate;
 
     return safeDate(job.updatedAt);
+  };
+
+  const getPublishedDate = (job) => {
+    const value = job?.publishedAt || job?.createdAt;
+    const date = value ? new Date(value) : null;
+    return date && !Number.isNaN(date.getTime()) ? date : null;
+  };
+
+  const getLatestEditRequest = (jobId) =>
+    editRequests.find((request) => String(request?.job?._id || request?.job) === String(jobId));
+
+  const hasTemporaryEditAccess = (job) => {
+    const unlockUntil = job?.editUnlockedUntil ? new Date(job.editUnlockedUntil) : null;
+    return Boolean(
+      unlockUntil &&
+      !Number.isNaN(unlockUntil.getTime()) &&
+      unlockUntil.getTime() > Date.now()
+    );
+  };
+
+  const isJobEditLocked = (job) => {
+    if (!job || job.isPublished === false || getDerivedStatus(job) === 'draft') return false;
+    if (hasTemporaryEditAccess(job)) return false;
+
+    const publishedAt = getPublishedDate(job);
+    return Boolean(publishedAt && Date.now() - publishedAt.getTime() >= 60 * 60 * 1000);
+  };
+
+  const openEditRequestFlow = (job) => {
+    setLockedJob(job);
+    setShowLockedModal(true);
+    setShowRequestModal(false);
+    setRequestSections([]);
+    setRequestReason('');
+  };
+
+  const handleEditAction = (job) => {
+    if (isJobEditLocked(job)) {
+      openEditRequestFlow(job);
+      return;
+    }
+
+    navigate(`/employer/edit-job/${job._id}`);
+  };
+
+  const toggleRequestSection = (section) => {
+    setRequestSections((current) =>
+      current.includes(section)
+        ? current.filter((item) => item !== section)
+        : [...current, section]
+    );
+  };
+
+  const submitEditRequest = async () => {
+    if (!lockedJob?._id || requestSubmitting) return;
+    if (!requestSections.length) {
+      setError('Select at least one section that needs to be edited.');
+      return;
+    }
+
+    try {
+      setRequestSubmitting(true);
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `https://phinmaau-job-portal-atlas.onrender.com/api/job-edit-requests/job/${lockedJob._id}`,
+        {
+          requestedSections: requestSections,
+          reason: requestReason,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (response.data?.request) {
+        setEditRequests((current) => [
+          response.data.request,
+          ...current.filter((item) => String(item?._id) !== String(response.data.request._id)),
+        ]);
+      }
+
+      setShowRequestModal(false);
+      setShowLockedModal(false);
+      setSuccess({
+        type: 'edit-request',
+        title: 'Edit request sent',
+        message: 'An administrator will review it shortly.',
+      });
+    } catch (err) {
+      console.error('Error sending edit request:', err);
+      const pendingRequest = err.response?.data?.request;
+      if (pendingRequest) {
+        setEditRequests((current) => [
+          pendingRequest,
+          ...current.filter((item) => String(item?._id) !== String(pendingRequest._id)),
+        ]);
+      }
+      setError(err.response?.data?.message || 'Failed to send the edit request. Please try again.');
+    } finally {
+      setRequestSubmitting(false);
+    }
   };
 
   const handlePublish = async (jobId) => {
@@ -1597,6 +1733,12 @@ const ManageJobs = () => {
                                   >
                                     {title}
                                   </div>
+                                  {getLatestEditRequest(job._id)?.status === 'pending' ? (
+                                    <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                                      <Icon name="shield" className="h-3 w-3" />
+                                      Edit request pending
+                                    </span>
+                                  ) : null}
                                 </div>
                               </div>
                             </td>
@@ -1647,14 +1789,20 @@ const ManageJobs = () => {
                                   <span className="sr-only">View</span>
                                 </Link>
 
-                                <Link
-                                  to={`/employer/edit-job/${job._id}`}
-                                  className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-                                  aria-label={`Edit ${title}`}
-                                  title="Edit"
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditAction(job)}
+                                  className={cn(
+                                    'inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+                                    isJobEditLocked(job)
+                                      ? 'border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 focus-visible:ring-amber-500'
+                                      : 'border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:ring-[#2e66a6]'
+                                  )}
+                                  aria-label={`${isJobEditLocked(job) ? 'Request edit access for' : 'Edit'} ${title}`}
+                                  title={isJobEditLocked(job) ? 'Editing locked — request access' : 'Edit'}
                                 >
-                                  <Icon name="edit" className="h-4 w-4" />
-                                </Link>
+                                  <Icon name={isJobEditLocked(job) ? 'lock' : 'edit'} className="h-4 w-4" />
+                                </button>
 
                                 <button
                                   onClick={() => {
@@ -1747,6 +1895,187 @@ const ManageJobs = () => {
             )}
           </div>
         </div>
+
+        {showLockedModal && lockedJob ? (
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setShowLockedModal(false);
+            }}
+          >
+            <div className="w-full max-w-xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+              <div className="relative px-8 pb-8 pt-7 text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowLockedModal(false)}
+                  className="absolute right-5 top-5 rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+                  aria-label="Close"
+                >
+                  <Icon name="x" className="h-5 w-5" />
+                </button>
+
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-amber-300 bg-amber-50 text-[#173f8a]">
+                  <Icon name="lock" className="h-8 w-8" />
+                </div>
+
+                <h2 className="mt-4 text-2xl font-bold text-[#173f8a]">Editing Locked</h2>
+                <p className="mx-auto mt-2 max-w-md text-base leading-6 text-gray-500">
+                  This job post has been published for more than 1 hour and can no longer be edited.
+                </p>
+
+                <div className="mt-6 rounded-2xl border border-gray-200 border-l-4 border-l-amber-400 bg-slate-50 px-5 py-4 text-left">
+                  <p className="font-bold text-[#173f8a]">{safeTitle(lockedJob)}</p>
+                  <p className="mt-1 text-sm text-gray-500">{safeCompany(lockedJob)}</p>
+                  <p className="mt-3 text-sm text-gray-500">
+                    Posted {formatDate(getPublishedDate(lockedJob))} · Valid until {formatDate(lockedJob.applicationDeadline)}
+                  </p>
+                </div>
+
+                <p className="mt-6 text-sm text-gray-500">
+                  Need to make changes? Submit an edit request to the administrator.
+                </p>
+
+                <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowLockedModal(false)}
+                    className="min-w-[150px] rounded-xl border border-gray-300 px-5 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const pending = getLatestEditRequest(lockedJob._id)?.status === 'pending';
+                      if (pending) {
+                        setError('An edit request for this job is already pending.');
+                        return;
+                      }
+                      setShowLockedModal(false);
+                      setShowRequestModal(true);
+                    }}
+                    className="inline-flex min-w-[170px] items-center justify-center gap-2 rounded-xl bg-[#173f8a] px-5 py-3 text-sm font-bold text-white hover:bg-[#12336f]"
+                  >
+                    <Icon name="send" className="h-4 w-4" />
+                    Request Edit
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {showRequestModal && lockedJob ? (
+          <div
+            className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 p-4"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget && !requestSubmitting) {
+                setShowRequestModal(false);
+              }
+            }}
+          >
+            <div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+              <div className="border-b border-gray-200 px-7 py-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+                      <Icon name="shield" className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-[#173f8a]">Submit edit request</h2>
+                      <p className="mt-1 text-sm leading-6 text-gray-500">
+                        The administrator will review your request and temporarily unlock “{safeTitle(lockedJob)}” if approved.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowRequestModal(false)}
+                    disabled={requestSubmitting}
+                    className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+                    aria-label="Close"
+                  >
+                    <Icon name="x" className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-6 px-7 py-6">
+                <div>
+                  <p className="mb-3 text-base font-bold text-[#173f8a]">What needs to change?</p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {[
+                      'Job Details',
+                      'Requirements & Qualifications',
+                      'Skills & Benefits',
+                      'Work Locations',
+                      'Salary',
+                      'Deadline',
+                      'Vacancies',
+                    ].map((section) => (
+                      <label
+                        key={section}
+                        className={cn(
+                          'flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition',
+                          requestSections.includes(section)
+                            ? 'border-[#2e66a6] bg-blue-50 text-[#173f8a]'
+                            : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                        )}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={requestSections.includes(section)}
+                          onChange={() => toggleRequestSection(section)}
+                          className="h-5 w-5 accent-[#2e66a6]"
+                        />
+                        {section}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="edit-request-reason" className="block text-base font-bold text-[#173f8a]">
+                    Reason for the request <span className="font-normal text-gray-400">(optional)</span>
+                  </label>
+                  <textarea
+                    id="edit-request-reason"
+                    value={requestReason}
+                    onChange={(event) => setRequestReason(event.target.value)}
+                    rows={5}
+                    maxLength={1000}
+                    placeholder="Explain why this post needs to be edited..."
+                    className="mt-3 w-full resize-y rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 border-t border-gray-200 px-7 py-5">
+                <button
+                  type="button"
+                  onClick={() => setShowRequestModal(false)}
+                  disabled={requestSubmitting}
+                  className="rounded-xl border border-gray-300 px-5 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={submitEditRequest}
+                  disabled={requestSubmitting || !requestSections.length}
+                  className="inline-flex min-w-[165px] items-center justify-center gap-2 rounded-xl bg-[#173f8a] px-5 py-3 text-sm font-bold text-white hover:bg-[#12336f] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {requestSubmitting ? (
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                  ) : (
+                    <Icon name="send" className="h-4 w-4" />
+                  )}
+                  Send request
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {statusConfirmationJob && (() => {
           const status = getDerivedStatus(statusConfirmationJob);

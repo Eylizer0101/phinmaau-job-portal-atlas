@@ -595,6 +595,8 @@ exports.createJob = async (req, res) => {
       companyLogo: companyLogo,
       status: isDraft ? 'draft' : 'published',
       isPublished: !isDraft,
+      publishedAt: isDraft ? null : new Date(),
+      editUnlockedUntil: null,
       isActive: !isDraft,
       isArchived: false,
       archivedAt: null,
@@ -1033,7 +1035,7 @@ exports.getEmployerJobs = async (req, res) => {
     const [jobs, activeCount, archivedCount] = await Promise.all([
       Job.find(filterQuery)
         .select(
-          'title location jobType workMode category isActive isPublished status createdAt updatedAt companyLogo companyName applicationCount applicationDeadline originalApplicationDeadline deadlineExtendedAt salaryMin salaryMax vacancies openToFreshGraduates perksAndBenefits otherBenefits willingToRelocate locationImage educationLevel experienceLevel isArchived statusBeforeArchive archivedAt'
+          'title location jobType workMode category isActive isPublished status createdAt updatedAt publishedAt editUnlockedUntil companyLogo companyName applicationCount applicationDeadline originalApplicationDeadline deadlineExtendedAt salaryMin salaryMax vacancies openToFreshGraduates perksAndBenefits otherBenefits willingToRelocate locationImage educationLevel experienceLevel isArchived statusBeforeArchive archivedAt'
         )
         .sort({ createdAt: -1 }),
       Job.countDocuments({
@@ -1085,13 +1087,20 @@ exports.updateJob = async (req, res) => {
     }
 
     const isPublishedJob = job.isPublished === true || String(job.status || '').toLowerCase() === 'published';
-    const publishedAt = job.createdAt ? new Date(job.createdAt) : null;
+    const publishedAtValue = job.publishedAt || job.createdAt;
+    const publishedAt = publishedAtValue ? new Date(publishedAtValue) : null;
+    const editUnlockedUntil = job.editUnlockedUntil ? new Date(job.editUnlockedUntil) : null;
+    const hasTemporaryEditAccess =
+      editUnlockedUntil &&
+      !Number.isNaN(editUnlockedUntil.getTime()) &&
+      editUnlockedUntil.getTime() > Date.now();
     const oneHourInMilliseconds = 60 * 60 * 1000;
     const editingWindowExpired =
       isPublishedJob &&
       publishedAt &&
       !Number.isNaN(publishedAt.getTime()) &&
-      Date.now() - publishedAt.getTime() >= oneHourInMilliseconds;
+      Date.now() - publishedAt.getTime() >= oneHourInMilliseconds &&
+      !hasTemporaryEditAccess;
 
     if (editingWindowExpired) {
       return res.status(403).json({
@@ -1351,9 +1360,14 @@ exports.updateJob = async (req, res) => {
       job.statusBeforeArchive = undefined;
     }
 
+    const nowPublished = job.isPublished === true;
+
+    if (wasDraft && nowPublished && !job.publishedAt) {
+      job.publishedAt = new Date();
+    }
+
     await job.save();
 
-    const nowPublished = job.isPublished === true;
     if (wasDraft && nowPublished) {
       await sendJobMatchNotifications(job);
     }
