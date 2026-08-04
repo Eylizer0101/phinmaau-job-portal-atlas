@@ -1582,15 +1582,44 @@ const EmployerDashboard = () => {
 
   const formatNotifMeta = (dateString) => {
     if (!dateString) return '';
-    try {
-      const d = new Date(dateString);
-      const datePart = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      const timePart = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-      return `${datePart} • ${timePart}`;
-    } catch {
-      return '';
-    }
+
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return '';
+
+    const now = new Date();
+    const diffMs = Math.max(0, now.getTime() - date.getTime());
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
   };
+
+  const getNotificationGroup = (dateString) => {
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return 'Last Week';
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const notificationDay = new Date(date);
+    notificationDay.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.floor((today.getTime() - notificationDay.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays <= 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    return 'Last Week';
+  };
+
+  const groupedNotifications = ['Today', 'Yesterday', 'Last Week']
+    .map((label) => ({
+      label,
+      items: notifications.filter((notification) => getNotificationGroup(notification.createdAt) === label),
+    }))
+    .filter((group) => group.items.length > 0);
 
   const getNotifIconName = (n) => {
     const t = String(n?.type || '').toLowerCase();
@@ -1835,67 +1864,67 @@ const EmployerDashboard = () => {
                       </div>
                     ) : (
                       <div className="py-2">
-                        {notifications.map((n) => {
-                          const isUnread = n?.isRead === false;
-                          const iconName = getNotifIconName(n);
-                          const iconStyle = getNotifIconStyle(n);
+                        {groupedNotifications.map((group) => (
+                          <div key={group.label}>
+                            <div className="px-4 pb-2 pt-3 text-xs font-bold uppercase tracking-wide text-gray-500">
+                              {group.label}
+                            </div>
 
-                          return (
-                            <button
-                              key={n._id}
-                              type="button"
-                              onClick={() => handleNotifItemClick(n)}
-                              role="menuitem"
-                              className={[
-                                'w-full text-left px-4 py-3 transition flex gap-3 items-start',
-                                'focus:outline-none focus:ring-2 focus:ring-[#2e66a6] focus:ring-inset',
-                                'hover:bg-gray-50',
-                                isUnread ? 'bg-[#2e66a6]/[0.04]' : '',
-                              ].join(' ')}
-                            >
-                              <div
-                                className={[
-                                  'mt-0.5 h-9 w-9 rounded-xl border flex items-center justify-center shrink-0',
-                                  iconStyle.wrap,
-                                ].join(' ')}
-                                aria-hidden="true"
-                              >
-                                <OutlineIcon name={iconName} className="w-[18px] h-[18px]" />
-                              </div>
+                            {group.items.map((n) => {
+                              const isUnread = n?.isRead === false;
+                              const iconName = getNotifIconName(n);
+                              const iconStyle = getNotifIconStyle(n);
 
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-start justify-between gap-3">
-                                  <p
+                              return (
+                                <button
+                                  key={n._id}
+                                  type="button"
+                                  onClick={() => handleNotifItemClick(n)}
+                                  role="menuitem"
+                                  className={[
+                                    'w-full text-left px-4 py-3 transition flex gap-3 items-start',
+                                    'focus:outline-none focus:ring-2 focus:ring-[#2e66a6] focus:ring-inset',
+                                    'hover:bg-gray-50',
+                                    isUnread ? 'bg-[#2e66a6]/[0.04]' : '',
+                                  ].join(' ')}
+                                >
+                                  <div
                                     className={[
-                                      'text-sm font-semibold truncate',
-                                      isUnread ? 'text-gray-900' : 'text-gray-800',
+                                      'mt-0.5 h-9 w-9 rounded-xl border flex items-center justify-center shrink-0',
+                                      iconStyle.wrap,
                                     ].join(' ')}
+                                    aria-hidden="true"
                                   >
-                                    {n.title || 'Notification'}
-                                  </p>
+                                    <OutlineIcon name={iconName} className="w-[18px] h-[18px]" />
+                                  </div>
 
-                                  <span
-                                    className={[
-                                      'mt-1 inline-flex w-2.5 h-2.5 rounded-full shrink-0',
-                                      isUnread ? iconStyle.dot : 'bg-gray-200',
-                                    ].join(' ')}
-                                    aria-label={isUnread ? 'Unread' : 'Read'}
-                                  />
-                                </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div className="min-w-0 flex-1">
+                                        <p
+                                          className={[
+                                            'text-sm font-semibold truncate',
+                                            isUnread ? 'text-gray-900' : 'text-gray-800',
+                                          ].join(' ')}
+                                        >
+                                          {n.title || 'Notification'}
+                                        </p>
 
-                                {n.message ? (
-                                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">{n.message}</p>
-                                ) : null}
+                                        {n.message ? (
+                                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">{n.message}</p>
+                                        ) : null}
+                                      </div>
 
-                                <p className="text-xs text-gray-400 mt-2">{n.createdAt ? formatNotifMeta(n.createdAt) : ''}</p>
-                              </div>
-
-                              <div className="shrink-0 text-[#2e66a6] mt-1">
-                                <OutlineIcon name="arrow" className="w-4 h-4" />
-                              </div>
-                            </button>
-                          );
-                        })}
+                                      <span className="shrink-0 pt-0.5 text-xs font-medium text-gray-400">
+                                        {n.createdAt ? formatNotifMeta(n.createdAt) : ''}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>

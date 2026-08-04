@@ -4,16 +4,13 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faBell,
   faCheck,
-  faTrash,
   faEnvelope,
   faBriefcase,
   faFileAlt,
   faCalendarAlt,
-  faExclamationCircle,
   faCheckCircle,
   faClock,
   faTimesCircle,
-  faCircle
 } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 
@@ -55,6 +52,9 @@ const EmployerNotificationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [unreadCount, setUnreadCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const navigate = useNavigate();
 
@@ -149,32 +149,6 @@ const EmployerNotificationsPage = () => {
     }
   };
 
-  const handleDeleteNotification = async (notificationId) => {
-    try {
-      const response = await api.delete(`/notifications/${notificationId}`);
-      if (response.data.success) {
-        const deletedNotification = notifications.find((n) => n._id === notificationId);
-        if (deletedNotification && !deletedNotification.isRead) {
-          setUnreadCount((prev) => Math.max(0, prev - 1));
-        }
-        setNotifications((prev) => prev.filter((notif) => notif._id !== notificationId));
-      }
-    } catch (error) {
-      console.error('Error deleting notification:', error);
-    }
-  };
-
-  const handleClearAll = async () => {
-    try {
-      const response = await api.delete('/notifications/clear-all');
-      if (response.data.success) {
-        setNotifications([]);
-        setUnreadCount(0);
-      }
-    } catch (error) {
-      console.error('Error clearing all notifications:', error);
-    }
-  };
 
   const getNotificationIcon = (type) => {
     switch (type) {
@@ -257,14 +231,67 @@ const EmployerNotificationsPage = () => {
   };
 
   const filteredNotifications = useMemo(() => {
-    return notifications.filter((notif) => {
-      if (filter === 'unread') return !notif.isRead;
-      if (filter === 'read') return notif.isRead;
-      return true;
-    });
-  }, [notifications, filter]);
+    const query = searchQuery.trim().toLowerCase();
 
-  const unreadInlineCount = useMemo(() => notifications.filter((n) => !n.isRead).length, [notifications]);
+    return notifications.filter((notif) => {
+      const matchesFilter =
+        filter === 'unread' ? !notif.isRead : filter === 'read' ? notif.isRead : true;
+
+      if (!matchesFilter) return false;
+      if (!query) return true;
+
+      const searchableValues = [
+        notif.title,
+        notif.message,
+        notif.type,
+        notif.metadata?.companyName,
+        notif.metadata?.jobTitle,
+        notif.metadata?.newStatus,
+        notif.metadata?.status,
+      ];
+
+      return searchableValues.some((value) =>
+        String(value || '').toLowerCase().includes(query)
+      );
+    });
+  }, [notifications, filter, searchQuery]);
+
+  const numericPageSize =
+    pageSize === 'all' ? Math.max(filteredNotifications.length, 1) : Number(pageSize);
+  const totalPages =
+    pageSize === 'all'
+      ? 1
+      : Math.max(1, Math.ceil(filteredNotifications.length / numericPageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedNotifications =
+    pageSize === 'all'
+      ? filteredNotifications
+      : filteredNotifications.slice(
+          (safePage - 1) * numericPageSize,
+          safePage * numericPageSize
+        );
+
+  const pageNumbers = useMemo(() => {
+    const startPage = Math.max(1, Math.min(safePage - 2, totalPages - 4));
+    const endPage = Math.min(totalPages, startPage + 4);
+    return Array.from(
+      { length: endPage - startPage + 1 },
+      (_, index) => startPage + index
+    );
+  }, [safePage, totalPages]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, searchQuery, pageSize]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  const unreadInlineCount = useMemo(
+    () => notifications.filter((n) => !n.isRead).length,
+    [notifications]
+  );
 
   return (
     <EmployerLayout>
@@ -301,7 +328,7 @@ const EmployerNotificationsPage = () => {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+          <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="inline-flex items-center rounded-2xl bg-white border border-gray-200 p-1 shadow-sm">
               <button
                 type="button"
@@ -348,16 +375,25 @@ const EmployerNotificationsPage = () => {
               </button>
             </div>
 
-            {notifications.length > 0 && (
-              <button
-                type="button"
-                onClick={handleClearAll}
-                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnDangerGhost} ${UI.ring}`}
+            <div className="relative w-full lg:max-w-md">
+              <svg
+                className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
               >
-                <FontAwesomeIcon icon={faTrash} className="w-4 h-4" />
-                Clear all
-              </button>
-            )}
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="m21 21-4.35-4.35m1.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" />
+              </svg>
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search notifications..."
+                className={`h-11 w-full rounded-xl border border-gray-200 bg-white pl-11 pr-4 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 ${UI.ring}`}
+                aria-label="Search notifications"
+              />
+            </div>
           </div>
 
           <div className={UI.shell}>
@@ -366,7 +402,7 @@ const EmployerNotificationsPage = () => {
                 <div className="h-12 w-12 rounded-full border-2 border-gray-200 border-t-[#2e66a6] animate-spin mx-auto" />
                 <p className={`mt-4 ${UI.textMuted}`}>Loading notifications...</p>
               </div>
-            ) : filteredNotifications.length === 0 ? (
+            ) : paginatedNotifications.length === 0 ? (
               <div className="p-12 text-center">
                 <div className="w-16 h-16 mx-auto bg-white border border-gray-200 rounded-full flex items-center justify-center mb-4">
                   <FontAwesomeIcon icon={faBell} className="w-8 h-8 text-[#2e66a6]" />
@@ -382,7 +418,7 @@ const EmployerNotificationsPage = () => {
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
-                {filteredNotifications.map((notification) => {
+                {paginatedNotifications.map((notification) => {
                   const isUnread = !notification.isRead;
                   const status = notification?.metadata?.newStatus || notification?.metadata?.status || '';
 
@@ -455,23 +491,9 @@ const EmployerNotificationsPage = () => {
                                   Read
                                 </button>
                               )}
-
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteNotification(notification._id)}
-                                className={`${UI.btnBase} ${UI.btnIcon} ${UI.btnDangerGhost} ${UI.ring}`}
-                                title="Delete notification"
-                              >
-                                <FontAwesomeIcon icon={faTrash} className="w-4 h-4" />
-                              </button>
                             </div>
                           </div>
                         </div>
-
-                        <FontAwesomeIcon
-                          icon={faCircle}
-                          className={`mt-1 w-2 h-2 flex-shrink-0 ${isUnread ? 'text-[#2e66a6]' : 'text-gray-300'}`}
-                        />
                       </div>
                     </div>
                   );
@@ -479,6 +501,52 @@ const EmployerNotificationsPage = () => {
               </div>
             )}
           </div>
+
+          {filteredNotifications.length > 0 && (
+            <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+              <p className="text-sm text-gray-500">
+                Page {safePage} of {totalPages} · {filteredNotifications.length} total
+              </p>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                <nav className="inline-flex min-h-11 items-center overflow-hidden rounded-xl border border-gray-200 bg-white" aria-label="Notification pagination">
+                  <button type="button" onClick={() => setCurrentPage(1)} disabled={safePage === 1} className="h-11 border-r border-gray-200 px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">First</button>
+                  <button type="button" onClick={() => setCurrentPage((pageNumber) => Math.max(1, pageNumber - 1))} disabled={safePage === 1} className="inline-flex h-11 items-center gap-1 border-r border-gray-200 px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"><span aria-hidden="true">‹</span> Previous</button>
+
+                  <div className="flex h-11 items-center px-1">
+                    {pageNumbers.map((pageNumber) => (
+                      <button
+                        key={pageNumber}
+                        type="button"
+                        onClick={() => setCurrentPage(pageNumber)}
+                        aria-current={safePage === pageNumber ? 'page' : undefined}
+                        className={`h-9 min-w-9 rounded-lg px-3 text-sm font-semibold transition ${safePage === pageNumber ? 'bg-[#2e66a6] text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+                      >
+                        {pageNumber}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button type="button" onClick={() => setCurrentPage((pageNumber) => Math.min(totalPages, pageNumber + 1))} disabled={safePage === totalPages} className="inline-flex h-11 items-center gap-1 border-l border-gray-200 px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">Next <span aria-hidden="true">›</span></button>
+                  <button type="button" onClick={() => setCurrentPage(totalPages)} disabled={safePage === totalPages} className="h-11 border-l border-gray-200 px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">Last</button>
+                </nav>
+
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <span className="whitespace-nowrap">Display per page</span>
+                  <select
+                    value={pageSize}
+                    onChange={(event) => setPageSize(event.target.value === 'all' ? 'all' : Number(event.target.value))}
+                    className="h-11 rounded-xl border border-gray-200 bg-white px-3 outline-none focus:border-[#2e66a6]"
+                  >
+                    <option value={10}>10</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                    <option value="all">All</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </EmployerLayout>
