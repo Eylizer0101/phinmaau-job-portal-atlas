@@ -836,15 +836,11 @@ const Companies = () => {
           </div>
 
           <div className="mt-6">
-            {!loadingInitial && !errorMsg && (
-              <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <p className="text-sm font-medium text-black/65">
-                  Showing <span className="font-bold text-black">{companies.length}</span> verified compan{companies.length === 1 ? "y" : "ies"}
+            {!loadingInitial && !errorMsg && hasAnyFilter && (
+              <div className="mb-4 flex justify-end">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#212C61]">
+                  Filtered results
                 </p>
-
-                {hasAnyFilter && (
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#212C61]">Filtered results</p>
-                )}
               </div>
             )}
 

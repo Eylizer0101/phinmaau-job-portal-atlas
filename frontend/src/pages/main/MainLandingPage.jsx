@@ -133,7 +133,7 @@ const MainLandingPage = () => {
               </span>
             </h1>
 
-            <p className="mt-4 text-base font-semibold text-[#202020]  sm:text-lg lg:mt-3">
+            <p className="mt-4 text-base font-semibold text-[#3558A8] sm:text-lg lg:mt-3">
               The job market is competitive but you are prepared.
             </p>
 
@@ -261,7 +261,7 @@ const MainLandingPage = () => {
                   ? Array.from({ length: 9 }).map((_, index) => (
                       <div
                         key={`partner-loading-${index}`}
-                        className="flex h-[88px] min-w-[110px] items-center justify-center rounded-2xl border border-[#E5E7EB] bg-white shadow-sm"
+                        className="flex h-[78px] min-w-[96px] items-center justify-center rounded-lg border border-[#E5E7EB] bg-white shadow-sm"
                       >
                         <div className="h-12 w-20 animate-pulse rounded bg-slate-200" />
                       </div>
@@ -269,13 +269,13 @@ const MainLandingPage = () => {
                   : partners.map((partner) => (
                       <div
                         key={partner.id}
-                        className="flex h-[88px] min-w-[110px] items-center justify-center rounded-2xl border border-[#E5E7EB] bg-white px-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                        className="flex h-[78px] min-w-[96px] items-center justify-center rounded-lg border border-[#E5E7EB] bg-white px-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
                         title={partner.name}
                       >
                         <img
                           src={partner.logo}
                           alt={`${partner.name} logo`}
-                          className="max-h-[48px] max-w-[72px] object-contain"
+                          className="max-h-[56px] max-w-[80px] object-contain"
                           loading="lazy"
                           decoding="async"
                           onError={(event) => {
