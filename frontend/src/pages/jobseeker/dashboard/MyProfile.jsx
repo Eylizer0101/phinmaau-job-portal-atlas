@@ -6877,7 +6877,10 @@ const MyProfile = () => {
       <div className="min-h-[100dvh] h-auto bg-transparent overflow-visible pb-6">
         <div className="max-w-[1420px] mx-auto px-4 sm:px-6 lg:px-8">
           {basicInformationNotice.open && !isBasicInformationComplete ? (
-            <div className="sticky top-[88px] z-[1000] mb-5 w-full">
+            <div
+              className="sticky top-0 z-[1000] mb-5 w-full pt-3"
+              style={{ marginTop: '-80px' }}
+            >
               <div className="mx-auto w-full max-w-[960px]">
                 <div
                   className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 shadow-[0_12px_32px_rgba(15,23,42,0.16)] sm:px-5"
