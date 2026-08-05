@@ -359,11 +359,6 @@ const JobSeekerLayout = ({ children }) => {
   }, [location.pathname, fetchMessageUnreadCount]);
 
   useEffect(() => {
-    if (isMyProfilePage) {
-      setIsNavbarVisible(true);
-      return undefined;
-    }
-
     const TOP_SHOW_PX = 8;
     const HIDE_AFTER_PX = 120;
     const DELTA_THRESHOLD = 8;
@@ -397,7 +392,7 @@ const JobSeekerLayout = ({ children }) => {
 
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, [isNotificationOpen, isProfileOpen, isMobileMenuOpen, showLogoutModal, isMyProfilePage]);
+  }, [isNotificationOpen, isProfileOpen, isMobileMenuOpen, showLogoutModal]);
 
   useOnClickOutside([notifBtnRef, notifMenuRef], () => setIsNotificationOpen(false), isNotificationOpen);
   useOnClickOutside([desktopProfileBtnRef, desktopProfileMenuRef, mobileProfileBtnRef, mobileProfileMenuRef], () => setIsProfileOpen(false), isProfileOpen);
