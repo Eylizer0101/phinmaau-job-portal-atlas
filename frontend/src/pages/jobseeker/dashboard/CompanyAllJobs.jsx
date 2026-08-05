@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import api from "../../../services/api";
 import ApplyJobModal from "../../../components/jobseeker/ApplyJobModal";
 
-const PAGE_OPTIONS = ["10", "50", "100", "All"];
 const normalizeJobsResponse = (response) => {
   const data = response?.data;
   if (Array.isArray(data)) return data;
@@ -60,7 +59,6 @@ const CompanyAllJobs = () => {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState("10");
   const [selectedJob, setSelectedJob] = useState(null);
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [appliedIds, setAppliedIds] = useState([]);
@@ -112,17 +110,43 @@ const CompanyAllJobs = () => {
     return jobs.filter((job) => [job?.title, job?.location, job?.jobType, job?.workMode, job?.category, company?.companyName].some((value) => String(value || "").toLowerCase().includes(query)));
   }, [jobs, search, company]);
 
-  const pageSize = perPage === "All" ? Math.max(filtered.length, 1) : Number(perPage);
+  const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
-  const visibleJobs = perPage === "All" ? filtered : filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
-  const pageNumbers = useMemo(() => {
-    const start = Math.max(1, Math.min(safePage - 2, totalPages - 4));
-    const end = Math.min(totalPages, start + 4);
-    return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+  const visibleJobs = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const paginationItems = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }
+
+    if (safePage <= 4) {
+      return [1, 2, 3, 4, 5, "ellipsis-right", totalPages];
+    }
+
+    if (safePage >= totalPages - 3) {
+      return [
+        1,
+        "ellipsis-left",
+        totalPages - 4,
+        totalPages - 3,
+        totalPages - 2,
+        totalPages - 1,
+        totalPages,
+      ];
+    }
+
+    return [
+      1,
+      "ellipsis-left",
+      safePage - 1,
+      safePage,
+      safePage + 1,
+      "ellipsis-right",
+      totalPages,
+    ];
   }, [safePage, totalPages]);
 
-  useEffect(() => { setPage(1); }, [search, perPage]);
+  useEffect(() => { setPage(1); }, [search]);
   useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
 
   const handleApply = (job) => {
@@ -330,7 +354,7 @@ const CompanyAllJobs = () => {
             </div>
           )}
 
-          <Pagination page={safePage} totalPages={totalPages} setPage={setPage} perPage={perPage} setPerPage={setPerPage} pageNumbers={pageNumbers} totalItems={filtered.length} />
+          <Pagination page={safePage} totalPages={totalPages} setPage={setPage} paginationItems={paginationItems} totalItems={filtered.length} />
         </section>
       </div>
 
@@ -346,54 +370,51 @@ const CompanyAllJobs = () => {
   );
 };
 
-const Pagination = ({ page, totalPages, setPage, perPage, setPerPage, pageNumbers, totalItems }) => (
+const Pagination = ({ page, totalPages, setPage, paginationItems, totalItems }) => (
   <div className="mt-8 flex flex-col gap-4 border-t border-[#e6edf5] pt-6 lg:flex-row lg:items-center lg:justify-between">
-    <div className="text-sm text-black/60">Page {page} of {totalPages} · {totalItems} total</div>
-
-    <div className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:flex-nowrap">
-      <label className="flex items-center gap-2 text-sm font-medium text-black/70">
-        <span className="whitespace-nowrap">Display per page</span>
-        <select
-          value={perPage}
-          onChange={(event) => setPerPage(event.target.value)}
-          className="h-11 rounded-xl border border-[#d8e2ee] bg-white px-3 outline-none shadow-sm focus:border-[#2e66a6]"
-        >
-          {PAGE_OPTIONS.map((option) => (
-            <option key={option} value={option}>{option}</option>
-          ))}
-        </select>
-      </label>
-
-      <nav
-        className="inline-flex min-h-11 items-center overflow-hidden rounded-xl border border-[#d8e2ee] bg-white shadow-sm"
-        aria-label="Pagination controls"
-      >
-        <PageButton
-          label="Previous"
-          direction="previous"
-          disabled={page === 1}
-          onClick={() => setPage((current) => Math.max(1, current - 1))}
-        />
-
-        <div className="flex h-11 items-center px-2">
-          {pageNumbers.map((number) => (
-            <PageButton
-              key={number}
-              label={String(number)}
-              active={number === page}
-              onClick={() => setPage(number)}
-            />
-          ))}
-        </div>
-
-        <PageButton
-          label="Next"
-          direction="next"
-          disabled={page === totalPages}
-          onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-        />
-      </nav>
+    <div className="whitespace-nowrap text-sm font-semibold text-[#2e66a6]">
+      Page {page} of {totalPages} · {totalItems} total
     </div>
+
+    <nav
+      className="inline-flex min-h-11 items-center overflow-hidden rounded-xl border border-[#d8e2ee] bg-white shadow-sm"
+      aria-label="Pagination controls"
+    >
+      <PageButton
+        label="Previous"
+        direction="previous"
+        disabled={page === 1}
+        onClick={() => setPage((current) => Math.max(1, current - 1))}
+      />
+
+      <div className="flex h-11 items-center px-2">
+        {paginationItems.map((item) =>
+          typeof item === "string" ? (
+            <span
+              key={item}
+              className="inline-flex h-9 min-w-9 items-center justify-center px-2 text-sm font-semibold text-black/45"
+              aria-hidden="true"
+            >
+              …
+            </span>
+          ) : (
+            <PageButton
+              key={item}
+              label={String(item)}
+              active={item === page}
+              onClick={() => setPage(item)}
+            />
+          )
+        )}
+      </div>
+
+      <PageButton
+        label="Next"
+        direction="next"
+        disabled={page === totalPages}
+        onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+      />
+    </nav>
   </div>
 );
 

@@ -1741,7 +1741,16 @@ The company also values transparency, teamwork, and continuous improvement, crea
                   onClick={() => navigate(`/jobseeker/company-details/${id}/jobs`)}
                   className="text-[15px] font-medium text-black/70 hover:text-black inline-flex items-center gap-2"
                 >
-                  View all jobs <span aria-hidden="true">→</span>
+                  View all jobs
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4" d="M5 12h14m-5-5 5 5-5 5" />
+                  </svg>
                 </button>
               ) : null}
             </div>
@@ -2090,7 +2099,16 @@ The company also values transparency, teamwork, and continuous improvement, crea
                   onClick={() => navigate(`/jobseeker/company-details/${id}/reviews`)}
                   className="text-[15px] font-medium text-[#2e66a6] hover:text-[#25578f] inline-flex items-center gap-2"
                 >
-                  See all reviews <span aria-hidden="true">→</span>
+                  See all reviews
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4" d="M5 12h14m-5-5 5 5-5 5" />
+                  </svg>
                 </button>
               </div>
             ) : null}
