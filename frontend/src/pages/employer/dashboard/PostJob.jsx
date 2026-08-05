@@ -2778,105 +2778,115 @@ const PostJob = () => {
             role="dialog"
             aria-modal="true"
             aria-labelledby="privacy-notice-title"
-            className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
+            className="relative flex max-h-[92vh] w-full max-w-[860px] flex-col overflow-hidden rounded-[22px] border border-gray-200 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.20)]"
           >
-            <div className="relative border-b border-slate-200 bg-gradient-to-b from-[#f7fbff] to-white px-6 pb-6 pt-7 text-center sm:px-9">
-              <button
-                type="button"
-                onClick={() => setShowPrivacyModal(false)}
-                className="absolute right-4 top-4 rounded-full p-2 text-slate-500 transition hover:bg-white hover:text-slate-800 hover:shadow-sm"
-                aria-label="Close privacy notice"
-              >
-                ✕
-              </button>
+            <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+              <div className="absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-[#2e66ff]/[0.07] blur-3xl" />
+              <div className="absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-[#56b5dc]/[0.12] blur-3xl" />
+              <div className="absolute -bottom-24 -right-20 h-56 w-56 rounded-full bg-[#1e4ba0]/[0.10] blur-3xl" />
+            </div>
 
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-[#bcd3ee] bg-[#eaf3fd] text-[#2e66a6] shadow-sm">
-                <svg
-                  className="h-7 w-7"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="1.6"
-                    d="M12 3l7 3v5c0 4.8-2.9 8.2-7 10-4.1-1.8-7-5.2-7-10V6l7-3z"
+            <button
+              type="button"
+              onClick={() => setShowPrivacyModal(false)}
+              className="absolute right-5 top-5 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
+              aria-label="Close privacy notice"
+            >
+              <span className="text-2xl leading-none" aria-hidden="true">×</span>
+            </button>
+
+            <div className="relative z-10 overflow-y-auto px-5 pb-5 pt-5 sm:px-9 sm:pb-7 lg:px-12">
+              <div className="flex justify-center">
+                <div className="relative flex h-20 w-20 items-center justify-center sm:h-24 sm:w-24" aria-hidden="true">
+                  <div className="absolute inset-0 rounded-full bg-[#1e4ba0]/[0.06]" />
+                  <div className="absolute inset-2 rounded-full border border-[#1e4ba0]/15" />
+                  <div className="absolute left-2 top-5 h-1.5 w-1.5 rounded-full bg-[#2e66ff]" />
+                  <div className="absolute right-3 top-9 h-1.5 w-1.5 rounded-full bg-[#2e66ff]" />
+                  <div className="absolute bottom-2 right-7 h-1.5 w-1.5 rounded-full bg-[#2e66ff]/70" />
+                  <img
+                    src="/images/lock.png"
+                    alt="Lock"
+                    className="relative h-16 w-16 object-contain sm:h-20 sm:w-20"
+                    draggable="false"
                   />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="1.6"
-                    d="M9.5 11V9.5a2.5 2.5 0 015 0V11m-5 0h5a1 1 0 011 1v3a1 1 0 01-1 1h-5a1 1 0 01-1-1v-3a1 1 0 011-1z"
-                  />
-                </svg>
+                </div>
               </div>
 
               <h2
                 id="privacy-notice-title"
-                className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900"
+                className="mt-0 text-center text-[24px] font-extrabold leading-tight text-[#071b3a] sm:text-[30px] lg:text-[34px]"
+                style={{ letterSpacing: '0.04em' }}
               >
                 Privacy Notice &amp; Posting Agreement
               </h2>
-            </div>
 
-            <div className="overflow-y-auto px-6 py-6 sm:px-9">
-              <div className="space-y-4 text-justify text-sm leading-7 text-slate-700">
-                <p>
-                  By publishing this job post, you confirm that all information provided is
-                  accurate and complies with our platform policies.
-                </p>
-                <p>
-                  Once published, your job post will be visible to eligible job seekers.
-                  Applicants may view the information you provide, including the job title,
-                  company name, job description, qualifications, work location, salary
-                  (if disclosed), and other hiring details.
-                </p>
-                <p>
-                  You may access applicants&apos; submitted information solely for recruitment
-                  purposes and must keep all personal information confidential.
-                </p>
-                <p>
-                  To maintain the integrity of job listings, this post cannot be edited after
-                  one (1) hour from publication. Any changes after this period require approval
-                  from the platform administrator.
-                </p>
+              <div className="mx-auto mt-3 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
+                <span className="h-px w-12 bg-gradient-to-r from-transparent to-[#1e4ba0]" />
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4" />
+                </svg>
+                <span className="h-px w-12 bg-gradient-to-l from-transparent to-[#1e4ba0]" />
               </div>
 
-              <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl border border-[#cdddf0] bg-[#f5f9fe] p-4 transition hover:border-[#9ebee2]">
+              <div className="mx-auto mt-5 max-w-[760px] rounded-[18px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 py-5 shadow-[0_10px_30px_rgba(30,75,160,0.08)] sm:px-7 sm:py-6">
+                <div className="space-y-4 text-justify text-sm leading-7 text-[#0f2442]">
+                  <p>
+                    By publishing this job post, you confirm that all information provided is
+                    accurate and complies with our platform policies.
+                  </p>
+                  <p>
+                    Once published, your job post will be visible to eligible job seekers.
+                    Applicants may view the information you provide, including the job title,
+                    company name, job description, qualifications, work location, salary
+                    (if disclosed), and other hiring details.
+                  </p>
+                  <p>
+                    You may access applicants&apos; submitted information solely for recruitment
+                    purposes and must keep all personal information confidential.
+                  </p>
+                  <p>
+                    To maintain the integrity of job listings, this post cannot be edited after
+                    one (1) hour from publication. Any changes after this period require approval
+                    from the platform administrator.
+                  </p>
+                </div>
+              </div>
+
+              <label className="mx-auto mt-5 flex max-w-[760px] cursor-pointer items-start gap-3 rounded-[16px] border border-[#cdddf0] bg-[#f5f9fe] p-4 transition hover:border-[#9ebee2] hover:bg-[#eef5ff]">
                 <input
                   type="checkbox"
                   checked={privacyAccepted}
                   onChange={(event) => setPrivacyAccepted(event.target.checked)}
-                  className="mt-1 h-4 w-4 flex-shrink-0 rounded border-gray-300 text-[#2e66a6] focus:ring-[#2e66a6]"
+                  className="mt-0.5 h-5 w-5 flex-shrink-0 rounded border-gray-300 focus:ring-2 focus:ring-offset-2"
+                  style={{ accentColor: '#1e4ba0' }}
                 />
-                <span className="text-left text-sm font-semibold leading-6 text-slate-900">
+                <span className="text-left text-sm font-semibold leading-6 text-[#0f2442] sm:text-base">
                   I have read and agree to the Privacy Notice &amp; Posting Agreement.
                 </span>
               </label>
-            </div>
 
-            <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50/70 px-6 py-4 sm:flex-row sm:justify-end sm:px-9">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowPrivacyModal(false);
-                  setShowPreviewModal(true);
-                }}
-                disabled={loading}
-                className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-50"
-              >
-                Back to Preview
-              </button>
-              <button
-                type="button"
-                onClick={(event) => handleSubmit(event)}
-                disabled={!privacyAccepted || loading}
-                className="rounded-xl bg-[#2e66a6] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#23508a] disabled:cursor-not-allowed disabled:bg-[#9bb8d8] disabled:shadow-none"
-              >
-                {loading ? 'Publishing…' : 'Publish Job'}
-              </button>
+              <div className="mx-auto mt-6 flex max-w-[760px] flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPrivacyModal(false);
+                    setShowPreviewModal(true);
+                  }}
+                  disabled={loading}
+                  className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Back to Preview
+                </button>
+                <button
+                  type="button"
+                  onClick={(event) => handleSubmit(event)}
+                  disabled={!privacyAccepted || loading}
+                  className="rounded-xl bg-[#1e4ba0] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(30,75,160,0.25)] transition hover:bg-[#1b4290] disabled:cursor-not-allowed disabled:bg-[#93a6c9] disabled:shadow-none"
+                >
+                  {loading ? 'Publishing…' : 'Publish Job'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
