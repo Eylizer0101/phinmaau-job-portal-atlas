@@ -359,6 +359,11 @@ const JobSeekerLayout = ({ children }) => {
   }, [location.pathname, fetchMessageUnreadCount]);
 
   useEffect(() => {
+    if (isMyProfilePage) {
+      setIsNavbarVisible(true);
+      return undefined;
+    }
+
     const TOP_SHOW_PX = 8;
     const HIDE_AFTER_PX = 120;
     const DELTA_THRESHOLD = 8;
@@ -392,7 +397,7 @@ const JobSeekerLayout = ({ children }) => {
 
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, [isNotificationOpen, isProfileOpen, isMobileMenuOpen, showLogoutModal]);
+  }, [isNotificationOpen, isProfileOpen, isMobileMenuOpen, showLogoutModal, isMyProfilePage]);
 
   useOnClickOutside([notifBtnRef, notifMenuRef], () => setIsNotificationOpen(false), isNotificationOpen);
   useOnClickOutside([desktopProfileBtnRef, desktopProfileMenuRef, mobileProfileBtnRef, mobileProfileMenuRef], () => setIsProfileOpen(false), isProfileOpen);
@@ -1581,12 +1586,7 @@ const JobSeekerLayout = ({ children }) => {
         )}
       </div>
 
-      <main
-        className={`w-full hidden md:block ${isMyProfilePage ? 'pt-16 pb-8' : 'py-8 pt-20'}`}
-        style={{ '--jobseeker-sticky-top': isNavbarVisible ? '64px' : '0px' }}
-      >
-        {children}
-      </main>
+      <main className="w-full py-8 pt-20 hidden md:block">{children}</main>
 
       <ChatbotWidget role="jobseeker" />
     </div>
