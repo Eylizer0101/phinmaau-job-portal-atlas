@@ -2463,10 +2463,10 @@ const PostJob = () => {
           >
             <div className="flex items-center justify-between border-b border-[#e6edf5] bg-white px-6 py-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#2e66a6]">Job Post Preview</p>
-                <h2 id="job-preview-title" className="mt-1 text-xl font-bold text-gray-900">
-                  Review your job post before continuing
-                </h2>
+                <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[#2e66a6]">Almost There!</h2>
+                <h3 id="job-preview-title" className="mt-1 text-xl font-bold text-gray-900">
+                  Double-check your job posting before publishing.
+                </h3>
               </div>
               <button
                 type="button"
