@@ -1743,14 +1743,14 @@ The company also values transparency, teamwork, and continuous improvement, crea
                 >
                   View all jobs
                   <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4" d="M5 12h14m-5-5 5 5-5 5" />
-                  </svg>
+                            className="w-[18px] h-[18px] shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                          </svg>
                 </button>
               ) : null}
             </div>
@@ -2101,14 +2101,14 @@ The company also values transparency, teamwork, and continuous improvement, crea
                 >
                   See all reviews
                   <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4" d="M5 12h14m-5-5 5 5-5 5" />
-                  </svg>
+                            className="w-[18px] h-[18px] shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                          </svg>
                 </button>
               </div>
             ) : null}

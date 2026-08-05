@@ -117,7 +117,16 @@ const CompanyAllReviews = () => {
           onClick={() => navigate(`/jobseeker/company-details/${id}`, { state: { activeTab: "reviews" } })}
           className="mb-5 inline-flex items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-[#2e66a6] hover:bg-[#f7faff]"
         >
-          <span aria-hidden="true">←</span> Back to Company Details
+          <svg
+            className="w-[18px] h-[18px] shrink-0 rotate-180"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+          </svg>
+          Back to Company Details
         </button>
 
         <section className="rounded-[1.35rem] border border-[#e6edf5] bg-white p-5 shadow-[0_18px_45px_rgba(46,102,166,0.08)] sm:p-7 lg:p-8">
@@ -200,13 +209,13 @@ const Metric = ({ label, value }) => (
 );
 
 const Pagination = ({ page, totalPages, setPage, paginationItems, totalItems }) => (
-  <div className="mt-8 flex flex-col gap-4 border-t border-[#e6edf5] pt-6 lg:flex-row lg:items-center lg:justify-between">
+  <div className="mt-8 flex flex-col items-center justify-center gap-4 border-t border-[#e6edf5] pt-6 text-center">
     <div className="whitespace-nowrap text-sm font-semibold text-[#2e66a6]">
       Page {page} of {totalPages} · {totalItems} total
     </div>
 
     <nav
-      className="inline-flex min-h-11 items-center overflow-hidden rounded-xl border border-[#d8e2ee] bg-white shadow-sm"
+      className="mx-auto inline-flex min-h-11 items-center overflow-hidden rounded-xl border border-[#d8e2ee] bg-white shadow-sm"
       aria-label="Pagination controls"
     >
       <PageButton
