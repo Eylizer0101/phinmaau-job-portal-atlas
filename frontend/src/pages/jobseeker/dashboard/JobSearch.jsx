@@ -1633,27 +1633,29 @@ const JobSearch = () => {
               {loading ? (
                 renderSkeleton()
               ) : filteredJobs.length === 0 ? (
-                <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center shadow-sm">
-                            <h3 className="text-lg font-bold text-gray-800">No results found</h3>
-                  <p className="mt-2 text-sm text-gray-600">Try adjusting your filters or search terms.</p>
-
-                  <div className="mt-5 flex items-center justify-center gap-3">
-                    {hasActiveFilters && (
-                      <button
-                        className="px-4 py-2 rounded-xl text-sm font-semibold border border-gray-300 text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400 transition"
-                        onClick={clearFilters}
-                      >
-                        Clear filters
-                      </button>
-                    )}
-
-                    <button
-                      className="px-4 py-2 rounded-xl text-sm font-semibold border border-gray-300 text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400 transition"
-                      onClick={fetchJobs}
-                    >
-                      Refresh
-                    </button>
-                  </div>
+                <div className="flex min-h-[430px] w-full flex-col items-center justify-center px-6 py-12 text-center">
+                  <img
+                    src="/images/NoResultFound.png"
+                    alt="No results found"
+                    className="h-auto w-[220px] max-w-[70vw] object-contain"
+                  />
+                  <h3 className="mt-5 text-[22px] font-bold text-gray-900">No results found</h3>
+                  <p className="mt-2 text-sm text-gray-600">
+                    Try adjusting your filters or search terms.
+                  </p>
+                  <button
+                    type="button"
+                    className="mt-6 inline-flex h-[44px] items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-[#25578f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                    onClick={() => {
+                      if (hasActiveFilters) clearFilters();
+                      else fetchJobs();
+                    }}
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Refresh
+                  </button>
                 </div>
               ) : (
                 <>
