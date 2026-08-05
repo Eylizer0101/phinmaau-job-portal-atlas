@@ -55,7 +55,7 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={1.5}
+            strokeWidth={1.8}
             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
           />
         </svg>
@@ -66,7 +66,7 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={1.5}
+            strokeWidth={1.8}
             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
@@ -77,7 +77,7 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={1.5}
+            strokeWidth={1.8}
             d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
@@ -88,7 +88,7 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={1.5}
+            strokeWidth={1.8}
             d="M15 9l-6 6m0-6l6 6m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
@@ -99,10 +99,10 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={1.5}
+            strokeWidth={1.8}
             d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
           />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       );
     case 'briefcase':
@@ -111,10 +111,10 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={1.5}
+            strokeWidth={1.8}
             d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m-3 0h14a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z"
           />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 13h18" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 13h18" />
         </svg>
       );
     case 'building':
@@ -123,7 +123,7 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={1.5}
+            strokeWidth={1.8}
             d="M3 21h18M6 21V5a2 2 0 012-2h8a2 2 0 012 2v16M9 7h.01M9 11h.01M9 15h.01M12 7h.01M12 11h.01M12 15h.01M15 7h.01M15 11h.01M15 15h.01"
           />
         </svg>
@@ -134,7 +134,7 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={1.5}
+            strokeWidth={1.8}
             d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
           />
         </svg>
@@ -145,27 +145,27 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={1.5}
+            strokeWidth={1.8}
             d="M12 21s7-4.438 7-11a7 7 0 10-14 0c0 6.562 7 11 7 11z"
           />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10a2 2 0 100-4 2 2 0 000 4z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 10a2 2 0 100-4 2 2 0 000 4z" />
         </svg>
       );
     case 'download':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 3v12m0 0l4-4m-4 4l-4-4" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 21h14" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 3v12m0 0l4-4m-4 4l-4-4" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 21h14" />
         </svg>
       );
     case 'refresh':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v6h6M20 20v-6h-6" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 4v6h6M20 20v-6h-6" />
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={1.5}
+            strokeWidth={1.8}
             d="M20 10a8 8 0 00-14.657-4.657L4 10m0 4a8 8 0 0014.657 4.657L20 14"
           />
         </svg>
@@ -173,9 +173,9 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
     case 'login':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 17l5-5-5-5" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12H3" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10 17l5-5-5-5" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 12H3" />
         </svg>
       );
     case 'star':
@@ -184,7 +184,7 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={1.5}
+            strokeWidth={1.8}
             d="M11.48 3.499a1 1 0 011.04 0l2.4 1.384a1 1 0 00.75.105l2.74-.7a1 1 0 011.21 1.21l-.7 2.74a1 1 0 00.105.75l1.384 2.4a1 1 0 010 1.04l-1.384 2.4a1 1 0 00-.105.75l.7 2.74a1 1 0 01-1.21 1.21l-2.74-.7a1 1 0 00-.75.105l-2.4 1.384a1 1 0 01-1.04 0l-2.4-1.384a1 1 0 00-.75-.105l-2.74.7A1 1 0 013.5 19.3l.7-2.74a1 1 0 00-.105-.75l-1.384-2.4a1 1 0 010-1.04l1.384-2.4a1 1 0 00.105-.75l-.7-2.74A1 1 0 014.71 3.594l2.74.7a1 1 0 00.75-.105l2.28-1.31z"
           />
         </svg>
@@ -200,12 +200,12 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
     case 'arrowPath':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v6h6" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 20v-6h-6" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 4v6h6" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M20 20v-6h-6" />
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={1.5}
+            strokeWidth={1.8}
             d="M20 10a8 8 0 00-13.657-4.657L4 10m0 4a8 8 0 0013.657 4.657L20 14"
           />
         </svg>
@@ -213,8 +213,8 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
     default:
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6l4 2" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 6v6l4 2" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       );
   }
@@ -611,17 +611,24 @@ const MyApplications = () => {
     return filteredApplications.filter((application) => {
       const statusText = getStatusText(application);
       const salaryText = formatPesoRange(application.job?.salaryMin, application.job?.salaryMax) || '';
+      const appliedDateText = formatAppliedDateTime(application.appliedAt);
       const searchableValues = [
         application.job?.title,
         application.job?.companyName,
         application.job?.location,
+        application.job?.workOfficeAddress,
+        application.job?.officeAddress,
         application.job?.jobType,
         application.job?.workMode,
         application.job?.industry,
         application.job?.companyIndustry,
         application.employer?.employerProfile?.industry,
+        application.employer?.employerProfile?.companyAddress,
+        application.status,
+        application.hiringStage,
         salaryText,
         statusText,
+        appliedDateText,
       ];
 
       return searchableValues.some((value) =>
@@ -902,16 +909,32 @@ const MyApplications = () => {
           )}
 
           <div className={`${UI.card} p-4`}>
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[130px_minmax(220px,1fr)_auto] lg:items-center">
               <div>
                 <h2 className={`${UI.heading2} ${UI.textPrimary}`}>Status</h2>
                 <p className={`text-sm ${UI.textSecondary}`}>Filter Application</p>
               </div>
 
+              <div className="relative w-full">
+                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="m21 21-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </span>
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search applications..."
+                  className={`h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 transition hover:border-[#2e66a6]/60 hover:shadow-md focus:border-[#2e66a6] focus:shadow-[0_0_0_3px_rgba(46,102,166,0.12)] ${UI.ring}`}
+                  aria-label="Search applications"
+                />
+              </div>
+
               <div
                 role="tablist"
                 aria-label="Application status filters"
-                className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:w-auto lg:grid-cols-4"
+                className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:w-auto lg:grid-cols-4"
               >
                 {topFilters.map((item) => {
                   const active =
@@ -930,19 +953,19 @@ const MyApplications = () => {
                       onClick={() => handleStatusFilterChange(item.key)}
                       className={[
                         UI.btnBase,
-                        'min-h-[48px] justify-start rounded-xl border px-4 py-3 text-sm',
+                        'min-h-[44px] justify-start rounded-xl border px-3 py-2 text-sm',
                         UI.ring,
                         active
                           ? 'border-[#2e66a6]/30 bg-[#2e66a6]/5 text-[#2e66a6] shadow-sm'
-                          : 'border-gray-200 bg-white text-gray-700 shadow-sm hover:border-gray-300 hover:bg-gray-50',
+                          : 'border-gray-200 bg-white text-gray-700 shadow-sm hover:border-[#2e66a6]/45 hover:bg-[#2e66a6]/5',
                       ].join(' ')}
                       type="button"
                     >
                       <span className={`flex-shrink-0 ${active ? 'text-[#2e66a6]' : 'text-gray-700'}`}>
-                        <SvgIcon name={item.icon} className="w-5 h-5" />
+                        <SvgIcon name={item.icon} className="w-[18px] h-[18px]" />
                       </span>
-                      <span>{item.label}</span>
-                      <span className="ml-1 inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded-full text-xs bg-gray-200 text-gray-800">
+                      <span className="whitespace-nowrap">{item.label}</span>
+                      <span className="ml-1 inline-flex items-center justify-center min-w-[26px] px-2 py-0.5 rounded-full text-xs bg-gray-200 text-gray-800">
                         {item.count}
                       </span>
                     </button>
@@ -1046,28 +1069,6 @@ const MyApplications = () => {
                   </button>
                 );
               })}
-            </div>
-          </div>
-
-          <div className={`${UI.card} p-4`}>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="relative w-full sm:max-w-xl">
-                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="m21 21-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </span>
-                <input
-                  type="search"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Search applications..."
-                  className={`h-11 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 placeholder:text-gray-400 ${UI.ring}`}
-                  aria-label="Search applications"
-                />
-              </div>
-
-
             </div>
           </div>
 
@@ -1182,15 +1183,15 @@ const MyApplications = () => {
 
                             <div className={`mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm ${UI.textSecondary}`}>
                               <span className="inline-flex min-w-0 items-center gap-1.5" title={companyName}>
-                                <SvgIcon name="building" className="h-4 w-4 flex-shrink-0 text-gray-500" />
+                                <SvgIcon name="building" className="h-[18px] w-[18px] flex-shrink-0 text-gray-500" />
                                 <span className="truncate">{companyName}</span>
                               </span>
 
                               {industryText && (
                                 <>
-                                  <span className="text-gray-400" aria-hidden="true">•</span>
+                                  <span className="font-medium text-gray-300" aria-hidden="true">|</span>
                                   <span className="inline-flex min-w-0 items-center gap-1.5" title={industryText}>
-                                    <SvgIcon name="briefcase" className="h-4 w-4 flex-shrink-0 text-gray-500" />
+                                    <SvgIcon name="briefcase" className="h-[18px] w-[18px] flex-shrink-0 text-gray-500" />
                                     <span className="truncate">{industryText}</span>
                                   </span>
                                 </>
@@ -1198,84 +1199,84 @@ const MyApplications = () => {
 
                               {workOfficeAddressText && (
                                 <>
-                                  <span className="text-gray-400" aria-hidden="true">•</span>
+                                  <span className="font-medium text-gray-300" aria-hidden="true">|</span>
                                   <span
                                     className="inline-flex min-w-0 items-center gap-1.5"
                                     title={formatLocationDisplay(workOfficeAddressText)}
                                   >
-                                    <SvgIcon name="location" className="h-4 w-4 flex-shrink-0 text-gray-500" />
+                                    <SvgIcon name="location" className="h-[18px] w-[18px] flex-shrink-0 text-gray-500" />
                                     <span className="truncate">{formatLocationDisplay(workOfficeAddressText)}</span>
                                   </span>
                                 </>
                               )}
                             </div>
+                          </div>
+                        </div>
 
-                            <div className="mt-3 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                              <div className="flex min-w-0 flex-wrap gap-2">
-                                {jobTypeText && (
-                                  <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
-                                    <span className="text-gray-500"><SvgIcon name="briefcase" className="w-3.5 h-3.5" /></span>
-                                    {jobTypeText}
-                                  </span>
-                                )}
-                                {workModeText && (
-                                  <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
-                                    <span className="text-gray-500"><SvgIcon name="building" className="w-3.5 h-3.5" /></span>
-                                    {workModeText}
-                                  </span>
-                                )}
-                                {salaryText && (
-                                  <span className={`${UI.chipBase} bg-[#2e66a6]/10 text-[#2e66a6] border-[#2e66a6]/20`}>
-                                    {salaryText}
-                                  </span>
-                                )}
-                                <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
-                                  <span className="text-gray-500"><SvgIcon name="calendar" className="w-3.5 h-3.5" /></span>
-                                  Applied on {appliedAt}
-                                </span>
-                              </div>
+                        <div className="mt-3 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                          <div className="flex min-w-0 flex-wrap gap-2">
+                            {jobTypeText && (
+                              <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
+                                <span className="text-gray-500"><SvgIcon name="briefcase" className="w-4 h-4" /></span>
+                                {jobTypeText}
+                              </span>
+                            )}
+                            {workModeText && (
+                              <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
+                                <span className="text-gray-500"><SvgIcon name="building" className="w-4 h-4" /></span>
+                                {workModeText}
+                              </span>
+                            )}
+                            {salaryText && (
+                              <span className={`${UI.chipBase} bg-[#2e66a6]/10 text-[#2e66a6] border-[#2e66a6]/20`}>
+                                {salaryText}
+                              </span>
+                            )}
+                            <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
+                              <span className="text-gray-500"><SvgIcon name="calendar" className="w-4 h-4" /></span>
+                              Applied on {appliedAt}
+                            </span>
+                          </div>
 
-                              <div className="flex flex-wrap items-center gap-2 xl:flex-shrink-0 xl:justify-end">
-                                {isActiveCard && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleWithdraw(application._id)}
-                                    disabled={isActionLoading}
-                                    className={`${UI.btnBase} ${UI.btnMd} ${UI.btnDangerSoft} ${UI.ring}`}
-                                  >
-                                    Withdraw
-                                  </button>
-                                )}
+                          <div className="flex flex-wrap items-center gap-2 xl:flex-shrink-0 xl:justify-end">
+                            {isActiveCard && (
+                              <button
+                                type="button"
+                                onClick={() => handleWithdraw(application._id)}
+                                disabled={isActionLoading}
+                                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnDangerSoft} ${UI.ring}`}
+                              >
+                                Withdraw
+                              </button>
+                            )}
 
-                                {isReactivatableCard && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleReactivate(application._id)}
-                                    disabled={isActionLoading}
-                                    className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSuccessSoft} ${UI.ring}`}
-                                  >
-                                    <SvgIcon name="arrowPath" className="w-4 h-4" />
-                                    Reactivate
-                                  </button>
-                                )}
+                            {isReactivatableCard && (
+                              <button
+                                type="button"
+                                onClick={() => handleReactivate(application._id)}
+                                disabled={isActionLoading}
+                                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSuccessSoft} ${UI.ring}`}
+                              >
+                                <SvgIcon name="arrowPath" className="w-4 h-4" />
+                                Reactivate
+                              </button>
+                            )}
 
-                                {jobId ? (
-                                  <Link
-                                    to={`/jobseeker/job-details/${jobId}`}
-                                    state={{ sourcePage: 'myapplications' }}
-                                    className={`${UI.btnBase} ${UI.btnMd} ${UI.btnInfo} ${UI.ring}`}
-                                  >
-                                    <SvgIcon name="eye" className="w-4 h-4" />
-                                    View Job
-                                  </Link>
-                                ) : (
-                                  <span className={`${UI.btnBase} ${UI.btnMd} ${UI.btnInfo} opacity-60 cursor-not-allowed`} aria-disabled="true">
-                                    <SvgIcon name="eye" className="w-4 h-4" />
-                                    View Job
-                                  </span>
-                                )}
-                              </div>
-                            </div>
+                            {jobId ? (
+                              <Link
+                                to={`/jobseeker/job-details/${jobId}`}
+                                state={{ sourcePage: 'myapplications' }}
+                                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnInfo} ${UI.ring}`}
+                              >
+                                <SvgIcon name="eye" className="w-4 h-4" />
+                                View Job
+                              </Link>
+                            ) : (
+                              <span className={`${UI.btnBase} ${UI.btnMd} ${UI.btnInfo} opacity-60 cursor-not-allowed`} aria-disabled="true">
+                                <SvgIcon name="eye" className="w-4 h-4" />
+                                View Job
+                              </span>
+                            )}
                           </div>
                         </div>
 
