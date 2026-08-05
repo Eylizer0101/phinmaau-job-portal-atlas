@@ -1202,6 +1202,12 @@ exports.updateProfile = async (req, res) => {
   try {
     const userId = req.user._id;
     const updateData = req.body;
+    // Capture only the fields actually sent by the current profile modal before
+    // merging them with the existing profile. Because updateData and req.body
+    // point to the same object, reading req.body.jobSeekerProfile after the merge
+    // would incorrectly make every existing personal-information field look like
+    // it was submitted by the Basic Information modal.
+    const requestedProfileKeys = Object.keys(req.body?.jobSeekerProfile || {});
 
     delete updateData.email;
     delete updateData.password;
@@ -1230,7 +1236,6 @@ exports.updateProfile = async (req, res) => {
       }
 
       const cleanRequiredValue = (value) => String(value ?? '').trim();
-      const requestedProfileKeys = Object.keys(req.body?.jobSeekerProfile || {});
       const basicProfileKeys = ['phoneNumber', 'address', 'campus', 'course', 'yearGraduated'];
       const personalProfileKeys = [
         'preferredWorkMode', 'employmentType', 'willingToRelocate', 'howSoonCanYouStart',
