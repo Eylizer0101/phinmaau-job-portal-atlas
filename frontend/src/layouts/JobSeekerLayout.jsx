@@ -1581,7 +1581,12 @@ const JobSeekerLayout = ({ children }) => {
         )}
       </div>
 
-      <main className="w-full py-8 pt-20 hidden md:block">{children}</main>
+      <main
+        className={`w-full hidden md:block ${isMyProfilePage ? 'pt-16 pb-8' : 'py-8 pt-20'}`}
+        style={{ '--jobseeker-sticky-top': isNavbarVisible ? '64px' : '0px' }}
+      >
+        {children}
+      </main>
 
       <ChatbotWidget role="jobseeker" />
     </div>

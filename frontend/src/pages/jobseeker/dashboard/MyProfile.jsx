@@ -6878,8 +6878,8 @@ const MyProfile = () => {
         <div className="max-w-[1420px] mx-auto px-4 sm:px-6 lg:px-8">
           {basicInformationNotice.open && !isBasicInformationComplete ? (
             <div
-              className="sticky top-0 z-[1000] mb-5 w-full pt-3"
-              style={{ marginTop: '-80px' }}
+              className="sticky z-[1000] mb-5 w-full pt-3 transition-[top] duration-300"
+              style={{ top: 'var(--jobseeker-sticky-top, 0px)' }}
             >
               <div className="mx-auto w-full max-w-[960px]">
                 <div
