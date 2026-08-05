@@ -4317,6 +4317,29 @@ const MyProfile = () => {
   // The To-Do completion check below still uses the stricter educationComplete logic.
   const hasEducationEntries = educationEntries.length > 0;
 
+  const basicInformationMissingFields = useMemo(() => {
+    const parsedBasicAddress = parseAddressString(formData.address || '');
+    const requiredBasicFields = [
+      ['First Name', formData.firstName],
+      ['Last Name', formData.lastName],
+      ['Email', formData.email],
+      ['Mobile Number', formData.phoneNumber],
+      ['Campus', formData.campus],
+      ['Course', formData.course],
+      ['Year Graduated', formData.yearGraduated],
+      ['Region', formData.region || parsedBasicAddress.region],
+      ['Province', formData.province || parsedBasicAddress.province],
+      ['City / Municipality', formData.cityMunicipality || parsedBasicAddress.cityMunicipality],
+      ['Street Address', formData.streetAddress || parsedBasicAddress.streetAddress],
+    ];
+
+    return requiredBasicFields
+      .filter(([, value]) => !isCompletedProfileValue(value))
+      .map(([label]) => label);
+  }, [formData]);
+
+  const isBasicInformationComplete = basicInformationMissingFields.length === 0;
+
   const todoProgress = useMemo(() => {
     const credentialWeights = {
       validId: 8,
@@ -4347,13 +4370,7 @@ const MyProfile = () => {
       completed: Boolean(String(verificationDocs?.[key]?.url || '').trim()),
     }));
 
-    const parsedBasicAddress = parseAddressString(formData.address || '');
-    const basicInformationComplete = [
-      formData.region || parsedBasicAddress.region,
-      formData.province || parsedBasicAddress.province,
-      formData.cityMunicipality || parsedBasicAddress.cityMunicipality,
-      formData.streetAddress || parsedBasicAddress.streetAddress,
-    ].every(isCompletedProfileValue);
+    const basicInformationComplete = isBasicInformationComplete;
 
     const personalInformationRequiredValues = [
       formData.preferredWorkMode,
@@ -4422,18 +4439,12 @@ const MyProfile = () => {
       profileItems,
       additionalItems,
     };
-  }, [formData, educationEntries, verificationDocs, workExperiences]);
+  }, [formData, educationEntries, verificationDocs, workExperiences, isBasicInformationComplete]);
 
   const sectionReminders = useMemo(() => {
     const countMissing = (values = []) => values.filter((value) => !isCompletedProfileValue(value)).length;
 
-    const parsedAddress = parseAddressString(formData.address || '');
-    const basicMissingCount = countMissing([
-      formData.region || parsedAddress.region,
-      formData.province || parsedAddress.province,
-      formData.cityMunicipality || parsedAddress.cityMunicipality,
-      formData.streetAddress || parsedAddress.streetAddress,
-    ]);
+    const basicMissingCount = basicInformationMissingFields.length;
 
     const personalMissingCount = countMissing([
       formData.preferredWorkMode,
@@ -4475,7 +4486,7 @@ const MyProfile = () => {
       projects: hasMeaningfulListContent(formData.projects) ? '' : 'Showcase 1 of your Projects',
       additional: hasAdditionalHighlight ? '' : 'Add 1 More Highlights',
     };
-  }, [formData, workExperiences, educationEntries, todoProgress]);
+  }, [formData, workExperiences, educationEntries, todoProgress, basicInformationMissingFields]);
 
   const jobSeekerLevel = useMemo(() => {
     const counts = {
@@ -5421,7 +5432,36 @@ const MyProfile = () => {
   };
 
 
+  const requireCompleteBasicInformation = () => {
+    if (isBasicInformationComplete) return true;
+
+    setError(
+      `Please complete all required fields in Basic Information first before adding or editing other resume sections. Missing: ${basicInformationMissingFields.join(', ')}.`
+    );
+    setOpenTabs((currentTabs) => (
+      currentTabs.includes('personal') ? currentTabs : [...currentTabs, 'personal']
+    ));
+
+    window.setTimeout(() => {
+      document.getElementById('basic-information-section')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }, 50);
+
+    return false;
+  };
+
+  const openAddSectionsWithBasicCheck = () => {
+    if (!requireCompleteBasicInformation()) return;
+    setAddSectionsModalOpen(true);
+  };
+
+
   const openProfileEditModal = (sectionKey, itemIndex = null) => {
+    // Basic Information is the prerequisite for every other resume section.
+    if (sectionKey !== 'personal' && !requireCompleteBasicInformation()) return;
+
     // Do not carry a validation message from a previously opened section.
     setError('');
     if (sectionKey === 'personal') {
@@ -5924,6 +5964,7 @@ const MyProfile = () => {
 
   const handleVerificationUpload = async (docType, file) => {
     if (!file) return;
+    if (!requireCompleteBasicInformation()) return;
 
     const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
     if (!validTypes.includes(file.type)) {
@@ -6033,6 +6074,8 @@ const MyProfile = () => {
   };
 
   const openEditWorkExperienceModal = (item) => {
+    if (!requireCompleteBasicInformation()) return;
+
     setEditingWorkExperienceId(item?._id || item?.id || '');
     setWorkExperienceModalMode('edit');
     setWorkExperienceForm({
@@ -6857,7 +6900,7 @@ const MyProfile = () => {
                   <div ref={sidebarPanelRef} style={sidebarFixedStyle || undefined}>
                     <ProfileRightPanel
                       jobSeekerLevel={jobSeekerLevel}
-                      onAddSections={() => setAddSectionsModalOpen(true)}
+                      onAddSections={openAddSectionsWithBasicCheck}
                       addSectionsReminder={sectionReminders.additional}
                     />
                   </div>
@@ -6954,7 +6997,11 @@ const MyProfile = () => {
                         isMoreProfileSection && !FIXED_PROFILE_SECTION_KEYS.includes(section.key);
 
                       return (
-                        <div key={section.key} className="w-full bg-white">
+                        <div
+                          key={section.key}
+                          id={section.key === 'personal' ? 'basic-information-section' : undefined}
+                          className="w-full bg-white"
+                        >
                           <div className="w-full min-h-[44px] px-1 border-b border-gray-200 flex items-center justify-between gap-4 text-left bg-white">
                             <button
                               type="button"
