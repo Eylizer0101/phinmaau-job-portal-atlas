@@ -4057,6 +4057,10 @@ const MyProfile = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [basicInformationNotice, setBasicInformationNotice] = useState({
+    open: false,
+    missingFields: [],
+  });
   const [savingSection, setSavingSection] = useState('');
   const [successPopup, setSuccessPopup] = useState({ open: false, title: '', message: '' });
   const [downloadPasswordModalOpen, setDownloadPasswordModalOpen] = useState(false);
@@ -4339,6 +4343,15 @@ const MyProfile = () => {
   }, [formData]);
 
   const isBasicInformationComplete = basicInformationMissingFields.length === 0;
+
+  useEffect(() => {
+    if (isBasicInformationComplete) {
+      setBasicInformationNotice({
+        open: false,
+        missingFields: [],
+      });
+    }
+  }, [isBasicInformationComplete]);
 
   const todoProgress = useMemo(() => {
     const credentialWeights = {
@@ -5435,9 +5448,12 @@ const MyProfile = () => {
   const requireCompleteBasicInformation = () => {
     if (isBasicInformationComplete) return true;
 
-    setError(
-      `Please complete all required fields in Basic Information first before adding or editing other resume sections. Missing: ${basicInformationMissingFields.join(', ')}.`
-    );
+    // This is a guided profile-completion notice, not a system error.
+    setError('');
+    setBasicInformationNotice({
+      open: true,
+      missingFields: basicInformationMissingFields,
+    });
     setOpenTabs((currentTabs) => (
       currentTabs.includes('personal') ? currentTabs : [...currentTabs, 'personal']
     ));
@@ -6860,6 +6876,64 @@ const MyProfile = () => {
 
       <div className="min-h-[100dvh] h-auto bg-transparent overflow-visible pb-6">
         <div className="max-w-[1420px] mx-auto px-4 sm:px-6 lg:px-8">
+          {basicInformationNotice.open && !isBasicInformationComplete ? (
+            <div className="sticky top-[88px] z-[90] mb-5 pt-3">
+              <div
+                className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 shadow-[0_8px_24px_rgba(15,23,42,0.08)] sm:px-5"
+                role="status"
+                aria-live="polite"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                    <FaInfoCircle className="text-base" />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-bold text-gray-900 sm:text-[15px]">
+                      Complete your Basic Information first
+                    </div>
+                    <p className="mt-1 text-sm leading-6 text-gray-700">
+                      Finish the required fields in Basic Information before adding or editing the other resume sections.
+                    </p>
+
+                    {basicInformationNotice.missingFields.length ? (
+                      <div className="mt-2 text-sm leading-6 text-gray-700">
+                        <span className="font-semibold text-gray-900">Fields to complete:</span>{' '}
+                        {basicInformationNotice.missingFields.join(', ')}.
+                      </div>
+                    ) : null}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBasicInformationNotice({
+                          open: false,
+                          missingFields: [],
+                        });
+                        openProfileEditModal('personal');
+                      }}
+                      className="mt-3 inline-flex h-9 items-center justify-center rounded-lg bg-[#2e66a6] px-4 text-sm font-semibold text-white transition hover:bg-[#25578f] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/30"
+                    >
+                      Complete Basic Information
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setBasicInformationNotice({
+                      open: false,
+                      missingFields: [],
+                    })}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-500 transition hover:bg-amber-100 hover:text-gray-800"
+                    aria-label="Dismiss Basic Information reminder"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           {error && !editModalSection && !editing.basic ? (
             <Alert type="error" title="Error" message={error} onClose={() => setError('')} />
           ) : null}
