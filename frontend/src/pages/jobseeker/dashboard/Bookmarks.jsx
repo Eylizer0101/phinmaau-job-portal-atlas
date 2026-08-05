@@ -1511,7 +1511,7 @@ const EmptyCompanyBookmarks = ({ onBrowseCompanies }) => (
         <img
           src="/images/NoSavedCompanies.png"
           alt="No saved companies"
-          className="mx-auto w-[130px]  h-auto object-contain"
+          className="mx-auto w-[110px]  h-auto object-contain"
           draggable="false"
         />
 
@@ -2916,7 +2916,7 @@ const Bookmarks = () => {
                         <img
                           src="/images/NoSavedCompanies.png"
                           alt="No saved companies"
-                          className="mx-auto w-[200px] h-auto object-contain"
+                          className="mx-auto w-[180px] h-auto object-contain"
                           draggable="false"
                         />
 
