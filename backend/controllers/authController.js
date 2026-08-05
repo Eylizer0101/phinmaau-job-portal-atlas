@@ -1277,29 +1277,6 @@ exports.updateProfile = async (req, res) => {
         }
       }
 
-      const isPersonalProfileUpdate = personalProfileKeys.some((key) => requestedProfileKeys.includes(key));
-      if (isPersonalProfileUpdate) {
-        const personalLabels = {
-          preferredWorkMode: 'Preferred Work Mode', employmentType: 'Employment Type',
-          willingToRelocate: 'Willing to Relocate', howSoonCanYouStart: 'How Soon Can Start',
-          experience: 'Experience', preferredLanguage: 'Preferred Language',
-          educationalAttainment: 'Educational Attainment', studyField: 'Field of Study',
-          minimumSalary: 'Minimum Salary', maximumSalary: 'Maximum Salary',
-          height: 'Height', weight: 'Weight', nationality: 'Nationality', gender: 'Gender',
-          civilStatus: 'Civil Status', birthday: 'Birthday',
-        };
-        const missingPersonal = personalProfileKeys
-          .filter((key) => !cleanRequiredValue(updateData.jobSeekerProfile[key]))
-          .map((key) => personalLabels[key]);
-
-        if (missingPersonal.length) {
-          return res.status(400).json({
-            success: false,
-            message: `Please complete the required personal information before saving: ${missingPersonal.join(', ')}.`,
-          });
-        }
-      }
-
       if (!updateData.jobSeekerProfile.salaryCurrency) {
         updateData.jobSeekerProfile.salaryCurrency = existingProfile.salaryCurrency || 'PHP';
       }
