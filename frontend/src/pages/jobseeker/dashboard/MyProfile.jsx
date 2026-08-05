@@ -4835,6 +4835,10 @@ const MyProfile = () => {
   };
 
   const handleBasicInfoChange = (field, value) => {
+    // Once the user corrects a Basic Information field, remove the old
+    // validation message and validate the Basic Information modal again on save.
+    if (error) setError('');
+
     setDrafts((prev) => {
       if (field === 'region') {
         return {
@@ -5111,6 +5115,10 @@ const MyProfile = () => {
 
   const saveSection = async (sectionKey, draftOverride = null) => {
     const activeDrafts = draftOverride || drafts;
+
+    // Every modal validates only its own fields. Clear any message left by a
+    // different profile modal before running the current section validation.
+    setError('');
 
     if (sectionKey === 'basic') {
       const requiredBasicFields = [
@@ -5405,6 +5413,11 @@ const MyProfile = () => {
   };
 
   const cancelEdit = (sectionKey) => {
+    // Validation messages belong only to the modal that created them.
+    // Closing or cancelling a modal must not leave the message on the page
+    // or show it inside another modal later.
+    setError('');
+
     if (sectionKey === 'education') {
       setDrafts(resetEducationDraftFields(formData));
       setEditing((prev) => ({ ...prev, [sectionKey]: false }));
@@ -5417,6 +5430,8 @@ const MyProfile = () => {
 
 
   const openProfileEditModal = (sectionKey, itemIndex = null) => {
+    // Do not carry a validation message from a previously opened section.
+    setError('');
     if (sectionKey === 'personal') {
       setProfileEntryModalContext({ sectionKey: '', mode: 'edit', index: -1, originalItems: [] });
       setDrafts(formData);
