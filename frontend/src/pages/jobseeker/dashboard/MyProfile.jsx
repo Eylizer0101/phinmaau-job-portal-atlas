@@ -938,7 +938,7 @@ const ResumePasswordModal = ({
               ) : mode === 'preview' || mode === 'credential-preview' ? (
                 <FaEye className="text-xs" />
               ) : (
-                <FaDownload className="text-xs" />
+                <FaEye className="text-xs" />
               )}
               {verifying
                 ? 'Verifying...'
@@ -3928,7 +3928,7 @@ const AddSectionsCard = ({ onAddSections, reminder = '' }) => (
     {reminder ? (
       <p className="mt-3 text-sm font-semibold text-amber-700">{reminder}</p>
     ) : null}
-    <div className="mt-6 flex justify-center">
+    <div className="mt-6 flex justify-start">
       <button
         type="button"
         onClick={onAddSections}
@@ -6364,15 +6364,15 @@ const MyProfile = () => {
           <div className="flex items-start justify-center gap-5">
             <div className="flex-1 min-w-0">
               <AutoFitProfileName>{fullName || 'YOUR NAME'}</AutoFitProfileName>
-              <div className="mt-2 font-serif text-[15px] leading-6 text-gray-900">
+              <div className="mt-2 font-serif text-[16px] leading-7 text-gray-900">
                 {buildAddressString(formData) || 'Complete your basic information to get started.'}
               </div>
               {(formData.email || formData.phoneNumber) ? (
-                <div className="mt-1 font-serif text-[15px] leading-6 text-gray-900">
+                <div className="mt-1 font-serif text-[16px] leading-7 text-gray-900">
                   {[formData.email, formData.phoneNumber].filter(Boolean).join(' • ')}
                 </div>
               ) : null}
-              <div className="mt-2 font-serif italic text-[15px] leading-6 text-gray-500">
+              <div className="mt-2 font-serif italic text-[16px] leading-7 text-gray-500">
                 {[
                   formData.campus,
                   formData.course,

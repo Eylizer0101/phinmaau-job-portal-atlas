@@ -455,7 +455,7 @@ const ResumePreviewPage = () => {
           background: #ffffff;
           color: #111111;
           font-family: Georgia, 'Times New Roman', serif;
-          font-size: 8.7px;
+          font-size: 9.2px;
           line-height: 1.18;
           box-shadow: 0 18px 50px rgba(15, 23, 42, 0.18);
         }
@@ -485,7 +485,7 @@ const ResumePreviewPage = () => {
         .resume-name {
           margin: 0;
           padding-top: 5px;
-          font-size: 17px;
+          font-size: 18px;
           line-height: 1;
           font-weight: 700;
           letter-spacing: 0.55px;
@@ -495,7 +495,7 @@ const ResumePreviewPage = () => {
         .resume-contact {
           margin-top: 5px;
           color: #222222;
-          font-size: 8px;
+          font-size: 8.7px;
           line-height: 1.4;
           overflow-wrap: anywhere;
         }
@@ -516,7 +516,7 @@ const ResumePreviewPage = () => {
         .resume-education-summary {
           margin-top: 3px;
           color: #222222;
-          font-size: 8.2px;
+          font-size: 9.2px;
           line-height: 1.35;
           font-style: italic;
         }
@@ -580,7 +580,7 @@ const ResumePreviewPage = () => {
 
         .info-label {
           white-space: nowrap;
-          font-size: 8.1px;
+          font-size: 8.5px;
         }
 
         .info-value {
@@ -667,8 +667,8 @@ const ResumePreviewPage = () => {
         .resume-rich-text li { display: list-item !important; margin: 0; padding-left: 1px; }
         .resume-rich-text blockquote { margin: 2px 0 2px 14px; padding-left: 8px; border-left: 2px solid #b8b8b8; }
         .resume-rich-text h1, .resume-rich-text h2 { margin: 2px 0 1px; border: 0; padding: 0; text-transform: none; letter-spacing: 0; line-height: 1.15; }
-        .resume-rich-text h1 { font-size: 11px; }
-        .resume-rich-text h2 { font-size: 10px; }
+        .resume-rich-text h1 { font-size: 11.5px; }
+        .resume-rich-text h2 { font-size: 10.5px; }
 
         .references-grid {
           row-gap: 7px;
