@@ -855,12 +855,6 @@ const ResumePasswordModal = ({
   onClose,
   onSubmit,
 }) => {
-  const [showPassword, setShowPassword] = useState(false);
-
-  useEffect(() => {
-    if (!open) setShowPassword(false);
-  }, [open]);
-
   if (!open) return null;
 
   return (
@@ -892,29 +886,13 @@ const ResumePasswordModal = ({
         </div>
 
         <form onSubmit={onSubmit} className="px-6 py-6 space-y-4">
-          <div>
-            <label className="block text-[11px] tracking-[0.16em] uppercase font-bold text-gray-400 mb-2">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password || ''}
-                onChange={(e) => onChange(e.target.value)}
-                placeholder="Enter your password"
-                className="w-full h-12 pl-4 pr-12 rounded-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6]"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((current) => !current)}
-                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-gray-500 transition hover:text-[#2e66a6]"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                title={showPassword ? 'Hide password' : 'Show password'}
-              >
-                <FaEye className={`text-base ${showPassword ? 'text-[#2e66a6]' : ''}`} />
-              </button>
-            </div>
-          </div>
+          <Input
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="Enter your password"
+          />
 
           {error ? <Alert type="error" message={error} /> : null}
 
@@ -2712,7 +2690,7 @@ const BasicInfoModal = ({
                   onChange={(e) => onChange('region', e.target.value)}
                   className="h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                 >
-                  <option value="" disabled={Boolean(drafts.region)}>Select region</option>
+                  <option value="">Select region</option>
                   {regionOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
               </div>
@@ -2726,7 +2704,7 @@ const BasicInfoModal = ({
                   disabled={!drafts.region}
                   className="h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6] disabled:bg-gray-50 disabled:text-gray-400"
                 >
-                  <option value="" disabled={Boolean(drafts.province)}>Select province</option>
+                  <option value="">Select province</option>
                   {provinceOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
               </div>
@@ -2740,7 +2718,7 @@ const BasicInfoModal = ({
                   disabled={!drafts.province}
                   className="h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6] disabled:bg-gray-50 disabled:text-gray-400"
                 >
-                  <option value="" disabled={Boolean(drafts.cityMunicipality)}>Select city / municipality</option>
+                  <option value="">Select city / municipality</option>
                   {cityOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
               </div>
@@ -3682,7 +3660,10 @@ const JobSeekerLevelCard = ({
           <div className="w-full max-w-[980px] overflow-hidden rounded-[22px] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
             <div className="flex items-center justify-between gap-4 bg-[#2e66a6] px-5 py-4 sm:px-7">
               <div>
-                <h2 id="job-seeker-levels-title" className="text-[21px] font-bold text-white sm:text-[24px]">
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/75">
+                  Job Seeker Ranking
+                </p>
+                <h2 id="job-seeker-levels-title" className="mt-1 text-[21px] font-bold text-white sm:text-[24px]">
                   Job Seeker Levels
                 </h2>
               </div>
@@ -3701,6 +3682,21 @@ const JobSeekerLevelCard = ({
               <p className="text-sm leading-6 text-gray-600">
                 Improve your profile to progress through each job seeker level.
               </p>
+
+              <div className="mt-4 overflow-x-auto rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-3">
+                <div className="flex min-w-max items-center gap-2 text-sm font-semibold text-[#2e66a6]">
+                  {jobSeekerLevels.map(([levelName], index) => (
+                    <React.Fragment key={levelName}>
+                      <span className={levelName === currentRank ? 'font-extrabold text-black' : ''}>
+                        {levelName}
+                      </span>
+                      {index < jobSeekerLevels.length - 1 ? (
+                        <span className="text-gray-400" aria-hidden="true">→</span>
+                      ) : null}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
 
               <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
                 {jobSeekerLevels.map(([levelName, levelBadge], index) => {
@@ -3741,6 +3737,15 @@ const JobSeekerLevelCard = ({
                 })}
               </div>
 
+              <div className="mt-6 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowLevelModal(false)}
+                  className="h-11 rounded-lg bg-[#2e66a6] px-6 text-sm font-semibold text-white transition hover:opacity-90"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>,
@@ -3907,18 +3912,16 @@ const AddSectionsCard = ({ onAddSections, reminder = '' }) => (
     {reminder ? (
       <p className="mt-3 text-sm font-semibold text-amber-700">{reminder}</p>
     ) : null}
-    <div className="mt-6 flex justify-center">
-      <button
-        type="button"
-        onClick={onAddSections}
-        className="h-12 rounded-xl bg-[#1658d3] px-6 text-[15px] font-bold text-white shadow-sm transition hover:bg-[#1249b2] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1658d3] focus-visible:ring-offset-2"
-      >
-        <span className="inline-flex items-center gap-2">
-          <FaPlus className="text-sm" />
-          Add Sections
-        </span>
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={onAddSections}
+      className="mt-6 h-12 rounded-xl bg-[#1658d3] px-6 text-[15px] font-bold text-white shadow-sm transition hover:bg-[#1249b2] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1658d3] focus-visible:ring-offset-2"
+    >
+      <span className="inline-flex items-center gap-2">
+        <FaPlus className="text-sm" />
+        Add Sections
+      </span>
+    </button>
   </section>
 );
 
@@ -4835,10 +4838,6 @@ const MyProfile = () => {
   };
 
   const handleBasicInfoChange = (field, value) => {
-    // Once the user corrects a Basic Information field, remove the old
-    // validation message and validate the Basic Information modal again on save.
-    if (error) setError('');
-
     setDrafts((prev) => {
       if (field === 'region') {
         return {
@@ -5115,10 +5114,6 @@ const MyProfile = () => {
 
   const saveSection = async (sectionKey, draftOverride = null) => {
     const activeDrafts = draftOverride || drafts;
-
-    // Every modal validates only its own fields. Clear any message left by a
-    // different profile modal before running the current section validation.
-    setError('');
 
     if (sectionKey === 'basic') {
       const requiredBasicFields = [
@@ -5413,11 +5408,6 @@ const MyProfile = () => {
   };
 
   const cancelEdit = (sectionKey) => {
-    // Validation messages belong only to the modal that created them.
-    // Closing or cancelling a modal must not leave the message on the page
-    // or show it inside another modal later.
-    setError('');
-
     if (sectionKey === 'education') {
       setDrafts(resetEducationDraftFields(formData));
       setEditing((prev) => ({ ...prev, [sectionKey]: false }));
@@ -5430,8 +5420,6 @@ const MyProfile = () => {
 
 
   const openProfileEditModal = (sectionKey, itemIndex = null) => {
-    // Do not carry a validation message from a previously opened section.
-    setError('');
     if (sectionKey === 'personal') {
       setProfileEntryModalContext({ sectionKey: '', mode: 'edit', index: -1, originalItems: [] });
       setDrafts(formData);
