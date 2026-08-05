@@ -6877,61 +6877,70 @@ const MyProfile = () => {
       <div className="min-h-[100dvh] h-auto bg-transparent overflow-visible pb-6">
         <div className="max-w-[1420px] mx-auto px-4 sm:px-6 lg:px-8">
           {basicInformationNotice.open && !isBasicInformationComplete ? (
-            <div className="sticky top-[88px] z-[90] mb-5 pt-3">
-              <div
-                className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 shadow-[0_8px_24px_rgba(15,23,42,0.08)] sm:px-5"
-                role="status"
-                aria-live="polite"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
-                    <FaInfoCircle className="text-base" />
-                  </div>
+            <>
+              <div className="h-[190px] sm:h-[150px]" aria-hidden="true" />
 
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-bold text-gray-900 sm:text-[15px]">
-                      Complete your Basic Information first
+              <div className="fixed left-1/2 top-[88px] z-[1000] w-[calc(100%-2rem)] max-w-[960px] -translate-x-1/2">
+                <div
+                  className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 shadow-[0_12px_32px_rgba(15,23,42,0.16)] sm:px-5"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                      <FaInfoCircle className="text-base" />
                     </div>
-                    <p className="mt-1 text-sm leading-6 text-gray-700">
-                      Finish the required fields in Basic Information before adding or editing the other resume sections.
-                    </p>
 
-                    {basicInformationNotice.missingFields.length ? (
-                      <div className="mt-2 text-sm leading-6 text-gray-700">
-                        <span className="font-semibold text-gray-900">Fields to complete:</span>{' '}
-                        {basicInformationNotice.missingFields.join(', ')}.
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-bold text-gray-900 sm:text-[15px]">
+                        Complete your Basic Information first
                       </div>
-                    ) : null}
+
+                      <p className="mt-1 text-sm leading-5 text-gray-700">
+                        Finish the required fields before adding or editing other resume sections.
+                      </p>
+
+                      <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                        {basicInformationNotice.missingFields.length ? (
+                          <div className="min-w-0 text-sm leading-5 text-gray-700">
+                            <span className="font-semibold text-gray-900">Fields to complete:</span>{' '}
+                            {basicInformationNotice.missingFields.join(', ')}.
+                          </div>
+                        ) : (
+                          <div />
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBasicInformationNotice({
+                              open: false,
+                              missingFields: [],
+                            });
+                            openProfileEditModal('personal');
+                          }}
+                          className="inline-flex h-9 shrink-0 items-center justify-center self-start rounded-lg bg-[#2e66a6] px-4 text-sm font-semibold text-white transition hover:bg-[#25578f] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/30 sm:self-auto"
+                        >
+                          Complete Basic Information
+                        </button>
+                      </div>
+                    </div>
 
                     <button
                       type="button"
-                      onClick={() => {
-                        setBasicInformationNotice({
-                          open: false,
-                          missingFields: [],
-                        });
-                        openProfileEditModal('personal');
-                      }}
-                      className="mt-3 inline-flex h-9 items-center justify-center rounded-lg bg-[#2e66a6] px-4 text-sm font-semibold text-white transition hover:bg-[#25578f] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/30"
+                      onClick={() => setBasicInformationNotice({
+                        open: false,
+                        missingFields: [],
+                      })}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-500 transition hover:bg-amber-100 hover:text-gray-800"
+                      aria-label="Dismiss Basic Information reminder"
                     >
-                      Complete Basic Information
+                      ×
                     </button>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setBasicInformationNotice({
-                      open: false,
-                      missingFields: [],
-                    })}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-500 transition hover:bg-amber-100 hover:text-gray-800"
-                    aria-label="Dismiss Basic Information reminder"
-                  >
-                    ×
-                  </button>
                 </div>
               </div>
-            </div>
+            </>
           ) : null}
 
           {error && !editModalSection && !editing.basic ? (
