@@ -1508,13 +1508,16 @@ const EmptyCompanyBookmarks = ({ onBrowseCompanies }) => (
   <div className="p-6">
     <div className="min-h-[260px] rounded-2xl border border-black/10 bg-white px-5 py-10 flex items-center justify-center text-center">
       <div className="max-w-[360px] mx-auto">
-        <div className="mx-auto text-black/50 flex items-center justify-center">
-          <SvgIcon name="building" className="w-12 h-12" />
-        </div>
+        <img
+          src="/images/NoSavedCompanies.png"
+          alt="No saved companies"
+          className="mx-auto w-[150px] max-w-full h-auto object-contain"
+          draggable="false"
+        />
 
-        <h3 className="mt-5 text-[15px] font-bold text-black/70">No saved companies yet.</h3>
+        <h3 className="mt-5 text-[15px] font-bold text-black/70">No saved companies yet</h3>
         <p className="mt-2 text-[14px] leading-6 text-black/35">
-          Click "Browse Companies" to save companies you want to revisit later.
+          Click &quot;Browse Companies&quot; to start exploring companies and save companies you want to revisit later.
         </p>
 
         <div className="mt-6">
@@ -2839,7 +2842,7 @@ const Bookmarks = () => {
                     <div className="px-4 py-4 bg-[#2e66a6] text-white flex items-center justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold">{formatCountLabel(savedCompanies.length, 'Saved Companie')}</p>
-                        <p className="text-xs text-white/75 mt-1">Your saved companies collection</p>
+                        <p className="text-xs text-white/75 mt-1">Discover employers you'll love.</p>
                       </div>
 
                       <button
@@ -2907,7 +2910,37 @@ const Bookmarks = () => {
                 </div>
 
                 <div className="min-w-0">
-                  {!selectedCompany ? (
+                  {savedCompanies.length === 0 ? (
+                    <div className={`${UI.card} min-h-[430px] px-6 py-12 flex items-center justify-center text-center`}>
+                      <div className="mx-auto max-w-[460px]">
+                        <img
+                          src="/images/NoSavedCompanies.png"
+                          alt="No saved companies"
+                          className="mx-auto w-[230px] max-w-full h-auto object-contain"
+                          draggable="false"
+                        />
+
+                        <h2 className="mt-5 text-xl font-semibold text-[#000000]">
+                          No saved companies yet
+                        </h2>
+                        <p className="mt-3 text-sm sm:text-[15px] text-black/70 leading-6">
+                          You haven&apos;t saved any companies.
+                          <br />
+                          Bookmark companies you&apos;re interested in to view them here anytime.
+                        </p>
+
+                        <div className="mt-6">
+                          <button
+                            type="button"
+                            onClick={() => navigate('/jobseeker/companies')}
+                            className={`${UI.btnBase} ${UI.btnMd} ${UI.btnPrimary} ${UI.ring}`}
+                          >
+                            Browse Companies
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : !selectedCompany ? (
                     <div className={`${UI.card} ${UI.pad}`}>
                       <h2 className={UI.h2}>No company selected</h2>
                       <p className={`mt-2 ${UI.body}`}>Select a saved company from the left panel to view its details.</p>
