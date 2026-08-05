@@ -2773,12 +2773,12 @@ const PostJob = () => {
       )}
 
       {showPrivacyModal && (
-        <div className="fixed inset-0 z-[2200] flex items-center justify-center bg-black/60 p-4">
+        <div className="fixed inset-0 z-[2200] flex items-center justify-center bg-black/60 p-2 sm:p-4">
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="privacy-notice-title"
-            className="relative flex max-h-[92vh] w-full max-w-[860px] flex-col overflow-hidden rounded-[22px] border border-gray-200 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.20)]"
+            className="relative flex w-full max-w-[860px] flex-col overflow-hidden rounded-[22px] border border-gray-200 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.20)]"
           >
             <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
               <div className="absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-[#2e66ff]/[0.07] blur-3xl" />
@@ -2795,9 +2795,9 @@ const PostJob = () => {
               <span className="text-2xl leading-none" aria-hidden="true">×</span>
             </button>
 
-            <div className="relative z-10 overflow-y-auto px-5 pb-5 pt-5 sm:px-9 sm:pb-7 lg:px-12">
+            <div className="relative z-10 px-5 pb-5 pt-4 sm:px-8 sm:pb-5 lg:px-10">
               <div className="flex justify-center">
-                <div className="relative flex h-20 w-20 items-center justify-center sm:h-24 sm:w-24" aria-hidden="true">
+                <div className="relative flex h-16 w-16 items-center justify-center sm:h-20 sm:w-20" aria-hidden="true">
                   <div className="absolute inset-0 rounded-full bg-[#1e4ba0]/[0.06]" />
                   <div className="absolute inset-2 rounded-full border border-[#1e4ba0]/15" />
                   <div className="absolute left-2 top-5 h-1.5 w-1.5 rounded-full bg-[#2e66ff]" />
@@ -2806,7 +2806,7 @@ const PostJob = () => {
                   <img
                     src="/images/lock.png"
                     alt="Lock"
-                    className="relative h-16 w-16 object-contain sm:h-20 sm:w-20"
+                    className="relative h-14 w-14 object-contain sm:h-16 sm:w-16"
                     draggable="false"
                   />
                 </div>
@@ -2814,13 +2814,13 @@ const PostJob = () => {
 
               <h2
                 id="privacy-notice-title"
-                className="mt-0 text-center text-[24px] font-extrabold leading-tight text-[#071b3a] sm:text-[30px] lg:text-[34px]"
+                className="mt-0 text-center text-[22px] font-extrabold leading-tight text-[#071b3a] sm:text-[27px] lg:text-[30px]"
                 style={{ letterSpacing: '0.04em' }}
               >
                 Privacy Notice &amp; Posting Agreement
               </h2>
 
-              <div className="mx-auto mt-3 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
+              <div className="mx-auto mt-2 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
                 <span className="h-px w-12 bg-gradient-to-r from-transparent to-[#1e4ba0]" />
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z" />
@@ -2829,8 +2829,8 @@ const PostJob = () => {
                 <span className="h-px w-12 bg-gradient-to-l from-transparent to-[#1e4ba0]" />
               </div>
 
-              <div className="mx-auto mt-5 max-w-[760px] rounded-[18px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 py-5 shadow-[0_10px_30px_rgba(30,75,160,0.08)] sm:px-7 sm:py-6">
-                <div className="space-y-4 text-justify text-sm leading-7 text-[#0f2442]">
+              <div className="mx-auto mt-3 max-w-[760px] rounded-[16px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 py-4 shadow-[0_10px_30px_rgba(30,75,160,0.08)] sm:px-6 sm:py-4">
+                <div className="space-y-2.5 text-justify text-[13px] leading-6 text-[#0f2442] sm:text-sm">
                   <p>
                     By publishing this job post, you confirm that all information provided is
                     accurate and complies with our platform policies.
@@ -2853,7 +2853,7 @@ const PostJob = () => {
                 </div>
               </div>
 
-              <label className="mx-auto mt-5 flex max-w-[760px] cursor-pointer items-start gap-3 rounded-[16px] border border-[#cdddf0] bg-[#f5f9fe] p-4 transition hover:border-[#9ebee2] hover:bg-[#eef5ff]">
+              <label className="mx-auto mt-3 flex max-w-[760px] cursor-pointer items-start gap-3 rounded-[14px] border border-[#cdddf0] bg-[#f5f9fe] px-4 py-3 transition hover:border-[#9ebee2] hover:bg-[#eef5ff]">
                 <input
                   type="checkbox"
                   checked={privacyAccepted}
@@ -2861,12 +2861,12 @@ const PostJob = () => {
                   className="mt-0.5 h-5 w-5 flex-shrink-0 rounded border-gray-300 focus:ring-2 focus:ring-offset-2"
                   style={{ accentColor: '#1e4ba0' }}
                 />
-                <span className="text-left text-sm font-semibold leading-6 text-[#0f2442] sm:text-base">
+                <span className="text-left text-sm font-semibold leading-5 text-[#0f2442]">
                   I have read and agree to the Privacy Notice &amp; Posting Agreement.
                 </span>
               </label>
 
-              <div className="mx-auto mt-6 flex max-w-[760px] flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <div className="mx-auto mt-4 flex max-w-[760px] flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={() => {
