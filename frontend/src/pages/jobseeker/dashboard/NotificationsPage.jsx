@@ -201,6 +201,41 @@ const NotificationsPage = () => {
     return status || 'Unknown';
   };
 
+  const getNotificationDisplayTitle = (notification = {}) => {
+    const type = String(notification?.type || '').trim().toLowerCase();
+
+    if (type === 'job_match') return 'New Job Match!';
+    if (type === 'new_message') return 'New Message';
+    if (type === 'application_update') return 'Application Update';
+    if (type === 'verification') return 'Credentials';
+
+    return String(notification?.title || 'Notification').trim() || 'Notification';
+  };
+
+  const getNotificationDisplayMessage = (notification = {}) => {
+    const type = String(notification?.type || '').trim().toLowerCase();
+    const metadata = notification?.metadata || {};
+
+    if (type === 'verification') {
+      const remaining = Number(
+        metadata?.remainingCredentials ??
+        metadata?.missingCredentialCount ??
+        metadata?.remainingCount
+      );
+
+      if (Number.isFinite(remaining) && remaining > 0) {
+        return `You still have ${remaining} credential${remaining === 1 ? '' : 's'} that need to be submitted.`;
+      }
+    }
+
+    if (type === 'new_message' && metadata?.lastMessage) {
+      const senderName = String(metadata?.senderName || 'User').trim() || 'User';
+      return `New message from ${senderName}: ${String(metadata.lastMessage).trim()}`;
+    }
+
+    return String(notification?.message || '').trim();
+  };
+
   const formatTime = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -293,24 +328,30 @@ const NotificationsPage = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">
-              {unreadCount > 0 && <span className={`${UI.badge} ${UI.badgeUnread}`}>{unreadCount} unread</span>}
-
-              <button
-                onClick={handleMarkAllAsRead}
-                disabled={unreadCount === 0}
-                className={`${UI.btnBase} ${UI.btnMd} ${unreadCount === 0 ? UI.btnSecondary : UI.btnSoft} ${UI.ring}`}
-                type="button"
+            <div className="relative w-full sm:max-w-md">
+              <svg
+                className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
               >
-                <FontAwesomeIcon icon={faCheck} className="w-4 h-4" />
-                Mark all as read
-              </button>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="m21 21-4.35-4.35m1.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" />
+              </svg>
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search notifications..."
+                className={`h-11 w-full rounded-xl border border-gray-200 bg-white pl-11 pr-4 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 ${UI.ring}`}
+                aria-label="Search notifications"
+              />
             </div>
           </div>
         </div>
 
-        {/* Filters + Search */}
-        <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        {/* Filters + Mark all as read */}
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="inline-flex items-center rounded-2xl bg-white border border-gray-200 p-1 shadow-sm">
             <button
               type="button"
@@ -357,25 +398,15 @@ const NotificationsPage = () => {
             </button>
           </div>
 
-          <div className="relative w-full lg:max-w-md">
-            <svg
-              className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="m21 21-4.35-4.35m1.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" />
-            </svg>
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search notifications..."
-              className={`h-11 w-full rounded-xl border border-gray-200 bg-white pl-11 pr-4 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 ${UI.ring}`}
-              aria-label="Search notifications"
-            />
-          </div>
+          <button
+            onClick={handleMarkAllAsRead}
+            disabled={unreadCount === 0}
+            className={`${UI.btnBase} ${UI.btnMd} ${unreadCount === 0 ? UI.btnSecondary : UI.btnSoft} ${UI.ring}`}
+            type="button"
+          >
+            <FontAwesomeIcon icon={faCheck} className="w-4 h-4" />
+            Mark all as read
+          </button>
         </div>
 
         {/* List */}
@@ -488,10 +519,15 @@ const NotificationsPage = () => {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className={`font-semibold ${UI.textPrimary} truncate`} title={notification.title}>
-                            {notification.title}
+                          <p
+                            className={`font-semibold ${UI.textPrimary} break-words`}
+                            title={getNotificationDisplayTitle(notification)}
+                          >
+                            {getNotificationDisplayTitle(notification)}
                           </p>
-                          <p className={`text-sm ${UI.textSecondary} mt-1 break-words`}>{notification.message}</p>
+                          <p className={`text-sm ${UI.textSecondary} mt-1 break-words leading-6`}>
+                            {getNotificationDisplayMessage(notification)}
+                          </p>
                         </div>
 
                         <div className="flex items-center gap-3 flex-shrink-0">

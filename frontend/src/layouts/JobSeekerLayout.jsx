@@ -602,6 +602,41 @@ const JobSeekerLayout = ({ children }) => {
       .join(' ');
   };
 
+  const getNotificationDisplayTitle = (notification = {}) => {
+    const type = String(notification?.type || '').trim().toLowerCase();
+
+    if (type === 'job_match') return 'New Job Match!';
+    if (type === 'new_message') return 'New Message';
+    if (type === 'application_update') return 'Application Update';
+    if (type === 'verification') return 'Credentials';
+
+    return String(notification?.title || 'Notification').trim() || 'Notification';
+  };
+
+  const getNotificationDisplayMessage = (notification = {}) => {
+    const type = String(notification?.type || '').trim().toLowerCase();
+    const metadata = notification?.metadata || {};
+
+    if (type === 'verification') {
+      const remaining = Number(
+        metadata?.remainingCredentials ??
+        metadata?.missingCredentialCount ??
+        metadata?.remainingCount
+      );
+
+      if (Number.isFinite(remaining) && remaining > 0) {
+        return `You still have ${remaining} credential${remaining === 1 ? '' : 's'} that need to be submitted.`;
+      }
+    }
+
+    if (type === 'new_message' && metadata?.lastMessage) {
+      const senderName = String(metadata?.senderName || 'User').trim() || 'User';
+      return `New message from ${senderName}: ${String(metadata.lastMessage).trim()}`;
+    }
+
+    return String(notification?.message || '').trim();
+  };
+
   const formatTime = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -1048,14 +1083,16 @@ const JobSeekerLayout = ({ children }) => {
 
                                       <div className="min-w-0 flex-1">
                                         <div className="flex items-start justify-between gap-3">
-                                          <h5 className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900">
-                                            {n.title}
+                                          <h5 className="min-w-0 flex-1 break-words text-sm font-semibold leading-5 text-gray-900">
+                                            {getNotificationDisplayTitle(n)}
                                           </h5>
                                           <span className="shrink-0 text-xs text-gray-500">
                                             {formatTime(n.createdAt)}
                                           </span>
                                         </div>
-                                        <p className="mt-1 line-clamp-2 text-sm text-gray-700">{n.message}</p>
+                                        <p className="mt-1 break-words text-sm leading-5 text-gray-700">
+                                          {getNotificationDisplayMessage(n)}
+                                        </p>
 
                                         {n.type === 'application_update' && n.metadata?.newStatus && (
                                           <div
@@ -1427,9 +1464,13 @@ const JobSeekerLayout = ({ children }) => {
 
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-3 mb-1">
-                                <h4 className="text-sm font-semibold text-gray-900 truncate">{n.title}</h4>
+                                <h4 className="break-words text-sm font-semibold leading-5 text-gray-900">
+                                  {getNotificationDisplayTitle(n)}
+                                </h4>
                               </div>
-                              <p className="text-sm text-gray-700 line-clamp-2">{n.message}</p>
+                              <p className="break-words text-sm leading-5 text-gray-700">
+                                {getNotificationDisplayMessage(n)}
+                              </p>
 
                               {n.type === 'application_update' && n.metadata?.newStatus && (
                                 <div

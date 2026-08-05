@@ -581,7 +581,7 @@ exports.createMessageNotification = async (senderId, receiverId, message) => {
         });
 
         if (existingNotification) {
-            existingNotification.message = `New message from ${sender.fullName || sender.companyName || 'User'}: ${message.content.substring(0, 50)}...`;
+            existingNotification.message = `New message from ${sender.fullName || sender.companyName || 'User'}: ${String(message.content || '').trim()}`;
             existingNotification.metadata.lastMessage = message.content;
             existingNotification.link = conversationLink;
             await existingNotification.save();
@@ -592,7 +592,7 @@ exports.createMessageNotification = async (senderId, receiverId, message) => {
             user: receiverId,
             type: 'new_message',
             title: 'New Message',
-            message: `New message from ${sender.fullName || sender.companyName || 'User'}: ${message.content.substring(0, 50)}...`,
+            message: `New message from ${sender.fullName || sender.companyName || 'User'}: ${String(message.content || '').trim()}`,
             relatedId: message._id,
             relatedModel: 'Message',
             link: conversationLink,
