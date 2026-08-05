@@ -286,7 +286,7 @@ const MyApplications = () => {
   const [mainTab, setMainTab] = useState('active');
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [pageSize, setPageSize] = useState(10);
+  const pageSize = 10;
   const [currentPage, setCurrentPage] = useState(1);
 
   const location = useLocation();
@@ -630,24 +630,53 @@ const MyApplications = () => {
     });
   }, [filteredApplications, searchQuery]);
 
-  const totalPages = pageSize === 'all'
-    ? 1
-    : Math.max(1, Math.ceil(searchedApplications.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(searchedApplications.length / pageSize));
 
   const paginatedApplications = useMemo(() => {
-    if (pageSize === 'all') return searchedApplications;
     const startIndex = (currentPage - 1) * pageSize;
     return searchedApplications.slice(startIndex, startIndex + pageSize);
-  }, [searchedApplications, currentPage, pageSize]);
+  }, [searchedApplications, currentPage]);
 
   const showPagination = searchedApplications.length > 0;
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [mainTab, statusFilter, searchQuery, pageSize]);
+  }, [mainTab, statusFilter, searchQuery]);
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  const paginationItems = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }
+
+    if (currentPage <= 4) {
+      return [1, 2, 3, 4, 5, 'ellipsis-right', totalPages];
+    }
+
+    if (currentPage >= totalPages - 3) {
+      return [
+        1,
+        'ellipsis-left',
+        totalPages - 4,
+        totalPages - 3,
+        totalPages - 2,
+        totalPages - 1,
+        totalPages,
+      ];
+    }
+
+    return [
+      1,
+      'ellipsis-left',
+      currentPage - 1,
+      currentPage,
+      currentPage + 1,
+      'ellipsis-right',
+      totalPages,
+    ];
   }, [currentPage, totalPages]);
 
   const filterLabel = useMemo(() => {
@@ -1298,28 +1327,16 @@ const MyApplications = () => {
                 })}
               </div>
               {showPagination && (
-                <div className="mt-8 flex flex-col gap-4 border-t border-gray-100 pt-6 lg:flex-row lg:items-center lg:justify-between" aria-label="Application pagination">
-                  <div className="text-sm text-gray-500">
+                <div
+                  className="mt-8 flex flex-col items-center justify-center gap-4 border-t border-gray-100 pt-6 text-center"
+                  aria-label="Application pagination"
+                >
+                  <div className="text-sm font-semibold text-[#2e66a6]">
                     Page {currentPage} of {totalPages} · {searchedApplications.length} total
                   </div>
 
-                  <div className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:flex-nowrap">
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                      <span className="whitespace-nowrap">Display per page</span>
-                      <select
-                        value={pageSize}
-                        onChange={(event) => setPageSize(event.target.value === 'all' ? 'all' : Number(event.target.value))}
-                        className={`h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 shadow-sm ${UI.ring}`}
-                      >
-                        <option value={10}>10</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                        <option value="all">All</option>
-                      </select>
-                    </label>
-
-                    <nav
-                    className="inline-flex min-h-11 items-center overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+                  <nav
+                    className="mx-auto inline-flex min-h-11 items-center overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
                     aria-label="Application pagination controls"
                   >
                     <button
@@ -1333,21 +1350,31 @@ const MyApplications = () => {
                     </button>
 
                     <div className="flex h-11 items-center px-2">
-                      {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
-                        <button
-                          key={pageNumber}
-                          type="button"
-                          onClick={() => setCurrentPage(pageNumber)}
-                          aria-current={currentPage === pageNumber ? 'page' : undefined}
-                          className={`h-9 min-w-9 rounded-lg px-3 text-sm font-semibold transition ${UI.ring} ${
-                            currentPage === pageNumber
-                              ? 'bg-[#2e66a6] text-white shadow-sm'
-                              : 'text-gray-700 hover:bg-gray-100'
-                          }`}
-                        >
-                          {pageNumber}
-                        </button>
-                      ))}
+                      {paginationItems.map((item) =>
+                        typeof item === 'string' ? (
+                          <span
+                            key={item}
+                            className="inline-flex h-9 min-w-9 items-center justify-center px-2 text-sm font-semibold text-gray-400"
+                            aria-hidden="true"
+                          >
+                            …
+                          </span>
+                        ) : (
+                          <button
+                            key={item}
+                            type="button"
+                            onClick={() => setCurrentPage(item)}
+                            aria-current={currentPage === item ? 'page' : undefined}
+                            className={`h-9 min-w-9 rounded-lg px-3 text-sm font-semibold transition ${UI.ring} ${
+                              currentPage === item
+                                ? 'bg-[#2e66a6] text-white shadow-sm'
+                                : 'text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            {item}
+                          </button>
+                        )
+                      )}
                     </div>
 
                     <button
@@ -1359,8 +1386,7 @@ const MyApplications = () => {
                       Next
                       <span aria-hidden="true">›</span>
                     </button>
-                    </nav>
-                  </div>
+                  </nav>
                 </div>
               )}
             </div>
