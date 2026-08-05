@@ -174,7 +174,32 @@ const CompanyAllJobs = () => {
               {visibleJobs.map((job) => {
                 const applied = appliedIds.includes(job._id);
                 return (
-                  <article key={job._id} className="group relative flex self-start flex-col overflow-visible rounded-[22px] border border-[#E5E7EB] bg-white p-5 shadow-[0_6px_18px_rgba(0,0,0,0.045)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)]">
+                  <article
+                    key={job._id}
+                    role="link"
+                    tabIndex={0}
+                    onClick={() =>
+                      navigate(`/jobseeker/job-details/${job._id}`, {
+                        state: {
+                          sourcePage: "company-all-jobs",
+                          companyId: id,
+                        },
+                      })
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        navigate(`/jobseeker/job-details/${job._id}`, {
+                          state: {
+                            sourcePage: "company-all-jobs",
+                            companyId: id,
+                          },
+                        });
+                      }
+                    }}
+                    className="group relative flex cursor-pointer self-start flex-col overflow-visible rounded-[22px] border border-[#E5E7EB] bg-white p-5 shadow-[0_6px_18px_rgba(0,0,0,0.045)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                    aria-label={`View details for ${job.title || "job"}`}
+                  >
                     <div className="flex items-start gap-4 pr-10">
                       <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#d8e2ee] bg-white">
                         {company.companyLogo ? <img src={company.companyLogo} alt={company.companyName || "Company"} className="h-full w-full object-contain p-1" /> : <span className="text-xl font-bold text-[#2e66a6]">{String(company.companyName || "C").charAt(0)}</span>}
@@ -278,14 +303,15 @@ const CompanyAllJobs = () => {
                       <div className="mb-4 h-px w-full bg-gray-300/80" />
                       <button
                         type="button"
-                        onClick={() =>
+                        onClick={(event) => {
+                          event.stopPropagation();
                           navigate(`/jobseeker/job-details/${job._id}`, {
                             state: {
                               sourcePage: "company-all-jobs",
                               companyId: id,
                             },
-                          })
-                        }
+                          });
+                        }}
                         disabled={applied}
                         className={`h-[40px] w-full rounded-xl px-5 text-sm font-semibold transition disabled:pointer-events-none ${
                           applied

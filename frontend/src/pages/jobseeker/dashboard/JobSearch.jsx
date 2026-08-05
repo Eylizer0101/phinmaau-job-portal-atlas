@@ -1679,13 +1679,29 @@ const JobSearch = () => {
                     return (
                       <div
                       key={jobId}
-                      className="group relative overflow-visible rounded-[22px] p-5 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[350px]"
+                      role="link"
+                      tabIndex={0}
+                      onClick={(event) => {
+                              event.stopPropagation();
+                              handleViewJobDetails(job);
+                            }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          handleViewJobDetails(job);
+                        }
+                      }}
+                      className="group relative cursor-pointer overflow-visible rounded-[22px] p-5 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[350px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                       style={{ border: `1px solid ${COLORS.border}` }}
+                      aria-label={`View details for ${job.title || 'job'}`}
                     >
 
                         <button
                           type="button"
-                          onClick={() => handleSaveJob(job)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleSaveJob(job);
+                          }}
                           disabled={savingJobId === jobId}
                           className={`absolute top-5 right-5 h-10 w-10 rounded-xl  flex items-center justify-center transition ${
                             isSaved

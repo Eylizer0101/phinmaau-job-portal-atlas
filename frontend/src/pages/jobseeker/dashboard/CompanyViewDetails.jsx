@@ -1772,11 +1772,36 @@ The company also values transparency, teamwork, and continuous improvement, crea
                   return (
                     <div
                       key={jobId}
-                      className="group relative overflow-visible rounded-[22px] p-5 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[350px] border border-[#E5E7EB]"
+                      role="link"
+                      tabIndex={0}
+                      onClick={() =>
+                        navigate(`/jobseeker/job-details/${jobId}`, {
+                          state: {
+                            sourcePage: "company-details",
+                            companyId: id,
+                          },
+                        })
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          navigate(`/jobseeker/job-details/${jobId}`, {
+                            state: {
+                              sourcePage: "company-details",
+                              companyId: id,
+                            },
+                          });
+                        }
+                      }}
+                      className="group relative cursor-pointer overflow-visible rounded-[22px] p-5 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.045)] hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] hover:-translate-y-0.5 transition-all duration-200 flex flex-col min-h-[350px] border border-[#E5E7EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                      aria-label={`View details for ${job.title || "job"}`}
                     >
                       <button
                         type="button"
-                        onClick={() => handleSaveJob(job)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleSaveJob(job);
+                        }}
                         disabled={isSavingThisJob}
                         className={`absolute top-5 right-5 h-10 w-10 rounded-xl flex items-center justify-center transition ${
                           isSavedJob ? "text-blue-700 hover:bg-blue-100" : "text-gray-700 hover:bg-gray-50"
@@ -1919,14 +1944,15 @@ The company also values transparency, teamwork, and continuous improvement, crea
                       <div className="pt-4">
                         <button
                           type="button"
-                          onClick={() =>
+                          onClick={(event) => {
+                            event.stopPropagation();
                             navigate(`/jobseeker/job-details/${job._id || job.id}`, {
                               state: {
                                 sourcePage: "company-details",
                                 companyId: id,
                               },
-                            })
-                          }
+                            });
+                          }}
                           disabled={hasApplied}
                           className={`w-full h-[40px] px-5 rounded-xl text-sm font-semibold transition disabled:pointer-events-none ${
                             hasApplied

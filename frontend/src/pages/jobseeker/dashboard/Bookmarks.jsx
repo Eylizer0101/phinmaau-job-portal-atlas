@@ -1253,11 +1253,29 @@ const CompanyJobMiniCard = ({ job, onViewDetails, onApply, onSave, saving, isSav
   const locationText = formatLocationDisplay(job.location);
 
   return (
-    <div className="rounded-2xl p-7 bg-white shadow-sm hover:shadow-md transition flex flex-col min-h-[375px] relative border border-[#E5E7EB]">
+    <div
+      role="link"
+      tabIndex={0}
+      onClick={(event) => {
+            event.stopPropagation();
+            onViewDetails();
+          }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onViewDetails();
+        }
+      }}
+      className="rounded-2xl p-7 bg-white shadow-sm hover:shadow-md transition flex flex-col min-h-[375px] relative cursor-pointer border border-[#E5E7EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+      aria-label={`View details for ${job.title || 'job'}`}
+    >
 
       <button
         type="button"
-        onClick={() => onSave(job)}
+        onClick={(event) => {
+          event.stopPropagation();
+          onSave(job);
+        }}
         disabled={saving}
         className={`absolute top-5 right-5 h-10 w-10 rounded-xl flex items-center justify-center transition ${
           isSaved ? 'hover:bg-blue-100' : 'hover:bg-gray-50'
