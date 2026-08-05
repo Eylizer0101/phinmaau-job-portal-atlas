@@ -2429,7 +2429,7 @@ const Bookmarks = () => {
                     <div className="px-4 py-4 bg-[#2e66a6] text-white flex items-center justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold">{formatCountLabel(savedJobs.length, 'Saved Job')}</p>
-                        <p className="text-xs text-white/75 mt-1">Quick access to your bookmarked roles</p>
+                        <p className="text-xs text-white/75 mt-1">Your next opportunity is waiting</p>
                       </div>
 
                       <button
@@ -2474,13 +2474,16 @@ const Bookmarks = () => {
                     ) : savedJobs.length === 0 ? (
                       <div className="p-6">
                         <div className="rounded-2xl border border-dashed border-black/20 bg-black/[0.02] px-5 py-8 text-center">
-                          <div className="mx-auto w-14 h-14 rounded-2xl bg-[#2e66a6]/10 border border-[#2e66a6]/15 flex items-center justify-center text-[#2e66a6]">
-                            <SvgIcon name="bookmark" className="w-6 h-6" />
-                          </div>
+                          <img
+                            src="/images/NoSaveJobs.png"
+                            alt="No saved jobs"
+                            className="mx-auto w-[150px] max-w-full h-auto object-contain"
+                            draggable="false"
+                          />
 
                           <h3 className="mt-4 text-base font-semibold text-[#000000]">No saved jobs yet</h3>
                           <p className="mt-2 text-sm text-black/70 leading-6">
-                            Start exploring opportunities and bookmark roles you want to revisit later.
+                            Click &quot;Browse Jobs&quot; to start exploring opportunities and save jobs you want to revisit later.
                           </p>
 
                           <div className="mt-5">
@@ -2510,7 +2513,37 @@ const Bookmarks = () => {
                 </div>
 
                 <div className="min-w-0">
-                  {!selectedJob ? (
+                  {savedJobs.length === 0 ? (
+                    <div className={`${UI.card} min-h-[430px] px-6 py-12 flex items-center justify-center text-center`}>
+                      <div className="mx-auto max-w-[460px]">
+                        <img
+                          src="/images/NoSaveJobs.png"
+                          alt="No saved jobs"
+                          className="mx-auto w-[230px] max-w-full h-auto object-contain"
+                          draggable="false"
+                        />
+
+                        <h2 className="mt-5 text-xl font-semibold text-[#000000]">
+                          No saved jobs yet
+                        </h2>
+                        <p className="mt-3 text-sm sm:text-[15px] text-black/70 leading-6">
+                          You haven&apos;t saved any jobs.
+                          <br />
+                          Bookmark jobs you like to view them here whenever you want.
+                        </p>
+
+                        <div className="mt-6">
+                          <button
+                            type="button"
+                            onClick={() => navigate('/jobseeker/job-search')}
+                            className={`${UI.btnBase} ${UI.btnMd} ${UI.btnPrimary} ${UI.ring}`}
+                          >
+                            Browse Jobs
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : !selectedJob ? (
                     <div className={`${UI.card} ${UI.pad}`}>
                       <h2 className={UI.h2}>No job selected</h2>
                       <p className={`mt-2 ${UI.body}`}>Select a saved job from the left panel to view its details.</p>
