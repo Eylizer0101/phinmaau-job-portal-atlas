@@ -5448,22 +5448,12 @@ const MyProfile = () => {
   const requireCompleteBasicInformation = () => {
     if (isBasicInformationComplete) return true;
 
-    // This is a guided profile-completion notice, not a system error.
+    // Show a guided modal instead of a page-level warning.
     setError('');
     setBasicInformationNotice({
       open: true,
       missingFields: basicInformationMissingFields,
     });
-    setOpenTabs((currentTabs) => (
-      currentTabs.includes('personal') ? currentTabs : [...currentTabs, 'personal']
-    ));
-
-    window.setTimeout(() => {
-      document.getElementById('basic-information-section')?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      });
-    }, 50);
 
     return false;
   };
@@ -6876,72 +6866,99 @@ const MyProfile = () => {
 
       <div className="min-h-[100dvh] h-auto bg-transparent overflow-visible pb-6">
         <div className="max-w-[1420px] mx-auto px-4 sm:px-6 lg:px-8">
-          {basicInformationNotice.open && !isBasicInformationComplete ? (
-            <>
-              <div className="h-[190px] sm:h-[150px]" aria-hidden="true" />
-
-              <div className="fixed left-1/2 top-[88px] z-[1000] w-[calc(100%-2rem)] max-w-[960px] -translate-x-1/2">
+          {basicInformationNotice.open && !isBasicInformationComplete
+            ? createPortal(
                 <div
-                  className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 shadow-[0_12px_32px_rgba(15,23,42,0.16)] sm:px-5"
-                  role="status"
-                  aria-live="polite"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
-                      <FaInfoCircle className="text-base" />
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-bold text-gray-900 sm:text-[15px]">
-                        Complete your Basic Information first
-                      </div>
-
-                      <p className="mt-1 text-sm leading-5 text-gray-700">
-                        Finish the required fields before adding or editing other resume sections.
-                      </p>
-
-                      <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                        {basicInformationNotice.missingFields.length ? (
-                          <div className="min-w-0 text-sm leading-5 text-gray-700">
-                            <span className="font-semibold text-gray-900">Fields to complete:</span>{' '}
-                            {basicInformationNotice.missingFields.join(', ')}.
-                          </div>
-                        ) : (
-                          <div />
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setBasicInformationNotice({
-                              open: false,
-                              missingFields: [],
-                            });
-                            openProfileEditModal('personal');
-                          }}
-                          className="inline-flex h-9 shrink-0 items-center justify-center self-start rounded-lg bg-[#2e66a6] px-4 text-sm font-semibold text-white transition hover:bg-[#25578f] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/30 sm:self-auto"
-                        >
-                          Complete Basic Information
-                        </button>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setBasicInformationNotice({
+                  className="fixed inset-0 z-[10060] flex items-center justify-center bg-black/45 px-4 py-6"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="basic-information-required-title"
+                  onMouseDown={(event) => {
+                    if (event.target === event.currentTarget) {
+                      setBasicInformationNotice({
                         open: false,
                         missingFields: [],
-                      })}
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-500 transition hover:bg-amber-100 hover:text-gray-800"
-                      aria-label="Dismiss Basic Information reminder"
-                    >
-                      ×
-                    </button>
+                      });
+                    }
+                  }}
+                >
+                  <div className="w-full max-w-[520px] overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.28)]">
+                    <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4 sm:px-6">
+                      <div className="flex min-w-0 items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                          <FaInfoCircle className="text-lg" />
+                        </div>
+
+                        <div className="min-w-0">
+                          <h2
+                            id="basic-information-required-title"
+                            className="text-lg font-bold leading-6 text-gray-900"
+                          >
+                            Complete your Basic Information first
+                          </h2>
+                          <p className="mt-1 text-sm leading-5 text-gray-600">
+                            You need to complete the required Basic Information fields before adding or editing other resume sections.
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setBasicInformationNotice({
+                          open: false,
+                          missingFields: [],
+                        })}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xl leading-none text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
+                        aria-label="Close Basic Information reminder"
+                      >
+                        ×
+                      </button>
+                    </div>
+
+                    <div className="px-5 py-5 sm:px-6">
+                      {basicInformationNotice.missingFields.length ? (
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                          <div className="text-sm font-semibold text-gray-900">
+                            Required fields to complete
+                          </div>
+                          <div className="mt-1 text-sm leading-6 text-gray-700">
+                            {basicInformationNotice.missingFields.join(', ')}.
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div className="flex flex-col-reverse gap-3 border-t border-gray-200 bg-gray-50 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+                      <button
+                        type="button"
+                        onClick={() => setBasicInformationNotice({
+                          open: false,
+                          missingFields: [],
+                        })}
+                        className="inline-flex h-11 items-center justify-center rounded-xl border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                      >
+                        Cancel
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBasicInformationNotice({
+                            open: false,
+                            missingFields: [],
+                          });
+                          openProfileEditModal('personal');
+                        }}
+                        className="inline-flex h-11 items-center justify-center rounded-xl bg-[#2e66a6] px-5 text-sm font-semibold text-white transition hover:bg-[#25578f] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/30"
+                      >
+                        Complete Basic Information
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </>
-          ) : null}
+                </div>,
+                document.body
+              )
+            : null}
 
           {error && !editModalSection && !editing.basic ? (
             <Alert type="error" title="Error" message={error} onClose={() => setError('')} />
