@@ -123,8 +123,8 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={1.8}
-            d="M3 21h18M6 21V5a2 2 0 012-2h8a2 2 0 012 2v16M9 7h.01M9 11h.01M9 15h.01M12 7h.01M12 11h.01M12 15h.01M15 7h.01M15 11h.01M15 15h.01"
+            strokeWidth={1.9}
+            d="M3 21h18M5 21V7l7-4v18M19 21V11l-6-4M9 9h.01M9 13h.01M9 17h.01M15 13h.01M15 17h.01"
           />
         </svg>
       );
@@ -145,10 +145,15 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={1.8}
-            d="M12 21s7-4.438 7-11a7 7 0 10-14 0c0 6.562 7 11 7 11z"
+            strokeWidth={1.9}
+            d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
           />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 10a2 2 0 100-4 2 2 0 000 4z" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.9}
+            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+          />
         </svg>
       );
     case 'download':
@@ -1191,7 +1196,7 @@ const MyApplications = () => {
                                 <>
                                   <span className="font-medium text-gray-300" aria-hidden="true">|</span>
                                   <span className="inline-flex min-w-0 items-center gap-1.5" title={industryText}>
-                                    <SvgIcon name="briefcase" className="h-[18px] w-[18px] flex-shrink-0 text-gray-500" />
+                                    <SvgIcon name="building" className="h-[18px] w-[18px] flex-shrink-0 text-gray-500" />
                                     <span className="truncate">{industryText}</span>
                                   </span>
                                 </>
