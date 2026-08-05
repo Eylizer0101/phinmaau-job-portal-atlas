@@ -6877,10 +6877,8 @@ const MyProfile = () => {
       <div className="min-h-[100dvh] h-auto bg-transparent overflow-visible pb-6">
         <div className="max-w-[1420px] mx-auto px-4 sm:px-6 lg:px-8">
           {basicInformationNotice.open && !isBasicInformationComplete ? (
-            <>
-              <div className="h-[190px] sm:h-[150px]" aria-hidden="true" />
-
-              <div className="fixed left-1/2 top-[88px] z-[1000] w-[calc(100%-2rem)] max-w-[960px] -translate-x-1/2">
+            <div className="sticky top-[88px] z-[1000] mb-5 w-full">
+              <div className="mx-auto w-full max-w-[960px]">
                 <div
                   className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 shadow-[0_12px_32px_rgba(15,23,42,0.16)] sm:px-5"
                   role="status"
@@ -6940,7 +6938,7 @@ const MyProfile = () => {
                   </div>
                 </div>
               </div>
-            </>
+            </div>
           ) : null}
 
           {error && !editModalSection && !editing.basic ? (
