@@ -3247,23 +3247,23 @@ const ProfileEditModal = ({
     if (sectionKey === 'career') {
       return (
         <div className="grid md:grid-cols-2 gap-5">
-          <Select label="Preferred Work Mode *" value={drafts.preferredWorkMode} onChange={(e) => onChange('preferredWorkMode', e.target.value)} options={PREFERRED_WORK_MODE_OPTIONS} placeholder="Select preferred work mode" />
-          <Select label="Employment Type *" value={drafts.employmentType} onChange={(e) => onChange('employmentType', e.target.value)} options={EMPLOYMENT_TYPE_OPTIONS} placeholder="Select employment type" />
-          <Select label="Willing to Relocate *" value={drafts.willingToRelocate} onChange={(e) => onChange('willingToRelocate', e.target.value)} options={WILLING_TO_RELOCATE_OPTIONS} placeholder="Select relocation preference" />
-          <Select label="How Soon Can Start *" value={drafts.howSoonCanYouStart} onChange={(e) => onChange('howSoonCanYouStart', e.target.value)} options={HOW_SOON_CAN_START_OPTIONS} placeholder="Select availability" />
-          <Select label="Experience *" value={drafts.experience} onChange={(e) => onChange('experience', e.target.value)} options={EXPERIENCE_OPTIONS} placeholder="Select experience" />
-          <Input label="Preferred Language *" value={drafts.preferredLanguage} onChange={(e) => onChange('preferredLanguage', e.target.value)} placeholder="Enter preferred language" />
-          <Select label="Educational Attainment *" value={drafts.educationalAttainment} onChange={(e) => onChange('educationalAttainment', e.target.value)} options={EDUCATIONAL_ATTAINMENT_OPTIONS} placeholder="Select educational attainment" />
-          <Select label="Double Degree *" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} options={FIELD_OF_STUDY_OPTIONS} placeholder="Select study field" />
-          <Input label="Minimum Salary *" value={drafts.minimumSalary} onChange={(e) => onChange('minimumSalary', formatSalaryInput(e.target.value))} placeholder="Minimum Salary" />
-          <Input label="Maximum Salary *" value={drafts.maximumSalary} onChange={(e) => onChange('maximumSalary', formatSalaryInput(e.target.value))} placeholder="Maximum Salary" />
+          <Select label="Preferred Work Mode" value={drafts.preferredWorkMode} onChange={(e) => onChange('preferredWorkMode', e.target.value)} options={PREFERRED_WORK_MODE_OPTIONS} placeholder="Select preferred work mode" />
+          <Select label="Employment Type" value={drafts.employmentType} onChange={(e) => onChange('employmentType', e.target.value)} options={EMPLOYMENT_TYPE_OPTIONS} placeholder="Select employment type" />
+          <Select label="Willing to Relocate" value={drafts.willingToRelocate} onChange={(e) => onChange('willingToRelocate', e.target.value)} options={WILLING_TO_RELOCATE_OPTIONS} placeholder="Select relocation preference" />
+          <Select label="How Soon Can Start" value={drafts.howSoonCanYouStart} onChange={(e) => onChange('howSoonCanYouStart', e.target.value)} options={HOW_SOON_CAN_START_OPTIONS} placeholder="Select availability" />
+          <Select label="Experience" value={drafts.experience} onChange={(e) => onChange('experience', e.target.value)} options={EXPERIENCE_OPTIONS} placeholder="Select experience" />
+          <Input label="Preferred Language" value={drafts.preferredLanguage} onChange={(e) => onChange('preferredLanguage', e.target.value)} placeholder="Enter preferred language" />
+          <Select label="Educational Attainment" value={drafts.educationalAttainment} onChange={(e) => onChange('educationalAttainment', e.target.value)} options={EDUCATIONAL_ATTAINMENT_OPTIONS} placeholder="Select educational attainment" />
+          <Select label="Double Degree" value={drafts.studyField} onChange={(e) => onChange('studyField', e.target.value)} options={FIELD_OF_STUDY_OPTIONS} placeholder="Select study field" />
+          <Input label="Minimum Salary" value={drafts.minimumSalary} onChange={(e) => onChange('minimumSalary', formatSalaryInput(e.target.value))} placeholder="Minimum Salary" />
+          <Input label="Maximum Salary" value={drafts.maximumSalary} onChange={(e) => onChange('maximumSalary', formatSalaryInput(e.target.value))} placeholder="Maximum Salary" />
           <SalaryPrivacySelect value={drafts.salaryPrivacy} onChange={(value) => onChange('salaryPrivacy', value)} />
-          <Input label="Height *" value={drafts.height} onChange={(e) => onChange('height', e.target.value)} placeholder="Height" />
-          <Input label="Weight *" value={drafts.weight} onChange={(e) => onChange('weight', e.target.value)} placeholder="Weight" />
-          <Input label="Nationality *" value={drafts.nationality} onChange={(e) => onChange('nationality', e.target.value)} placeholder="Nationality" />
-          <Select label="Gender *" value={drafts.gender} onChange={(e) => onChange('gender', e.target.value)} options={GENDER_OPTIONS} placeholder="Select gender" />
-          <Select label="Civil Status *" value={drafts.civilStatus} onChange={(e) => onChange('civilStatus', e.target.value)} options={CIVIL_STATUS_OPTIONS} placeholder="Select civil status" />
-          <Input label="Birthday *" type="date" value={drafts.birthday} onChange={(e) => onChange('birthday', e.target.value)} />
+          <Input label="Height" value={drafts.height} onChange={(e) => onChange('height', e.target.value)} placeholder="Height" />
+          <Input label="Weight" value={drafts.weight} onChange={(e) => onChange('weight', e.target.value)} placeholder="Weight" />
+          <Input label="Nationality" value={drafts.nationality} onChange={(e) => onChange('nationality', e.target.value)} placeholder="Nationality" />
+          <Select label="Gender" value={drafts.gender} onChange={(e) => onChange('gender', e.target.value)} options={GENDER_OPTIONS} placeholder="Select gender" />
+          <Select label="Civil Status" value={drafts.civilStatus} onChange={(e) => onChange('civilStatus', e.target.value)} options={CIVIL_STATUS_OPTIONS} placeholder="Select civil status" />
+          <Input label="Birthday" type="date" value={drafts.birthday} onChange={(e) => onChange('birthday', e.target.value)} />
         </div>
       );
     }
@@ -5161,35 +5161,6 @@ const MyProfile = () => {
 
       if (missingBasicFields.length) {
         setError(`Please complete the required fields before saving: ${missingBasicFields.join(', ')}.`);
-        return false;
-      }
-    }
-
-    if (sectionKey === 'career') {
-      const requiredPersonalFields = [
-        ['Preferred Work Mode', activeDrafts.preferredWorkMode],
-        ['Employment Type', activeDrafts.employmentType],
-        ['Willing to Relocate', activeDrafts.willingToRelocate],
-        ['How Soon Can Start', activeDrafts.howSoonCanYouStart],
-        ['Experience', activeDrafts.experience],
-        ['Preferred Language', activeDrafts.preferredLanguage],
-        ['Educational Attainment', activeDrafts.educationalAttainment],
-        ['Field of Study', activeDrafts.studyField],
-        ['Minimum Salary', normalizeSalaryDigits(activeDrafts.minimumSalary)],
-        ['Maximum Salary', normalizeSalaryDigits(activeDrafts.maximumSalary)],
-        ['Height', activeDrafts.height],
-        ['Weight', activeDrafts.weight],
-        ['Nationality', activeDrafts.nationality],
-        ['Gender', activeDrafts.gender],
-        ['Civil Status', activeDrafts.civilStatus],
-        ['Birthday', activeDrafts.birthday],
-      ];
-      const missingPersonalFields = requiredPersonalFields
-        .filter(([, value]) => !isCompletedProfileValue(value))
-        .map(([label]) => label);
-
-      if (missingPersonalFields.length) {
-        setError(`Please complete the required personal information before saving: ${missingPersonalFields.join(', ')}.`);
         return false;
       }
     }
