@@ -151,8 +151,8 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={1.7}
-            d="M3 21h18M5 21V10l5 3V9l5 3V6h4v15M8 17h1m3 0h1m3 0h1"
+            strokeWidth={1.9}
+            d="M3 21h18M5 21V7l7-4v18M19 21V11l-6-4M9 9h.01M9 13h.01M9 17h.01M15 13h.01M15 17h.01"
           />
         </svg>
       );
@@ -1224,7 +1224,7 @@ const MyApplications = () => {
                                 <>
                                   <span className="font-medium text-gray-300" aria-hidden="true">|</span>
                                   <span className="inline-flex min-w-0 items-center gap-1.5" title={industryText}>
-                                    <SvgIcon name="building" className="h-[18px] w-[18px] flex-shrink-0 text-gray-500" />
+                                    <SvgIcon name="industry" className="h-[18px] w-[18px] flex-shrink-0 text-gray-500" />
                                     <span className="truncate">{industryText}</span>
                                   </span>
                                 </>
