@@ -657,16 +657,16 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
       { label: 'Willing to Relocate', value: formData.willingToRelocate },
       { label: 'How Soon Can Start', value: formData.howSoonCanYouStart },
       { label: 'Experience', value: formData.experience },
-      { label: 'Preferred Language', value: formData.preferredLanguage },
     ],
     [
+      { label: 'Preferred Language', value: formData.preferredLanguage },
       { label: 'Educational Attainment', value: formData.educationalAttainment },
       { label: 'Double Degree', value: formData.studyField },
       { label: 'Salary', value: [formData.minimumSalary, formData.maximumSalary].filter(Boolean).join(' - ') },
       { label: 'Nationality', value: formData.nationality },
-      { label: 'Height', value: formData.height },
     ],
     [
+      { label: 'Height', value: formData.height },
       { label: 'Weight', value: formData.weight ? `${String(formData.weight).replace(/\s*(kg|kgs|kilogram|kilograms)$/i, '').trim()} kg` : '' },
       { label: 'Gender', value: formData.gender },
       { label: 'Civil Status', value: formData.civilStatus },
