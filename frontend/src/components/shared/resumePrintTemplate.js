@@ -628,6 +628,7 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
       { label: 'Employment Type', value: formData.employmentType },
       { label: 'Willing to Relocate', value: formData.willingToRelocate },
       { label: 'How Soon Can Start', value: formData.howSoonCanYouStart },
+      { label: 'Experience', value: formData.experience },
       { label: 'Preferred Language', value: formData.preferredLanguage },
     ],
     [

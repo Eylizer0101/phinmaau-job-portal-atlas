@@ -946,7 +946,7 @@ const ResumePasswordModal = ({
                   ? 'Continue Preview'
                   : mode === 'credential-preview'
                     ? 'Continue View'
-                    : 'Continue Download'}
+                    : 'Preview'}
             </button>
           </div>
         </form>
@@ -1883,6 +1883,17 @@ const splitDateLabel = (value = '') => {
     };
   }
 
+  if (/^present$/i.test(clean)) {
+    return {
+      fromMonth: '',
+      fromYear: '',
+      toMonth: '',
+      toYear: '',
+      isPresent: true,
+      isSingleDate: false,
+    };
+  }
+
   const normalized = clean.replace(/\s+to\s+/i, ' — ').replace(/\s+-\s+/g, ' — ');
   const [fromRaw = '', toRaw = ''] = normalized.split('—').map((item) => item.trim());
 
@@ -2011,7 +2022,7 @@ const SmallSelect = ({ value, onChange, options = [], placeholder = 'Select', di
       disabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-900'
     }`}
   >
-    <option value="">{placeholder}</option>
+    <option value="" disabled={Boolean(value)}>{placeholder}</option>
     {options.map((option) => (
       <option key={option} value={option}>{option}</option>
     ))}
@@ -3556,6 +3567,83 @@ const hasMeaningfulListContent = (items = []) =>
     if (item && typeof item === 'object') return hasMeaningfulObjectValue(item);
     return Boolean(String(item || '').trim());
   });
+
+const normalizeComparableValue = (value) => {
+  if (Array.isArray(value)) return value.map(normalizeComparableValue);
+  if (value && typeof value === 'object') {
+    return Object.keys(value)
+      .filter((key) => !['_id', 'id', 'createdAt', 'updatedAt', '__v'].includes(key))
+      .sort()
+      .reduce((result, key) => {
+        result[key] = normalizeComparableValue(value[key]);
+        return result;
+      }, {});
+  }
+  return String(value ?? '').trim();
+};
+
+const areProfileValuesEqual = (left, right) =>
+  JSON.stringify(normalizeComparableValue(left)) === JSON.stringify(normalizeComparableValue(right));
+
+const hasCompleteSingleDate = (dateValue = '') => {
+  const parts = splitDateLabel(dateValue);
+  return Boolean(parts.fromMonth && parts.fromYear);
+};
+
+const hasCompleteRangeDate = (dateValue = '', { singleDate = false } = {}) => {
+  const parts = splitDateLabel(dateValue);
+  if (!parts.fromMonth || !parts.fromYear) return false;
+  if (singleDate) return true;
+  if (parts.isPresent) return true;
+  return Boolean(parts.toMonth && parts.toYear);
+};
+
+const getProfileEntryValidationError = (sectionKey, item = {}) => {
+  const value = (key) => String(item?.[key] || '').trim();
+
+  if (sectionKey === 'certifications') {
+    if (!value('title') || !value('issuer') || !hasCompleteSingleDate(item.date)) {
+      return 'Please complete the certification title, issuer, month, and year before saving.';
+    }
+  }
+
+  if (sectionKey === 'projects') {
+    if (!value('title') || !value('role') || !hasCompleteRangeDate(item.date)) {
+      return 'Please complete the project name, role, and required date fields before saving.';
+    }
+  }
+
+  if (sectionKey === 'seminars') {
+    const isSingleDate = Boolean(item.isSingleDate);
+    if (
+      !value('title') ||
+      !value('organization') ||
+      !hasCompleteRangeDate(item.date, { singleDate: isSingleDate })
+    ) {
+      return 'Please complete the title, organizer, and required date fields before saving.';
+    }
+  }
+
+  if (sectionKey === 'awards') {
+    if (!value('title') || !value('issuer') || !hasCompleteSingleDate(item.date)) {
+      return 'Please complete the title, issuer, month, and year before saving.';
+    }
+  }
+
+  if (sectionKey === 'affiliations' || sectionKey === 'cocurricular') {
+    if (!value('organization') || !value('role') || !hasCompleteRangeDate(item.date)) {
+      return 'Please complete the organization, role, and required date fields before saving.';
+    }
+  }
+
+  if (sectionKey === 'references') {
+    if (!value('name') || !value('position') || !value('company') || !value('phone') || !value('email')) {
+      return 'Please complete all required reference fields before saving.';
+    }
+  }
+
+  return '';
+};
 
 const isCompletedProfileValue = (value) => {
   const clean = String(value ?? '').trim();
@@ -5341,6 +5429,44 @@ const MyProfile = () => {
         };
       }
 
+      const payloadHasChanges = (() => {
+        const topLevelPayload = Object.fromEntries(
+          Object.entries(payload || {}).filter(([key]) => key !== 'jobSeekerProfile')
+        );
+        const profilePayload = payload?.jobSeekerProfile || {};
+
+        const topLevelChanged = Object.entries(topLevelPayload).some(([key, value]) =>
+          !areProfileValuesEqual(value, formData[key])
+        );
+
+        const profileChanged = Object.entries(profilePayload).some(([key, value]) => {
+          if (key === 'technicalSkills') {
+            return !areProfileValuesEqual(
+              normalizeSkillsFromProfile(value),
+              normalizeSkillsFromProfile(formData.technicalSkills)
+            );
+          }
+          if (key === 'softSkills') {
+            return !areProfileValuesEqual(
+              normalizeSkillsFromProfile(value),
+              normalizeSkillsFromProfile(formData.softSkills)
+            );
+          }
+          if (key === 'minimumSalary' || key === 'maximumSalary') {
+            return normalizeSalaryDigits(value) !== normalizeSalaryDigits(formData[key]);
+          }
+          return !areProfileValuesEqual(value, formData[key]);
+        });
+
+        return topLevelChanged || profileChanged;
+      })();
+
+      if (!payloadHasChanges) {
+        setError('No changes to save.');
+        setSavingSection('');
+        return false;
+      }
+
       const response = await axios.put(`${API_BASE}/auth/update-profile`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -5576,6 +5702,29 @@ const MyProfile = () => {
           return;
         }
 
+        if (
+          !(selectedEntry.level || selectedEntry.educationalAttainment) ||
+          !selectedEntry.school ||
+          !selectedEntry.startMonth ||
+          !selectedEntry.startYear ||
+          !selectedEntry.endMonth ||
+          !selectedEntry.endYear
+        ) {
+          setError('Please complete all required education fields before saving.');
+          return;
+        }
+
+        if (
+          isEditMode &&
+          areProfileValuesEqual(
+            selectedEntry,
+            originalItems[profileEntryModalContext.index] || {}
+          )
+        ) {
+          setError('No changes to save.');
+          return;
+        }
+
         const nextItems = [...originalItems];
         if (isEditMode) {
           nextItems[profileEntryModalContext.index] = selectedEntry;
@@ -5600,6 +5749,23 @@ const MyProfile = () => {
           return;
         }
 
+        const validationError = getProfileEntryValidationError(editModalSection, selectedEntry);
+        if (validationError) {
+          setError(validationError);
+          return;
+        }
+
+        if (
+          isEditMode &&
+          areProfileValuesEqual(
+            selectedEntry,
+            originalItems[profileEntryModalContext.index] || {}
+          )
+        ) {
+          setError('No changes to save.');
+          return;
+        }
+
         const nextItems = [...originalItems];
         if (isEditMode) {
           nextItems[profileEntryModalContext.index] = selectedEntry;
@@ -5619,6 +5785,31 @@ const MyProfile = () => {
       setEditModalSection('');
       setProfileEntryModalContext({ sectionKey: '', mode: 'edit', index: -1, originalItems: [] });
       return;
+    }
+
+    if (editModalSection === 'skills') {
+      const nextSkillRows = normalizeSkillRows(
+        drafts.skillRows || [
+          ...(drafts.technicalSkills || []),
+          ...(drafts.softSkills || []),
+        ],
+        true
+      ).filter((item) => String(item.skill || '').trim());
+
+      if (!nextSkillRows.length) {
+        setError('Please add at least one skill before saving.');
+        return;
+      }
+
+      const currentSkillRows = normalizeSkillRows([
+        ...(formData.technicalSkills || []),
+        ...(formData.softSkills || []),
+      ]).filter((item) => String(item.skill || '').trim());
+
+      if (areProfileValuesEqual(nextSkillRows, currentSkillRows)) {
+        setError('No changes to save.');
+        return;
+      }
     }
 
     const saved = await saveSection(editModalSection === 'skills' ? 'career' : editModalSection);
@@ -5647,10 +5838,21 @@ const MyProfile = () => {
           const payload = {
             jobSeekerProfile: {
               educationEntries: nextItems,
-              campus: primaryEducation.school || primaryEducation.campus || '',
-              yearGraduated: primaryEducation.endYear || primaryEducation.yearGraduated || '',
+              campus:
+                primaryEducation.school ||
+                primaryEducation.campus ||
+                formData.campus ||
+                '',
+              yearGraduated:
+                primaryEducation.endYear ||
+                primaryEducation.yearGraduated ||
+                formData.yearGraduated ||
+                '',
               educationalAttainment:
-                primaryEducation.educationalAttainment || primaryEducation.level || '',
+                primaryEducation.educationalAttainment ||
+                primaryEducation.level ||
+                formData.educationalAttainment ||
+                '',
             },
           };
 
@@ -5666,8 +5868,9 @@ const MyProfile = () => {
             const nextFormData = {
               ...formData,
               educationEntries:
-                updatedProfile.educationEntries ||
-                payload.jobSeekerProfile.educationEntries,
+                Array.isArray(updatedProfile.educationEntries)
+                  ? updatedProfile.educationEntries
+                  : payload.jobSeekerProfile.educationEntries,
               campus:
                 updatedProfile.campus ??
                 payload.jobSeekerProfile.campus,
