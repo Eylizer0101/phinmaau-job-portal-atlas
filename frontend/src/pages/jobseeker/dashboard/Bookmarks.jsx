@@ -2413,37 +2413,14 @@ const Bookmarks = () => {
             </div>
 
             {activeSection === 'jobs' ? (
-              <div className={UI.grid}>
+              <div className={`${UI.grid} ${savedJobs.length > 0 ? 'xl:items-start' : ''}`}>
                 <div className="min-w-0">
-                  <div className="h-full rounded-2xl border border-black/10 overflow-hidden bg-[#FFFFFF] shadow-sm flex flex-col">
+                  <div className={`${savedJobs.length === 0 ? 'h-full' : ''} rounded-2xl border border-black/10 overflow-hidden bg-[#FFFFFF] shadow-sm flex flex-col`}>
                     <div className="px-4 py-4 bg-[#2e66a6] text-white flex items-center justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold">{formatCountLabel(savedJobs.length, 'Saved Job')}</p>
                         <p className="text-xs text-white/75 mt-1">Your next opportunity is waiting</p>
                       </div>
-
-                      <button
-                        type="button"
-                        className="text-sm font-medium hover:opacity-80 disabled:opacity-40"
-                        disabled={savedJobs.length === 0}
-                        onClick={async () => {
-                          if (savedJobs.length === 0) return;
-
-                          const confirmed = window.confirm('Remove all saved jobs from your bookmarks?');
-                          if (!confirmed) return;
-
-                          try {
-                            await Promise.all(savedJobs.map((job) => api.delete(`/jobs/saved/${job._id}`)));
-                            setSavedJobs([]);
-                            setSelectedJobId('');
-                            setToastMessage('success', 'All saved jobs removed.');
-                          } catch {
-                            setToastMessage('error', 'Failed to remove all saved jobs.');
-                          }
-                        }}
-                      >
-                        Remove All
-                      </button>
                     </div>
 
                     {loading ? (
@@ -2810,42 +2787,14 @@ const Bookmarks = () => {
                 </div>
               </div>
             ) : (
-              <div className={UI.grid}>
+              <div className={`${UI.grid} ${savedCompanies.length > 0 ? 'xl:items-start' : ''}`}>
                 <div className="min-w-0">
-                  <div className="h-full rounded-2xl border border-black/10 overflow-hidden bg-[#FFFFFF] shadow-sm flex flex-col">
+                  <div className={`${savedCompanies.length === 0 ? 'h-full' : ''} rounded-2xl border border-black/10 overflow-hidden bg-[#FFFFFF] shadow-sm flex flex-col`}>
                     <div className="px-4 py-4 bg-[#2e66a6] text-white flex items-center justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold">{formatCountLabel(savedCompanies.length, 'Saved Companie')}</p>
                         <p className="text-xs text-white/75 mt-1">Discover employers you'll love.</p>
                       </div>
-
-                      <button
-                        type="button"
-                        className="text-sm font-medium hover:opacity-80 disabled:opacity-40"
-                        disabled={savedCompanies.length === 0}
-                        onClick={async () => {
-                          if (savedCompanies.length === 0) return;
-
-                          const confirmed = window.confirm('Remove all saved companies from your bookmarks?');
-                          if (!confirmed) return;
-
-                          try {
-                            try {
-                              await api.delete('/companies/saved');
-                            } catch {
-                              setLocalSavedCompanies([]);
-                            }
-
-                            setSavedCompanies([]);
-                            setSelectedCompanyId('');
-                            setToastMessage('success', 'All saved companies removed.');
-                          } catch {
-                            setToastMessage('error', 'Failed to remove all saved companies.');
-                          }
-                        }}
-                      >
-                        Remove All
-                      </button>
                     </div>
 
                     {loadingCompanies ? (

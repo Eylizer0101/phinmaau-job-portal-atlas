@@ -1242,7 +1242,7 @@ const JobSearch = () => {
         const response = await api.post(`/jobs/saved/${jobId}`);
         if (response.data?.success) {
           setSavedJobIds((prev) => (prev.includes(jobId) ? prev : [...prev, jobId]));
-          showToast('Saved job', 'success');
+          showToast('Job Saved Successfully!', 'success');
         } else {
           alert(response.data?.message || 'Failed to save job.');
         }
@@ -1375,9 +1375,13 @@ const JobSearch = () => {
           <div className="max-w-[1500px] mx-auto px-3 lg:px-4 2xl:px-6">
          {toast.show && (
   <div className="fixed top-[100px] left-1/2 -translate-x-1/2 z-[9999] pointer-events-none">
-    <div className="inline-flex items-center gap-2 rounded-xl border border-green-200 bg-green-100 px-5 py-3 text-sm font-semibold text-green-700 shadow-lg">
+    <div className={`inline-flex items-center gap-3 rounded-2xl border px-7 py-4 text-base font-semibold shadow-xl ${
+      toast.type === 'error'
+        ? 'border-red-200 bg-red-100 text-red-700'
+        : 'border-blue-200 bg-blue-100 text-blue-700'
+    }`}>
       <svg
-        className="w-4 h-4"
+        className="w-5 h-5"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"

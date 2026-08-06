@@ -1190,6 +1190,7 @@ const CompanyViewDetails = () => {
         }
 
         setSaved(true);
+        showToast("Company Saved Successfully!", "success");
       }
     } catch (error) {
       console.error("Error saving company:", error);
@@ -1505,14 +1506,14 @@ const CompanyViewDetails = () => {
       {toast.show && (
         <div className="fixed top-[100px] left-1/2 -translate-x-1/2 z-[9999] pointer-events-none">
           <div
-            className={`inline-flex items-center gap-2 rounded-xl border px-5 py-3 text-sm font-semibold shadow-lg ${
+            className={`inline-flex items-center gap-3 rounded-2xl border px-7 py-4 text-base font-semibold shadow-xl ${
               toast.type === "error"
                 ? "border-red-200 bg-red-100 text-red-700"
-                : "border-green-200 bg-green-100 text-green-700"
+                : "border-blue-200 bg-blue-100 text-blue-700"
             }`}
           >
             <svg
-              className="w-4 h-4"
+              className="w-5 h-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
