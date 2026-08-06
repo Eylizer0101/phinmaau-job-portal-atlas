@@ -497,12 +497,12 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
       );
     case 'building':
       return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={1.9}
-            d="M3 21h18M5 21V7l7-4v18M19 21V11l-6-4M9 9h.01M9 13h.01M9 17h.01M15 13h.01M15 17h.01"
+            strokeWidth={1.6}
+            d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3.75h1.5m-1.5 3.75h1.5m3-7.5H15m-1.5 3.75H15m-1.5 3.75H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"
           />
         </svg>
       );

@@ -992,7 +992,7 @@ const JobSeekerDashboard = () => {
       },
       'vacancy full': {
         icon: faTimesCircle,
-        label: 'Vacancy Full',
+        label: 'Positions Filled',
         bg: 'bg-orange-50',
         text: 'text-orange-800',
         border: 'border-orange-200',
@@ -1770,7 +1770,7 @@ const JobSeekerDashboard = () => {
                               </div>
                             </div>
 
-                            <div className="mt-4">
+                            <div className="mt-1.5">
                               {app.job?.location && (
                                 <div className="flex min-w-0 items-center gap-2 text-sm text-gray-700">
                                   <svg
@@ -2062,7 +2062,7 @@ const JobSeekerDashboard = () => {
                             </button>
                           </div>
 
-                          <div className="mt-4">
+                          <div className="mt-1.5">
                             <div className="flex min-w-0 items-center gap-2 text-sm text-gray-700">
                               <svg
                                 className="h-4 w-4 shrink-0 text-gray-600"
