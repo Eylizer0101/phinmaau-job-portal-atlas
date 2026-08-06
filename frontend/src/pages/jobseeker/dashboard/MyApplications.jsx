@@ -1220,11 +1220,11 @@ const MyApplications = () => {
                                 <span className="truncate">{companyName}</span>
                               </span>
 
-                              {industryText && (
+                             {industryText && (
                                 <>
                                   <span className="font-medium text-gray-300" aria-hidden="true">|</span>
                                   <span className="inline-flex min-w-0 items-center gap-1.5" title={industryText}>
-                                    <SvgIcon name="industry" className="h-[18px] w-[18px] flex-shrink-0 text-gray-500" />
+                                    <SvgIcon name="building" className="h-[18px] w-[18px] flex-shrink-0 text-gray-500" />
                                     <span className="truncate">{industryText}</span>
                                   </span>
                                 </>
