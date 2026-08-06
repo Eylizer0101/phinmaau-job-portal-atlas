@@ -194,7 +194,9 @@ const CompanyAllReviews = () => {
             ))}
           </div>
 
-          <Pagination page={safePage} totalPages={totalPages} setPage={setPage} paginationItems={paginationItems} totalItems={filtered.length} pageSize={pageSize} setPageSize={setPageSize} />
+          {filtered.length > pageSize && (
+            <Pagination page={safePage} totalPages={totalPages} setPage={setPage} paginationItems={paginationItems} totalItems={filtered.length} pageSize={pageSize} setPageSize={setPageSize} />
+          )}
         </section>
       </div>
     </main>

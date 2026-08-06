@@ -622,7 +622,7 @@ const NotificationsPage = () => {
           )}
         </div>
 
-        {filteredNotifications.length > 0 && (
+        {pageSize !== 'all' && filteredNotifications.length > numericPageSize && (
           <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
             <p className="whitespace-nowrap rounded-lg bg-[#2e66a6]/10 px-3 py-2 text-sm font-bold text-[#2e66a6]">
               Page {safePage} of {totalPages} · {filteredNotifications.length} total
