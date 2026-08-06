@@ -1450,9 +1450,9 @@ const ApplicationDetails = () => {
                   ) : null}
                 </section>
 
-                {meaningfulEducation.length ? (
-                  <section className="pt-2">
-                    <h3 className="border-b border-black text-[11px] font-bold uppercase">Education</h3>
+                <section className="pt-2">
+                  <h3 className="border-b border-black text-[11px] font-bold uppercase">Education</h3>
+                  {meaningfulEducation.length ? (
                     <div className="space-y-1 pt-1">
                       {meaningfulEducation.map((item, index) => (
                         <div key={item._id || index} className="flex items-start justify-between gap-4">
@@ -1473,8 +1473,8 @@ const ApplicationDetails = () => {
                         </div>
                       ))}
                     </div>
-                  </section>
-                ) : null}
+                  ) : null}
+                </section>
 
                 <section className="pt-2">
                   <h3 className="border-b border-black text-[11px] font-bold uppercase">Certifications</h3>

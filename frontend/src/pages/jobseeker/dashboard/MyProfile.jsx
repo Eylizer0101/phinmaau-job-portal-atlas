@@ -3677,6 +3677,21 @@ const isCompletedProfileValue = (value) => {
   );
 };
 
+const isMeaningfulRichTextValue = (value) => {
+  const raw = String(value ?? '').trim();
+  if (!raw) return false;
+
+  const plainText = raw
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;|&#160;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return Boolean(plainText);
+};
+
 const isCompleteEducationEntry = (entry = {}) => {
   const normalized = normalizeEducationEntry(entry);
 
@@ -4529,7 +4544,7 @@ const MyProfile = () => {
 
     const profileItems = [
       { key: 'basic', label: 'Basic Information', weight: 2, completed: basicInformationComplete },
-      { key: 'objective', label: 'Career Objectives', weight: 1, completed: Boolean(String(formData.aboutMe || '').trim()) },
+      { key: 'objective', label: 'Career Objectives', weight: 1, completed: isMeaningfulRichTextValue(formData.aboutMe) },
       { key: 'availability', label: 'Personal Information', weight: 2, completed: availabilityComplete },
       { key: 'work', label: 'Work Experience', weight: 15, completed: workExperiences.length > 0 },
       { key: 'skills', label: 'Skills', weight: 10, completed: skillsComplete },
@@ -4597,7 +4612,7 @@ const MyProfile = () => {
 
     return {
       personal: basicMissingCount > 0 ? `${basicMissingCount} Incomplete Basic Information` : '',
-      about: String(formData.aboutMe || '').trim() ? '' : 'Career objective missing',
+      about: isMeaningfulRichTextValue(formData.aboutMe) ? '' : 'Career objective missing',
       career: personalMissingCount > 0 ? `${personalMissingCount} Missing Personal Information` : '',
       work: workExperiences.length > 0 ? '' : 'Showcase 1 of your Experience',
       skills: skillsCount > 0 ? '' : 'Showcase 1 of your Skills',
@@ -5310,7 +5325,9 @@ const MyProfile = () => {
       if (sectionKey === 'about') {
         payload = {
           jobSeekerProfile: {
-            aboutMe: activeDrafts.aboutMe,
+            aboutMe: isMeaningfulRichTextValue(activeDrafts.aboutMe)
+              ? activeDrafts.aboutMe
+              : '',
           },
         };
       }
@@ -5551,6 +5568,10 @@ const MyProfile = () => {
             ...activeDrafts,
             address: combinedAddress,
           }));
+        } else if (sectionKey === 'about') {
+          const savedAboutMe = payload.jobSeekerProfile?.aboutMe || '';
+          setFormData((prev) => ({ ...prev, ...activeDrafts, aboutMe: savedAboutMe }));
+          setDrafts((prev) => ({ ...prev, ...activeDrafts, aboutMe: savedAboutMe }));
         } else {
           setFormData((prev) => ({ ...prev, ...activeDrafts }));
         }

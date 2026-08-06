@@ -719,22 +719,24 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
     false
   );
 
-  const educationHtml = educationEntries.length
-    ? sectionHtml(
-        'Education',
-        educationEntries
-          .map((entry) =>
-            datedItemHtml({
-              title: getText(entry.level || entry.educationalAttainment, 'Education'),
-              subtitle: getText(entry.school || entry.campus),
-              meta: '',
-              date: getEducationDateRange(entry),
-              description: entry.description,
-            })
-          )
-          .join('')
+  const meaningfulEducationEntries = educationEntries.filter((entry) =>
+    Object.values(entry || {}).some((value) => getText(value))
+  );
+
+  const educationHtml = sectionHtml(
+    'Education',
+    meaningfulEducationEntries
+      .map((entry) =>
+        datedItemHtml({
+          title: getText(entry.level || entry.educationalAttainment, 'Education'),
+          subtitle: getText(entry.school || entry.campus),
+          meta: '',
+          date: getEducationDateRange(entry),
+          description: entry.description,
+        })
       )
-    : '';
+      .join('')
+  );
 
   return `<!doctype html>
 <html>

@@ -848,9 +848,10 @@ const ResumePreviewPage = () => {
                   })}
                 </div>              </Section>
 
-            {educationEntries.length ? (
-              <Section title="Education">
-                {educationEntries.map((entry, index) => (
+            <Section title="Education">
+              {educationEntries
+                .filter((entry) => Object.values(entry || {}).some((value) => getText(value)))
+                .map((entry, index) => (
                   <DatedItem
                     key={`${entry.level || 'education'}-${entry.campus || entry.school || 'campus'}-${index}`}
                     title={getText(entry.level || entry.educationalAttainment, 'Education')}
@@ -860,8 +861,7 @@ const ResumePreviewPage = () => {
                     description={entry.description}
                   />
                 ))}
-              </Section>
-            ) : null}
+            </Section>
 
             <ProfileListSection title="Certifications" items={certifications} alwaysShow />
             <ProfileListSection title="Projects" items={projects} alwaysShow />
