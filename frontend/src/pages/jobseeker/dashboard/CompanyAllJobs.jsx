@@ -234,9 +234,19 @@ const CompanyAllJobs = () => {
                     aria-label={`View details for ${job.title || "job"}`}
                   >
                     <div className="flex items-start gap-4 pr-10">
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#d8e2ee] bg-white">
-                        {company.companyLogo ? <img src={company.companyLogo} alt={company.companyName || "Company"} className="h-full w-full rounded-lg object-contain p-1.5" /> : <span className="text-xl font-bold text-[#2e66a6]">{String(company.companyName || "C").charAt(0)}</span>}
-                      </div>
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#d8e2ee] bg-white p-1">
+  {company.companyLogo ? (
+    <img
+      src={company.companyLogo}
+      alt={company.companyName || "Company"}
+      className="h-full w-full rounded-2xl object-cover"
+    />
+  ) : (
+    <span className="text-xl font-bold text-[#2e66a6]">
+      {String(company.companyName || "C").charAt(0)}
+    </span>
+  )}
+</div>
                       <div className="min-w-0 flex-1">
                         <h2 className="truncate text-lg font-bold text-gray-800">{String(job.title || "Job Title").replaceAll('"', "")}</h2>
                         <div className="mt-1 flex items-center gap-2"><span className="truncate text-sm font-medium text-gray-600">{company.companyName}</span><img src="/images/checkmo.png" alt="Verified" className="h-5 w-5 shrink-0 object-contain" /></div>
