@@ -2428,7 +2428,7 @@ const Bookmarks = () => {
             {activeSection === 'jobs' ? (
               <div className={UI.grid}>
                 <div className="min-w-0">
-                  <div className="rounded-2xl border border-black/10 overflow-hidden bg-[#FFFFFF] shadow-sm">
+                  <div className="h-full rounded-2xl border border-black/10 overflow-hidden bg-[#FFFFFF] shadow-sm flex flex-col">
                     <div className="px-4 py-4 bg-[#2e66a6] text-white flex items-center justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold">{formatCountLabel(savedJobs.length, 'Saved Job')}</p>
@@ -2475,8 +2475,8 @@ const Bookmarks = () => {
                         </div>
                       </div>
                     ) : savedJobs.length === 0 ? (
-                      <div className="p-6">
-                        <div className="rounded-2xl border border-dashed border-black/20 bg-black/[0.02] px-5 py-8 text-center">
+                      <div className="p-6 flex-1">
+                        <div className="h-full min-h-[300px] rounded-2xl border border-dashed border-black/20 bg-black/[0.02] px-5 py-8 text-center flex flex-col items-center justify-center">
                           <img
                             src="/images/NoSaveJobs.png"
                             alt="No saved jobs"
@@ -2485,19 +2485,6 @@ const Bookmarks = () => {
                           />
 
                           <h3 className="mt-4 text-base font-semibold text-[#000000]">No saved jobs yet</h3>
-                          <p className="mt-2 text-sm text-black/70 leading-6">
-                            Click &quot;Browse Jobs&quot; to start exploring opportunities and save jobs you want to revisit later.
-                          </p>
-
-                          <div className="mt-5">
-                            <button
-                              type="button"
-                              onClick={() => navigate('/jobseeker/job-search')}
-                              className={`${UI.btnBase} ${UI.btnMd} ${UI.btnPrimary} ${UI.ring}`}
-                            >
-                              Browse Jobs
-                            </button>
-                          </div>
                         </div>
                       </div>
                     ) : (
@@ -2532,7 +2519,7 @@ const Bookmarks = () => {
                         <p className="mt-3 text-sm sm:text-[15px] text-black/70 leading-6">
                           You haven&apos;t saved any jobs.
                           <br />
-                          Bookmark jobs you like to view them here whenever you want.
+                          Click &quot;Browse Jobs&quot; to start exploring opportunities and save jobs you want to revisit later.
                         </p>
 
                         <div className="mt-6">
