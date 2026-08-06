@@ -133,7 +133,7 @@ const MainLandingPage = () => {
               </span>
             </h1>
 
-            <p className="mt-4 text-base font-semibold text-[#3558A8] sm:text-lg lg:mt-3">
+            <p className="mt-4 text-base font-semibold text-[#202020] sm:text-lg lg:mt-3">
               The job market is competitive but you are prepared.
             </p>
 
@@ -183,7 +183,7 @@ const MainLandingPage = () => {
 
                   <p className="mt-2 flex items-center gap-2 text-sm font-medium text-white/95 drop-shadow">
                     <svg
-                      className="h-4 w-4 shrink-0"
+                      className="h-4 w-4 shrink-0 text-yellow-400"
                       viewBox="0 0 24 24"
                       fill="currentColor"
                       aria-hidden="true"
@@ -275,7 +275,7 @@ const MainLandingPage = () => {
                         <img
                           src={partner.logo}
                           alt={`${partner.name} logo`}
-                          className="max-h-[56px] max-w-[80px] object-contain"
+                          className="max-h-[56px] max-w-[80px] rounded-lg object-contain"
                           loading="lazy"
                           decoding="async"
                           onError={(event) => {

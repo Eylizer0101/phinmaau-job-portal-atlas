@@ -1713,12 +1713,12 @@ const JobSeekerDashboard = () => {
                       >
                         <div className="flex w-full items-start gap-4">
                           <div className="flex-shrink-0">
-                            <div className="h-16 w-16 overflow-hidden rounded-xl border border-[#D9E3F2] bg-white shadow-xs transition-all duration-300 group-hover:shadow-sm sm:h-[68px] sm:w-[68px]">
+                            <div className="h-[58px] w-[58px] overflow-hidden rounded-xl border border-[#D9E3F2] bg-white shadow-xs transition-all duration-300 group-hover:shadow-sm sm:h-[60px] sm:w-[60px]">
                               {logoUrl ? (
                                 <img
                                   src={logoUrl}
                                   alt={companyName}
-                                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                  className="h-full w-full rounded-xl object-cover transition-transform duration-500 group-hover:scale-105"
                                   onError={(e) => {
                                     e.target.style.display = 'none';
                                     const fallbackDiv = document.createElement('div');
@@ -1983,12 +1983,12 @@ const JobSeekerDashboard = () => {
                           }
                         }}
                       >
-                        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-[#D9E3F2] bg-white sm:h-[68px] sm:w-[68px]">
+                        <div className="h-[58px] w-[58px] shrink-0 overflow-hidden rounded-xl border border-[#D9E3F2] bg-white sm:h-[60px] sm:w-[60px]">
                           {logoUrl ? (
                             <img
                               src={logoUrl}
                               alt={job.companyName || 'Company logo'}
-                              className="h-full w-full object-cover"
+                              className="h-full w-full rounded-xl object-cover"
                               onError={(event) => {
                                 event.currentTarget.style.display = 'none';
                               }}

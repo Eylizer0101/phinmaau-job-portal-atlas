@@ -235,7 +235,7 @@ const CompanyAllJobs = () => {
                   >
                     <div className="flex items-start gap-4 pr-10">
                       <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#d8e2ee] bg-white">
-                        {company.companyLogo ? <img src={company.companyLogo} alt={company.companyName || "Company"} className="h-full w-full object-contain p-1" /> : <span className="text-xl font-bold text-[#2e66a6]">{String(company.companyName || "C").charAt(0)}</span>}
+                        {company.companyLogo ? <img src={company.companyLogo} alt={company.companyName || "Company"} className="h-full w-full rounded-lg object-contain p-1.5" /> : <span className="text-xl font-bold text-[#2e66a6]">{String(company.companyName || "C").charAt(0)}</span>}
                       </div>
                       <div className="min-w-0 flex-1">
                         <h2 className="truncate text-lg font-bold text-gray-800">{String(job.title || "Job Title").replaceAll('"', "")}</h2>
