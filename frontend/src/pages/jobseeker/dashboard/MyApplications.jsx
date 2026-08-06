@@ -649,7 +649,7 @@ const MyApplications = () => {
     return searchedApplications.slice(startIndex, startIndex + pageSize);
   }, [searchedApplications, currentPage, pageSize]);
 
-  const showPagination = searchedApplications.length > 0;
+  const showPagination = searchedApplications.length > pageSize;
 
   useEffect(() => {
     setCurrentPage(1);
