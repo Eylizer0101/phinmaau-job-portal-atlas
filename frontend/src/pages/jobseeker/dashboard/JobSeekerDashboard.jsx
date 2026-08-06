@@ -106,6 +106,14 @@ const JobSeekerDashboard = () => {
     profileChecks: {},
     missingProfileFields: [],
   });
+  const [isFirstLogin] = useState(() => {
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      return Boolean(storedUser?.isFirstLogin);
+    } catch {
+      return false;
+    }
+  });
 
   const [showProfileReminderBanner, setShowProfileReminderBanner] = useState(false);
 
@@ -1592,9 +1600,11 @@ const JobSeekerDashboard = () => {
         <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
             <h1 className="text-2xl md:text-3xl font-bold text-black">
-              Welcome back, <span className="text-[#2e66a6]">{userData.name.split(' ')[0]}</span>
+              {isFirstLogin ? 'Welcome to Agapay, ' : 'Welcome back, '}
+              <span className="text-[#2e66a6]">{userData.name.split(' ')[0]}</span>
+              {isFirstLogin ? '!' : ''}
             </h1>
-            <p className="text-gray-600 mt-1">Here's your job search overview for today</p>
+            <p className="text-gray-600 mt-1">Your career journey starts here.</p>
           </div>
 
           {showProfileReminderBanner && !userData.profileComplete ? (

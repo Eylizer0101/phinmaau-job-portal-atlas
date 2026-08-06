@@ -984,6 +984,8 @@ exports.login = async (req, res) => {
       }
     }
 
+    const isFirstLogin = user.role === 'jobseeker' && !user.lastLogin;
+
     user.lastLogin = Date.now();
     await user.save();
 
@@ -1003,6 +1005,7 @@ exports.login = async (req, res) => {
         lastName: user.lastName,
         extensionName: user.extensionName,
         mustChangePassword: Boolean(user.mustChangePassword),
+        isFirstLogin,
         jobSeekerProfile: user.role === 'jobseeker' ? user.jobSeekerProfile : undefined,
         employerProfile: user.role === 'employer' ? user.employerProfile : undefined,
       },
