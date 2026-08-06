@@ -736,19 +736,29 @@ const JobseekerCompanies = () => {
                 <p className="mt-2 text-sm text-black/70">
                   Try adjusting your filters or search terms.
                 </p>
-                <button
-                  type="button"
-                  className="mt-6 inline-flex h-[44px] items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-[#25578f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-                  onClick={() => {
-                    if (hasAnyFilter) clearAll();
-                    else fetchCompanies();
-                  }}
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  Refresh
-                </button>
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    className="inline-flex h-[44px] items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-6 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-gray-400 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                    onClick={clearAll}
+                  >
+                    <svg className="h-4 w-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                    Clear filters
+                  </button>
+
+                  <button
+                    type="button"
+                    className="inline-flex h-[44px] items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-[#25578f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                    onClick={() => fetchCompanies()}
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Refresh
+                  </button>
+                </div>
               </div>
             ) : (
               <>

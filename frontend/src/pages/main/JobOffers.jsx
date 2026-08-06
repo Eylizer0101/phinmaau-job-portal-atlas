@@ -1556,19 +1556,29 @@ const JobOffers = () => {
                 <p className="mt-2 text-sm text-black/65">
                   Try adjusting your filters or search terms.
                 </p>
-                <button
-                  type="button"
-                  className="mt-6 inline-flex h-[44px] items-center justify-center gap-2 rounded-lg bg-[#212C61] px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-[#182149] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61] focus-visible:ring-offset-2"
-                  onClick={() => {
-                    if (hasActiveFilters) clearFilters();
-                    else fetchAllJobs();
-                  }}
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  Refresh
-                </button>
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    className="inline-flex h-[44px] items-center justify-center gap-2 rounded-lg border border-[#212C61]/25 bg-white px-6 text-sm font-semibold text-black/75 shadow-sm transition hover:border-[#212C61]/45 hover:bg-[#212C61]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61] focus-visible:ring-offset-2"
+                    onClick={clearFilters}
+                  >
+                    <svg className="h-4 w-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                    Clear filters
+                  </button>
+
+                  <button
+                    type="button"
+                    className="inline-flex h-[44px] items-center justify-center gap-2 rounded-lg bg-[#212C61] px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-[#182149] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61] focus-visible:ring-offset-2"
+                    onClick={fetchAllJobs}
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Refresh
+                  </button>
+                </div>
               </div>
             ) : (
               <>
