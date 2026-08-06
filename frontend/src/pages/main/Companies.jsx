@@ -907,9 +907,7 @@ const Companies = () => {
                     className="inline-flex h-[44px] items-center justify-center gap-2 rounded-lg border border-[#212C61]/25 bg-white px-6 text-sm font-semibold text-black/75 shadow-sm transition hover:border-[#212C61]/45 hover:bg-[#212C61]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61] focus-visible:ring-offset-2"
                     onClick={clearAll}
                   >
-                    <svg className="h-4 w-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18 18 6M6 6l12 12" />
-                    </svg>
+                    
                     Clear filters
                   </button>
 
