@@ -289,13 +289,36 @@ const NotificationsPage = () => {
         safePage * numericPageSize
       );
 
-  const pageNumbers = useMemo(() => {
-    const startPage = Math.max(1, Math.min(safePage - 2, totalPages - 4));
-    const endPage = Math.min(totalPages, startPage + 4);
-    return Array.from(
-      { length: endPage - startPage + 1 },
-      (_, index) => startPage + index
-    );
+  const paginationItems = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }
+
+    if (safePage <= 4) {
+      return [1, 2, 3, 4, 5, 'ellipsis-right', totalPages];
+    }
+
+    if (safePage >= totalPages - 3) {
+      return [
+        1,
+        'ellipsis-left',
+        totalPages - 4,
+        totalPages - 3,
+        totalPages - 2,
+        totalPages - 1,
+        totalPages,
+      ];
+    }
+
+    return [
+      1,
+      'ellipsis-left',
+      safePage - 1,
+      safePage,
+      safePage + 1,
+      'ellipsis-right',
+      totalPages,
+    ];
   }, [safePage, totalPages]);
 
   useEffect(() => {
@@ -601,20 +624,27 @@ const NotificationsPage = () => {
 
         {filteredNotifications.length > 0 && (
           <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-            <p className="text-sm text-gray-500">
+            <p className="whitespace-nowrap rounded-lg bg-[#2e66a6]/10 px-3 py-2 text-sm font-bold text-[#2e66a6]">
               Page {safePage} of {totalPages} · {filteredNotifications.length} total
             </p>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-              <nav className="inline-flex min-h-11 items-center overflow-hidden rounded-xl border border-gray-200 bg-white" aria-label="Notification pagination">
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage(1)}
-                  disabled={safePage === 1}
-                  className="h-11 border-r border-gray-200 px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <span className="whitespace-nowrap">Display per page</span>
+                <select
+                  value={pageSize}
+                  onChange={(event) => setPageSize(event.target.value === 'all' ? 'all' : Number(event.target.value))}
+                  className="h-11 rounded-xl border border-gray-200 bg-white px-3 outline-none focus:border-[#2e66a6]"
                 >
-                  First
-                </button>
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value="all">All</option>
+                </select>
+              </label>
+
+              <nav className="inline-flex min-h-11 items-center overflow-hidden rounded-xl border border-gray-200 bg-white" aria-label="Notification pagination">
                 <button
                   type="button"
                   onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
@@ -625,21 +655,31 @@ const NotificationsPage = () => {
                 </button>
 
                 <div className="flex h-11 items-center px-1">
-                  {pageNumbers.map((pageNumber) => (
-                    <button
-                      key={pageNumber}
-                      type="button"
-                      onClick={() => setCurrentPage(pageNumber)}
-                      aria-current={safePage === pageNumber ? 'page' : undefined}
-                      className={`h-9 min-w-9 rounded-lg px-3 text-sm font-semibold transition ${
-                        safePage === pageNumber
-                          ? 'bg-[#2e66a6] text-white'
-                          : 'text-gray-700 hover:bg-gray-100'
-                      }`}
-                    >
-                      {pageNumber}
-                    </button>
-                  ))}
+                  {paginationItems.map((item) =>
+                    typeof item === 'string' ? (
+                      <span
+                        key={item}
+                        className="inline-flex h-9 min-w-9 items-center justify-center px-2 text-sm font-semibold text-gray-400"
+                        aria-hidden="true"
+                      >
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => setCurrentPage(item)}
+                        aria-current={safePage === item ? 'page' : undefined}
+                        className={`h-9 min-w-9 rounded-lg px-3 text-sm font-semibold transition ${
+                          safePage === item
+                            ? 'bg-[#2e66a6] text-white'
+                            : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        {item}
+                      </button>
+                    )
+                  )}
                 </div>
 
                 <button
@@ -650,33 +690,10 @@ const NotificationsPage = () => {
                 >
                   Next <span aria-hidden="true">›</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={safePage === totalPages}
-                  className="h-11 border-l border-gray-200 px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Last
-                </button>
               </nav>
-
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <span className="whitespace-nowrap">Display per page</span>
-                <select
-                  value={pageSize}
-                  onChange={(event) => setPageSize(event.target.value === 'all' ? 'all' : Number(event.target.value))}
-                  className="h-11 rounded-xl border border-gray-200 bg-white px-3 outline-none focus:border-[#2e66a6]"
-                >
-                  <option value={10}>10</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                  <option value="all">All</option>
-                </select>
-              </label>
             </div>
           </div>
         )}
-
       </div>
     </div>
   );

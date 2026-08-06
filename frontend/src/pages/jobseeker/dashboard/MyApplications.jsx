@@ -291,7 +291,7 @@ const MyApplications = () => {
   const [mainTab, setMainTab] = useState('active');
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
   const location = useLocation();
@@ -647,13 +647,13 @@ const MyApplications = () => {
   const paginatedApplications = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
     return searchedApplications.slice(startIndex, startIndex + pageSize);
-  }, [searchedApplications, currentPage]);
+  }, [searchedApplications, currentPage, pageSize]);
 
   const showPagination = searchedApplications.length > 0;
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [mainTab, statusFilter, searchQuery]);
+  }, [mainTab, statusFilter, searchQuery, pageSize]);
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
@@ -1334,65 +1334,81 @@ const MyApplications = () => {
               </div>
               {showPagination && (
                 <div
-                  className="mt-8 flex flex-col items-center justify-center gap-4 border-t border-gray-100 pt-6 text-center"
+                  className="mt-8 flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between"
                   aria-label="Application pagination"
                 >
-                  <div className="text-sm font-semibold text-[#2e66a6]">
+                  <div className="whitespace-nowrap rounded-lg bg-[#2e66a6]/10 px-3 py-2 text-sm font-bold text-[#2e66a6]">
                     Page {currentPage} of {totalPages} · {searchedApplications.length} total
                   </div>
 
-                  <nav
-                    className="mx-auto inline-flex min-h-11 items-center overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
-                    aria-label="Application pagination controls"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                      disabled={currentPage === 1}
-                      className={`inline-flex h-11 items-center gap-2 border-r border-gray-200 px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 ${UI.ring}`}
-                    >
-                      <span aria-hidden="true">‹</span>
-                      Previous
-                    </button>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                      <span className="whitespace-nowrap">Display per page</span>
+                      <select
+                        value={pageSize}
+                        onChange={(event) => setPageSize(Number(event.target.value))}
+                        className={`h-11 rounded-xl border border-gray-200 bg-white px-3 outline-none focus:border-[#2e66a6] ${UI.ring}`}
+                      >
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                    </label>
 
-                    <div className="flex h-11 items-center px-2">
-                      {paginationItems.map((item) =>
-                        typeof item === 'string' ? (
-                          <span
-                            key={item}
-                            className="inline-flex h-9 min-w-9 items-center justify-center px-2 text-sm font-semibold text-gray-400"
-                            aria-hidden="true"
-                          >
-                            …
-                          </span>
-                        ) : (
-                          <button
-                            key={item}
-                            type="button"
-                            onClick={() => setCurrentPage(item)}
-                            aria-current={currentPage === item ? 'page' : undefined}
-                            className={`h-9 min-w-9 rounded-lg px-3 text-sm font-semibold transition ${UI.ring} ${
-                              currentPage === item
-                                ? 'bg-[#2e66a6] text-white shadow-sm'
-                                : 'text-gray-700 hover:bg-gray-100'
-                            }`}
-                          >
-                            {item}
-                          </button>
-                        )
-                      )}
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                      disabled={currentPage === totalPages}
-                      className={`inline-flex h-11 items-center gap-2 border-l border-gray-200 px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 ${UI.ring}`}
+                    <nav
+                      className="inline-flex min-h-11 items-center overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+                      aria-label="Application pagination controls"
                     >
-                      Next
-                      <span aria-hidden="true">›</span>
-                    </button>
-                  </nav>
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                        disabled={currentPage === 1}
+                        className={`inline-flex h-11 items-center gap-2 border-r border-gray-200 px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 ${UI.ring}`}
+                      >
+                        <span aria-hidden="true">‹</span>
+                        Previous
+                      </button>
+
+                      <div className="flex h-11 items-center px-2">
+                        {paginationItems.map((item) =>
+                          typeof item === 'string' ? (
+                            <span
+                              key={item}
+                              className="inline-flex h-9 min-w-9 items-center justify-center px-2 text-sm font-semibold text-gray-400"
+                              aria-hidden="true"
+                            >
+                              …
+                            </span>
+                          ) : (
+                            <button
+                              key={item}
+                              type="button"
+                              onClick={() => setCurrentPage(item)}
+                              aria-current={currentPage === item ? 'page' : undefined}
+                              className={`h-9 min-w-9 rounded-lg px-3 text-sm font-semibold transition ${UI.ring} ${
+                                currentPage === item
+                                  ? 'bg-[#2e66a6] text-white shadow-sm'
+                                  : 'text-gray-700 hover:bg-gray-100'
+                              }`}
+                            >
+                              {item}
+                            </button>
+                          )
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                        disabled={currentPage === totalPages}
+                        className={`inline-flex h-11 items-center gap-2 border-l border-gray-200 px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 ${UI.ring}`}
+                      >
+                        Next
+                        <span aria-hidden="true">›</span>
+                      </button>
+                    </nav>
+                  </div>
                 </div>
               )}
             </div>

@@ -34,6 +34,7 @@ const CompanyAllReviews = () => {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     let mounted = true;
@@ -65,12 +66,11 @@ const CompanyAllReviews = () => {
     ].some((value) => String(value || "").toLowerCase().includes(query)));
   }, [reviews, search]);
 
-  const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
   const visibleReviews = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
-  useEffect(() => { setPage(1); }, [search]);
+  useEffect(() => { setPage(1); }, [search, pageSize]);
   useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
 
   const paginationItems = useMemo(() => {
@@ -194,7 +194,7 @@ const CompanyAllReviews = () => {
             ))}
           </div>
 
-          <Pagination page={safePage} totalPages={totalPages} setPage={setPage} paginationItems={paginationItems} totalItems={filtered.length} />
+          <Pagination page={safePage} totalPages={totalPages} setPage={setPage} paginationItems={paginationItems} totalItems={filtered.length} pageSize={pageSize} setPageSize={setPageSize} />
         </section>
       </div>
     </main>
@@ -208,51 +208,67 @@ const Metric = ({ label, value }) => (
   </div>
 );
 
-const Pagination = ({ page, totalPages, setPage, paginationItems, totalItems }) => (
-  <div className="mt-8 flex flex-col items-center justify-center gap-4 border-t border-[#e6edf5] pt-6 text-center">
-    <div className="whitespace-nowrap text-sm font-semibold text-[#2e66a6]">
+const Pagination = ({ page, totalPages, setPage, paginationItems, totalItems, pageSize, setPageSize }) => (
+  <div className="mt-8 flex flex-col gap-4 rounded-2xl border border-[#e6edf5] bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+    <div className="whitespace-nowrap rounded-lg bg-[#2e66a6]/10 px-3 py-2 text-sm font-bold text-[#2e66a6]">
       Page {page} of {totalPages} · {totalItems} total
     </div>
 
-    <nav
-      className="mx-auto inline-flex min-h-11 items-center overflow-hidden rounded-xl border border-[#d8e2ee] bg-white shadow-sm"
-      aria-label="Pagination controls"
-    >
-      <PageButton
-        label="Previous"
-        direction="previous"
-        disabled={page === 1}
-        onClick={() => setPage((current) => Math.max(1, current - 1))}
-      />
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+      <label className="flex items-center gap-2 text-sm font-medium text-black/70">
+        <span className="whitespace-nowrap">Display per page</span>
+        <select
+          value={pageSize}
+          onChange={(event) => setPageSize(Number(event.target.value))}
+          className="h-11 rounded-xl border border-[#d8e2ee] bg-white px-3 outline-none focus:border-[#2e66a6]"
+        >
+          <option value={10}>10</option>
+          <option value={25}>25</option>
+          <option value={50}>50</option>
+          <option value={100}>100</option>
+        </select>
+      </label>
 
-      <div className="flex h-11 items-center px-2">
-        {paginationItems.map((item) =>
-          typeof item === "string" ? (
-            <span
-              key={item}
-              className="inline-flex h-9 min-w-9 items-center justify-center px-2 text-sm font-semibold text-black/45"
-              aria-hidden="true"
-            >
-              …
-            </span>
-          ) : (
-            <PageButton
-              key={item}
-              label={String(item)}
-              active={item === page}
-              onClick={() => setPage(item)}
-            />
-          )
-        )}
-      </div>
+      <nav
+        className="inline-flex min-h-11 items-center overflow-hidden rounded-xl border border-[#d8e2ee] bg-white shadow-sm"
+        aria-label="Pagination controls"
+      >
+        <PageButton
+          label="Previous"
+          direction="previous"
+          disabled={page === 1}
+          onClick={() => setPage((current) => Math.max(1, current - 1))}
+        />
 
-      <PageButton
-        label="Next"
-        direction="next"
-        disabled={page === totalPages}
-        onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-      />
-    </nav>
+        <div className="flex h-11 items-center px-2">
+          {paginationItems.map((item) =>
+            typeof item === "string" ? (
+              <span
+                key={item}
+                className="inline-flex h-9 min-w-9 items-center justify-center px-2 text-sm font-semibold text-black/45"
+                aria-hidden="true"
+              >
+                …
+              </span>
+            ) : (
+              <PageButton
+                key={item}
+                label={String(item)}
+                active={item === page}
+                onClick={() => setPage(item)}
+              />
+            )
+          )}
+        </div>
+
+        <PageButton
+          label="Next"
+          direction="next"
+          disabled={page === totalPages}
+          onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+        />
+      </nav>
+    </div>
   </div>
 );
 
