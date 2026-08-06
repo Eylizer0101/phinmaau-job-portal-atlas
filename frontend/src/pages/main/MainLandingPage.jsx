@@ -275,7 +275,7 @@ const MainLandingPage = () => {
                         <img
                           src={partner.logo}
                           alt={`${partner.name} logo`}
-                          className="max-h-[56px] max-w-[80px] rounded-lg object-contain"
+                          className="max-h-[56px] max-w-[80px] rounded-2xl object-contain"
                           loading="lazy"
                           decoding="async"
                           onError={(event) => {
