@@ -12,6 +12,34 @@ const getText = (value, fallback = '') => {
   return isMeaningfulResumeValue(text) ? text : fallback;
 };
 
+const formatBirthdayDisplay = (value = '') => {
+  const clean = String(value || '').trim();
+  if (!clean) return '';
+
+  const isoMatch = clean.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) {
+    const [, year, month, day] = isoMatch;
+    const date = new Date(Number(year), Number(month) - 1, Number(day));
+
+    if (!Number.isNaN(date.getTime())) {
+      return date.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    }
+  }
+
+  const parsedDate = new Date(clean);
+  if (Number.isNaN(parsedDate.getTime())) return clean;
+
+  return parsedDate.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
+
 const SHORT_MONTH_NAMES = { January: 'Jan', February: 'Feb', March: 'Mar', April: 'Apr', May: 'May', June: 'Jun', July: 'Jul', August: 'Aug', September: 'Sep', October: 'Oct', November: 'Nov', December: 'Dec' };
 
 const formatShortResumeDate = (value = '') => String(value || '').replace(/\b(January|February|March|April|May|June|July|August|September|October|November|December)\b/g, (month) => SHORT_MONTH_NAMES[month] || month).replace(/\s+(?:-|–|—|to)\s+/gi, ' – ').replace(/\s+/g, ' ').trim();
@@ -357,7 +385,7 @@ const ResumePreviewPage = () => {
       { label: 'Weight', value: formData.weight ? `${String(formData.weight).replace(/\s*(kg|kgs|kilogram|kilograms)$/i, '').trim()} kg` : '' },
       { label: 'Gender', value: formData.gender },
       { label: 'Civil Status', value: formData.civilStatus },
-      { label: 'Birthday', value: formData.birthday },
+      { label: 'Birthday', value: formatBirthdayDisplay(formData.birthday) },
     ],
   ];
 

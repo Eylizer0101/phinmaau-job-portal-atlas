@@ -1746,6 +1746,34 @@ const EmptyProfileSection = ({ title, message }) => {
 };
 
 
+const formatBirthdayDisplay = (value = '') => {
+  const clean = String(value || '').trim();
+  if (!clean) return '';
+
+  const isoMatch = clean.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) {
+    const [, year, month, day] = isoMatch;
+    const date = new Date(Number(year), Number(month) - 1, Number(day));
+
+    if (!Number.isNaN(date.getTime())) {
+      return date.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    }
+  }
+
+  const parsedDate = new Date(clean);
+  if (Number.isNaN(parsedDate.getTime())) return clean;
+
+  return parsedDate.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
+
 const formatDisplayHeight = (height) => {
   if (!height) return 'N/A';
 
@@ -2804,11 +2832,9 @@ const BasicInfoModal = ({
                         onChange={(e) => onChange('campus', e.target.value)}
                         className="w-full h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                       >
-                      {!drafts.campus && (
-  <option value="">
-    Select campus
-  </option>
-)}
+                        <option value="" disabled>
+                          Select campus
+                        </option>
 
 {CAMPUS_OPTIONS.map((opt) => (
   <option key={opt} value={opt}>
@@ -2826,11 +2852,9 @@ const BasicInfoModal = ({
                         onChange={(e) => onChange('course', e.target.value)}
                         className="w-full h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                       >
-                        {!drafts.course && (
-  <option value="">
-    Select course
-  </option>
-)}
+                        <option value="" disabled>
+                          Select course
+                        </option>
 
 {MAJOR_COURSE_OPTIONS.map((opt) => (
   <option key={opt} value={opt}>
@@ -2848,11 +2872,9 @@ const BasicInfoModal = ({
                         onChange={(e) => onChange('yearGraduated', e.target.value)}
                         className="w-full h-11 px-3 border border-gray-300 rounded-[3px] bg-white outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                       >
-                      {!drafts.yearGraduated && (
-  <option value="">
-    Select year
-  </option>
-)}
+                        <option value="" disabled>
+                          Select year graduated
+                        </option>
 
 {yearOptions.map((opt) => (
   <option key={opt} value={opt}>
@@ -6519,7 +6541,7 @@ const MyProfile = () => {
   };
 
  const personalDisplayItems = [
-  { label: 'Birthday', value: formData.birthday },
+  { label: 'Birthday', value: formatBirthdayDisplay(formData.birthday) },
   { label: 'Civil Status', value: formData.civilStatus },
   { label: 'Height', value: formatDisplayHeight(formData.height) },
   { label: 'Weight', value: formatDisplayWeight(formData.weight) },
@@ -6656,7 +6678,7 @@ const MyProfile = () => {
             <div><b>Weight:</b> {formatDisplayWeight(formData.weight)}</div>
             <div><b>Gender:</b> {textOrEmpty(formData.gender, 'Not provided')}</div>
             <div><b>Civil Status:</b> {textOrEmpty(formData.civilStatus, 'Not provided')}</div>
-            <div><b>Birthday:</b> {textOrEmpty(formData.birthday, 'Not provided')}</div>
+            <div><b>Birthday:</b> {textOrEmpty(formatBirthdayDisplay(formData.birthday), 'Not provided')}</div>
           </div>
         </div>
       );
