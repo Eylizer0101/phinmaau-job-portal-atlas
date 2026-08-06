@@ -1504,9 +1504,9 @@ const EmptyCompanyTabState = ({ icon = 'file', title, description }) => (
   </div>
 );
 
-const EmptyCompanyBookmarks = ({ onBrowseCompanies }) => (
-  <div className="p-6">
-    <div className="min-h-[260px] rounded-2xl border border-black/10 bg-white px-5 py-10 flex items-center justify-center text-center">
+const EmptyCompanyBookmarks = () => (
+  <div className="p-6 flex-1">
+    <div className="h-full min-h-[300px] rounded-2xl border border-black/10 bg-white px-5 py-10 flex items-center justify-center text-center">
       <div className="max-w-[360px] mx-auto">
         <img
           src="/images/NoSavedCompanies.png"
@@ -1516,19 +1516,6 @@ const EmptyCompanyBookmarks = ({ onBrowseCompanies }) => (
         />
 
         <h3 className="mt-5 text-[15px] font-bold text-black/70">No saved companies yet</h3>
-        <p className="mt-2 text-[14px] leading-6 text-black/35">
-          Click &quot;Browse Companies&quot; to start exploring companies and save companies you want to revisit later.
-        </p>
-
-        <div className="mt-6">
-          <button
-            type="button"
-            onClick={onBrowseCompanies}
-            className={`${UI.btnBase} ${UI.btnMd} ${UI.btnPrimary} ${UI.ring}`}
-          >
-            Browse Companies
-          </button>
-        </div>
       </div>
     </div>
   </div>
@@ -2825,7 +2812,7 @@ const Bookmarks = () => {
             ) : (
               <div className={UI.grid}>
                 <div className="min-w-0">
-                  <div className="rounded-2xl border border-black/10 overflow-hidden bg-[#FFFFFF] shadow-sm">
+                  <div className="h-full rounded-2xl border border-black/10 overflow-hidden bg-[#FFFFFF] shadow-sm flex flex-col">
                     <div className="px-4 py-4 bg-[#2e66a6] text-white flex items-center justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold">{formatCountLabel(savedCompanies.length, 'Saved Companie')}</p>
@@ -2877,7 +2864,7 @@ const Bookmarks = () => {
                         </div>
                       </div>
                     ) : savedCompanies.length === 0 ? (
-                      <EmptyCompanyBookmarks onBrowseCompanies={() => navigate('/jobseeker/companies')} />
+                      <EmptyCompanyBookmarks />
                     ) : (
                       savedCompanies.map((company) => (
                         <SavedCompanyCard
@@ -2913,7 +2900,7 @@ const Bookmarks = () => {
                         <p className="mt-3 text-sm sm:text-[15px] text-black/70 leading-6">
                           You haven&apos;t saved any companies.
                           <br />
-                          Bookmark companies you&apos;re interested in to view them here anytime.
+                          Click &quot;Browse Companies&quot; to start exploring companies and save companies you want to revisit later.
                         </p>
 
                         <div className="mt-6">
