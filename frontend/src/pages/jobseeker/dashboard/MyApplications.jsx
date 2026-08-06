@@ -117,6 +117,23 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 13h18" />
         </svg>
       );
+    case 'laptop':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.8}
+            d="M5 5h14a1 1 0 011 1v9H4V6a1 1 0 011-1z"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.8}
+            d="M2.5 18h19M8 18h8"
+          />
+        </svg>
+      );
     case 'building':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -613,7 +630,7 @@ const MyApplications = () => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return filteredApplications;
 
-    return filteredApplications.filter((application) => {
+    return applications.filter((application) => {
       const statusText = getStatusText(application);
       const salaryText = formatPesoRange(application.job?.salaryMin, application.job?.salaryMax) || '';
       const appliedDateText = formatAppliedDateTime(application.appliedAt);
@@ -640,7 +657,7 @@ const MyApplications = () => {
         String(value || '').toLowerCase().includes(query)
       );
     });
-  }, [filteredApplications, searchQuery]);
+  }, [applications, filteredApplications, searchQuery]);
 
   const totalPages = Math.max(1, Math.ceil(searchedApplications.length / pageSize));
 
@@ -1228,7 +1245,7 @@ const MyApplications = () => {
                             )}
                             {workModeText && (
                               <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
-                                <span className="text-gray-500"><SvgIcon name="building" className="w-4 h-4" /></span>
+                                <span className="text-gray-500"><SvgIcon name="laptop" className="w-4 h-4" /></span>
                                 {workModeText}
                               </span>
                             )}

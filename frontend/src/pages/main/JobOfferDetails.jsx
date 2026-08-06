@@ -478,6 +478,23 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           />
         </svg>
       );
+    case 'laptop':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.5}
+            d="M5 5h14a1 1 0 011 1v9H4V6a1 1 0 011-1z"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.5}
+            d="M2.5 18h19M8 18h8"
+          />
+        </svg>
+      );
     case 'building':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1222,7 +1239,7 @@ const JobOfferDetails = () => {
                         {job.workMode && (
                           <span className={UI.chip}>
                             <span className="text-black/60">
-                              <SvgIcon name="building" className="w-3.5 h-3.5" />
+                              <SvgIcon name="laptop" className="w-3.5 h-3.5" />
                             </span>
                             {job.workMode}
                           </span>
