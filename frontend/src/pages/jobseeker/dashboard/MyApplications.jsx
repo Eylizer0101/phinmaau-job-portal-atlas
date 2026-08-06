@@ -145,6 +145,17 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           />
         </svg>
       );
+    case 'industry':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.7}
+            d="M3 21h18M5 21V10l5 3V9l5 3V6h4v15M8 17h1m3 0h1m3 0h1"
+          />
+        </svg>
+      );
     case 'calendar':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1213,7 +1224,7 @@ const MyApplications = () => {
                                 <>
                                   <span className="font-medium text-gray-300" aria-hidden="true">|</span>
                                   <span className="inline-flex min-w-0 items-center gap-1.5" title={industryText}>
-                                    <SvgIcon name="building" className="h-[18px] w-[18px] flex-shrink-0 text-gray-500" />
+                                    <SvgIcon name="industry" className="h-[18px] w-[18px] flex-shrink-0 text-gray-500" />
                                     <span className="truncate">{industryText}</span>
                                   </span>
                                 </>
