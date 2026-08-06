@@ -249,8 +249,8 @@ const EmployerRegisterPage = () => {
 
     if (check('regionCity')) {
       if (!selectedRegion) next.regionCity = 'Region is required.';
-      else if (!selectedCity) next.regionCity = 'City/Province is required.';
-      else if (!formData.regionCity.trim()) next.regionCity = 'Region and City/Province are required.';
+      else if (!selectedCity) next.regionCity = 'Province is required.';
+      else if (!formData.regionCity.trim()) next.regionCity = 'Region and Province are required.';
     }
 
     // Documents (now 5 required)
@@ -1304,7 +1304,7 @@ const EmployerRegisterPage = () => {
                           {/* City */}
                           <div className="space-y-1">
                             <label htmlFor="city" className={labelBase}>
-                              City/Province
+                              Province
                             </label>
                             <div className="relative">
                               <div className="hidden sm:flex absolute inset-y-0 left-0 pl-3 items-center pointer-events-none z-10">
@@ -1320,7 +1320,7 @@ const EmployerRegisterPage = () => {
                                 className={selectWithLeftIconClass(!!fieldErrors.regionCity)}
                                 disabled={loading || !selectedRegion}
                               >
-                                <option value="">{selectedRegion ? 'Select City/Province' : 'Select Region first'}</option>
+                                <option value="">{selectedRegion ? 'Select Province' : 'Select Region first'}</option>
                                 {cityOptions.map((c) => (
                                   <option key={c} value={c}>
                                     {c}
@@ -1331,7 +1331,7 @@ const EmployerRegisterPage = () => {
                           </div>
 
                           <input type="hidden" name="regionCity" value={formData.regionCity} />
-                          {focused.regionCity && !fieldErrors.regionCity && helperText('regionCity-help', 'Select your region and city/province.')}
+                          {focused.regionCity && !fieldErrors.regionCity && helperText('regionCity-help', 'Select your region and province.')}
                           {errorText('regionCity-error', fieldErrors.regionCity)}
                         </div>
                       </div>
