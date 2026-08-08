@@ -460,6 +460,217 @@ const EmptyState = ({ icon, title, subtitle }) => {
   );
 };
 
+const ImageCropEditor = ({ source, mode, fileName, onCancel, onApply }) => {
+  const frameRef = useRef(null);
+  const imageRef = useRef(null);
+  const dragRef = useRef(null);
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const [frameSize, setFrameSize] = useState({ width: 0, height: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [applying, setApplying] = useState(false);
+
+  const isLogo = mode === 'logo';
+
+  useEffect(() => {
+    const updateFrameSize = () => {
+      const rect = frameRef.current?.getBoundingClientRect();
+      if (rect) setFrameSize({ width: rect.width, height: rect.height });
+    };
+
+    updateFrameSize();
+    window.addEventListener('resize', updateFrameSize);
+    return () => window.removeEventListener('resize', updateFrameSize);
+  }, []);
+
+  const baseScale = useMemo(() => {
+    if (!frameSize.width || !frameSize.height || !imageSize.width || !imageSize.height) return 1;
+    return Math.max(frameSize.width / imageSize.width, frameSize.height / imageSize.height);
+  }, [frameSize, imageSize]);
+
+  const renderedScale = baseScale * zoom;
+  const renderedWidth = imageSize.width * renderedScale;
+  const renderedHeight = imageSize.height * renderedScale;
+  const maxOffsetX = Math.max(0, (renderedWidth - frameSize.width) / 2);
+  const maxOffsetY = Math.max(0, (renderedHeight - frameSize.height) / 2);
+
+  const clampPosition = useCallback(
+    (next) => ({
+      x: Math.max(-maxOffsetX, Math.min(maxOffsetX, next.x)),
+      y: Math.max(-maxOffsetY, Math.min(maxOffsetY, next.y)),
+    }),
+    [maxOffsetX, maxOffsetY]
+  );
+
+  useEffect(() => {
+    setPosition((current) => clampPosition(current));
+  }, [clampPosition]);
+
+  const handlePointerDown = (event) => {
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: position.x,
+      originY: position.y,
+    };
+  };
+
+  const handlePointerMove = (event) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+
+    setPosition(
+      clampPosition({
+        x: drag.originX + event.clientX - drag.startX,
+        y: drag.originY + event.clientY - drag.startY,
+      })
+    );
+  };
+
+  const handlePointerEnd = (event) => {
+    if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
+  };
+
+  const handleApply = async () => {
+    const image = imageRef.current;
+    if (!image || !frameSize.width || !frameSize.height || !renderedScale) return;
+
+    setApplying(true);
+    try {
+      const outputWidth = isLogo ? 800 : 1500;
+      const outputHeight = isLogo ? 800 : 500;
+      const sourceWidth = frameSize.width / renderedScale;
+      const sourceHeight = frameSize.height / renderedScale;
+      const sourceX = imageSize.width / 2 - sourceWidth / 2 - position.x / renderedScale;
+      const sourceY = imageSize.height / 2 - sourceHeight / 2 - position.y / renderedScale;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = outputWidth;
+      canvas.height = outputHeight;
+      const context = canvas.getContext('2d');
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = 'high';
+      context.drawImage(
+        image,
+        sourceX,
+        sourceY,
+        sourceWidth,
+        sourceHeight,
+        0,
+        0,
+        outputWidth,
+        outputHeight
+      );
+
+      const mimeType = isLogo ? 'image/png' : 'image/jpeg';
+      const extension = isLogo ? 'png' : 'jpg';
+      const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob(
+          (result) => (result ? resolve(result) : reject(new Error('Unable to crop image.'))),
+          mimeType,
+          isLogo ? undefined : 0.92
+        );
+      });
+
+      const cleanName = String(fileName || (isLogo ? 'company-logo' : 'company-cover'))
+        .replace(/\.[^/.]+$/, '')
+        .replace(/[^a-zA-Z0-9-_]+/g, '-');
+      onApply(new File([blob], `${cleanName}-cropped.${extension}`, { type: mimeType }));
+    } catch (cropError) {
+      console.error('Image crop failed:', cropError);
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/65 px-4 py-6">
+      <div className="w-full max-w-[760px] overflow-hidden rounded-[18px] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
+        <div className="flex items-start justify-between gap-4 border-b border-[#e5e7eb] px-6 py-5">
+          <div>
+            <h3 className="text-[22px] font-semibold text-[#111827]">
+              {isLogo ? 'Adjust Company Logo' : 'Adjust Cover Photo'}
+            </h3>
+            <p className="mt-1 text-[13px] text-[#6b7280]">
+              Drag the photo to reposition it, then use the slider to zoom.
+            </p>
+          </div>
+          <button type="button" onClick={onCancel} className="rounded-full p-2 text-[#4b5563] hover:bg-[#f3f4f6]" aria-label="Close image editor">
+            <CloseIcon className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="bg-[#111827] px-4 py-6 sm:px-8">
+          <div
+            ref={frameRef}
+            className={cx(
+              'relative mx-auto touch-none select-none overflow-hidden bg-black cursor-grab active:cursor-grabbing',
+              isLogo ? 'aspect-square w-full max-w-[430px] rounded-full' : 'aspect-[3/1] w-full rounded-[12px]'
+            )}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerEnd}
+            onPointerCancel={handlePointerEnd}
+          >
+            <img
+              ref={imageRef}
+              src={source}
+              alt="Crop preview"
+              draggable="false"
+              onLoad={(event) => {
+                setImageSize({
+                  width: event.currentTarget.naturalWidth,
+                  height: event.currentTarget.naturalHeight,
+                });
+                setPosition({ x: 0, y: 0 });
+                setZoom(1);
+              }}
+              className="pointer-events-none absolute left-1/2 top-1/2 max-w-none"
+              style={{
+                width: renderedWidth || 'auto',
+                height: renderedHeight || 'auto',
+                transform: `translate(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px))`,
+              }}
+            />
+            <div className={cx('pointer-events-none absolute inset-0 border-2 border-white/90', isLogo ? 'rounded-full' : 'rounded-[12px]')} />
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <span className="rounded-full bg-black/45 px-3 py-1.5 text-[12px] font-medium text-white">Drag to reposition</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-5 px-6 py-5">
+          <div className="flex items-center gap-3">
+            <span className="text-[12px] font-semibold text-[#4b5563]">Zoom</span>
+            <input
+              type="range"
+              min="1"
+              max="3"
+              step="0.01"
+              value={zoom}
+              onChange={(event) => setZoom(Number(event.target.value))}
+              className="h-2 flex-1 cursor-pointer accent-[#2e66a6]"
+              aria-label="Image zoom"
+            />
+            <span className="w-12 text-right text-[12px] font-semibold text-[#4b5563]">{Math.round(zoom * 100)}%</span>
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <button type="button" onClick={onCancel} disabled={applying} className="h-[42px] rounded-[10px] border border-[#d1d5db] px-5 text-sm font-semibold text-[#374151] hover:bg-[#f9fafb] disabled:opacity-60">
+              Cancel
+            </button>
+            <button type="button" onClick={handleApply} disabled={applying || !imageSize.width} className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[10px] bg-[#2e66a6] px-5 text-sm font-semibold text-white hover:bg-[#255487] disabled:cursor-not-allowed disabled:opacity-60">
+              {applying ? <><SpinnerIcon className="h-4 w-4" /> Applying...</> : 'Apply Photo'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const CredentialRow = ({
   item,
   uploading,
@@ -585,6 +796,12 @@ const CompanyProfile = () => {
 
   const [previewCover, setPreviewCover] = useState(null);
   const [coverFile, setCoverFile] = useState(null);
+  const [cropEditor, setCropEditor] = useState({
+    isOpen: false,
+    mode: 'logo',
+    source: '',
+    fileName: '',
+  });
 
   const [galleryFiles, setGalleryFiles] = useState([]);
   const [galleryPreviews, setGalleryPreviews] = useState([]);
@@ -720,6 +937,13 @@ const CompanyProfile = () => {
     setGalleryFiles([]);
   }, [previewCover, previewLogo, revokeLocalPreviewUrls]);
 
+  const closeCropEditor = useCallback(() => {
+    setCropEditor((current) => {
+      if (current.source?.startsWith('blob:')) URL.revokeObjectURL(current.source);
+      return { isOpen: false, mode: 'logo', source: '', fileName: '' };
+    });
+  }, []);
+
   const fetchCompanyProfile = useCallback(async () => {
     try {
       setLoading(true);
@@ -803,6 +1027,12 @@ const CompanyProfile = () => {
       if (credentialPreview.url) window.URL.revokeObjectURL(credentialPreview.url);
     };
   }, [credentialPreview.url]);
+
+  useEffect(() => {
+    return () => {
+      if (cropEditor.source?.startsWith('blob:')) URL.revokeObjectURL(cropEditor.source);
+    };
+  }, [cropEditor.source]);
 
   useEffect(() => {
     if (location.hash) {
@@ -930,10 +1160,12 @@ const CompanyProfile = () => {
           return;
         }
 
-        if (previewLogo?.startsWith('blob:')) URL.revokeObjectURL(previewLogo);
-
-        setLogoFile(file);
-        setPreviewLogo(blobUrl);
+        setCropEditor({
+          isOpen: true,
+          mode: 'logo',
+          source: blobUrl,
+          fileName: file.name,
+        });
       } catch (err) {
         console.error(err);
         setError(err.message || 'Could not read image.');
@@ -941,7 +1173,7 @@ const CompanyProfile = () => {
         e.target.value = '';
       }
     },
-    [clearFieldErrors, clearMessages, previewLogo, validateImageDimensions]
+    [clearFieldErrors, clearMessages, validateImageDimensions]
   );
 
   const handleCoverChange = useCallback(
@@ -963,13 +1195,34 @@ const CompanyProfile = () => {
       }
 
       const blobUrl = URL.createObjectURL(file);
-      if (previewCover?.startsWith('blob:')) URL.revokeObjectURL(previewCover);
-
-      setCoverFile(file);
-      setPreviewCover(blobUrl);
+      setCropEditor({
+        isOpen: true,
+        mode: 'cover',
+        source: blobUrl,
+        fileName: file.name,
+      });
       e.target.value = '';
     },
-    [clearFieldErrors, clearMessages, previewCover]
+    [clearFieldErrors, clearMessages]
+  );
+
+  const applyCroppedImage = useCallback(
+    (croppedFile) => {
+      const previewUrl = URL.createObjectURL(croppedFile);
+
+      if (cropEditor.mode === 'logo') {
+        if (previewLogo?.startsWith('blob:')) URL.revokeObjectURL(previewLogo);
+        setLogoFile(croppedFile);
+        setPreviewLogo(previewUrl);
+      } else {
+        if (previewCover?.startsWith('blob:')) URL.revokeObjectURL(previewCover);
+        setCoverFile(croppedFile);
+        setPreviewCover(previewUrl);
+      }
+
+      closeCropEditor();
+    },
+    [closeCropEditor, cropEditor.mode, previewCover, previewLogo]
   );
 
   const handleGalleryPick = useCallback(
@@ -1639,7 +1892,15 @@ const CompanyProfile = () => {
             </div>
           </div>
         </div>
-
+        {cropEditor.isOpen && cropEditor.source ? (
+          <ImageCropEditor
+            source={cropEditor.source}
+            mode={cropEditor.mode}
+            fileName={cropEditor.fileName}
+            onCancel={closeCropEditor}
+            onApply={applyCroppedImage}
+          />
+        ) : null}
 
         {credentialAccess.isOpen ? (
           <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/45 px-4 py-6" role="dialog" aria-modal="true">
