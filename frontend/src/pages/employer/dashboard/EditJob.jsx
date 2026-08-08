@@ -1153,16 +1153,6 @@ const EditJob = () => {
     ).trim();
   }, [storedUser]);
 
-  const salaryRangeText = useMemo(() => {
-    const min = formData.salaryMin ? Number(formData.salaryMin).toLocaleString() : '';
-    const max = formData.salaryMax ? Number(formData.salaryMax).toLocaleString() : '';
-    if (!min && !max) return 'Salary not specified';
-    if (min && !max) return `₱${min}`;
-    if (!min && max) return `Up to ₱${max}`;
-    return `₱${min} – ₱${max}`;
-  }, [formData.salaryMin, formData.salaryMax]);
-
-
   const canPublish = useMemo(() => {
     return verificationStatus === 'verified' || storedUser?.isVerified === true;
   }, [verificationStatus, storedUser]);
@@ -1207,6 +1197,16 @@ const EditJob = () => {
     locationLatitude: '',
     locationLongitude: '',
   });
+
+  const salaryRangeText = useMemo(() => {
+    const min = formData.salaryMin ? Number(formData.salaryMin).toLocaleString() : '';
+    const max = formData.salaryMax ? Number(formData.salaryMax).toLocaleString() : '';
+    if (!min && !max) return 'Salary not specified';
+    if (min && !max) return `₱${min}`;
+    if (!min && max) return `Up to ₱${max}`;
+    return `₱${min} – ₱${max}`;
+  }, [formData.salaryMin, formData.salaryMax]);
+
 
   const companyCategoryDefault = useMemo(() => {
     const fromJob = normalizeCategory(job?.category);
