@@ -108,6 +108,7 @@ app.use(
       'X-Resume-Filename',
       'X-Admin-Password',
     ],
+    exposedHeaders: ['Content-Disposition', 'Content-Type'],
     optionsSuccessStatus: 204,
   })
 );
