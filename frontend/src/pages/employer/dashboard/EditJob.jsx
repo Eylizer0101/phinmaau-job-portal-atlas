@@ -1037,6 +1037,40 @@ const formatSalaryInput = (value = '') => {
   return Number(clean).toLocaleString('en-PH');
 };
 
+const formatApplicationDeadline = (value = '') => {
+  if (!value) return '';
+
+  const parts = String(value).split('-').map(Number);
+  const date =
+    parts.length >= 3 && parts.every(Number.isFinite)
+      ? new Date(parts[0], parts[1] - 1, parts[2])
+      : new Date(value);
+
+  if (Number.isNaN(date.getTime())) return String(value);
+
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+  });
+};
+
+const getRelocationDisplayLabel = (value = '') => {
+  const cleanValue = String(value || '').trim();
+  const normalized = cleanValue.toLowerCase();
+
+  if (normalized === 'yes - willing to relocate') return 'Willing to relocate';
+  if (normalized === 'no - position is fixed location') return 'Location Fixed';
+  if (normalized === 'open to relocation if necessary') return 'Possible to relocate';
+
+  return cleanValue;
+};
+
+const normalizeExternalUrl = (value = '') => {
+  const cleanValue = String(value || '').trim();
+  if (!cleanValue || cleanValue.toLowerCase() === 'n/a') return '';
+  return /^https?:\/\//i.test(cleanValue) ? cleanValue : `https://${cleanValue}`;
+};
+
 const EditJob = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -1059,6 +1093,9 @@ const EditJob = () => {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [savingCancelDraft, setSavingCancelDraft] = useState(false);
   const [pendingLeavePath, setPendingLeavePath] = useState('/employer/manage-jobs');
   const allowNavigationRef = useRef(false);
@@ -1083,6 +1120,37 @@ const EditJob = () => {
 
   const verificationStatus = useMemo(() => {
     return storedUser?.employerProfile?.verificationDocs?.overallStatus || 'unverified';
+  }, [storedUser]);
+
+  const isCompanyProfileComplete = useMemo(() => {
+    const profile = storedUser?.employerProfile || {};
+
+    return Boolean(
+      String(profile.companyName || '').trim() &&
+        String(profile.businessEmail || '').trim() &&
+        String(profile.mobileNumber || '').trim() &&
+        String(profile.regionCity || '').trim() &&
+        String(profile.industry || '').trim() &&
+        String(profile.companyAddress || '').trim() &&
+        String(profile.companyDescription || '').trim() &&
+        String(profile.companyLogo || '').trim()
+    );
+  }, [storedUser]);
+
+  const companyLocationFromProfile =
+    String(storedUser?.employerProfile?.companyAddress || '').trim() || 'Company location';
+
+  const companyWebsite = useMemo(() => {
+    const profile = storedUser?.employerProfile || {};
+    return String(
+      profile.companyWebsiteUrl ||
+        profile.companyWebsite ||
+        profile.website ||
+        profile.websiteUrl ||
+        profile.companyUrl ||
+        profile.companyURL ||
+        ''
+    ).trim();
   }, [storedUser]);
 
   const canPublish = useMemo(() => {
@@ -2085,6 +2153,38 @@ const EditJob = () => {
     }
   };
 
+  const handleOpenDraftPreview = () => {
+    setSubmitted(true);
+    clearMessages();
+
+    if (formData.isPublished !== false) {
+      handleSaveChanges();
+      return;
+    }
+
+    if (!isCompanyProfileComplete) {
+      setError('You have not yet completed your company profile. A complete company profile is required to publish a job.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    if (!canPublish) {
+      setError(verificationBannerMessage || 'You cannot publish until verified.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    const msg = validateStrict();
+    if (msg) {
+      setError('Please fix the highlighted fields.');
+      focusFirstError(fieldErrors);
+      return;
+    }
+
+    setPrivacyAccepted(false);
+    setShowPreviewModal(true);
+  };
+
   const handlePublish = async () => {
     setSubmitted(true);
     clearMessages();
@@ -2101,6 +2201,8 @@ const EditJob = () => {
       return;
     }
 
+    setShowPrivacyModal(false);
+    setShowPreviewModal(false);
     setPublishing(true);
     try {
       const payload = buildPayload({ mode: 'publish' });
@@ -2226,8 +2328,8 @@ const EditJob = () => {
   const showReqCounterRed = (touched.requirements || submitted) && reqLen > 0 && reqLen < 40;
 
   const isDraft = formData.isPublished === false;
-  const primaryActionLabel = 'Save Changes';
-  const primaryActionHandler = handleSaveChanges;
+  const primaryActionLabel = isDraft ? 'Continue →' : 'Save Changes';
+  const primaryActionHandler = isDraft ? handleOpenDraftPreview : handleSaveChanges;
 
   if (loading) {
     return (
@@ -2924,7 +3026,7 @@ const EditJob = () => {
                       savingChanges ||
                       deleting ||
                       !requiredOk ||
-                      !isDirty
+                      (!isDraft && !isDirty)
                     }
                     className="rounded-xl bg-[#2e66a6] px-5 py-2 text-sm font-semibold text-white hover:bg-[#25558a] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#2e66a6]"
                   >
@@ -2939,6 +3041,303 @@ const EditJob = () => {
 
 
         </div>
+
+          {isDraft && showPreviewModal && (
+            <div className="fixed inset-0 z-[2100] flex items-center justify-center bg-black/60 p-4">
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="edit-job-preview-title"
+                className="flex max-h-[94vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+              >
+                <div className="flex items-center justify-between border-b border-[#e6edf5] bg-white px-6 py-4">
+                  <div>
+                    <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[#2e66a6]">
+                      Almost There!
+                    </h2>
+                    <h3 id="edit-job-preview-title" className="mt-1 text-xl font-bold text-gray-900">
+                      Double-check your job posting before publishing.
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowPreviewModal(false)}
+                    className="rounded-full p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
+                    aria-label="Close preview"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="overflow-y-auto bg-white p-5 sm:p-6">
+                  <div className="mx-auto w-full max-w-6xl space-y-5">
+                    <section className="rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] sm:p-7">
+                      <div className="flex min-w-0 items-start gap-4">
+                        {storedUser?.employerProfile?.companyLogo ? (
+                          <img
+                            src={storedUser.employerProfile.companyLogo}
+                            alt="Company logo"
+                            className="h-16 w-16 flex-shrink-0 rounded-2xl border border-slate-200 bg-white object-cover sm:h-20 sm:w-20"
+                          />
+                        ) : (
+                          <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-xl font-bold text-slate-600 sm:h-20 sm:w-20">
+                            {(storedUser?.employerProfile?.companyName || 'C').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+
+                        <div className="min-w-0 flex-1">
+                          <h3 className="break-words text-3xl font-extrabold leading-tight tracking-tight text-black sm:text-4xl">
+                            {formData.title || 'Untitled Job'}
+                          </h3>
+
+                          <div className="mt-2 flex items-center gap-2 text-sm text-black/70">
+                            <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 21h18M6 21V5a2 2 0 012-2h8a2 2 0 012 2v16M9 7h.01M9 11h.01M9 15h.01M12 7h.01M12 11h.01M12 15h.01M15 7h.01M15 11h.01M15 15h.01" />
+                            </svg>
+                            <span className="truncate">{storedUser?.employerProfile?.companyName || job?.companyName || 'Company name'}</span>
+                          </div>
+
+                          <div className="mt-2 flex items-start gap-2 text-sm uppercase tracking-wide text-black/60">
+                            <svg className="mt-0.5 h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 21s7-4.438 7-11a7 7 0 10-14 0c0 6.562 7 11 7 11z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 10a2 2 0 100-4 2 2 0 000 4z" />
+                            </svg>
+                            <span className="break-words">{formData.location || companyLocationFromProfile}</span>
+                          </div>
+
+                          <div className="mt-5 flex flex-wrap gap-2">
+                            {[
+                              formData.jobType,
+                              formData.workMode,
+                              formData.vacancies
+                                ? `${formData.vacancies} ${Number(formData.vacancies) === 1 ? 'Vacancy' : 'Vacancies'}`
+                                : '',
+                              getRelocationDisplayLabel(formData.willingToRelocate),
+                            ]
+                              .filter(Boolean)
+                              .map((value) => (
+                                <span
+                                  key={value}
+                                  className="inline-flex items-center rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1.5 text-sm font-semibold text-black/75"
+                                >
+                                  {value}
+                                </span>
+                              ))}
+                          </div>
+
+                          <div className="mt-5 flex items-center gap-2 text-sm text-black/70">
+                            <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>
+                              Ready to publish
+                              {formData.applicationDeadline
+                                ? ` and deadline of application is on ${formatApplicationDeadline(formData.applicationDeadline)}`
+                                : ''}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                      <div className="rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-sm">
+                        <p className="text-sm font-bold text-black">Salary</p>
+                        <p className="mt-2 text-sm text-black/75">
+                          {formData.hideSalary
+                            ? 'Salary not disclosed'
+                            : formData.salaryMin || formData.salaryMax
+                            ? `₱${formatSalaryInput(formData.salaryMin || '0')} – ₱${formatSalaryInput(formData.salaryMax || '0')}`
+                            : 'Not specified'}
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-sm">
+                        <p className="text-sm font-bold text-black">Experience</p>
+                        <p className="mt-2 text-sm text-black/75">{formData.experienceLevel || 'Not specified'}</p>
+                      </div>
+
+                      <div className="rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-sm">
+                        <p className="text-sm font-bold text-black">Employment Type</p>
+                        <p className="mt-2 text-sm text-black/75">{formData.jobType || 'Not specified'}</p>
+                      </div>
+
+                      <div className="rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-sm">
+                        <p className="text-sm font-bold text-black">Website / Company URL</p>
+                        {companyWebsite ? (
+                          <a
+                            href={normalizeExternalUrl(companyWebsite)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-2 block truncate text-sm font-medium text-[#2e66a6] hover:underline"
+                            title={companyWebsite}
+                          >
+                            {companyWebsite}
+                          </a>
+                        ) : (
+                          <p className="mt-2 text-sm text-black/75">N/A</p>
+                        )}
+                      </div>
+                    </section>
+
+                    <section className="rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-sm sm:p-6">
+                      <h4 className="text-base font-bold text-black">Job Description</h4>
+                      <div
+                        className="mt-4 break-words text-sm leading-7 text-black/75"
+                        dangerouslySetInnerHTML={{ __html: normalizeRichTextValue(formData.description) }}
+                      />
+                    </section>
+
+                    <section className="rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-sm sm:p-6">
+                      <h4 className="text-base font-bold text-black">Job Requirements</h4>
+                      <div
+                        className="mt-4 break-words text-sm leading-7 text-black/75"
+                        dangerouslySetInnerHTML={{ __html: normalizeRichTextValue(formData.requirements) }}
+                      />
+                    </section>
+
+                    {(formData.perksAndBenefits?.length || formData.otherBenefits) ? (
+                      <section className="rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-sm sm:p-6">
+                        <h4 className="text-base font-bold text-black">Perks and Benefits</h4>
+                        {formData.perksAndBenefits?.length ? (
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            {formData.perksAndBenefits.map((benefit) => (
+                              <span
+                                key={benefit}
+                                className="rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1.5 text-sm text-black/75"
+                              >
+                                {benefit}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
+                        {formData.otherBenefits ? (
+                          <p className="mt-4 text-sm leading-7 text-black/70">{formData.otherBenefits}</p>
+                        ) : null}
+                      </section>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="flex flex-col-reverse gap-3 border-t border-[#e6edf5] bg-white px-6 py-4 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowPreviewModal(false)}
+                    className="rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+                  >
+                    Back to Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPreviewModal(false);
+                      setPrivacyAccepted(false);
+                      setShowPrivacyModal(true);
+                    }}
+                    className="rounded-xl bg-[#2e66a6] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#23508a]"
+                  >
+                    Continue →
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isDraft && showPrivacyModal && (
+            <div className="fixed inset-0 z-[2200] flex items-center justify-center bg-black/60 p-2 sm:p-4">
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="edit-job-privacy-notice-title"
+                className="relative flex w-full max-w-[860px] flex-col overflow-hidden rounded-[22px] border border-gray-200 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.20)]"
+              >
+                <button
+                  type="button"
+                  onClick={() => setShowPrivacyModal(false)}
+                  className="absolute right-5 top-5 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
+                  aria-label="Close privacy notice"
+                >
+                  <span className="text-2xl leading-none" aria-hidden="true">×</span>
+                </button>
+
+                <div className="px-5 pb-5 pt-4 sm:px-8 lg:px-10">
+                  <div className="flex justify-center">
+                    <div className="relative flex h-16 w-16 items-center justify-center sm:h-20 sm:w-20" aria-hidden="true">
+                      <div className="absolute inset-0 rounded-full bg-[#1e4ba0]/[0.06]" />
+                      <div className="absolute inset-2 rounded-full border border-[#1e4ba0]/15" />
+                      <img
+                        src="/images/lock.png"
+                        alt="Lock"
+                        className="relative h-14 w-14 object-contain sm:h-16 sm:w-16"
+                        draggable="false"
+                      />
+                    </div>
+                  </div>
+
+                  <h2
+                    id="edit-job-privacy-notice-title"
+                    className="text-center text-[22px] font-extrabold leading-tight text-[#071b3a] sm:text-[27px] lg:text-[30px]"
+                    style={{ letterSpacing: '0.04em' }}
+                  >
+                    Privacy Notice &amp; Posting Agreement
+                  </h2>
+
+                  <div className="mx-auto mt-3 max-w-[760px] rounded-[16px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 py-4 shadow-[0_10px_30px_rgba(30,75,160,0.08)] sm:px-6">
+                    <div className="space-y-2.5 text-justify text-[13px] leading-6 text-[#0f2442] sm:text-sm">
+                      <p>
+                        By publishing this job post, you confirm that all information provided is accurate and complies with our platform policies.
+                      </p>
+                      <p>
+                        Once published, your job post will be visible to eligible job seekers. Applicants may view the information you provide, including the job title, company name, job description, qualifications, work location, salary (if disclosed), and other hiring details.
+                      </p>
+                      <p>
+                        You may access applicants&apos; submitted information solely for recruitment purposes and must keep all personal information confidential.
+                      </p>
+                      <p>
+                        To maintain the integrity of job listings, this post cannot be edited after one (1) hour from publication. Any changes after this period require approval from the platform administrator.
+                      </p>
+                    </div>
+                  </div>
+
+                  <label className="mx-auto mt-3 flex max-w-[760px] cursor-pointer items-start gap-3 rounded-[14px] border border-[#cdddf0] bg-[#f5f9fe] px-4 py-3 transition hover:border-[#9ebee2] hover:bg-[#eef5ff]">
+                    <input
+                      type="checkbox"
+                      checked={privacyAccepted}
+                      onChange={(event) => setPrivacyAccepted(event.target.checked)}
+                      className="mt-0.5 h-5 w-5 flex-shrink-0 rounded border-gray-300 focus:ring-2 focus:ring-offset-2"
+                      style={{ accentColor: '#1e4ba0' }}
+                    />
+                    <span className="text-left text-sm font-semibold leading-5 text-[#0f2442]">
+                      I have read and agree to the Privacy Notice &amp; Posting Agreement.
+                    </span>
+                  </label>
+
+                  <div className="mx-auto mt-4 flex max-w-[760px] flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPrivacyModal(false);
+                        setShowPreviewModal(true);
+                      }}
+                      disabled={publishing}
+                      className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      Back to Preview
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handlePublish}
+                      disabled={!privacyAccepted || publishing}
+                      className="rounded-xl bg-[#1e4ba0] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(30,75,160,0.25)] transition hover:bg-[#1b4290] disabled:cursor-not-allowed disabled:bg-[#93a6c9] disabled:shadow-none"
+                    >
+                      {publishing ? 'Publishing…' : 'Publish Job'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {showCancelModal && (
             <div className="fixed inset-0 z-[2100] flex items-center justify-center bg-black/50 p-4">
               <div

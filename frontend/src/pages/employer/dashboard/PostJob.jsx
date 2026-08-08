@@ -933,6 +933,23 @@ const formatSalaryInput = (value = '') => {
   return Number(clean).toLocaleString('en-PH');
 };
 
+const formatApplicationDeadline = (value = '') => {
+  if (!value) return '';
+
+  const parts = String(value).split('-').map(Number);
+  const date =
+    parts.length >= 3 && parts.every(Number.isFinite)
+      ? new Date(parts[0], parts[1] - 1, parts[2])
+      : new Date(value);
+
+  if (Number.isNaN(date.getTime())) return String(value);
+
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+  });
+};
+
 const getRelocationDisplayLabel = (value = '') => {
   const cleanValue = String(value || '').trim();
   const normalized = cleanValue.toLowerCase();
@@ -2564,7 +2581,7 @@ const PostJob = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           <span>
-                            Ready to publish{formData.applicationDeadline ? ` and deadline of application is on ${formData.applicationDeadline}` : ''}
+                            Ready to publish{formData.applicationDeadline ? ` and deadline of application is on ${formatApplicationDeadline(formData.applicationDeadline)}` : ''}
                           </span>
                         </div>
                       </div>
