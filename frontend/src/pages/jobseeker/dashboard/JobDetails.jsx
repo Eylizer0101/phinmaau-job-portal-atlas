@@ -791,6 +791,16 @@ const JobDetails = () => {
 
   const sourcePage = location.state?.sourcePage || 'jobsearch';
 
+  const companyId = useMemo(() => {
+    const employer = job?.employer;
+    const employerId = job?.employerId;
+
+    if (typeof employer === 'string') return employer;
+    if (employer?._id || employer?.id) return employer._id || employer.id;
+    if (typeof employerId === 'string') return employerId;
+    return employerId?._id || employerId?.id || '';
+  }, [job]);
+
   const setToastWithAutoClear = useCallback((type, message, ms = 1800) => {
     setToast({ show: true, type, message });
     if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
@@ -1327,9 +1337,20 @@ const JobDetails = () => {
                         <span className="text-black/60">
                           <SvgIcon name="building" className="w-4 h-4" />
                         </span>
-                        <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap" title={job.companyName}>
-                          {job.companyName}
-                        </span>
+                        {companyId ? (
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/jobseeker/company-details/${companyId}`)}
+                            className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap underline underline-offset-4 decoration-1 hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30 rounded-sm"
+                            title={`View ${job.companyName || 'company'} details`}
+                          >
+                            {job.companyName}
+                          </button>
+                        ) : (
+                          <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap" title={job.companyName}>
+                            {job.companyName}
+                          </span>
+                        )}
                       </div>
                     </div>
 
