@@ -4,6 +4,7 @@ import {
   filterMeaningfulResumeItems,
   hasMeaningfulResumeRows,
   isMeaningfulResumeValue,
+  normalizeAddedResumeSections,
 } from '../../../components/shared/resumeDisplayUtils';
 
 const getText = (value, fallback = '') => {
@@ -325,6 +326,13 @@ const ResumePreviewPage = () => {
   const affiliations = Array.isArray(formData.affiliations) ? formData.affiliations : [];
   const cocurricular = Array.isArray(formData.cocurricular) ? formData.cocurricular : [];
   const references = Array.isArray(formData.references) ? formData.references : [];
+  const addedResumeSections = normalizeAddedResumeSections(
+    formData.addedResumeSections,
+    formData
+  );
+  const showOptionalSection = (sectionKey, items) =>
+    addedResumeSections.includes(sectionKey) &&
+    filterMeaningfulResumeItems(items).length > 0;
   const meaningfulWorkExperiences = filterMeaningfulResumeItems(workExperiences);
   const meaningfulEducationEntries = filterMeaningfulResumeItems(educationEntries);
   const educationSummary = [
@@ -400,7 +408,7 @@ const ResumePreviewPage = () => {
           html,
           body {
             width: 210mm;
-            min-height: 297mm;
+            min-height: auto;
             background: #ffffff !important;
           }
 
@@ -421,7 +429,7 @@ const ResumePreviewPage = () => {
 
           .resume-paper {
             width: 210mm !important;
-            min-height: 297mm !important;
+            min-height: auto !important;
             margin: 0 !important;
             box-shadow: none !important;
           }
@@ -575,7 +583,7 @@ const ResumePreviewPage = () => {
         }
 
         .resume-section {
-          margin-top: 7px;
+          margin-top: 8px;
           break-inside: avoid;
         }
 
@@ -715,6 +723,24 @@ const ResumePreviewPage = () => {
         .empty-text {
           margin: 0;
           color: #777777;
+        }
+
+        .resume-declaration {
+          margin-top: 11px;
+          break-inside: avoid;
+        }
+
+        .declaration-text {
+          margin: 0 0 9px;
+          text-align: justify;
+        }
+
+        .declaration-name {
+          font-weight: 700;
+        }
+
+        .declaration-role {
+          margin-top: 2px;
         }
 
         @media screen and (max-width: 1240px) {
@@ -860,13 +886,21 @@ const ResumePreviewPage = () => {
                 ))}
             </Section>
 
-            <ProfileListSection title="Certifications" items={certifications} />
-            <ProfileListSection title="Projects" items={projects} />
-            <ProfileListSection title="Seminars and Trainings" items={seminars} />
-            <ProfileListSection title="Awards and Achievements" items={awards} type="awards" />
-            <ProfileListSection title="Affiliations" items={affiliations} />
-            <ProfileListSection title="Co-curricular Activities" items={cocurricular} />
-            <ProfileListSection title="References" items={references} type="references" />
+            {showOptionalSection('seminars', seminars) ? <ProfileListSection title="Seminars and Trainings" items={seminars} /> : null}
+            {showOptionalSection('awards', awards) ? <ProfileListSection title="Awards and Achievements" items={awards} type="awards" /> : null}
+            {showOptionalSection('certifications', certifications) ? <ProfileListSection title="Certifications" items={certifications} /> : null}
+            {showOptionalSection('projects', projects) ? <ProfileListSection title="Projects" items={projects} /> : null}
+            {showOptionalSection('affiliations', affiliations) ? <ProfileListSection title="Affiliations" items={affiliations} /> : null}
+            {showOptionalSection('cocurricular', cocurricular) ? <ProfileListSection title="Co-curricular Activities" items={cocurricular} /> : null}
+            {showOptionalSection('references', references) ? <ProfileListSection title="References" items={references} type="references" /> : null}
+
+            <section className="resume-declaration">
+              <p className="declaration-text">
+                I hereby certify that the above information is true and correct to the best of my knowledge.
+              </p>
+              <div className="declaration-name">{fullName}</div>
+              <div className="declaration-role">Applicant</div>
+            </section>
           </div>
           </main>
         </div>

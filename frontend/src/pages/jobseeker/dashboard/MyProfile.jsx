@@ -6,6 +6,10 @@ import JobSeekerLayout from '../../../layouts/JobSeekerLayout';
 import ProfileMoreDropdown from '../../../components/jobseeker/ProfileMoreDropdown';
 import { openResumePrintWindow } from '../../../components/shared/resumePrintTemplate';
 import {
+  OPTIONAL_RESUME_SECTION_KEYS,
+  normalizeAddedResumeSections,
+} from '../../../components/shared/resumeDisplayUtils';
+import {
   MAJOR_COURSE_OPTIONS,
   CAMPUS_OPTIONS,
   EDUCATIONAL_ATTAINMENT_OPTIONS,
@@ -579,10 +583,7 @@ const MORE_PROFILE_SECTIONS = {
 };
 
 const MORE_PROFILE_TAB_KEYS = Object.keys(MORE_PROFILE_SECTIONS);
-const FIXED_PROFILE_SECTION_KEYS = ['certifications', 'projects'];
-const ADDABLE_MORE_SECTION_KEYS = MORE_PROFILE_TAB_KEYS.filter(
-  (key) => !FIXED_PROFILE_SECTION_KEYS.includes(key)
-);
+const ADDABLE_MORE_SECTION_KEYS = OPTIONAL_RESUME_SECTION_KEYS;
 
 const MORE_SECTION_MODAL_STYLES = {
   certifications: { icon: <FaGraduationCap />, color: '#f97316', bgColor: '#fff1e6', accentColor: COLORS.primary },
@@ -595,8 +596,8 @@ const MORE_SECTION_MODAL_STYLES = {
 };
 
 const MORE_SECTION_DESCRIPTIONS = {
-  certifications: "There are jobs that require certain certifications. For those that don't, being officially qualified or skilled in a certain area is a plus. Don’t forget to include dates. Click Add at the top right corner to add Certifications.",
-  projects: "Projects include anything from portfolios, blogs, and websites to organizing events and building a robot. Showing work that you've already accomplished lets employers visualize your place in their company. Click Add at the top right corner to add Projects.",
+  certifications: 'Highlight certifications you’ve earned through school, training programs, or professional organizations. Include the issuing organization and date earned.',
+  projects: 'Showcase the work you’ve created, contributed to, or completed—from school projects and portfolios to websites, events, research, and creative work. Give employers a glimpse of what you can bring to the team.',
   seminars: 'This section is another way of telling employers that you have certain skills and insights from other professionals. Attending these events also says that you are a proactive learner. Click Add at the top right corner to add Seminars and Trainings.',
   awards: "Assess the industry you are looking to enter and include related or noteworthy awards and recognition you've received in the past. Click Add at the top right corner to add Awards and Achievements.",
   affiliations: 'Whether or not you have work experience, building your resume with co-curricular activities outside of work will help employers understand the type of worker you might be. Click Add at the top right corner to add Affiliations.',
@@ -3948,7 +3949,7 @@ const TodoProgressCard = ({
       key: 'education',
       label: 'Add Education',
       completed: Boolean(profileByKey.education?.completed),
-      info: 'Education — 3%',
+      info: 'Education — 8%',
     },
     {
       key: 'credentials',
@@ -3960,13 +3961,13 @@ const TodoProgressCard = ({
       key: 'certifications',
       label: 'Add Certifications',
       completed: Boolean(profileByKey.certifications?.completed),
-      info: 'Certifications — 5%',
+      info: 'Certifications — 2%',
     },
     {
       key: 'projects',
       label: 'Add Projects',
       completed: Boolean(profileByKey.projects?.completed),
-      info: 'Projects — 4%',
+      info: 'Projects — 2%',
     },
     {
       key: 'additional',
@@ -4270,7 +4271,7 @@ const MyProfile = () => {
   });
   const [addSectionsModalOpen, setAddSectionsModalOpen] = useState(false);
   const [skillProficiencyModalOpen, setSkillProficiencyModalOpen] = useState(false);
-  const [addedMoreSections, setAddedMoreSections] = useState(FIXED_PROFILE_SECTION_KEYS);
+  const [addedMoreSections, setAddedMoreSections] = useState([]);
   const [moreSectionMenuOpen, setMoreSectionMenuOpen] = useState('');
 
   const [uploadingDocs, setUploadingDocs] = useState({});
@@ -4329,6 +4330,7 @@ const MyProfile = () => {
     willingToRelocate: '',
     studyField: '',
     experience: '',
+    addedResumeSections: [],
 
     certifications: [],
     projects: [],
@@ -4552,9 +4554,19 @@ const MyProfile = () => {
       { key: 'availability', label: 'Personal Information', weight: 2, completed: availabilityComplete },
       { key: 'work', label: 'Work Experience', weight: 15, completed: workExperiences.length > 0 },
       { key: 'skills', label: 'Skills', weight: 10, completed: skillsComplete },
-      { key: 'education', label: 'Education', weight: 3, completed: educationComplete },
-      { key: 'certifications', label: 'Certifications', weight: 5, completed: hasMeaningfulListContent(formData.certifications) },
-      { key: 'projects', label: 'Projects', weight: 4, completed: hasMeaningfulListContent(formData.projects) },
+      { key: 'education', label: 'Education', weight: 8, completed: educationComplete },
+      {
+        key: 'certifications',
+        label: 'Certifications',
+        weight: 2,
+        completed: addedMoreSections.includes('certifications') && hasMeaningfulListContent(formData.certifications),
+      },
+      {
+        key: 'projects',
+        label: 'Projects',
+        weight: 2,
+        completed: addedMoreSections.includes('projects') && hasMeaningfulListContent(formData.projects),
+      },
     ];
 
     const additionalItems = [
@@ -4581,7 +4593,7 @@ const MyProfile = () => {
       profileItems,
       additionalItems,
     };
-  }, [formData, educationEntries, verificationDocs, workExperiences, isBasicInformationComplete]);
+  }, [formData, educationEntries, verificationDocs, workExperiences, isBasicInformationComplete, addedMoreSections]);
 
   const sectionReminders = useMemo(() => {
     const countMissing = (values = []) => values.filter((value) => !isCompletedProfileValue(value)).length;
@@ -4847,7 +4859,7 @@ const MyProfile = () => {
   const openResumePreview = () => {
     const resumeData = {
       userData,
-      formData,
+      formData: { ...formData, addedResumeSections: addedMoreSections },
       workExperiences,
       verificationDocs,
     };
@@ -4867,7 +4879,7 @@ const MyProfile = () => {
   const downloadResumePdf = async () => {
     const resumeData = {
       userData,
-      formData,
+      formData: { ...formData, addedResumeSections: addedMoreSections },
       workExperiences,
       verificationDocs,
     };
@@ -5138,6 +5150,10 @@ const MyProfile = () => {
           willingToRelocate: profile.willingToRelocate || '',
           studyField: profile.studyField || '',
           experience: normalizeExperienceValue(profile.experience),
+          addedResumeSections: normalizeAddedResumeSections(
+            profile.addedResumeSections,
+            profile
+          ),
 
           certifications: normalizeProfileList(profile.certifications),
           projects: normalizeProfileList(profile.projects),
@@ -5159,6 +5175,7 @@ const MyProfile = () => {
         };
 
         syncDrafts(nextData);
+        setAddedMoreSections(nextData.addedResumeSections);
         setUserData(user);
         setVerificationDocs(normalizeVerificationDocs(profile.verificationDocs || {}));
       }
@@ -6484,18 +6501,54 @@ const MyProfile = () => {
 
 
   useEffect(() => {
-    const filledSections = MORE_PROFILE_TAB_KEYS.filter(
-      (key) => Array.isArray(formData[key]) && formData[key].length > 0
+    const normalizedSections = normalizeAddedResumeSections(
+      formData.addedResumeSections,
+      formData
     );
 
-    setAddedMoreSections((prev) =>
-      Array.from(new Set([...FIXED_PROFILE_SECTION_KEYS, ...prev, ...filledSections]))
-    );
+    setAddedMoreSections(normalizedSections);
   }, [formData]);
 
-  const handleAddMoreSection = (sectionKey) => {
-    setAddedMoreSections((prev) => (prev.includes(sectionKey) ? prev : [...prev, sectionKey]));
-    setOpenTabs((prev) => (prev.includes(sectionKey) ? prev : [...prev, sectionKey]));
+  const handleAddMoreSection = async (sectionKey) => {
+    if (!ADDABLE_MORE_SECTION_KEYS.includes(sectionKey) || addedMoreSections.includes(sectionKey)) return;
+
+    const nextSections = ADDABLE_MORE_SECTION_KEYS.filter((key) =>
+      [...addedMoreSections, sectionKey].includes(key)
+    );
+
+    try {
+      setSavingSection(sectionKey);
+      setError('');
+
+      const token = localStorage.getItem('token');
+      const response = await axios.put(
+        `${API_BASE}/auth/update-profile`,
+        { jobSeekerProfile: { addedResumeSections: nextSections } },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (response.data?.success) {
+        setAddedMoreSections(nextSections);
+        setFormData((prev) => ({ ...prev, addedResumeSections: nextSections }));
+        setDrafts((prev) => ({ ...prev, addedResumeSections: nextSections }));
+        setOpenTabs((prev) => (prev.includes(sectionKey) ? prev : [...prev, sectionKey]));
+
+        if (response.data.user) {
+          setUserData(response.data.user);
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || 'Failed to add the resume section.');
+    } finally {
+      setSavingSection('');
+    }
   };
 
   useEffect(() => {
@@ -6512,8 +6565,6 @@ const MyProfile = () => {
   }, [moreSectionMenuOpen]);
 
   const handleDeleteMoreSection = (sectionKey) => {
-    if (FIXED_PROFILE_SECTION_KEYS.includes(sectionKey)) return;
-
     const sectionTitle = MORE_PROFILE_SECTIONS[sectionKey]?.title || 'Section';
     setMoreSectionMenuOpen('');
 
@@ -6527,9 +6578,11 @@ const MyProfile = () => {
           setError('');
 
           const token = localStorage.getItem('token');
+          const nextSections = addedMoreSections.filter((key) => key !== sectionKey);
           const payload = {
             jobSeekerProfile: {
               [sectionKey]: [],
+              addedResumeSections: nextSections,
             },
           };
 
@@ -6541,9 +6594,9 @@ const MyProfile = () => {
           });
 
           if (response.data?.success) {
-            setFormData((prev) => ({ ...prev, [sectionKey]: [] }));
-            setDrafts((prev) => ({ ...prev, [sectionKey]: [] }));
-            setAddedMoreSections((prev) => prev.filter((key) => key !== sectionKey));
+            setFormData((prev) => ({ ...prev, [sectionKey]: [], addedResumeSections: nextSections }));
+            setDrafts((prev) => ({ ...prev, [sectionKey]: [], addedResumeSections: nextSections }));
+            setAddedMoreSections(nextSections);
             setOpenTabs((prev) => prev.filter((key) => key !== sectionKey));
             setEditing((prev) => ({ ...prev, [sectionKey]: false }));
             setEditModalSection((current) => (current === sectionKey ? '' : current));
@@ -7336,24 +7389,17 @@ const MyProfile = () => {
                       },
                       { key: 'education', label: 'Education', actionLabel: 'ADD' },
                       { key: 'credentials', label: 'Credentials', actionLabel: '' },
-                      ...FIXED_PROFILE_SECTION_KEYS.map((key) => ({
-                        key,
-                        label: MORE_PROFILE_SECTIONS[key]?.title || key,
-                        actionLabel: 'ADD',
-                      })),
                       ...addedMoreSections
-                        .filter((key) => !FIXED_PROFILE_SECTION_KEYS.includes(key))
                         .map((key) => ({
                           key,
                           label: MORE_PROFILE_SECTIONS[key]?.title || key,
-                          actionLabel: 'ADD',
+                          actionLabel: hasMeaningfulListContent(formData[key]) ? 'EDIT' : 'ADD',
                         })),
                     ].map((section) => {
                       const targetTab = section.key === 'about' ? 'about' : section.key === 'work' ? 'work' : section.key === 'skills' ? 'skills' : section.key;
                       const isOpen = openTabs.includes(targetTab);
                       const isMoreProfileSection = MORE_PROFILE_TAB_KEYS.includes(section.key);
-                      const canDeleteMoreProfileSection =
-                        isMoreProfileSection && !FIXED_PROFILE_SECTION_KEYS.includes(section.key);
+                      const canDeleteMoreProfileSection = isMoreProfileSection;
 
                       return (
                         <div

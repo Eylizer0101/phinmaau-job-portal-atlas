@@ -455,6 +455,22 @@ const userSchema = new mongoose.Schema(
       educationEntries: { type: [educationEntrySchema], default: [] },
       workExperiences: { type: [workExperienceSchema], default: [] },
 
+      addedResumeSections: {
+        type: [{
+          type: String,
+          enum: [
+            'seminars',
+            'awards',
+            'certifications',
+            'projects',
+            'affiliations',
+            'cocurricular',
+            'references',
+          ],
+        }],
+        default: [],
+      },
+
       certifications: { type: [profileMoreEntrySchema], default: [] },
       projects: { type: [profileMoreEntrySchema], default: [] },
       seminars: { type: [profileMoreEntrySchema], default: [] },

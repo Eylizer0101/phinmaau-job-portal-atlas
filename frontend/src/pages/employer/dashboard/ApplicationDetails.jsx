@@ -11,6 +11,7 @@ import {
   hasMeaningfulResumeObject,
   hasMeaningfulResumeRows,
   isMeaningfulResumeValue,
+  normalizeAddedResumeSections,
 } from '../../../components/shared/resumeDisplayUtils';
 
 const API_HOST = process.env.REACT_APP_API_URL
@@ -1252,18 +1253,23 @@ const ApplicationDetails = () => {
   ).trim();
   const meaningfulWork = filterMeaningfulResumeItems(work);
   const meaningfulEducation = filterMeaningfulResumeItems(education);
-  const meaningfulCertifications = filterMeaningfulResumeItems(profile.certifications);
-  const meaningfulProjects = filterMeaningfulResumeItems(profile.projects);
+  const addedResumeSections = normalizeAddedResumeSections(profile.addedResumeSections, profile);
+  const showOptionalResumeSection = (sectionKey, items) =>
+    addedResumeSections.includes(sectionKey) && filterMeaningfulResumeItems(items).length > 0;
   const meaningfulProfileSections = [
-    ['Seminars and Trainings', profile.seminars || []],
-    ['Awards and Achievements', profile.awards || []],
-    ['Affiliations', profile.affiliations || []],
-    ['Co-Curricular Activities', profile.cocurricular || []],
-  ].map(([title, items]) => [
+    ['seminars', 'Seminars and Trainings', profile.seminars || []],
+    ['awards', 'Awards and Achievements', profile.awards || []],
+    ['certifications', 'Certifications', profile.certifications || []],
+    ['projects', 'Projects', profile.projects || []],
+    ['affiliations', 'Affiliations', profile.affiliations || []],
+    ['cocurricular', 'Co-Curricular Activities', profile.cocurricular || []],
+  ].filter(([sectionKey, , items]) => showOptionalResumeSection(sectionKey, items)).map(([, title, items]) => [
     title,
     filterMeaningfulResumeItems(items),
-  ]).filter(([, items]) => items.length > 0);
-  const meaningfulReferences = filterMeaningfulResumeItems(profile.references);
+  ]);
+  const meaningfulReferences = showOptionalResumeSection('references', profile.references)
+    ? filterMeaningfulResumeItems(profile.references)
+    : [];
   const personalInformationColumns = [
     [
       ['Preferred Work Mode', profile.preferredWorkMode],
@@ -1499,54 +1505,6 @@ const ApplicationDetails = () => {
                 </section>
                 ) : null}
 
-                {meaningfulCertifications.length ? (
-                <section className="pt-2">
-                  <h3 className="border-b border-black text-[11px] font-bold uppercase">Certifications</h3>
-                    <div className="space-y-1 pt-1">
-                      {meaningfulCertifications.map((item, index) => (
-                        <div key={item._id || `certification-${index}`}>
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="min-w-0">
-                              {isMeaningfulResumeValue(item.title || item.name || item.organization) ? (
-                                <div className="font-bold">{item.title || item.name || item.organization}</div>
-                              ) : null}
-                              {isMeaningfulResumeValue(item.issuer || item.role || item.company || item.organization) ? (
-                                <div className="italic">{item.issuer || item.role || item.company || item.organization}</div>
-                              ) : null}
-                            </div>
-                            {isMeaningfulResumeValue(entryDate(item)) ? <div className="shrink-0 whitespace-nowrap italic">{entryDate(item)}</div> : null}
-                          </div>
-                          {isMeaningfulResumeValue(item.description) ? <div className="mt-0.5 text-justify">{richText(item.description)}</div> : null}
-                        </div>
-                      ))}
-                    </div>
-                </section>
-                ) : null}
-
-                {meaningfulProjects.length ? (
-                <section className="pt-2">
-                  <h3 className="border-b border-black text-[11px] font-bold uppercase">Projects</h3>
-                    <div className="space-y-1 pt-1">
-                      {meaningfulProjects.map((item, index) => (
-                        <div key={item._id || `project-${index}`}>
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="min-w-0">
-                              {isMeaningfulResumeValue(item.title || item.name || item.organization) ? (
-                                <div className="font-bold">{item.title || item.name || item.organization}</div>
-                              ) : null}
-                              {isMeaningfulResumeValue(item.issuer || item.role || item.company || item.organization) ? (
-                                <div className="italic">{item.issuer || item.role || item.company || item.organization}</div>
-                              ) : null}
-                            </div>
-                            {isMeaningfulResumeValue(entryDate(item)) ? <div className="shrink-0 whitespace-nowrap italic">{entryDate(item)}</div> : null}
-                          </div>
-                          {isMeaningfulResumeValue(item.description) ? <div className="mt-0.5 text-justify">{richText(item.description)}</div> : null}
-                        </div>
-                      ))}
-                    </div>
-                </section>
-                ) : null}
-
                 {meaningfulProfileSections.map(([sectionTitle, items]) => (
                   <section key={sectionTitle} className="pt-2">
                     <h3 className="border-b border-black text-[11px] font-bold uppercase">{sectionTitle}</h3>
@@ -1593,6 +1551,14 @@ const ApplicationDetails = () => {
                     </div>
                   </section>
                 ) : null}
+
+                <section className="break-inside-avoid pt-3">
+                  <p className="mb-2 text-justify">
+                    I hereby certify that the above information is true and correct to the best of my knowledge.
+                  </p>
+                  <div className="font-bold">{name}</div>
+                  <div className="mt-0.5">Applicant</div>
+                </section>
               </article>
             </div>
           ) : <div className="border-t border-[#d8e2ee] px-6 py-8 sm:px-10"><div className="relative ml-3 border-l-2 border-gray-200 pl-8">{activities.map((item, index) => { const dt = formatDateTime(item.occurredAt || item.createdAt); return <div key={item._id || `${item.type}-${index}`} className="relative pb-10 last:pb-0"><div className="absolute -left-[43px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-4 border-white bg-[#2e66a6] shadow"><SvgIcon name={item.type === 'message' ? 'message' : item.type === 'submitted' ? 'resume' : 'activity'} className="h-3 w-3 text-white" /></div><h3 className="text-lg font-semibold text-gray-900">{item.title || 'Application updated'}</h3><p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">{item.description || 'The application record was updated.'}</p><div className="mt-2 text-xs font-bold tracking-wide text-gray-500">{dt.date}{dt.time ? ` · ${dt.time}` : ''}</div></div>; })}</div></div>}

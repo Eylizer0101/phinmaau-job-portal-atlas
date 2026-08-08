@@ -1405,6 +1405,24 @@ exports.updateProfile = async (req, res) => {
       }
 
       const existingProfile = user.jobSeekerProfile || {};
+      if (Object.prototype.hasOwnProperty.call(updateData.jobSeekerProfile, 'addedResumeSections')) {
+        const allowedResumeSections = [
+          'seminars',
+          'awards',
+          'certifications',
+          'projects',
+          'affiliations',
+          'cocurricular',
+          'references',
+        ];
+        const requestedSections = Array.isArray(updateData.jobSeekerProfile.addedResumeSections)
+          ? updateData.jobSeekerProfile.addedResumeSections
+          : [];
+
+        updateData.jobSeekerProfile.addedResumeSections = allowedResumeSections.filter((key) =>
+          requestedSections.includes(key)
+        );
+      }
       updateData.jobSeekerProfile = {
         ...(existingProfile.toObject?.() || existingProfile),
         ...updateData.jobSeekerProfile,
@@ -3069,7 +3087,36 @@ const resumeEscapeHtml = (value = '') =>
 
 const isMeaningfulResumeValue = (value) => {
   const text = String(value ?? '').trim();
-  return Boolean(text) && !/^(not\s+provided|n\/?a)$/i.test(text);
+  return Boolean(text) && !/^(null|undefined|not\s+provided|n\/?a)$/i.test(text);
+};
+
+const RESUME_OPTIONAL_SECTION_KEYS = [
+  'seminars',
+  'awards',
+  'certifications',
+  'projects',
+  'affiliations',
+  'cocurricular',
+  'references',
+];
+
+const hasResumeListData = (items = []) =>
+  Array.isArray(items) && items.some((item) =>
+    Object.entries(item || {}).some(([key, value]) =>
+      !['_id', 'id', 'createdAt', 'updatedAt', '__v'].includes(key) &&
+      typeof value !== 'boolean' &&
+      isMeaningfulResumeValue(value)
+    )
+  );
+
+const getAddedResumeSections = (profile = {}) => {
+  const savedSections = Array.isArray(profile.addedResumeSections)
+    ? profile.addedResumeSections
+    : [];
+
+  return RESUME_OPTIONAL_SECTION_KEYS.filter((key) =>
+    savedSections.includes(key) || hasResumeListData(profile[key])
+  );
 };
 
 const resumeText = (value = '', fallback = '') => {
@@ -3228,7 +3275,7 @@ const renderResumeDatedItem = ({ title, subtitle, date, description, meta }) => 
 
 const renderResumeProfileList = (title, items = [], type = 'default') => {
   const cleanItems = Array.isArray(items)
-    ? items.filter((item) => Object.values(item || {}).some((value) => resumeText(value)))
+    ? items.filter((item) => hasResumeListData([item]))
     : [];
 
   if (!cleanItems.length) return '';
@@ -3282,6 +3329,9 @@ const buildResumeHtmlForPdf = (user = {}) => {
   const fullName = resumeFullName(user) || 'Your Name';
   const initials = resumeInitials(fullName);
   const profileImage = resumeText(user.profileImage);
+  const addedResumeSections = getAddedResumeSections(profile);
+  const showOptionalSection = (sectionKey) =>
+    addedResumeSections.includes(sectionKey) && hasResumeListData(profile[sectionKey]);
 
   const educationSummary = [
     resumeText(profile.campus),
@@ -3373,7 +3423,7 @@ const buildResumeHtmlForPdf = (user = {}) => {
           @page { size: A4; margin: 0; }
           * { box-sizing: border-box; }
           body { margin: 0; background: #ffffff; color: #111111; font-family: Georgia, 'Times New Roman', serif; font-size: 8.7px; line-height: 1.18; }
-          .resume-paper { width: 210mm; min-height: 297mm; background: #ffffff; }
+          .resume-paper { width: 210mm; background: #ffffff; }
           .resume-inner { padding: 16mm 16mm 12mm; position: relative; }
           .resume-header { position: relative; min-height: 62px; padding-right: 98px; text-align: center; }
           .resume-name { margin: 0; padding-top: 5px; font-size: 17px; line-height: 1; font-weight: 700; letter-spacing: 0.55px; text-transform: uppercase; }
@@ -3381,7 +3431,7 @@ const buildResumeHtmlForPdf = (user = {}) => {
           .resume-contact span + span::before { content: ' | '; }
           .resume-education-summary { margin-top: 3px; color: #222222; font-size: 7.2px; line-height: 1.25; font-style: italic; }
           .resume-initials, .resume-photo { position: absolute; top: 0; right: 3px; width: 61px; height: 61px; display: flex; align-items: center; justify-content: center; background: #343434; color: #ffffff; font-family: Arial, Helvetica, sans-serif; font-size: 27px; font-weight: 500; letter-spacing: 0.8px; overflow: hidden; object-fit: cover; }
-          .resume-section { margin-top: 7px; break-inside: avoid; }
+          .resume-section { margin-top: 8px; break-inside: avoid; }
           .resume-section h2 { margin: 0 0 3px; padding-bottom: 2px; border-bottom: 1px solid #777777; font-size: 8.8px; line-height: 1; font-weight: 700; letter-spacing: 0.25px; text-transform: uppercase; }
           .objective-text { margin: 0; text-align: justify; }
           .two-column-rows, .skills-grid, .references-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 35px; }
@@ -3403,6 +3453,10 @@ const buildResumeHtmlForPdf = (user = {}) => {
           .reference-card { break-inside: avoid; }
           .link-text { color: #1d4ed8; text-decoration: underline; word-break: break-all; }
           .empty-text { margin: 0; color: #777777; }
+          .resume-declaration { margin-top: 11px; break-inside: avoid; text-align: left; }
+          .declaration-text { margin: 0 0 9px; text-align: justify; }
+          .declaration-name { font-weight: 700; }
+          .declaration-role { margin-top: 2px; }
         </style>
       </head>
       <body>
@@ -3423,13 +3477,18 @@ const buildResumeHtmlForPdf = (user = {}) => {
             ${workExperienceHtml}
             ${skillsHtml}
             ${educationHtml}
-            ${renderResumeProfileList('Certifications', profile.certifications)}
-            ${renderResumeProfileList('Projects', profile.projects)}
-            ${renderResumeProfileList('Seminars and Trainings', profile.seminars)}
-            ${renderResumeProfileList('Awards and Achievements', profile.awards, 'awards')}
-            ${renderResumeProfileList('Affiliations', profile.affiliations)}
-            ${renderResumeProfileList('Co-curricular Activities', profile.cocurricular)}
-            ${renderResumeProfileList('References', profile.references, 'references')}
+            ${showOptionalSection('seminars') ? renderResumeProfileList('Seminars and Trainings', profile.seminars) : ''}
+            ${showOptionalSection('awards') ? renderResumeProfileList('Awards and Achievements', profile.awards, 'awards') : ''}
+            ${showOptionalSection('certifications') ? renderResumeProfileList('Certifications', profile.certifications) : ''}
+            ${showOptionalSection('projects') ? renderResumeProfileList('Projects', profile.projects) : ''}
+            ${showOptionalSection('affiliations') ? renderResumeProfileList('Affiliations', profile.affiliations) : ''}
+            ${showOptionalSection('cocurricular') ? renderResumeProfileList('Co-curricular Activities', profile.cocurricular) : ''}
+            ${showOptionalSection('references') ? renderResumeProfileList('References', profile.references, 'references') : ''}
+            <section class="resume-declaration">
+              <p class="declaration-text">I hereby certify that the above information is true and correct to the best of my knowledge.</p>
+              <div class="declaration-name">${resumeEscapeHtml(fullName)}</div>
+              <div class="declaration-role">Applicant</div>
+            </section>
           </div>
         </main>
       </body>

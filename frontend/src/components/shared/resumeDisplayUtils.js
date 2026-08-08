@@ -55,3 +55,41 @@ export const hasMeaningfulResumeRows = (columns) =>
       isMeaningfulResumeValue(Array.isArray(row) ? row[1] : row?.value)
     )
   );
+
+export const OPTIONAL_RESUME_SECTION_KEYS = [
+  'seminars',
+  'awards',
+  'certifications',
+  'projects',
+  'affiliations',
+  'cocurricular',
+  'references',
+];
+
+export const normalizeAddedResumeSections = (sections = [], profile = {}) => {
+  const requestedSections = Array.isArray(sections)
+    ? sections.filter((key) => OPTIONAL_RESUME_SECTION_KEYS.includes(key))
+    : [];
+
+  const sectionsWithExistingData = OPTIONAL_RESUME_SECTION_KEYS.filter((key) =>
+    filterMeaningfulResumeItems(profile?.[key]).length > 0
+  );
+
+  return OPTIONAL_RESUME_SECTION_KEYS.filter((key) =>
+    requestedSections.includes(key) || sectionsWithExistingData.includes(key)
+  );
+};
+
+export const isOptionalResumeSectionVisible = (profile = {}, sectionKey) => {
+  if (!OPTIONAL_RESUME_SECTION_KEYS.includes(sectionKey)) return false;
+
+  const addedSections = normalizeAddedResumeSections(
+    profile?.addedResumeSections,
+    profile
+  );
+
+  return (
+    addedSections.includes(sectionKey) &&
+    filterMeaningfulResumeItems(profile?.[sectionKey]).length > 0
+  );
+};

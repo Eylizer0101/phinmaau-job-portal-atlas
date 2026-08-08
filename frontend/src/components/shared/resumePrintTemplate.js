@@ -2,6 +2,7 @@
 import {
   filterMeaningfulResumeItems,
   isMeaningfulResumeValue,
+  normalizeAddedResumeSections,
 } from './resumeDisplayUtils';
 
 const getText = (value, fallback = '') => {
@@ -275,7 +276,7 @@ const resumeStyles = `
     html,
     body {
       width: 210mm;
-      min-height: 297mm;
+      min-height: auto;
       background: #ffffff !important;
     }
 
@@ -290,7 +291,7 @@ const resumeStyles = `
 
     .resume-paper {
       width: 210mm !important;
-      min-height: 297mm !important;
+      min-height: auto !important;
       margin: 0 !important;
       box-shadow: none !important;
     }
@@ -437,7 +438,7 @@ const resumeStyles = `
   }
 
   .resume-section {
-    margin-top: 7px;
+    margin-top: 8px;
     break-inside: avoid;
   }
 
@@ -584,6 +585,24 @@ const resumeStyles = `
     color: #777777;
   }
 
+  .resume-declaration {
+    margin-top: 11px;
+    break-inside: avoid;
+  }
+
+  .declaration-text {
+    margin: 0 0 9px;
+    text-align: justify;
+  }
+
+  .declaration-name {
+    font-weight: 700;
+  }
+
+  .declaration-role {
+    margin-top: 2px;
+  }
+
   @media screen and (max-width: 900px) {
     .preview-topbar,
     .resume-paper {
@@ -639,6 +658,13 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
   const affiliations = Array.isArray(formData.affiliations) ? formData.affiliations : [];
   const cocurricular = Array.isArray(formData.cocurricular) ? formData.cocurricular : [];
   const references = Array.isArray(formData.references) ? formData.references : [];
+  const addedResumeSections = normalizeAddedResumeSections(
+    formData.addedResumeSections,
+    formData
+  );
+  const showOptionalSection = (sectionKey, items) =>
+    addedResumeSections.includes(sectionKey) &&
+    filterMeaningfulResumeItems(items).length > 0;
   const educationSummary = [
     getText(formData.campus),
     getText(formData.course),
@@ -776,13 +802,18 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
           ${workExperienceHtml}
           ${skillsHtml}
           ${educationHtml}
-          ${profileListSectionHtml({ title: 'Certifications', items: certifications })}
-          ${profileListSectionHtml({ title: 'Projects', items: projects })}
-          ${profileListSectionHtml({ title: 'Seminars and Trainings', items: seminars })}
-          ${profileListSectionHtml({ title: 'Awards and Achievements', items: awards, type: 'awards' })}
-          ${profileListSectionHtml({ title: 'Affiliations', items: affiliations })}
-          ${profileListSectionHtml({ title: 'Co-curricular Activities', items: cocurricular })}
-          ${profileListSectionHtml({ title: 'References', items: references, type: 'references' })}
+          ${showOptionalSection('seminars', seminars) ? profileListSectionHtml({ title: 'Seminars and Trainings', items: seminars }) : ''}
+          ${showOptionalSection('awards', awards) ? profileListSectionHtml({ title: 'Awards and Achievements', items: awards, type: 'awards' }) : ''}
+          ${showOptionalSection('certifications', certifications) ? profileListSectionHtml({ title: 'Certifications', items: certifications }) : ''}
+          ${showOptionalSection('projects', projects) ? profileListSectionHtml({ title: 'Projects', items: projects }) : ''}
+          ${showOptionalSection('affiliations', affiliations) ? profileListSectionHtml({ title: 'Affiliations', items: affiliations }) : ''}
+          ${showOptionalSection('cocurricular', cocurricular) ? profileListSectionHtml({ title: 'Co-curricular Activities', items: cocurricular }) : ''}
+          ${showOptionalSection('references', references) ? profileListSectionHtml({ title: 'References', items: references, type: 'references' }) : ''}
+          <section class="resume-declaration">
+            <p class="declaration-text">I hereby certify that the above information is true and correct to the best of my knowledge.</p>
+            <div class="declaration-name">${escapeHtml(fullName)}</div>
+            <div class="declaration-role">Applicant</div>
+          </section>
         </div>
       </main>
     </div>
@@ -987,6 +1018,9 @@ export const normalizeUserToResumeData = ({ userData = {}, profile = {}, workExp
     willingToRelocate: profile.willingToRelocate || '',
     studyField: profile.studyField || '',
     experience: profile.experience || '',
+    addedResumeSections: Array.isArray(profile.addedResumeSections)
+      ? profile.addedResumeSections
+      : [],
 
     certifications: Array.isArray(profile.certifications) ? profile.certifications : [],
     projects: Array.isArray(profile.projects) ? profile.projects : [],
