@@ -14,6 +14,15 @@ const EMPLOYER_DOC_FOLDER_MAP = {
 };
 
 const CLOUDINARY_ROOT_FOLDER = process.env.CLOUDINARY_ROOT_FOLDER || 'agapay-job-portal';
+const MAX_JOBSEEKER_CREDENTIAL_SIZE = 5 * 1024 * 1024;
+const INVALID_JOBSEEKER_CREDENTIAL_MESSAGE = 'Invalid file. Upload PDF, JPG, JPEG, or PNG only, up to 5MB.';
+const JOBSEEKER_CREDENTIAL_MIME_TYPES = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+]);
+const JOBSEEKER_CREDENTIAL_EXTENSIONS = new Set(['.pdf', '.jpg', '.jpeg', '.png']);
 
 const isCloudinaryConfigured = () =>
   Boolean(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
@@ -39,6 +48,49 @@ const sanitizePublicIdPart = (value, fallback = 'file') => {
     .replace(/^-|-$/g, '');
 
   return clean || fallback;
+};
+
+const sanitizeOriginalFileName = (value, fallback = 'file') => {
+  const baseName = path.basename(String(value || fallback)).replace(/\0/g, '');
+  const extension = path.extname(baseName).toLowerCase();
+  const name = path.basename(baseName, path.extname(baseName))
+    .normalize('NFKC')
+    .replace(/[^a-zA-Z0-9._ -]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 100);
+
+  return `${name || fallback}${extension}`;
+};
+
+const detectCredentialSignature = (buffer) => {
+  if (!Buffer.isBuffer(buffer)) return '';
+  if (buffer.length >= 5 && buffer.subarray(0, 5).toString('ascii') === '%PDF-') return 'pdf';
+  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'jpeg';
+  if (
+    buffer.length >= 8
+    && buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+  ) return 'png';
+  return '';
+};
+
+const validateJobseekerCredentialBuffer = (file) => {
+  if (file.fieldname === 'profileImage') return null;
+
+  const signature = detectCredentialSignature(file.buffer);
+  const mimeType = String(file.mimetype || '').toLowerCase();
+  const extension = path.extname(String(file.originalname || '')).toLowerCase();
+  const signatureMatches = (
+    (signature === 'pdf' && mimeType === 'application/pdf' && extension === '.pdf')
+    || (signature === 'jpeg' && ['image/jpeg', 'image/jpg'].includes(mimeType) && ['.jpg', '.jpeg'].includes(extension))
+    || (signature === 'png' && mimeType === 'image/png' && extension === '.png')
+  );
+
+  if (!signatureMatches || file.buffer.length > MAX_JOBSEEKER_CREDENTIAL_SIZE) {
+    return INVALID_JOBSEEKER_CREDENTIAL_MESSAGE;
+  }
+
+  return null;
 };
 
 const getOwnerId = (req) => String(req.user?._id || req.body?.userId || 'anon');
@@ -96,7 +148,13 @@ const uploadBufferToCloudinary = ({ file, folder, publicId, resourceType = 'auto
     uploadStream.end(file.buffer);
   });
 
-const createCloudinaryStorage = ({ folderResolver, publicIdResolver, resourceType = 'auto' }) => ({
+const createCloudinaryStorage = ({
+  folderResolver,
+  publicIdResolver,
+  resourceType = 'auto',
+  bufferValidator,
+  sanitizeFileName = false,
+}) => ({
   _handleFile: async (req, file, cb) => {
     try {
       const chunks = [];
@@ -113,7 +171,13 @@ const createCloudinaryStorage = ({ folderResolver, publicIdResolver, resourceTyp
           const fileForUpload = {
             ...file,
             buffer,
+            originalname: sanitizeFileName
+              ? sanitizeOriginalFileName(file.originalname)
+              : file.originalname,
           };
+
+          const validationError = bufferValidator?.(fileForUpload);
+          if (validationError) throw new Error(validationError);
 
           const folder = folderResolver(req, fileForUpload);
           const publicId = publicIdResolver(req, fileForUpload);
@@ -136,7 +200,7 @@ const createCloudinaryStorage = ({ folderResolver, publicIdResolver, resourceTyp
             size: result.bytes || buffer.length,
             format: result.format,
             resource_type: result.resource_type,
-            originalname: file.originalname,
+            originalname: fileForUpload.originalname,
             mimetype: file.mimetype,
           });
         } catch (error) {
@@ -294,6 +358,8 @@ const alumniResubmitStorage = createCloudinaryStorage({
 
 const registerDocsStorage = createCloudinaryStorage({
   resourceType: 'auto',
+  bufferValidator: validateJobseekerCredentialBuffer,
+  sanitizeFileName: true,
   folderResolver: (req, file) => {
     const allowedFields = ['cv', 'diploma', 'validId', 'tor', 'sss', 'philhealth', 'pagibig', 'tin', 'profileImage'];
     const field = String(file.fieldname || '').trim();
@@ -477,7 +543,14 @@ const registerFileFilter = (req, file, cb) => {
     return imageFileFilter(req, file, cb);
   }
 
-  return verificationFileFilter(req, file, cb);
+  const mimeType = String(file.mimetype || '').toLowerCase();
+  const extension = path.extname(String(file.originalname || '')).toLowerCase();
+  if (
+    JOBSEEKER_CREDENTIAL_MIME_TYPES.has(mimeType)
+    && JOBSEEKER_CREDENTIAL_EXTENSIONS.has(extension)
+  ) return cb(null, true);
+
+  return cb(new Error(INVALID_JOBSEEKER_CREDENTIAL_MESSAGE), false);
 };
 
 const uploadRegisterDocs = multer({
@@ -485,6 +558,31 @@ const uploadRegisterDocs = multer({
   fileFilter: registerFileFilter,
   limits: { fileSize: 5 * 1024 * 1024 },
 });
+
+const jobseekerRegisterFields = uploadRegisterDocs.fields([
+  { name: 'cv', maxCount: 1 },
+  { name: 'diploma', maxCount: 1 },
+  { name: 'validId', maxCount: 1 },
+  { name: 'tor', maxCount: 1 },
+  { name: 'sss', maxCount: 1 },
+  { name: 'philhealth', maxCount: 1 },
+  { name: 'pagibig', maxCount: 1 },
+  { name: 'tin', maxCount: 1 },
+  { name: 'profileImage', maxCount: 1 },
+]);
+
+const handleJobseekerRegisterUploads = (req, res, next) => {
+  jobseekerRegisterFields(req, res, (error) => {
+    if (!error) return next();
+
+    const isFileSizeError = error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE';
+    const message = isFileSizeError
+      ? INVALID_JOBSEEKER_CREDENTIAL_MESSAGE
+      : (error.message || INVALID_JOBSEEKER_CREDENTIAL_MESSAGE);
+
+    return res.status(400).json({ message });
+  });
+};
 
 const uploadEmployerVerification = multer({
   storage: employerVerificationStorage,
@@ -509,6 +607,7 @@ module.exports = {
   uploadAlumniResubmit,
   uploadEmployerVerification,
   uploadRegisterDocs,
+  handleJobseekerRegisterUploads,
   uploadEmployerRegisterDocs,
   uploadEmployerCompanyMedia,
 };

@@ -6,6 +6,61 @@ import axios from 'axios';
 // ✅ Use existing dropdown options (course dropdown)
 import { MAJOR_COURSE_OPTIONS } from '../../../constants/jobseekerEducationOptions';
 
+const CREDENTIAL_FILE_KEYS = new Set([
+  'cvFile', 'diplomaFile', 'validIdFile', 'torFile',
+  'sssFile', 'philhealthFile', 'pagibigFile', 'tinFile',
+]);
+const ALLOWED_CREDENTIAL_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png']);
+const ALLOWED_CREDENTIAL_MIME_TYPES = new Set([
+  'application/pdf', 'image/jpeg', 'image/jpg', 'image/png',
+]);
+const MAX_CREDENTIAL_FILE_SIZE = 5 * 1024 * 1024;
+const INVALID_CREDENTIAL_MESSAGE = 'Invalid file. Upload PDF, JPG, JPEG, or PNG only, up to 5MB.';
+
+const getCredentialSignatureType = async (file) => {
+  const bytes = new Uint8Array(await file.slice(0, 8).arrayBuffer());
+  const isPdf = bytes.length >= 5
+    && bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44
+    && bytes[3] === 0x46 && bytes[4] === 0x2d;
+  const isJpeg = bytes.length >= 3
+    && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  const pngSignature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  const isPng = bytes.length >= pngSignature.length
+    && pngSignature.every((byte, index) => bytes[index] === byte);
+
+  if (isPdf) return 'pdf';
+  if (isJpeg) return 'jpeg';
+  if (isPng) return 'png';
+  return null;
+};
+
+const validateCredentialFile = async (file) => {
+  if (!file) return false;
+  const extension = String(file.name || '').split('.').pop()?.toLowerCase() || '';
+
+  if (
+    !ALLOWED_CREDENTIAL_EXTENSIONS.has(extension)
+    || !ALLOWED_CREDENTIAL_MIME_TYPES.has(String(file.type || '').toLowerCase())
+    || file.size > MAX_CREDENTIAL_FILE_SIZE
+  ) return false;
+
+  try {
+    const signatureType = await getCredentialSignatureType(file);
+    const expectedType = extension === 'jpg' ? 'jpeg' : extension;
+    const mimeType = String(file.type || '').toLowerCase();
+    const expectedMimeType = signatureType === 'pdf'
+      ? 'application/pdf'
+      : signatureType === 'png'
+        ? 'image/png'
+        : 'image/jpeg';
+
+    return signatureType === expectedType
+      && (mimeType === expectedMimeType || (signatureType === 'jpeg' && mimeType === 'image/jpg'));
+  } catch {
+    return false;
+  }
+};
+
 const RegisterPage = () => {
   const navigate = useNavigate();
 
@@ -82,17 +137,17 @@ const RegisterPage = () => {
     ) : null;
 
   // Name rules
-  const stripDigits = (v) => String(v || '').replace(/[0-9]/g, '');
   const hasDigits = (v) => /\d/.test(String(v || ''));
+  const hasValidNameCharacters = (v) => /^[\p{L}\s'-]+$/u.test(String(v || ''));
 
   // Email rules
-  const isValidEmailFormat = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim());
+  const isValidGmailAddress = (v) => /^[^\s@]+@gmail\.com$/i.test(String(v || '').trim());
 
   // Year dropdown list (years only)
   const yearOptions = useMemo(() => {
     const nowYear = new Date().getFullYear();
     const startYear = nowYear; // include current year
-    const endYear = 1950;
+    const endYear = 1982;
     const out = [];
     for (let y = startYear; y >= endYear; y--) out.push(String(y));
     return out;
@@ -129,11 +184,23 @@ const RegisterPage = () => {
   };
 
   // -------- Handlers --------
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     const { name, value, type, files } = e.target;
 
     if (type === 'file') {
       const file = files?.[0] || null;
+
+      if (file && CREDENTIAL_FILE_KEYS.has(name)) {
+        const isValid = await validateCredentialFile(file);
+        if (!isValid) {
+          setFormData((prev) => ({ ...prev, [name]: null }));
+          setFormErrors((prev) => ({ ...prev, [name]: INVALID_CREDENTIAL_MESSAGE }));
+          e.target.value = '';
+          setServerError('');
+          return;
+        }
+      }
+
       setFormData((prev) => ({ ...prev, [name]: file }));
       clearError(name);
       setServerError('');
@@ -142,8 +209,7 @@ const RegisterPage = () => {
 
     // Prevent typing numbers on name fields
     if (name === 'firstName' || name === 'middleName' || name === 'lastName') {
-      const cleaned = stripDigits(value);
-      setFormData((prev) => ({ ...prev, [name]: cleaned }));
+      setFormData((prev) => ({ ...prev, [name]: value }));
       clearError(name);
       setServerError('');
       return;
@@ -187,17 +253,23 @@ const RegisterPage = () => {
 
     if (!fn) errors.firstName = 'First name is required';
     else if (hasDigits(fn)) errors.firstName = 'First Name should not contain numbers';
+    else if (fn.length > 50) errors.firstName = 'Maximum of 50 characters only.';
+    else if (!hasValidNameCharacters(fn)) errors.firstName = "Use letters, spaces, hyphens, and apostrophes only.";
 
     if (mn && hasDigits(mn)) errors.middleName = 'Middle Name should not contain numbers';
+    else if (mn.length > 50) errors.middleName = 'Maximum of 50 characters only.';
+    else if (mn && !hasValidNameCharacters(mn)) errors.middleName = "Use letters, spaces, hyphens, and apostrophes only.";
 
     if (!ln) errors.lastName = 'Last name is required';
     else if (hasDigits(ln)) errors.lastName = 'Last Name should not contain numbers';
+    else if (ln.length > 50) errors.lastName = 'Maximum of 50 characters only.';
+    else if (!hasValidNameCharacters(ln)) errors.lastName = "Use letters, spaces, hyphens, and apostrophes only.";
 
     if (ext && hasDigits(ext)) errors.extensionName = 'Extension Name should not contain numbers';
 
     const email = String(formData.email || '').trim();
     if (!email) errors.email = 'Email is required';
-    else if (!isValidEmailFormat(email)) errors.email = 'Please enter a valid email address';
+    else if (!isValidGmailAddress(email)) errors.email = 'Gmail account required to continue.';
 
     // ✅ Phone number: REQUIRED EXACT 11 digits
     const phone = String(formData.phoneNumber || '').trim();
@@ -214,7 +286,12 @@ const RegisterPage = () => {
 
     if (!String(formData.campus || '').trim()) errors.campus = 'Campus is required';
     if (!String(formData.course || '').trim()) errors.course = 'Course is required';
+    const currentYear = new Date().getFullYear();
+    const graduationYear = Number(formData.yearGraduated);
     if (!String(formData.yearGraduated || '').trim()) errors.yearGraduated = 'Year Graduated is required';
+    else if (!Number.isInteger(graduationYear) || graduationYear < 1982 || graduationYear > currentYear) {
+      errors.yearGraduated = `Year Graduated must be between 1982 and ${currentYear}`;
+    }
     if (!String(formData.preferredWorkMode || '').trim()) errors.preferredWorkMode = 'Preferred Work Mode is required';
     if (!String(formData.howSoonCanYouStart || '').trim()) errors.howSoonCanYouStart = 'This field is required';
 
@@ -243,13 +320,14 @@ const RegisterPage = () => {
   const validateStep3 = () => {
     const errors = {};
 
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
-    const maxSize = 5 * 1024 * 1024;
-
     const validateFileIfExists = (file, key) => {
       if (!file) return;
-      if (!allowedTypes.includes(file.type)) errors[key] = 'Accepted formats: PDF, JPG, PNG';
-      else if (file.size > maxSize) errors[key] = 'File size limit is 5MB';
+      const extension = String(file.name || '').split('.').pop()?.toLowerCase() || '';
+      if (
+        !ALLOWED_CREDENTIAL_EXTENSIONS.has(extension)
+        || !ALLOWED_CREDENTIAL_MIME_TYPES.has(String(file.type || '').toLowerCase())
+        || file.size > MAX_CREDENTIAL_FILE_SIZE
+      ) errors[key] = INVALID_CREDENTIAL_MESSAGE;
     };
 
     // ✅ Required documents
@@ -568,6 +646,7 @@ const RegisterPage = () => {
                     type="text"
                     name="firstName"
                     value={formData.firstName}
+                    placeholder="Enter your first name"
                     onChange={handleChange}
                     onKeyDown={handleNameKeyDown}
                     onFocus={() => setFieldFocus('firstName', true)}
@@ -576,7 +655,6 @@ const RegisterPage = () => {
                     disabled={loading}
                     aria-invalid={!!formErrors.firstName}
                     aria-describedby={describedBy(formErrors.firstName ? 'firstName-error' : null)}
-                    maxLength={60}
                   />
                 </div>
                 {errorText('firstName-error', formErrors.firstName)}
@@ -591,13 +669,13 @@ const RegisterPage = () => {
                   type="text"
                   name="middleName"
                   value={formData.middleName}
+                  placeholder="Enter your middle name"
                   onChange={handleChange}
                   onKeyDown={handleNameKeyDown}
                   onFocus={() => setFieldFocus('middleName', true)}
                   onBlur={() => setFieldFocus('middleName', false)}
                   className={inputBase}
                   disabled={loading}
-                  maxLength={60}
                 />
                 {errorText('middleName-error', formErrors.middleName)}
               </div>
@@ -615,6 +693,7 @@ const RegisterPage = () => {
                     type="text"
                     name="lastName"
                     value={formData.lastName}
+                    placeholder="Enter your last name"
                     onChange={handleChange}
                     onKeyDown={handleNameKeyDown}
                     onFocus={() => setFieldFocus('lastName', true)}
@@ -623,7 +702,6 @@ const RegisterPage = () => {
                     disabled={loading}
                     aria-invalid={!!formErrors.lastName}
                     aria-describedby={describedBy(formErrors.lastName ? 'lastName-error' : null)}
-                    maxLength={60}
                   />
                 </div>
                 {errorText('lastName-error', formErrors.lastName)}
@@ -665,6 +743,7 @@ const RegisterPage = () => {
                     type="email"
                     name="email"
                     value={formData.email}
+                    placeholder="Enter your Gmail address"
                     onChange={handleChange}
                     onFocus={() => setFieldFocus('email', true)}
                     onBlur={() => setFieldFocus('email', false)}
@@ -881,7 +960,7 @@ const RegisterPage = () => {
                         aria-describedby={formErrors.preferredWorkMode ? 'preferredWorkMode-error' : undefined}
                       >
                         <option value="" disabled>
-                          Select option
+                          Choose Work Mode
                         </option>
                         <option value="On-site">On-site</option>
                         <option value="Blended">Blended</option>
@@ -913,7 +992,7 @@ const RegisterPage = () => {
                       aria-describedby={formErrors.howSoonCanYouStart ? 'howSoonCanYouStart-error' : undefined}
                     >
                       <option value="" disabled>
-                        Select option
+                        Choose Availability to Start
                       </option>
                       <option value="Ready to start">Ready to start</option>
                       <option value="Within a few days">Within a few days</option>
@@ -947,6 +1026,8 @@ const RegisterPage = () => {
                     <li>Accepted Formats: PDF (preferred for resumes) or Photos (JPG, PNG).</li>
                     <li>File Size: Please keep files under 5MB.</li>
                     <li>Clarity: If uploading a photo, ensure the text is clear and readable—no blurry shots!</li>
+                    <li><strong>No Cropped Edges:</strong> Make sure names, dates, signatures, and other important details are visible.</li>
+                    <li><strong>Check Before Uploading:</strong> Make sure the document is the latest and correct version.</li>
                   </ul>
 
                  
@@ -958,6 +1039,9 @@ const RegisterPage = () => {
                       For your Resume: We highly recommend using a PDF format. It keeps your layout looking perfect on every recruiter's
                       screen!
                     </li>
+                    <li><strong>Diploma &amp; TOR:</strong> Upload clear scans or well-lit photos of the complete document.</li>
+                    <li><strong>Valid ID:</strong> Use an Alumni ID or an unexpired government-issued ID where possible.</li>
+                    <li><strong>Before You Submit:</strong> Double-check every upload to avoid verification delays.</li>
                   </ul>
                 </div>
               </div>

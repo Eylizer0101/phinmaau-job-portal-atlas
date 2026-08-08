@@ -343,9 +343,9 @@ const userSchema = new mongoose.Schema(
       default: 'jobseeker',
     },
 
-    firstName: { type: String, trim: true, default: '' },
-    middleName: { type: String, trim: true, default: '' },
-    lastName: { type: String, trim: true, default: '' },
+    firstName: { type: String, trim: true, maxlength: 50, default: '' },
+    middleName: { type: String, trim: true, maxlength: 50, default: '' },
+    lastName: { type: String, trim: true, maxlength: 50, default: '' },
     extensionName: { type: String, trim: true, default: '' },
 
     profileImage: { type: String, default: '' },

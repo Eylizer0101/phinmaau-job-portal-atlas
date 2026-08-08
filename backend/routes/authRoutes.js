@@ -43,17 +43,7 @@ const passwordRecoveryLimiter = createAuthLimiter({
 router.post(
   '/register',
   registrationLimiter,
-  upload.uploadRegisterDocs.fields([
-    { name: 'cv', maxCount: 1 },
-    { name: 'diploma', maxCount: 1 },
-    { name: 'validId', maxCount: 1 },
-    { name: 'tor', maxCount: 1 },
-    { name: 'sss', maxCount: 1 },
-    { name: 'philhealth', maxCount: 1 },
-    { name: 'pagibig', maxCount: 1 },
-    { name: 'tin', maxCount: 1 },
-    { name: 'profileImage', maxCount: 1 },
-  ]),
+  upload.handleJobseekerRegisterUploads,
   authController.register
 );
 

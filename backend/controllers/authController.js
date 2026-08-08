@@ -7,7 +7,12 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const https = require('https');
 const querystring = require('querystring');
-const { sendCredentialsEmail, sendPasswordResetEmail, sendSettingsEmailVerificationCode } = require('../config/mailer');
+const {
+  sendCredentialsEmail,
+  sendPasswordResetEmail,
+  sendSettingsEmailVerificationCode,
+  sendJobseekerRegistrationSummaryEmail,
+} = require('../config/mailer');
 const puppeteer = require('puppeteer');
 const { v2: cloudinary } = require('cloudinary');
 
@@ -50,6 +55,8 @@ const getUploadedFileUrl = (req, file, fallbackRelativePath) => {
 const boolFromBody = (v) => String(v || '').toLowerCase() === 'true';
 
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
+const isGmailAddress = (email) => /^[^\s@]+@gmail\.com$/i.test(String(email || '').trim());
+const isValidPersonName = (value) => /^[\p{L}\s'-]+$/u.test(String(value || '').trim());
 
 const getJwtSecret = () => {
   const secret = process.env.JWT_SECRET;
@@ -679,8 +686,31 @@ exports.register = async (req, res) => {
 
     const emailLower = normalizeEmail(email);
     if (!emailLower) return res.status(400).json({ message: 'Email is required' });
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailLower)) {
-      return res.status(400).json({ message: 'Invalid email address' });
+    if (!isGmailAddress(emailLower)) {
+      return res.status(400).json({ message: 'Gmail account required to continue.' });
+    }
+
+    const cleanFirstName = String(firstName || '').trim();
+    const cleanMiddleName = String(middleName || '').trim();
+    const cleanLastName = String(lastName || '').trim();
+    const nameValues = [
+      ['First Name', cleanFirstName, true],
+      ['Middle Name', cleanMiddleName, false],
+      ['Last Name', cleanLastName, true],
+    ];
+
+    for (const [label, value, required] of nameValues) {
+      if (required && !value) return res.status(400).json({ message: `${label} is required` });
+      if (value.length > 50) return res.status(400).json({ message: 'Maximum of 50 characters only.' });
+      if (value && !isValidPersonName(value)) {
+        return res.status(400).json({ message: `${label} may contain letters, spaces, hyphens, and apostrophes only.` });
+      }
+    }
+
+    const currentYear = new Date().getFullYear();
+    const numericGraduationYear = Number(yearGraduated);
+    if (!Number.isInteger(numericGraduationYear) || numericGraduationYear < 1982 || numericGraduationYear > currentYear) {
+      return res.status(400).json({ message: `Year Graduated must be between 1982 and ${currentYear}` });
     }
 
     if (
@@ -693,7 +723,7 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'Please complete Career Profile fields' });
     }
 
-    if (!firstName || !lastName || !phoneNumber) {
+    if (!cleanFirstName || !cleanLastName || !phoneNumber) {
       return res.status(400).json({ message: 'Please complete Basic Information fields' });
     }
 
@@ -750,9 +780,9 @@ exports.register = async (req, res) => {
       password: hashedPassword,
       role: 'jobseeker',
 
-      firstName: String(firstName || '').trim(),
-      middleName: String(middleName || '').trim(),
-      lastName: String(lastName || '').trim(),
+      firstName: cleanFirstName,
+      middleName: cleanMiddleName,
+      lastName: cleanLastName,
       extensionName: normalizeExtensionName(extensionName),
       profileImage,
 
@@ -776,6 +806,42 @@ exports.register = async (req, res) => {
     const user = new User(userData);
     await user.save();
     await notificationController.createAdminUserRegistrationNotification(user, 'jobseeker');
+
+    const uploadedCredentialLabels = {
+      cv: 'CV/Resume',
+      diploma: 'Diploma',
+      validId: 'Valid ID',
+      tor: 'Transcript of Records (TOR)',
+      sss: 'SSS',
+      philhealth: 'PhilHealth',
+      pagibig: 'Pag-IBIG',
+      tin: 'TIN',
+    };
+    const uploadedCredentialTypes = Object.entries(uploadedCredentialLabels)
+      .filter(([key]) => Boolean(files?.[key]?.[0]))
+      .map(([, label]) => label);
+    const fullName = [user.firstName, user.middleName, user.lastName, user.extensionName]
+      .filter(Boolean)
+      .join(' ');
+
+    try {
+      await sendJobseekerRegistrationSummaryEmail({
+        to: user.email,
+        fullName,
+        contactNumber: user.jobSeekerProfile?.phoneNumber,
+        campus: user.jobSeekerProfile?.campus,
+        course: user.jobSeekerProfile?.course,
+        yearGraduated: user.jobSeekerProfile?.yearGraduated,
+        preferredWorkMode: user.jobSeekerProfile?.preferredWorkMode,
+        availabilityToStart: user.jobSeekerProfile?.howSoonCanYouStart,
+        uploadedCredentialTypes,
+        registeredAt: user.createdAt || new Date(),
+      });
+    } catch (mailError) {
+      console.error('Jobseeker registration summary email failed.', {
+        code: mailError?.code || 'EMAIL_SEND_FAILED',
+      });
+    }
 
     const token = signToken({ userId: user._id, role: user.role });
 
