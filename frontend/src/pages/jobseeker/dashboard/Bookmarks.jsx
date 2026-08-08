@@ -341,6 +341,25 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           />
         </svg>
       );
+    case 'minusCircle':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 12h8m5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      );
+    case 'xCircle':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 9l6 6m0-6l-6 6m12-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      );
+    case 'calendarCheck':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 3v3m8-3v3M4 9h16M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 14l2 2 4-4" />
+        </svg>
+      );
     case 'exclamation':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -452,7 +471,11 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
 };
 
 const normalizeApplicationStatus = (status) => {
-  const value = String(status || '').trim().toLowerCase();
+  const value = String(status || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ');
 
   if (!value) return 'pending';
   if (value === 'pending') return 'pending';
@@ -460,7 +483,6 @@ const normalizeApplicationStatus = (status) => {
   if (
     value === 'for interview' ||
     value === 'interview' ||
-    value === 'interview_scheduled' ||
     value === 'interview scheduled' ||
     value === 'shortlisted'
   ) {
@@ -1542,7 +1564,7 @@ const Bookmarks = () => {
   const [modalJob, setModalJob] = useState(null);
 
   const [appliedMap, setAppliedMap] = useState({});
-  const [checkingApplied, setCheckingApplied] = useState(false);
+  const [checkingApplied, setCheckingApplied] = useState(true);
 
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewProcessRating, setReviewProcessRating] = useState(0);
@@ -1672,12 +1694,14 @@ const Bookmarks = () => {
 
       if (!token || !userStr || uniqueJobs.length === 0) {
         setAppliedMap({});
+        setCheckingApplied(false);
         return;
       }
 
       const user = JSON.parse(userStr);
       if (user.role !== 'jobseeker') {
         setAppliedMap({});
+        setCheckingApplied(false);
         return;
       }
 
@@ -1696,13 +1720,18 @@ const Bookmarks = () => {
                 {
                   hasApplied: Boolean(response.data.hasApplied),
                   applicationStatus: normalizeApplicationStatus(response.data.application?.status || ''),
+                  isClosed: Boolean(response.data.jobAvailability?.isClosed),
+                  isFullyFilled: Boolean(response.data.jobAvailability?.isFullyFilled),
+                  vacancyCount: Number(response.data.jobAvailability?.vacancyCount || 0),
+                  filledCount: Number(response.data.jobAvailability?.filledCount || 0),
+                  isResolved: true,
                 },
               ];
             }
 
-            return [jobId, { hasApplied: false, applicationStatus: '' }];
+            return [jobId, { hasApplied: false, applicationStatus: '', isResolved: true }];
           } catch {
-            return [jobId, { hasApplied: false, applicationStatus: '' }];
+            return [jobId, { hasApplied: false, applicationStatus: '', isResolved: true }];
           }
         })
       );
@@ -1729,6 +1758,7 @@ const Bookmarks = () => {
       checkAppliedStatuses(jobsToCheck);
     } else {
       setAppliedMap({});
+      setCheckingApplied(false);
     }
   }, [savedJobs, companyJobsForAppliedCheck, checkAppliedStatuses]);
 
@@ -1869,23 +1899,29 @@ const Bookmarks = () => {
   const companyWebsiteUrl = useMemo(() => getCompanyWebsiteUrl(selectedJob), [selectedJob]);
 
   const selectedJobApplyState = selectedJob
-    ? appliedMap[selectedJob._id] || { hasApplied: false, applicationStatus: '' }
-    : { hasApplied: false, applicationStatus: '' };
+    ? appliedMap[selectedJob._id] || { hasApplied: false, applicationStatus: '', isResolved: false }
+    : { hasApplied: false, applicationStatus: '', isResolved: true };
 
   const hasApplied = Boolean(selectedJobApplyState.hasApplied);
   const applicationStatus = normalizeApplicationStatus(selectedJobApplyState.applicationStatus || '');
+  const applicationStateReady = Boolean(selectedJobApplyState.isResolved);
+  const isFullyFilled =
+    applicationStateReady &&
+    Boolean(selectedJobApplyState.isClosed) &&
+    Boolean(selectedJobApplyState.isFullyFilled);
 
   const statusBadge = useMemo(() => {
-    if (!hasApplied) return null;
+    if (!applicationStateReady || !hasApplied) return null;
 
     const status = normalizeApplicationStatus(applicationStatus || 'pending');
     const map = {
-      pending: { cls: 'bg-black/5 border-black/15 text-[#000000]', icon: 'clock', label: 'Pending' },
-      'for interview': { cls: 'bg-[#2e66a6]/10 border-[#2e66a6]/20 text-[#000000]', icon: 'checkCircle', label: 'For Interview' },
-      hired: { cls: 'bg-[#2e66a6]/10 border-[#2e66a6]/20 text-[#000000]', icon: 'checkCircle', label: 'Hired' },
-      declined: { cls: 'bg-black/5 border-black/15 text-[#000000]', icon: 'exclamation', label: 'Declined' },
-      withdrawn: { cls: 'bg-black/5 border-black/15 text-[#000000]', icon: 'exclamation', label: 'Withdrawn' },
-      cancelled: { cls: 'bg-black/5 border-black/15 text-[#000000]', icon: 'exclamation', label: 'Cancelled' },
+      pending: { cls: 'bg-amber-50 border-amber-200 text-amber-700', icon: 'clock', label: 'Pending' },
+      'for interview': { cls: 'bg-blue-50 border-blue-200 text-blue-700', icon: 'calendarCheck', label: 'For Interview' },
+      hired: { cls: 'bg-green-50 border-green-200 text-green-700', icon: 'checkCircle', label: 'Hired' },
+      declined: { cls: 'bg-red-50 border-red-200 text-red-700', icon: 'xCircle', label: 'Declined' },
+      withdrawn: { cls: 'bg-gray-50 border-gray-200 text-gray-700', icon: 'minusCircle', label: 'Withdrawn' },
+      cancelled: { cls: 'bg-gray-50 border-gray-200 text-gray-700', icon: 'minusCircle', label: 'Cancelled' },
+      'vacancy full': { cls: 'bg-gray-50 border-gray-200 text-gray-700', icon: 'minusCircle', label: 'Vacancy Full' },
     };
 
     const picked = map[status] || map.pending;
@@ -1896,7 +1932,7 @@ const Bookmarks = () => {
         Applied ({picked.label})
       </span>
     );
-  }, [hasApplied, applicationStatus]);
+  }, [applicationStateReady, hasApplied, applicationStatus]);
 
   const isJobActive = useCallback((job) => {
     if (!job) return false;
@@ -2268,7 +2304,16 @@ const Bookmarks = () => {
     [navigate, savedJobs, savingJobId, setToastMessage]
   );
 
-  const primaryCtaLabel = hasApplied ? 'View Application' : selectedJob && isJobActive(selectedJob) ? 'Apply Now' : 'Application Closed';
+  const mainActionLoading = Boolean(selectedJob) && (checkingApplied || !applicationStateReady);
+  const primaryCtaLabel = mainActionLoading
+    ? 'Loading...'
+    : isFullyFilled
+    ? 'Positions Filled'
+    : hasApplied
+    ? 'View Application'
+    : selectedJob && isJobActive(selectedJob)
+    ? 'Apply Now'
+    : 'Application Closed';
 
   const perksAndBenefitsList = useMemo(() => {
     if (!selectedJob) return [];
@@ -2569,7 +2614,9 @@ const Bookmarks = () => {
                             <button
                               type="button"
                               onClick={
-                                hasApplied
+                                mainActionLoading || isFullyFilled
+                                  ? undefined
+                                  : hasApplied
                                   ? () => {
                                       navigate('/jobseeker/my-applications');
                                     }
@@ -2577,13 +2624,20 @@ const Bookmarks = () => {
                                   ? handleApplyClick
                                   : undefined
                               }
-                              disabled={(!isJobActive(selectedJob) && !hasApplied) || checkingApplied}
+                              disabled={mainActionLoading || isFullyFilled || (!isJobActive(selectedJob) && !hasApplied)}
                               className={`${UI.btnBase} ${UI.btnLg} ${
-                                !isJobActive(selectedJob) && !hasApplied
+                                isFullyFilled
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 disabled:!pointer-events-auto disabled:cursor-not-allowed'
+                                  : mainActionLoading || (!isJobActive(selectedJob) && !hasApplied)
                                   ? 'bg-black/5 text-black/50 border border-black/10'
                                   : UI.btnPrimary
                               } ${UI.ring} w-full`}
                             >
+                              {mainActionLoading ? (
+                                <span className="inline-block w-4 h-4 rounded-full border-2 border-black/20 border-t-black/60 animate-spin motion-reduce:animate-none" />
+                              ) : isFullyFilled ? (
+                                <SvgIcon name="checkCircle" className="w-4 h-4" />
+                              ) : null}
                               {primaryCtaLabel}
                             </button>
 
@@ -2753,10 +2807,20 @@ const Bookmarks = () => {
                                   <h3 className="text-sm font-bold text-black/55">Interested in this role?</h3>
 
                                   <button
-                                    onClick={hasApplied ? () => navigate('/jobseeker/my-applications') : isJobActive(selectedJob) ? handleApplyClick : undefined}
-                                    disabled={(!isJobActive(selectedJob) && !hasApplied) || checkingApplied}
+                                    onClick={
+                                      mainActionLoading || isFullyFilled
+                                        ? undefined
+                                        : hasApplied
+                                        ? () => navigate('/jobseeker/my-applications')
+                                        : isJobActive(selectedJob)
+                                        ? handleApplyClick
+                                        : undefined
+                                    }
+                                    disabled={mainActionLoading || isFullyFilled || (!isJobActive(selectedJob) && !hasApplied)}
                                     className={`w-full mt-4 h-12 rounded-xl text-base font-bold transition-all duration-200 ${UI.ring} ${
-                                      !isJobActive(selectedJob) && !hasApplied
+                                      isFullyFilled
+                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 disabled:!pointer-events-auto disabled:cursor-not-allowed'
+                                        : mainActionLoading || (!isJobActive(selectedJob) && !hasApplied)
                                         ? 'bg-black/5 text-black/50 border border-black/10 cursor-not-allowed'
                                         : hasApplied
                                         ? 'bg-[#eaf2fb] text-[#2e66a6] border border-[#d8e2ee]'
@@ -2764,6 +2828,11 @@ const Bookmarks = () => {
                                     }`}
                                     type="button"
                                   >
+                                    {mainActionLoading ? (
+                                      <span className="mr-2 inline-block w-4 h-4 rounded-full border-2 border-black/20 border-t-black/60 animate-spin motion-reduce:animate-none align-[-2px]" />
+                                    ) : isFullyFilled ? (
+                                      <SvgIcon name="checkCircle" className="inline-block mr-2 w-4 h-4 align-[-2px]" />
+                                    ) : null}
                                     {primaryCtaLabel}
                                   </button>
 

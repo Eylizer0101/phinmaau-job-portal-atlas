@@ -1623,12 +1623,20 @@ exports.getSavedJobs = async (req, res) => {
     const user = await User.findById(req.user._id).populate({
       path: 'savedJobs',
       match: {
-        isPublished: true,
-        isActive: true,
-        $or: [
-          { isArchived: false },
-          { isArchived: { $exists: false } }
-        ]
+        $and: [
+          {
+            $or: [
+              { isPublished: true },
+              { status: { $in: ['filled', 'closed'] } }
+            ]
+          },
+          {
+            $or: [
+              { isArchived: false },
+              { isArchived: { $exists: false } }
+            ]
+          }
+        ],
       },
       populate: {
         path: 'employer',

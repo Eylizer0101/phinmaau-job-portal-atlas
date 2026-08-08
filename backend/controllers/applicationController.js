@@ -2606,18 +2606,53 @@ exports.checkIfApplied = async (req, res) => {
       });
     }
 
-    const application = await Application.findOne({
-      job: jobId,
-      jobseeker: req.user._id
-    }).populate({
-      path: 'job',
-      select: 'title companyName companyLogo'
-    });
+    const [application, job, filledCount] = await Promise.all([
+      Application.findOne({
+        job: jobId,
+        jobseeker: req.user._id
+      })
+        .sort({ updatedAt: -1 })
+        .populate({
+          path: 'job',
+          select: 'title companyName companyLogo'
+        }),
+      Job.findById(jobId)
+        .select('status isActive isPublished applicationDeadline vacancies')
+        .lean(),
+      Application.countDocuments({ job: jobId, status: 'hired' })
+    ]);
+
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: 'Job not found'
+      });
+    }
+
+    const vacancyCount = Number(job.vacancies || 0);
+    const normalizedStatus = normalizeJobStatus(job.status);
+    const isFullyFilled =
+      normalizedStatus === 'filled' ||
+      (Number.isFinite(vacancyCount) && vacancyCount > 0 && filledCount >= vacancyCount);
+    const deadline = job.applicationDeadline ? new Date(job.applicationDeadline) : null;
+    const deadlinePassed = deadline && !Number.isNaN(deadline.getTime()) && deadline < new Date();
+    const isClosed =
+      isFullyFilled ||
+      normalizedStatus === 'closed' ||
+      job.isActive === false ||
+      job.isPublished === false ||
+      Boolean(deadlinePassed);
 
     res.status(200).json({
       success: true,
       hasApplied: !!application,
-      application: application || null
+      application: application || null,
+      jobAvailability: {
+        isClosed,
+        isFullyFilled,
+        vacancyCount: Number.isFinite(vacancyCount) && vacancyCount > 0 ? vacancyCount : 0,
+        filledCount
+      }
     });
 
   } catch (error) {
