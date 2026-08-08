@@ -1153,6 +1153,16 @@ const EditJob = () => {
     ).trim();
   }, [storedUser]);
 
+  const salaryRangeText = useMemo(() => {
+    const min = formData.salaryMin ? Number(formData.salaryMin).toLocaleString() : '';
+    const max = formData.salaryMax ? Number(formData.salaryMax).toLocaleString() : '';
+    if (!min && !max) return 'Salary not specified';
+    if (min && !max) return `₱${min}`;
+    if (!min && max) return `Up to ₱${max}`;
+    return `₱${min} – ₱${max}`;
+  }, [formData.salaryMin, formData.salaryMax]);
+
+
   const canPublish = useMemo(() => {
     return verificationStatus === 'verified' || storedUser?.isVerified === true;
   }, [verificationStatus, storedUser]);
@@ -3047,15 +3057,13 @@ const EditJob = () => {
               <div
                 role="dialog"
                 aria-modal="true"
-                aria-labelledby="edit-job-preview-title"
+                aria-labelledby="job-preview-title"
                 className="flex max-h-[94vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
               >
                 <div className="flex items-center justify-between border-b border-[#e6edf5] bg-white px-6 py-4">
                   <div>
-                    <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[#2e66a6]">
-                      Almost There!
-                    </h2>
-                    <h3 id="edit-job-preview-title" className="mt-1 text-xl font-bold text-gray-900">
+                    <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[#2e66a6]">Almost There!</h2>
+                    <h3 id="job-preview-title" className="mt-1 text-xl font-bold text-gray-900">
                       Double-check your job posting before publishing.
                     </h3>
                   </div>
@@ -3072,150 +3080,271 @@ const EditJob = () => {
                 <div className="overflow-y-auto bg-white p-5 sm:p-6">
                   <div className="mx-auto w-full max-w-6xl space-y-5">
                     <section className="rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] sm:p-7">
-                      <div className="flex min-w-0 items-start gap-4">
-                        {storedUser?.employerProfile?.companyLogo ? (
-                          <img
-                            src={storedUser.employerProfile.companyLogo}
-                            alt="Company logo"
-                            className="h-16 w-16 flex-shrink-0 rounded-2xl border border-slate-200 bg-white object-cover sm:h-20 sm:w-20"
-                          />
-                        ) : (
-                          <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-xl font-bold text-slate-600 sm:h-20 sm:w-20">
-                            {(storedUser?.employerProfile?.companyName || 'C').charAt(0).toUpperCase()}
-                          </div>
-                        )}
+                      <div className="flex min-w-0 flex-col gap-5">
+                        <div className="flex min-w-0 items-start gap-4">
+                          {storedUser?.employerProfile?.companyLogo ? (
+                            <img
+                              src={storedUser.employerProfile.companyLogo}
+                              alt="Company logo"
+                              className="h-16 w-16 flex-shrink-0 rounded-2xl border border-slate-200 bg-white object-cover sm:h-20 sm:w-20"
+                            />
+                          ) : (
+                            <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-xl font-bold text-slate-600 sm:h-20 sm:w-20">
+                              {(storedUser?.employerProfile?.companyName || 'C').charAt(0).toUpperCase()}
+                            </div>
+                          )}
 
-                        <div className="min-w-0 flex-1">
-                          <h3 className="break-words text-3xl font-extrabold leading-tight tracking-tight text-black sm:text-4xl">
-                            {formData.title || 'Untitled Job'}
-                          </h3>
+                          <div className="min-w-0 flex-1">
+                            <h3 className="break-words text-3xl font-extrabold leading-tight tracking-tight text-black sm:text-4xl">
+                              {formData.title || 'Untitled Job'}
+                            </h3>
 
-                          <div className="mt-2 flex items-center gap-2 text-sm text-black/70">
-                            <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 21h18M6 21V5a2 2 0 012-2h8a2 2 0 012 2v16M9 7h.01M9 11h.01M9 15h.01M12 7h.01M12 11h.01M12 15h.01M15 7h.01M15 11h.01M15 15h.01" />
-                            </svg>
-                            <span className="truncate">{storedUser?.employerProfile?.companyName || job?.companyName || 'Company name'}</span>
-                          </div>
+                            <div className="mt-2 flex items-center gap-2 text-sm text-black/70">
+                              <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 21h18M6 21V5a2 2 0 012-2h8a2 2 0 012 2v16M9 7h.01M9 11h.01M9 15h.01M12 7h.01M12 11h.01M12 15h.01M15 7h.01M15 11h.01M15 15h.01" />
+                              </svg>
+                              <span className="truncate">{storedUser?.employerProfile?.companyName || 'Company name'}</span>
+                            </div>
 
-                          <div className="mt-2 flex items-start gap-2 text-sm uppercase tracking-wide text-black/60">
-                            <svg className="mt-0.5 h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 21s7-4.438 7-11a7 7 0 10-14 0c0 6.562 7 11 7 11z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 10a2 2 0 100-4 2 2 0 000 4z" />
-                            </svg>
-                            <span className="break-words">{formData.location || companyLocationFromProfile}</span>
-                          </div>
+                            <div className="mt-2 flex items-start gap-2 text-sm uppercase tracking-wide text-black/60">
+                              <svg className="mt-0.5 h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 21s7-4.438 7-11a7 7 0 10-14 0c0 6.562 7 11 7 11z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 10a2 2 0 100-4 2 2 0 000 4z" />
+                              </svg>
+                              <span className="break-words">{formData.location || companyLocationFromProfile}</span>
+                            </div>
 
-                          <div className="mt-5 flex flex-wrap gap-2">
-                            {[
-                              formData.jobType,
-                              formData.workMode,
-                              formData.vacancies
-                                ? `${formData.vacancies} ${Number(formData.vacancies) === 1 ? 'Vacancy' : 'Vacancies'}`
-                                : '',
-                              getRelocationDisplayLabel(formData.willingToRelocate),
-                            ]
-                              .filter(Boolean)
-                              .map((value) => (
-                                <span
-                                  key={value}
-                                  className="inline-flex items-center rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1.5 text-sm font-semibold text-black/75"
-                                >
-                                  {value}
-                                </span>
-                              ))}
-                          </div>
+                            <div className="mt-5 flex flex-wrap gap-2">
+                              {[
+                                { value: formData.jobType, icon: 'briefcase' },
+                                { value: formData.workMode, icon: 'building' },
+                                {
+                                  value: formData.vacancies
+                                    ? `${formData.vacancies} ${Number(formData.vacancies) === 1 ? 'Vacancy' : 'Vacancies'}`
+                                    : '',
+                                  icon: 'users',
+                                },
+                                { value: getRelocationDisplayLabel(formData.willingToRelocate), icon: 'location' },
+                              ]
+                                .filter((item) => item.value)
+                                .map((item) => (
+                                  <span
+                                    key={`${item.icon}-${item.value}`}
+                                    className="inline-flex items-center gap-2 rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1.5 text-xs font-semibold text-black/80"
+                                  >
+                                    {item.icon === 'briefcase' && (
+                                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m-3 0h14a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2zM3 13h18" />
+                                      </svg>
+                                    )}
+                                    {item.icon === 'building' && (
+                                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 21h18M6 21V5a2 2 0 012-2h8a2 2 0 012 2v16M9 7h.01M12 7h.01M15 7h.01M9 11h.01M12 11h.01M15 11h.01" />
+                                      </svg>
+                                    )}
+                                    {item.icon === 'users' && (
+                                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-1a4 4 0 00-4-4h-1M9 20H2v-1a4 4 0 014-4h1m7-4a4 4 0 10-8 0 4 4 0 008 0zm8 2a3 3 0 10-6 0 3 3 0 006 0z" />
+                                      </svg>
+                                    )}
+                                    {item.icon === 'location' && (
+                                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 21s7-4.438 7-11a7 7 0 10-14 0c0 6.562 7 11 7 11z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 10a2 2 0 100-4 2 2 0 000 4z" />
+                                      </svg>
+                                    )}
+                                    {item.value}
+                                  </span>
+                                ))}
+                            </div>
 
-                          <div className="mt-5 flex items-center gap-2 text-sm text-black/70">
-                            <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span>
-                              Ready to publish
-                              {formData.applicationDeadline
-                                ? ` and deadline of application is on ${formatApplicationDeadline(formData.applicationDeadline)}`
-                                : ''}
-                            </span>
+                            <div className="mt-5 flex items-center gap-2 text-sm text-black/70">
+                              <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <span>
+                                Ready to publish{formData.applicationDeadline ? ` and deadline of application is on ${formatApplicationDeadline(formData.applicationDeadline)}` : ''}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </section>
 
-                    <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-                      <div className="rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-sm">
-                        <p className="text-sm font-bold text-black">Salary</p>
-                        <p className="mt-2 text-sm text-black/75">
-                          {formData.hideSalary
-                            ? 'Salary not disclosed'
-                            : formData.salaryMin || formData.salaryMax
-                            ? `₱${formatSalaryInput(formData.salaryMin || '0')} – ₱${formatSalaryInput(formData.salaryMax || '0')}`
-                            : 'Not specified'}
-                        </p>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                      {[
+                        {
+                          title: 'Salary',
+                          value: formData.hideSalary ? 'Salary not specified' : salaryRangeText,
+                          icon: '₱',
+                        },
+                        {
+                          title: 'Experience',
+                          value: normalizeExperienceLevel(formData.experienceLevel) || 'Experience not specified',
+                          icon: 'clock',
+                        },
+                        {
+                          title: 'Employment Type',
+                          value: formData.jobType || 'Employment type not specified',
+                          icon: 'briefcase',
+                        },
+                        {
+                          title: 'Website / Company URL',
+                          value: companyWebsite || 'N/A',
+                          icon: 'external',
+                        },
+                      ].map((metric) => (
+                        <div
+                          key={metric.title}
+                          className="min-h-[102px] rounded-xl border border-[#d9e2ec] bg-white px-4 py-4 shadow-[0_4px_14px_rgba(15,23,42,0.08)]"
+                        >
+                          <div className="flex h-full min-w-0 items-start gap-3">
+                            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[#d9dbe3] bg-[#f9fafb] text-[#6b7280]">
+                              {metric.icon === '₱' ? (
+                                <span className="text-sm font-bold">₱</span>
+                              ) : metric.icon === 'clock' ? (
+                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              ) : metric.icon === 'briefcase' ? (
+                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m-3 0h14a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2zM3 13h18" />
+                                </svg>
+                              ) : (
+                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M14 3h7v7M10 14L21 3M21 14v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6" />
+                                </svg>
+                              )}
+                            </div>
+                            <div className="min-w-0 pt-0.5">
+                              <p className="text-sm font-semibold text-black">{metric.title}</p>
+                              {metric.title === 'Website / Company URL' && companyWebsite ? (
+                                <a
+                                  href={normalizeExternalUrl(companyWebsite)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="mt-1 block truncate text-sm text-[#2e66a6] hover:underline"
+                                  title={companyWebsite}
+                                >
+                                  {companyWebsite}
+                                </a>
+                              ) : (
+                                <p className="mt-1 truncate text-sm text-black/80" title={metric.value}>
+                                  {metric.value}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <section className="overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+                      <div className="px-5 py-5 sm:px-6">
+                        <div className="flex items-center gap-3 pt-2">
+                          <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-[#2e66a6]/25 bg-[#2e66a6]/10 text-[#2e66a6]">
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                          </span>
+                          <h3 className="text-base font-bold text-black">Job Description</h3>
+                        </div>
+                        <div
+                          className="mt-4 break-words text-sm leading-relaxed text-black/70 sm:text-base [&_p]:my-2 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1"
+                          dangerouslySetInnerHTML={{ __html: normalizeRichTextValue(formData.description) || 'No description provided.' }}
+                        />
+                      </div>
+                    </section>
+
+                    <section className="overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+                      <div className="px-5 py-5 sm:px-6">
+                        <div className="flex items-center gap-3 pt-2">
+                          <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-[#2e66a6]/25 bg-[#2e66a6]/10 text-[#2e66a6]">
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M14.7 6.3a4 4 0 01-5.657 5.657l-5.04 5.04a2 2 0 102.829 2.828l5.04-5.04A4 4 0 0114.7 6.3zM19 7l-3 3" />
+                            </svg>
+                          </span>
+                          <h3 className="text-base font-bold text-black">Qualification</h3>
+                        </div>
+                        <div
+                          className="mt-4 break-words text-sm leading-relaxed text-black/70 sm:text-base [&_p]:my-2 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1"
+                          dangerouslySetInnerHTML={{ __html: normalizeRichTextValue(formData.requirements) || 'No requirements provided.' }}
+                        />
+                      </div>
+                    </section>
+
+                    <section className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+                      <div className="overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+                        <div className="border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6">
+                          <p className="text-sm font-semibold text-black">Required Skills</p>
+                        </div>
+                        <div className="px-5 py-5 sm:px-6">
+                          {skills.length ? (
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                              {skills.map((skill) => (
+                                <div key={skill} className="rounded-xl border border-[#d8e2ee] bg-white px-4 py-3 text-sm text-black/75">
+                                  {skill}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-black/70">No skills specified</p>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-sm">
-                        <p className="text-sm font-bold text-black">Experience</p>
-                        <p className="mt-2 text-sm text-black/75">{formData.experienceLevel || 'Not specified'}</p>
+                      <div className="overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+                        <div className="border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6">
+                          <p className="text-sm font-semibold text-black">Work Location</p>
+                        </div>
+                        <div className="h-[180px] overflow-hidden bg-black/5">
+                          {hasUsableCoordinates(formData.locationLatitude, formData.locationLongitude) ? (
+                            <iframe
+                              title="Work location preview"
+                              src={`https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(`${Number(formData.locationLongitude) - 0.01},${Number(formData.locationLatitude) - 0.01},${Number(formData.locationLongitude) + 0.01},${Number(formData.locationLatitude) + 0.01}`)}&layer=mapnik&marker=${formData.locationLatitude},${formData.locationLongitude}`}
+                              className="h-full w-full border-0"
+                              loading="lazy"
+                            />
+                          ) : locationImagePreview ? (
+                            <img src={locationImagePreview} alt="Work location preview" className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="flex h-full items-center justify-center text-black/40">
+                              <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 21s7-4.438 7-11a7 7 0 10-14 0c0 6.562 7 11 7 11z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 10a2 2 0 100-4 2 2 0 000 4z" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                        <div className="border-t border-[#e6edf5] px-4 py-3">
+                          <p className="text-xs text-[#2e66a6]">{formData.location || 'No work address provided.'}</p>
+                        </div>
                       </div>
+                    </section>
 
-                      <div className="rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-sm">
-                        <p className="text-sm font-bold text-black">Employment Type</p>
-                        <p className="mt-2 text-sm text-black/75">{formData.jobType || 'Not specified'}</p>
+                    <section className="overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+                      <div className="border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6">
+                        <p className="text-sm font-semibold text-black">Perks and Benefits</p>
                       </div>
-
-                      <div className="rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-sm">
-                        <p className="text-sm font-bold text-black">Website / Company URL</p>
-                        {companyWebsite ? (
-                          <a
-                            href={normalizeExternalUrl(companyWebsite)}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="mt-2 block truncate text-sm font-medium text-[#2e66a6] hover:underline"
-                            title={companyWebsite}
-                          >
-                            {companyWebsite}
-                          </a>
+                      <div className="px-5 py-5 sm:px-6">
+                        {formData.perksAndBenefits?.length || formData.otherBenefits ? (
+                          <div className="space-y-4">
+                            {formData.perksAndBenefits?.length ? (
+                              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                {formData.perksAndBenefits.map((benefit) => (
+                                  <div key={benefit} className="rounded-xl border border-[#d8e2ee] bg-white px-4 py-3 text-sm text-black/75">
+                                    {benefit}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : null}
+                            {formData.otherBenefits ? <p className="text-sm leading-relaxed text-black/70">{formData.otherBenefits}</p> : null}
+                          </div>
                         ) : (
-                          <p className="mt-2 text-sm text-black/75">N/A</p>
+                          <p className="text-sm text-black/70">No perks or benefits specified</p>
                         )}
                       </div>
                     </section>
-
-                    <section className="rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-sm sm:p-6">
-                      <h4 className="text-base font-bold text-black">Job Description</h4>
-                      <div
-                        className="mt-4 break-words text-sm leading-7 text-black/75"
-                        dangerouslySetInnerHTML={{ __html: normalizeRichTextValue(formData.description) }}
-                      />
-                    </section>
-
-                    <section className="rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-sm sm:p-6">
-                      <h4 className="text-base font-bold text-black">Job Requirements</h4>
-                      <div
-                        className="mt-4 break-words text-sm leading-7 text-black/75"
-                        dangerouslySetInnerHTML={{ __html: normalizeRichTextValue(formData.requirements) }}
-                      />
-                    </section>
-
-                    {(formData.perksAndBenefits?.length || formData.otherBenefits) ? (
-                      <section className="rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-sm sm:p-6">
-                        <h4 className="text-base font-bold text-black">Perks and Benefits</h4>
-                        {formData.perksAndBenefits?.length ? (
-                          <div className="mt-4 flex flex-wrap gap-2">
-                            {formData.perksAndBenefits.map((benefit) => (
-                              <span
-                                key={benefit}
-                                className="rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1.5 text-sm text-black/75"
-                              >
-                                {benefit}
-                              </span>
-                            ))}
-                          </div>
-                        ) : null}
-                        {formData.otherBenefits ? (
-                          <p className="mt-4 text-sm leading-7 text-black/70">{formData.otherBenefits}</p>
-                        ) : null}
-                      </section>
-                    ) : null}
                   </div>
                 </div>
 
@@ -3231,7 +3360,6 @@ const EditJob = () => {
                     type="button"
                     onClick={() => {
                       setShowPreviewModal(false);
-                      setPrivacyAccepted(false);
                       setShowPrivacyModal(true);
                     }}
                     className="rounded-xl bg-[#2e66a6] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#23508a]"
@@ -3243,28 +3371,37 @@ const EditJob = () => {
             </div>
           )}
 
-          {isDraft && showPrivacyModal && (
+              {isDraft && showPrivacyModal && (
             <div className="fixed inset-0 z-[2200] flex items-center justify-center bg-black/60 p-2 sm:p-4">
               <div
                 role="dialog"
                 aria-modal="true"
-                aria-labelledby="edit-job-privacy-notice-title"
+                aria-labelledby="privacy-notice-title"
                 className="relative flex w-full max-w-[860px] flex-col overflow-hidden rounded-[22px] border border-gray-200 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.20)]"
               >
+                <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+                  <div className="absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-[#2e66ff]/[0.07] blur-3xl" />
+                  <div className="absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-[#56b5dc]/[0.12] blur-3xl" />
+                  <div className="absolute -bottom-24 -right-20 h-56 w-56 rounded-full bg-[#1e4ba0]/[0.10] blur-3xl" />
+                </div>
+
                 <button
                   type="button"
                   onClick={() => setShowPrivacyModal(false)}
-                  className="absolute right-5 top-5 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
+                  className="absolute right-5 top-5 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
                   aria-label="Close privacy notice"
                 >
                   <span className="text-2xl leading-none" aria-hidden="true">×</span>
                 </button>
 
-                <div className="px-5 pb-5 pt-4 sm:px-8 lg:px-10">
+                <div className="relative z-10 px-5 pb-5 pt-4 sm:px-8 sm:pb-5 lg:px-10">
                   <div className="flex justify-center">
                     <div className="relative flex h-16 w-16 items-center justify-center sm:h-20 sm:w-20" aria-hidden="true">
                       <div className="absolute inset-0 rounded-full bg-[#1e4ba0]/[0.06]" />
                       <div className="absolute inset-2 rounded-full border border-[#1e4ba0]/15" />
+                      <div className="absolute left-2 top-5 h-1.5 w-1.5 rounded-full bg-[#2e66ff]" />
+                      <div className="absolute right-3 top-9 h-1.5 w-1.5 rounded-full bg-[#2e66ff]" />
+                      <div className="absolute bottom-2 right-7 h-1.5 w-1.5 rounded-full bg-[#2e66ff]/70" />
                       <img
                         src="/images/lock.png"
                         alt="Lock"
@@ -3275,26 +3412,42 @@ const EditJob = () => {
                   </div>
 
                   <h2
-                    id="edit-job-privacy-notice-title"
-                    className="text-center text-[22px] font-extrabold leading-tight text-[#071b3a] sm:text-[27px] lg:text-[30px]"
+                    id="privacy-notice-title"
+                    className="mt-0 text-center text-[22px] font-extrabold leading-tight text-[#071b3a] sm:text-[27px] lg:text-[30px]"
                     style={{ letterSpacing: '0.04em' }}
                   >
                     Privacy Notice &amp; Posting Agreement
                   </h2>
 
-                  <div className="mx-auto mt-3 max-w-[760px] rounded-[16px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 py-4 shadow-[0_10px_30px_rgba(30,75,160,0.08)] sm:px-6">
+                  <div className="mx-auto mt-2 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
+                    <span className="h-px w-12 bg-gradient-to-r from-transparent to-[#1e4ba0]" />
+                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4" />
+                    </svg>
+                    <span className="h-px w-12 bg-gradient-to-l from-transparent to-[#1e4ba0]" />
+                  </div>
+
+                  <div className="mx-auto mt-3 max-w-[760px] rounded-[16px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 py-4 shadow-[0_10px_30px_rgba(30,75,160,0.08)] sm:px-6 sm:py-4">
                     <div className="space-y-2.5 text-justify text-[13px] leading-6 text-[#0f2442] sm:text-sm">
                       <p>
-                        By publishing this job post, you confirm that all information provided is accurate and complies with our platform policies.
+                        By publishing this job post, you confirm that all information provided is
+                        accurate and complies with our platform policies.
                       </p>
                       <p>
-                        Once published, your job post will be visible to eligible job seekers. Applicants may view the information you provide, including the job title, company name, job description, qualifications, work location, salary (if disclosed), and other hiring details.
+                        Once published, your job post will be visible to eligible job seekers.
+                        Applicants may view the information you provide, including the job title,
+                        company name, job description, qualifications, work location, salary
+                        (if disclosed), and other hiring details.
                       </p>
                       <p>
-                        You may access applicants&apos; submitted information solely for recruitment purposes and must keep all personal information confidential.
+                        You may access applicants&apos; submitted information solely for recruitment
+                        purposes and must keep all personal information confidential.
                       </p>
                       <p>
-                        To maintain the integrity of job listings, this post cannot be edited after one (1) hour from publication. Any changes after this period require approval from the platform administrator.
+                        To maintain the integrity of job listings, this post cannot be edited after
+                        one (1) hour from publication. Any changes after this period require approval
+                        from the platform administrator.
                       </p>
                     </div>
                   </div>
@@ -3337,6 +3490,7 @@ const EditJob = () => {
               </div>
             </div>
           )}
+
 
           {showCancelModal && (
             <div className="fixed inset-0 z-[2100] flex items-center justify-center bg-black/50 p-4">
