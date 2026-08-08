@@ -1363,7 +1363,16 @@ const EmployerRegisterPage = () => {
                                 disabled={loading}
                                 className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-500"
                               >
-                                <span aria-hidden="true">⌄</span>
+                                <svg
+                                  aria-hidden="true"
+                                  className="h-4 w-4"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="m7 10 5 5 5-5" />
+                                </svg>
                               </button>
                               {industryOpen && (
                                 <div
