@@ -51,8 +51,18 @@ const boolFromBody = (v) => String(v || '').toLowerCase() === 'true';
 
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+
+  if (!secret) {
+    throw new Error('JWT_SECRET is not configured');
+  }
+
+  return secret;
+};
+
 const signToken = (payload, expiresIn = '7d') =>
-  jwt.sign(payload, process.env.JWT_SECRET || 'your_super_secret_jwt_key_here_change_this', { expiresIn });
+  jwt.sign(payload, getJwtSecret(), { expiresIn });
 
 const generateEmailVerifyToken = () => crypto.randomBytes(32).toString('hex');
 const generatePasswordResetToken = () => crypto.randomBytes(32).toString('hex');
@@ -225,6 +235,8 @@ const sendEmailIfConfigured = async ({ to, subject, html }) => {
     port,
     secure: port === 465,
     auth: { user, pass },
+    disableFileAccess: true,
+    disableUrlAccess: true,
   });
 
   await transporter.sendMail({ from, to, subject, html });

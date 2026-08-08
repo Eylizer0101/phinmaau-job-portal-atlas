@@ -3,6 +3,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const helmet = require('helmet');
 const dotenv = require('dotenv');
 const applicationRoutes = require('./routes/applicationRoutes');
 const path = require('path');
@@ -11,6 +12,10 @@ const fs = require('fs');
 dotenv.config();
 
 const app = express();
+
+// Render terminates HTTPS at its proxy. Trust only the first proxy hop so
+// secure protocol detection and IP-based rate limiting work correctly.
+app.set('trust proxy', 1);
 
 const getAllowedOrigins = () => {
   const origins = [
@@ -78,6 +83,13 @@ createUploadsDirectories();
 
 // Middleware
 app.use(
+  helmet({
+    // Uploaded images and documents are served by the backend and displayed
+    // by the separate Render frontend origin.
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
+app.use(
   cors({
     origin: (origin, callback) => {
       const allowedOrigins = getAllowedOrigins();
@@ -89,6 +101,9 @@ app.use(
       return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 204,
   })
 );
 app.use(express.json());

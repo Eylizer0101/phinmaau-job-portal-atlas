@@ -1,15 +1,48 @@
 // BACKEND/routes/authRoutes.js
 const express = require('express');
+const { rateLimit } = require('express-rate-limit');
 const router = express.Router();
 const authController = require('../controllers/authController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
+
+const createAuthLimiter = ({ windowMs, limit, message, skipSuccessfulRequests = false }) =>
+  rateLimit({
+    windowMs,
+    limit,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    skipSuccessfulRequests,
+    handler: (req, res) => {
+      res.status(429).json({ message });
+    },
+  });
+
+const registrationLimiter = createAuthLimiter({
+  windowMs: 60 * 60 * 1000,
+  limit: 10,
+  message: 'Too many registration attempts. Please try again later.',
+});
+
+const loginLimiter = createAuthLimiter({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  skipSuccessfulRequests: true,
+  message: 'Too many login attempts. Please try again after 15 minutes.',
+});
+
+const passwordRecoveryLimiter = createAuthLimiter({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  message: 'Too many password recovery attempts. Please try again after 15 minutes.',
+});
 
 // -------------------------------
 // JOBSEEKER REGISTER
 // -------------------------------
 router.post(
   '/register',
+  registrationLimiter,
   upload.uploadRegisterDocs.fields([
     { name: 'cv', maxCount: 1 },
     { name: 'diploma', maxCount: 1 },
@@ -27,13 +60,14 @@ router.post(
 // -------------------------------
 // JOBSEEKER/ADMIN LOGIN
 // -------------------------------
-router.post('/login', authController.login);
+router.post('/login', loginLimiter, authController.login);
 
 // -------------------------------
 // EMPLOYER REGISTER/LOGIN
 // -------------------------------
 router.post(
   '/employer/register',
+  registrationLimiter,
   upload.uploadEmployerRegisterDocs.fields([
     { name: 'secRegistration', maxCount: 1 },
     { name: 'birRegistration', maxCount: 1 },
@@ -45,13 +79,13 @@ router.post(
   authController.registerEmployer
 );
 
-router.post('/employer/login', authController.loginEmployer);
+router.post('/employer/login', loginLimiter, authController.loginEmployer);
 
 // -------------------------------
 // FORGOT / RESET PASSWORD
 // -------------------------------
-router.post('/forgot-password', authController.forgotPassword);
-router.post('/reset-password', authController.resetPassword);
+router.post('/forgot-password', passwordRecoveryLimiter, authController.forgotPassword);
+router.post('/reset-password', passwordRecoveryLimiter, authController.resetPassword);
 
 // -------------------------------
 // RESUBMIT DOCUMENT (PUBLIC TOKEN-BASED)

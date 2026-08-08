@@ -1,13 +1,23 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+const getJwtSecret = () => {
+    const secret = process.env.JWT_SECRET;
+
+    if (!secret) {
+        throw new Error('JWT_SECRET is not configured');
+    }
+
+    return secret;
+};
+
 const protect = async (req, res, next) => {
     let token;
 
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         try {
             token = req.headers.authorization.split(' ')[1];
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_jwt_key_here_change_this');
+            const decoded = jwt.verify(token, getJwtSecret());
             
             // Try different possible field names
             const userId = decoded.userId || decoded.id || decoded._id;
@@ -35,6 +45,10 @@ const protect = async (req, res, next) => {
             next();
         } catch (error) {
             console.error('Auth middleware error:', error);
+
+            if (error.message === 'JWT_SECRET is not configured') {
+                return res.status(500).json({ message: 'Server authentication is not configured' });
+            }
             
             // More specific error messages
             if (error.name === 'TokenExpiredError') {
@@ -103,7 +117,7 @@ const verifyToken = async (req, res, next) => {
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         try {
             token = req.headers.authorization.split(' ')[1];
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_jwt_key_here_change_this');
+            const decoded = jwt.verify(token, getJwtSecret());
             
             const userId = decoded.userId || decoded.id || decoded._id;
             
@@ -123,6 +137,11 @@ const verifyToken = async (req, res, next) => {
             next();
         } catch (error) {
             console.error('Token verification error:', error);
+
+            if (error.message === 'JWT_SECRET is not configured') {
+                return res.status(500).json({ message: 'Server authentication is not configured' });
+            }
+
             return res.status(401).json({ message: 'Invalid token' });
         }
     }
