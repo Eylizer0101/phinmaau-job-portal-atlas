@@ -204,6 +204,18 @@ router.get(
   authController.downloadAlumniVerificationDoc
 );
 
+router.post(
+  '/credential/preview/:docType',
+  protect,
+  authorize('jobseeker'),
+  authController.createAlumniCredentialPreview
+);
+
+router.get(
+  '/credential/preview/:previewToken/:fileName',
+  authController.viewAlumniCredentialPreview
+);
+
 router.get(
   '/alumni-verification-status',
   protect,

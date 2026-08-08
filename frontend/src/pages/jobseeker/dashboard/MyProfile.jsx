@@ -873,10 +873,8 @@ const ResumePasswordModal = ({
             <div className="text-sm text-gray-500 mt-1">
               {mode === 'preview'
                 ? 'For your security, please enter your account password before previewing your CV.'
-                : mode === 'credential-preview'
-                  ? `For your security, please enter your account password before viewing your ${resourceTitle}.`
-                  : mode === 'credential-download'
-                    ? `For your security, please enter your account password before downloading your ${resourceTitle}.`
+                : mode === 'credential-export'
+                  ? `For your security, please enter your account password before exporting your ${resourceTitle}.`
                     : 'For your security, please enter your password to download your CV/Resume as PDF.'}
             </div>
           </div>
@@ -938,7 +936,9 @@ const ResumePasswordModal = ({
             >
               {verifying ? (
                 <Spinner size="small" />
-              ) : mode === 'preview' || mode === 'credential-preview' ? (
+              ) : mode === 'credential-export' ? (
+                <FaDownload className="text-xs" />
+              ) : mode === 'preview' ? (
                 <FaEye className="text-xs" />
               ) : (
                 <FaEye className="text-xs" />
@@ -946,11 +946,13 @@ const ResumePasswordModal = ({
               {verifying
                 ? mode === 'download'
                   ? 'Preparing CV...'
-                  : 'Verifying...'
+                  : mode === 'credential-export'
+                    ? `Preparing ${resourceTitle}...`
+                    : 'Verifying...'
                 : mode === 'preview'
                   ? 'Continue Preview'
-                  : mode === 'credential-preview'
-                    ? 'Continue View'
+                  : mode === 'credential-export'
+                    ? `Export ${resourceTitle}`
                     : 'Preview'}
             </button>
           </div>
@@ -1550,55 +1552,25 @@ const CredentialItem = ({
     inputRef.current?.click();
   };
 
-  const getCredentialDownloadUrl = (disposition = 'attachment') => {
+  const getCredentialPreviewUrl = () => {
     const apiBase = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
-    return `${apiBase}/auth/download-alumni-verification/${encodeURIComponent(docType)}?disposition=${encodeURIComponent(disposition)}`;
+    return `${apiBase}/auth/credential/preview/${encodeURIComponent(docType)}`;
   };
 
-  const handleViewFile = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleExportFile = async () => {
     if (!fileUrl) return;
 
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(getCredentialDownloadUrl('inline'), {
-        responseType: 'blob',
+    const token = localStorage.getItem('token');
+    const response = await axios.post(getCredentialPreviewUrl(), {}, {
         headers: { Authorization: `Bearer ${token}` },
-      });
+    });
 
-      const blobUrl = window.URL.createObjectURL(new Blob([response.data], { type: response.headers['content-type'] || 'application/octet-stream' }));
-      window.open(blobUrl, '_blank', 'noopener,noreferrer');
-      window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
-    } catch (error) {
-      console.error('Error viewing credential file:', error);
-      window.open(fileUrl, '_blank', 'noopener,noreferrer');
+    if (!response.data?.previewUrl) {
+      throw new Error('Credential preview is unavailable.');
     }
-  };
 
-  const handleDownloadFile = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!fileUrl) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(getCredentialDownloadUrl('attachment'), {
-        responseType: 'blob',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const blobUrl = window.URL.createObjectURL(new Blob([response.data], { type: response.headers['content-type'] || 'application/octet-stream' }));
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = fileName || `${title}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(blobUrl);
-    } catch (error) {
-      console.error('Error downloading credential file:', error);
-    }
+    window.open(response.data.previewUrl, '_blank', 'noopener,noreferrer');
+    return true;
   };
 
   return (
@@ -1651,26 +1623,13 @@ const CredentialItem = ({
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onClose?.();
-            }}
-            className="absolute right-2 top-2 text-red-500 hover:text-red-700 text-sm leading-none"
-            aria-label={`Close ${title} popup`}
-          >
-            ×
-          </button>
-
-          <div className="pr-5 text-[12px] leading-5 text-black/65">
+          <div className="text-[12px] leading-5 text-black/65">
             {uploaded
-              ? `Uploaded ${title}. You can view or download this credential.`
+              ? `Uploaded ${title}. You can securely preview and export this credential.`
               : `Upload your ${title} for document compliance and profile processing.`}
           </div>
 
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-3 flex items-center justify-center">
             {!uploaded ? (
               <button
                 type="button"
@@ -1690,28 +1649,12 @@ const CredentialItem = ({
                       e.preventDefault();
                       e.stopPropagation();
                       onClose?.();
-                      onProtectedAction?.('credential-preview', title, () => handleViewFile(e));
+                      onProtectedAction?.('credential-export', title, handleExportFile);
                     }}
-                    className="h-8 px-3 rounded-md border border-[#d8e2ee] bg-white text-[#2e66a6] text-xs font-semibold inline-flex items-center justify-center gap-2 hover:bg-[#f7faff]"
-                  >
-                    <FaEye className="text-[10px]" />
-                    View
-                  </button>
-                ) : null}
-
-                {fileUrl ? (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onClose?.();
-                      onProtectedAction?.('credential-download', title, () => handleDownloadFile(e));
-                    }}
-                    className="h-8 px-3 rounded-md border border-[#d8e2ee] bg-white text-[#2e66a6] text-xs font-semibold inline-flex items-center justify-center gap-2 hover:bg-[#f7faff]"
+                    className="h-8 min-w-[138px] px-4 rounded-md border border-[#d8e2ee] bg-white text-[#2e66a6] text-xs font-semibold inline-flex items-center justify-center gap-2 hover:bg-[#f7faff]"
                   >
                     <FaDownload className="text-[10px]" />
-                    Download
+                    {`Export ${title}`}
                   </button>
                 ) : null}
               </>
@@ -4947,19 +4890,17 @@ const MyProfile = () => {
       );
 
       if (verifyResponse.data?.success) {
-        if (
-          resumePasswordAction === 'credential-preview' ||
-          resumePasswordAction === 'credential-download'
-        ) {
-          setDownloadPasswordModalOpen(false);
-          setDownloadPassword('');
+        if (resumePasswordAction === 'credential-export') {
           const executeCredentialAction = pendingCredentialActionRef.current;
-          pendingCredentialActionRef.current = null;
-          setPasswordResourceTitle('CV/Resume');
 
           if (executeCredentialAction) {
             await executeCredentialAction();
           }
+
+          setDownloadPasswordModalOpen(false);
+          setDownloadPassword('');
+          pendingCredentialActionRef.current = null;
+          setPasswordResourceTitle('CV/Resume');
           return;
         }
 

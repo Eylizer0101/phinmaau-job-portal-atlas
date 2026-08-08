@@ -1977,6 +1977,116 @@ exports.deleteAlumniVerificationDoc = async (req, res) => {
 };
 
 
+const CREDENTIAL_PREVIEW_TTL_MS = 5 * 60 * 1000;
+const credentialPreviewStore = new Map();
+
+const clearExpiredCredentialPreviews = () => {
+  const now = Date.now();
+
+  for (const [token, item] of credentialPreviewStore.entries()) {
+    if (!item || item.expiresAt <= now) credentialPreviewStore.delete(token);
+  }
+};
+
+exports.createAlumniCredentialPreview = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const docType = String(req.params.docType || '').trim();
+
+    if (req.user.role !== 'jobseeker') {
+      return res.status(403).json({ success: false, message: 'Only job seekers can preview verification documents.' });
+    }
+
+    if (!ALUMNI_VERIFICATION_DOWNLOAD_DOC_TYPES.includes(docType)) {
+      return res.status(400).json({ success: false, message: 'Invalid document type.' });
+    }
+
+    const user = await User.findById(userId).select('jobSeekerProfile');
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const doc = user.jobSeekerProfile?.verificationDocs?.[docType] || {};
+    const rawUrl = String(doc.url || '').trim();
+
+    if (!rawUrl) {
+      return res.status(404).json({ success: false, message: 'Document not found.' });
+    }
+
+    const fallbackFileName = `${ALUMNI_DOC_LABELS[docType] || docType}.pdf`;
+    const fileName = sanitizeDownloadFileName(doc.filename || fallbackFileName, fallbackFileName);
+    const sourceUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : makePublicUrl(req, rawUrl);
+    const candidates = buildCredentialDownloadCandidates({ rawUrl: sourceUrl, fileName, disposition: 'inline' });
+
+    let downloaded = null;
+    let lastError = null;
+
+    for (const candidate of candidates) {
+      try {
+        downloaded = await fetchUrlBuffer(candidate);
+        if (downloaded?.buffer?.length) break;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    if (!downloaded?.buffer?.length) {
+      console.error('Credential preview preparation failed:', lastError);
+      return res.status(502).json({ success: false, message: 'Unable to prepare credential preview.' });
+    }
+
+    clearExpiredCredentialPreviews();
+
+    const previewToken = crypto.randomBytes(32).toString('hex');
+    const contentType = downloaded.contentType || doc.mimeType || getContentTypeFromFileName(fileName);
+
+    credentialPreviewStore.set(previewToken, {
+      buffer: downloaded.buffer,
+      contentType,
+      fileName,
+      userId: String(userId),
+      expiresAt: Date.now() + CREDENTIAL_PREVIEW_TTL_MS,
+    });
+
+    const apiBase = `${req.protocol}://${req.get('host')}${req.baseUrl}`;
+    const previewUrl = `${apiBase}/credential/preview/${previewToken}/${encodeURIComponent(fileName)}`;
+
+    return res.status(201).json({
+      success: true,
+      previewUrl,
+      fileName,
+      expiresInMs: CREDENTIAL_PREVIEW_TTL_MS,
+    });
+  } catch (error) {
+    console.error('Error creating credential preview:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Unable to prepare credential preview.' });
+  }
+};
+
+exports.viewAlumniCredentialPreview = async (req, res) => {
+  try {
+    clearExpiredCredentialPreviews();
+
+    const preview = credentialPreviewStore.get(req.params.previewToken);
+    if (!preview || preview.expiresAt <= Date.now()) {
+      credentialPreviewStore.delete(req.params.previewToken);
+      return res.status(404).send('This credential preview has expired. Please prepare it again.');
+    }
+
+    const fileName = sanitizeDownloadFileName(preview.fileName, 'credential');
+    res.set({
+      'Content-Type': preview.contentType || getContentTypeFromFileName(fileName),
+      'Content-Disposition': `inline; filename="${fileName.replace(/"/g, '')}"`,
+      'Content-Length': preview.buffer.length,
+      'Cache-Control': 'private, no-store, max-age=0',
+      'X-Content-Type-Options': 'nosniff',
+    });
+
+    return res.end(preview.buffer);
+  } catch (error) {
+    console.error('Error opening credential preview:', error);
+    return res.status(500).send('Unable to open credential preview.');
+  }
+};
+
 exports.downloadAlumniVerificationDoc = async (req, res) => {
   try {
     const userId = req.user._id;
