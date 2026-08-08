@@ -166,7 +166,7 @@ const normalizeExternalUrl = (value = '') => {
 
 const UI = {
   page: 'min-h-screen bg-[#f8fafc]',
-  container: 'mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8',
+  container: 'mx-auto max-w-7xl px-1 py-8',
   card: 'w-full rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]',
   sectionCard: 'w-full rounded-xl border border-[#e5e7eb] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]',
   metricCard: 'h-full min-h-[96px] rounded-xl border border-[#d9e2ec] bg-white px-4 py-4 shadow-[0_4px_14px_rgba(15,23,42,0.08)]',
