@@ -128,6 +128,56 @@ const toSafeDownloadName = (name = 'document') =>
     .replace(/\s+/g, ' ')
     .trim() || 'document';
 
+const DOCUMENT_EXTENSION_BY_MIME_TYPE = {
+  'application/pdf': 'pdf',
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+};
+
+const detectDocumentExtensionFromBuffer = (buffer) => {
+  if (!Buffer.isBuffer(buffer) || buffer.length < 4) return '';
+
+  if (buffer.subarray(0, 4).toString('ascii') === '%PDF') return 'pdf';
+  if (buffer.subarray(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47]))) return 'png';
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'jpg';
+
+  const signature = buffer.subarray(0, 4).toString('ascii');
+  if (signature === 'GIF8') return 'gif';
+  if (signature === 'RIFF' && buffer.length >= 12 && buffer.subarray(8, 12).toString('ascii') === 'WEBP') {
+    return 'webp';
+  }
+
+  return '';
+};
+
+const ensureDocumentFileExtension = ({ fileName, contentType, doc, buffer }) => {
+  const safeFileName = toSafeDownloadName(fileName);
+
+  if (/\.[a-z0-9]{1,10}$/i.test(safeFileName)) {
+    return safeFileName;
+  }
+
+  const cleanContentType = String(contentType || '')
+    .split(';')[0]
+    .trim()
+    .toLowerCase();
+  const mimeExtension = DOCUMENT_EXTENSION_BY_MIME_TYPE[cleanContentType] || '';
+  const storedFormat = String(doc?.format || '')
+    .trim()
+    .replace(/^\./, '')
+    .toLowerCase();
+  const safeStoredFormat = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp'].includes(storedFormat)
+    ? storedFormat === 'jpeg' ? 'jpg' : storedFormat
+    : '';
+  const detectedExtension = detectDocumentExtensionFromBuffer(buffer);
+  const extension = mimeExtension || safeStoredFormat || detectedExtension;
+
+  return extension ? `${safeFileName}.${extension}` : safeFileName;
+};
+
 const getCloudinaryAssetParts = (doc = {}) => {
   const originalUrl = String(doc?.url || '').trim();
   if (!originalUrl || !isCloudinaryUrl(originalUrl) || !isCloudinaryConfiguredForDelivery()) return null;
@@ -309,7 +359,12 @@ const streamVerificationDocument = async (req, res, userRole) => {
     const buffer = Buffer.from(arrayBuffer);
     const contentType = fileResponse.headers.get('content-type') || doc.mimeType || 'application/octet-stream';
     const fallbackName = `${docType}-${user._id}`;
-    const filename = toSafeDownloadName(getFileNameFromDocumentUrl(doc.url, fallbackName));
+    const filename = ensureDocumentFileExtension({
+      fileName: getFileNameFromDocumentUrl(doc.url, fallbackName),
+      contentType,
+      doc,
+      buffer,
+    });
 
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Length', buffer.length);
