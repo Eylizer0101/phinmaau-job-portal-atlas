@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../../services/api";
+import Pagination from "../../../components/shared/Pagination";
 
 
 const getOutcomeLabel = (value) => {
@@ -66,45 +67,15 @@ const CompanyAllReviews = () => {
     ].some((value) => String(value || "").toLowerCase().includes(query)));
   }, [reviews, search]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const numericPageSize = pageSize === "all" ? Math.max(filtered.length, 1) : Number(pageSize);
+  const totalPages = pageSize === "all" ? 1 : Math.max(1, Math.ceil(filtered.length / numericPageSize));
   const safePage = Math.min(page, totalPages);
-  const visibleReviews = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const visibleReviews = pageSize === "all"
+    ? filtered
+    : filtered.slice((safePage - 1) * numericPageSize, safePage * numericPageSize);
 
   useEffect(() => { setPage(1); }, [search, pageSize]);
   useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
-
-  const paginationItems = useMemo(() => {
-    if (totalPages <= 7) {
-      return Array.from({ length: totalPages }, (_, index) => index + 1);
-    }
-
-    if (safePage <= 4) {
-      return [1, 2, 3, 4, 5, "ellipsis-right", totalPages];
-    }
-
-    if (safePage >= totalPages - 3) {
-      return [
-        1,
-        "ellipsis-left",
-        totalPages - 4,
-        totalPages - 3,
-        totalPages - 2,
-        totalPages - 1,
-        totalPages,
-      ];
-    }
-
-    return [
-      1,
-      "ellipsis-left",
-      safePage - 1,
-      safePage,
-      safePage + 1,
-      "ellipsis-right",
-      totalPages,
-    ];
-  }, [safePage, totalPages]);
-
 
   if (loading) return <div className="min-h-[70vh] flex items-center justify-center text-black/60">Loading reviews...</div>;
   if (error || !company) return <div className="min-h-[70vh] flex items-center justify-center text-red-600">{error || "Company not found."}</div>;
@@ -194,9 +165,14 @@ const CompanyAllReviews = () => {
             ))}
           </div>
 
-          {filtered.length > pageSize && (
-            <Pagination page={safePage} totalPages={totalPages} setPage={setPage} paginationItems={paginationItems} totalItems={filtered.length} pageSize={pageSize} setPageSize={setPageSize} />
-          )}
+          <Pagination
+            currentPage={safePage}
+            totalItems={filtered.length}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            ariaLabel="Company reviews pagination"
+          />
         </section>
       </div>
     </main>
@@ -209,103 +185,5 @@ const Metric = ({ label, value }) => (
     <p className="mt-1 text-lg font-bold text-black">{value}</p>
   </div>
 );
-
-const Pagination = ({ page, totalPages, setPage, paginationItems, totalItems, pageSize, setPageSize }) => (
-  <div className="mt-8 flex flex-col gap-4 rounded-2xl border border-[#e6edf5] bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-    <div className="whitespace-nowrap rounded-lg bg-[#2e66a6]/10 px-3 py-2 text-sm font-bold text-[#2e66a6]">
-      Page {page} of {totalPages} · {totalItems} total
-    </div>
-
-    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-      <label className="flex items-center gap-2 text-sm font-medium text-black/70">
-        <span className="whitespace-nowrap">Display per page</span>
-        <select
-          value={pageSize}
-          onChange={(event) => setPageSize(Number(event.target.value))}
-          className="h-11 rounded-xl border border-[#d8e2ee] bg-white px-3 outline-none focus:border-[#2e66a6]"
-        >
-          <option value={10}>10</option>
-          <option value={25}>25</option>
-          <option value={50}>50</option>
-          <option value={100}>100</option>
-        </select>
-      </label>
-
-      <nav
-        className="inline-flex min-h-11 items-center overflow-hidden rounded-xl border border-[#d8e2ee] bg-white shadow-sm"
-        aria-label="Pagination controls"
-      >
-        <PageButton
-          label="Previous"
-          direction="previous"
-          disabled={page === 1}
-          onClick={() => setPage((current) => Math.max(1, current - 1))}
-        />
-
-        <div className="flex h-11 items-center px-2">
-          {paginationItems.map((item) =>
-            typeof item === "string" ? (
-              <span
-                key={item}
-                className="inline-flex h-9 min-w-9 items-center justify-center px-2 text-sm font-semibold text-black/45"
-                aria-hidden="true"
-              >
-                …
-              </span>
-            ) : (
-              <PageButton
-                key={item}
-                label={String(item)}
-                active={item === page}
-                onClick={() => setPage(item)}
-              />
-            )
-          )}
-        </div>
-
-        <PageButton
-          label="Next"
-          direction="next"
-          disabled={page === totalPages}
-          onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-        />
-      </nav>
-    </div>
-  </div>
-);
-
-const PageButton = ({ label, disabled, active, direction, onClick }) => {
-  if (direction) {
-    return (
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={onClick}
-        className={`inline-flex h-11 items-center gap-2 px-4 text-sm font-semibold text-black/70 transition hover:bg-[#f7faff] disabled:cursor-not-allowed disabled:opacity-40 ${
-          direction === "previous" ? "border-r border-[#d8e2ee]" : "border-l border-[#d8e2ee]"
-        }`}
-      >
-        {direction === "previous" ? <span aria-hidden="true">‹</span> : null}
-        {label}
-        {direction === "next" ? <span aria-hidden="true">›</span> : null}
-      </button>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-current={active ? "page" : undefined}
-      className={`h-9 min-w-9 rounded-lg px-3 text-sm font-semibold transition ${
-        active
-          ? "bg-[#2e66a6] text-white shadow-sm"
-          : "text-black/70 hover:bg-[#f7faff]"
-      }`}
-    >
-      {label}
-    </button>
-  );
-};
 
 export default CompanyAllReviews;
