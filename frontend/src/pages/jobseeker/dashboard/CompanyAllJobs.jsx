@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import api from "../../../services/api";
 import ApplyJobModal from "../../../components/jobseeker/ApplyJobModal";
 import Pagination from "../../../components/shared/Pagination";
+import { filterOpenJobListings } from "../../../utils/jobVisibility";
 
 const normalizeJobsResponse = (response) => {
   const data = response?.data;
@@ -78,7 +79,7 @@ const CompanyAllJobs = () => {
         if (!mounted) return;
         const companyData = companyResponse?.data?.company || null;
         setCompany(companyData);
-        setJobs(normalizeJobsResponse(jobsResponse).filter((job) => String(job?.employer?._id || job?.employer || "") === String(id)));
+        setJobs(filterOpenJobListings(normalizeJobsResponse(jobsResponse)).filter((job) => String(job?.employer?._id || job?.employer || "") === String(id)));
       } catch (err) {
         if (mounted) setError(err?.response?.data?.message || "Unable to load company jobs.");
       } finally {
@@ -151,7 +152,7 @@ const CompanyAllJobs = () => {
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h1 className="text-2xl font-bold text-black sm:text-3xl">All Jobs at {company.companyName || "Company"}</h1>
-              <p className="mt-1 text-black/60">{filtered.length} open position{filtered.length === 1 ? "" : "s"}</p>
+              <p className="mt-1 text-black/60">{jobs.length} open position{jobs.length === 1 ? "" : "s"}</p>
             </div>
             <div className="w-full lg:max-w-md">
               <div className="relative">
@@ -174,7 +175,9 @@ const CompanyAllJobs = () => {
           </div>
 
           {visibleJobs.length === 0 ? (
-            <div className="mt-7 rounded-2xl border border-dashed border-[#d8e2ee] px-6 py-14 text-center text-black/55">No jobs found.</div>
+            <div className="mt-7 rounded-2xl border border-dashed border-[#d8e2ee] px-6 py-14 text-center text-black/55">
+              {jobs.length === 0 ? "No open positions available." : "No jobs found matching your search."}
+            </div>
           ) : (
             <div className="mt-7 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {visibleJobs.map((job) => {

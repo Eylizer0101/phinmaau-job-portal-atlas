@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import api from "../../../services/api";
 import ApplyJobModal from "../../../components/jobseeker/ApplyJobModal";
+import { filterOpenJobListings } from "../../../utils/jobVisibility";
 
 const calculateAccurateReviewSummary = ({
   reviews = [],
@@ -885,7 +886,7 @@ const CompanyViewDetails = () => {
         return;
       }
 
-      const filteredJobs = (jobs || []).filter((job) => {
+      const filteredJobs = filterOpenJobListings(jobs).filter((job) => {
         const employerId =
           typeof job?.employer === "string"
             ? job.employer
@@ -1759,7 +1760,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
             {companyJobs.length === 0 ? (
               <EmptyTabState
                 icon="briefcase"
-                title="No jobs posted yet."
+                title="No open positions available."
                 description="New openings from this company will appear here once available."
               />
             ) : (

@@ -224,11 +224,47 @@ const applyIfNotBlank = (obj, key, value) => {
   obj[key] = value;
 };
 
+const getApplicationDeadlineExpiryTime = (value) => {
+  if (!value) return null;
+
+  const deadline = new Date(value);
+  if (Number.isNaN(deadline.getTime())) return null;
+
+  const rawValue = String(value).trim();
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(rawValue);
+  const isUtcMidnight =
+    deadline.getUTCHours() === 0 &&
+    deadline.getUTCMinutes() === 0 &&
+    deadline.getUTCSeconds() === 0 &&
+    deadline.getUTCMilliseconds() === 0;
+
+  if (isDateOnly || isUtcMidnight) {
+    return Date.UTC(
+      deadline.getUTCFullYear(),
+      deadline.getUTCMonth(),
+      deadline.getUTCDate(),
+      15,
+      59,
+      59,
+      999
+    );
+  }
+
+  return deadline.getTime();
+};
+
 const isPastApplicationDeadline = (value, now = new Date()) => {
   if (!value) return false;
-  const deadline = new Date(value);
-  if (Number.isNaN(deadline.getTime())) return false;
-  return deadline.getTime() < now.getTime();
+  const expiryTime = getApplicationDeadlineExpiryTime(value);
+  if (expiryTime === null) return false;
+  return expiryTime < now.getTime();
+};
+
+const isPublicJobOpen = (job, now = new Date()) => {
+  if (!job) return false;
+  if (job.isPublished !== true || job.isActive !== true || job.isArchived === true) return false;
+  if (String(job.status || '').trim().toLowerCase() !== 'published') return false;
+  return !isPastApplicationDeadline(job.applicationDeadline, now);
 };
 
 const getStatusBeforeArchive = (job = {}) => {
@@ -693,6 +729,7 @@ exports.getAllJobs = async (req, res) => {
     let query = {
       isPublished: true,
       isActive: true,
+      status: 'published',
       $or: [
         { isArchived: false },
         { isArchived: { $exists: false } }
@@ -792,7 +829,7 @@ exports.getAllJobs = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    const transformedJobs = jobs.map(job => {
+    const transformedJobs = jobs.filter((job) => isPublicJobOpen(job)).map(job => {
       const jobObj = job.toObject();
 
       if (!jobObj.companyLogo && jobObj.employer?.employerProfile?.companyLogo) {
@@ -923,7 +960,10 @@ exports.getRecommendedJobs = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    const transformedJobs = attachRecommendationData(jobs, user).map((jobObj) => {
+    const transformedJobs = attachRecommendationData(
+      jobs.filter((job) => isPublicJobOpen(job)),
+      user
+    ).map((jobObj) => {
       if (!jobObj.companyLogo && jobObj.employer?.employerProfile?.companyLogo) {
         jobObj.companyLogo = jobObj.employer.employerProfile.companyLogo;
       }

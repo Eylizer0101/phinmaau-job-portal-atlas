@@ -6,6 +6,7 @@ import { JOB_TYPES, EXPERIENCE_LEVELS, EDUCATION_LEVELS } from '../../../constan
 import { PH_PROVINCES_BY_REGION, PH_CITIES_BY_PROVINCE } from '../../../constants/phLocations';
 import api from '../../../services/api';
 import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
+import { filterOpenJobListings } from '../../../utils/jobVisibility';
 
 const normalizeAmount = (value) => String(value || '').replace(/[^\d]/g, '');
 
@@ -901,18 +902,7 @@ const JobSearch = () => {
         jobsData = response.data.data;
       }
 
-      const now = new Date();
-      const filteredJobs = (jobsData || []).filter((job) => {
-        if (!job) return false;
-        if (job.isPublished === false) return false;
-        if (job.isActive === false) return false;
-        if (String(job.status || '').toLowerCase() === 'filled') return false;
-
-        if (!job.applicationDeadline) return true;
-        const d = new Date(job.applicationDeadline);
-        if (Number.isNaN(d.getTime())) return true;
-        return d >= now;
-      });
+      const filteredJobs = filterOpenJobListings(jobsData);
 
       setJobs(filteredJobs);
     } catch (error) {
