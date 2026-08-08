@@ -1250,6 +1250,7 @@ const MyApplications = () => {
                                 disabled={isActionLoading}
                                 className={`${UI.btnBase} ${UI.btnMd} ${UI.btnDangerSoft} ${UI.ring}`}
                               >
+                                <SvgIcon name="timesCircle" className="w-4 h-4" />
                                 Withdraw
                               </button>
                             )}
@@ -1272,12 +1273,10 @@ const MyApplications = () => {
                                 state={{ sourcePage: 'myapplications' }}
                                 className={`${UI.btnBase} ${UI.btnMd} ${UI.btnInfo} ${UI.ring}`}
                               >
-                                <SvgIcon name="eye" className="w-4 h-4" />
                                 View Job
                               </Link>
                             ) : (
                               <span className={`${UI.btnBase} ${UI.btnMd} ${UI.btnInfo} opacity-60 cursor-not-allowed`} aria-disabled="true">
-                                <SvgIcon name="eye" className="w-4 h-4" />
                                 View Job
                               </span>
                             )}
