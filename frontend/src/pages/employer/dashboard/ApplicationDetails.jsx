@@ -1281,7 +1281,7 @@ const ApplicationDetails = () => {
     ],
     [
       ['Educational Attainment', profile.educationalAttainment],
-      ['Double Degree', profile.studyField || profile.course],
+      ['Double Degree', profile.studyField],
       ['Salary', salary],
       ['Nationality', profile.nationality],
       ['Height', profile.height],
