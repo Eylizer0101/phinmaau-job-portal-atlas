@@ -1,9 +1,8 @@
 // src/components/shared/resumePrintTemplate.js
-
-const isMeaningfulResumeValue = (value) => {
-  const text = String(value ?? '').trim();
-  return Boolean(text) && !/^(not\s+provided|n\/?a)$/i.test(text);
-};
+import {
+  filterMeaningfulResumeItems,
+  isMeaningfulResumeValue,
+} from './resumeDisplayUtils';
 
 const getText = (value, fallback = '') => {
   const text = String(value || '').trim();
@@ -188,7 +187,7 @@ const splitDetails = (value) => {
 };
 
 const sectionHtml = (title, children, hidden = false) => {
-  if (hidden) return '';
+  if (hidden || !isMeaningfulResumeValue(children)) return '';
   return `
     <section class="resume-section">
       <h2>${escapeHtml(title)}</h2>
@@ -214,15 +213,13 @@ const threeColumnRowsHtml = (columns = []) =>
 const datedItemHtml = ({ title, subtitle, date, description, details, meta }) => {
   const detailItems = Array.isArray(details) ? details.filter(isMeaningfulResumeValue) : [];
   const descriptionHtml = sanitizeResumeRichText(description);
-  return `<div class="dated-item"><div class="dated-header"><div class="dated-main"><div class="item-title">${escapeHtml(title)}</div>${subtitle ? `<div class="item-subtitle">${escapeHtml(subtitle)}</div>` : ''}${meta ? `<div class="item-meta">${escapeHtml(meta)}</div>` : ''}</div>${date ? `<div class="item-date">${escapeHtml(formatShortResumeDate(date))}</div>` : ''}</div>${detailItems.length ? `<ul class="resume-bullets">${detailItems.map((detail) => `<li>${escapeHtml(detail)}</li>`).join('')}</ul>` : descriptionHtml ? `<div class="resume-rich-text">${descriptionHtml}</div>` : ''}</div>`;
+  return `<div class="dated-item"><div class="dated-header"><div class="dated-main">${getText(title) ? `<div class="item-title">${escapeHtml(title)}</div>` : ''}${getText(subtitle) ? `<div class="item-subtitle">${escapeHtml(subtitle)}</div>` : ''}${getText(meta) ? `<div class="item-meta">${escapeHtml(meta)}</div>` : ''}</div>${getText(date) ? `<div class="item-date">${escapeHtml(formatShortResumeDate(date))}</div>` : ''}</div>${detailItems.length ? `<ul class="resume-bullets">${detailItems.map((detail) => `<li>${escapeHtml(detail)}</li>`).join('')}</ul>` : descriptionHtml ? `<div class="resume-rich-text">${descriptionHtml}</div>` : ''}</div>`;
 };
 
-const profileListSectionHtml = ({ title, items = [], type = 'default', alwaysShow = false }) => {
-  const cleanItems = Array.isArray(items)
-    ? items.filter((item) => Object.values(item || {}).some((value) => getText(value)))
-    : [];
+const profileListSectionHtml = ({ title, items = [], type = 'default' }) => {
+  const cleanItems = filterMeaningfulResumeItems(items);
 
-  if (!cleanItems.length) return alwaysShow ? sectionHtml(title, '') : '';
+  if (!cleanItems.length) return '';
 
   if (type === 'references') {
     return sectionHtml(
@@ -234,10 +231,10 @@ const profileListSectionHtml = ({ title, items = [], type = 'default', alwaysSho
               const subtitle = [item.position, item.company].filter(Boolean).join(' / ');
               return `
                 <div class="reference-card">
-                  <div class="item-title">${escapeHtml(getText(item.name, 'Reference'))}</div>
+                  ${getText(item.name) ? `<div class="item-title">${escapeHtml(getText(item.name))}</div>` : ''}
                   ${subtitle ? `<div class="item-subtitle">${escapeHtml(subtitle)}</div>` : ''}
-                  ${item.phone ? `<div>${escapeHtml(item.phone)}</div>` : ''}
-                  ${item.email ? `<div class="link-text">${escapeHtml(item.email)}</div>` : ''}
+                  ${getText(item.phone) ? `<div>${escapeHtml(item.phone)}</div>` : ''}
+                  ${getText(item.email) ? `<div class="link-text">${escapeHtml(item.email)}</div>` : ''}
                 </div>
               `;
             })
@@ -251,7 +248,7 @@ const profileListSectionHtml = ({ title, items = [], type = 'default', alwaysSho
     title,
     cleanItems
       .map((item) => {
-        const titleText = getText(item.title || item.organization || item.name, 'Untitled');
+        const titleText = getText(item.title || item.organization || item.name);
         const subtitle =
           type === 'awards'
             ? getText(item.issuer ? `Issued by: ${item.issuer}` : '')
@@ -662,12 +659,12 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
       { label: 'Preferred Language', value: formData.preferredLanguage },
       { label: 'Educational Attainment', value: formData.educationalAttainment },
       { label: 'Double Degree', value: formData.studyField },
-      { label: 'Salary', value: [formData.minimumSalary, formData.maximumSalary].filter(Boolean).join(' - ') },
+      { label: 'Salary', value: [formData.minimumSalary, formData.maximumSalary].filter(isMeaningfulResumeValue).join(' - ') },
       { label: 'Nationality', value: formData.nationality },
     ],
     [
       { label: 'Height', value: formData.height },
-      { label: 'Weight', value: formData.weight ? `${String(formData.weight).replace(/\s*(kg|kgs|kilogram|kilograms)$/i, '').trim()} kg` : '' },
+      { label: 'Weight', value: isMeaningfulResumeValue(formData.weight) ? `${String(formData.weight).replace(/\s*(kg|kgs|kilogram|kilograms)$/i, '').trim()} kg` : '' },
       { label: 'Gender', value: formData.gender },
       { label: 'Civil Status', value: formData.civilStatus },
       { label: 'Birthday', value: formatBirthdayDisplay(formData.birthday) },
@@ -679,13 +676,15 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
     ? `<div class="resume-photo"><img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(fullName || 'Profile photo')}" /></div>`
     : `<div class="resume-initials">${escapeHtml(initials)}</div>`;
 
+  const meaningfulWorkExperiences = filterMeaningfulResumeItems(workExperiences);
+
   const workExperienceHtml = sectionHtml(
     'Work Experience',
-    workExperiences
+    meaningfulWorkExperiences
       .map((item, index) =>
         datedItemHtml({
-          title: getText(item.positionTitle, 'Position not provided'),
-          subtitle: getText(item.companyName, 'Company not provided'),
+          title: getText(item.positionTitle),
+          subtitle: getText(item.companyName),
           date: getDateRange(item),
           description: item.description,
         })
@@ -719,16 +718,14 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
     false
   );
 
-  const meaningfulEducationEntries = educationEntries.filter((entry) =>
-    Object.values(entry || {}).some((value) => getText(value))
-  );
+  const meaningfulEducationEntries = filterMeaningfulResumeItems(educationEntries);
 
   const educationHtml = sectionHtml(
     'Education',
     meaningfulEducationEntries
       .map((entry) =>
         datedItemHtml({
-          title: getText(entry.level || entry.educationalAttainment, 'Education'),
+          title: getText(entry.level || entry.educationalAttainment),
           subtitle: getText(entry.school || entry.campus),
           meta: '',
           date: getEducationDateRange(entry),
@@ -779,8 +776,8 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
           ${workExperienceHtml}
           ${skillsHtml}
           ${educationHtml}
-          ${profileListSectionHtml({ title: 'Certifications', items: certifications, alwaysShow: true })}
-          ${profileListSectionHtml({ title: 'Projects', items: projects, alwaysShow: true })}
+          ${profileListSectionHtml({ title: 'Certifications', items: certifications })}
+          ${profileListSectionHtml({ title: 'Projects', items: projects })}
           ${profileListSectionHtml({ title: 'Seminars and Trainings', items: seminars })}
           ${profileListSectionHtml({ title: 'Awards and Achievements', items: awards, type: 'awards' })}
           ${profileListSectionHtml({ title: 'Affiliations', items: affiliations })}

@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-
-
-const isMeaningfulResumeValue = (value) => {
-  const text = String(value ?? '').trim();
-  return Boolean(text) && !/^(not\s+provided|n\/?a)$/i.test(text);
-};
+import {
+  filterMeaningfulResumeItems,
+  hasMeaningfulResumeRows,
+  isMeaningfulResumeValue,
+} from '../../../components/shared/resumeDisplayUtils';
 
 const getText = (value, fallback = '') => {
   const text = String(value || '').trim();
@@ -240,18 +239,16 @@ const DatedItem = ({ title, subtitle, date, description, details, meta }) => {
   const detailItems = Array.isArray(details) ? details.filter(isMeaningfulResumeValue) : [];
   return (
     <div className="dated-item">
-      <div className="dated-header"><div className="dated-main"><div className="item-title">{title}</div>{subtitle ? <div className="item-subtitle">{subtitle}</div> : null}{meta ? <div className="item-meta">{meta}</div> : null}</div>{date ? <div className="item-date">{formatShortResumeDate(date)}</div> : null}</div>
+      <div className="dated-header"><div className="dated-main">{isMeaningfulResumeValue(title) ? <div className="item-title">{title}</div> : null}{isMeaningfulResumeValue(subtitle) ? <div className="item-subtitle">{subtitle}</div> : null}{isMeaningfulResumeValue(meta) ? <div className="item-meta">{meta}</div> : null}</div>{isMeaningfulResumeValue(date) ? <div className="item-date">{formatShortResumeDate(date)}</div> : null}</div>
       {detailItems.length ? <ul className="resume-bullets">{detailItems.map((detail, index) => <li key={`${title}-${index}`}>{detail}</li>)}</ul> : <ResumeRichText value={description} />}
     </div>
   );
 };
 
-const ProfileListSection = ({ title, items = [], type = 'default', alwaysShow = false }) => {
-  const cleanItems = Array.isArray(items)
-    ? items.filter((item) => Object.values(item || {}).some((value) => getText(value)))
-    : [];
+const ProfileListSection = ({ title, items = [], type = 'default' }) => {
+  const cleanItems = filterMeaningfulResumeItems(items);
 
-  if (!cleanItems.length) return alwaysShow ? <Section title={title} /> : null;
+  if (!cleanItems.length) return null;
 
   return (
     <Section title={title}>
@@ -259,18 +256,18 @@ const ProfileListSection = ({ title, items = [], type = 'default', alwaysShow = 
         <div className="references-grid">
           {cleanItems.map((item, index) => (
             <div className="reference-card" key={item._id || `${title}-${index}`}>
-              <div className="item-title">{getText(item.name, 'Reference')}</div>
+              {getText(item.name) ? <div className="item-title">{getText(item.name)}</div> : null}
               {[item.position, item.company].filter(Boolean).join(' / ') ? (
                 <div className="item-subtitle">{[item.position, item.company].filter(Boolean).join(' / ')}</div>
               ) : null}
-              {item.phone ? <div>{item.phone}</div> : null}
-              {item.email ? <div className="link-text">{item.email}</div> : null}
+              {getText(item.phone) ? <div>{item.phone}</div> : null}
+              {getText(item.email) ? <div className="link-text">{item.email}</div> : null}
             </div>
           ))}
         </div>
       ) : (
         cleanItems.map((item, index) => {
-          const titleText = getText(item.title || item.organization || item.name, 'Untitled');
+          const titleText = getText(item.title || item.organization || item.name);
           const subtitle =
             type === 'awards'
               ? getText(item.issuer ? `Issued by: ${item.issuer}` : '')
@@ -328,6 +325,8 @@ const ResumePreviewPage = () => {
   const affiliations = Array.isArray(formData.affiliations) ? formData.affiliations : [];
   const cocurricular = Array.isArray(formData.cocurricular) ? formData.cocurricular : [];
   const references = Array.isArray(formData.references) ? formData.references : [];
+  const meaningfulWorkExperiences = filterMeaningfulResumeItems(workExperiences);
+  const meaningfulEducationEntries = filterMeaningfulResumeItems(educationEntries);
   const educationSummary = [
     getText(formData.campus),
     getText(formData.course),
@@ -377,12 +376,12 @@ const ResumePreviewPage = () => {
       { label: 'Preferred Language', value: formData.preferredLanguage },
       { label: 'Educational Attainment', value: formData.educationalAttainment },
       { label: 'Double Degree', value: formData.studyField },
-      { label: 'Salary', value: [formData.minimumSalary, formData.maximumSalary].filter(Boolean).join(' - ') },
+      { label: 'Salary', value: [formData.minimumSalary, formData.maximumSalary].filter(isMeaningfulResumeValue).join(' - ') },
       { label: 'Nationality', value: formData.nationality },
     ],
     [
       { label: 'Height', value: formData.height },
-      { label: 'Weight', value: formData.weight ? `${String(formData.weight).replace(/\s*(kg|kgs|kilogram|kilograms)$/i, '').trim()} kg` : '' },
+      { label: 'Weight', value: isMeaningfulResumeValue(formData.weight) ? `${String(formData.weight).replace(/\s*(kg|kgs|kilogram|kilograms)$/i, '').trim()} kg` : '' },
       { label: 'Gender', value: formData.gender },
       { label: 'Civil Status', value: formData.civilStatus },
       { label: 'Birthday', value: formatBirthdayDisplay(formData.birthday) },
@@ -811,27 +810,27 @@ const ResumePreviewPage = () => {
               <ResumePhoto src={profileImage} initials={initials} fullName={fullName} />
             </header>
 
-            <Section title="Objective">
+            <Section title="Objective" hidden={!isMeaningfulResumeValue(formData.aboutMe)}>
               <ResumeRichText value={formData.aboutMe} className="objective-text" />
             </Section>
 
-            <Section title="Personal Information">
+            <Section title="Personal Information" hidden={!hasMeaningfulResumeRows(personalInformationColumns)}>
               <ThreeColumnRows columns={personalInformationColumns} />
             </Section>
 
-            <Section title="Work Experience">
-              {workExperiences.map((item, index) => (
+            <Section title="Work Experience" hidden={!meaningfulWorkExperiences.length}>
+              {meaningfulWorkExperiences.map((item, index) => (
                 <DatedItem
                   key={item._id || item.id || `${item.companyName}-${item.positionTitle}-${index}`}
-                  title={getText(item.positionTitle, 'Position not provided')}
-                  subtitle={getText(item.companyName, 'Company not provided')}
+                  title={getText(item.positionTitle)}
+                  subtitle={getText(item.companyName)}
                   date={getDateRange(item)}
                   description={item.description}
                 />
               ))}
             </Section>
 
-            <Section title="Skills">
+            <Section title="Skills" hidden={!allSkills.length}>
                 <div className="skills-groups">
                   {Array.from({ length: Math.ceil(allSkills.length / 9) }, (_, groupIndex) => {
                     const skillGroup = allSkills.slice(groupIndex * 9, groupIndex * 9 + 9);
@@ -848,13 +847,11 @@ const ResumePreviewPage = () => {
                   })}
                 </div>              </Section>
 
-            <Section title="Education">
-              {educationEntries
-                .filter((entry) => Object.values(entry || {}).some((value) => getText(value)))
-                .map((entry, index) => (
+            <Section title="Education" hidden={!meaningfulEducationEntries.length}>
+              {meaningfulEducationEntries.map((entry, index) => (
                   <DatedItem
                     key={`${entry.level || 'education'}-${entry.campus || entry.school || 'campus'}-${index}`}
-                    title={getText(entry.level || entry.educationalAttainment, 'Education')}
+                    title={getText(entry.level || entry.educationalAttainment)}
                     subtitle={getText(entry.school || entry.campus)}
                     meta=""
                     date={getEducationDateRange(entry)}
@@ -863,8 +860,8 @@ const ResumePreviewPage = () => {
                 ))}
             </Section>
 
-            <ProfileListSection title="Certifications" items={certifications} alwaysShow />
-            <ProfileListSection title="Projects" items={projects} alwaysShow />
+            <ProfileListSection title="Certifications" items={certifications} />
+            <ProfileListSection title="Projects" items={projects} />
             <ProfileListSection title="Seminars and Trainings" items={seminars} />
             <ProfileListSection title="Awards and Achievements" items={awards} type="awards" />
             <ProfileListSection title="Affiliations" items={affiliations} />

@@ -6,6 +6,12 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import { normalizeUserToResumeData } from '../../../components/shared/resumePrintTemplate';
+import {
+  filterMeaningfulResumeItems,
+  hasMeaningfulResumeObject,
+  hasMeaningfulResumeRows,
+  isMeaningfulResumeValue,
+} from '../../../components/shared/resumeDisplayUtils';
 
 const API_HOST = process.env.REACT_APP_API_URL
   ? process.env.REACT_APP_API_URL.replace(/\/api\/?$/, '')
@@ -184,7 +190,7 @@ const parseSkills = (value) => {
     const clean = String(item || '').trim();
     const match = clean.match(/^(.*?)\s+[—-]\s+(Basic|Novice|Intermediate|Advanced|Expert)$/i);
     return match ? { skill: match[1].trim(), proficiency: match[2][0].toUpperCase() + match[2].slice(1).toLowerCase() } : { skill: clean, proficiency: 'Basic' };
-  }).filter((item) => item.skill);
+  }).filter((item) => isMeaningfulResumeValue(item.skill));
 };
 
 const decodeHtmlEntities = (value = '') => {
@@ -307,17 +313,7 @@ const richText = (value) => {
   );
 };
 
-const hasMeaningfulObjectValue = (item = {}) =>
-  Boolean(
-    item &&
-    typeof item === 'object' &&
-    Object.entries(item).some(([key, value]) => {
-      if (['_id', 'id', 'createdAt', 'updatedAt', '__v'].includes(key)) return false;
-      if (Array.isArray(value)) return value.length > 0;
-      if (value && typeof value === 'object') return hasMeaningfulObjectValue(value);
-      return Boolean(String(value ?? '').trim());
-    })
-  );
+const hasMeaningfulObjectValue = (item = {}) => hasMeaningfulResumeObject(item);
 
 const calculateJobSeekerLevel = ({
   skills = [],
@@ -1244,7 +1240,7 @@ const ApplicationDetails = () => {
     work,
     education,
   });
-  const salary = [profile.minimumSalary, profile.maximumSalary].filter(Boolean).join(' - ');
+  const salary = [profile.minimumSalary, profile.maximumSalary].filter(isMeaningfulResumeValue).join(' - ');
   const resumeAddress = String(profile.address || '').trim();
   const resumeEmail = String(user.email || '').trim();
   const resumePhoneNumber = String(
@@ -1254,12 +1250,10 @@ const ApplicationDetails = () => {
       user.contactNumber ||
       ''
   ).trim();
-  const meaningfulWork = work.filter(hasMeaningfulObjectValue);
-  const meaningfulEducation = education.filter(hasMeaningfulObjectValue);
-  const meaningfulCertifications = (Array.isArray(profile.certifications) ? profile.certifications : [])
-    .filter(hasMeaningfulObjectValue);
-  const meaningfulProjects = (Array.isArray(profile.projects) ? profile.projects : [])
-    .filter(hasMeaningfulObjectValue);
+  const meaningfulWork = filterMeaningfulResumeItems(work);
+  const meaningfulEducation = filterMeaningfulResumeItems(education);
+  const meaningfulCertifications = filterMeaningfulResumeItems(profile.certifications);
+  const meaningfulProjects = filterMeaningfulResumeItems(profile.projects);
   const meaningfulProfileSections = [
     ['Seminars and Trainings', profile.seminars || []],
     ['Awards and Achievements', profile.awards || []],
@@ -1267,10 +1261,9 @@ const ApplicationDetails = () => {
     ['Co-Curricular Activities', profile.cocurricular || []],
   ].map(([title, items]) => [
     title,
-    (Array.isArray(items) ? items : []).filter(hasMeaningfulObjectValue),
+    filterMeaningfulResumeItems(items),
   ]).filter(([, items]) => items.length > 0);
-  const meaningfulReferences = (Array.isArray(profile.references) ? profile.references : [])
-    .filter(hasMeaningfulObjectValue);
+  const meaningfulReferences = filterMeaningfulResumeItems(profile.references);
   const personalInformationColumns = [
     [
       ['Preferred Work Mode', profile.preferredWorkMode],
@@ -1293,6 +1286,7 @@ const ApplicationDetails = () => {
       ['Birthday', profile.birthday],
     ],
   ];
+  const hasPersonalInformation = hasMeaningfulResumeRows(personalInformationColumns);
   const activities = Array.isArray(application.activityHistory) && application.activityHistory.length
     ? [...application.activityHistory].sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt))
     : [
@@ -1414,20 +1408,21 @@ const ApplicationDetails = () => {
                   ) : null}
                 </header>
 
+                {isMeaningfulResumeValue(profile.aboutMe) ? (
                 <section className="pt-2">
                   <h3 className="border-b border-black text-[11px] font-bold uppercase">Objective</h3>
-                  {String(profile.aboutMe || '').trim() ? (
-                    <div className="pt-1 text-justify">{richText(profile.aboutMe)}</div>
-                  ) : null}
+                  <div className="pt-1 text-justify">{richText(profile.aboutMe)}</div>
                 </section>
+                ) : null}
 
+                {hasPersonalInformation ? (
                 <section className="pt-2">
                   <h3 className="border-b border-black text-[11px] font-bold uppercase">Personal Information</h3>
                   <div className="grid grid-cols-1 gap-x-7 gap-y-0.5 pt-1 sm:grid-cols-3">
                     {personalInformationColumns.map((column, columnIndex) => (
                       <div key={`personal-column-${columnIndex}`}>
                         {column.map(([label, value]) =>
-                          String(value || '').trim() ? (
+                          isMeaningfulResumeValue(value) ? (
                             <div key={label}>
                               <b>{label}:</b> {value}
                             </div>
@@ -1437,36 +1432,37 @@ const ApplicationDetails = () => {
                     ))}
                   </div>
                 </section>
+                ) : null}
 
+                {meaningfulWork.length ? (
                 <section className="pt-2">
                   <h3 className="border-b border-black text-[11px] font-bold uppercase">Work Experience</h3>
-                  {meaningfulWork.length ? (
                     <div className="space-y-1 pt-1">
                       {meaningfulWork.map((item, index) => (
                         <div key={item._id || index}>
                           <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0">
-                              {item.positionTitle || item.title ? (
+                              {isMeaningfulResumeValue(item.positionTitle || item.title) ? (
                                 <div className="font-bold">{item.positionTitle || item.title}</div>
                               ) : null}
-                              {item.companyName || item.company ? (
+                              {isMeaningfulResumeValue(item.companyName || item.company) ? (
                                 <div className="italic">{item.companyName || item.company}</div>
                               ) : null}
                             </div>
-                            {entryDate(item) ? (
+                            {isMeaningfulResumeValue(entryDate(item)) ? (
                               <div className="shrink-0 whitespace-nowrap italic">{entryDate(item)}</div>
                             ) : null}
                           </div>
-                          {item.description ? <div className="mt-0.5 text-justify">{richText(item.description)}</div> : null}
+                          {isMeaningfulResumeValue(item.description) ? <div className="mt-0.5 text-justify">{richText(item.description)}</div> : null}
                         </div>
                       ))}
                     </div>
-                  ) : null}
                 </section>
+                ) : null}
 
+                {skills.length ? (
                 <section className="pt-2">
                   <h3 className="border-b border-black text-[11px] font-bold uppercase">Skills</h3>
-                  {skills.length ? (
                     <ul className="grid list-disc grid-cols-1 gap-x-8 gap-y-0 pl-4 pt-1 sm:grid-cols-3">
                       {skills.map((item, index) => (
                         <li key={`${item.skill}-${index}`}>
@@ -1474,82 +1470,82 @@ const ApplicationDetails = () => {
                         </li>
                       ))}
                     </ul>
-                  ) : null}
                 </section>
+                ) : null}
 
+                {meaningfulEducation.length ? (
                 <section className="pt-2">
                   <h3 className="border-b border-black text-[11px] font-bold uppercase">Education</h3>
-                  {meaningfulEducation.length ? (
                     <div className="space-y-1 pt-1">
                       {meaningfulEducation.map((item, index) => (
                         <div key={item._id || index} className="flex items-start justify-between gap-4">
                           <div className="min-w-0">
-                            {item.educationalAttainment || item.level || item.course ? (
+                            {isMeaningfulResumeValue(item.educationalAttainment || item.level || item.course) ? (
                               <div className="font-bold">
                                 {item.educationalAttainment || item.level || item.course}
                               </div>
                             ) : null}
-                            {item.school || item.campus ? (
+                            {isMeaningfulResumeValue(item.school || item.campus) ? (
                               <div className="italic">{item.school || item.campus}</div>
                             ) : null}
-                            {item.description ? <div>{richText(item.description)}</div> : null}
+                            {isMeaningfulResumeValue(item.description) ? <div>{richText(item.description)}</div> : null}
                           </div>
-                          {entryDate(item) ? (
+                          {isMeaningfulResumeValue(entryDate(item)) ? (
                             <div className="shrink-0 whitespace-nowrap italic">{entryDate(item)}</div>
                           ) : null}
                         </div>
                       ))}
                     </div>
-                  ) : null}
                 </section>
+                ) : null}
 
+                {meaningfulCertifications.length ? (
                 <section className="pt-2">
                   <h3 className="border-b border-black text-[11px] font-bold uppercase">Certifications</h3>
-                  {meaningfulCertifications.length ? (
                     <div className="space-y-1 pt-1">
                       {meaningfulCertifications.map((item, index) => (
                         <div key={item._id || `certification-${index}`}>
                           <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0">
-                              {item.title || item.name || item.organization ? (
+                              {isMeaningfulResumeValue(item.title || item.name || item.organization) ? (
                                 <div className="font-bold">{item.title || item.name || item.organization}</div>
                               ) : null}
-                              {item.issuer || item.role || item.company || item.organization ? (
+                              {isMeaningfulResumeValue(item.issuer || item.role || item.company || item.organization) ? (
                                 <div className="italic">{item.issuer || item.role || item.company || item.organization}</div>
                               ) : null}
                             </div>
-                            {entryDate(item) ? <div className="shrink-0 whitespace-nowrap italic">{entryDate(item)}</div> : null}
+                            {isMeaningfulResumeValue(entryDate(item)) ? <div className="shrink-0 whitespace-nowrap italic">{entryDate(item)}</div> : null}
                           </div>
-                          {item.description ? <div className="mt-0.5 text-justify">{richText(item.description)}</div> : null}
+                          {isMeaningfulResumeValue(item.description) ? <div className="mt-0.5 text-justify">{richText(item.description)}</div> : null}
                         </div>
                       ))}
                     </div>
-                  ) : null}
                 </section>
+                ) : null}
 
+                {meaningfulProjects.length ? (
                 <section className="pt-2">
                   <h3 className="border-b border-black text-[11px] font-bold uppercase">Projects</h3>
-                  {meaningfulProjects.length ? (
                     <div className="space-y-1 pt-1">
                       {meaningfulProjects.map((item, index) => (
                         <div key={item._id || `project-${index}`}>
                           <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0">
-                              {item.title || item.name || item.organization ? (
+                              {isMeaningfulResumeValue(item.title || item.name || item.organization) ? (
                                 <div className="font-bold">{item.title || item.name || item.organization}</div>
                               ) : null}
-                              {item.issuer || item.role || item.company || item.organization ? (
+                              {isMeaningfulResumeValue(item.issuer || item.role || item.company || item.organization) ? (
                                 <div className="italic">{item.issuer || item.role || item.company || item.organization}</div>
                               ) : null}
                             </div>
-                            {entryDate(item) ? <div className="shrink-0 whitespace-nowrap italic">{entryDate(item)}</div> : null}
+                            {isMeaningfulResumeValue(entryDate(item)) ? <div className="shrink-0 whitespace-nowrap italic">{entryDate(item)}</div> : null}
                           </div>
-                          {item.description ? <div className="mt-0.5 text-justify">{richText(item.description)}</div> : null}
+                          {isMeaningfulResumeValue(item.description) ? <div className="mt-0.5 text-justify">{richText(item.description)}</div> : null}
                         </div>
                       ))}
                     </div>
-                  ) : null}
                 </section>
+                ) : null}
 
                 {meaningfulProfileSections.map(([sectionTitle, items]) => (
                   <section key={sectionTitle} className="pt-2">
@@ -1559,22 +1555,22 @@ const ApplicationDetails = () => {
                         <div key={item._id || `${sectionTitle}-${index}`}>
                           <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0">
-                              {item.title || item.name || item.organization ? (
+                              {isMeaningfulResumeValue(item.title || item.name || item.organization) ? (
                                 <div className="font-bold">
                                   {item.title || item.name || item.organization}
                                 </div>
                               ) : null}
-                              {item.issuer || item.role || item.company || item.organization ? (
+                              {isMeaningfulResumeValue(item.issuer || item.role || item.company || item.organization) ? (
                                 <div className="italic">
                                   {item.issuer || item.role || item.company || item.organization}
                                 </div>
                               ) : null}
                             </div>
-                            {entryDate(item) ? (
+                            {isMeaningfulResumeValue(entryDate(item)) ? (
                               <div className="shrink-0 whitespace-nowrap italic">{entryDate(item)}</div>
                             ) : null}
                           </div>
-                          {item.description ? <div className="mt-0.5 text-justify">{richText(item.description)}</div> : null}
+                          {isMeaningfulResumeValue(item.description) ? <div className="mt-0.5 text-justify">{richText(item.description)}</div> : null}
                         </div>
                       ))}
                     </div>
@@ -1587,11 +1583,11 @@ const ApplicationDetails = () => {
                     <div className="grid grid-cols-1 gap-x-8 gap-y-2 pt-1 sm:grid-cols-2">
                       {meaningfulReferences.map((item, index) => (
                         <div key={item._id || index}>
-                          {item.name || item.title ? <div className="font-bold">{item.name || item.title}</div> : null}
-                          {item.position ? <div className="italic">{item.position}</div> : null}
-                          {item.company ? <div>{item.company}</div> : null}
-                          {item.phone ? <div>{item.phone}</div> : null}
-                          {item.email ? <div className="break-all text-blue-700 underline">{item.email}</div> : null}
+                          {isMeaningfulResumeValue(item.name || item.title) ? <div className="font-bold">{item.name || item.title}</div> : null}
+                          {isMeaningfulResumeValue(item.position) ? <div className="italic">{item.position}</div> : null}
+                          {isMeaningfulResumeValue(item.company) ? <div>{item.company}</div> : null}
+                          {isMeaningfulResumeValue(item.phone) ? <div>{item.phone}</div> : null}
+                          {isMeaningfulResumeValue(item.email) ? <div className="break-all text-blue-700 underline">{item.email}</div> : null}
                         </div>
                       ))}
                     </div>
