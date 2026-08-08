@@ -846,18 +846,6 @@ export const openResumePrintWindow = async (resumeData = {}) => {
     existingWrapper.remove();
   }
 
-  // Open the tab immediately so the browser will not block it after the
-  // asynchronous PDF generation finishes.
-  const previewWindow = window.open('', '_blank');
-
-  if (!previewWindow) {
-    return false;
-  }
-
-  previewWindow.document.title = buildResumeFileName(resumeData);
-  previewWindow.document.body.innerHTML =
-    '<div style="font-family:Arial,sans-serif;padding:24px;color:#374151;">Preparing your CV PDF...</div>';
-
   const wrapper = document.createElement('div');
   wrapper.id = 'agapay-resume-pdf-wrapper';
   wrapper.style.position = 'fixed';
@@ -942,19 +930,20 @@ export const openResumePrintWindow = async (resumeData = {}) => {
       );
     }
 
-    previewWindow.document.title = pdfFileName;
     const previewUrlWithZoom = `${uploadResult.previewUrl}#zoom=125`;
-    previewWindow.location.replace(previewUrlWithZoom);
+    const previewWindow = window.open(previewUrlWithZoom, '_blank');
+
+    if (!previewWindow) {
+      throw new Error('The PDF preview was blocked by your browser. Please allow pop-ups and try again.');
+    }
+
+    previewWindow.opener = null;
 
     wrapper.remove();
     return true;
   } catch (error) {
     console.error('Resume PDF preview failed:', error);
     wrapper.remove();
-
-    try {
-      previewWindow.close();
-    } catch {}
 
     return false;
   }

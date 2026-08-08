@@ -902,12 +902,14 @@ const ResumePasswordModal = ({
                 value={password || ''}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder="Enter your password"
-                className="w-full h-12 pl-4 pr-12 rounded-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6]"
+                disabled={verifying}
+                className="w-full h-12 pl-4 pr-12 rounded-xl border border-gray-200 bg-white text-gray-900 outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:border-[#2e66a6] disabled:bg-gray-50 disabled:text-gray-500"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((current) => !current)}
-                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-gray-500 transition hover:text-[#2e66a6]"
+                disabled={verifying}
+                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-gray-500 transition hover:text-[#2e66a6] disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
                 title={showPassword ? 'Hide password' : 'Show password'}
               >
@@ -941,7 +943,9 @@ const ResumePasswordModal = ({
                 <FaEye className="text-xs" />
               )}
               {verifying
-                ? 'Verifying...'
+                ? mode === 'download'
+                  ? 'Preparing CV...'
+                  : 'Verifying...'
                 : mode === 'preview'
                   ? 'Continue Preview'
                   : mode === 'credential-preview'
@@ -4872,7 +4876,10 @@ const MyProfile = () => {
 
     if (!downloaded) {
       setError('Failed to generate CV PDF. Please try again.');
+      setDownloadPasswordError('Failed to generate CV PDF. Please try again.');
     }
+
+    return downloaded;
   };
 
   const handleDownloadResume = () => {
@@ -4928,13 +4935,12 @@ const MyProfile = () => {
       );
 
       if (verifyResponse.data?.success) {
-        setDownloadPasswordModalOpen(false);
-        setDownloadPassword('');
-
         if (
           resumePasswordAction === 'credential-preview' ||
           resumePasswordAction === 'credential-download'
         ) {
+          setDownloadPasswordModalOpen(false);
+          setDownloadPassword('');
           const executeCredentialAction = pendingCredentialActionRef.current;
           pendingCredentialActionRef.current = null;
           setPasswordResourceTitle('CV/Resume');
@@ -4946,11 +4952,18 @@ const MyProfile = () => {
         }
 
         if (resumePasswordAction === 'preview') {
+          setDownloadPasswordModalOpen(false);
+          setDownloadPassword('');
           openResumePreview();
           return;
         }
 
-        await downloadResumePdf();
+        const previewOpened = await downloadResumePdf();
+
+        if (previewOpened) {
+          setDownloadPasswordModalOpen(false);
+          setDownloadPassword('');
+        }
       }
     } catch (err) {
       console.error(err);
