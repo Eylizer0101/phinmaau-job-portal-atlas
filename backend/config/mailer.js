@@ -442,6 +442,85 @@ const sendJobseekerRegistrationSummaryEmail = async ({
   });
 };
 
+const sendEmployerRegistrationSummaryEmail = async ({
+  to,
+  companyName,
+  website,
+  industry,
+  region,
+  province,
+  primaryContactFullName,
+  contactNumber,
+  uploadedCredentialTypes = [],
+  registeredAt = new Date(),
+  verificationStatus = 'Pending Verification',
+}) => {
+  if (!to) throw new Error('Recipient email missing');
+
+  const digits = String(contactNumber || '').replace(/\D/g, '');
+  const maskedContact = digits.length >= 4
+    ? `${'*'.repeat(Math.max(0, digits.length - 4))}${digits.slice(-4)}`
+    : 'Not provided';
+  const safeCredentials = Array.isArray(uploadedCredentialTypes)
+    ? uploadedCredentialTypes.map((item) => escapeHtml(item)).filter(Boolean)
+    : [];
+  const formattedDate = new Intl.DateTimeFormat('en-PH', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'Asia/Manila',
+  }).format(new Date(registeredAt));
+  const rows = [
+    ['Company Name', companyName],
+    ['Website', website || 'Not provided'],
+    ['Industry', industry],
+    ['Region', region],
+    ['Province', province],
+    ['Primary Contact', primaryContactFullName],
+    ['Contact Number', maskedContact],
+    ['Employee/Company Email', to],
+    ['Registration Date and Time', formattedDate],
+    ['Verification Status', verificationStatus],
+  ];
+
+  await sendMail({
+    to,
+    subject: 'AGAPAY Employer Registration Summary',
+    html: `
+      <div style="background:#f4f6f9; padding:40px 15px; font-family:Arial, sans-serif;">
+        <div style="max-width:620px; margin:auto; background:#ffffff; padding:30px; border-radius:8px; border:1px solid #e5e7eb;">
+          <h2 style="margin:0; color:#1e3a8a; font-weight:600;">AGAPAY</h2>
+          <p style="margin-top:25px; font-size:15px; color:#111827;">
+            Hello <strong>${escapeHtml(primaryContactFullName || 'Employer')}</strong>,
+          </p>
+          <p style="font-size:14px; color:#374151; line-height:1.6;">
+            Your employer registration was submitted successfully. Below is a safe summary of the information you provided.
+          </p>
+          <table role="presentation" style="width:100%; margin-top:20px; border-collapse:collapse; font-size:14px;">
+            <tbody>
+              ${rows.map(([label, value]) => `
+                <tr>
+                  <td style="padding:10px; border:1px solid #e5e7eb; background:#f9fafb; font-weight:600; width:38%;">${escapeHtml(label)}</td>
+                  <td style="padding:10px; border:1px solid #e5e7eb; color:#374151;">${escapeHtml(value || 'Not provided')}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <div style="margin-top:20px; padding:15px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:6px;">
+            <p style="margin:0 0 8px; font-size:14px; font-weight:600; color:#111827;">Successfully uploaded credential types</p>
+            ${safeCredentials.length
+              ? `<ul style="margin:0; padding-left:20px; color:#374151; font-size:14px; line-height:1.7;">${safeCredentials.map((item) => `<li>${item}</li>`).join('')}</ul>`
+              : '<p style="margin:0; color:#6b7280; font-size:14px;">No credential type recorded.</p>'}
+          </div>
+          <p style="margin-top:20px; font-size:13px; color:#6b7280; line-height:1.6;">
+            Passwords, authentication or verification tokens, uploaded files, registration numbers, and internal IDs are not included in this email.
+          </p>
+          <p style="margin-top:30px; font-size:12px; color:#9ca3af;">This is an automated message from AGAPAY. Please do not reply.</p>
+        </div>
+      </div>
+    `,
+  });
+};
+
 module.exports = {
   sendCredentialsEmail,
   sendPasswordResetEmail,
@@ -449,4 +528,5 @@ module.exports = {
   sendVerificationRejectedEmail,
   sendSettingsEmailVerificationCode,
   sendJobseekerRegistrationSummaryEmail,
+  sendEmployerRegistrationSummaryEmail,
 };

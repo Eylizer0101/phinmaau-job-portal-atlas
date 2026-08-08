@@ -12,6 +12,7 @@ const {
   sendPasswordResetEmail,
   sendSettingsEmailVerificationCode,
   sendJobseekerRegistrationSummaryEmail,
+  sendEmployerRegistrationSummaryEmail,
 } = require('../config/mailer');
 const puppeteer = require('puppeteer');
 const { v2: cloudinary } = require('cloudinary');
@@ -57,6 +58,28 @@ const boolFromBody = (v) => String(v || '').toLowerCase() === 'true';
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 const isGmailAddress = (email) => /^[^\s@]+@gmail\.com$/i.test(String(email || '').trim());
 const isValidPersonName = (value) => /^[\p{L}\s'-]+$/u.test(String(value || '').trim());
+const isValidIndustry = (value) => {
+  const clean = String(value || '').trim();
+  return /^[^<>\u0000-\u001F\u007F]+$/u.test(clean) && !/^\s*(?:javascript|data):/i.test(clean);
+};
+const isValidBusinessEmail = (email) => /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i.test(String(email || '').trim());
+
+const normalizeCompanyWebsiteUrl = (value) => {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return '';
+  if (/\s|<|>|["'`]/.test(trimmed) || /^(?:javascript|data):/i.test(trimmed)) return null;
+
+  const candidate = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  try {
+    const parsed = new URL(candidate);
+    if (!['http:', 'https:'].includes(parsed.protocol)) return null;
+    if (parsed.username || parsed.password || !parsed.hostname || !parsed.hostname.includes('.')) return null;
+    if (!/^[a-z0-9.-]+$/i.test(parsed.hostname) || parsed.hostname.startsWith('.') || parsed.hostname.endsWith('.')) return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+};
 
 const getJwtSecret = () => {
   const secret = process.env.JWT_SECRET;
@@ -889,14 +912,39 @@ exports.registerEmployer = async (req, res) => {
       industry,
     } = req.body;
 
-    if (!firstName || !String(firstName).trim()) return res.status(400).json({ message: 'First name is required.' });
-    if (!lastName || !String(lastName).trim()) return res.status(400).json({ message: 'Last name is required.' });
+    const cleanFirstName = String(firstName || '').trim();
+    const cleanMiddleName = String(middleName || '').trim();
+    const cleanLastName = String(lastName || '').trim();
+    const nameValues = [
+      ['First name', cleanFirstName, true],
+      ['Middle name', cleanMiddleName, false],
+      ['Last name', cleanLastName, true],
+    ];
+    for (const [label, value, required] of nameValues) {
+      if (required && !value) return res.status(400).json({ message: `${label} is required.` });
+      if (value.length > 50) return res.status(400).json({ message: 'Maximum of 50 characters only.' });
+      if (value && !isValidPersonName(value)) {
+        return res.status(400).json({ message: `${label} may contain letters, spaces, hyphens, and apostrophes only.` });
+      }
+    }
 
-    if (!companyName || !String(companyName).trim()) return res.status(400).json({ message: 'Company name is required.' });
+    const cleanCompanyName = String(companyName || '').trim();
+    if (!cleanCompanyName) return res.status(400).json({ message: 'Company name is required.' });
+    if (cleanCompanyName.length < 2) {
+      return res.status(400).json({ message: 'Company name must contain at least 2 characters.' });
+    }
+    if (cleanCompanyName.length > 200) {
+      return res.status(400).json({ message: 'Company name must not exceed 200 characters.' });
+    }
+
+    const normalizedWebsiteUrl = normalizeCompanyWebsiteUrl(companyWebsiteUrl);
+    if (normalizedWebsiteUrl === null) {
+      return res.status(400).json({ message: 'Enter a valid company website URL.' });
+    }
 
     const emailLower = normalizeEmail(businessEmail);
     if (!emailLower) return res.status(400).json({ message: 'Business email is required.' });
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailLower)) {
+    if (!isValidBusinessEmail(emailLower)) {
       return res.status(400).json({ message: 'Invalid business email address.' });
     }
 
@@ -904,8 +952,15 @@ exports.registerEmployer = async (req, res) => {
       return res.status(400).json({ message: 'Phone / Mobile number is required.' });
     }
 
-    if (!industry || !String(industry).trim()) {
+    const cleanIndustry = String(industry || '').trim().normalize('NFKC').replace(/\s+/g, ' ');
+    if (!cleanIndustry) {
       return res.status(400).json({ message: 'Industry is required.' });
+    }
+    if (cleanIndustry.length > 100) {
+      return res.status(400).json({ message: 'Industry must not exceed 100 characters.' });
+    }
+    if (!isValidIndustry(cleanIndustry)) {
+      return res.status(400).json({ message: 'Enter a valid industry without HTML or script content.' });
     }
 
     const files = req.files || {};
@@ -918,7 +973,7 @@ exports.registerEmployer = async (req, res) => {
     const existingEmail = await User.findOne({ email: emailLower });
     if (existingEmail) return res.status(400).json({ message: 'User already exists with this email.' });
 
-    const baseFromCompany = String(companyName || '')
+    const baseFromCompany = cleanCompanyName
       .toLowerCase()
       .replace(/[^a-z0-9_]/g, '')
       .slice(0, 20);
@@ -949,21 +1004,21 @@ exports.registerEmployer = async (req, res) => {
       email: emailLower,
       password: hashedPassword,
 
-      firstName: String(firstName || '').trim(),
-      middleName: String(middleName || '').trim(),
-      lastName: String(lastName || '').trim(),
+      firstName: cleanFirstName,
+      middleName: cleanMiddleName,
+      lastName: cleanLastName,
       extensionName: normalizeExtensionName(extensionName),
 
       status: 'pending',
       isVerified: true,
 
       employerProfile: {
-        companyName: String(companyName || '').trim(),
-        companyWebsiteUrl: String(companyWebsiteUrl || '').trim(),
+        companyName: cleanCompanyName,
+        companyWebsiteUrl: normalizedWebsiteUrl,
         businessEmail: emailLower,
         mobileNumber: String(mobileNumber || '').trim(),
         regionCity: String(regionCity || '').trim(),
-        industry: String(industry || '').trim(),
+        industry: cleanIndustry,
         companyLogo: companyLogoUrl,
 
         verificationDocs: {
@@ -979,7 +1034,50 @@ exports.registerEmployer = async (req, res) => {
 
     const user = new User(userData);
     await user.save();
-    await notificationController.createAdminUserRegistrationNotification(user, 'employer');
+    try {
+      await notificationController.createAdminUserRegistrationNotification(user, 'employer');
+    } catch (notificationError) {
+      console.error('Employer registration notification failed.', {
+        code: notificationError?.code || 'NOTIFICATION_CREATE_FAILED',
+      });
+    }
+
+    const credentialLabels = {
+      secRegistration: 'SEC Registration',
+      birRegistration: 'BIR Registration',
+      dtiRegistration: 'DTI Registration',
+      cityPermit: 'City/Municipality Permit',
+      businessPermit: 'Business Permit',
+    };
+    const uploadedCredentialTypes = Object.entries(credentialLabels)
+      .filter(([key]) => Boolean(files?.[key]?.[0]))
+      .map(([, label]) => label);
+    const primaryContactFullName = [user.firstName, user.middleName, user.lastName, user.extensionName]
+      .filter(Boolean)
+      .join(' ');
+    const [region = '', province = ''] = String(user.employerProfile?.regionCity || '')
+      .split(' - ')
+      .map((item) => item.trim());
+
+    try {
+      await sendEmployerRegistrationSummaryEmail({
+        to: user.email,
+        companyName: user.employerProfile?.companyName,
+        website: user.employerProfile?.companyWebsiteUrl,
+        industry: user.employerProfile?.industry,
+        region,
+        province,
+        primaryContactFullName,
+        contactNumber: user.employerProfile?.mobileNumber,
+        uploadedCredentialTypes,
+        registeredAt: user.createdAt || new Date(),
+        verificationStatus: 'Pending Verification',
+      });
+    } catch (mailError) {
+      console.error('Employer registration summary email failed.', {
+        code: mailError?.code || 'EMAIL_SEND_FAILED',
+      });
+    }
 
     return res.status(201).json({
       message: 'Thank you for signing up! Your account is under review.',

@@ -58,14 +58,7 @@ router.post('/login', loginLimiter, authController.login);
 router.post(
   '/employer/register',
   registrationLimiter,
-  upload.uploadEmployerRegisterDocs.fields([
-    { name: 'secRegistration', maxCount: 1 },
-    { name: 'birRegistration', maxCount: 1 },
-    { name: 'dtiRegistration', maxCount: 1 },
-    { name: 'cityPermit', maxCount: 1 },
-    { name: 'businessPermit', maxCount: 1 },
-    { name: 'companyLogo', maxCount: 1 },
-  ]),
+  upload.handleEmployerRegisterUploads,
   authController.registerEmployer
 );
 

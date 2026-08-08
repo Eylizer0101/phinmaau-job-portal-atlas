@@ -6,6 +6,66 @@ import axios from 'axios';
 // ✅ ADDED: region/city mapping (Option A separate file)
 import { PH_REGIONS, PH_CITIES_BY_REGION } from '../../../constants/phLocations';
 
+const EMPLOYER_DOC_KEYS = ['secRegistration', 'birRegistration', 'dtiRegistration', 'cityPermit', 'businessPermit'];
+const ALLOWED_DOC_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png']);
+const ALLOWED_DOC_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/jpg', 'image/png']);
+const MAX_DOC_SIZE = 5 * 1024 * 1024;
+const INVALID_DOC_MESSAGE = 'Invalid file. Upload PDF, JPG, JPEG, or PNG only, up to 5MB.';
+const PERSON_NAME_PATTERN = /^[\p{L}\s'-]+$/u;
+const SAFE_INDUSTRY_PATTERN = /^[^<>\u0000-\u001F\u007F]+$/u;
+const BUSINESS_EMAIL_PATTERN = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i;
+
+const normalizeWebsiteUrl = (value) => {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return '';
+  if (/\s|<|>|["'`]/.test(trimmed) || /^(?:javascript|data):/i.test(trimmed)) return null;
+
+  const candidate = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  try {
+    const parsed = new URL(candidate);
+    if (!['http:', 'https:'].includes(parsed.protocol)) return null;
+    if (parsed.username || parsed.password || !parsed.hostname || !parsed.hostname.includes('.')) return null;
+    if (!/^[a-z0-9.-]+$/i.test(parsed.hostname) || parsed.hostname.startsWith('.') || parsed.hostname.endsWith('.')) return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+};
+
+const getDocumentSignatureType = async (file) => {
+  const bytes = new Uint8Array(await file.slice(0, 8).arrayBuffer());
+  if (
+    bytes.length >= 5
+    && bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44
+    && bytes[3] === 0x46 && bytes[4] === 0x2d
+  ) return 'pdf';
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'jpeg';
+  const pngSignature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  if (bytes.length >= 8 && pngSignature.every((byte, index) => bytes[index] === byte)) return 'png';
+  return null;
+};
+
+const validateEmployerDocument = async (file) => {
+  if (!file || file.size > MAX_DOC_SIZE) return false;
+  const extension = String(file.name || '').split('.').pop()?.toLowerCase() || '';
+  const mimeType = String(file.type || '').toLowerCase();
+  if (!ALLOWED_DOC_EXTENSIONS.has(extension) || !ALLOWED_DOC_MIME_TYPES.has(mimeType)) return false;
+
+  try {
+    const signatureType = await getDocumentSignatureType(file);
+    const expectedType = extension === 'jpg' ? 'jpeg' : extension;
+    const expectedMime = signatureType === 'pdf'
+      ? 'application/pdf'
+      : signatureType === 'png'
+        ? 'image/png'
+        : 'image/jpeg';
+    return signatureType === expectedType
+      && (mimeType === expectedMime || (signatureType === 'jpeg' && mimeType === 'image/jpg'));
+  } catch {
+    return false;
+  }
+};
+
 const EmployerRegisterPage = () => {
   const navigate = useNavigate();
 
@@ -56,6 +116,7 @@ const EmployerRegisterPage = () => {
 
   // ✅ show helper text only when focused
   const [focused, setFocused] = useState({});
+  const [industryOpen, setIndustryOpen] = useState(false);
 
   // ✅ NEW: Popups
   const [showReadyModal, setShowReadyModal] = useState(false);
@@ -74,7 +135,7 @@ const EmployerRegisterPage = () => {
     businessPermit: useRef(null),
   };
 
-  const DOC_KEYS = ['secRegistration', 'birRegistration', 'dtiRegistration', 'cityPermit', 'businessPermit'];
+  const DOC_KEYS = EMPLOYER_DOC_KEYS;
 
   // ✅ UPDATED STEP FIELDS (3 steps only) - NEW ORDER
   const STEP_FIELDS = {
@@ -181,24 +242,38 @@ const EmployerRegisterPage = () => {
     'Wood / Fibre / Paper',
   ];
 
+  const industrySearch = formData.industry.trim();
+  const filteredIndustryOptions = useMemo(() => {
+    const query = industrySearch.toLowerCase();
+    if (!query) return INDUSTRY_OPTIONS;
+    return INDUSTRY_OPTIONS.filter((option) => option.toLowerCase().includes(query));
+  }, [industrySearch]);
+  const hasExactIndustryMatch = INDUSTRY_OPTIONS.some(
+    (option) => option.toLowerCase() === industrySearch.toLowerCase()
+  );
+
   const validate = (onlyKeys = null) => {
     const check = (k) => !onlyKeys || onlyKeys.includes(k);
     const next = {};
-    const hasNumber = /\d/;
-
     // Basic Info
     if (check('firstName')) {
-      if (!formData.firstName.trim()) next.firstName = 'First name is required.';
-      else if (hasNumber.test(formData.firstName)) next.firstName = 'First Name should not contain numbers';
+      const value = formData.firstName.trim();
+      if (!value) next.firstName = 'First name is required.';
+      else if (value.length > 50) next.firstName = 'Maximum of 50 characters only.';
+      else if (!PERSON_NAME_PATTERN.test(value)) next.firstName = "Use letters, spaces, hyphens, and apostrophes only.";
     }
 
     if (check('middleName')) {
-      if (hasNumber.test(formData.middleName)) next.middleName = 'Middle Name should not contain numbers';
+      const value = formData.middleName.trim();
+      if (value.length > 50) next.middleName = 'Maximum of 50 characters only.';
+      else if (value && !PERSON_NAME_PATTERN.test(value)) next.middleName = "Use letters, spaces, hyphens, and apostrophes only.";
     }
 
     if (check('lastName')) {
-      if (!formData.lastName.trim()) next.lastName = 'Last name is required.';
-      else if (hasNumber.test(formData.lastName)) next.lastName = 'Last Name should not contain numbers';
+      const value = formData.lastName.trim();
+      if (!value) next.lastName = 'Last name is required.';
+      else if (value.length > 50) next.lastName = 'Maximum of 50 characters only.';
+      else if (!PERSON_NAME_PATTERN.test(value)) next.lastName = "Use letters, spaces, hyphens, and apostrophes only.";
     }
 
     if (check('extensionName')) {
@@ -210,7 +285,7 @@ const EmployerRegisterPage = () => {
     if (check('businessEmail')) {
       const businessEmail = normalizeEmail(formData.businessEmail);
       if (!businessEmail) next.businessEmail = 'Business email is required.';
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(businessEmail))
+      else if (!BUSINESS_EMAIL_PATTERN.test(businessEmail))
         next.businessEmail = 'Please enter a valid email address.';
     }
 
@@ -222,14 +297,16 @@ const EmployerRegisterPage = () => {
     }
 
     // Company info
-    if (check('companyName') && !formData.companyName.trim()) next.companyName = 'Company name is required.';
+    if (check('companyName')) {
+      const value = formData.companyName.trim();
+      if (!value) next.companyName = 'Company name is required.';
+      else if (value.length < 2) next.companyName = 'Company name must contain at least 2 characters.';
+      else if (value.length > 200) next.companyName = 'Company name must not exceed 200 characters.';
+    }
 
     if (check('companyWebsiteUrl')) {
       const v = formData.companyWebsiteUrl.trim();
-      if (v) {
-        const ok = /^https?:\/\/.+/i.test(v) || /^[a-z0-9.-]+\.[a-z]{2,}.*$/i.test(v);
-        if (!ok) next.companyWebsiteUrl = 'Please enter a valid website URL (ex: https://company.com).';
-      }
+      if (v && !normalizeWebsiteUrl(v)) next.companyWebsiteUrl = 'Enter a valid company website URL.';
     }
 
     if (check('companyLogo') && companyLogo) {
@@ -244,7 +321,12 @@ const EmployerRegisterPage = () => {
     }
 
     if (check('industry')) {
-      if (!formData.industry.trim()) next.industry = 'Industry is required.';
+      const value = formData.industry.trim();
+      if (!value) next.industry = 'Industry is required.';
+      else if (value.length > 100) next.industry = 'Industry must not exceed 100 characters.';
+      else if (!SAFE_INDUSTRY_PATTERN.test(value) || /^\s*(?:javascript|data):/i.test(value)) {
+        next.industry = 'Enter a valid industry without HTML or script content.';
+      }
     }
 
     if (check('regionCity')) {
@@ -275,10 +357,6 @@ const EmployerRegisterPage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    if (name === 'firstName' || name === 'middleName' || name === 'lastName') {
-      if (/\d/.test(value)) return;
-    }
 
     if (name === 'mobileNumber') {
       if (!/^\d*$/.test(value)) return;
@@ -355,9 +433,17 @@ const EmployerRegisterPage = () => {
     }
   };
 
-  const handleDocChange = (e) => {
-    const { name, files } = e.target;
+  const handleDocChange = async (e) => {
+    const input = e.target;
+    const { name, files } = input;
     const file = files?.[0] || null;
+
+    if (file && !(await validateEmployerDocument(file))) {
+      setDocs((prev) => ({ ...prev, [name]: null }));
+      setFieldErrors((prev) => ({ ...prev, [name]: INVALID_DOC_MESSAGE }));
+      input.value = '';
+      return;
+    }
 
     setDocs((prev) => ({ ...prev, [name]: file }));
     setServerError('');
@@ -405,7 +491,7 @@ const EmployerRegisterPage = () => {
 
       // Company Info
       fd.append('companyName', formData.companyName.trim());
-      fd.append('companyWebsiteUrl', formData.companyWebsiteUrl.trim());
+      fd.append('companyWebsiteUrl', normalizeWebsiteUrl(formData.companyWebsiteUrl) || '');
       fd.append('regionCity', formData.regionCity.trim());
       fd.append('industry', formData.industry.trim());
       if (companyLogo) fd.append('companyLogo', companyLogo);
@@ -609,7 +695,7 @@ const EmployerRegisterPage = () => {
           ref={docRefs[k]}
           name={k}
           type="file"
-          accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx"
+          accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
           onChange={handleDocChange}
           disabled={loading}
           className="sr-only"
@@ -1135,7 +1221,7 @@ const EmployerRegisterPage = () => {
                                   fieldErrors.companyName ? 'companyName-error' : null,
                                   focused.companyName && !fieldErrors.companyName ? 'companyName-help' : null
                                 )}
-                                maxLength={120}
+                                placeholder="Enter registered company name"
                               />
                             </div>
                             {focused.companyName && !fieldErrors.companyName && helperText('companyName-help')}
@@ -1168,8 +1254,8 @@ const EmployerRegisterPage = () => {
                                 inputMode="url"
                                 autoCapitalize="none"
                                 spellCheck={false}
-                                maxLength={120}
-                                placeholder="https://company.com"
+                                maxLength={2048}
+                                placeholder="https://www.company.com"
                               />
                             </div>
                             {focused.companyWebsiteUrl && !fieldErrors.companyWebsiteUrl &&
@@ -1241,28 +1327,89 @@ const EmployerRegisterPage = () => {
                             <label htmlFor="industry" className={labelBase}>
                               Industry
                             </label>
-                            <select
-                              id="industry"
-                              name="industry"
-                              value={formData.industry}
-                              onChange={handleChange}
-                              onFocus={() => setFieldFocus('industry', true)}
-                              onBlur={() => setFieldFocus('industry', false)}
-                              className={`${fieldClass(!!fieldErrors.industry)}`}
-                              disabled={loading}
-                              aria-invalid={!!fieldErrors.industry}
-                              aria-describedby={describedBy(
-                                fieldErrors.industry ? 'industry-error' : null,
-                                focused.industry && !fieldErrors.industry ? 'industry-help' : null
+                            <div className="relative">
+                              <input
+                                id="industry"
+                                name="industry"
+                                value={formData.industry}
+                                onChange={handleChange}
+                                onFocus={() => {
+                                  setFieldFocus('industry', true);
+                                  setIndustryOpen(true);
+                                }}
+                                onBlur={() => {
+                                  setFieldFocus('industry', false);
+                                  window.setTimeout(() => setIndustryOpen(false), 120);
+                                }}
+                                className={`${fieldClass(!!fieldErrors.industry)} pr-10`}
+                                disabled={loading}
+                                placeholder="Select or enter an industry"
+                                autoComplete="off"
+                                role="combobox"
+                                aria-autocomplete="list"
+                                aria-expanded={industryOpen}
+                                aria-controls="industry-options"
+                                aria-invalid={!!fieldErrors.industry}
+                                aria-describedby={describedBy(
+                                  fieldErrors.industry ? 'industry-error' : null,
+                                  focused.industry && !fieldErrors.industry ? 'industry-help' : null
+                                )}
+                              />
+                              <button
+                                type="button"
+                                aria-label="Show industry options"
+                                onMouseDown={(event) => event.preventDefault()}
+                                onClick={() => setIndustryOpen((open) => !open)}
+                                disabled={loading}
+                                className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-500"
+                              >
+                                <span aria-hidden="true">⌄</span>
+                              </button>
+                              {industryOpen && (
+                                <div
+                                  id="industry-options"
+                                  role="listbox"
+                                  className="absolute z-30 mt-1 max-h-52 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white p-1 shadow-lg"
+                                >
+                                  {filteredIndustryOptions.map((option) => (
+                                    <button
+                                      key={option}
+                                      type="button"
+                                      role="option"
+                                      aria-selected={formData.industry === option}
+                                      onMouseDown={(event) => event.preventDefault()}
+                                      onClick={() => {
+                                        setFormData((prev) => ({ ...prev, industry: option }));
+                                        clearFieldError('industry');
+                                        setIndustryOpen(false);
+                                      }}
+                                      className="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-blue-50"
+                                    >
+                                      {option}
+                                    </button>
+                                  ))}
+                                  {industrySearch && !hasExactIndustryMatch && (
+                                    <button
+                                      type="button"
+                                      role="option"
+                                      aria-selected="false"
+                                      onMouseDown={(event) => event.preventDefault()}
+                                      onClick={() => {
+                                        setFormData((prev) => ({ ...prev, industry: industrySearch }));
+                                        clearFieldError('industry');
+                                        setIndustryOpen(false);
+                                      }}
+                                      className="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-[#2e66a6] hover:bg-blue-50"
+                                    >
+                                      Add “{industrySearch}”
+                                    </button>
+                                  )}
+                                  {!filteredIndustryOptions.length && !industrySearch && (
+                                    <p className="px-3 py-2 text-sm text-gray-500">No industries available.</p>
+                                  )}
+                                </div>
                               )}
-                            >
-                              <option value="">Select industry</option>
-                              {INDUSTRY_OPTIONS.map((opt) => (
-                                <option key={opt} value={opt}>
-                                  {opt}
-                                </option>
-                              ))}
-                            </select>
+                            </div>
                             {focused.industry && !fieldErrors.industry && helperText('industry-help')}
                             {errorText('industry-error', fieldErrors.industry)}
                           </div>
@@ -1365,7 +1512,7 @@ const EmployerRegisterPage = () => {
                                   focused.firstName && !fieldErrors.firstName ? 'firstName-help' : null
                                 )}
                                 autoComplete="given-name"
-                                maxLength={60}
+                                placeholder="Enter first name"
                               />
                             </div>
                             {focused.firstName && !fieldErrors.firstName && helperText('firstName-help')}
@@ -1392,7 +1539,7 @@ const EmployerRegisterPage = () => {
                                   fieldErrors.middleName ? 'middleName-error' : null,
                                   focused.middleName && !fieldErrors.middleName ? 'middleName-help' : null
                                 )}
-                                maxLength={60}
+                                placeholder="Enter middle name"
                               />
                             </div>
                             {focused.middleName && !fieldErrors.middleName && helperText('middleName-help')}
@@ -1420,7 +1567,7 @@ const EmployerRegisterPage = () => {
                                   focused.lastName && !fieldErrors.lastName ? 'lastName-help' : null
                                 )}
                                 autoComplete="family-name"
-                                maxLength={60}
+                                placeholder="Enter last name"
                               />
                             </div>
                             {focused.lastName && !fieldErrors.lastName && helperText('lastName-help')}
@@ -1478,6 +1625,7 @@ const EmployerRegisterPage = () => {
                                 inputMode="numeric"
                                 autoComplete="tel"
                                 maxLength={11}
+                                placeholder="e.g., 09XXXXXXXXX"
                               />
                             </div>
                             {focused.mobileNumber && !fieldErrors.mobileNumber && helperText('mobileNumber-help')}
@@ -1513,6 +1661,7 @@ const EmployerRegisterPage = () => {
                                 autoCapitalize="none"
                                 spellCheck={false}
                                 maxLength={80}
+                                placeholder="Enter company email address"
                               />
                             </div>
                             {focused.businessEmail && !fieldErrors.businessEmail &&
@@ -1526,6 +1675,17 @@ const EmployerRegisterPage = () => {
                     {/* STEP 3: DOCUMENTS */}
                     {step === 3 && (
                       <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                        <div className="mb-4 rounded-xl border border-blue-100 bg-blue-50/60 p-4">
+                          <p className="text-sm font-semibold text-gray-800">Quick Upload Rules:</p>
+                          <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-relaxed text-gray-600">
+                            <li><strong>Accepted Formats:</strong> PDF or photos in JPG, JPEG, or PNG format.</li>
+                            <li><strong>File Size:</strong> Keep each file under 5MB.</li>
+                            <li><strong>Clarity:</strong> If uploading a photo, make sure the text is clear and readable—no blurry images.</li>
+                            <li><strong>No Cropped Edges:</strong> Make sure names, dates, signatures, stamps, and other important details are visible.</li>
+                            <li><strong>Check Before Uploading:</strong> Make sure the document is the latest, complete, and correct version.</li>
+                            <li><strong>Before You Submit:</strong> Double-check every document before submitting to avoid verification delays.</li>
+                          </ul>
+                        </div>
                         <div className="flex items-center justify-between mb-3">
                           <p className="text-sm font-semibold text-gray-700">Upload required documents</p>
                         </div>

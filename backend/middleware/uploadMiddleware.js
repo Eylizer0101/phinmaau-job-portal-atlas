@@ -16,6 +16,7 @@ const EMPLOYER_DOC_FOLDER_MAP = {
 const CLOUDINARY_ROOT_FOLDER = process.env.CLOUDINARY_ROOT_FOLDER || 'agapay-job-portal';
 const MAX_JOBSEEKER_CREDENTIAL_SIZE = 5 * 1024 * 1024;
 const INVALID_JOBSEEKER_CREDENTIAL_MESSAGE = 'Invalid file. Upload PDF, JPG, JPEG, or PNG only, up to 5MB.';
+const INVALID_EMPLOYER_CREDENTIAL_MESSAGE = 'Invalid file. Upload PDF, JPG, JPEG, or PNG only, up to 5MB.';
 const JOBSEEKER_CREDENTIAL_MIME_TYPES = new Set([
   'application/pdf',
   'image/jpeg',
@@ -88,6 +89,25 @@ const validateJobseekerCredentialBuffer = (file) => {
 
   if (!signatureMatches || file.buffer.length > MAX_JOBSEEKER_CREDENTIAL_SIZE) {
     return INVALID_JOBSEEKER_CREDENTIAL_MESSAGE;
+  }
+
+  return null;
+};
+
+const validateEmployerCredentialBuffer = (file) => {
+  if (file.fieldname === 'companyLogo') return null;
+
+  const signature = detectCredentialSignature(file.buffer);
+  const mimeType = String(file.mimetype || '').toLowerCase();
+  const extension = path.extname(String(file.originalname || '')).toLowerCase();
+  const signatureMatches = (
+    (signature === 'pdf' && mimeType === 'application/pdf' && extension === '.pdf')
+    || (signature === 'jpeg' && ['image/jpeg', 'image/jpg'].includes(mimeType) && ['.jpg', '.jpeg'].includes(extension))
+    || (signature === 'png' && mimeType === 'image/png' && extension === '.png')
+  );
+
+  if (!signatureMatches || file.buffer.length > MAX_JOBSEEKER_CREDENTIAL_SIZE) {
+    return INVALID_EMPLOYER_CREDENTIAL_MESSAGE;
   }
 
   return null;
@@ -388,6 +408,8 @@ const employerVerificationStorage = createCloudinaryStorage({
 
 const employerRegisterDocsStorage = createCloudinaryStorage({
   resourceType: 'raw',
+  bufferValidator: validateEmployerCredentialBuffer,
+  sanitizeFileName: true,
   folderResolver: (req, file) => {
     const allowedFields = ['secRegistration', 'birRegistration', 'dtiRegistration', 'cityPermit', 'businessPermit', 'companyLogo'];
     const field = String(file.fieldname || '').trim();
@@ -590,11 +612,50 @@ const uploadEmployerVerification = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
 });
 
+const employerRegisterFileFilter = (req, file, cb) => {
+  if (file.fieldname === 'companyLogo') {
+    return imageFileFilter(req, file, cb);
+  }
+
+  const mimeType = String(file.mimetype || '').toLowerCase();
+  const extension = path.extname(String(file.originalname || '')).toLowerCase();
+  if (
+    JOBSEEKER_CREDENTIAL_MIME_TYPES.has(mimeType)
+    && JOBSEEKER_CREDENTIAL_EXTENSIONS.has(extension)
+  ) return cb(null, true);
+
+  return cb(new Error(INVALID_EMPLOYER_CREDENTIAL_MESSAGE), false);
+};
+
 const uploadEmployerRegisterDocs = multer({
   storage: employerRegisterDocsStorage,
-  fileFilter: verificationFileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: employerRegisterFileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
 });
+
+const employerRegisterFields = uploadEmployerRegisterDocs.fields([
+  { name: 'secRegistration', maxCount: 1 },
+  { name: 'birRegistration', maxCount: 1 },
+  { name: 'dtiRegistration', maxCount: 1 },
+  { name: 'cityPermit', maxCount: 1 },
+  { name: 'businessPermit', maxCount: 1 },
+  { name: 'companyLogo', maxCount: 1 },
+]);
+
+const handleEmployerRegisterUploads = (req, res, next) => {
+  employerRegisterFields(req, res, (error) => {
+    if (!error) return next();
+
+    const isFileSizeError = error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE';
+    const message = isFileSizeError && error.field === 'companyLogo'
+      ? 'Company logo must be 5MB or smaller.'
+      : isFileSizeError
+      ? INVALID_EMPLOYER_CREDENTIAL_MESSAGE
+      : (error.message || INVALID_EMPLOYER_CREDENTIAL_MESSAGE);
+
+    return res.status(400).json({ message });
+  });
+};
 
 module.exports = {
   uploadResume,
@@ -609,5 +670,6 @@ module.exports = {
   uploadRegisterDocs,
   handleJobseekerRegisterUploads,
   uploadEmployerRegisterDocs,
+  handleEmployerRegisterUploads,
   uploadEmployerCompanyMedia,
 };
