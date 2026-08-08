@@ -463,6 +463,33 @@ const normalizeEmploymentType = (value = '') =>
     .replace(/[\s-]+/g, '')
     .trim();
 
+const normalizeWorkMode = (value = '') => {
+  const normalized = normalizeMatchText(value)
+    .replace(/[\s-]+/g, '')
+    .trim();
+
+  if (['onsite', 'on-site'].includes(normalized)) return 'onsite';
+  if (['remote', 'workfromhome', 'wfh'].includes(normalized)) return 'remote';
+  if (['hybrid'].includes(normalized)) return 'hybrid';
+  if (['blended'].includes(normalized)) return 'blended';
+
+  return normalized;
+};
+
+const isWorkModeMatch = (applicantWorkMode = '', jobWorkMode = '') => {
+  const applicantMode = normalizeWorkMode(applicantWorkMode);
+  const requiredMode = normalizeWorkMode(jobWorkMode);
+
+  if (!applicantMode || !requiredMode) return false;
+
+  // Blended means the applicant is flexible/all-around for the available work setup.
+  if (applicantMode === 'blended') {
+    return ['onsite', 'remote', 'hybrid', 'blended'].includes(requiredMode);
+  }
+
+  return applicantMode === requiredMode;
+};
+
 const normalizeSkillName = (value = '') =>
   normalizeMatchText(value)
     .replace(/\s[—-]\s(?:basic|novice|intermediate|advanced|expert)$/i, '')
@@ -703,10 +730,10 @@ const calculateApplicationMatch = ({ job = {}, profile = {}, skills = [], work =
     missingCourseKeywords: [...new Set(courseWords.filter((word) => !courseHits.includes(word)))],
     applicantWorkModeDisplay: profile.preferredWorkMode || 'Not provided',
     requiredWorkModeDisplay: job.workMode || job.workArrangement || job.workSetup || 'Not specified',
-    workModeMatched:
-      Boolean(profile.preferredWorkMode && (job.workMode || job.workArrangement || job.workSetup)) &&
-      normalizeMatchText(profile.preferredWorkMode) ===
-        normalizeMatchText(job.workMode || job.workArrangement || job.workSetup),
+    workModeMatched: isWorkModeMatch(
+      profile.preferredWorkMode,
+      job.workMode || job.workArrangement || job.workSetup
+    ),
     applicantEmploymentTypeDisplay: profile.employmentType || 'Not provided',
     requiredEmploymentTypeDisplay: job.jobType || 'Not specified',
     employmentTypeMatched:
