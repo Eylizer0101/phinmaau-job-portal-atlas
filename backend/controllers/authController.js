@@ -2001,8 +2001,18 @@ exports.createAlumniCredentialPreview = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid document type.' });
     }
 
-    const user = await User.findById(userId).select('jobSeekerProfile');
+    const { password } = req.body || {};
+    if (!password || !String(password).trim()) {
+      return res.status(400).json({ success: false, message: 'Please enter your password.' });
+    }
+
+    const user = await User.findById(userId);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const isMatch = await bcrypt.compare(String(password), user.password);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: 'Incorrect password. Please try again.' });
+    }
 
     const doc = user.jobSeekerProfile?.verificationDocs?.[docType] || {};
     const rawUrl = String(doc.url || '').trim();
@@ -3541,8 +3551,9 @@ const buildResumeHtmlForPdf = (user = {}) => {
           .resume-contact span + span::before { content: ' | '; }
           .resume-education-summary { margin-top: 3px; color: #222222; font-size: 7.2px; line-height: 1.25; font-style: italic; }
           .resume-initials, .resume-photo { position: absolute; top: 0; right: 3px; width: 61px; height: 61px; display: flex; align-items: center; justify-content: center; background: #343434; color: #ffffff; font-family: Arial, Helvetica, sans-serif; font-size: 27px; font-weight: 500; letter-spacing: 0.8px; overflow: hidden; object-fit: cover; }
-          .resume-section { margin-top: 8px; break-inside: avoid; }
-          .resume-section h2 { margin: 0 0 3px; padding-bottom: 2px; border-bottom: 1px solid #777777; font-size: 8.8px; line-height: 1; font-weight: 700; letter-spacing: 0.25px; text-transform: uppercase; }
+          .resume-section { margin-top: 10px; break-inside: auto; }
+          .resume-section h2 { margin: 0 0 3px; padding-bottom: 2px; border-bottom: 1px solid #777777; font-size: 8.8px; line-height: 1; font-weight: 700; letter-spacing: 0.25px; text-transform: uppercase; break-after: avoid-page; page-break-after: avoid; }
+          .resume-section h2 + * { break-before: avoid-page; page-break-before: avoid; }
           .objective-text { margin: 0; text-align: justify; }
           .two-column-rows, .skills-grid, .references-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 35px; }
           .info-row { display: grid; grid-template-columns: 112px 1fr; gap: 4px; min-height: 11px; }

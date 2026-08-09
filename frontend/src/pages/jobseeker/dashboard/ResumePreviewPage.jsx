@@ -583,7 +583,7 @@ const ResumePreviewPage = () => {
         }
 
         .resume-section {
-          margin-top: 8px;
+          margin-top: 10px;
           break-inside: auto;
         }
 
@@ -596,7 +596,13 @@ const ResumePreviewPage = () => {
           font-weight: 700;
           letter-spacing: 0.25px;
           text-transform: uppercase;
-          break-after: avoid;
+          break-after: avoid-page;
+          page-break-after: avoid;
+        }
+
+        .resume-section h2 + * {
+          break-before: avoid-page;
+          page-break-before: avoid;
         }
 
         .objective-text {

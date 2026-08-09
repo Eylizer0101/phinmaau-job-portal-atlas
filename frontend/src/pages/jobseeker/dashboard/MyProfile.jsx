@@ -794,6 +794,30 @@ const SuccessPopup = ({ open, title, message, onClose }) => {
   );
 };
 
+const ProfileToast = ({ toast, onClose }) => {
+  if (!toast?.message) return null;
+
+  const alertClass =
+    toast.type === 'error'
+      ? 'bg-black/5 border-black/15 text-[#000000]'
+      : 'bg-[#2e66a6]/10 border-[#2e66a6]/20 text-[#000000]';
+
+  return (
+    <div className={`rounded-2xl border p-4 shadow-sm ${alertClass}`} role="status" aria-live="polite">
+      <div className="flex items-start justify-between gap-3">
+        <p className="font-semibold leading-6">{toast.message}</p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="inline-flex h-10 items-center justify-center rounded-xl px-3.5 text-sm font-semibold text-black/70 transition-colors hover:bg-black/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+        >
+          Dismiss
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const ConfirmModal = ({
   open,
   title = 'Are you sure you want to delete this?',
@@ -801,6 +825,7 @@ const ConfirmModal = ({
   confirmText = 'Delete',
   cancelText = 'Cancel',
   tone = 'primary',
+  loading = false,
   onConfirm,
   onCancel,
 }) => {
@@ -826,17 +851,26 @@ const ConfirmModal = ({
           <button
             type="button"
             onClick={onCancel}
-            className="h-11 min-w-[92px] rounded-[4px] border border-[#0b80ff] bg-white px-5 text-[16px] font-semibold text-[#0b80ff] transition hover:bg-blue-50"
+            disabled={loading}
+            className="h-11 min-w-[92px] rounded-[4px] border border-[#0b80ff] bg-white px-5 text-[16px] font-semibold text-[#0b80ff] transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {cancelText}
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="h-11 min-w-[92px] rounded-[4px] px-5 text-[16px] font-semibold text-white transition hover:opacity-90"
+            disabled={loading}
+            className="inline-flex h-11 min-w-[112px] items-center justify-center gap-2 rounded-[4px] px-5 text-[16px] font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
             style={{ backgroundColor: confirmBg }}
           >
-            {confirmText}
+            {loading ? (
+              <>
+                <Spinner size="small" />
+                Deleting...
+              </>
+            ) : (
+              confirmText
+            )}
           </button>
         </div>
       </div>
@@ -874,7 +908,7 @@ const ResumePasswordModal = ({
               {mode === 'preview'
                 ? 'For your security, please enter your account password before previewing your CV.'
                 : mode === 'credential-export'
-                  ? `For your security, please enter your account password before exporting your ${resourceTitle}.`
+                  ? `For your security, please enter your account password before securely previewing your ${resourceTitle}.`
                     : 'For your security, please enter your password to download your CV/Resume as PDF.'}
             </div>
           </div>
@@ -936,10 +970,6 @@ const ResumePasswordModal = ({
             >
               {verifying ? (
                 <Spinner size="small" />
-              ) : mode === 'credential-export' ? (
-                <FaDownload className="text-xs" />
-              ) : mode === 'preview' ? (
-                <FaEye className="text-xs" />
               ) : (
                 <FaEye className="text-xs" />
               )}
@@ -947,12 +977,12 @@ const ResumePasswordModal = ({
                 ? mode === 'download'
                   ? 'Preparing CV...'
                   : mode === 'credential-export'
-                    ? `Preparing ${resourceTitle}...`
+                    ? 'Preparing Preview...'
                     : 'Verifying...'
                 : mode === 'preview'
                   ? 'Continue Preview'
                   : mode === 'credential-export'
-                    ? `Export ${resourceTitle}`
+                    ? 'Preview'
                     : 'Preview'}
             </button>
           </div>
@@ -1557,13 +1587,20 @@ const CredentialItem = ({
     return `${apiBase}/auth/credential/preview/${encodeURIComponent(docType)}`;
   };
 
-  const handleExportFile = async () => {
+  const handleExportFile = async (verifiedPassword) => {
     if (!fileUrl) return;
 
     const token = localStorage.getItem('token');
-    const response = await axios.post(getCredentialPreviewUrl(), {}, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await axios.post(
+      getCredentialPreviewUrl(),
+      { password: verifiedPassword },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
     if (!response.data?.previewUrl) {
       throw new Error('Credential preview is unavailable.');
@@ -2455,6 +2492,7 @@ const WorkExperienceModal = ({
   onSave,
   onDelete,
   saving,
+  deleting = false,
 }) => {
   if (!open) return null;
 
@@ -2545,10 +2583,11 @@ const WorkExperienceModal = ({
             <button
               type="button"
               onClick={onDelete}
-              disabled={saving}
-              className="px-4 h-11 rounded-xl border border-red-200 text-red-600 font-semibold hover:bg-red-50 disabled:opacity-70"
+              disabled={saving || deleting}
+              className="inline-flex min-w-[108px] items-center justify-center gap-2 px-4 h-11 rounded-xl border border-red-200 text-red-600 font-semibold hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Remove
+              {deleting ? <Spinner size="small" /> : null}
+              {deleting ? 'Deleting...' : 'Remove'}
             </button>
           ) : (
             <div className="hidden sm:block" />
@@ -4124,6 +4163,10 @@ const MyProfile = () => {
   });
   const [savingSection, setSavingSection] = useState('');
   const [successPopup, setSuccessPopup] = useState({ open: false, title: '', message: '' });
+  const [profileToast, setProfileToast] = useState({ type: '', message: '' });
+  const profileToastTimerRef = useRef(null);
+  const [deletingItemKey, setDeletingItemKey] = useState('');
+  const deleteRequestRef = useRef(false);
   const [downloadPasswordModalOpen, setDownloadPasswordModalOpen] = useState(false);
   const [downloadPassword, setDownloadPassword] = useState('');
   const [downloadPasswordError, setDownloadPasswordError] = useState('');
@@ -4303,6 +4346,66 @@ const MyProfile = () => {
 
   const showSuccess = (title, message) => setSuccessPopup({ open: true, title, message });
   const closeSuccess = () => setSuccessPopup({ open: false, title: '', message: '' });
+
+  const showProfileToast = (type, message, ms = 1800) => {
+    setProfileToast({ type, message });
+
+    if (profileToastTimerRef.current) {
+      window.clearTimeout(profileToastTimerRef.current);
+    }
+
+    profileToastTimerRef.current = window.setTimeout(() => {
+      setProfileToast({ type: '', message: '' });
+    }, ms);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (profileToastTimerRef.current) {
+        window.clearTimeout(profileToastTimerRef.current);
+      }
+    };
+  }, []);
+
+  const beginDeleteRequest = (key) => {
+    if (deleteRequestRef.current) return false;
+    deleteRequestRef.current = true;
+    setDeletingItemKey(key);
+    return true;
+  };
+
+  const finishDeleteRequest = () => {
+    deleteRequestRef.current = false;
+    setDeletingItemKey('');
+  };
+
+  const getProfileAddNotificationLabel = (sectionKey) => {
+    const labels = {
+      education: 'Education',
+      certifications: 'Certifications',
+      projects: 'Projects',
+      seminars: 'Seminars & Trainings',
+      awards: 'Awards & Achievements',
+      affiliations: 'Affiliations',
+      cocurricular: 'Co-curricular Activities',
+      references: 'References',
+    };
+    return labels[sectionKey] || MORE_PROFILE_SECTIONS[sectionKey]?.title || 'Resume Section';
+  };
+
+  const getProfileDeleteNotificationLabel = (sectionKey) => {
+    const labels = {
+      education: 'Education',
+      certifications: 'Certification',
+      projects: 'Project',
+      seminars: 'Seminar & Training',
+      awards: 'Award & Achievement',
+      affiliations: 'Affiliation',
+      cocurricular: 'Co-curricular Activity',
+      references: 'Reference',
+    };
+    return labels[sectionKey] || 'Profile Entry';
+  };
 
   const normalizeStatus = (raw, hasUrl) => {
     const s = (raw || '').toString().trim().toLowerCase();
@@ -4585,8 +4688,6 @@ const MyProfile = () => {
       credentials: uploadedCredentialCount >= credentialTotal
         ? ''
         : `${uploadedCredentialCount}/${credentialTotal} Credentials Completed`,
-      certifications: hasMeaningfulListContent(formData.certifications) ? '' : 'Highlight 1 of your Certifications',
-      projects: hasMeaningfulListContent(formData.projects) ? '' : 'Showcase 1 of your Projects',
       additional: hasAdditionalHighlight ? '' : 'Add 1 More Highlights',
     };
   }, [formData, workExperiences, educationEntries, todoProgress, basicInformationMissingFields]);
@@ -4900,7 +5001,7 @@ const MyProfile = () => {
           const executeCredentialAction = pendingCredentialActionRef.current;
 
           if (executeCredentialAction) {
-            await executeCredentialAction();
+            await executeCredentialAction(downloadPassword);
           }
 
           setDownloadPasswordModalOpen(false);
@@ -5260,8 +5361,10 @@ const MyProfile = () => {
     }
   };
 
-  const saveSection = async (sectionKey, draftOverride = null) => {
+  const saveSection = async (sectionKey, draftOverride = null, notificationOptions = {}) => {
     const activeDrafts = draftOverride || drafts;
+    const successToastMessage = String(notificationOptions?.successToastMessage || '').trim();
+    const errorToastOnFailure = Boolean(notificationOptions?.errorToastOnFailure);
 
     // Every modal validates only its own fields. Clear any message left by a
     // different profile modal before running the current section validation.
@@ -5549,14 +5652,22 @@ const MyProfile = () => {
           localStorage.setItem('user', JSON.stringify(response.data.user));
         }
 
-        showSuccess('Saved Successfully', 'Your profile section has been updated.');
+        if (successToastMessage) {
+          showProfileToast('success', successToastMessage);
+        } else {
+          showSuccess('Saved Successfully', 'Your profile section has been updated.');
+        }
         return true;
       }
 
       return false;
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || 'Failed to save changes.');
+      const message = err.response?.data?.message || 'Failed to save changes.';
+      setError(message);
+      if (errorToastOnFailure) {
+        showProfileToast('error', message);
+      }
       return false;
     } finally {
       setSavingSection('');
@@ -5746,7 +5857,16 @@ const MyProfile = () => {
           educationEntries: nextItems,
         };
 
-        const saved = await saveSection('education', mergedDrafts);
+        const saved = await saveSection(
+          'education',
+          mergedDrafts,
+          isEditMode
+            ? {}
+            : {
+                successToastMessage: 'Education Added Successfully!',
+                errorToastOnFailure: true,
+              }
+        );
         if (!saved) return;
       } else {
         const selectedEntry = Array.isArray(drafts[editModalSection])
@@ -5787,7 +5907,16 @@ const MyProfile = () => {
           [editModalSection]: nextItems,
         };
 
-        const saved = await saveSection(editModalSection, mergedDrafts);
+        const saved = await saveSection(
+          editModalSection,
+          mergedDrafts,
+          isEditMode
+            ? {}
+            : {
+                successToastMessage: `${getProfileAddNotificationLabel(editModalSection)} Added Successfully!`,
+                errorToastOnFailure: true,
+              }
+        );
         if (!saved) return;
       }
 
@@ -5795,6 +5924,8 @@ const MyProfile = () => {
       setProfileEntryModalContext({ sectionKey: '', mode: 'edit', index: -1, originalItems: [] });
       return;
     }
+
+    let isAddingSkills = false;
 
     if (editModalSection === 'skills') {
       const nextSkillRows = normalizeSkillRows(
@@ -5819,9 +5950,58 @@ const MyProfile = () => {
         setError('No changes to save.');
         return;
       }
+
+      isAddingSkills = currentSkillRows.length === 0;
     }
 
-    const saved = await saveSection(editModalSection === 'skills' ? 'career' : editModalSection);
+    const isAddingObjective =
+      editModalSection === 'about' && !isMeaningfulRichTextValue(formData.aboutMe);
+
+    const personalInformationFields = [
+      formData.preferredWorkMode,
+      formData.employmentType,
+      formData.minimumSalary,
+      formData.maximumSalary,
+      formData.height,
+      formData.willingToRelocate,
+      formData.weight,
+      formData.howSoonCanYouStart,
+      formData.experience,
+      formData.nationality,
+      formData.preferredLanguage,
+      formData.gender,
+      formData.educationalAttainment,
+      formData.civilStatus,
+      formData.studyField,
+      formData.birthday,
+    ];
+
+    const isAddingPersonalInformation =
+      editModalSection === 'career' &&
+      !personalInformationFields.some((value) => String(value || '').trim());
+
+    const saveNotificationOptions = isAddingSkills
+      ? {
+          successToastMessage: 'Skills Added Successfully!',
+          errorToastOnFailure: true,
+        }
+      : isAddingObjective
+        ? {
+            successToastMessage: 'Objective Added Successfully!',
+            errorToastOnFailure: true,
+          }
+        : isAddingPersonalInformation
+          ? {
+              successToastMessage: 'Personal Information Added Successfully!',
+              errorToastOnFailure: true,
+            }
+          : {};
+
+    const saved = await saveSection(
+      editModalSection === 'skills' ? 'career' : editModalSection,
+      null,
+      saveNotificationOptions
+    );
     if (saved) {
       setEditModalSection('');
     }
@@ -5837,6 +6017,9 @@ const MyProfile = () => {
       message: 'You will not be able to recover it.',
       confirmText: 'Delete',
       onConfirm: async () => {
+        const deleteKey = `education:${index}`;
+        if (!beginDeleteRequest(deleteKey)) return;
+
         try {
           setSavingSection('education');
           setError('');
@@ -5874,13 +6057,16 @@ const MyProfile = () => {
               localStorage.setItem('user', JSON.stringify(response.data.user));
             }
 
-            showSuccess('Deleted Successfully', 'The education entry was removed.');
+            showProfileToast('success', 'Education Deleted Successfully!');
           }
         } catch (err) {
           console.error(err);
-          setError(err.response?.data?.message || 'Failed to delete the education entry.');
+          const message = err.response?.data?.message || 'Failed to delete the education entry.';
+          setError(message);
+          showProfileToast('error', message);
         } finally {
           setSavingSection('');
+          finishDeleteRequest();
           closeConfirmModal();
         }
       },
@@ -5897,6 +6083,9 @@ const MyProfile = () => {
       message: 'You will not be able to recover it.',
       confirmText: 'Delete',
       onConfirm: async () => {
+        const deleteKey = `${sectionKey}:${index}`;
+        if (!beginDeleteRequest(deleteKey)) return;
+
         try {
           setSavingSection(sectionKey);
           setError('');
@@ -5929,13 +6118,19 @@ const MyProfile = () => {
               localStorage.setItem('user', JSON.stringify(response.data.user));
             }
 
-            showSuccess('Deleted Successfully', 'The profile entry was removed.');
+            showProfileToast(
+              'success',
+              `${getProfileDeleteNotificationLabel(sectionKey)} Deleted Successfully!`
+            );
           }
         } catch (err) {
           console.error(err);
-          setError(err.response?.data?.message || 'Failed to delete the profile entry.');
+          const message = err.response?.data?.message || 'Failed to delete the profile entry.';
+          setError(message);
+          showProfileToast('error', message);
         } finally {
           setSavingSection('');
+          finishDeleteRequest();
           closeConfirmModal();
         }
       },
@@ -6337,28 +6532,48 @@ const MyProfile = () => {
       };
 
       if (workExperienceModalMode === 'edit' && editingWorkExperienceId) {
-        await axios.put(`${API_BASE}/auth/work-experiences/${editingWorkExperienceId}`, payload, {
+        const response = await axios.put(`${API_BASE}/auth/work-experiences/${editingWorkExperienceId}`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
+
+        if (Array.isArray(response.data?.workExperiences)) {
+          setWorkExperiences(response.data.workExperiences);
+        } else {
+          await fetchWorkExperiences();
+        }
+
         showSuccess('Updated Successfully', 'Work experience has been updated.');
       } else {
-        await axios.post(`${API_BASE}/auth/work-experiences`, payload, {
+        const response = await axios.post(`${API_BASE}/auth/work-experiences`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
-        showSuccess('Added Successfully', 'Work experience has been added.');
+
+        if (Array.isArray(response.data?.workExperiences)) {
+          setWorkExperiences(response.data.workExperiences);
+        } else {
+          await fetchWorkExperiences();
+        }
+
+        showProfileToast('success', 'Work Experience Added Successfully!');
       }
 
-      closeWorkExperienceModal();
-      fetchWorkExperiences();
+      setWorkExperienceModalOpen(false);
+      setEditingWorkExperienceId('');
+      setWorkExperienceModalMode('add');
+      setWorkExperienceForm(createEmptyWorkExperienceForm());
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || 'Failed to save work experience.');
+      const message = err.response?.data?.message || 'Failed to save work experience.';
+      setError(message);
+      if (workExperienceModalMode === 'add') {
+        showProfileToast('error', message);
+      }
     } finally {
       setSavingWorkExperience(false);
     }
@@ -6373,38 +6588,39 @@ const MyProfile = () => {
       message: 'You will not be able to recover it.',
       confirmText: 'Delete',
       onConfirm: async () => {
+        const deleteKey = `work:${workId}`;
+        if (!beginDeleteRequest(deleteKey)) return;
+
         try {
+          setError('');
           const token = localStorage.getItem('token');
-          await axios.delete(`${API_BASE}/auth/work-experiences/${workId}`, {
+          const response = await axios.delete(`${API_BASE}/auth/work-experiences/${workId}`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           });
 
-          setConfirmState({
-            open: false,
-            title: '',
-            message: '',
-            confirmText: 'Yes',
-            cancelText: 'Cancel',
-            tone: 'primary',
-            onConfirmAction: null,
-          });
+          if (Array.isArray(response.data?.workExperiences)) {
+            setWorkExperiences(response.data.workExperiences);
+          } else {
+            setWorkExperiences((current) =>
+              current.filter((entry) => String(entry?._id || entry?.id || '') !== String(workId))
+            );
+          }
 
-          showSuccess('Deleted Successfully', 'Work experience has been removed.');
-          fetchWorkExperiences();
+          setWorkExperienceModalOpen(false);
+          setEditingWorkExperienceId('');
+          setWorkExperienceModalMode('add');
+          setWorkExperienceForm(createEmptyWorkExperienceForm());
+          showProfileToast('success', 'Work Experience Deleted Successfully!');
         } catch (err) {
           console.error(err);
-          setError(err.response?.data?.message || 'Failed to delete work experience.');
-          setConfirmState({
-            open: false,
-            title: '',
-            message: '',
-            confirmText: 'Yes',
-            cancelText: 'Cancel',
-            tone: 'primary',
-            onConfirmAction: null,
-          });
+          const message = err.response?.data?.message || 'Failed to delete work experience.';
+          setError(message);
+          showProfileToast('error', message);
+        } finally {
+          finishDeleteRequest();
+          closeConfirmModal();
         }
       },
     });
@@ -6484,6 +6700,9 @@ const MyProfile = () => {
       message: 'You will not be able to recover it.',
       confirmText: 'Delete',
       onConfirm: async () => {
+        const deleteKey = `section:${sectionKey}`;
+        if (!beginDeleteRequest(deleteKey)) return;
+
         try {
           setSavingSection(sectionKey);
           setError('');
@@ -6517,13 +6736,16 @@ const MyProfile = () => {
               localStorage.setItem('user', JSON.stringify(response.data.user));
             }
 
-            showSuccess('Deleted Successfully', `${sectionTitle} has been removed.`);
+            showProfileToast('success', `${sectionTitle} Deleted Successfully!`);
           }
         } catch (err) {
           console.error(err);
-          setError(err.response?.data?.message || `Failed to delete ${sectionTitle}.`);
+          const message = err.response?.data?.message || `Failed to delete ${sectionTitle}.`;
+          setError(message);
+          showProfileToast('error', message);
         } finally {
           setSavingSection('');
+          finishDeleteRequest();
           setConfirmState({
             open: false,
             title: '',
@@ -6726,11 +6948,16 @@ const MyProfile = () => {
                       <button
                         type="button"
                         onClick={() => handleDeleteWorkExperience(item)}
-                        className="inline-flex h-6 w-6 items-center justify-center text-red-500 transition hover:text-red-600"
+                        disabled={Boolean(deletingItemKey)}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-500 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
                         aria-label={`Remove ${item.companyName || 'work experience'}`}
                         title="Remove"
                       >
-                        <FaTrash className="text-[11px]" />
+                        {deletingItemKey === `work:${item?._id || item?.id}` ? (
+                          <Spinner size="small" />
+                        ) : (
+                          <FaTrash className="text-[12px]" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -6807,11 +7034,16 @@ const MyProfile = () => {
                   <button
                     type="button"
                     onClick={() => handleDeleteEducationEntryFromProfile(index)}
-                    className="inline-flex h-6 w-6 items-center justify-center text-red-500 transition hover:text-red-600"
+                    disabled={Boolean(deletingItemKey)}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-500 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label="Remove education entry"
                     title="Remove"
                   >
-                    <FaTrash className="text-[11px]" />
+                    {deletingItemKey === `education:${index}` ? (
+                      <Spinner size="small" />
+                    ) : (
+                      <FaTrash className="text-[12px]" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -6893,11 +7125,16 @@ const MyProfile = () => {
                     <button
                       type="button"
                       onClick={() => handleDeleteProfileEntry(sectionKey, index)}
-                      className="inline-flex h-6 w-6 items-center justify-center text-red-500 transition hover:text-red-600"
+                      disabled={Boolean(deletingItemKey)}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-500 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
                       aria-label={`Remove ${getProfileEntryTitle(sectionKey, item)}`}
                       title="Remove"
                     >
-                      <FaTrash className="text-[11px]" />
+                      {deletingItemKey === `${sectionKey}:${index}` ? (
+                        <Spinner size="small" />
+                      ) : (
+                        <FaTrash className="text-[12px]" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -6935,11 +7172,16 @@ const MyProfile = () => {
                       <button
                         type="button"
                         onClick={() => handleDeleteProfileEntry(sectionKey, index)}
-                        className="inline-flex h-6 w-6 items-center justify-center text-red-500 transition hover:text-red-600"
+                        disabled={Boolean(deletingItemKey)}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-500 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
                         aria-label={`Remove ${getProfileEntryTitle(sectionKey, item)}`}
                         title="Remove"
                       >
-                        <FaTrash className="text-[11px]" />
+                        {deletingItemKey === `${sectionKey}:${index}` ? (
+                          <Spinner size="small" />
+                        ) : (
+                          <FaTrash className="text-[12px]" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -6971,6 +7213,20 @@ const MyProfile = () => {
 
   return (
     <JobSeekerLayout>
+      {profileToast.message ? (
+        <div className="fixed left-1/2 top-24 z-[10040] w-[min(94vw,680px)] -translate-x-1/2 px-4">
+          <ProfileToast
+            toast={profileToast}
+            onClose={() => {
+              if (profileToastTimerRef.current) {
+                window.clearTimeout(profileToastTimerRef.current);
+              }
+              setProfileToast({ type: '', message: '' });
+            }}
+          />
+        </div>
+      ) : null}
+
       <SuccessPopup open={successPopup.open} title={successPopup.title} message={successPopup.message} onClose={closeSuccess} />
 
       <ConfirmModal
@@ -6980,6 +7236,7 @@ const MyProfile = () => {
         confirmText={confirmState.confirmText}
         cancelText={confirmState.cancelText}
         tone={confirmState.tone}
+        loading={Boolean(deletingItemKey)}
         onCancel={closeConfirmModal}
         onConfirm={() => confirmState.onConfirmAction?.()}
       />
@@ -7013,6 +7270,7 @@ const MyProfile = () => {
           }
         }}
         saving={savingWorkExperience}
+        deleting={Boolean(deletingItemKey && deletingItemKey.startsWith('work:'))}
       />
 
       <BasicInfoModal
@@ -7316,7 +7574,7 @@ const MyProfile = () => {
                         <div
                           key={section.key}
                           id={section.key === 'personal' ? 'basic-information-section' : undefined}
-                          className="w-full bg-white"
+                          className="mt-2 w-full bg-white first:mt-0"
                         >
                           <div className="w-full min-h-[44px] px-1 border-b border-gray-200 flex items-center justify-between gap-4 text-left bg-white">
                             <button
@@ -7407,11 +7665,11 @@ const MyProfile = () => {
                                       <button
                                         type="button"
                                         onClick={() => handleDeleteMoreSection(section.key)}
-                                        disabled={savingSection === section.key}
-                                        className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-red-50 disabled:opacity-60"
+                                        disabled={savingSection === section.key || Boolean(deletingItemKey)}
+                                        className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
                                         role="menuitem"
                                       >
-                                        Delete Section
+                                        {deletingItemKey === `section:${section.key}` ? 'Deleting...' : 'Delete Section'}
                                       </button>
                                     </div>
                                   ) : null}
