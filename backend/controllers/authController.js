@@ -3551,7 +3551,7 @@ const buildResumeHtmlForPdf = (user = {}) => {
           .resume-contact span + span::before { content: ' | '; }
           .resume-education-summary { margin-top: 3px; color: #222222; font-size: 7.2px; line-height: 1.25; font-style: italic; }
           .resume-initials, .resume-photo { position: absolute; top: 0; right: 3px; width: 61px; height: 61px; display: flex; align-items: center; justify-content: center; background: #343434; color: #ffffff; font-family: Arial, Helvetica, sans-serif; font-size: 27px; font-weight: 500; letter-spacing: 0.8px; overflow: hidden; object-fit: cover; }
-          .resume-section { margin-top: 10px; break-inside: auto; }
+          .resume-section { margin-top: 12px; break-inside: auto; }
           .resume-section h2 { margin: 0 0 3px; padding-bottom: 2px; border-bottom: 1px solid #777777; font-size: 8.8px; line-height: 1; font-weight: 700; letter-spacing: 0.25px; text-transform: uppercase; break-after: avoid-page; page-break-after: avoid; }
           .resume-section h2 + * { break-before: avoid-page; page-break-before: avoid; }
           .objective-text { margin: 0; text-align: justify; }

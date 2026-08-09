@@ -874,7 +874,7 @@ const ResumePasswordModal = ({
               {mode === 'preview'
                 ? 'For your security, please enter your account password before previewing your CV.'
                 : mode === 'credential-export'
-                  ? `For your security, please enter your account password before exporting your ${resourceTitle}.`
+                  ? `For your security, please enter your account password before securely previewing your ${resourceTitle}.`
                     : 'For your security, please enter your password to download your CV/Resume as PDF.'}
             </div>
           </div>
@@ -936,10 +936,6 @@ const ResumePasswordModal = ({
             >
               {verifying ? (
                 <Spinner size="small" />
-              ) : mode === 'credential-export' ? (
-                <FaDownload className="text-xs" />
-              ) : mode === 'preview' ? (
-                <FaEye className="text-xs" />
               ) : (
                 <FaEye className="text-xs" />
               )}
@@ -947,12 +943,12 @@ const ResumePasswordModal = ({
                 ? mode === 'download'
                   ? 'Preparing CV...'
                   : mode === 'credential-export'
-                    ? `Preparing ${resourceTitle}...`
+                    ? 'Preparing Preview...'
                     : 'Verifying...'
                 : mode === 'preview'
                   ? 'Continue Preview'
                   : mode === 'credential-export'
-                    ? `Export ${resourceTitle}`
+                    ? 'Preview'
                     : 'Preview'}
             </button>
           </div>
@@ -1557,13 +1553,20 @@ const CredentialItem = ({
     return `${apiBase}/auth/credential/preview/${encodeURIComponent(docType)}`;
   };
 
-  const handleExportFile = async () => {
+  const handleExportFile = async (verifiedPassword) => {
     if (!fileUrl) return;
 
     const token = localStorage.getItem('token');
-    const response = await axios.post(getCredentialPreviewUrl(), {}, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await axios.post(
+      getCredentialPreviewUrl(),
+      { password: verifiedPassword },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
     if (!response.data?.previewUrl) {
       throw new Error('Credential preview is unavailable.');
@@ -4585,8 +4588,6 @@ const MyProfile = () => {
       credentials: uploadedCredentialCount >= credentialTotal
         ? ''
         : `${uploadedCredentialCount}/${credentialTotal} Credentials Completed`,
-      certifications: hasMeaningfulListContent(formData.certifications) ? '' : 'Highlight 1 of your Certifications',
-      projects: hasMeaningfulListContent(formData.projects) ? '' : 'Showcase 1 of your Projects',
       additional: hasAdditionalHighlight ? '' : 'Add 1 More Highlights',
     };
   }, [formData, workExperiences, educationEntries, todoProgress, basicInformationMissingFields]);
@@ -4900,7 +4901,7 @@ const MyProfile = () => {
           const executeCredentialAction = pendingCredentialActionRef.current;
 
           if (executeCredentialAction) {
-            await executeCredentialAction();
+            await executeCredentialAction(downloadPassword);
           }
 
           setDownloadPasswordModalOpen(false);
@@ -7316,7 +7317,7 @@ const MyProfile = () => {
                         <div
                           key={section.key}
                           id={section.key === 'personal' ? 'basic-information-section' : undefined}
-                          className="w-full bg-white"
+                          className="mt-2 w-full bg-white first:mt-0"
                         >
                           <div className="w-full min-h-[44px] px-1 border-b border-gray-200 flex items-center justify-between gap-4 text-left bg-white">
                             <button
