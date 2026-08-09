@@ -27,6 +27,12 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
         </svg>
       );
+    case 'trash':
+      return (
+        <svg {...common}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.9 12.1A2 2 0 0116.1 21H7.9a2 2 0 01-2-1.9L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -452,6 +458,12 @@ const HiredApplicants = () => {
   const API_BASE = (process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
 
   const [applications, setApplications] = useState([]);
+  const [statusFilter, setStatusFilter] = useState(() => {
+    const requested = new URLSearchParams(window.location.search).get('status');
+    return ['all', 'hired', 'declined'].includes(requested) ? requested : 'hired';
+  });
+  const [archivedDeclinedCount, setArchivedDeclinedCount] = useState(0);
+  const [archivingId, setArchivingId] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [jobsLoading, setJobsLoading] = useState(true);
@@ -522,6 +534,11 @@ const HiredApplicants = () => {
         ''
     ).trim() || '—', []);
 
+  const getDeclineStageLabel = useCallback((value) => {
+    const normalized = String(value || '').replace(/([a-z])([A-Z])/g, '$1 $2').trim();
+    return normalized ? normalized.replace(/\b\w/g, (letter) => letter.toUpperCase()) : 'Declined';
+  }, []);
+
   const Avatar = useCallback(
     ({ img, name, size = 48, altKey }) => {
       const initial = (name?.trim()?.[0] || 'U').toUpperCase();
@@ -581,25 +598,34 @@ const HiredApplicants = () => {
       const params = {};
       if (selectedJob !== 'all') params.jobId = selectedJob;
 
-      const res = await axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/applications/employer/hired', {
-        headers: getAuthHeaders(),
-        params,
-      });
+      const request = (status) => axios.get(
+        `https://phinmaau-job-portal-atlas.onrender.com/api/applications/employer/${status}`,
+        { headers: getAuthHeaders(), params }
+      );
+      const responses = statusFilter === 'all'
+        ? await Promise.all([request('hired'), request('declined')])
+        : [await request(statusFilter)];
 
-      if (res.data?.success) {
-        setApplications(res.data.applications || []);
-      } else {
-        setApplications([]);
-      }
+      const combined = responses.flatMap((response) => {
+        const recordStatus = response.config.url.endsWith('/declined') ? 'declined' : 'hired';
+        if (recordStatus === 'declined') {
+          setArchivedDeclinedCount(response.data?.archivedCount || 0);
+        }
+        return (response.data?.applications || []).map((application) => ({
+          ...application,
+          _recordStatus: recordStatus,
+        }));
+      });
+      setApplications(combined);
     } catch (err) {
       console.error(err);
       if (err.response?.status === 401) return handleAuthError();
-      setError('Failed to load hired applicants.');
+      setError('Failed to load hired and declined applicants.');
       setApplications([]);
     } finally {
       setLoading(false);
     }
-  }, [handleAuthError, selectedJob]);
+  }, [handleAuthError, selectedJob, statusFilter]);
 
   useEffect(() => {
     fetchJobs();
@@ -713,10 +739,19 @@ const HiredApplicants = () => {
       return candidates.length ? Math.max(...candidates) : 0;
     };
 
+    const getDeclinedTime = (app) => {
+      const candidates = [app?.reviewedAt, app?.updatedAt, app?.appliedAt]
+        .map((value) => new Date(value || 0).getTime())
+        .filter(Number.isFinite);
+      return candidates.length ? Math.max(...candidates) : 0;
+    };
+
     const sorted = [...filteredByDate].sort((a, b) => {
       if (sortBy === 'oldest_first') return getAppliedTime(a) - getAppliedTime(b);
       if (sortBy === 'recently_hired') return getHiredTime(b) - getHiredTime(a);
       if (sortBy === 'least_recently_hired') return getHiredTime(a) - getHiredTime(b);
+      if (sortBy === 'recently_declined') return getDeclinedTime(b) - getDeclinedTime(a);
+      if (sortBy === 'least_recently_declined') return getDeclinedTime(a) - getDeclinedTime(b);
 
       return getAppliedTime(b) - getAppliedTime(a);
     });
@@ -745,11 +780,12 @@ const HiredApplicants = () => {
     setCustomDateFrom('');
     setCustomDateTo('');
     setSortBy('recent');
+    setStatusFilter('hired');
   };
 
   const jobOptions = useMemo(() => {
     return [
-      { value: 'all', label: 'All Jobs' },
+      { value: 'all', label: 'All Job Title' },
       ...jobs.map((j) => ({
         value: j._id,
         label: j.title || '(Untitled)',
@@ -761,12 +797,43 @@ const HiredApplicants = () => {
   const sortOptions = [
     { value: 'recent', label: 'Newest First' },
     { value: 'oldest_first', label: 'Oldest First' },
-    { value: 'recently_hired', label: 'Recently Hired' },
-    { value: 'least_recently_hired', label: 'Least Recently Hired' },
+    ...(statusFilter !== 'declined' ? [
+      { value: 'recently_hired', label: 'Recently Hired' },
+      { value: 'least_recently_hired', label: 'Least Recently Hired' },
+    ] : []),
+    ...(statusFilter !== 'hired' ? [
+      { value: 'recently_declined', label: 'Recently Declined' },
+      { value: 'least_recently_declined', label: 'Least Recently Declined' },
+    ] : []),
   ];
 
   const hasActiveFilters =
-    query.trim() || selectedJob !== 'all' || dateFilter !== 'all' || sortBy !== 'recent';
+    query.trim() || selectedJob !== 'all' || dateFilter !== 'all' || sortBy !== 'recent' || statusFilter !== 'hired';
+
+  const handleStatusFilterChange = (value) => {
+    setStatusFilter(value);
+    setSortBy(value === 'declined' ? 'recently_declined' : 'recent');
+    setCurrentPage(1);
+    navigate(`/employer/hired${value === 'hired' ? '' : `?status=${value}`}`, { replace: true });
+  };
+
+  const handleArchiveDeclined = async (applicationId) => {
+    if (archivingId) return;
+    try {
+      setArchivingId(applicationId);
+      await axios.patch(
+        `https://phinmaau-job-portal-atlas.onrender.com/api/applications/${applicationId}/archive-declined`,
+        {},
+        { headers: getAuthHeaders() }
+      );
+      setApplications((previous) => previous.filter((item) => item._id !== applicationId));
+      setArchivedDeclinedCount((count) => count + 1);
+    } catch (archiveError) {
+      setError(archiveError?.response?.data?.message || 'Failed to archive declined applicant.');
+    } finally {
+      setArchivingId(null);
+    }
+  };
 
   const DropdownFilter = ({ id, label, value, onChange, options, disabled }) => {
     const isOpen = openDropdown === id;
@@ -776,7 +843,7 @@ const HiredApplicants = () => {
         <button
           type="button"
           onClick={() => setOpenDropdown(isOpen ? null : id)}
-          className="inline-flex h-[54px] w-full min-w-[105px] items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
+          className="inline-flex h-[54px] w-full min-w-[105px] items-center justify-between gap-2 whitespace-nowrap rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
           disabled={disabled}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
@@ -822,9 +889,24 @@ const selectBase =
   return (
     <EmployerLayout>
       <div className="mx-auto max-w-7xl px-1 py-8">
-        <div className="mb-6">
-          <h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">Hired Applicants</h1>
-          <p className="mt-1 text-sm text-gray-600">Applicants successfully hired and officially joined company</p>
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">
+              {statusFilter === 'declined' ? 'Declined Applicants' : statusFilter === 'all' ? 'Hired & Declined Applicants' : 'Hired Applicants'}
+            </h1>
+            <p className="mt-1 text-sm text-gray-600">
+              {statusFilter === 'declined' ? 'Applicants reviewed but not selected for a position' : 'Applicants successfully hired and officially joined company'}
+            </p>
+          </div>
+          {statusFilter === 'declined' && (
+            <button
+              type="button"
+              onClick={() => navigate('/employer/declined/archived')}
+              className="inline-flex h-11 items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-800 hover:bg-gray-50"
+            >
+              Archived <span className="rounded-full bg-gray-100 px-2 py-0.5">{archivedDeclinedCount}</span>
+            </button>
+          )}
         </div>
 
         {error && (
@@ -901,6 +983,21 @@ const selectBase =
               </div>
 
               <div className="lg:col-span-2">
+                <label className="sr-only" htmlFor="statusFilter">Filter by status</label>
+                <select
+                  id="statusFilter"
+                  value={statusFilter}
+                  onChange={(event) => handleStatusFilterChange(event.target.value)}
+                  className={selectBase}
+                  disabled={loading}
+                >
+                  <option value="all">All Status</option>
+                  <option value="hired">Hired</option>
+                  <option value="declined">Declined</option>
+                </select>
+              </div>
+
+              <div className="lg:col-span-2">
                 <EmployerDateFilterDropdown
                   value={dateFilter}
                   startDate={customDateFrom}
@@ -954,11 +1051,11 @@ const selectBase =
           {loading ? (
             <div className="py-14 text-center" role="status" aria-live="polite">
               <div className="mx-auto inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-[#2e66a6]" />
-              <p className="mt-4 text-sm text-gray-600">Loading hired applicants…</p>
+              <p className="mt-4 text-sm text-gray-600">Loading applicants…</p>
             </div>
           ) : filteredApplications.length === 0 ? (
             <div className="py-14 text-center">
-              <h3 className="text-lg font-semibold text-gray-900">No hired applicants found</h3>
+              <h3 className="text-lg font-semibold text-gray-900">No {statusFilter === 'declined' ? 'declined' : statusFilter === 'all' ? 'hired or declined' : 'hired'} applicants found</h3>
               <p className="mt-2 text-sm text-gray-600">Try changing filters or search.</p>
             </div>
           ) : (
@@ -980,6 +1077,12 @@ const selectBase =
                       <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
                         Job Applied
                       </th>
+                      {statusFilter === 'all' && (
+                        <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">Status</th>
+                      )}
+                      {statusFilter !== 'hired' && (
+                        <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">Decline Stage</th>
+                      )}
                       <th className="px-6 py-5 text-center text-sm font-semibold uppercase tracking-wide text-gray-700">
                         Actions
                       </th>
@@ -1038,15 +1141,40 @@ const selectBase =
                             <div className="text-[15px] font-semibold text-gray-900">{jobTitle}</div>
                           </td>
 
+                          {statusFilter === 'all' && (
+                            <td className="px-6 py-4">
+                              <span className={cn('rounded-full px-3 py-1 text-xs font-semibold', app._recordStatus === 'declined' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700')}>
+                                {app._recordStatus === 'declined' ? 'Declined' : 'Hired'}
+                              </span>
+                            </td>
+                          )}
+
+                          {statusFilter !== 'hired' && (
+                            <td className="px-6 py-4 text-sm text-gray-700">
+                              {app._recordStatus === 'declined' ? getDeclineStageLabel(app.declinedFrom) : '—'}
+                            </td>
+                          )}
+
                           <td className="px-6 py-4 text-center">
                             <Link
                               to={`/employer/application/${app._id}?from=hired`}
                               className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                               aria-label={`View details of ${name}`}
                             >
-                              <Icon name="eye" className="h-4 w-4" />
                               <span>View Application</span>
                             </Link>
+                            {app._recordStatus === 'declined' && (
+                              <button
+                                type="button"
+                                onClick={() => handleArchiveDeclined(app._id)}
+                                disabled={archivingId === app._id}
+                                className="ml-2 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50"
+                                aria-label={`Archive declined application of ${name}`}
+                                title="Archive declined application"
+                              >
+                                <Icon name="trash" className="h-4 w-4" />
+                              </button>
+                            )}
                           </td>
                         </tr>
                       );
@@ -1094,6 +1222,13 @@ const selectBase =
                           <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Job Applied</p>
                           <p className="text-sm font-semibold text-gray-900">{jobTitle}</p>
                         </div>
+
+                        {app._recordStatus === 'declined' && (
+                          <div>
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Decline Stage</p>
+                            <p className="text-sm text-gray-800">{getDeclineStageLabel(app.declinedFrom)}</p>
+                          </div>
+                        )}
                       </div>
 
                       <div className="mt-3">
@@ -1101,9 +1236,18 @@ const selectBase =
                           to={`/employer/application/${app._id}?from=hired`}
                           className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                         >
-                          <Icon name="eye" className="h-5 w-5" />
-                          View details
+                          View Application
                         </Link>
+                        {app._recordStatus === 'declined' && (
+                          <button
+                            type="button"
+                            onClick={() => handleArchiveDeclined(app._id)}
+                            disabled={archivingId === app._id}
+                            className="mt-2 inline-flex w-full items-center justify-center rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
+                          >
+                            Archive
+                          </button>
+                        )}
                       </div>
                     </div>
                   );

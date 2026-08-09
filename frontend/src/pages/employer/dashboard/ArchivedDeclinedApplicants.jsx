@@ -40,13 +40,10 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
       );
     case 'restore':
       return (
-        <img
-          src="/images/restorebutton.png"
-          alt=""
-          aria-hidden="true"
-          className={cn(className, 'object-contain')}
-          {...props}
-        />
+        <svg {...common}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M3.75 9.75h4.5v-4.5" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M5.3 7.2A8.25 8.25 0 112.9 13" />
+        </svg>
       );
     default:
       return null;
@@ -1014,7 +1011,7 @@ const ArchivedDeclinedApplicants = () => {
       <div className="inline-flex items-center rounded-2xl border border-gray-200 bg-white p-1 shadow-sm">
         <button
           type="button"
-          onClick={() => navigate('/employer/declined')}
+          onClick={() => navigate('/employer/hired?status=declined')}
           className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
         >
           <span>Declined</span>

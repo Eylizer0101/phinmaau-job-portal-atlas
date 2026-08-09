@@ -1009,7 +1009,10 @@ const HiringStageModal = ({
     }
     setLocalError('');
     const added = await onAddCustom(value);
-    if (added) setCustomStage('');
+    if (added) {
+      const applied = await onSelect(value);
+      if (applied) setCustomStage('');
+    }
   };
 
   return (
@@ -1017,7 +1020,7 @@ const HiringStageModal = ({
       <div className="w-full max-w-[520px] overflow-hidden rounded-2xl bg-white shadow-2xl">
         <div className="flex items-start justify-between px-6 pb-3 pt-5">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Update Hiring Stage</h2>
+            <h2 className="text-xl font-bold text-gray-900">Set Hiring Stage</h2>
             <p className="mt-1 text-sm text-gray-500">
               {buildApplicantName(application.jobseeker)} — {application.job?.title || 'Job'} @ {application.job?.companyName || 'Company'}
             </p>
@@ -1091,7 +1094,7 @@ const HiringStageModal = ({
 
           <div className="mt-4">
             <label htmlFor="customHiringStage" className="text-sm font-semibold text-gray-800">
-              Not listed? Add a custom stage
+              Type the stage this applicant is currently in
             </label>
             <div className="mt-2 flex gap-2">
               <input
@@ -1105,7 +1108,7 @@ const HiringStageModal = ({
                   }
                 }}
                 maxLength={80}
-                placeholder="e.g. Panel Interview"
+                placeholder="e.g. Initial Interview, Assessment, Job Offer"
                 className="h-11 min-w-0 flex-1 rounded-xl border border-gray-300 px-4 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
               />
               <button
@@ -1117,15 +1120,18 @@ const HiringStageModal = ({
                 <span className="text-lg leading-none">+</span>
                 Add
               </button>
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={busy}
+                className="h-11 rounded-xl border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Done
+              </button>
             </div>
             {localError ? <p className="mt-2 text-xs font-medium text-red-600">{localError}</p> : null}
           </div>
 
-          <div className="mt-4 flex justify-end">
-            <button type="button" onClick={onClose} disabled={busy} className="h-10 rounded-xl border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-              Done
-            </button>
-          </div>
         </div>
       </div>
     </div>
@@ -1281,48 +1287,13 @@ const ActionMenu = ({
       : null;
 
   return (
-    <>
-      <div
-        ref={wrapperRef}
-        className="relative flex items-center justify-center gap-2 whitespace-nowrap"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <Link
-          to={`/employer/application/${app._id}?from=for-interview`}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-          aria-label={`View application of ${name}`}
-        >
-          <Icon name="eye" className="h-4 w-4" />
-          View
-        </Link>
-
-        <button
-          ref={triggerRef}
-          type="button"
-          onClick={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-
-            if (isOpen) {
-              setOpenMenuId(null);
-              return;
-            }
-
-            setMenuPosition(null);
-            setTriggerVisible(false);
-            setOpenMenuId(app._id);
-          }}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-          aria-label={`More actions for ${name}`}
-          aria-expanded={isOpen}
-          aria-haspopup="menu"
-        >
-          <Icon name="dots-vertical" className="h-5 w-5" />
-        </button>
-      </div>
-
-      {actionDropdown}
-    </>
+    <Link
+      to={`/employer/application/${app._id}?from=for-interview`}
+      className="inline-flex h-10 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+      aria-label={`View application of ${name}`}
+    >
+      View Application
+    </Link>
   );
 };
 
@@ -1638,7 +1609,7 @@ const ForInterview = () => {
 
   const jobOptions = useMemo(() => {
     return [
-      { value: 'all', label: 'All Jobs' },
+      { value: 'all', label: 'All Job Title' },
       ...jobs.map((j) => ({
         value: j._id,
         label: j.title || 'Untitled Job',
@@ -1803,6 +1774,13 @@ const ForInterview = () => {
       const responseData = response.data || {};
       if (responseData.success === false) {
         throw new Error(responseData.message || 'Failed to update hiring stage.');
+      }
+      if (responseData.finalStatus === 'hired' || responseData.finalStatus === 'declined') {
+        setApplications((previous) => previous.filter((item) => item._id !== stageTarget._id));
+        setSuccess(responseData.message || `Applicant marked as ${responseData.finalStatus}.`);
+        setStageModalOpen(false);
+        setStageTarget(null);
+        return true;
       }
       applyHiringStageResponse(responseData);
       if (!responseData.application) {
@@ -2101,16 +2079,17 @@ const selectBase =
                 <div className="hidden md:block">
                   <table className="w-full table-fixed divide-y divide-gray-200">
                     <colgroup>
-                      <col className="w-[13%]" />
-                      <col className="w-[24%]" />
-                      <col className="w-[16%]" />
+                      <col className="w-[11%]" />
                       <col className="w-[18%]" />
+                      <col className="w-[18%]" />
+                      <col className="w-[13%]" />
                       <col className="w-[15%]" />
                       <col className="w-[14%]" />
+                      <col className="w-[11%]" />
                     </colgroup>
                     <thead className="bg-gray-50">
                       <tr>
-                        {['Applied Date', 'Applicant', 'Contact Number', 'Job Applied', 'Hiring Stage', 'Actions'].map((heading) => (
+                        {['Applied Date', 'Applicant', 'Email', 'Contact Number', 'Job Applied', 'Hiring Stage', 'Actions'].map((heading) => (
                           <th
                             key={heading}
                             className={cn(
@@ -2162,11 +2141,12 @@ const selectBase =
                                   <div className="truncate text-sm font-semibold text-gray-900" title={name}>
                                     {name}
                                   </div>
-                                  <div className="mt-0.5 truncate text-xs text-gray-500" title={email}>
-                                    {email}
-                                  </div>
                                 </div>
                               </div>
+                            </td>
+
+                            <td className="px-3 py-5 align-middle text-sm text-gray-600">
+                              <span className="block truncate" title={email}>{email}</span>
                             </td>
 
                             <td className="px-3 py-5 align-middle text-sm text-gray-600">

@@ -2210,6 +2210,90 @@ exports.updateApplicationHiringStage = async (req, res) => {
       });
     }
 
+    // Hired and Declined are canonical final stages. Exact matching is used
+    // after trimming/collapsing spaces and lowercasing, so partial phrases do
+    // not accidentally change an applicant's final status.
+    const normalizedFinalStage = nextStage.toLowerCase();
+    if (action !== 'reset' && ['hired', 'declined'].includes(normalizedFinalStage)) {
+      const oldStatus = application.status;
+      const finalStatus = normalizedFinalStage;
+
+      if (finalStatus === 'hired') {
+        const otherHiredApplication = await Application.findOne({
+          _id: { $ne: application._id },
+          jobseeker: application.jobseeker?._id || application.jobseeker,
+          job: { $ne: application.job?._id || application.job },
+          status: 'hired'
+        }).select('_id');
+
+        if (otherHiredApplication) {
+          return res.status(409).json({
+            success: false,
+            code: 'APPLICANT_ALREADY_EMPLOYED',
+            message: 'This applicant is already employed through another job application.'
+          });
+        }
+
+        const jobRecord = await Job.findById(application.job?._id || application.job);
+        const vacancyLimit = Number(jobRecord?.vacancies || 0);
+        if (Number.isFinite(vacancyLimit) && vacancyLimit > 0) {
+          const currentHiredCount = await Application.countDocuments({
+            job: jobRecord._id,
+            status: 'hired',
+            _id: { $ne: application._id }
+          });
+          if (currentHiredCount >= vacancyLimit || normalizeJobStatus(jobRecord.status) === 'filled') {
+            return res.status(400).json({ success: false, message: 'The vacancy is already full.' });
+          }
+        }
+      }
+
+      application.status = finalStatus;
+      application.hiringStage = finalStatus === 'hired' ? 'Hired' : 'Declined';
+      application.reviewedAt = new Date();
+      application.lastActiveStatus = finalStatus === 'hired' ? 'hired' : application.lastActiveStatus;
+      application.isDeclinedArchived = false;
+      application.declinedArchivedAt = null;
+      application.declinedFrom = finalStatus === 'declined' ? 'forInterview' : '';
+      application.declineReason = finalStatus === 'declined'
+        ? 'Position requirements not fully met'
+        : '';
+      application.declineComment = '';
+      application.activityHistory.push({
+        type: finalStatus,
+        title: finalStatus === 'hired' ? 'Hired' : 'Not Selected',
+        description: `Final hiring stage changed to ${application.hiringStage}.`,
+        fromStatus: oldStatus,
+        toStatus: finalStatus,
+        occurredAt: new Date(),
+        performedBy: req.user._id
+      });
+
+      await application.save();
+      await notificationController.createApplicationStatusNotification(
+        application,
+        oldStatus,
+        finalStatus
+      );
+      if (finalStatus === 'hired') {
+        await closeJobWhenVacancyIsFull(application.job?._id || application.job);
+      }
+
+      const finalApplication = await Application.findById(application._id)
+        .populate({ path: 'job', select: 'title companyName companyLogo' })
+        .populate({
+          path: 'jobseeker',
+          select: 'fullName firstName middleName lastName email profileImage phoneNumber contactNumber jobSeekerProfile.phoneNumber jobSeekerProfile.mobileNumber'
+        });
+
+      return res.status(200).json({
+        success: true,
+        message: `Applicant marked as ${application.hiringStage}.`,
+        finalStatus,
+        application: finalApplication
+      });
+    }
+
     await application.save();
 
     const [defaultHiringStages, customHiringStages] = await Promise.all([
