@@ -14,7 +14,7 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
     case 'eye':
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>;
     case 'check':
-      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>;
+      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M5 13l4 4L19 7" /></svg>;
     case 'x':
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>;
     case 'plus':
@@ -34,9 +34,9 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
     case 'publish':
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 16V4m0 0L7 9m5-5 5 5M5 20h14" /></svg>;
     case 'openJob':
-      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V8a4 4 0 018 0m-9 3h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg>;
+      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 11V8a4 4 0 018 0m-9 3h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg>;
     case 'closeJob':
-      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11V8a5 5 0 0110 0v3m-10 0h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg>;
+      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M7 11V8a5 5 0 0110 0v3m-10 0h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg>;
     case 'more':
       return <svg {...common}><circle cx="12" cy="5" r="1.5" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" /><circle cx="12" cy="19" r="1.5" fill="currentColor" stroke="none" /></svg>;
     case 'lock':
@@ -835,6 +835,28 @@ const ManageJobs = () => {
   const getLatestEditRequest = (jobId) =>
     editRequests.find((request) => String(request?.job?._id || request?.job) === String(jobId));
 
+  const getEditRequestBadge = (jobId) => {
+    const status = String(getLatestEditRequest(jobId)?.status || '').toLowerCase();
+
+    if (status === 'pending') {
+      return {
+        label: 'Edit Request Pending',
+        icon: 'shield',
+        className: 'border-amber-300 bg-amber-50 text-amber-800',
+      };
+    }
+
+    if (status === 'approved') {
+      return {
+        label: 'Edit Request Approved',
+        icon: 'check',
+        className: 'border-emerald-300 bg-emerald-50 text-emerald-700',
+      };
+    }
+
+    return null;
+  };
+
   const hasTemporaryEditAccess = (job) => {
     const unlockUntil = job?.editUnlockedUntil ? new Date(job.editUnlockedUntil) : null;
     return Boolean(
@@ -1514,18 +1536,27 @@ const ManageJobs = () => {
                           </div>
 
                           <div className="min-w-0 flex-1">
-                            <Link
-                              to={`/employer/edit-job/${job._id}`}
-                              className="block truncate text-sm font-semibold text-gray-900 hover:text-[#2e66a6]"
+                            <button
+                              type="button"
+                              onClick={() => handleEditAction(job)}
+                              className="block w-full truncate text-left text-sm font-semibold text-gray-900 hover:text-[#2e66a6]"
                               title={title}
                             >
                               {title}
-                            </Link>
+                            </button>
                             <div className="mt-2 flex flex-wrap items-center gap-2">
                               <span className={cn('inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold', getStatusPill(job))}>
                                 {getStatusText(job)}
                               </span>
-
+                              {(() => {
+                                const badge = getEditRequestBadge(job._id);
+                                return badge ? (
+                                  <span className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold', badge.className)}>
+                                    <Icon name={badge.icon} className="h-3 w-3" />
+                                    {badge.label}
+                                  </span>
+                                ) : null;
+                              })()}
                             </div>
                           </div>
                         </div>
@@ -1564,26 +1595,19 @@ const ManageJobs = () => {
                             <Icon name="eye" className="h-4 w-4" />
                           </Link>
 
-                          <Link
-                            to={`/employer/edit-job/${job._id}`}
-                            className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-                            aria-label={`Edit ${title}`}
-                            title="Edit"
+                          <button
+                            type="button"
+                            onClick={() => handleEditAction(job)}
+                            className={cn(
+                              'inline-flex h-10 items-center justify-center rounded-lg border px-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+                              isJobEditLocked(job)
+                                ? 'border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 focus-visible:ring-amber-500'
+                                : 'border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:ring-[#2e66a6]'
+                            )}
+                            aria-label={`${isJobEditLocked(job) ? 'Request edit access for' : 'Edit'} ${title}`}
+                            title={isJobEditLocked(job) ? 'Editing locked — request access' : 'Edit'}
                           >
                             <Icon name="edit" className="h-4 w-4" />
-                          </Link>
-
-                          <button
-                            onClick={() => {
-                              setSelectedJob(job);
-                              setShowDeleteModal(true);
-                            }}
-                            disabled={busyThisRow}
-                            className="inline-flex h-10 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            aria-label={`Archive ${title}`}
-                            title="Archive"
-                          >
-                            <Icon name="trash" className="h-4 w-4" />
                           </button>
 
                           {['open', 'closed'].includes(derivedStatus) && (
@@ -1598,7 +1622,10 @@ const ManageJobs = () => {
                               {busyThisRow && ['open', 'close'].includes(action.type) ? (
                                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#2e66a6]" />
                               ) : (
-                                derivedStatus === 'open' ? 'Close' : 'Open'
+                                <>
+                                  <Icon name={derivedStatus === 'open' ? 'closeJob' : 'openJob'} className="mr-2 h-4 w-4" />
+                                  {derivedStatus === 'open' ? 'Close' : 'Open'}
+                                </>
                               )}
                             </button>
                           )}
@@ -1614,10 +1641,23 @@ const ManageJobs = () => {
                               {busyThisRow && action.type === 'publish' ? (
                                 <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-current" />
                               ) : (
-                                'Publish'
+                                <><Icon name="check" className="mr-2 h-4 w-4" />Publish</>
                               )}
                             </button>
                           )}
+
+                          <button
+                            onClick={() => {
+                              setSelectedJob(job);
+                              setShowDeleteModal(true);
+                            }}
+                            disabled={busyThisRow}
+                            className="inline-flex h-10 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            aria-label={`Archive ${title}`}
+                            title="Archive"
+                          >
+                            <Icon name="trash" className="h-4 w-4" />
+                          </button>
                         </div>
                       </div>
                     );
@@ -1737,12 +1777,15 @@ const ManageJobs = () => {
                                   >
                                     {title}
                                   </div>
-                                  {getLatestEditRequest(job._id)?.status === 'pending' ? (
-                                    <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
-                                      <Icon name="shield" className="h-3 w-3" />
-                                      Edit request pending
-                                    </span>
-                                  ) : null}
+                                  {(() => {
+                                    const badge = getEditRequestBadge(job._id);
+                                    return badge ? (
+                                      <span className={cn('mt-1 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold', badge.className)}>
+                                        <Icon name={badge.icon} className="h-3 w-3" />
+                                        {badge.label}
+                                      </span>
+                                    ) : null;
+                                  })()}
                                 </div>
                               </div>
                             </td>
@@ -1805,20 +1848,7 @@ const ManageJobs = () => {
                                   aria-label={`${isJobEditLocked(job) ? 'Request edit access for' : 'Edit'} ${title}`}
                                   title={isJobEditLocked(job) ? 'Editing locked — request access' : 'Edit'}
                                 >
-                                  <Icon name={isJobEditLocked(job) ? 'lock' : 'edit'} className="h-4 w-4" />
-                                </button>
-
-                                <button
-                                  onClick={() => {
-                                    setSelectedJob(job);
-                                    setShowDeleteModal(true);
-                                  }}
-                                  disabled={busyThisRow}
-                                  className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                  aria-label={`Archive ${title}`}
-                                  title="Archive"
-                                >
-                                  <Icon name="trash" className="h-4 w-4" />
+                                  <Icon name="edit" className="h-4 w-4" />
                                 </button>
 
                                 {['open', 'closed'].includes(derivedStatus) && (
@@ -1838,7 +1868,10 @@ const ManageJobs = () => {
                                     {busyThisRow && ['open', 'close'].includes(action.type) ? (
                                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#2e66a6]" />
                                     ) : (
-                                      derivedStatus === 'open' ? 'Close' : 'Open'
+                                      <>
+                                        <Icon name={derivedStatus === 'open' ? 'closeJob' : 'openJob'} className="mr-2 h-4 w-4" />
+                                        {derivedStatus === 'open' ? 'Close' : 'Open'}
+                                      </>
                                     )}
                                   </button>
                                 )}
@@ -1854,10 +1887,23 @@ const ManageJobs = () => {
                                     {busyThisRow && action.type === 'publish' ? (
                                       <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-current" />
                                     ) : (
-                                      'Publish'
+                                      <><Icon name="check" className="mr-2 h-4 w-4" />Publish</>
                                     )}
                                   </button>
                                 )}
+
+                                <button
+                                  onClick={() => {
+                                    setSelectedJob(job);
+                                    setShowDeleteModal(true);
+                                  }}
+                                  disabled={busyThisRow}
+                                  className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                  aria-label={`Archive ${title}`}
+                                  title="Archive"
+                                >
+                                  <Icon name="trash" className="h-4 w-4" />
+                                </button>
                               </div>
                             </td>
                           </tr>
