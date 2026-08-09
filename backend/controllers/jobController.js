@@ -525,19 +525,46 @@ const buildComprehensiveJobSearchCondition = (searchValue) => {
   return { $or: conditions };
 };
 
-const isCompanyProfileComplete = (employer) => {
+const getMissingCompanyProfileFields = (employer) => {
   const profile = employer?.employerProfile || {};
+  const galleryImages = Array.isArray(profile.galleryImages) ? profile.galleryImages : [];
+  const hasSavedGalleryPhoto = galleryImages.some((item) => {
+    const url = String(typeof item === 'string' ? item : item?.url || '').trim();
+    return Boolean(url) && !/^(blob:|data:)/i.test(url);
+  });
 
-  return Boolean(
-    String(profile.companyName || '').trim() &&
-      String(profile.businessEmail || '').trim() &&
-      String(profile.mobileNumber || '').trim() &&
-      String(profile.regionCity || '').trim() &&
-      String(profile.industry || '').trim() &&
-      String(profile.companyAddress || '').trim() &&
-      String(profile.companyDescription || '').trim() &&
-      String(profile.companyLogo || '').trim()
-  );
+  return [
+    !String(profile.companyName || '').trim() ? 'Company Name' : null,
+    !String(profile.businessEmail || '').trim() ? 'Business Email' : null,
+    !String(profile.mobileNumber || '').trim() ? 'Mobile Number' : null,
+    !String(profile.regionCity || '').trim() ? 'City / Municipality' : null,
+    !String(profile.industry || '').trim() ? 'Industry' : null,
+    !String(profile.companyAddress || '').trim() ? 'Company Address' : null,
+    !String(profile.companyDescription || '').trim() ? 'About the Company' : null,
+    !String(profile.companyLogo || '').trim() ? 'Company Logo' : null,
+    !hasSavedGalleryPhoto ? 'Gallery' : null,
+  ].filter(Boolean);
+};
+
+const buildIncompleteCompanyProfileMessage = (missingFields = []) => {
+  const missingTextFields = missingFields.filter((field) => field !== 'Gallery');
+  const isGalleryMissing = missingFields.includes('Gallery');
+  const joinFields = (fields) => {
+    if (fields.length <= 1) return fields[0] || '';
+    if (fields.length === 2) return `${fields[0]} and ${fields[1]}`;
+    return `${fields.slice(0, -1).join(', ')}, and ${fields[fields.length - 1]}`;
+  };
+
+  if (!missingTextFields.length && isGalleryMissing) {
+    return 'Add at least one Gallery photo before posting a job.';
+  }
+
+  const fieldsText = joinFields(missingTextFields);
+  const galleryText = isGalleryMissing
+    ? `${missingTextFields.length ? ', and ' : ''}add at least one Gallery photo`
+    : '';
+
+  return `Complete your ${fieldsText}${galleryText} before posting a job.`;
 };
 
 exports.createJob = async (req, res) => {
@@ -585,11 +612,13 @@ exports.createJob = async (req, res) => {
     const validationMessage = validateJobRules(req.body, !isDraft);
     if (validationMessage) return res.status(400).json({ success: false, message: validationMessage });
 
-    if (!isDraft && !isCompanyProfileComplete(employer)) {
+    const missingCompanyProfileFields = getMissingCompanyProfileFields(employer);
+    if (!isDraft && missingCompanyProfileFields.length > 0) {
       return res.status(403).json({
         success: false,
         code: 'COMPANY_PROFILE_INCOMPLETE',
-        message: 'You have not yet completed your company profile. A complete company profile is required to post a job.',
+        message: buildIncompleteCompanyProfileMessage(missingCompanyProfileFields),
+        missingFields: missingCompanyProfileFields,
       });
     }
 
@@ -1260,11 +1289,13 @@ exports.updateJob = async (req, res) => {
     const validationMessage = validateJobRules(mergedValidationData, wantsToPublish || isPublishedJob);
     if (validationMessage) return res.status(400).json({ success: false, message: validationMessage });
 
-    if (wantsToPublish && !isCompanyProfileComplete(employer)) {
+    const missingCompanyProfileFields = getMissingCompanyProfileFields(employer);
+    if (wantsToPublish && missingCompanyProfileFields.length > 0) {
       return res.status(403).json({
         success: false,
         code: 'COMPANY_PROFILE_INCOMPLETE',
-        message: 'You have not yet completed your company profile. A complete company profile is required to post a job.',
+        message: buildIncompleteCompanyProfileMessage(missingCompanyProfileFields),
+        missingFields: missingCompanyProfileFields,
       });
     }
 

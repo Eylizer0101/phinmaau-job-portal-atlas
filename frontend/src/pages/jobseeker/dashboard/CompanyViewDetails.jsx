@@ -221,21 +221,16 @@ const SvgIcon = ({ name, className = "w-4 h-4" }) => {
     case "image":
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <rect x="3" y="5" width="18" height="14" rx="2" strokeWidth="1.8" />
-          <circle cx="8.5" cy="10" r="1.5" strokeWidth="1.8" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M21 15l-5-5-7 7" />
+          <rect x="3" y="4" width="18" height="16" rx="2" strokeWidth="1.8" />
+          <circle cx="8.5" cy="9" r="1.5" strokeWidth="1.8" />
+          <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M21 15l-5-5L5 20" />
         </svg>
       );
     case "paperPlane":
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.8"
-            d="M21 3L3.8 10.2c-.95.4-.9 1.77.08 2.08l6.55 2.07 2.07 6.55c.31.98 1.68 1.03 2.08.08L21 3z"
-          />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M10.5 14.5L21 3" />
+          <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M21 3L10 14" />
+          <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M21 3L14.5 21l-4.5-7-7-4.5L21 3z" />
         </svg>
       );
     case "starOutline":
@@ -658,13 +653,14 @@ const SocialMediaCard = ({ icon, label, url }) => {
   );
 };
 
-const GalleryImageCard = ({ item, index }) => {
+const GalleryImageCard = ({ item, index, onError }) => {
   return (
     <div className="overflow-hidden rounded-[18px] border border-black/10 bg-white shadow-sm">
       <img
         src={item.url}
         alt={item.caption || `Gallery ${index + 1}`}
         className="w-full h-[220px] object-cover"
+        onError={() => onError?.(item.url)}
       />
       {item.caption ? (
         <div className="px-4 py-3 border-t border-black/10">
@@ -707,6 +703,7 @@ const CompanyViewDetails = () => {
   const [appliedJobIds, setAppliedJobIds] = useState([]);
   const [savedJobIds, setSavedJobIds] = useState([]);
   const [savingJobId, setSavingJobId] = useState("");
+  const [failedGalleryUrls, setFailedGalleryUrls] = useState([]);
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
   const toastTimerRef = useRef(null);
   const reviewsListRef = useRef(null);
@@ -1443,8 +1440,26 @@ const CompanyViewDetails = () => {
   }, [company]);
 
   const galleryItems = useMemo(() => {
-    return Array.isArray(company?.galleryImages) ? company.galleryImages : [];
-  }, [company]);
+    if (!Array.isArray(company?.galleryImages)) return [];
+
+    return company.galleryImages.filter((item) => {
+      const url = String(item?.url || "").trim();
+      return url && !/^(blob:|data:)/i.test(url) && !failedGalleryUrls.includes(url);
+    });
+  }, [company, failedGalleryUrls]);
+
+  const handleGalleryImageError = useCallback((url) => {
+    const normalizedUrl = String(url || "").trim();
+    if (!normalizedUrl) return;
+
+    setFailedGalleryUrls((current) =>
+      current.includes(normalizedUrl) ? current : [...current, normalizedUrl]
+    );
+  }, []);
+
+  useEffect(() => {
+    setFailedGalleryUrls([]);
+  }, [company?._id]);
 
   if (loading) {
     return (
@@ -1998,8 +2013,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
             {socialLinks.length === 0 ? (
               <EmptyTabState
                 icon="paperPlane"
-                title="No social accounts linked yet."
-                description='Click "Edit Profile" to connect your accounts.'
+                title="This company has not linked any social media accounts yet."
               />
             ) : (
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2032,8 +2046,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
             {galleryItems.length === 0 ? (
               <EmptyTabState
                 icon="image"
-                title="No photos added yet."
-                description='Click "Edit Profile" to upload company photos.'
+                title="This company has not added any photos yet."
               />
             ) : (
               <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -2042,6 +2055,7 @@ The company also values transparency, teamwork, and continuous improvement, crea
                     key={`${item._id || item.url}-${index}`}
                     item={item}
                     index={index}
+                    onError={handleGalleryImageError}
                   />
                 ))}
               </div>

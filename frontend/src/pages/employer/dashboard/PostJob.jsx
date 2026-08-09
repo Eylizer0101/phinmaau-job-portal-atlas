@@ -1037,42 +1037,88 @@ const PostJob = () => {
 
   const [storedUser, setStoredUser] = useState(() => getStoredUser());
 
-  useEffect(() => {
-    const fetchCurrentEmployer = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+  const fetchCurrentEmployer = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('https://phinmaau-job-portal-atlas.onrender.com/api/auth/me', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Cache-Control': 'no-cache',
+        },
+        params: { profileRefresh: Date.now() },
+      });
 
-        const user = response.data?.user;
-        if (response.data?.success && user) {
-          localStorage.setItem('user', JSON.stringify(user));
-          setStoredUser(user);
-        }
-      } catch (err) {
-        console.error('Unable to refresh employer profile:', err);
-        setStoredUser(getStoredUser());
+      const user = response.data?.user;
+      if (response.data?.success && user) {
+        localStorage.setItem('user', JSON.stringify(user));
+        setStoredUser(user);
       }
-    };
-
-    fetchCurrentEmployer();
+    } catch (err) {
+      console.error('Unable to refresh employer profile:', err);
+      setStoredUser(getStoredUser());
+    }
   }, [getStoredUser]);
 
-  const isCompanyProfileComplete = useMemo(() => {
-    const p = storedUser?.employerProfile || {};
+  useEffect(() => {
+    fetchCurrentEmployer();
 
-    return Boolean(
-      String(p.companyName || '').trim() &&
-        String(p.businessEmail || '').trim() &&
-        String(p.mobileNumber || '').trim() &&
-        String(p.regionCity || '').trim() &&
-        String(p.industry || '').trim() &&
-        String(p.companyAddress || '').trim() &&
-        String(p.companyDescription || '').trim() &&
-        String(p.companyLogo || '').trim()
-    );
+    const refreshOnFocus = () => fetchCurrentEmployer();
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') fetchCurrentEmployer();
+    };
+
+    window.addEventListener('focus', refreshOnFocus);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+
+    return () => {
+      window.removeEventListener('focus', refreshOnFocus);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+    };
+  }, [fetchCurrentEmployer]);
+
+  const missingCompanyProfileFields = useMemo(() => {
+    const p = storedUser?.employerProfile || {};
+    const galleryImages = Array.isArray(p.galleryImages) ? p.galleryImages : [];
+    const hasSavedGalleryPhoto = galleryImages.some((item) => {
+      const url = String(typeof item === 'string' ? item : item?.url || '').trim();
+      return Boolean(url) && !/^(blob:|data:)/i.test(url);
+    });
+
+    return [
+      !String(p.companyName || '').trim() ? 'Company Name' : null,
+      !String(p.businessEmail || '').trim() ? 'Business Email' : null,
+      !String(p.mobileNumber || '').trim() ? 'Mobile Number' : null,
+      !String(p.regionCity || '').trim() ? 'City / Municipality' : null,
+      !String(p.industry || '').trim() ? 'Industry' : null,
+      !String(p.companyAddress || '').trim() ? 'Company Address' : null,
+      !String(p.companyDescription || '').trim() ? 'About the Company' : null,
+      !String(p.companyLogo || '').trim() ? 'Company Logo' : null,
+      !hasSavedGalleryPhoto ? 'Gallery' : null,
+    ].filter(Boolean);
   }, [storedUser]);
+
+  const isCompanyProfileComplete = missingCompanyProfileFields.length === 0;
+
+  const companyProfileReminderMessage = useMemo(() => {
+    const missingTextFields = missingCompanyProfileFields.filter((field) => field !== 'Gallery');
+    const isGalleryMissing = missingCompanyProfileFields.includes('Gallery');
+    const joinFields = (fields) => {
+      if (fields.length <= 1) return fields[0] || '';
+      if (fields.length === 2) return `${fields[0]} and ${fields[1]}`;
+      return `${fields.slice(0, -1).join(', ')}, and ${fields[fields.length - 1]}`;
+    };
+
+    if (!missingTextFields.length && isGalleryMissing) {
+      return 'Add at least one Gallery photo before posting a job.';
+    }
+
+    const fieldsText = joinFields(missingTextFields);
+    const galleryText = isGalleryMissing
+      ? `${missingTextFields.length ? ', and ' : ''}add at least one Gallery photo`
+      : '';
+
+    return `Complete your ${fieldsText}${galleryText} before posting a job.`;
+  }, [missingCompanyProfileFields]);
 
   const companyLocationFromProfile =
     String(storedUser?.employerProfile?.companyAddress || '').trim() || 'Company location';
@@ -1908,7 +1954,7 @@ const PostJob = () => {
                       You're Almost There!
                     </p>
                     <p className="mt-1 text-sm leading-5 text-blue-800">
-                      You have not yet completed your company profile. A complete company profile is required to post a job.
+                      {companyProfileReminderMessage}
                     </p>
                     <button
                       type="button"
