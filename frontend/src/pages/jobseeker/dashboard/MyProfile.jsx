@@ -3901,22 +3901,10 @@ const TodoProgressCard = ({
       info: 'Credentials total — 45%',
     },
     {
-      key: 'certifications',
-      label: 'Add Certifications',
-      completed: Boolean(profileByKey.certifications?.completed),
-      info: 'Certifications — 2%',
-    },
-    {
-      key: 'projects',
-      label: 'Add Projects',
-      completed: Boolean(profileByKey.projects?.completed),
-      info: 'Projects — 2%',
-    },
-    {
       key: 'additional',
       label: 'Add More Sections',
       completed: additionalComplete,
-      info: 'Complete any one additional section — 13%',
+      info: 'Complete any one additional section — 17%',
     },
   ];
 
@@ -4498,26 +4486,44 @@ const MyProfile = () => {
       { key: 'work', label: 'Work Experience', weight: 15, completed: workExperiences.length > 0 },
       { key: 'skills', label: 'Skills', weight: 10, completed: skillsComplete },
       { key: 'education', label: 'Education', weight: 8, completed: educationComplete },
+    ];
+
+    const additionalItems = [
       {
         key: 'certifications',
         label: 'Certifications',
-        weight: 2,
         completed: addedMoreSections.includes('certifications') && hasMeaningfulListContent(formData.certifications),
       },
       {
         key: 'projects',
         label: 'Projects',
-        weight: 2,
         completed: addedMoreSections.includes('projects') && hasMeaningfulListContent(formData.projects),
       },
-    ];
-
-    const additionalItems = [
-      { key: 'seminars', label: 'Seminars and Trainings', completed: hasMeaningfulListContent(formData.seminars) },
-      { key: 'awards', label: 'Awards and Achievements', completed: hasMeaningfulListContent(formData.awards) },
-      { key: 'affiliations', label: 'Affiliations', completed: hasMeaningfulListContent(formData.affiliations) },
-      { key: 'cocurricular', label: 'Co-Curricular Activities', completed: hasMeaningfulListContent(formData.cocurricular) },
-      { key: 'references', label: 'References', completed: hasMeaningfulListContent(formData.references) },
+      {
+        key: 'seminars',
+        label: 'Seminars and Trainings',
+        completed: addedMoreSections.includes('seminars') && hasMeaningfulListContent(formData.seminars),
+      },
+      {
+        key: 'awards',
+        label: 'Awards and Achievements',
+        completed: addedMoreSections.includes('awards') && hasMeaningfulListContent(formData.awards),
+      },
+      {
+        key: 'affiliations',
+        label: 'Affiliations',
+        completed: addedMoreSections.includes('affiliations') && hasMeaningfulListContent(formData.affiliations),
+      },
+      {
+        key: 'cocurricular',
+        label: 'Co-Curricular Activities',
+        completed: addedMoreSections.includes('cocurricular') && hasMeaningfulListContent(formData.cocurricular),
+      },
+      {
+        key: 'references',
+        label: 'References',
+        completed: addedMoreSections.includes('references') && hasMeaningfulListContent(formData.references),
+      },
     ];
 
     const credentialsProgress = credentialItems.reduce(
@@ -4528,7 +4534,7 @@ const MyProfile = () => {
       (total, item) => total + (item.completed ? item.weight : 0),
       0
     );
-    const additionalProgress = additionalItems.some((item) => item.completed) ? 13 : 0;
+    const additionalProgress = additionalItems.some((item) => item.completed) ? 17 : 0;
 
     return {
       percentage: Math.min(100, credentialsProgress + resumeProfileProgress + additionalProgress),
