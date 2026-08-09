@@ -1615,17 +1615,14 @@ const ManageJobs = () => {
                               type="button"
                               onClick={() => setStatusConfirmationJob(job)}
                               disabled={busyThisRow}
-                              className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                               aria-label={`${derivedStatus === 'open' ? 'Close Job' : 'Open Job'} ${title}`}
                               title={derivedStatus === 'open' ? 'Close Job' : 'Open Job'}
                             >
                               {busyThisRow && ['open', 'close'].includes(action.type) ? (
                                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#2e66a6]" />
                               ) : (
-                                <>
-                                  <Icon name={derivedStatus === 'open' ? 'closeJob' : 'openJob'} className="mr-2 h-4 w-4" />
-                                  {derivedStatus === 'open' ? 'Close' : 'Open'}
-                                </>
+                                <Icon name={derivedStatus === 'open' ? 'closeJob' : 'openJob'} className="h-4 w-4" />
                               )}
                             </button>
                           )}
@@ -1635,13 +1632,13 @@ const ManageJobs = () => {
                               onClick={() => handlePublish(job._id)}
                               disabled={busyThisRow || !isEmployerVerified}
                               title={!isEmployerVerified ? 'Verify your company to publish jobs.' : 'Publish'}
-                              className="inline-flex h-10 items-center justify-center rounded-lg bg-[#173f8a] px-4 text-sm font-semibold text-white transition hover:bg-[#12336f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#173f8a] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex h-10 items-center justify-center rounded-lg bg-[#173f8a] px-3 text-sm font-semibold text-white transition hover:bg-[#12336f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#173f8a] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                               aria-label={`Publish ${title}`}
                             >
                               {busyThisRow && action.type === 'publish' ? (
                                 <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-current" />
                               ) : (
-                                <><Icon name="check" className="mr-2 h-4 w-4" />Publish</>
+                                <Icon name="check" className="h-4 w-4" />
                               )}
                             </button>
                           )}
@@ -1857,7 +1854,7 @@ const ManageJobs = () => {
                                     onClick={() => setStatusConfirmationJob(job)}
                                     disabled={busyThisRow}
                                     className={cn(
-                                      'inline-flex h-10 min-w-[88px] shrink-0 items-center justify-center rounded-lg px-4 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+                                      'inline-flex h-10 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                                       derivedStatus === 'closed'
                                         ? 'bg-amber-400 text-gray-900 hover:bg-amber-500 focus-visible:ring-amber-500'
                                         : 'border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 focus-visible:ring-[#2e66a6]'
@@ -1868,10 +1865,7 @@ const ManageJobs = () => {
                                     {busyThisRow && ['open', 'close'].includes(action.type) ? (
                                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#2e66a6]" />
                                     ) : (
-                                      <>
-                                        <Icon name={derivedStatus === 'open' ? 'closeJob' : 'openJob'} className="mr-2 h-4 w-4" />
-                                        {derivedStatus === 'open' ? 'Close' : 'Open'}
-                                      </>
+                                      <Icon name={derivedStatus === 'open' ? 'closeJob' : 'openJob'} className="h-4 w-4" />
                                     )}
                                   </button>
                                 )}
@@ -1881,13 +1875,13 @@ const ManageJobs = () => {
                                     onClick={() => handlePublish(job._id)}
                                     disabled={busyThisRow || !isEmployerVerified}
                                     title={!isEmployerVerified ? 'Verify your company to publish jobs.' : 'Publish'}
-                                    className="inline-flex h-10 min-w-[88px] shrink-0 items-center justify-center rounded-lg bg-[#173f8a] px-4 text-sm font-semibold text-white transition hover:bg-[#12336f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#173f8a] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg bg-[#173f8a] px-3 text-sm font-semibold text-white transition hover:bg-[#12336f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#173f8a] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                     aria-label={`Publish ${title}`}
                                   >
                                     {busyThisRow && action.type === 'publish' ? (
                                       <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-current" />
                                     ) : (
-                                      <><Icon name="check" className="mr-2 h-4 w-4" />Publish</>
+                                      <Icon name="check" className="h-4 w-4" />
                                     )}
                                   </button>
                                 )}
