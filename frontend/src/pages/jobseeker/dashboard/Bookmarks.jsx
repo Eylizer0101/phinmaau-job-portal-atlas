@@ -1,7 +1,9 @@
 // src/pages/jobseeker/dashboard/Bookmarks.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTimesCircle } from '@fortawesome/free-solid-svg-icons';
 import JobSeekerLayout from '../../../layouts/JobSeekerLayout';
 import api from '../../../services/api';
 import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
@@ -263,6 +265,30 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
             strokeLinejoin="round"
             strokeWidth={1.75}
             d="M17 20h5v-1a4 4 0 00-4-4h-1M9 20H2v-1a4 4 0 014-4h1m7-4a4 4 0 10-8 0 4 4 0 008 0zm8 2a3 3 0 10-6 0 3 3 0 006 0z"
+          />
+        </svg>
+      );
+    case 'laptop':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M5 5h14a1 1 0 011 1v9H4V6a1 1 0 011-1z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M2.5 18h19M8 18h8" />
+        </svg>
+      );
+    case 'tools':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M14.7 6.3a4 4 0 01-5 5L4 17v3h3l5.7-5.7a4 4 0 005-5L15 12l-3-3 2.7-2.7z" />
+        </svg>
+      );
+    case 'star':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.8}
+            d="M11.48 3.499a1 1 0 011.04 0l2.4 1.384a1 1 0 00.75.105l2.74-.7a1 1 0 011.21 1.21l-.7 2.74a1 1 0 00.105.75l1.384 2.4a1 1 0 010 1.04l-1.384 2.4a1 1 0 00-.105.75l.7 2.74a1 1 0 01-1.21 1.21l-2.74-.7a1 1 0 00-.75.105l-2.4 1.384a1 1 0 01-1.04 0l-2.4-1.384a1 1 0 00-.75-.105l-2.74.7A1 1 0 013.5 19.3l.7-2.74a1 1 0 00-.105-.75l-1.384-2.4a1 1 0 010-1.04l1.384-2.4a1 1 0 00-.105-.75l-.7-2.74A1 1 0 014.71 3.594l2.74.7a1 1 0 00.75-.105l2.28-1.31z"
           />
         </svg>
       );
@@ -542,13 +568,33 @@ const normalizeLocation = (jobData) => {
     jobData?.employerDetails?.location,
     jobData?.employerDetails?.companyAddress,
     jobData?.employer?.companyAddress,
+    jobData?.employerId?.companyAddress,
     jobData?.companyAddress,
+    jobData?.regionCity && jobData?.country ? `${jobData.regionCity}, ${jobData.country}` : '',
+    jobData?.employerDetails?.regionCity && jobData?.employerDetails?.country
+      ? `${jobData.employerDetails.regionCity}, ${jobData.employerDetails.country}`
+      : '',
   ];
 
   for (const c of candidates) {
     if (!c) continue;
-    const s = String(c).trim();
-    if (s) return s;
+
+    if (typeof c === 'object') {
+      const city = c.city || c.town || c.regionCity || '';
+      const province = c.province || c.state || '';
+      const country = c.country || '';
+      const built = [city, province, country].filter(Boolean).join(', ');
+      if (built.trim()) return built.trim();
+      continue;
+    }
+
+    const value = String(c).trim();
+    if (!value) continue;
+
+    const invalidValues = ['not specified', 'n/a', 'not set', 'location not specified'];
+    if (invalidValues.includes(value.toLowerCase())) continue;
+
+    return value;
   }
 
   return '';
@@ -687,7 +733,8 @@ const StaticLocationMap = ({ job, heightClass = 'h-[160px]' }) => {
   );
 };
 
-const formatSalary = (min, max) => {
+const formatSalary = (min, max, hideSalary = false) => {
+  if (hideSalary) return 'Salary Undisclosed';
   const hasMin = min !== undefined && min !== null && min !== '' && !Number.isNaN(Number(min));
   const hasMax = max !== undefined && max !== null && max !== '' && !Number.isNaN(Number(max));
   if (!hasMin && !hasMax) return 'Salary not specified';
@@ -837,6 +884,46 @@ const formatPostedRelative = (dateString) => {
 
   const years = Math.floor(diffMs / year);
   return `Posted ${years} year${years > 1 ? 's' : ''} ago`;
+};
+
+const hasValidDisplayValue = (value) => {
+  if (value === null || value === undefined) return false;
+  if (Array.isArray(value)) return value.some((item) => hasValidDisplayValue(item));
+  const normalized = String(value).trim().toLowerCase();
+  return Boolean(normalized) && !['n/a', 'na', 'none', 'not specified', 'undefined', 'null'].includes(normalized);
+};
+
+const getJobCompanyId = (job) => {
+  if (!job) return '';
+
+  const candidates = [
+    job?.employer,
+    job?.employerId,
+    job?.company,
+    job?.companyId,
+    job?.employerDetails?._id,
+    job?.employerDetails?.id,
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    if (typeof candidate === 'string' || typeof candidate === 'number') {
+      const value = String(candidate).trim();
+      if (value) return value;
+      continue;
+    }
+    const value = String(candidate?._id || candidate?.id || '').trim();
+    if (value) return value;
+  }
+
+  return '';
+};
+
+const getShortUrlLabel = (value, maxLength = 34) => {
+  const clean = String(value || '').trim();
+  if (!clean) return '';
+  if (clean.length <= maxLength) return clean;
+  return `${clean.slice(0, Math.max(1, maxLength - 3)).trim()}...`;
 };
 
 const getCompanyWebsiteUrl = (job) => {
@@ -1101,19 +1188,45 @@ const getStoredUser = () => {
   }
 };
 
-const TopMetricCard = ({ icon, title, value, isPeso = false }) => (
-  <div className="rounded-2xl border border-black/10 bg-[#FFFFFF] px-4 py-4 min-h-[110px] shadow-sm">
-    <div className="flex items-start gap-3">
-      <div className="w-8 h-8 rounded-lg border border-[#2e66a6]/15 bg-[#2e66a6]/10 flex items-center justify-center text-[#2e66a6] flex-shrink-0 mt-0.5">
-        {isPeso ? <span className="font-bold text-[13px] leading-none">₱</span> : <SvgIcon name={icon} className="w-4 h-4" />}
+const TopMetricCard = ({ icon, title, value, isPeso = false, href = '' }) => (
+  <div className="h-full min-h-[96px] rounded-xl border border-[#d9e2ec] bg-white px-4 py-4 shadow-[0_4px_14px_rgba(15,23,42,0.08)] min-w-0">
+    <div className="flex h-full min-w-0 items-start gap-3">
+      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[#d9dbe3] bg-[#f9fafb] text-[#6b7280]">
+        {isPeso ? <span className="text-sm font-bold">₱</span> : <SvgIcon name={icon} className="h-4 w-4" />}
       </div>
+
       <div className="min-w-0">
-        <p className="text-[11px] uppercase tracking-[0.08em] font-semibold text-black/50">{title}</p>
-        <p className="mt-2 text-sm sm:text-[15px] leading-7 font-semibold text-[#000000] break-words">{value}</p>
+        <p className="text-sm font-semibold text-black">{title}</p>
+        {href ? (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`mt-1.5 block max-w-full truncate whitespace-nowrap text-[15px] font-semibold leading-6 text-[#2e66a6] hover:underline ${UI.ring} rounded`}
+            title={value}
+          >
+            {getShortUrlLabel(value)}
+          </a>
+        ) : (
+          <p className="mt-1.5 break-words text-[15px] font-semibold leading-6 text-black">{value}</p>
+        )}
       </div>
     </div>
   </div>
 );
+
+const JobDetailIconBadge = ({ icon }) => (
+  <span className="w-11 h-11 rounded-2xl bg-[#2e66a6]/10 border border-[#2e66a6]/25 flex items-center justify-center flex-shrink-0 text-[#2e66a6]">
+    <SvgIcon name={icon} className="w-5 h-5" />
+  </span>
+);
+
+const JobDetailItem = ({ children }) => (
+  <div className="rounded-xl border border-[#e6edf5] bg-[#fdfefe] px-4 py-3 text-xs sm:text-sm text-black/70">
+    {children}
+  </div>
+);
+
 
 const BookmarkCard = ({ job, selected, onClick, onRemove, removing }) => {
   return (
@@ -1545,11 +1658,15 @@ const EmptyCompanyBookmarks = () => (
 
 const Bookmarks = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [activeSection, setActiveSection] = useState('jobs');
+  const initialBookmarksParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const [activeSection, setActiveSection] = useState(() =>
+    initialBookmarksParams.get('tab') === 'companies' ? 'companies' : 'jobs'
+  );
 
   const [savedJobs, setSavedJobs] = useState([]);
-  const [selectedJobId, setSelectedJobId] = useState('');
+  const [selectedJobId, setSelectedJobId] = useState(() => initialBookmarksParams.get('job') || '');
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState('');
   const [toast, setToast] = useState({ type: '', message: '' });
@@ -1891,12 +2008,81 @@ const Bookmarks = () => {
 
   const selectedJob = useMemo(() => savedJobs.find((job) => job._id === selectedJobId) || null, [savedJobs, selectedJobId]);
 
+  useEffect(() => {
+    if (activeSection !== 'jobs' || !selectedJobId) return;
+
+    const params = new URLSearchParams(location.search);
+    const currentTab = params.get('tab');
+    const currentJob = params.get('job');
+
+    if (currentTab === 'jobs' && currentJob === selectedJobId) return;
+
+    params.set('tab', 'jobs');
+    params.set('job', selectedJobId);
+
+    navigate(
+      { pathname: location.pathname, search: `?${params.toString()}` },
+      { replace: true }
+    );
+  }, [activeSection, selectedJobId, location.pathname, location.search, navigate]);
+
   const selectedCompany = useMemo(
     () => savedCompanies.find((company) => company._id === selectedCompanyId) || null,
     [savedCompanies, selectedCompanyId]
   );
 
   const companyWebsiteUrl = useMemo(() => getCompanyWebsiteUrl(selectedJob), [selectedJob]);
+  const selectedJobCompanyId = useMemo(() => getJobCompanyId(selectedJob), [selectedJob]);
+
+  const selectedJobSummaryCards = useMemo(() => {
+    if (!selectedJob) return [];
+
+    const cards = [];
+    const hasSalary =
+      normalizeBoolean(selectedJob.hideSalary) ||
+      selectedJob.salaryMin !== undefined && selectedJob.salaryMin !== null && selectedJob.salaryMin !== '' ||
+      selectedJob.salaryMax !== undefined && selectedJob.salaryMax !== null && selectedJob.salaryMax !== '';
+
+    if (hasSalary) {
+      cards.push({
+        key: 'salary',
+        icon: 'money',
+        title: 'Salary',
+        value: formatSalary(selectedJob.salaryMin, selectedJob.salaryMax, normalizeBoolean(selectedJob.hideSalary)),
+        isPeso: true,
+      });
+    }
+
+    if (hasValidDisplayValue(selectedJob.experienceLevel)) {
+      cards.push({
+        key: 'experience',
+        icon: 'clock',
+        title: 'Experience',
+        value: getExperienceBadgeLabel(selectedJob.experienceLevel),
+      });
+    }
+
+    if (hasValidDisplayValue(selectedJob.educationLevel)) {
+      cards.push({
+        key: 'education',
+        icon: 'graduation',
+        title: 'Educational Requirement',
+        value: formatEducationDisplay(selectedJob.educationLevel),
+      });
+    }
+
+    if (companyWebsiteUrl) {
+      cards.push({
+        key: 'website',
+        icon: 'external',
+        title: 'Website / Company URL',
+        value: companyWebsiteUrl,
+        href: companyWebsiteUrl,
+      });
+    }
+
+    return cards;
+  }, [selectedJob, companyWebsiteUrl]);
 
   const selectedJobApplyState = selectedJob
     ? appliedMap[selectedJob._id] || { hasApplied: false, applicationStatus: '', isResolved: false }
@@ -1916,23 +2102,28 @@ const Bookmarks = () => {
     const status = normalizeApplicationStatus(applicationStatus || 'pending');
     const map = {
       pending: { cls: 'bg-amber-50 border-amber-200 text-amber-700', icon: 'clock', label: 'Pending' },
-      'for interview': { cls: 'bg-blue-50 border-blue-200 text-blue-700', icon: 'calendarCheck', label: 'For Interview' },
+      'for interview': { cls: 'bg-[#EAF2FB] border-[#BFD4EA] text-[#2e66a6]', icon: 'star', label: 'For Interview' },
       hired: { cls: 'bg-green-50 border-green-200 text-green-700', icon: 'checkCircle', label: 'Hired' },
       declined: { cls: 'bg-red-50 border-red-200 text-red-700', icon: 'xCircle', label: 'Declined' },
-      withdrawn: { cls: 'bg-gray-50 border-gray-200 text-gray-700', icon: 'minusCircle', label: 'Withdrawn' },
+      withdrawn: { cls: 'bg-gray-100 border-gray-300 text-gray-700', icon: 'withdrawnRecentApplications', label: 'Withdrawn' },
       cancelled: { cls: 'bg-gray-50 border-gray-200 text-gray-700', icon: 'minusCircle', label: 'Cancelled' },
-      'vacancy full': { cls: 'bg-gray-50 border-gray-200 text-gray-700', icon: 'minusCircle', label: 'Vacancy Full' },
+      'vacancy full': { cls: 'bg-orange-50 border-orange-200 text-orange-800', icon: 'xCircle', label: 'Vacancy Full' },
     };
 
     const picked = map[status] || map.pending;
 
     return (
-      <span className={`${UI.badgeBase} ${picked.cls}`}>
-        <SvgIcon name={picked.icon} className="w-3.5 h-3.5" />
-        Applied ({picked.label})
+      <span className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold ${picked.cls}`}>
+        {picked.icon === 'withdrawnRecentApplications' ? (
+          <FontAwesomeIcon icon={faTimesCircle} className="w-3 h-3 mr-1.5" />
+        ) : (
+          <SvgIcon name={picked.icon} className={`mr-1.5 ${picked.icon === 'star' ? 'w-3.5 h-3.5' : 'w-3.5 h-3.5'}`} />
+        )}
+        Applied ( {picked.label} )
       </span>
     );
   }, [applicationStateReady, hasApplied, applicationStatus]);
+
 
   const isJobActive = useCallback((job) => {
     if (!job) return false;
@@ -2549,77 +2740,117 @@ const Bookmarks = () => {
                     </div>
                   ) : (
                     <div className="space-y-5">
-                      <div className={`${UI.card} ${UI.pad}`}>
-                        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
-                          <div className="flex items-start gap-4 min-w-0 flex-1">
+                      <div className="w-full rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] sm:p-7">
+                        <div className="flex w-full flex-col justify-between gap-6 lg:flex-row lg:items-center">
+                          <div className="flex min-w-0 flex-1 items-start gap-4">
                             <CompanyLogo src={selectedJob.companyLogo} name={selectedJob.companyName} size="lg" />
 
                             <div className="min-w-0 flex-1">
-                              <h1 className={`${UI.h1} line-clamp-2`}>{selectedJob.title}</h1>
+                              <h1
+                                className="overflow-hidden text-ellipsis text-3xl font-extrabold leading-tight tracking-tight text-black sm:text-4xl"
+                                style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2 }}
+                                title={selectedJob.title}
+                              >
+                                {selectedJob.title}
+                              </h1>
 
-                              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-                                <div className={`inline-flex items-center gap-2 ${UI.meta} min-w-0`}>
-                                  <span className="text-black/55">
-                                    <SvgIcon name="building" className="w-4 h-4" />
+                              <div className="mt-2">
+                                <div className="inline-flex min-w-0 items-center gap-2 text-sm text-black/70">
+                                  <span className="text-black/60">
+                                    <SvgIcon name="building" className="h-4 w-4" />
                                   </span>
-                                  <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{selectedJob.companyName}</span>
-                                </div>
-
-                                <div className={`inline-flex items-center gap-2 ${UI.caption}`}>
-                                  <span className="text-black/55">
-                                    <SvgIcon name="location" className="w-4 h-4" />
-                                  </span>
-                                  <span>{formatLocationDisplay(selectedJob.location)}</span>
+                                  {selectedJobCompanyId ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const returnTo = `/jobseeker/bookmarks?tab=jobs&job=${encodeURIComponent(selectedJob._id)}`;
+                                        navigate(`/jobseeker/company-details/${selectedJobCompanyId}`, {
+                                          state: {
+                                            sourcePage: 'bookmarks',
+                                            returnTo,
+                                            selectedJobId: selectedJob._id,
+                                          },
+                                        });
+                                      }}
+                                      className={`min-w-0 overflow-hidden text-ellipsis whitespace-nowrap rounded-sm text-[#2e66a6] hover:text-[#1f4f86] ${UI.ring}`}
+                                      style={{ borderBottom: '1px solid currentColor', paddingBottom: '1px' }}
+                                      title={`View ${selectedJob.companyName || 'company'} details`}
+                                    >
+                                      {selectedJob.companyName}
+                                    </button>
+                                  ) : (
+                                    <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap" title={selectedJob.companyName}>
+                                      {selectedJob.companyName}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
 
+                              {hasValidDisplayValue(selectedJob.location) ? (
+                                <div className="mt-1">
+                                  <div className="inline-flex items-start gap-2 text-xs font-semibold uppercase tracking-wide text-black/50">
+                                    <span className="mt-0.5 text-black/60">
+                                      <SvgIcon name="location" className="h-4 w-4" />
+                                    </span>
+                                    <span className="break-words normal-case tracking-normal text-black/65">
+                                      {formatLocationDisplay(selectedJob.location)}
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : null}
+
                               <div className="mt-4 flex flex-wrap gap-2">
-                                {selectedJob.jobType && (
-                                  <span className={UI.chip}>
-                                    <SvgIcon name="briefcase" className="w-3.5 h-3.5" />
+                                {hasValidDisplayValue(selectedJob.jobType) ? (
+                                  <span className="inline-flex items-center gap-2 rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1.5 text-xs font-semibold text-black/80">
+                                    <span className="text-black/60"><SvgIcon name="briefcase" className="h-3.5 w-3.5" /></span>
                                     {selectedJob.jobType}
                                   </span>
-                                )}
+                                ) : null}
 
-                                {selectedJob.workMode && (
-                                  <span className={UI.chip}>
-                                    <SvgIcon name="building" className="w-3.5 h-3.5" />
-                                    {formatWorkModeDisplay(selectedJob.workMode)}
+                                {hasValidDisplayValue(selectedJob.workMode) ? (
+                                  <span className="inline-flex items-center gap-2 rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1.5 text-xs font-semibold text-black/80">
+                                    <span className="text-black/60"><SvgIcon name="laptop" className="h-3.5 w-3.5" /></span>
+                                    {selectedJob.workMode}
                                   </span>
-                                )}
+                                ) : null}
 
-                                {selectedJob.vacancies ? (
-                                  <span className={UI.chip}>
-                                    <SvgIcon name="users" className="w-3.5 h-3.5" />
-                                    {`${selectedJob.vacancies} Vacancy`}
+                                {Number(selectedJob.vacancies) > 0 ? (
+                                  <span className="inline-flex items-center gap-2 rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1.5 text-xs font-semibold text-black/80">
+                                    <span className="text-black/60"><SvgIcon name="users" className="h-3.5 w-3.5" /></span>
+                                    {`${selectedJob.vacancies} ${Number(selectedJob.vacancies) === 1 ? 'Vacancy' : 'Vacancies'}`}
+                                  </span>
+                                ) : null}
+
+                                {hasValidDisplayValue(selectedJob.willingToRelocate) ? (
+                                  <span className="inline-flex items-center gap-2 rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1.5 text-xs font-semibold text-black/80">
+                                    <span className="text-black/60"><SvgIcon name="location" className="h-3.5 w-3.5" /></span>
+                                    {getRelocationDisplayLabel(selectedJob.willingToRelocate)}
                                   </span>
                                 ) : null}
                               </div>
 
-                              <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-black/80">
-                                <span className="text-black/55">
-                                  <SvgIcon name="clock" className="w-4 h-4" />
-                                </span>
-                                <span>
-                                  {formatPostedRelative(selectedJob.createdAt)}
-                                  {selectedJob.applicationDeadline
-                                    ? ` and deadline of application is on ${formatApplicationDeadlineDate(selectedJob.applicationDeadline)}`
-                                    : ''}
-                                </span>
-                              </div>
+                              {(selectedJob.createdAt || selectedJob.applicationDeadline) ? (
+                                <div className="mt-4 flex items-start gap-2 text-sm text-black/75">
+                                  <span className="mt-0.5 text-black/55"><SvgIcon name="clock" className="h-4 w-4" /></span>
+                                  <span>
+                                    {selectedJob.createdAt ? formatPostedRelative(selectedJob.createdAt) : 'Posted date not specified'}
+                                    {selectedJob.applicationDeadline
+                                      ? ` and deadline of application is on ${formatApplicationDeadlineDate(selectedJob.applicationDeadline)}`
+                                      : ''}
+                                  </span>
+                                </div>
+                              ) : null}
                             </div>
                           </div>
 
-                          <div className="flex flex-col gap-3 w-full lg:w-[220px] shrink-0">
+                          <div className="flex w-full shrink-0 flex-col gap-3 lg:w-[240px]">
                             <button
                               type="button"
                               onClick={
                                 mainActionLoading || isFullyFilled
                                   ? undefined
                                   : hasApplied
-                                  ? () => {
-                                      navigate('/jobseeker/my-applications');
-                                    }
+                                  ? () => navigate('/jobseeker/my-applications')
                                   : isJobActive(selectedJob)
                                   ? handleApplyClick
                                   : undefined
@@ -2634,14 +2865,14 @@ const Bookmarks = () => {
                               } ${UI.ring} w-full`}
                             >
                               {mainActionLoading ? (
-                                <span className="inline-block w-4 h-4 rounded-full border-2 border-black/20 border-t-black/60 animate-spin motion-reduce:animate-none" />
+                                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-black/20 border-t-black/60 motion-reduce:animate-none" />
                               ) : isFullyFilled ? (
-                                <SvgIcon name="checkCircle" className="w-4 h-4" />
+                                <SvgIcon name="checkCircle" className="h-4 w-4" />
                               ) : null}
                               {primaryCtaLabel}
                             </button>
 
-                            <div className="grid grid-cols-2 gap-2 w-full">
+                            <div className="grid w-full grid-cols-2 gap-2">
                               <button
                                 type="button"
                                 onClick={() => handleRemoveSavedJob(selectedJob._id)}
@@ -2651,9 +2882,9 @@ const Bookmarks = () => {
                                 className={`${UI.btnBase} ${UI.btnSm} ${UI.btnSecondary} ${UI.ring} w-full text-[#2e66a6]`}
                               >
                                 {removingId === selectedJob._id ? (
-                                  <span className="inline-block w-4 h-4 rounded-full border-2 border-[#2e66a6]/25 border-t-[#2e66a6] animate-spin motion-reduce:animate-none" />
+                                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[#2e66a6]/25 border-t-[#2e66a6] motion-reduce:animate-none" />
                                 ) : (
-                                  <SvgIcon name="bookmarkFilled" className="w-4 h-4 text-[#2e66a6]" />
+                                  <SvgIcon name="bookmarkFilled" className="h-4 w-4 text-[#2e66a6]" />
                                 )}
                                 Saved
                               </button>
@@ -2663,191 +2894,179 @@ const Bookmarks = () => {
                                 onClick={() => handleShareJob(selectedJob)}
                                 className={`${UI.btnBase} ${UI.btnSm} ${UI.btnSecondary} ${UI.ring} w-full`}
                               >
-                                <SvgIcon name="share" className="w-4 h-4" />
+                                <SvgIcon name="share" className="h-4 w-4" />
                                 Share
                               </button>
                             </div>
 
-                            {statusBadge ? (
-                              <div className="mt-1 flex justify-start">
-                                {statusBadge}
-                              </div>
-                            ) : null}
+                            {statusBadge ? <div className="mt-1 flex justify-center">{statusBadge}</div> : null}
                           </div>
                         </div>
                       </div>
 
-                      <div className={UI.detailsGrid}>
-                        <div className={UI.metricsGrid}>
-                          <TopMetricCard icon="money" title="Salary" value={formatSalary(selectedJob.salaryMin, selectedJob.salaryMax)} isPeso />
-                          <TopMetricCard icon="clock" title="Experience" value={selectedJob.experienceLevel || 'No experience required'} />
-                          <TopMetricCard icon="graduation" title="Educational Requirements" value={formatEducationDisplay(selectedJob.educationLevel)} />
+                      {selectedJobSummaryCards.length > 0 ? (
+                        <div className={`grid grid-cols-1 gap-4 ${
+                          selectedJobSummaryCards.length >= 4
+                            ? 'sm:grid-cols-2 xl:grid-cols-4'
+                            : selectedJobSummaryCards.length === 3
+                            ? 'md:grid-cols-3'
+                            : selectedJobSummaryCards.length === 2
+                            ? 'sm:grid-cols-2'
+                            : ''
+                        }`}>
+                          {selectedJobSummaryCards.map((card) => (
+                            <TopMetricCard
+                              key={card.key}
+                              icon={card.icon}
+                              title={card.title}
+                              value={card.value}
+                              isPeso={card.isPeso}
+                              href={card.href}
+                            />
+                          ))}
+                        </div>
+                      ) : null}
+
+                      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+                        <div className="min-w-0 space-y-5">
+                          {hasValidDisplayValue(selectedJob.description) ? (
+                            <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+                              <div className="px-5 py-5 sm:px-6">
+                                <section>
+                                  <div className="flex items-center gap-3 pt-2">
+                                    <JobDetailIconBadge icon="file" />
+                                    <h3 className="text-sm font-semibold text-black">Job Description</h3>
+                                  </div>
+                                  <div className="mt-4 text-sm leading-relaxed text-black/70 sm:text-base">
+                                    <RichTextContent value={selectedJob.description} />
+                                  </div>
+                                </section>
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {hasValidDisplayValue(selectedJob.requirements) ? (
+                            <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+                              <div className="px-5 py-5 sm:px-6">
+                                <section>
+                                  <div className="flex items-center gap-3 pt-2">
+                                    <JobDetailIconBadge icon="tools" />
+                                    <h3 className="text-sm font-semibold text-black">Qualification</h3>
+                                  </div>
+                                  <div className="mt-4 text-sm leading-relaxed text-black/70 sm:text-base">
+                                    <RichTextContent value={selectedJob.requirements} />
+                                  </div>
+                                </section>
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {Array.isArray(selectedJob.skillsRequired) && selectedJob.skillsRequired.filter(Boolean).length > 0 ? (
+                            <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+                              <div className="border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6">
+                                <p className="text-sm font-semibold text-black">Required Skills</p>
+                              </div>
+                              <div className="px-5 py-5 sm:px-6">
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                  {selectedJob.skillsRequired.filter(Boolean).map((skill, idx) => (
+                                    <JobDetailItem key={`${skill}-${idx}`}>{skill}</JobDetailItem>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {perksAndBenefitsList.length > 0 ? (
+                            <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+                              <div className="border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6">
+                                <p className="text-sm font-semibold text-black">Perks and Benefits</p>
+                              </div>
+                              <div className="px-5 py-5 sm:px-6">
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                  {perksAndBenefitsList.map((benefit, idx) => (
+                                    <JobDetailItem key={`${benefit}-${idx}`}>{benefit}</JobDetailItem>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          ) : null}
                         </div>
 
-                        <div className={UI.lowerGrid}>
-                          <div className="min-w-0">
-                            <div className="space-y-5">
-                              <div className={UI.insetPanel}>
-                                <div className={UI.insetHead}>
-                                  <div className="flex items-center gap-2">
-                                    <SvgIcon name="file" className="w-4 h-4 text-black/55" />
-                                    <p className="text-sm font-semibold text-[#000000]">Job Details</p>
-                                  </div>
-                                </div>
-
-                                <div className={`${UI.insetBody} space-y-8`}>
-                                  <section>
-                                    <h3 className={`${UI.h3} pt-1`}>Job Description</h3>
-                                    <div className="mt-4 text-sm sm:text-[15px] text-black/75 leading-7">
-                                      <RichTextContent
-                                        value={selectedJob.description}
-                                        fallback="No description provided."
-                                      />
-                                    </div>
-                                  </section>
-
-                                  <div className={UI.divider} />
-
-                                  <section>
-                                    <h3 className={`${UI.h3} pt-1`}>Qualification</h3>
-                                    <div className="mt-4 text-sm sm:text-[15px] text-black/75 leading-7">
-                                      <RichTextContent
-                                        value={selectedJob.requirements}
-                                        fallback="No requirements provided."
-                                      />
-                                    </div>
-                                  </section>
-                                </div>
+                        <div className="min-w-0 space-y-5 lg:sticky lg:top-24 lg:self-start">
+                          {hasValidDisplayValue(selectedJob.willingToRelocate) ? (
+                            <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+                              <div className="border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6">
+                                <p className="text-sm font-semibold text-black">Job Overview</p>
                               </div>
-
-                              <div className={UI.insetPanel}>
-                                <div className={UI.insetHead}>
-                                  <p className="text-sm font-semibold text-[#000000]">Perks and Benefits</p>
-                                </div>
-
-                                <div className={UI.insetBody}>
-                                  {perksAndBenefitsList.length > 0 ? (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                      {perksAndBenefitsList.map((benefit, idx) => (
-                                        <div
-                                          key={`${benefit}-${idx}`}
-                                          className="rounded-xl border border-black/10 bg-[#FFFFFF] px-4 py-3 text-sm text-black/75"
-                                        >
-                                          {benefit}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <p className={UI.meta}>No perks or benefits specified</p>
-                                  )}
+                              <div className="px-5 py-5 sm:px-6">
+                                <div>
+                                  <p className="text-xs font-semibold uppercase tracking-wide text-black/50">Willing to Relocate?</p>
+                                  <p className="mt-1 text-sm text-black/70">{getRelocationDisplayLabel(selectedJob.willingToRelocate)}</p>
                                 </div>
                               </div>
                             </div>
-                          </div>
+                          ) : null}
 
-                          <div className="min-w-0 lg:sticky lg:top-24 lg:self-start">
-                            <div className={UI.insetPanel}>
-                              <div className={UI.insetHead}>
-                                <p className="text-sm font-semibold text-[#000000]">Job Overview</p>
+                          {hasValidDisplayValue(selectedJob.location) ? (
+                            <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+                              <div className="border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6">
+                                <p className="text-sm font-semibold text-black">Work Location</p>
                               </div>
-
-                              <div className={`${UI.insetBody} space-y-6`}>
-                                <div>
-                                  <p className={UI.caption}>Willing to Relocate?</p>
-                                  <p className={`${UI.meta} mt-1`}>{getRelocationDisplayLabel(selectedJob.willingToRelocate)}</p>
-                                </div>
-
-                                <div>
-                                  <p className={UI.caption}>Website / Company URL</p>
-                                  {companyWebsiteUrl ? (
-                                    <a
-                                      href={companyWebsiteUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className={`inline-flex items-center gap-2 font-semibold text-[#2e66a6] hover:underline ${UI.ring} rounded mt-1`}
-                                    >
-                                      <span className="break-all">{companyWebsiteUrl}</span>
-                                      <SvgIcon name="external" className="w-3.5 h-3.5" />
-                                    </a>
-                                  ) : (
-                                    <p className={`${UI.meta} mt-1`}>N/A</p>
-                                  )}
-                                </div>
-
-                                <div>
-                                  <p className={UI.caption}>Required Skills</p>
-                                  {Array.isArray(selectedJob.skillsRequired) && selectedJob.skillsRequired.length > 0 ? (
-                                    <div className="mt-2 flex flex-wrap gap-2">
-                                      {selectedJob.skillsRequired.map((skill, idx) => (
-                                        <span
-                                          key={`${skill}-${idx}`}
-                                          className="px-2.5 py-1 rounded-full text-[11px] font-medium border border-black/10 bg-[#FFFFFF] text-black/75"
-                                        >
-                                          {skill}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <p className={`${UI.meta} mt-1`}>No skills specified</p>
-                                  )}
-                                </div>
-
-                                <div>
-                                  <p className={UI.caption}>Work Location</p>
-                                  <div className="mt-2 rounded-xl border border-black/10 overflow-hidden bg-[#FFFFFF]">
-                                    <StaticLocationMap job={selectedJob} heightClass="h-[160px]" />
-
-                                    <div className="px-3 py-2.5 border-t border-black/10">
-                                      <p className="text-xs text-black/70">{formatLocationDisplay(selectedJob.location)}</p>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div className="rounded-2xl bg-[#f7faff] border border-[#d8e2ee] p-5 text-center shadow-[0_14px_32px_rgba(46,102,166,0.08)]">
-                                  <h3 className="text-sm font-bold text-black/55">Interested in this role?</h3>
-
-                                  <button
-                                    onClick={
-                                      mainActionLoading || isFullyFilled
-                                        ? undefined
-                                        : hasApplied
-                                        ? () => navigate('/jobseeker/my-applications')
-                                        : isJobActive(selectedJob)
-                                        ? handleApplyClick
-                                        : undefined
-                                    }
-                                    disabled={mainActionLoading || isFullyFilled || (!isJobActive(selectedJob) && !hasApplied)}
-                                    className={`w-full mt-4 h-12 rounded-xl text-base font-bold transition-all duration-200 ${UI.ring} ${
-                                      isFullyFilled
-                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 disabled:!pointer-events-auto disabled:cursor-not-allowed'
-                                        : mainActionLoading || (!isJobActive(selectedJob) && !hasApplied)
-                                        ? 'bg-black/5 text-black/50 border border-black/10 cursor-not-allowed'
-                                        : hasApplied
-                                        ? 'bg-[#eaf2fb] text-[#2e66a6] border border-[#d8e2ee]'
-                                        : 'bg-[#2e66a6] text-white hover:bg-[#25578f] shadow-[0_14px_28px_rgba(46,102,166,0.22)]'
-                                    }`}
-                                    type="button"
-                                  >
-                                    {mainActionLoading ? (
-                                      <span className="mr-2 inline-block w-4 h-4 rounded-full border-2 border-black/20 border-t-black/60 animate-spin motion-reduce:animate-none align-[-2px]" />
-                                    ) : isFullyFilled ? (
-                                      <SvgIcon name="checkCircle" className="inline-block mr-2 w-4 h-4 align-[-2px]" />
-                                    ) : null}
-                                    {primaryCtaLabel}
-                                  </button>
-
-                                  <p className="mt-4 text-xs text-black/45">
-                                    {selectedJob.applicationDeadline
-                                      ? `Deadline: ${new Date(selectedJob.applicationDeadline).toLocaleDateString('en-US', {
-                                          month: 'long',
-                                          day: 'numeric',
-                                          year: 'numeric',
-                                        })}`
-                                      : 'Deadline not specified'}
+                              <div className="overflow-hidden">
+                                <StaticLocationMap job={selectedJob} heightClass="h-[180px]" />
+                              </div>
+                              <div className="border-t border-[#e6edf5] px-4 py-3">
+                                <p className="text-xs text-black/65">{formatLocationDisplay(selectedJob.location)}</p>
+                                {isUsableCoordinates(getJobCoordinates(selectedJob)) ? (
+                                  <p className="mt-1 text-[11px] text-black/45">
+                                    Latitude: {getJobCoordinates(selectedJob).lat} · Longitude: {getJobCoordinates(selectedJob).lng}
                                   </p>
-                                </div>
+                                ) : null}
                               </div>
                             </div>
+                          ) : null}
+
+                          <div className="rounded-2xl border border-[#d8e2ee] bg-[#f7faff] p-5 text-center shadow-[0_14px_32px_rgba(46,102,166,0.08)]">
+                            <h3 className="text-sm font-bold text-black/55">Interested in this role?</h3>
+                            <button
+                              onClick={
+                                mainActionLoading || isFullyFilled
+                                  ? undefined
+                                  : hasApplied
+                                  ? () => navigate('/jobseeker/my-applications')
+                                  : isJobActive(selectedJob)
+                                  ? handleApplyClick
+                                  : undefined
+                              }
+                              disabled={mainActionLoading || isFullyFilled || (!isJobActive(selectedJob) && !hasApplied)}
+                              className={`mt-4 h-12 w-full rounded-xl text-base font-bold transition-all duration-200 ${UI.ring} ${
+                                isFullyFilled
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 disabled:!pointer-events-auto disabled:cursor-not-allowed'
+                                  : mainActionLoading || (!isJobActive(selectedJob) && !hasApplied)
+                                  ? 'bg-black/5 text-black/50 border border-black/10 cursor-not-allowed'
+                                  : hasApplied
+                                  ? 'bg-[#eaf2fb] text-[#2e66a6] border border-[#d8e2ee]'
+                                  : 'bg-[#2e66a6] text-white hover:bg-[#25578f] shadow-[0_14px_28px_rgba(46,102,166,0.22)]'
+                              }`}
+                              type="button"
+                            >
+                              {mainActionLoading ? (
+                                <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-black/20 border-t-black/60 align-[-2px] motion-reduce:animate-none" />
+                              ) : isFullyFilled ? (
+                                <SvgIcon name="checkCircle" className="mr-2 inline-block h-4 w-4 align-[-2px]" />
+                              ) : null}
+                              {primaryCtaLabel}
+                            </button>
+
+                            {selectedJob.applicationDeadline ? (
+                              <p className="mt-4 text-xs text-black/45">
+                                Deadline: {new Date(selectedJob.applicationDeadline).toLocaleDateString('en-US', {
+                                  month: 'long',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                })}
+                              </p>
+                            ) : null}
                           </div>
                         </div>
                       </div>

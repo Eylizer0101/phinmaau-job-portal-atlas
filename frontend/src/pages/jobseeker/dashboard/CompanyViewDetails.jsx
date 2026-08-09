@@ -681,6 +681,17 @@ const CompanyViewDetails = () => {
   const [activeTab, setActiveTab] = useState(
     location.state?.activeTab === "jobs" ? "jobs" : "about"
   );
+
+  const handleBackToSource = useCallback(() => {
+    const returnTo = String(location.state?.returnTo || '').trim();
+    if (location.state?.sourcePage === 'bookmarks' && returnTo.startsWith('/jobseeker/bookmarks')) {
+      navigate(returnTo);
+      return;
+    }
+    navigate('/jobseeker/companies');
+  }, [location.state, navigate]);
+
+  const backDestinationLabel = location.state?.sourcePage === 'bookmarks' ? 'Back to Bookmarks' : 'Back to Companies';
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
@@ -1491,12 +1502,12 @@ const CompanyViewDetails = () => {
         <div className={`${UI.container} -mt-16 sm:-mt-20 lg:-mt-24 relative z-10`}>
           <div className="mb-4">
             <button
-              onClick={() => navigate("/jobseeker/companies")}
+              onClick={handleBackToSource}
               className={`${UI.btnBase} ${UI.btnSm} ${UI.btnSecondary} ${UI.ring}`}
               type="button"
             >
               <SvgIcon name="arrowLeft" className="w-4 h-4" />
-              Back to Companies
+              {backDestinationLabel}
             </button>
           </div>
 
@@ -1505,7 +1516,7 @@ const CompanyViewDetails = () => {
             <p className="mt-2 text-black/70">{error || "The company you are looking for could not be found."}</p>
 
             <button
-              onClick={() => navigate("/jobseeker/companies")}
+              onClick={handleBackToSource}
               className={`${UI.btnBase} ${UI.btnMd} ${UI.btnPrimary} ${UI.ring} mt-6`}
               type="button"
             >
@@ -1556,12 +1567,12 @@ const CompanyViewDetails = () => {
       <div className={`${UI.container} -mt-16 sm:-mt-20 lg:-mt-24 relative z-10`}>
         <div className="absolute top-[-58px] left-4 sm:left-6 lg:left-8 z-30">
           <button
-            onClick={() => navigate("/jobseeker/companies")}
+            onClick={handleBackToSource}
             className={`${UI.btnBase} ${UI.btnSm} ${UI.btnSecondary} ${UI.ring}`}
             type="button"
           >
             <SvgIcon name="arrowLeft" className="w-4 h-4" />
-            Back to Companies
+            {backDestinationLabel}
           </button>
         </div>
 
