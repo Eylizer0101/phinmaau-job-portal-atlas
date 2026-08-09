@@ -2612,7 +2612,7 @@ const Bookmarks = () => {
                   </h1>
 
                   <p className="mt-3 text-sm sm:text-base text-white/90 leading-7 max-w-xl">
-                    {activeSection === 'jobs' ? 'Your Handpicked Jobs and Companies Collection.' : 'Review your saved companies.'}
+                    {activeSection === 'jobs' ? 'Review your saved jobs.' : 'Review your saved companies.'}
                   </p>
 
                   <p className="mt-4 text-xs sm:text-sm text-white/80 font-medium">
