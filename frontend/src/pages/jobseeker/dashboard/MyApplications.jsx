@@ -980,63 +980,61 @@ const MyApplications = () => {
           </div>
 
           <div className="pt-2">
-            <div className={`${UI.card} p-6`}>
-                  <div>
-                    <h3 className={`text-lg font-bold tracking-tight ${UI.textPrimary}`}>Understanding Application Status</h3>
-                    <p className={`mt-1 text-sm ${UI.textSecondary}`}>Quick guide for what each status means.</p>
-                  </div>
+            <div className={`${UI.card} overflow-hidden`}>
+              <div className="px-5 pb-4 pt-5 text-center sm:px-6">
+                <h3 className={`text-lg font-bold tracking-tight ${UI.textPrimary}`}>Understanding Application Status</h3>
+                <p className={`mt-0.5 text-sm ${UI.textSecondary}`}>Quick guide for what each status means.</p>
+              </div>
 
-                  <div className="mt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                    <div className="p-4 rounded-xl border border-gray-200 bg-white">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 text-black/70">
-                          <SvgIcon name="clock" className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <p className={`font-semibold ${UI.textPrimary}`}>Pending</p>
-                          <p className={`mt-1 text-sm ${UI.textSecondary}`}>Your application was sent successfully and it is still under review.</p>
-                        </div>
-                      </div>
+              <div className="grid grid-cols-1 border-t border-gray-200 md:grid-cols-4">
+                <div className="bg-slate-50 px-5 py-4 md:border-r md:border-gray-200">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 text-black/70">
+                      <SvgIcon name="clock" className="h-5 w-5" />
                     </div>
-
-                    <div className="p-4 rounded-xl border border-gray-200 bg-white">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 text-[#2e66a6]">
-                          <SvgIcon name="star" className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <p className={`font-semibold ${UI.textPrimary}`}>For Interview</p>
-                          <p className={`mt-1 text-sm ${UI.textSecondary}`}>You passed initial screening. Wait for interview or next steps.</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="p-4 rounded-xl border border-gray-200 bg-white">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 text-emerald-700">
-                          <SvgIcon name="checkCircle" className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <p className={`font-semibold ${UI.textPrimary}`}>Hired</p>
-                          <p className={`mt-1 text-sm ${UI.textSecondary}`}>The employer has hired you for the role.</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="p-4 rounded-xl border border-gray-200 bg-white">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 text-black/70">
-                          <SvgIcon name="timesCircle" className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <p className={`font-semibold ${UI.textPrimary}`}>Declined</p>
-                          <p className={`mt-1 text-sm ${UI.textSecondary}`}>Not selected this time. You can also view the employer's decline reason and feedback here.</p>
-                        </div>
-                      </div>
+                    <div>
+                      <p className={`font-semibold ${UI.textPrimary}`}>Pending</p>
+                      <p className={`mt-1 text-sm leading-5 ${UI.textSecondary}`}>Your application was sent successfully and it is still under review.</p>
                     </div>
                   </div>
+                </div>
 
-                
+                <div className="border-t border-gray-200 bg-blue-50/60 px-5 py-4 md:border-r md:border-t-0">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 text-[#2e66a6]">
+                      <SvgIcon name="star" className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className={`font-semibold ${UI.textPrimary}`}>For Interview</p>
+                      <p className={`mt-1 text-sm leading-5 ${UI.textSecondary}`}>You passed initial screening. Wait for interview or next steps.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 bg-emerald-50/60 px-5 py-4 md:border-r md:border-t-0">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 text-emerald-700">
+                      <SvgIcon name="checkCircle" className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className={`font-semibold ${UI.textPrimary}`}>Hired</p>
+                      <p className={`mt-1 text-sm leading-5 ${UI.textSecondary}`}>The employer has hired you for the role.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 bg-gray-50 px-5 py-4 md:border-t-0">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 text-black/70">
+                      <SvgIcon name="timesCircle" className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className={`font-semibold ${UI.textPrimary}`}>Declined</p>
+                      <p className={`mt-1 text-sm leading-5 ${UI.textSecondary}`}>Not selected this time. You can also view the employer's decline reason and feedback here.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
