@@ -1044,7 +1044,7 @@ const RegisterPage = () => {
 
                  
 
-                  <div className="mt-4 flex items-center gap-2">
+                  <div className="mt-4 -ml-7 flex items-center gap-3">
                     <IconLightBulb />
                     <p className="text-sm font-semibold text-gray-900">Pro-Tips for Fresh Grads:</p>
                   </div>
