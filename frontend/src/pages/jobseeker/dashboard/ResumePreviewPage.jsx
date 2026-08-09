@@ -584,7 +584,7 @@ const ResumePreviewPage = () => {
 
         .resume-section {
           margin-top: 8px;
-          break-inside: avoid;
+          break-inside: auto;
         }
 
         .resume-section h2 {
@@ -596,6 +596,7 @@ const ResumePreviewPage = () => {
           font-weight: 700;
           letter-spacing: 0.25px;
           text-transform: uppercase;
+          break-after: avoid;
         }
 
         .objective-text {
@@ -727,6 +728,8 @@ const ResumePreviewPage = () => {
 
         .resume-declaration {
           margin-top: 11px;
+          width: 48%;
+          margin-left: auto;
           break-inside: avoid;
         }
 
@@ -737,6 +740,11 @@ const ResumePreviewPage = () => {
 
         .declaration-name {
           font-weight: 700;
+        }
+
+        .declaration-signature {
+          display: inline-block;
+          text-align: center;
         }
 
         .declaration-role {
@@ -898,8 +906,10 @@ const ResumePreviewPage = () => {
               <p className="declaration-text">
                 I hereby certify that the above information is true and correct to the best of my knowledge.
               </p>
-              <div className="declaration-name">{fullName}</div>
-              <div className="declaration-role">Applicant</div>
+              <div className="declaration-signature">
+                <div className="declaration-name">{fullName}</div>
+                <div className="declaration-role">Applicant</div>
+              </div>
             </section>
           </div>
           </main>

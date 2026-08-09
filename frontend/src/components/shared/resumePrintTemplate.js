@@ -439,7 +439,7 @@ const resumeStyles = `
 
   .resume-section {
     margin-top: 8px;
-    break-inside: avoid;
+    break-inside: auto;
   }
 
   .resume-section h2 {
@@ -451,6 +451,7 @@ const resumeStyles = `
     font-weight: 700;
     letter-spacing: 0.25px;
     text-transform: uppercase;
+    break-after: avoid;
   }
 
   .objective-text {
@@ -587,6 +588,8 @@ const resumeStyles = `
 
   .resume-declaration {
     margin-top: 11px;
+    width: 48%;
+    margin-left: auto;
     break-inside: avoid;
   }
 
@@ -597,6 +600,11 @@ const resumeStyles = `
 
   .declaration-name {
     font-weight: 700;
+  }
+
+  .declaration-signature {
+    display: inline-block;
+    text-align: center;
   }
 
   .declaration-role {
@@ -811,8 +819,10 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
           ${showOptionalSection('references', references) ? profileListSectionHtml({ title: 'References', items: references, type: 'references' }) : ''}
           <section class="resume-declaration">
             <p class="declaration-text">I hereby certify that the above information is true and correct to the best of my knowledge.</p>
-            <div class="declaration-name">${escapeHtml(fullName)}</div>
-            <div class="declaration-role">Applicant</div>
+            <div class="declaration-signature">
+              <div class="declaration-name">${escapeHtml(fullName)}</div>
+              <div class="declaration-role">Applicant</div>
+            </div>
           </section>
         </div>
       </main>
@@ -905,6 +915,7 @@ export const openResumePrintWindow = async (resumeData = {}) => {
   try {
     const html2pdf = await loadHtml2Pdf();
     const paper = wrapper.querySelector('.resume-paper') || wrapper;
+    paper.style.minHeight = 'auto';
 
     const pdfWorker = html2pdf()
       .set({
