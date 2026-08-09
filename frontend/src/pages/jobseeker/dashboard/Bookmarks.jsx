@@ -1216,7 +1216,7 @@ const TopMetricCard = ({ icon, title, value, isPeso = false, href = '' }) => (
             {getShortUrlLabel(value)}
           </a>
         ) : (
-          <p className="mt-1.5 break-words text-[15px] font-semibold leading-6 text-black">{value}</p>
+          <p className="mt-1.5 break-words text-[15px] font-normal leading-6 text-black">{value}</p>
         )}
       </div>
     </div>
@@ -2056,7 +2056,11 @@ const Bookmarks = () => {
         key: 'salary',
         icon: 'money',
         title: 'Salary',
-        value: formatSalary(selectedJob.salaryMin, selectedJob.salaryMax, normalizeBoolean(selectedJob.hideSalary)),
+        value: formatSalary(
+          selectedJob.salaryMin,
+          selectedJob.salaryMax,
+          normalizeBoolean(selectedJob.hideSalary)
+        ).replace(/₱/g, ''),
         isPeso: true,
       });
     }
