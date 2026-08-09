@@ -747,6 +747,7 @@ const ResumePreviewPage = () => {
           min-width: 160px;
           margin-left: auto;
           text-align: center;
+          transform: translateX(4mm);
         }
 
         .declaration-role {
