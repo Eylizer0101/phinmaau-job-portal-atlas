@@ -855,6 +855,11 @@ const EmployerJobView = () => {
     <EmployerLayout>
       <div className={UI.page}>
         <div className={UI.container}>
+          {(location.state?.jobPostSuccess || location.state?.jobEditSuccess) && (
+            <div role="status" className="mb-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-800">
+              {location.state?.jobPostSuccess ? 'Job published successfully.' : 'Job updated successfully.'}
+            </div>
+          )}
           <div className="mb-5">
             <button
               onClick={handleBack}

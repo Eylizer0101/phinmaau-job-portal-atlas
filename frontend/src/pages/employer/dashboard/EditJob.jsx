@@ -11,7 +11,6 @@ import {
   WILLING_TO_RELOCATE_OPTIONS,
   PERKS_AND_BENEFITS_OPTIONS
 } from '../../../constants/postJobDropdownOptions';
-import { PH_PROVINCES_BY_REGION, PH_CITIES_BY_PROVINCE } from '../../../constants/phLocations';
 import {
   FaBold,
   FaItalic,
@@ -153,6 +152,25 @@ const getRichTextPlainText = (value = '') => {
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+};
+
+const JOB_TEXT_MIN = 1000;
+const JOB_TEXT_MAX = 2000;
+const MAX_SALARY = 999999;
+const INVALID_JOB_TITLE_WORDS = ['iloveyou', 'i love you', 'love you', 'mahal kita', 'fuck', 'shit', 'bitch', 'sex', 'sexy', 'porn', 'xxx', 'test', 'asdf', 'qwerty', 'sample', 'random'];
+const JOB_ROLE_WORDS = ['accountant', 'administrator', 'analyst', 'architect', 'assistant', 'auditor', 'cashier', 'clerk', 'consultant', 'coordinator', 'designer', 'developer', 'director', 'driver', 'electrician', 'engineer', 'instructor', 'manager', 'mechanic', 'nurse', 'officer', 'operator', 'programmer', 'recruiter', 'representative', 'secretary', 'specialist', 'staff', 'supervisor', 'teacher', 'technician', 'writer', 'teller', 'associate', 'executive', 'sales', 'marketing', 'human resources', 'information technology', 'hr', 'it'];
+const normalizeSingleLine = (value = '') => String(value || '').replace(/\s+/g, ' ').trim();
+const getJobTitleError = (value = '') => {
+  const title = normalizeSingleLine(value);
+  const lower = title.toLowerCase();
+  if (!title) return 'Job title is required.';
+  if (title.length > 100) return 'Job title must not exceed 100 characters.';
+  if (/\d/.test(title)) return 'Job title must not contain numbers.';
+  if (!/^[a-zA-ZÀ-ÿ&/().,'’+\-\s]+$/.test(title)) return 'Enter a valid job title using letters only.';
+  if (INVALID_JOB_TITLE_WORDS.some((word) => lower.includes(word))) return 'Enter a professional, job-related title.';
+  if (/(.)\1{3,}/i.test(title) || !/[aeiou]/i.test(title.replace(/\b(hr|it)\b/gi, ''))) return 'Enter a valid, recognizable job title.';
+  if (!JOB_ROLE_WORDS.some((word) => new RegExp(`\\b${word.replace(/\s+/g, '\\s+')}\\b`, 'i').test(title))) return 'Enter a valid job title, such as Software Developer or Administrative Assistant.';
+  return '';
 };
 
 const RichTextToolbarButton = ({
@@ -797,6 +815,16 @@ const addDaysLocalISO = (days) => {
   return getLocalISODate(d);
 };
 
+const addMonthsLocalISO = (date, months) => {
+  const result = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const originalDay = result.getDate();
+  result.setDate(1);
+  result.setMonth(result.getMonth() + months);
+  const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+  result.setDate(Math.min(originalDay, lastDay));
+  return getLocalISODate(result);
+};
+
 const stableStringify = (obj) => JSON.stringify(obj, Object.keys(obj).sort());
 
 const normalizeExperienceLevel = (level) => {
@@ -1106,6 +1134,7 @@ const EditJob = () => {
   const hasLoadedInitialRef = useRef(false);
 
   const [skillInput, setSkillInput] = useState('');
+  const [customBenefitInput, setCustomBenefitInput] = useState('');
 
   const [locationImageFile, setLocationImageFile] = useState(null);
   const [locationImagePreview, setLocationImagePreview] = useState('');
@@ -1265,6 +1294,7 @@ const EditJob = () => {
     if (isBusy) return;
     const cleanSkill = String(rawSkill || '').trim().replace(/^,+|,+$/g, '');
     if (!cleanSkill) return;
+    if (cleanSkill.length > 100) { markTouched('skillsRequired'); return; }
 
     const currentSkills = (formData.skillsRequired || '')
       .split(',')
@@ -1296,6 +1326,20 @@ const EditJob = () => {
     setError('');
     setSuccess('');
   }, [formData.skillsRequired, markTouched, isBusy]);
+
+  const customBenefits = useMemo(() => String(formData.otherBenefits || '').split(',').map((item) => item.trim()).filter(Boolean), [formData.otherBenefits]);
+  const addCustomBenefit = useCallback((rawBenefit) => {
+    if (isBusy) return;
+    const benefit = normalizeSingleLine(rawBenefit).replace(/^,+|,+$/g, '');
+    if (!benefit || benefit.length > 80) return;
+    if (customBenefits.some((item) => item.toLowerCase() === benefit.toLowerCase())) { setCustomBenefitInput(''); return; }
+    setFormData((prev) => ({ ...prev, otherBenefits: [...customBenefits, benefit].join(', ') }));
+    setCustomBenefitInput('');
+  }, [customBenefits, isBusy]);
+  const removeCustomBenefit = useCallback((indexToRemove) => {
+    if (isBusy) return;
+    setFormData((prev) => ({ ...prev, otherBenefits: customBenefits.filter((_, index) => index !== indexToRemove).join(', ') }));
+  }, [customBenefits, isBusy]);
 
   const removeRequiredSkill = useCallback((skillIndex) => {
     if (isBusy) return;
@@ -1381,12 +1425,11 @@ const EditJob = () => {
   const experienceLevels = EXPERIENCE_LEVELS;
   const educationLevels = EDUCATION_LEVELS;
   const willingToRelocateOptions = WILLING_TO_RELOCATE_OPTIONS;
-  const provinceOptions = useMemo(() => Array.from(new Set(Object.values(PH_PROVINCES_BY_REGION).flat())).sort((a, b) => a.localeCompare(b)), []);
-  const cityOptions = useMemo(() => formData.locationProvince ? (PH_CITIES_BY_PROVINCE[formData.locationProvince] || []) : [], [formData.locationProvince]);
   const perksAndBenefitsOptions = PERKS_AND_BENEFITS_OPTIONS;
   const workModes = ['On-site', 'Remote', 'Blended', 'Work from Home'];
 
-  const minDeadlineISO = useMemo(() => addDaysLocalISO(1), []);
+  const minDeadlineISO = useMemo(() => getLocalISODate(new Date()), []);
+  const maxDeadlineISO = useMemo(() => addMonthsLocalISO(new Date(), 6), []);
   const todayISO = useMemo(() => getLocalISODate(new Date()), []);
 
   const skillsAll = useMemo(() => {
@@ -1415,19 +1458,19 @@ const EditJob = () => {
     const min = Number(formData.salaryMin);
     const max = Number(formData.salaryMax);
     if (Number.isNaN(min) || Number.isNaN(max)) return false;
-    return min <= max;
+    return Number.isInteger(min) && Number.isInteger(max) && min > 0 && max > 0 && min <= MAX_SALARY && max <= MAX_SALARY && min <= max;
   }, [formData.hideSalary, formData.salaryMin, formData.salaryMax]);
 
   const vacanciesValid = useMemo(() => {
     const v = Number(formData.vacancies);
     if (Number.isNaN(v)) return false;
-    return v >= 1;
+    return /^\d+$/.test(String(formData.vacancies)) && Number.isInteger(v) && v >= 1 && v <= 50;
   }, [formData.vacancies]);
 
   const isDeadlineValid = useMemo(() => {
     if (!formData.applicationDeadline) return false;
-    return formData.applicationDeadline >= minDeadlineISO;
-  }, [formData.applicationDeadline, minDeadlineISO]);
+    return formData.applicationDeadline >= minDeadlineISO && formData.applicationDeadline <= maxDeadlineISO;
+  }, [formData.applicationDeadline, minDeadlineISO, maxDeadlineISO]);
 
   const derivedStatus = useMemo(() => {
     if (formData.isPublished === false) return 'Draft';
@@ -1442,13 +1485,12 @@ const EditJob = () => {
   const requiredOk = useMemo(() => {
     return (
       String(formData.title || '').trim() &&
+      !getJobTitleError(formData.title) &&
       String(formData.jobType || '').trim() &&
       String(formData.workMode || '').trim() &&
       String(formData.location || '').trim() &&
-      String(formData.locationProvince || '').trim() &&
-      String(formData.locationCity || '').trim() &&
-      getRichTextPlainText(formData.description).length >= 80 &&
-      getRichTextPlainText(formData.requirements).length >= 40 &&
+      getRichTextPlainText(formData.description).length >= JOB_TEXT_MIN && getRichTextPlainText(formData.description).length <= JOB_TEXT_MAX &&
+      getRichTextPlainText(formData.requirements).length >= JOB_TEXT_MIN && getRichTextPlainText(formData.requirements).length <= JOB_TEXT_MAX &&
       EXPERIENCE_LEVELS.includes(String(formData.experienceLevel || '').trim()) &&
       String(formData.educationLevel || '').trim() &&
       WILLING_TO_RELOCATE_OPTIONS.includes(String(formData.willingToRelocate || '').trim()) &&
@@ -1462,6 +1504,7 @@ const EditJob = () => {
   const stepReady = useMemo(() => ({
     1: Boolean(
       String(formData.title || '').trim() &&
+      !getJobTitleError(formData.title) &&
       String(formData.jobType || '').trim() &&
       String(formData.workMode || '').trim() &&
       vacanciesValid &&
@@ -1469,16 +1512,14 @@ const EditJob = () => {
       salaryValid
     ),
     2: Boolean(
-      getRichTextPlainText(formData.description).length >= 80 &&
-      getRichTextPlainText(formData.requirements).length >= 40 &&
+      getRichTextPlainText(formData.description).length >= JOB_TEXT_MIN && getRichTextPlainText(formData.description).length <= JOB_TEXT_MAX &&
+      getRichTextPlainText(formData.requirements).length >= JOB_TEXT_MIN && getRichTextPlainText(formData.requirements).length <= JOB_TEXT_MAX &&
       EXPERIENCE_LEVELS.includes(String(formData.experienceLevel || '').trim()) &&
       String(formData.educationLevel || '').trim()
     ),
     3: Boolean(skillsCountValid),
     4: Boolean(
       String(formData.location || '').trim() &&
-      String(formData.locationProvince || '').trim() &&
-      String(formData.locationCity || '').trim() &&
       WILLING_TO_RELOCATE_OPTIONS.includes(String(formData.willingToRelocate || '').trim())
     ),
   }), [formData, vacanciesValid, isDeadlineValid, salaryValid, skillsCountValid]);
@@ -1542,18 +1583,13 @@ const EditJob = () => {
   const fieldErrors = useMemo(() => {
     const errors = {};
 
-    if ((touched.title || submitted) && !String(formData.title || '').trim()) {
-      errors.title = 'Job title is required.';
+    if (touched.title || submitted) {
+      errors.title = getJobTitleError(formData.title);
+      if (!errors.title) delete errors.title;
     }
 
     if ((touched.location || submitted) && !String(formData.location || '').trim()) {
       errors.location = 'Complete work address is required.';
-    }
-    if ((touched.locationProvince || submitted) && !String(formData.locationProvince || '').trim()) {
-      errors.locationProvince = 'Province is required.';
-    }
-    if ((touched.locationCity || submitted) && !String(formData.locationCity || '').trim()) {
-      errors.locationCity = 'City / Municipality is required.';
     }
 
     if ((touched.jobType || submitted) && !String(formData.jobType || '').trim()) {
@@ -1584,9 +1620,11 @@ const EditJob = () => {
     } else if (
       (touched.description || submitted) &&
       descriptionText.length > 0 &&
-      descriptionText.length < 80
+      descriptionText.length < JOB_TEXT_MIN
     ) {
-      errors.description = 'Job description must be at least 80 characters.';
+      errors.description = 'Job description must be at least 1,000 characters.';
+    } else if ((touched.description || submitted) && descriptionText.length > JOB_TEXT_MAX) {
+      errors.description = 'Job description must not exceed 2,000 characters.';
     }
 
     if ((touched.requirements || submitted) && !requirementsText) {
@@ -1594,13 +1632,15 @@ const EditJob = () => {
     } else if (
       (touched.requirements || submitted) &&
       requirementsText.length > 0 &&
-      requirementsText.length < 40
+      requirementsText.length < JOB_TEXT_MIN
     ) {
-      errors.requirements = 'Requirements must be at least 40 characters.';
+      errors.requirements = 'Qualifications must be at least 1,000 characters.';
+    } else if ((touched.requirements || submitted) && requirementsText.length > JOB_TEXT_MAX) {
+      errors.requirements = 'Qualifications must not exceed 2,000 characters.';
     }
 
     if ((touched.vacancies || submitted) && !vacanciesValid) {
-      errors.vacancies = 'Vacancies must be 1 or more.';
+      errors.vacancies = 'Vacancies must be a whole number from 1 to 50.';
     }
 
     if (
@@ -1614,7 +1654,7 @@ const EditJob = () => {
       (touched.salaryMin || touched.salaryMax || submitted) &&
       !salaryValid
     ) {
-      errors.salary = 'Minimum salary must be ≤ maximum salary.';
+      errors.salary = 'Salary must be ₱1–₱999,999, and maximum salary must be at least the minimum.';
     }
 
     if ((touched.applicationDeadline || submitted) && !formData.applicationDeadline) {
@@ -1624,11 +1664,13 @@ const EditJob = () => {
       formData.applicationDeadline &&
       !isDeadlineValid
     ) {
-      errors.applicationDeadline = 'Application deadline must be at least tomorrow.';
+      errors.applicationDeadline = 'Application deadline must be from today up to exactly 6 months from today.';
     }
 
     if ((touched.skillsRequired || submitted) && !skillsCountValid) {
       errors.skillsRequired = `Please limit skills to 10. You entered ${skillsAll.length}.`;
+    } else if ((touched.skillsRequired || submitted) && skillsAll.some((skill) => skill.length > 100)) {
+      errors.skillsRequired = 'Each skill must not exceed 100 characters.';
     }
 
     if ((touched.locationImage || submitted) && locationImageFile) {
@@ -1652,29 +1694,30 @@ const EditJob = () => {
   ]);
 
   const validateStrict = () => {
-    if (!String(formData.title || '').trim()) return 'Job title is required';
+    const titleError = getJobTitleError(formData.title);
+    if (titleError) return titleError;
     if (!String(formData.jobType || '').trim()) return 'Employment type is required';
     if (!String(formData.workMode || '').trim()) return 'Work mode is required';
     if (!String(formData.location || '').trim()) return 'Complete work address is required';
-    if (!String(formData.locationProvince || '').trim()) return 'Province is required';
-    if (!String(formData.locationCity || '').trim()) return 'City / Municipality is required';
     if (!String(formData.educationLevel || '').trim()) return 'Education level is required';
     const descriptionText = getRichTextPlainText(formData.description);
     const requirementsText = getRichTextPlainText(formData.requirements);
     if (!descriptionText) return 'Job description is required';
-    if (descriptionText.length < 80) return 'Job description must be at least 80 characters';
+    if (descriptionText.length < JOB_TEXT_MIN || descriptionText.length > JOB_TEXT_MAX) return 'Job description must contain 1,000 to 2,000 characters';
     if (!requirementsText) return 'Job requirements are required';
-    if (requirementsText.length < 40) return 'Requirements must be at least 40 characters';
-    if (!vacanciesValid) return 'Vacancies must be 1 or more';
+    if (requirementsText.length < JOB_TEXT_MIN || requirementsText.length > JOB_TEXT_MAX) return 'Qualifications must contain 1,000 to 2,000 characters';
+    if (!vacanciesValid) return 'Vacancies must be a whole number from 1 to 50';
     if (!formData.applicationDeadline) return 'Application deadline is required';
-    if (!isDeadlineValid) return 'Application deadline must be in the future';
+    if (!isDeadlineValid) return 'Application deadline must be from today through 6 months from today';
     if (!formData.hideSalary && (formData.salaryMin === '' || formData.salaryMax === '')) {
       return 'Minimum and maximum salary are required unless salary is hidden';
     }
     if (!formData.hideSalary && !salaryValid) {
-      return 'Minimum salary cannot be greater than maximum salary';
+      return 'Salary must be ₱1–₱999,999, and maximum must be at least the minimum';
     }
     if (!skillsCountValid) return 'Skills must be 10 or fewer';
+    if (skillsAll.some((skill) => skill.length > 100)) return 'Each skill must not exceed 100 characters';
+    if (customBenefits.some((benefit) => benefit.length > 80)) return 'Each custom benefit must not exceed 80 characters';
 
     const exp = normalizeExperienceLevel(formData.experienceLevel);
     if (!EXPERIENCE_LEVELS.includes(exp)) return 'Invalid experience level';
@@ -1743,10 +1786,10 @@ const EditJob = () => {
   const buildPayload = ({ mode }) => {
     const payload = new FormData();
 
-    payload.append('title', String(formData.title || '').trim());
+    payload.append('title', normalizeSingleLine(formData.title));
     payload.append('location', String(formData.location || '').trim());
-    payload.append('locationProvince', String(formData.locationProvince || '').trim());
-    payload.append('locationCity', String(formData.locationCity || '').trim());
+    payload.append('locationProvince', '');
+    payload.append('locationCity', '');
     payload.append('description', String(formData.description || '').trim());
     payload.append('requirements', String(formData.requirements || '').trim());
     payload.append('jobType', formData.jobType);
@@ -2216,9 +2259,9 @@ const EditJob = () => {
     setPublishing(true);
     try {
       const payload = buildPayload({ mode: 'publish' });
-      await persist(payload);
-
-      navigate('/employer/manage-jobs', {
+      const response = await persist(payload);
+      const savedId = response.data?.job?._id || response.data?.job?.id || id;
+      navigate(`/employer/manage-jobs/${savedId}/view`, {
         state: { jobEditSuccess: true, successType: 'edit-publish' },
       });
     } catch (err) {
@@ -2250,8 +2293,9 @@ const EditJob = () => {
     setSavingChanges(true);
     try {
       const payload = buildPayload({ mode: 'update' });
-      await persist(payload);
-      navigate('/employer/manage-jobs', {
+      const response = await persist(payload);
+      const savedId = response.data?.job?._id || response.data?.job?.id || id;
+      navigate(`/employer/manage-jobs/${savedId}/view`, {
         state: { jobEditSuccess: true, successType: 'edit' },
       });
     } catch (err) {
@@ -2464,6 +2508,7 @@ const EditJob = () => {
                               onBlur={() => markTouched('title')}
                               className={inputClass(!!fieldErrors.title)}
                               placeholder="e.g., Junior Web Developer"
+                              maxLength={100}
                               disabled={isBusy}
                             />
                           </Field>
@@ -2526,6 +2571,8 @@ const EditJob = () => {
                                 onChange={handleChange}
                                 onBlur={() => markTouched('vacancies')}
                                 min="1"
+                                max="50"
+                                step="1"
                                 placeholder="Enter number of vacancies"
                                 className={inputClass(!!fieldErrors.vacancies)}
                                 disabled={isBusy}
@@ -2544,6 +2591,7 @@ const EditJob = () => {
                                 onChange={handleChange}
                                 onBlur={() => markTouched('applicationDeadline')}
                                 min={minDeadlineISO}
+                                max={maxDeadlineISO}
                                 placeholder="Select application deadline"
                                 className={inputClass(!!fieldErrors.applicationDeadline)}
                                 disabled={isBusy}
@@ -2575,14 +2623,14 @@ const EditJob = () => {
                               value={formatSalaryInput(formData.salaryMin)}
                               onChange={(event) => setFormData((prev) => ({
                                 ...prev,
-                                salaryMin: sanitizeSalaryInput(event.target.value),
+                                salaryMin: sanitizeSalaryInput(event.target.value).slice(0, 6),
                               }))}
                               onBlur={() => markTouched('salaryMin')}
                               className={`${inputClass(!!fieldErrors.salary)} pl-8`}
                               placeholder={formData.hideSalary ? 'Salary hidden' : 'Min'}
-                              disabled={formData.hideSalary}
+                              maxLength={7}
                               required={!formData.hideSalary}
-                              disabled={isBusy}
+                              disabled={isBusy || formData.hideSalary}
                             />
                           </div>
                         </Field>
@@ -2598,14 +2646,14 @@ const EditJob = () => {
                               value={formatSalaryInput(formData.salaryMax)}
                               onChange={(event) => setFormData((prev) => ({
                                 ...prev,
-                                salaryMax: sanitizeSalaryInput(event.target.value),
+                                salaryMax: sanitizeSalaryInput(event.target.value).slice(0, 6),
                               }))}
                               onBlur={() => markTouched('salaryMax')}
                               className={`${inputClass(!!fieldErrors.salary)} pl-8`}
                               placeholder={formData.hideSalary ? 'Salary hidden' : 'Max'}
-                              disabled={formData.hideSalary}
+                              maxLength={7}
                               required={!formData.hideSalary}
-                              disabled={isBusy}
+                              disabled={isBusy || formData.hideSalary}
                             />
                           </div>
                         </Field>
@@ -2709,17 +2757,7 @@ const EditJob = () => {
                       
                         error={fieldErrors.description}
                       >
-                        <RichTextEditor
-                          id="description"
-                          name="description"
-                          value={formData.description}
-                          onChange={handleChange}
-                          onBlur={() => markTouched('description')}
-                          rows={7}
-                          error={Boolean(fieldErrors.description)}
-                          placeholder="Write the role overview and day-to-day responsibilities..."
-                          disabled={isBusy}
-                        />
+                        <div><RichTextEditor id="description" name="description" value={formData.description} onChange={handleChange} onBlur={() => markTouched('description')} rows={7} error={Boolean(fieldErrors.description)} placeholder="Write the role overview and day-to-day responsibilities..." disabled={isBusy} /><div className="flex justify-end text-xs text-gray-500">{getRichTextPlainText(formData.description).length.toLocaleString()} / {JOB_TEXT_MAX.toLocaleString()}</div></div>
                       </Field>
 
                       <Field
@@ -2728,24 +2766,14 @@ const EditJob = () => {
                     
                         error={fieldErrors.requirements}
                       >
-                        <RichTextEditor
-                          id="requirements"
-                          name="requirements"
-                          value={formData.requirements}
-                          onChange={handleChange}
-                          onBlur={() => markTouched('requirements')}
-                          rows={6}
-                          error={Boolean(fieldErrors.requirements)}
-                          placeholder="Must-have: ...  | Nice-to-have: ..."
-                          disabled={isBusy}
-                        />
+                        <div><RichTextEditor id="requirements" name="requirements" value={formData.requirements} onChange={handleChange} onBlur={() => markTouched('requirements')} rows={6} error={Boolean(fieldErrors.requirements)} placeholder="Must-have: ...  | Nice-to-have: ..." disabled={isBusy} /><div className="flex justify-end text-xs text-gray-500">{getRichTextPlainText(formData.requirements).length.toLocaleString()} / {JOB_TEXT_MAX.toLocaleString()}</div></div>
                       </Field>
                     </section>
 
                     <div className="hidden border-t border-gray-100" />
 
                     <section className={`${activeStep === 3 ? 'block' : 'hidden'} space-y-5`}>
-                      <h3 className="text-base font-bold text-gray-900">Required Skills</h3>
+                      <h3 className="text-base font-bold text-gray-900">Required Skills (Optional)</h3>
 
                       <Field
                         id="skillsRequired"
@@ -2769,6 +2797,7 @@ const EditJob = () => {
                             placeholder={skills.length >= 10 ? 'Maximum of 10 skills reached' : 'Type a skill'}
                             disabled={isBusy || skills.length >= 10}
                             autoComplete="off"
+                            maxLength={100}
                           />
 
                           <button
@@ -2811,7 +2840,7 @@ const EditJob = () => {
                     <div className="hidden border-t border-gray-100" />
 
                     <section className={`${activeStep === 3 ? 'block' : 'hidden'} space-y-5`}>
-                      <h3 className="text-base font-bold text-gray-900">Perks and Benefits</h3>
+                      <h3 className="text-base font-bold text-gray-900">Perks and Benefits (Optional)</h3>
 
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         {perksAndBenefitsOptions.map((perk) => {
@@ -2834,17 +2863,10 @@ const EditJob = () => {
                         })}
                       </div>
 
-                      <Field id="otherBenefits" label="Other benefits (type to add)">
-                        <input
-                          name="otherBenefits"
-                          value={formData.otherBenefits}
-                          onChange={handleChange}
-                          onBlur={() => markTouched('otherBenefits')}
-                          className={inputClass(false)}
-                          placeholder="e.g., Paid Bereavement/Family Leave, Paid leave, Bonuses"
-                          disabled={isBusy}
-                        />
+                      <Field id="otherBenefits" label="More Benefits & Perks (Optional)">
+                        <div className="flex min-h-[50px] items-center rounded-xl border border-gray-300 bg-white focus-within:border-[#2e66a6] focus-within:ring-2 focus-within:ring-[#2e66a6]"><input id="otherBenefits" value={customBenefitInput} onChange={(event) => setCustomBenefitInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addCustomBenefit(customBenefitInput); } }} maxLength={80} disabled={isBusy} className="min-w-0 flex-1 bg-transparent px-4 py-3 text-gray-900 outline-none" placeholder="e.g., Paid Bereavement Leave" /><button type="button" onClick={() => addCustomBenefit(customBenefitInput)} disabled={isBusy || !customBenefitInput.trim()} className="mr-2 h-9 rounded-lg bg-[#2e66a6] px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45">Add</button></div>
                       </Field>
+                      {customBenefits.length > 0 && <div className="flex flex-wrap gap-2">{customBenefits.map((benefit, index) => <span key={`${benefit}-${index}`} className="inline-flex items-center gap-2 rounded-xl border border-[#cdddf0] bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#24558d]">{benefit}<button type="button" onClick={() => removeCustomBenefit(index)} disabled={isBusy} aria-label={`Remove ${benefit}`} className="text-base hover:text-red-600">×</button></span>)}</div>}
                     </section>
 
                     <div className="hidden border-t border-gray-100" />
@@ -2872,7 +2894,7 @@ const EditJob = () => {
                         <div className="hidden md:block" />
                       </div>
 
-                      <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                      <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                         Let applicants know if there's a possibility of relocation for this position. This helps candidates plan ahead.
                       </div>
                     </section>
@@ -2881,41 +2903,8 @@ const EditJob = () => {
                     <section className={`${activeStep === 4 ? 'block' : 'hidden'} space-y-5`}>
                       <h3 className="text-base font-bold text-gray-900">Additional Details</h3>
 
-                      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                        <Field id="locationProvince" label="Province" error={fieldErrors.locationProvince}>
-                          <select
-                            name="locationProvince"
-                            value={formData.locationProvince}
-                            disabled={isBusy}
-                            onChange={(event) => {
-                              const province = event.target.value;
-                              setFormData((prev) => ({ ...prev, locationProvince: province, locationCity: '' }));
-                              markTouched('locationProvince');
-                              clearMessages();
-                            }}
-                            onBlur={() => markTouched('locationProvince')}
-                            className={selectClass}
-                          >
-                            <option value="">Select province</option>
-                            {provinceOptions.map((province) => <option key={province} value={province}>{province}</option>)}
-                          </select>
-                        </Field>
-
-                        <Field id="locationCity" label="City / Municipality" error={fieldErrors.locationCity}>
-                          <select
-                            name="locationCity"
-                            value={formData.locationCity}
-                            disabled={isBusy || !formData.locationProvince}
-                            onChange={handleChange}
-                            onBlur={() => markTouched('locationCity')}
-                            className={selectClass}
-                          >
-                            <option value="">Select city / municipality</option>
-                            {cityOptions.map((city) => <option key={city} value={city}>{city}</option>)}
-                          </select>
-                        </Field>
-
-                        <div className="md:col-span-2">
+                      <div className="grid grid-cols-1 gap-5">
+                        <div>
                         <Field
                           id="location"
                           label="Complete Work Office Address"
@@ -2950,13 +2939,7 @@ const EditJob = () => {
                 <div className="border-t border-gray-200 bg-white px-6 py-4">
                   <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-gray-600">
-                {activeStep < JOB_FORM_STEPS.length ? (
-                  stepReady[activeStep] ? (
-                    <span className="font-semibold text-[#2e66a6]">This step is complete.</span>
-                  ) : (
-                    <span>Complete this step to continue.</span>
-                  )
-                ) : requiredOk ? (
+                {activeStep < JOB_FORM_STEPS.length ? null : requiredOk ? (
                   <span className="font-semibold text-[#2e66a6]">
                     All required fields complete. You can {isDraft ? 'publish' : 'save changes'}.
                   </span>
@@ -3081,6 +3064,7 @@ const EditJob = () => {
                   <div className="mx-auto w-full max-w-6xl space-y-5">
                     <section className="rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] sm:p-7">
                       <div className="flex min-w-0 flex-col gap-5">
+                        <img src={storedUser?.employerProfile?.coverPhoto || storedUser?.employerProfile?.companyCoverPhoto || '/images/jobback.png'} alt="Company cover" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = '/images/jobback.png'; }} className="h-36 w-full rounded-xl bg-slate-100 object-cover sm:h-52" />
                         <div className="flex min-w-0 items-start gap-4">
                           {storedUser?.employerProfile?.companyLogo ? (
                             <img

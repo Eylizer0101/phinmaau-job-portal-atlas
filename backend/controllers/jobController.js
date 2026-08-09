@@ -180,6 +180,63 @@ const normalizeSkills = (skillsRequired) => {
   return [];
 };
 
+const stripHtmlToText = (value = '') => String(value || '')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&nbsp;|&#160;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&lt;/gi, '<')
+  .replace(/&gt;/gi, '>')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+const normalizeSingleLine = (value = '') => String(value || '').replace(/\s+/g, ' ').trim();
+const INVALID_JOB_TITLE_WORDS = ['iloveyou', 'i love you', 'love you', 'mahal kita', 'fuck', 'shit', 'bitch', 'sex', 'sexy', 'porn', 'xxx', 'asdf', 'qwerty', 'sample', 'random', 'test'];
+
+const validateJobRules = (data, requireComplete = false) => {
+  const title = normalizeSingleLine(data.title);
+  if ((requireComplete || title) && !title) return 'Job title is required.';
+  if (title.length > 100) return 'Job title must not exceed 100 characters.';
+  if (/\d/.test(title)) return 'Job title must not contain numbers.';
+  if (title && (!/^[a-zA-ZÀ-ÿ&/().,'’+\-\s]+$/.test(title) || INVALID_JOB_TITLE_WORDS.some((word) => title.toLowerCase().includes(word)) || /(.)\1{3,}/i.test(title))) return 'Enter a valid, professional job title.';
+
+  const vacanciesText = String(data.vacancies ?? '').trim();
+  if (requireComplete || vacanciesText) {
+    if (!/^\d+$/.test(vacanciesText) || Number(vacanciesText) < 1 || Number(vacanciesText) > 50) return 'Vacancies must be a whole number from 1 to 50.';
+  }
+
+  for (const [field, label] of [['description', 'Job description'], ['requirements', 'Qualifications']]) {
+    const text = stripHtmlToText(data[field]);
+    if (requireComplete && !text) return `${label} is required.`;
+    if ((requireComplete && text && text.length < 1000) || text.length > 2000) return `${label} must contain 1,000 to 2,000 text characters.`;
+  }
+
+  const deadlineText = String(data.applicationDeadline || '').trim();
+  if (requireComplete || deadlineText) {
+    const deadline = new Date(`${deadlineText}T00:00:00`);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const maximum = new Date(today); const day = maximum.getDate(); maximum.setDate(1); maximum.setMonth(maximum.getMonth() + 6); maximum.setDate(Math.min(day, new Date(maximum.getFullYear(), maximum.getMonth() + 1, 0).getDate()));
+    if (Number.isNaN(deadline.getTime()) || deadline < today || deadline > maximum) return 'Application deadline must be from today up to exactly 6 months from today.';
+  }
+
+  const hidden = parseBool(data.hideSalary);
+  const minText = String(data.salaryMin ?? '').trim();
+  const maxText = String(data.salaryMax ?? '').trim();
+  if (!hidden && (requireComplete || minText || maxText)) {
+    if (requireComplete && (!minText || !maxText)) return 'Minimum and maximum salary are required unless salary is hidden.';
+    if ((minText && !/^\d+$/.test(minText)) || (maxText && !/^\d+$/.test(maxText))) return 'Minimum and maximum salary must contain numbers only.';
+    const min = minText ? Number(minText) : null; const max = maxText ? Number(maxText) : null;
+    if ((min !== null && (min < 1 || min > 999999)) || (max !== null && (max < 1 || max > 999999)) || (min !== null && max !== null && max < min)) return 'Salary must be ₱1–₱999,999, and maximum salary must be at least the minimum.';
+  }
+
+  const skills = normalizeSkills(data.skillsRequired);
+  if (skills.some((skill) => skill.length > 100)) return 'Each required skill must not exceed 100 characters.';
+  const benefitList = String(data.otherBenefits || '').split(',').map((item) => item.trim()).filter(Boolean);
+  if (benefitList.some((benefit) => benefit.length > 80)) return 'Each custom benefit must not exceed 80 characters.';
+  return '';
+};
+
 const normalizePerksAndBenefits = (value) => {
   if (!value) return [];
   if (Array.isArray(value)) {
@@ -525,6 +582,8 @@ exports.createJob = async (req, res) => {
     }
 
     const isDraft = status === 'draft';
+    const validationMessage = validateJobRules(req.body, !isDraft);
+    if (validationMessage) return res.status(400).json({ success: false, message: validationMessage });
 
     if (!isDraft && !isCompanyProfileComplete(employer)) {
       return res.status(403).json({
@@ -555,13 +614,6 @@ exports.createJob = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Location (City) is required.'
-      });
-    }
-
-    if (!isDraft && (!provinceValue || !cityValue)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Province and City / Municipality are required.'
       });
     }
 
@@ -649,7 +701,7 @@ exports.createJob = async (req, res) => {
       isUrgent: parseBool(isUrgent),
     };
 
-    applyIfDefined(jobData, 'title', title);
+    applyIfDefined(jobData, 'title', normalizeSingleLine(title));
     applyIfDefined(jobData, 'description', description);
     applyIfDefined(jobData, 'requirements', requirements);
     applyIfNotBlank(jobData, 'jobType', jobType);
@@ -762,14 +814,13 @@ exports.getAllJobs = async (req, res) => {
     if (req.query.location) {
       const rawLocation = String(req.query.location || '').trim();
       const escapedLocation = escapeRegExp(rawLocation);
-      const locationPattern = `(^|,\\s*)${escapedLocation}(?:\\s+City)?(\\s*,|$)`;
 
       query.$and = query.$and || [];
       query.$and.push({
         $or: [
           { locationCity: { $regex: `^${escapedLocation}$`, $options: 'i' } },
           { locationProvince: { $regex: `^${escapedLocation}$`, $options: 'i' } },
-          { location: { $regex: locationPattern, $options: 'i' } }
+          { location: { $regex: escapedLocation, $options: 'i' } }
         ]
       });
     }
@@ -1200,6 +1251,15 @@ exports.updateJob = async (req, res) => {
       req.body.status === 'published' ||
       req.body.isPublished === true;
 
+    const mergedValidationData = {
+      ...job.toObject(),
+      ...req.body,
+      skillsRequired: req.body.skillsRequired !== undefined ? req.body.skillsRequired : job.skillsRequired,
+      hideSalary: req.body.hideSalary !== undefined ? req.body.hideSalary : job.hideSalary,
+    };
+    const validationMessage = validateJobRules(mergedValidationData, wantsToPublish || isPublishedJob);
+    if (validationMessage) return res.status(400).json({ success: false, message: validationMessage });
+
     if (wantsToPublish && !isCompanyProfileComplete(employer)) {
       return res.status(403).json({
         success: false,
@@ -1219,18 +1279,10 @@ exports.updateJob = async (req, res) => {
 
     if (wantsToPublish) {
       const manualLocation = String(req.body.location || job.location || '').trim();
-      const provinceValue = String(req.body.locationProvince || job.locationProvince || '').trim();
-      const cityValue = String(req.body.locationCity || job.locationCity || '').trim();
       if (!manualLocation) {
         return res.status(400).json({
           success: false,
           message: 'Complete work address is required.'
-        });
-      }
-      if (!provinceValue || !cityValue) {
-        return res.status(400).json({
-          success: false,
-          message: 'Province and City / Municipality are required.'
         });
       }
     }
@@ -1365,6 +1417,11 @@ exports.updateJob = async (req, res) => {
 
       if (key === 'category') {
         job.category = normalizeCategory(req.body.category);
+        return;
+      }
+
+      if (key === 'title') {
+        job.title = normalizeSingleLine(req.body.title);
         return;
       }
 

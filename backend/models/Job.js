@@ -25,15 +25,28 @@ const jobSchema = new mongoose.Schema({
     title: {
         type: String,
         required: function () { return this.isPublished === true; },
-        trim: true
+        trim: true,
+        maxlength: 100,
+        validate: {
+            validator: (value) => !value || (!/\d/.test(value) && /^[a-zA-ZÀ-ÿ&/().,'’+\-\s]+$/.test(value)),
+            message: 'Enter a valid job title without numbers.'
+        }
     },
     description: {
         type: String,
-        required: function () { return this.isPublished === true; }
+        required: function () { return this.isPublished === true; },
+        validate: {
+            validator: function (value) { const count = String(value || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().length; return !this.isPublished || (count >= 1000 && count <= 2000); },
+            message: 'Job description must contain 1,000 to 2,000 text characters.'
+        }
     },
     requirements: {
         type: String,
-        required: function () { return this.isPublished === true; }
+        required: function () { return this.isPublished === true; },
+        validate: {
+            validator: function (value) { const count = String(value || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().length; return !this.isPublished || (count >= 1000 && count <= 2000); },
+            message: 'Qualifications must contain 1,000 to 2,000 text characters.'
+        }
     },
     jobType: {
         type: String,
@@ -69,12 +82,14 @@ const jobSchema = new mongoose.Schema({
 
     salaryMin: {
         type: Number,
-        min: 0,
+        min: 1,
+        max: 999999,
         set: normalizeSalaryAmount
     },
     salaryMax: {
         type: Number,
-        min: 0,
+        min: 1,
+        max: 999999,
         set: normalizeSalaryAmount
     },
     hideSalary: {
@@ -119,11 +134,13 @@ const jobSchema = new mongoose.Schema({
     vacancies: {
         type: Number,
         required: function () { return this.isPublished === true; },
-        min: 1
+        min: 1,
+        max: 50
     },
     skillsRequired: [{
         type: String,
-        trim: true
+        trim: true,
+        maxlength: 100
     }],
 
     experienceLevel: {
@@ -166,7 +183,11 @@ const jobSchema = new mongoose.Schema({
     otherBenefits: {
         type: String,
         trim: true,
-        default: ''
+        default: '',
+        validate: {
+            validator: (value) => String(value || '').split(',').every((benefit) => benefit.trim().length <= 80),
+            message: 'Each custom benefit must not exceed 80 characters.'
+        }
     },
     willingToRelocate: {
         type: String,

@@ -84,9 +84,11 @@ const getJobLocationLabels = (job) => {
         label && normalizeLocationKey(label) !== normalizeLocationKey(addressProvince)
       ) || '';
 
-    const addressLabels = Array.from(
-      new Set([addressCity, addressProvince].filter(Boolean))
-    );
+    const addressLabels = Array.from(new Set([
+      ...parts.map((part) => normalizeLocationPart(part)).filter(Boolean),
+      addressCity,
+      addressProvince,
+    ].filter(Boolean)));
 
     if (addressLabels.length) return addressLabels;
   }
@@ -100,8 +102,12 @@ const getJobLocationLabels = (job) => {
 const jobMatchesSelectedLocations = (job, selectedLocations) => {
   if (!selectedLocations?.length) return true;
 
+  const address = normalizeLocationKey(job?.location);
   const labels = getJobLocationLabels(job).map(normalizeLocationKey);
-  return selectedLocations.some((selected) => labels.includes(normalizeLocationKey(selected)));
+  return selectedLocations.some((selected) => {
+    const query = normalizeLocationKey(selected);
+    return address.includes(query) || labels.some((label) => label.includes(query));
+  });
 };
 
 const buildLocationGroups = (jobs) => {
