@@ -43,6 +43,7 @@ const EmployerDashboard = () => {
   const [notifLoading, setNotifLoading] = useState(false);
 
   const [profileOpen, setProfileOpen] = useState(false);
+  const [companyLogoError, setCompanyLogoError] = useState(false);
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
@@ -394,13 +395,15 @@ const EmployerDashboard = () => {
 
   const applyUserData = (user) => {
     const profileComplete = isCompanyProfileComplete(user);
+    const employerProfile = user?.employerProfile || {};
 
     setUserData({
-      companyName: user?.employerProfile?.companyName || user?.fullName || 'Company',
+      companyName: employerProfile.companyName || user?.fullName || 'Company',
       email: user?.email || '',
       profileComplete,
-      avatarUrl: user?.profileImage || '',
+      avatarUrl: employerProfile.companyLogo || '',
     });
+    setCompanyLogoError(false);
 
   };
 
@@ -1962,14 +1965,21 @@ const EmployerDashboard = () => {
                 aria-expanded={profileOpen}
                 aria-controls="employer-profile-menu"
               >
-                <img
-                  src={userData.avatarUrl || '/images/profile.png'}
-                  alt="User avatar"
-                  className="w-10 h-10 rounded-full object-cover border border-gray-200"
-                  onError={(e) => {
-                    e.currentTarget.src = '/images/profile.png';
-                  }}
-                />
+                {userData.avatarUrl && !companyLogoError ? (
+                  <img
+                    src={userData.avatarUrl}
+                    alt={`${userData.companyName} company logo`}
+                    className="w-10 h-10 rounded-full object-cover border border-gray-200 bg-white"
+                    onError={() => setCompanyLogoError(true)}
+                  />
+                ) : (
+                  <span
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-[#2e66a6] bg-[#2e66a6]"
+                    aria-hidden="true"
+                  >
+                    <OutlineIcon name="building" className="h-6 w-6 text-white" />
+                  </span>
+                )}
                 <OutlineIcon
                   name="chevronDown"
                   className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${profileOpen ? 'rotate-180' : ''}`}
