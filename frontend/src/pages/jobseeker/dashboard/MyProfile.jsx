@@ -782,7 +782,7 @@ const SuccessPopup = ({ open, title, message, onClose }) => {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-black/25 flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-live="polite">
+    <div className="fixed inset-0 z-[10060] bg-black/25 flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-live="polite">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 text-center">
         <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center mb-4" style={{ backgroundColor: '#e8f1ff' }}>
           <FaCheckCircle className="text-4xl" style={{ color: COLORS.primary }} />
@@ -6454,6 +6454,9 @@ const MyProfile = () => {
           setUserData(response.data.user);
           localStorage.setItem('user', JSON.stringify(response.data.user));
         }
+
+        const sectionTitle = MORE_PROFILE_SECTIONS[sectionKey]?.title || 'Resume Section';
+        showSuccess('Added Successfully', `${sectionTitle} has been added successfully.`);
       }
     } catch (err) {
       console.error(err);
@@ -6518,7 +6521,7 @@ const MyProfile = () => {
               localStorage.setItem('user', JSON.stringify(response.data.user));
             }
 
-            showSuccess('Deleted Successfully', `${sectionTitle} has been removed.`);
+            showSuccess('Removed Successfully', `${sectionTitle} has been removed successfully.`);
           }
         } catch (err) {
           console.error(err);
