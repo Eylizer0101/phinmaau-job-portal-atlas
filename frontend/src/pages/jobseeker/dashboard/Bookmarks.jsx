@@ -144,6 +144,14 @@ const RichTextContent = ({ value, fallback }) => {
   );
 };
 
+const formatAppliedStatusBadgeText = (statusLabel) => {
+  const cleanLabel = String(statusLabel || '')
+    .trim()
+    .replace(/\s+/g, ' ');
+
+  return cleanLabel ? `Applied ( ${cleanLabel} )` : 'Applied';
+};
+
 const getRelocationDisplayLabel = (value) => {
   const normalized = String(value || '').trim().toLowerCase();
 
@@ -2113,13 +2121,17 @@ const Bookmarks = () => {
     const picked = map[status] || map.pending;
 
     return (
-      <span className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold ${picked.cls}`}>
+      <span
+        className={`inline-flex max-w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold ${picked.cls}`}
+      >
         {picked.icon === 'withdrawnRecentApplications' ? (
-          <FontAwesomeIcon icon={faTimesCircle} className="w-3 h-3 mr-1.5" />
+          <FontAwesomeIcon icon={faTimesCircle} className="h-3 w-3 flex-shrink-0" />
+        ) : picked.icon === 'star' ? (
+          <SvgIcon name="star" className="h-5 w-5 flex-shrink-0" />
         ) : (
-          <SvgIcon name={picked.icon} className={`mr-1.5 ${picked.icon === 'star' ? 'w-3.5 h-3.5' : 'w-3.5 h-3.5'}`} />
+          <SvgIcon name={picked.icon} className="h-3.5 w-3.5 flex-shrink-0" />
         )}
-        Applied ( {picked.label} )
+        <span>{formatAppliedStatusBadgeText(picked.label)}</span>
       </span>
     );
   }, [applicationStateReady, hasApplied, applicationStatus]);
@@ -2899,7 +2911,11 @@ const Bookmarks = () => {
                               </button>
                             </div>
 
-                            {statusBadge ? <div className="mt-1 flex justify-center">{statusBadge}</div> : null}
+                            {statusBadge ? (
+                              <div className="mt-2 flex w-full min-w-0 justify-center">
+                                {statusBadge}
+                              </div>
+                            ) : null}
                           </div>
                         </div>
                       </div>
