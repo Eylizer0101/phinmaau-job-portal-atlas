@@ -1156,25 +1156,27 @@ const selectBase =
                           )}
 
                           <td className="px-6 py-4 text-center">
-                            <Link
-                              to={`/employer/application/${app._id}?from=hired`}
-                              className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-                              aria-label={`View details of ${name}`}
-                            >
-                              <span>View Application</span>
-                            </Link>
-                            {app._recordStatus === 'declined' && (
-                              <button
-                                type="button"
-                                onClick={() => handleArchiveDeclined(app._id)}
-                                disabled={archivingId === app._id}
-                                className="ml-2 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50"
-                                aria-label={`Archive declined application of ${name}`}
-                                title="Archive declined application"
+                            <div className="flex flex-nowrap items-center justify-center gap-2 whitespace-nowrap">
+                              <Link
+                                to={`/employer/application/${app._id}?from=hired`}
+                                className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                                aria-label={`View details of ${name}`}
                               >
-                                <Icon name="trash" className="h-4 w-4" />
-                              </button>
-                            )}
+                                <span>View Application</span>
+                              </Link>
+                              {app._recordStatus === 'declined' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleArchiveDeclined(app._id)}
+                                  disabled={archivingId === app._id}
+                                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50"
+                                  aria-label={`Archive declined application of ${name}`}
+                                  title="Archive declined application"
+                                >
+                                  <Icon name="trash" className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
