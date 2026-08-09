@@ -1289,7 +1289,7 @@ const ActionMenu = ({
   return (
     <Link
       to={`/employer/application/${app._id}?from=for-interview`}
-      className="inline-flex h-10 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+      className="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
       aria-label={`View application of ${name}`}
     >
       View Application
@@ -2080,12 +2080,12 @@ const selectBase =
                   <table className="w-full table-fixed divide-y divide-gray-200">
                     <colgroup>
                       <col className="w-[11%]" />
-                      <col className="w-[18%]" />
-                      <col className="w-[18%]" />
+                      <col className="w-[17%]" />
+                      <col className="w-[17%]" />
                       <col className="w-[13%]" />
-                      <col className="w-[15%]" />
                       <col className="w-[14%]" />
-                      <col className="w-[11%]" />
+                      <col className="w-[14%]" />
+                      <col className="w-[14%]" />
                     </colgroup>
                     <thead className="bg-gray-50">
                       <tr>
