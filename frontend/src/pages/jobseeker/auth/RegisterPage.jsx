@@ -489,6 +489,18 @@ const RegisterPage = () => {
     </svg>
   );
 
+  const IconLightBulb = () => (
+    <svg aria-hidden="true" className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M9.663 17h4.673M12 3v1m6.364.636-.707.707M21 12h-1M4 12H3m3.343-5.657-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.373 3.373 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+      />
+    </svg>
+  );
+
+
   // ---------- Stepper ----------
   const steps = [
     { id: 1, label: 'Basic Information' },
@@ -1023,20 +1035,23 @@ const RegisterPage = () => {
                   <p className="text-sm font-semibold text-gray-900">Quick Upload Rules:</p>
 
                   <ul className="mt-2 text-xs text-gray-700 list-disc pl-5 space-y-1">
-                    <li>Accepted Formats: PDF (preferred for resumes) or Photos (JPG, PNG).</li>
-                    <li>File Size: Please keep files under 5MB.</li>
-                    <li>Clarity: If uploading a photo, ensure the text is clear and readable—no blurry shots!</li>
+                    <li><strong>Accepted Formats:</strong> PDF (preferred for resumes) or Photos (JPG, PNG).</li>
+                    <li><strong>File Size:</strong> Please keep files under 5MB.</li>
+                    <li><strong>Clarity:</strong> If uploading a photo, ensure the text is clear and readable—no blurry shots!</li>
                     <li><strong>No Cropped Edges:</strong> Make sure names, dates, signatures, and other important details are visible.</li>
                     <li><strong>Check Before Uploading:</strong> Make sure the document is the latest and correct version.</li>
                   </ul>
 
                  
 
-                  <p className="mt-4 text-sm font-semibold text-gray-900">Pro-Tips for Fresh Grads:</p>
+                  <div className="mt-4 flex items-center gap-2">
+                    <IconLightBulb />
+                    <p className="text-sm font-semibold text-gray-900">Pro-Tips for Fresh Grads:</p>
+                  </div>
 
                   <ul className="mt-2 text-xs text-gray-700 list-disc pl-5 space-y-1">
                     <li>
-                      For your Resume: We highly recommend using a PDF format. It keeps your layout looking perfect on every recruiter's
+                      <strong>For your Resume:</strong> We highly recommend using a PDF format. It keeps your layout looking perfect on every recruiter's
                       screen!
                     </li>
                     <li><strong>Diploma &amp; TOR:</strong> Upload clear scans or well-lit photos of the complete document.</li>

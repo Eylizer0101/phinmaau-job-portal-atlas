@@ -252,7 +252,7 @@ const EmployerRegisterPage = () => {
     (option) => option.toLowerCase() === industrySearch.toLowerCase()
   );
 
-  const validate = (onlyKeys = null) => {
+  const getValidationErrors = (onlyKeys = null) => {
     const check = (k) => !onlyKeys || onlyKeys.includes(k);
     const next = {};
     // Basic Info
@@ -341,6 +341,11 @@ const EmployerRegisterPage = () => {
     if (check('dtiRegistration') && !docs.dtiRegistration) next.dtiRegistration = 'DTI registration document is required.';
     if (check('cityPermit') && !docs.cityPermit) next.cityPermit = 'City / Municipality permit document is required.';
     if (check('businessPermit') && !docs.businessPermit) next.businessPermit = 'Business permit document is required.';
+    return next;
+  };
+
+  const validate = (onlyKeys = null) => {
+    const next = getValidationErrors(onlyKeys);
 
     setFieldErrors((prev) => {
       if (!onlyKeys) return next;
@@ -353,6 +358,12 @@ const EmployerRegisterPage = () => {
     if (firstKey) focusField(firstKey);
 
     return Object.keys(next).length === 0;
+  };
+
+  const isStepComplete = (stepId) => {
+    const keys = STEP_FIELDS[stepId] || [];
+    if (!keys.length) return false;
+    return Object.keys(getValidationErrors(keys)).length === 0;
   };
 
   const handleChange = (e) => {
@@ -570,7 +581,7 @@ const EmployerRegisterPage = () => {
       <div className="grid grid-cols-3 items-start">
         {steps.map((s, idx) => {
           const isActive = s.id === step;
-          const isDone = s.id < step;
+          const isDone = s.id < step && isStepComplete(s.id);
           const isError = stepHasError(s.id);
 
           const leftLine =
@@ -584,12 +595,16 @@ const EmployerRegisterPage = () => {
             'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/20';
 
           const circleClass = isDone
-            ? 'bg-[#2e66a6] text-white'
+            ? 'bg-green-600 text-white'
             : isActive
             ? 'bg-[#2e66a6] text-white'
             : 'bg-gray-100 text-gray-600';
 
-          const labelClass = isActive ? 'text-[#2e66a6]' : 'text-gray-500';
+          const labelClass = isDone
+            ? 'text-green-600'
+            : isActive
+            ? 'text-[#2e66a6]'
+            : 'text-gray-500';
 
           return (
             <div key={s.id} className="min-w-0">
@@ -628,6 +643,12 @@ const EmployerRegisterPage = () => {
         })}
       </div>
     </div>
+  );
+
+  const IconDoc = () => (
+    <svg aria-hidden="true" className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z" />
+    </svg>
   );
 
   const IconUser = () => (
@@ -1685,15 +1706,22 @@ const EmployerRegisterPage = () => {
                     {step === 3 && (
                       <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
                         <div className="mb-4 rounded-xl border border-blue-100 bg-blue-50/60 p-4">
-                          <p className="text-sm font-semibold text-gray-800">Quick Upload Rules:</p>
-                          <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-relaxed text-gray-600">
-                            <li><strong>Accepted Formats:</strong> PDF or photos in JPG, JPEG, or PNG format.</li>
-                            <li><strong>File Size:</strong> Keep each file under 5MB.</li>
-                            <li><strong>Clarity:</strong> If uploading a photo, make sure the text is clear and readable—no blurry images.</li>
-                            <li><strong>No Cropped Edges:</strong> Make sure names, dates, signatures, stamps, and other important details are visible.</li>
-                            <li><strong>Check Before Uploading:</strong> Make sure the document is the latest, complete, and correct version.</li>
-                            <li><strong>Before You Submit:</strong> Double-check every document before submitting to avoid verification delays.</li>
-                          </ul>
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5">
+                              <IconDoc />
+                            </div>
+                            <div className="w-full">
+                              <p className="text-sm font-semibold text-gray-800">Quick Upload Rules:</p>
+                              <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-relaxed text-gray-600">
+                                <li><strong>Accepted Formats:</strong> PDF or photos in JPG, JPEG, or PNG format.</li>
+                                <li><strong>File Size:</strong> Keep each file under 5MB.</li>
+                                <li><strong>Clarity:</strong> If uploading a photo, make sure the text is clear and readable—no blurry images.</li>
+                                <li><strong>No Cropped Edges:</strong> Make sure names, dates, signatures, stamps, and other important details are visible.</li>
+                                <li><strong>Check Before Uploading:</strong> Make sure the document is the latest, complete, and correct version.</li>
+                                <li><strong>Before You Submit:</strong> Double-check every document before submitting to avoid verification delays.</li>
+                              </ul>
+                            </div>
+                          </div>
                         </div>
                         <div className="flex items-center justify-between mb-3">
                           <p className="text-sm font-semibold text-gray-700">Upload required documents</p>
