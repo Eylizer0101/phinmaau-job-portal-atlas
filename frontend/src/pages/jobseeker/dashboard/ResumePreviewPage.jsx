@@ -743,7 +743,8 @@ const ResumePreviewPage = () => {
 
         .declaration-signature {
           display: block;
-          width: 48%;
+          width: max-content;
+          min-width: 160px;
           margin-left: auto;
           text-align: center;
         }
