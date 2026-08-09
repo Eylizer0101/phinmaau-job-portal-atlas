@@ -734,7 +734,7 @@ const ResumePreviewPage = () => {
 
         .declaration-text {
           margin: 0 0 6px;
-          text-align: left;
+          text-align: right;
         }
 
         .declaration-name {
