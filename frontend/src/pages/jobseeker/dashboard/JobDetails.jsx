@@ -1341,7 +1341,8 @@ const JobDetails = () => {
                           <button
                             type="button"
                             onClick={() => navigate(`/jobseeker/company-details/${companyId}`)}
-                            className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[#2e66a6] underline underline-offset-4 decoration-1 decoration-[#2e66a6] hover:text-[#1f4f86] hover:decoration-[#1f4f86] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30 rounded-sm"
+                            className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[#2e66a6] hover:text-[#1f4f86] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30 rounded-sm"
+                            style={{ borderBottom: '1px solid currentColor', paddingBottom: '1px' }}
                             title={`View ${job.companyName || 'company'} details`}
                           >
                             {job.companyName}
