@@ -5413,14 +5413,9 @@ const MyProfile = () => {
           return false;
         }
 
-        const primaryEducation = nextEducationEntries[0] || {};
-
         payload = {
           jobSeekerProfile: {
             educationEntries: nextEducationEntries,
-            campus: primaryEducation.school || primaryEducation.campus || activeDrafts.campus,
-            course: normalizeCourseValue(activeDrafts.course),
-            yearGraduated: primaryEducation.endYear || primaryEducation.yearGraduated || activeDrafts.yearGraduated,
           },
         };
       }
@@ -5500,10 +5495,6 @@ const MyProfile = () => {
           const nextFormData = {
             ...formData,
             educationEntries: nextEducationEntries,
-            campus: updatedProfile.campus || payload.jobSeekerProfile?.campus || formData.campus,
-            course: normalizeCourseValue(updatedProfile.course || payload.jobSeekerProfile?.course || formData.course),
-            yearGraduated: updatedProfile.yearGraduated || payload.jobSeekerProfile?.yearGraduated || formData.yearGraduated,
-            studyField: updatedProfile.studyField || payload.jobSeekerProfile?.studyField || formData.studyField,
           };
 
           const nextDrafts = resetEducationDraftFields(nextFormData);
@@ -5851,21 +5842,10 @@ const MyProfile = () => {
           setError('');
 
           const nextItems = currentItems.filter((_, itemIndex) => itemIndex !== index);
-          const primaryEducation = nextItems[0] || {};
           const token = localStorage.getItem('token');
           const payload = {
             jobSeekerProfile: {
               educationEntries: nextItems,
-              campus:
-                primaryEducation.school ||
-                primaryEducation.campus ||
-                formData.campus ||
-                '',
-              yearGraduated:
-                primaryEducation.endYear ||
-                primaryEducation.yearGraduated ||
-                formData.yearGraduated ||
-                '',
             },
           };
 
@@ -5884,12 +5864,6 @@ const MyProfile = () => {
                 Array.isArray(updatedProfile.educationEntries)
                   ? updatedProfile.educationEntries
                   : payload.jobSeekerProfile.educationEntries,
-              campus:
-                updatedProfile.campus ??
-                payload.jobSeekerProfile.campus,
-              yearGraduated:
-                updatedProfile.yearGraduated ??
-                payload.jobSeekerProfile.yearGraduated,
             };
 
             setFormData(nextFormData);
