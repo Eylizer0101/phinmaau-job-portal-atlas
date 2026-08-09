@@ -1870,28 +1870,16 @@ const PostJob = () => {
     <EmployerLayout>
       <div className="min-h-screen bg-gray-50 -mt-2">
         <div className="mx-auto max-w-7xl px-1 py-8">
-          <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
+          <div
+            className={`mb-4 grid grid-cols-1 gap-4 ${
+              !isCompanyProfileComplete
+                ? 'lg:grid-cols-[minmax(260px,0.8fr)_minmax(480px,1.2fr)] lg:items-center'
+                : ''
+            }`}
+          >
+            <div className="min-w-0">
               <h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">Post a Job</h1>
               <p className="text-gray-600">Create a job post that attracts the right candidates.</p>
-
-              {!isCompanyProfileComplete && (
-                <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-4">
-                  <p className="text-sm font-semibold text-blue-900">
-                    Complete company profile required
-                  </p>
-                  <p className="mt-1 text-sm text-blue-800">
-                    You have not yet completed your company profile. A complete company profile is required to post a job.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/employer/company-profile')}
-                    className="mt-3 inline-flex items-center gap-2 rounded-xl bg-[#075fc8] px-4 py-2 text-sm font-semibold text-white hover:bg-[#064da3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-                  >
-                    Go to Company Profile
-                  </button>
-                </div>
-              )}
 
               {isCompanyProfileComplete && !isEmployerVerified && (
                 <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
@@ -1911,6 +1899,41 @@ const PostJob = () => {
                 </div>
               )}
             </div>
+
+            {!isCompanyProfileComplete && (
+              <div className="w-full overflow-hidden rounded-2xl border border-blue-200 bg-blue-50 p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-blue-900">
+                      You're Almost There!
+                    </p>
+                    <p className="mt-1 text-sm leading-5 text-blue-800">
+                      You have not yet completed your company profile. A complete company profile is required to post a job.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/employer/company-profile')}
+                      className="mt-3 inline-flex items-center gap-2 rounded-xl bg-[#075fc8] px-4 py-2 text-sm font-semibold text-white hover:bg-[#064da3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                    >
+                      Go to Company Profile
+                    </button>
+                  </div>
+
+                  <div className="hidden h-24 w-28 shrink-0 items-end justify-center sm:flex" aria-hidden="true">
+                    <svg viewBox="0 0 140 110" className="h-full w-full" fill="none">
+                      <path d="M17 97h106" stroke="#93C5FD" strokeWidth="3" strokeLinecap="round" />
+                      <path d="M37 97V39h51v58" fill="#DBEAFE" stroke="#60A5FA" strokeWidth="3" strokeLinejoin="round" />
+                      <path d="M88 97V57h25v40" fill="#BFDBFE" stroke="#60A5FA" strokeWidth="3" strokeLinejoin="round" />
+                      <path d="M31 39h63L63 18 31 39Z" fill="#93C5FD" stroke="#60A5FA" strokeWidth="3" strokeLinejoin="round" />
+                      <path d="M56 97V75h15v22" fill="white" stroke="#60A5FA" strokeWidth="3" />
+                      <path d="M47 50h9v9h-9zM69 50h9v9h-9zM47 64h9v9h-9zM69 64h9v9h-9zM96 68h9v9h-9zM96 82h9v9h-9z" fill="white" stroke="#93C5FD" strokeWidth="2" />
+                      <circle cx="113" cy="30" r="8" fill="#DBEAFE" />
+                      <path d="M107 19l6-7 6 7" stroke="#93C5FD" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {error && <Alert type="error">{error}</Alert>}
