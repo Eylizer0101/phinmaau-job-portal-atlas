@@ -728,14 +728,13 @@ const ResumePreviewPage = () => {
 
         .resume-declaration {
           margin-top: 11px;
-          width: 48%;
-          margin-left: auto;
+          width: 100%;
           break-inside: avoid;
         }
 
         .declaration-text {
-          margin: 0 0 9px;
-          text-align: justify;
+          margin: 0 0 6px;
+          text-align: left;
         }
 
         .declaration-name {
@@ -743,7 +742,9 @@ const ResumePreviewPage = () => {
         }
 
         .declaration-signature {
-          display: inline-block;
+          display: block;
+          width: 48%;
+          margin-left: auto;
           text-align: center;
         }
 
