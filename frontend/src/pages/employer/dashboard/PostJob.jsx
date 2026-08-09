@@ -2405,7 +2405,7 @@ const PostJob = () => {
                         <div className="hidden md:block" />
                       </div>
 
-                      <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                      <div className="w-fit max-w-full rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                         Let applicants know if there's a possibility of relocation for this position. This helps candidates plan ahead.
                       </div>
                     </section>
