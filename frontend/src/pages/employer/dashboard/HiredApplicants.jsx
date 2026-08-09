@@ -931,7 +931,7 @@ const selectBase =
         <div className="relative z-20 mb-6 overflow-visible rounded-[22px] border border-gray-300 bg-[#ffffff] shadow-sm">
           <div className="overflow-visible p-5">
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-              <div className={hasActiveFilters ? 'lg:col-span-4' : 'lg:col-span-5'}>
+              <div className={hasActiveFilters ? 'lg:col-span-3' : 'lg:col-span-4'}>
                 <div className="relative">
                   <span className="pointer-events-none absolute left-4 top-3.5 text-gray-400">
                     <Icon name="search" className="h-5 w-5" />
@@ -963,7 +963,7 @@ const selectBase =
                 </div>
               </div>
 
-              <div className="lg:col-span-3">
+              <div className="lg:col-span-2">
                 <label className="sr-only" htmlFor="jobFilter">
                   Filter by job
                 </label>
