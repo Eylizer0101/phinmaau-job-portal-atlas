@@ -2927,148 +2927,91 @@ const Bookmarks = () => {
                         </div>
                       ) : null}
 
-                      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-                        <div className="min-w-0 space-y-5">
-                          {hasValidDisplayValue(selectedJob.description) ? (
-                            <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
-                              <div className="px-5 py-5 sm:px-6">
-                                <section>
-                                  <div className="flex items-center gap-3 pt-2">
-                                    <JobDetailIconBadge icon="file" />
-                                    <h3 className="text-sm font-semibold text-black">Job Description</h3>
-                                  </div>
-                                  <div className="mt-4 text-sm leading-relaxed text-black/70 sm:text-base">
-                                    <RichTextContent value={selectedJob.description} />
-                                  </div>
-                                </section>
-                              </div>
-                            </div>
-                          ) : null}
-
-                          {hasValidDisplayValue(selectedJob.requirements) ? (
-                            <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
-                              <div className="px-5 py-5 sm:px-6">
-                                <section>
-                                  <div className="flex items-center gap-3 pt-2">
-                                    <JobDetailIconBadge icon="tools" />
-                                    <h3 className="text-sm font-semibold text-black">Qualification</h3>
-                                  </div>
-                                  <div className="mt-4 text-sm leading-relaxed text-black/70 sm:text-base">
-                                    <RichTextContent value={selectedJob.requirements} />
-                                  </div>
-                                </section>
-                              </div>
-                            </div>
-                          ) : null}
-
-                          {Array.isArray(selectedJob.skillsRequired) && selectedJob.skillsRequired.filter(Boolean).length > 0 ? (
-                            <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
-                              <div className="border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6">
-                                <p className="text-sm font-semibold text-black">Required Skills</p>
-                              </div>
-                              <div className="px-5 py-5 sm:px-6">
-                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                                  {selectedJob.skillsRequired.filter(Boolean).map((skill, idx) => (
-                                    <JobDetailItem key={`${skill}-${idx}`}>{skill}</JobDetailItem>
-                                  ))}
+                      <div className="space-y-5">
+                        {hasValidDisplayValue(selectedJob.description) ? (
+                          <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+                            <div className="px-5 py-5 sm:px-6">
+                              <section>
+                                <div className="flex items-center gap-3 pt-2">
+                                  <JobDetailIconBadge icon="file" />
+                                  <h3 className="text-sm font-semibold text-black">Job Description</h3>
                                 </div>
-                              </div>
-                            </div>
-                          ) : null}
-
-                          {perksAndBenefitsList.length > 0 ? (
-                            <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
-                              <div className="border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6">
-                                <p className="text-sm font-semibold text-black">Perks and Benefits</p>
-                              </div>
-                              <div className="px-5 py-5 sm:px-6">
-                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                                  {perksAndBenefitsList.map((benefit, idx) => (
-                                    <JobDetailItem key={`${benefit}-${idx}`}>{benefit}</JobDetailItem>
-                                  ))}
+                                <div className="mt-4 text-sm leading-relaxed text-black/70 sm:text-base">
+                                  <RichTextContent value={selectedJob.description} />
                                 </div>
-                              </div>
+                              </section>
                             </div>
-                          ) : null}
-                        </div>
-
-                        <div className="min-w-0 space-y-5 lg:sticky lg:top-24 lg:self-start">
-                          {hasValidDisplayValue(selectedJob.willingToRelocate) ? (
-                            <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
-                              <div className="border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6">
-                                <p className="text-sm font-semibold text-black">Job Overview</p>
-                              </div>
-                              <div className="px-5 py-5 sm:px-6">
-                                <div>
-                                  <p className="text-xs font-semibold uppercase tracking-wide text-black/50">Willing to Relocate?</p>
-                                  <p className="mt-1 text-sm text-black/70">{getRelocationDisplayLabel(selectedJob.willingToRelocate)}</p>
-                                </div>
-                              </div>
-                            </div>
-                          ) : null}
-
-                          {hasValidDisplayValue(selectedJob.location) ? (
-                            <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
-                              <div className="border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6">
-                                <p className="text-sm font-semibold text-black">Work Location</p>
-                              </div>
-                              <div className="overflow-hidden">
-                                <StaticLocationMap job={selectedJob} heightClass="h-[180px]" />
-                              </div>
-                              <div className="border-t border-[#e6edf5] px-4 py-3">
-                                <p className="text-xs text-black/65">{formatLocationDisplay(selectedJob.location)}</p>
-                                {isUsableCoordinates(getJobCoordinates(selectedJob)) ? (
-                                  <p className="mt-1 text-[11px] text-black/45">
-                                    Latitude: {getJobCoordinates(selectedJob).lat} · Longitude: {getJobCoordinates(selectedJob).lng}
-                                  </p>
-                                ) : null}
-                              </div>
-                            </div>
-                          ) : null}
-
-                          <div className="rounded-2xl border border-[#d8e2ee] bg-[#f7faff] p-5 text-center shadow-[0_14px_32px_rgba(46,102,166,0.08)]">
-                            <h3 className="text-sm font-bold text-black/55">Interested in this role?</h3>
-                            <button
-                              onClick={
-                                mainActionLoading || isFullyFilled
-                                  ? undefined
-                                  : hasApplied
-                                  ? () => navigate('/jobseeker/my-applications')
-                                  : isJobActive(selectedJob)
-                                  ? handleApplyClick
-                                  : undefined
-                              }
-                              disabled={mainActionLoading || isFullyFilled || (!isJobActive(selectedJob) && !hasApplied)}
-                              className={`mt-4 h-12 w-full rounded-xl text-base font-bold transition-all duration-200 ${UI.ring} ${
-                                isFullyFilled
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 disabled:!pointer-events-auto disabled:cursor-not-allowed'
-                                  : mainActionLoading || (!isJobActive(selectedJob) && !hasApplied)
-                                  ? 'bg-black/5 text-black/50 border border-black/10 cursor-not-allowed'
-                                  : hasApplied
-                                  ? 'bg-[#eaf2fb] text-[#2e66a6] border border-[#d8e2ee]'
-                                  : 'bg-[#2e66a6] text-white hover:bg-[#25578f] shadow-[0_14px_28px_rgba(46,102,166,0.22)]'
-                              }`}
-                              type="button"
-                            >
-                              {mainActionLoading ? (
-                                <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-black/20 border-t-black/60 align-[-2px] motion-reduce:animate-none" />
-                              ) : isFullyFilled ? (
-                                <SvgIcon name="checkCircle" className="mr-2 inline-block h-4 w-4 align-[-2px]" />
-                              ) : null}
-                              {primaryCtaLabel}
-                            </button>
-
-                            {selectedJob.applicationDeadline ? (
-                              <p className="mt-4 text-xs text-black/45">
-                                Deadline: {new Date(selectedJob.applicationDeadline).toLocaleDateString('en-US', {
-                                  month: 'long',
-                                  day: 'numeric',
-                                  year: 'numeric',
-                                })}
-                              </p>
-                            ) : null}
                           </div>
-                        </div>
+                        ) : null}
+
+                        {hasValidDisplayValue(selectedJob.requirements) ? (
+                          <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+                            <div className="px-5 py-5 sm:px-6">
+                              <section>
+                                <div className="flex items-center gap-3 pt-2">
+                                  <JobDetailIconBadge icon="tools" />
+                                  <h3 className="text-sm font-semibold text-black">Qualification</h3>
+                                </div>
+                                <div className="mt-4 text-sm leading-relaxed text-black/70 sm:text-base">
+                                  <RichTextContent value={selectedJob.requirements} />
+                                </div>
+                              </section>
+                            </div>
+                          </div>
+                        ) : null}
+
+                        {(Array.isArray(selectedJob.skillsRequired) &&
+                          selectedJob.skillsRequired.filter(Boolean).length > 0) ||
+                        hasValidDisplayValue(selectedJob.location) ? (
+                          <section className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+                            {Array.isArray(selectedJob.skillsRequired) &&
+                            selectedJob.skillsRequired.filter(Boolean).length > 0 ? (
+                              <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+                                <div className="border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6">
+                                  <p className="text-sm font-semibold text-black">Required Skills</p>
+                                </div>
+                                <div className="px-5 py-5 sm:px-6">
+                                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                    {selectedJob.skillsRequired.filter(Boolean).map((skill, idx) => (
+                                      <JobDetailItem key={`${skill}-${idx}`}>{skill}</JobDetailItem>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="hidden lg:block" aria-hidden="true" />
+                            )}
+
+                            {hasValidDisplayValue(selectedJob.location) ? (
+                              <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+                                <div className="border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6">
+                                  <p className="text-sm font-semibold text-black">Work Location</p>
+                                </div>
+                                <div className="overflow-hidden">
+                                  <StaticLocationMap job={selectedJob} heightClass="h-[180px]" />
+                                </div>
+                                <div className="border-t border-[#e6edf5] px-4 py-3">
+                                  <p className="text-xs text-black/65">{formatLocationDisplay(selectedJob.location)}</p>
+                                </div>
+                              </div>
+                            ) : null}
+                          </section>
+                        ) : null}
+
+                        {perksAndBenefitsList.length > 0 ? (
+                          <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+                            <div className="border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6">
+                              <p className="text-sm font-semibold text-black">Perks and Benefits</p>
+                            </div>
+                            <div className="px-5 py-5 sm:px-6">
+                              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                {perksAndBenefitsList.map((benefit, idx) => (
+                                  <JobDetailItem key={`${benefit}-${idx}`}>{benefit}</JobDetailItem>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   )}
