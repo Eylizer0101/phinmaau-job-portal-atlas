@@ -1340,7 +1340,14 @@ const JobDetails = () => {
                         {companyId ? (
                           <button
                             type="button"
-                            onClick={() => navigate(`/jobseeker/company-details/${companyId}`)}
+                            onClick={() =>
+                              navigate(`/jobseeker/company-details/${companyId}`, {
+                                state: {
+                                  sourcePage: 'jobdetails',
+                                  returnTo: `${location.pathname}${location.search}`,
+                                },
+                              })
+                            }
                             className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[#2e66a6] hover:text-[#1f4f86] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30 rounded-sm"
                             style={{ borderBottom: '1px solid currentColor', paddingBottom: '1px' }}
                             title={`View ${job.companyName || 'company'} details`}

@@ -684,14 +684,29 @@ const CompanyViewDetails = () => {
 
   const handleBackToSource = useCallback(() => {
     const returnTo = String(location.state?.returnTo || '').trim();
+
+    if (
+      location.state?.sourcePage === 'jobdetails' &&
+      returnTo.startsWith('/jobseeker/job-details/')
+    ) {
+      navigate(returnTo);
+      return;
+    }
+
     if (location.state?.sourcePage === 'bookmarks' && returnTo.startsWith('/jobseeker/bookmarks')) {
       navigate(returnTo);
       return;
     }
+
     navigate('/jobseeker/companies');
   }, [location.state, navigate]);
 
-  const backDestinationLabel = location.state?.sourcePage === 'bookmarks' ? 'Back to Bookmarks' : 'Back to Companies';
+  const backDestinationLabel =
+    location.state?.sourcePage === 'jobdetails'
+      ? 'Back to Job Details'
+      : location.state?.sourcePage === 'bookmarks'
+        ? 'Back to Bookmarks'
+        : 'Back to Companies';
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
