@@ -1106,7 +1106,7 @@ const CompanyViewDetails = () => {
         const response = await api.post(`/jobs/saved/${jobId}`);
         if (response.data?.success) {
           setSavedJobIds((prev) => (prev.includes(jobId) ? prev : [...prev, jobId]));
-          showToast("Saved job", "success");
+          showToast("Job Saved Successfully!", "success");
         } else {
           alert(response.data?.message || "Failed to save job.");
         }

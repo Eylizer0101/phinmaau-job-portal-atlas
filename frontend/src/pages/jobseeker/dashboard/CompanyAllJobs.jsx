@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../../services/api";
 import ApplyJobModal from "../../../components/jobseeker/ApplyJobModal";
@@ -65,6 +65,28 @@ const CompanyAllJobs = () => {
   const [selectedJob, setSelectedJob] = useState(null);
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [appliedIds, setAppliedIds] = useState([]);
+  const [savedJobIds, setSavedJobIds] = useState([]);
+  const [savingJobId, setSavingJobId] = useState("");
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+  const toastTimerRef = useRef(null);
+
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+
+    if (toastTimerRef.current) {
+      window.clearTimeout(toastTimerRef.current);
+    }
+
+    toastTimerRef.current = window.setTimeout(() => {
+      setToast({ show: false, message: "", type: "success" });
+    }, 2200);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -107,6 +129,42 @@ const CompanyAllJobs = () => {
     return () => { mounted = false; };
   }, [jobs]);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchSavedJobs = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const userStr = localStorage.getItem("user");
+
+        if (!token || !userStr) {
+          if (mounted) setSavedJobIds([]);
+          return;
+        }
+
+        const parsedUser = JSON.parse(userStr);
+        if (parsedUser.role !== "jobseeker") {
+          if (mounted) setSavedJobIds([]);
+          return;
+        }
+
+        const response = await api.get("/jobs/saved");
+        if (!mounted) return;
+
+        if (response.data?.success && Array.isArray(response.data.jobs)) {
+          setSavedJobIds(response.data.jobs.map((job) => job._id || job.id).filter(Boolean));
+        } else {
+          setSavedJobIds([]);
+        }
+      } catch {
+        if (mounted) setSavedJobIds([]);
+      }
+    };
+
+    fetchSavedJobs();
+    return () => { mounted = false; };
+  }, []);
+
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return jobs;
@@ -129,11 +187,82 @@ const CompanyAllJobs = () => {
     setShowApplyModal(true);
   };
 
+  const handleSaveJob = async (job) => {
+    try {
+      const token = localStorage.getItem("token");
+      const userStr = localStorage.getItem("user");
+      const jobId = job?._id || job?.id;
+
+      if (!token || !userStr) {
+        navigate("/login");
+        return;
+      }
+
+      const parsedUser = JSON.parse(userStr);
+
+      if (parsedUser.role !== "jobseeker") {
+        alert("Only job seekers can save jobs.");
+        return;
+      }
+
+      if (!jobId) {
+        alert("Job data not found.");
+        return;
+      }
+
+      setSavingJobId(jobId);
+
+      const isSaved = savedJobIds.includes(jobId);
+
+      if (isSaved) {
+        const response = await api.delete(`/jobs/saved/${jobId}`);
+        if (response.data?.success) {
+          setSavedJobIds((prev) => prev.filter((savedId) => savedId !== jobId));
+          showToast("Saved job removed", "success");
+        } else {
+          alert(response.data?.message || "Failed to remove saved job.");
+        }
+      } else {
+        const response = await api.post(`/jobs/saved/${jobId}`);
+        if (response.data?.success) {
+          setSavedJobIds((prev) => (prev.includes(jobId) ? prev : [...prev, jobId]));
+          showToast("Job Saved Successfully!", "success");
+        } else {
+          alert(response.data?.message || "Failed to save job.");
+        }
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to update saved job.");
+    } finally {
+      setSavingJobId("");
+    }
+  };
+
   if (loading) return <div className="min-h-[70vh] flex items-center justify-center text-black/60">Loading jobs...</div>;
   if (error || !company) return <div className="min-h-[70vh] flex items-center justify-center text-red-600">{error || "Company not found."}</div>;
 
   return (
     <main className="min-h-screen bg-[#f7f9fc] px-4 py-8 sm:px-6 lg:px-8">
+      {toast.show && (
+        <div className="fixed top-[100px] left-1/2 -translate-x-1/2 z-[9999] pointer-events-none">
+          <div className={`inline-flex items-center gap-3 rounded-2xl border px-7 py-4 text-base font-semibold shadow-xl ${
+            toast.type === "error"
+              ? "border-red-200 bg-red-100 text-red-700"
+              : "border-blue-200 bg-blue-100 text-blue-700"
+          }`}>
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>{toast.message}</span>
+          </div>
+        </div>
+      )}
       <div className="mx-auto w-full max-w-[1280px]">
         <button type="button" onClick={() => navigate(`/jobseeker/company-details/${id}`, { state: { activeTab: "jobs" } })} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-[#2e66a6] hover:bg-[#f7faff]">
           <svg
@@ -182,6 +311,9 @@ const CompanyAllJobs = () => {
             <div className="mt-7 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {visibleJobs.map((job) => {
                 const applied = appliedIds.includes(job._id);
+                const jobId = job._id || job.id;
+                const isSavedJob = savedJobIds.includes(jobId);
+                const isSavingThisJob = savingJobId === jobId;
                 return (
                   <article
                     key={job._id}
@@ -209,6 +341,42 @@ const CompanyAllJobs = () => {
                     className="group relative flex cursor-pointer self-start flex-col overflow-visible rounded-[22px] border border-[#E5E7EB] bg-white p-5 shadow-[0_6px_18px_rgba(0,0,0,0.045)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                     aria-label={`View details for ${job.title || "job"}`}
                   >
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleSaveJob(job);
+                      }}
+                      disabled={isSavingThisJob}
+                      className={`absolute top-5 right-5 h-10 w-10 rounded-xl flex items-center justify-center transition ${
+                        isSavedJob ? "text-blue-700 hover:bg-blue-100" : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                      aria-label={`${isSavedJob ? "Remove saved" : "Save"} ${job.title || "job"}`}
+                      title={isSavedJob ? "Remove Saved Job" : "Save Job"}
+                    >
+                      {isSavingThisJob ? (
+                        <span className="inline-block w-5 h-5 rounded-full border-2 border-gray-300 border-t-blue-700 animate-spin" />
+                      ) : isSavedJob ? (
+                        <svg
+                          className="w-5 h-5 text-blue-700"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          aria-hidden="true"
+                        >
+                          <path d="M6 4.75A2.75 2.75 0 018.75 2h6.5A2.75 2.75 0 0118 4.75V21a.75.75 0 01-1.154.638L12 18.58l-4.846 3.058A.75.75 0 016 21V4.75z" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="1.8"
+                            d="M6 4.75A1.75 1.75 0 017.75 3h8.5A1.75 1.75 0 0118 4.75V21l-5-3-5 3V4.75z"
+                          />
+                        </svg>
+                      )}
+                    </button>
+
                     <div className="flex items-start gap-4 pr-10">
                     <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#d8e2ee] bg-white p-1">
   {company.companyLogo ? (

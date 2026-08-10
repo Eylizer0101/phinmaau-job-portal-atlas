@@ -1132,7 +1132,7 @@ const JobDetails = () => {
         const response = await api.post(`/jobs/saved/${job._id}`);
         if (response.data?.success) {
           setIsSaved(true);
-          setToastWithAutoClear('success', 'Job saved successfully.');
+          setToastWithAutoClear('success', 'Job Saved Successfully!');
         } else {
           setToastWithAutoClear('error', response.data?.message || 'Failed to save job.');
         }

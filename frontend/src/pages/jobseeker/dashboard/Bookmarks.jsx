@@ -1678,6 +1678,7 @@ const Bookmarks = () => {
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState('');
   const [toast, setToast] = useState({ type: '', message: '' });
+  const [jobSaveToast, setJobSaveToast] = useState({ show: false, message: '' });
 
   const [savedCompanies, setSavedCompanies] = useState([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
@@ -1716,6 +1717,15 @@ const Bookmarks = () => {
   });
 
   const toastTimerRef = useRef(null);
+  const jobSaveToastTimerRef = useRef(null);
+
+  const showJobSaveToast = useCallback((message, ms = 2200) => {
+    setJobSaveToast({ show: true, message });
+    if (jobSaveToastTimerRef.current) window.clearTimeout(jobSaveToastTimerRef.current);
+    jobSaveToastTimerRef.current = window.setTimeout(() => {
+      setJobSaveToast({ show: false, message: '' });
+    }, ms);
+  }, []);
 
   const setToastMessage = useCallback((type, message, ms = 1800) => {
     setToast({ type, message });
@@ -1728,6 +1738,7 @@ const Bookmarks = () => {
   useEffect(() => {
     return () => {
       if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+      if (jobSaveToastTimerRef.current) window.clearTimeout(jobSaveToastTimerRef.current);
     };
   }, []);
 
@@ -2498,7 +2509,7 @@ const Bookmarks = () => {
             setSavedJobs((prev) => [normalizedJob, ...prev]);
           }
 
-          setToastMessage('success', response.data?.alreadySaved ? 'Job already saved.' : 'Job saved successfully.');
+          showJobSaveToast(response.data?.alreadySaved ? 'Job already saved.' : 'Job Saved Successfully!');
         } else {
           setToastMessage('error', response.data?.message || 'Failed to save job.');
         }
@@ -2508,7 +2519,7 @@ const Bookmarks = () => {
         setSavingJobId('');
       }
     },
-    [navigate, savedJobs, savingJobId, setToastMessage]
+    [navigate, savedJobs, savingJobId, setToastMessage, showJobSaveToast]
   );
 
   const mainActionLoading = Boolean(selectedJob) && (checkingApplied || !applicationStateReady);
@@ -2561,6 +2572,26 @@ const Bookmarks = () => {
     <JobSeekerLayout>
       <>
         <div className={UI.page}>
+          {jobSaveToast.show && (
+            <div
+              className="fixed top-[100px] left-1/2 -translate-x-1/2 z-[9999] pointer-events-none"
+              role="status"
+              aria-live="polite"
+            >
+              <div className="inline-flex items-center gap-3 rounded-2xl border border-blue-200 bg-blue-100 px-7 py-4 text-base font-semibold text-blue-700 shadow-xl">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>{jobSaveToast.message}</span>
+              </div>
+            </div>
+          )}
           <div className={UI.container}>
             {toast.message && (
               <div className={`${UI.alertBase} ${toast.type === 'error' ? UI.alertError : UI.alertSuccess} mb-5`} role="status" aria-live="polite">
