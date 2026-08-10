@@ -246,7 +246,7 @@ const ResetPassword = () => {
             </svg>
           </button>
 
-          <img src="/images/agpay.png" alt="AGAPAY" className="mx-auto h-20 w-auto max-w-[240px] object-contain" />
+          <img src="/images/agpay.png" alt="AGAPAY" className="mx-auto h-24 w-auto max-w-[280px] object-contain" />
           <h1 className="mt-4 text-xl font-extrabold text-gray-950">Reset Password</h1>
           <p className="mx-auto mt-2 max-w-[360px] text-sm leading-5 text-gray-600">
             Enter the OTP sent to your email and choose a new password.

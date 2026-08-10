@@ -639,11 +639,11 @@ const LoginPage = () => {
             </button>
 
             <div className="text-center">
-              <img
-                src="/images/agpay.png"
-                alt="AGAPAY"
-                className="mx-auto h-20 w-auto max-w-[230px] object-contain"
-              />
+             <img
+  src="/images/agpay.png"
+  alt="AGAPAY"
+  className="mx-auto h-24 w-auto max-w-[280px] object-contain"
+/>
               <h3 id="forgot-password-title" className="mt-4 text-xl font-extrabold tracking-tight text-gray-950">
                 Forgot Password
               </h3>
