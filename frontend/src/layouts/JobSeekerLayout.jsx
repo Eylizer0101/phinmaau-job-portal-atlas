@@ -1090,7 +1090,15 @@ const JobSeekerLayout = ({ children }) => {
                                             {formatTime(n.createdAt)}
                                           </span>
                                         </div>
-                                        <p className="mt-1 break-words text-sm leading-5 text-gray-700">
+                                        <p
+                                          className="mt-1 break-words text-sm leading-5 text-gray-700"
+                                          style={{
+                                            display: '-webkit-box',
+                                            WebkitLineClamp: 2,
+                                            WebkitBoxOrient: 'vertical',
+                                            overflow: 'hidden',
+                                          }}
+                                        >
                                           {getNotificationDisplayMessage(n)}
                                         </p>
 
@@ -1468,7 +1476,15 @@ const JobSeekerLayout = ({ children }) => {
                                   {getNotificationDisplayTitle(n)}
                                 </h4>
                               </div>
-                              <p className="break-words text-sm leading-5 text-gray-700">
+                              <p
+                                className="break-words text-sm leading-5 text-gray-700"
+                                style={{
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: 'vertical',
+                                  overflow: 'hidden',
+                                }}
+                              >
                                 {getNotificationDisplayMessage(n)}
                               </p>
 
