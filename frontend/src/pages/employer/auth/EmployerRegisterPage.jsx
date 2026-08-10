@@ -13,7 +13,13 @@ const MAX_DOC_SIZE = 5 * 1024 * 1024;
 const INVALID_DOC_MESSAGE = 'Invalid file. Upload PDF, JPG, JPEG, or PNG only, up to 5MB.';
 const PERSON_NAME_PATTERN = /^[\p{L}\s'-]+$/u;
 const SAFE_INDUSTRY_PATTERN = /^[^<>\u0000-\u001F\u007F]+$/u;
+const MAX_INDUSTRY_LENGTH = 100;
 const BUSINESS_EMAIL_PATTERN = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i;
+
+const normalizeIndustryValue = (value) =>
+  String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ');
 
 const normalizeWebsiteUrl = (value) => {
   const trimmed = String(value || '').trim();
@@ -251,6 +257,8 @@ const EmployerRegisterPage = () => {
   const hasExactIndustryMatch = INDUSTRY_OPTIONS.some(
     (option) => option.toLowerCase() === industrySearch.toLowerCase()
   );
+  const isCustomIndustryValue = Boolean(industrySearch && !hasExactIndustryMatch);
+  const industryCharacterCount = formData.industry.length;
 
   const getValidationErrors = (onlyKeys = null) => {
     const check = (k) => !onlyKeys || onlyKeys.includes(k);
@@ -321,9 +329,9 @@ const EmployerRegisterPage = () => {
     }
 
     if (check('industry')) {
-      const value = formData.industry.trim();
+      const value = normalizeIndustryValue(formData.industry);
       if (!value) next.industry = 'Industry is required.';
-      else if (value.length > 100) next.industry = 'Industry must not exceed 100 characters.';
+      else if (value.length > MAX_INDUSTRY_LENGTH) next.industry = 'Industry must not exceed 100 characters.';
       else if (!SAFE_INDUSTRY_PATTERN.test(value) || /^\s*(?:javascript|data):/i.test(value)) {
         next.industry = 'Enter a valid industry without HTML or script content.';
       }
@@ -372,6 +380,28 @@ const EmployerRegisterPage = () => {
     if (name === 'mobileNumber') {
       if (!/^\d*$/.test(value)) return;
       if (value.length > 11) return;
+    }
+
+    if (name === 'industry') {
+      const limitedValue = value.slice(0, MAX_INDUSTRY_LENGTH);
+
+      setFormData((prev) => ({
+        ...prev,
+        industry: limitedValue,
+      }));
+
+      setServerError('');
+
+      if (value.length > MAX_INDUSTRY_LENGTH) {
+        setFieldErrors((prev) => ({
+          ...prev,
+          industry: 'Industry must not exceed 100 characters.',
+        }));
+      } else {
+        clearFieldError('industry');
+      }
+
+      return;
     }
 
     setFormData((prev) => ({
@@ -504,7 +534,7 @@ const EmployerRegisterPage = () => {
       fd.append('companyName', formData.companyName.trim());
       fd.append('companyWebsiteUrl', normalizeWebsiteUrl(formData.companyWebsiteUrl) || '');
       fd.append('regionCity', formData.regionCity.trim());
-      fd.append('industry', formData.industry.trim());
+      fd.append('industry', normalizeIndustryValue(formData.industry));
       if (companyLogo) fd.append('companyLogo', companyLogo);
 
       // Documents (5)
@@ -1354,11 +1384,18 @@ const EmployerRegisterPage = () => {
                                 name="industry"
                                 value={formData.industry}
                                 onChange={handleChange}
+                                maxLength={MAX_INDUSTRY_LENGTH}
                                 onFocus={() => {
                                   setFieldFocus('industry', true);
                                   setIndustryOpen(true);
                                 }}
                                 onBlur={() => {
+                                  const normalizedIndustry = normalizeIndustryValue(formData.industry);
+                                  setFormData((prev) =>
+                                    prev.industry === normalizedIndustry
+                                      ? prev
+                                      : { ...prev, industry: normalizedIndustry }
+                                  );
                                   setFieldFocus('industry', false);
                                   window.setTimeout(() => setIndustryOpen(false), 120);
                                 }}
@@ -1425,7 +1462,8 @@ const EmployerRegisterPage = () => {
                                       aria-selected="false"
                                       onMouseDown={(event) => event.preventDefault()}
                                       onClick={() => {
-                                        setFormData((prev) => ({ ...prev, industry: industrySearch }));
+                                        const normalizedIndustry = normalizeIndustryValue(industrySearch);
+                                        setFormData((prev) => ({ ...prev, industry: normalizedIndustry }));
                                         clearFieldError('industry');
                                         setIndustryOpen(false);
                                       }}
@@ -1440,6 +1478,13 @@ const EmployerRegisterPage = () => {
                                 </div>
                               )}
                             </div>
+                            {isCustomIndustryValue ? (
+                              <div className="flex justify-end">
+                                <span className="text-xs text-gray-500">
+                                  {industryCharacterCount} / {MAX_INDUSTRY_LENGTH}
+                                </span>
+                              </div>
+                            ) : null}
                             {focused.industry && !fieldErrors.industry && helperText('industry-help')}
                             {errorText('industry-error', fieldErrors.industry)}
                           </div>
