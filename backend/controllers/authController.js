@@ -1277,7 +1277,7 @@ exports.forgotPassword = async (req, res) => {
       return res.status(400).json({ message: 'Please enter a valid email address.' });
     }
 
-    const expiresInMinutes = Math.max(1, Number(process.env.PASSWORD_RESET_OTP_EXPIRES_MINUTES || 5));
+    const expiresInMinutes = 3;
     const expiresInSeconds = expiresInMinutes * 60;
     const genericMessage = 'If the email exists, we sent a password reset OTP.';
 

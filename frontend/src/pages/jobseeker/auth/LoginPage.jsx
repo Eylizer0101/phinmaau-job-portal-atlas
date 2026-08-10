@@ -366,7 +366,7 @@ const LoginPage = () => {
     try {
       const email = normalizeEmail(forgotPasswordEmail);
       const response = await axios.post(FORGOT_PASSWORD_API_URL, { email });
-      const expiresInSeconds = Math.max(60, Number(response.data?.expiresInSeconds || 300));
+      const expiresInSeconds = Math.min(180, Math.max(60, Number(response.data?.expiresInSeconds || 180)));
       const expiresAt = Date.now() + expiresInSeconds * 1000;
 
       sessionStorage.setItem('password_reset_email', email);
@@ -642,7 +642,7 @@ const LoginPage = () => {
               <img
                 src="/images/agpay.png"
                 alt="AGAPAY"
-                className="mx-auto h-14 w-auto max-w-[190px] object-contain"
+                className="mx-auto h-20 w-auto max-w-[230px] object-contain"
               />
               <h3 id="forgot-password-title" className="mt-4 text-xl font-extrabold tracking-tight text-gray-950">
                 Forgot Password
@@ -707,8 +707,13 @@ const LoginPage = () => {
                   }}
                   disabled={forgotPasswordLoading}
                   aria-label="Math verification answer"
-                  className={`h-10 w-14 rounded-lg border bg-white px-2 text-center text-sm font-semibold text-gray-900 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10 ${
-                    forgotPasswordMathError ? 'border-red-400' : 'border-gray-200'
+                  className={`h-10 w-14 rounded-lg border px-2 text-center text-sm font-semibold outline-none transition focus:ring-2 ${
+                    forgotPasswordMathError
+                      ? 'border-red-400 bg-white text-gray-900 focus:border-red-400 focus:ring-red-100'
+                      : String(forgotPasswordMathAnswer).trim() &&
+                        Number(forgotPasswordMathAnswer) === forgotPasswordMathChallenge.answer
+                        ? 'border-green-500 bg-green-50 text-green-700 focus:border-green-500 focus:ring-green-100'
+                        : 'border-gray-200 bg-white text-gray-900 focus:border-[#2e66a6] focus:ring-[#2e66a6]/10'
                   }`}
                 />
                 <button

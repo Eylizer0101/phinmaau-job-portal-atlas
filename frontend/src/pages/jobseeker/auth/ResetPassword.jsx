@@ -152,7 +152,7 @@ const ResetPassword = () => {
 
     try {
       const response = await axios.post(FORGOT_PASSWORD_API_URL, { email: recoveryEmail });
-      const expiresInSeconds = Math.max(60, Number(response.data?.expiresInSeconds || 300));
+      const expiresInSeconds = Math.min(180, Math.max(60, Number(response.data?.expiresInSeconds || 180)));
       const nextExpiresAt = Date.now() + expiresInSeconds * 1000;
 
       sessionStorage.setItem('password_reset_email', recoveryEmail);
@@ -246,7 +246,7 @@ const ResetPassword = () => {
             </svg>
           </button>
 
-          <img src="/images/agpay.png" alt="AGAPAY" className="mx-auto h-14 w-auto max-w-[200px] object-contain" />
+          <img src="/images/agpay.png" alt="AGAPAY" className="mx-auto h-20 w-auto max-w-[240px] object-contain" />
           <h1 className="mt-4 text-xl font-extrabold text-gray-950">Reset Password</h1>
           <p className="mx-auto mt-2 max-w-[360px] text-sm leading-5 text-gray-600">
             Enter the OTP sent to your email and choose a new password.
@@ -379,8 +379,12 @@ const ResetPassword = () => {
                 }}
                 disabled={loading || !!successMessage || !recoveryEmail}
                 aria-label="Math verification answer"
-                className={`h-10 w-14 rounded-lg border px-2 text-center text-sm font-semibold outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10 ${
-                  fieldErrors.math ? 'border-red-400' : 'border-gray-200'
+                className={`h-10 w-14 rounded-lg border px-2 text-center text-sm font-semibold outline-none focus:ring-2 ${
+                  fieldErrors.math
+                    ? 'border-red-400 bg-white text-gray-900 focus:border-red-400 focus:ring-red-100'
+                    : String(mathAnswer).trim() && Number(mathAnswer) === mathChallenge.answer
+                      ? 'border-green-500 bg-green-50 text-green-700 focus:border-green-500 focus:ring-green-100'
+                      : 'border-gray-200 bg-white text-gray-900 focus:border-[#2e66a6] focus:ring-[#2e66a6]/10'
                 }`}
               />
               <button
