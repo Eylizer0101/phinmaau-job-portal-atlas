@@ -388,7 +388,9 @@ const userSchema = new mongoose.Schema(
     },
 
     passwordReset: {
+      // tokenHash is kept for backward compatibility with older stored records.
       tokenHash: { type: String, default: '' },
+      otpHash: { type: String, default: '' },
       expiresAt: { type: Date, default: null },
       requestedAt: { type: Date, default: null },
       usedAt: { type: Date, default: null },

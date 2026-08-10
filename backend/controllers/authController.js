@@ -9,7 +9,7 @@ const https = require('https');
 const querystring = require('querystring');
 const {
   sendCredentialsEmail,
-  sendPasswordResetEmail,
+  sendPasswordResetOtpEmail,
   sendSettingsEmailVerificationCode,
   sendJobseekerRegistrationSummaryEmail,
   sendEmployerRegistrationSummaryEmail,
@@ -1261,7 +1261,7 @@ exports.loginEmployer = async (req, res) => {
 };
 
 // ---------------------------
-// FORGOT PASSWORD
+// FORGOT PASSWORD - OTP
 // ---------------------------
 exports.forgotPassword = async (req, res) => {
   try {
@@ -1273,22 +1273,30 @@ exports.forgotPassword = async (req, res) => {
       });
     }
 
-    const genericMessage = 'If the email exists, we sent a reset link.';
+    if (!isValidBusinessEmail(email)) {
+      return res.status(400).json({ message: 'Please enter a valid email address.' });
+    }
+
+    const expiresInMinutes = Math.max(1, Number(process.env.PASSWORD_RESET_OTP_EXPIRES_MINUTES || 5));
+    const expiresInSeconds = expiresInMinutes * 60;
+    const genericMessage = 'If the email exists, we sent a password reset OTP.';
 
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(200).json({ message: genericMessage });
+      return res.status(200).json({
+        message: genericMessage,
+        expiresInSeconds,
+      });
     }
 
-    const resetToken = generatePasswordResetToken();
-    const tokenHash = hashToken(resetToken);
-
-    const expiresInMinutes = Number(process.env.PASSWORD_RESET_EXPIRES_MINUTES || 30);
-    const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
+    const otp = generateNumericOtp();
+    const otpHash = hashToken(otp);
+    const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
 
     user.passwordReset = {
-      tokenHash,
+      tokenHash: '',
+      otpHash,
       expiresAt,
       requestedAt: new Date(),
       usedAt: null,
@@ -1296,22 +1304,33 @@ exports.forgotPassword = async (req, res) => {
 
     await user.save();
 
-    const appUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://agapayy.onrender.com';
-    const resetUrl = `${appUrl}/reset-password?token=${encodeURIComponent(resetToken)}`;
-
     try {
-      await sendPasswordResetEmail({
+      await sendPasswordResetOtpEmail({
         to: user.email,
         fullName: user.fullName || user.firstName || user.username || 'User',
-        resetUrl,
+        otp,
         expiresInMinutes,
       });
     } catch (mailError) {
-      console.error('Forgot password email sending error:', mailError);
+      console.error('Forgot password OTP email sending error:', mailError);
+
+      user.passwordReset = {
+        tokenHash: '',
+        otpHash: '',
+        expiresAt: null,
+        requestedAt: null,
+        usedAt: null,
+      };
+      await user.save().catch(() => {});
+
+      return res.status(503).json({
+        message: 'Unable to send the verification code right now. Please try again later.',
+      });
     }
 
     return res.status(200).json({
       message: genericMessage,
+      expiresInSeconds,
     });
   } catch (error) {
     console.error('Forgot password error:', error);
@@ -1323,37 +1342,55 @@ exports.forgotPassword = async (req, res) => {
 };
 
 // ---------------------------
-// RESET PASSWORD
+// RESET PASSWORD - OTP
 // ---------------------------
 exports.resetPassword = async (req, res) => {
   try {
-    const { token, newPassword } = req.body;
+    const email = normalizeEmail(req.body?.email);
+    const otp = String(req.body?.otp || '').trim();
+    const newPassword = String(req.body?.newPassword || '');
+    const confirmPassword = String(req.body?.confirmPassword || '');
 
-    if (!token || !String(token).trim()) {
-      return res.status(400).json({ message: 'Reset token is required.' });
+    if (!email || !isValidBusinessEmail(email)) {
+      return res.status(400).json({ message: 'A valid registered email address is required.' });
     }
 
-    if (!newPassword || String(newPassword).trim().length < 6) {
+    if (!/^\d{6}$/.test(otp)) {
+      return res.status(400).json({ message: 'Enter the valid 6-digit OTP sent to your email.' });
+    }
+
+    if (!newPassword || newPassword.trim().length < 6) {
       return res.status(400).json({ message: 'New password must be at least 6 characters long.' });
     }
 
-    const tokenHash = hashToken(String(token).trim());
+    if (!confirmPassword) {
+      return res.status(400).json({ message: 'Confirm password is required.' });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: 'Passwords do not match.' });
+    }
+
+    const otpHash = hashToken(otp);
 
     const user = await User.findOne({
-      'passwordReset.tokenHash': tokenHash,
+      email,
+      'passwordReset.otpHash': otpHash,
       'passwordReset.expiresAt': { $gt: new Date() },
+      'passwordReset.usedAt': null,
     });
 
     if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired reset token.' });
+      return res.status(400).json({ message: 'Invalid or expired OTP. Please request a new code.' });
     }
 
     const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(String(newPassword).trim(), salt);
+    user.password = await bcrypt.hash(newPassword.trim(), salt);
     user.mustChangePassword = false;
 
     user.passwordReset = {
       tokenHash: '',
+      otpHash: '',
       expiresAt: null,
       requestedAt: null,
       usedAt: new Date(),
@@ -1363,7 +1400,7 @@ exports.resetPassword = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Password reset successful. You can now log in with your new password.',
+      message: 'Password reset successful. You can now sign in with your new password.',
     });
   } catch (error) {
     console.error('Reset password error:', error);

@@ -3,6 +3,12 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ReCAPTCHA from 'react-google-recaptcha';
 
+const createMathChallenge = () => {
+  const left = Math.floor(Math.random() * 40) + 10;
+  const right = Math.floor(Math.random() * 9) + 1;
+  return { left, right, answer: left + right };
+};
+
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -44,7 +50,9 @@ const LoginPage = () => {
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
   const [forgotPasswordError, setForgotPasswordError] = useState('');
-  const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState('');
+  const [forgotPasswordMathChallenge, setForgotPasswordMathChallenge] = useState(() => createMathChallenge());
+  const [forgotPasswordMathAnswer, setForgotPasswordMathAnswer] = useState('');
+  const [forgotPasswordMathError, setForgotPasswordMathError] = useState('');
   const forgotPasswordInputRef = useRef(null);
 
   const normalizeUsername = (u) => String(u || '').trim().toLowerCase();
@@ -120,6 +128,18 @@ const LoginPage = () => {
     const successMessage = location?.state?.successMessage;
     if (successMessage && typeof successMessage === 'string') {
       setPageSuccessMessage(successMessage);
+      navigate(location.pathname, { replace: true, state: {} });
+      return;
+    }
+
+    if (location?.state?.openForgotPassword) {
+      const recoveryEmail = normalizeEmail(location?.state?.email || '');
+      setForgotPasswordEmail(recoveryEmail);
+      setForgotPasswordError('');
+      setForgotPasswordMathAnswer('');
+      setForgotPasswordMathError('');
+      setForgotPasswordMathChallenge(createMathChallenge());
+      setShowForgotPasswordModal(true);
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location?.state, location.pathname, navigate]);
@@ -282,6 +302,12 @@ const LoginPage = () => {
     return '';
   };
 
+  const refreshForgotPasswordMathChallenge = () => {
+    setForgotPasswordMathChallenge(createMathChallenge());
+    setForgotPasswordMathAnswer('');
+    setForgotPasswordMathError('');
+  };
+
   const resetAttemptsAndLock = () => {
     const username = normalizeUsername(formData.username);
     setAttemptCount(0);
@@ -300,7 +326,9 @@ const LoginPage = () => {
 
     setForgotPasswordEmail(initialEmail);
     setForgotPasswordError('');
-    setForgotPasswordSuccess('');
+    setForgotPasswordMathAnswer('');
+    setForgotPasswordMathError('');
+    setForgotPasswordMathChallenge(createMathChallenge());
     setShowForgotPasswordModal(true);
   };
 
@@ -308,13 +336,14 @@ const LoginPage = () => {
     if (forgotPasswordLoading) return;
     setShowForgotPasswordModal(false);
     setForgotPasswordError('');
-    setForgotPasswordSuccess('');
+    setForgotPasswordMathAnswer('');
+    setForgotPasswordMathError('');
   };
 
   const handleForgotPasswordSubmit = async (e) => {
     e.preventDefault();
     setForgotPasswordError('');
-    setForgotPasswordSuccess('');
+    setForgotPasswordMathError('');
 
     const emailError = validateForgotPasswordEmail();
     if (emailError) {
@@ -322,18 +351,36 @@ const LoginPage = () => {
       return;
     }
 
+    const numericAnswer = Number(forgotPasswordMathAnswer);
+    if (!String(forgotPasswordMathAnswer).trim()) {
+      setForgotPasswordMathError('Please answer the math verification.');
+      return;
+    }
+    if (!Number.isFinite(numericAnswer) || numericAnswer !== forgotPasswordMathChallenge.answer) {
+      setForgotPasswordMathError('Incorrect answer. Please try again.');
+      return;
+    }
+
     setForgotPasswordLoading(true);
 
     try {
-      await axios.post(FORGOT_PASSWORD_API_URL, {
-        email: normalizeEmail(forgotPasswordEmail),
-      });
+      const email = normalizeEmail(forgotPasswordEmail);
+      const response = await axios.post(FORGOT_PASSWORD_API_URL, { email });
+      const expiresInSeconds = Math.max(60, Number(response.data?.expiresInSeconds || 300));
+      const expiresAt = Date.now() + expiresInSeconds * 1000;
 
-      setForgotPasswordSuccess('If the email exists, we sent a reset link.');
+      sessionStorage.setItem('password_reset_email', email);
+      sessionStorage.setItem('password_reset_expires_at', String(expiresAt));
+
+      setShowForgotPasswordModal(false);
+      navigate('/reset-password', {
+        state: { email, expiresAt },
+      });
     } catch (err) {
       const message =
-        err.response?.data?.message || 'Unable to process your request right now. Please try again.';
+        err.response?.data?.message || 'Unable to send the verification code right now. Please try again.';
       setForgotPasswordError(message);
+      refreshForgotPasswordMathChallenge();
     } finally {
       setForgotPasswordLoading(false);
     }
@@ -566,7 +613,7 @@ const LoginPage = () => {
 
     return (
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-[2px]"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="forgot-password-title"
@@ -577,187 +624,152 @@ const LoginPage = () => {
           }
         }}
       >
-        <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5">
-          <div className="relative border-b border-gray-100 px-6 py-5 sm:px-7">
+        <div className="w-full max-w-[410px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+          <div className="relative border-b border-gray-200 px-5 pb-5 pt-6 sm:px-6">
             <button
               type="button"
               onClick={closeForgotPasswordModal}
               disabled={forgotPasswordLoading}
-              className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 transition hover:bg-gray-50 hover:text-gray-700 focus:outline-none focus:ring-4 focus:ring-[#2e66a6]/10 disabled:cursor-not-allowed disabled:opacity-50"
+              className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 transition hover:bg-gray-50 hover:text-gray-700 focus:outline-none focus:ring-4 focus:ring-[#2e66a6]/10 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Close forgot password modal"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
 
-            <div className="pr-12">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2e66a6]/10">
-                <svg
-                  aria-hidden="true"
-                  className="h-6 w-6 text-[#2e66a6]"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8m-16 9h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                  />
-                </svg>
-              </div>
-
-              <h3 id="forgot-password-title" className="text-xl font-extrabold tracking-tight text-gray-900">
+            <div className="text-center">
+              <img
+                src="/images/agpay.png"
+                alt="AGAPAY"
+                className="mx-auto h-14 w-auto max-w-[190px] object-contain"
+              />
+              <h3 id="forgot-password-title" className="mt-4 text-xl font-extrabold tracking-tight text-gray-950">
                 Forgot Password
               </h3>
-              <p id="forgot-password-description" className="mt-1.5 text-sm leading-6 text-gray-600">
-                Enter the email address linked to your account and we’ll send you a password reset link.
+              <p id="forgot-password-description" className="mx-auto mt-2 max-w-[330px] text-sm leading-5 text-gray-600">
+                Enter the email address linked to your account and we&apos;ll send you a one-time password (OTP).
               </p>
             </div>
           </div>
 
-          <div className="px-6 py-6 sm:px-7">
-            {forgotPasswordSuccess ? (
-              <div className="space-y-5">
-                <div
-                  className="rounded-2xl border border-green-200 bg-green-50 p-4"
-                  role="status"
-                  aria-live="polite"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-100">
-                      <svg
-                        aria-hidden="true"
-                        className="h-5 w-5 text-green-700"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2.5"
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </div>
+          <form onSubmit={handleForgotPasswordSubmit} className="space-y-4 px-5 py-5 sm:px-6" noValidate>
+            <div className="space-y-1.5">
+              <label htmlFor="forgot-password-email" className="block text-xs font-bold text-gray-900">
+                Enter Registered Email Address
+              </label>
 
-                    <div>
-                      <p className="text-sm font-bold text-green-800">Reset link request sent</p>
-                      <p className="mt-1 text-sm text-green-700">
-                        If the email exists, we sent a reset link. Please check your inbox and spam folder.
-                      </p>
-                    </div>
-                  </div>
+              <input
+                ref={forgotPasswordInputRef}
+                id="forgot-password-email"
+                type="email"
+                value={forgotPasswordEmail}
+                onChange={(e) => {
+                  setForgotPasswordEmail(e.target.value);
+                  setForgotPasswordError('');
+                }}
+                autoComplete="email"
+                className={fieldClass(!!forgotPasswordError)}
+                disabled={forgotPasswordLoading}
+                placeholder="name@example.com"
+                aria-invalid={!!forgotPasswordError}
+                aria-describedby={forgotPasswordError ? 'forgot-password-email-error' : 'forgot-password-email-help'}
+              />
+
+              {forgotPasswordError ? (
+                <p id="forgot-password-email-error" className="mt-1 text-xs text-red-600" role="alert" aria-live="polite">
+                  {forgotPasswordError}
+                </p>
+              ) : (
+                <p id="forgot-password-email-help" className="mt-1 text-xs text-gray-500">
+                  Make sure you enter the same email used during registration.
+                </p>
+              )}
+            </div>
+
+            <div>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <div className="flex h-10 min-w-[48px] items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900">
+                  {forgotPasswordMathChallenge.left}
                 </div>
-
+                <span className="text-sm font-semibold text-gray-500">+</span>
+                <div className="flex h-10 min-w-[48px] items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900">
+                  {forgotPasswordMathChallenge.right}
+                </div>
+                <span className="text-sm font-semibold text-gray-500">=</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={forgotPasswordMathAnswer}
+                  onChange={(e) => {
+                    setForgotPasswordMathAnswer(e.target.value.replace(/[^0-9]/g, '').slice(0, 3));
+                    setForgotPasswordMathError('');
+                  }}
+                  disabled={forgotPasswordLoading}
+                  aria-label="Math verification answer"
+                  className={`h-10 w-14 rounded-lg border bg-white px-2 text-center text-sm font-semibold text-gray-900 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10 ${
+                    forgotPasswordMathError ? 'border-red-400' : 'border-gray-200'
+                  }`}
+                />
                 <button
                   type="button"
-                  onClick={closeForgotPasswordModal}
-                  className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white transition hover:bg-[#245387] focus:outline-none focus:ring-4 focus:ring-[#2e66a6]/15"
+                  onClick={refreshForgotPasswordMathChallenge}
+                  disabled={forgotPasswordLoading}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 hover:text-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20 disabled:opacity-50"
+                  aria-label="Refresh math verification"
+                  title="New math question"
                 >
-                  Done
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M4 4v6h6M20 20v-6h-6M5.1 15A7 7 0 0017 18.9L20 16M18.9 9A7 7 0 007 5.1L4 8" />
+                  </svg>
                 </button>
               </div>
-            ) : (
-              <form onSubmit={handleForgotPasswordSubmit} className="space-y-5" noValidate>
-                <div className="space-y-1.5">
-                  <label htmlFor="forgot-password-email" className={labelBase}>
-                    Email address
-                  </label>
+              {forgotPasswordMathError ? (
+                <p className="mt-2 text-center text-xs text-red-600" role="alert" aria-live="polite">
+                  {forgotPasswordMathError}
+                </p>
+              ) : null}
+            </div>
 
-                  <input
-                    ref={forgotPasswordInputRef}
-                    id="forgot-password-email"
-                    type="email"
-                    value={forgotPasswordEmail}
-                    onChange={(e) => {
-                      setForgotPasswordEmail(e.target.value);
-                      setForgotPasswordError('');
-                    }}
-                    autoComplete="email"
-                    className={fieldClass(!!forgotPasswordError)}
-                    disabled={forgotPasswordLoading}
-                    placeholder="name@example.com"
-                    aria-invalid={!!forgotPasswordError}
-                    aria-describedby={forgotPasswordError ? 'forgot-password-email-error' : 'forgot-password-email-help'}
-                  />
+            <div className="flex items-center justify-center gap-3 pt-1">
+              <button
+                type="button"
+                onClick={closeForgotPasswordModal}
+                disabled={forgotPasswordLoading}
+                className="inline-flex h-10 min-w-[96px] items-center justify-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50 focus:outline-none focus:ring-4 focus:ring-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Cancel
+              </button>
 
-                  {forgotPasswordError ? (
-                    <p
-                      id="forgot-password-email-error"
-                      className="text-xs text-red-600 mt-1"
-                      role="alert"
-                      aria-live="polite"
-                    >
-                      {forgotPasswordError}
-                    </p>
-                  ) : (
-                    <p id="forgot-password-email-help" className="text-xs text-gray-500 mt-1">
-                      Make sure you enter the same email used during registration.
-                    </p>
-                  )}
-                </div>
+              <button
+                type="submit"
+                disabled={forgotPasswordLoading}
+                className="inline-flex h-10 min-w-[112px] items-center justify-center rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white transition hover:bg-[#245387] focus:outline-none focus:ring-4 focus:ring-[#2e66a6]/15 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {forgotPasswordLoading ? 'Sending OTP...' : 'SEND OTP'}
+              </button>
+            </div>
 
-                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                  <button
-                    type="button"
-                    onClick={closeForgotPasswordModal}
-                    disabled={forgotPasswordLoading}
-                    className="inline-flex h-11 w-full items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-4 focus:ring-gray-200 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:min-w-[120px]"
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="submit"
-                    disabled={forgotPasswordLoading}
-                    className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white transition hover:bg-[#245387] focus:outline-none focus:ring-4 focus:ring-[#2e66a6]/15 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:min-w-[160px]"
-                  >
-                    {forgotPasswordLoading ? (
-                      <span className="flex items-center justify-center">
-                        <svg
-                          aria-hidden="true"
-                          className="mr-2 h-4 w-4 animate-spin text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          />
-                        </svg>
-                        Sending link...
-                      </span>
-                    ) : (
-                      'Send Reset Link'
-                    )}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
+            <button
+              type="button"
+              onClick={closeForgotPasswordModal}
+              disabled={forgotPasswordLoading}
+              className="mx-auto block text-sm font-semibold text-[#2e66a6] transition hover:text-[#245387] disabled:opacity-50"
+            >
+              Back to Sign In
+            </button>
+          </form>
         </div>
       </div>
     );
   }, [
     showForgotPasswordModal,
-    forgotPasswordSuccess,
     forgotPasswordError,
     forgotPasswordEmail,
     forgotPasswordLoading,
+    forgotPasswordMathChallenge,
+    forgotPasswordMathAnswer,
+    forgotPasswordMathError,
   ]);
 
   return (

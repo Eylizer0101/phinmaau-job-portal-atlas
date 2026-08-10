@@ -207,6 +207,64 @@ const sendPasswordResetEmail = async ({ to, fullName, resetUrl, expiresInMinutes
   });
 };
 
+const sendPasswordResetOtpEmail = async ({ to, fullName, otp, expiresInMinutes }) => {
+  if (!to) throw new Error('Recipient email missing');
+
+  const safeName = escapeHtml(fullName || 'User');
+  const safeOtp = escapeHtml(otp);
+  const safeExpiry = escapeHtml(expiresInMinutes);
+  const appUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://agapayy.onrender.com';
+  const logoUrl = escapeHtml(`${String(appUrl).replace(/\/$/, '')}/images/agpay.png`);
+
+  await sendMail({
+    to,
+    subject: 'Your AGAPAY Password Reset Code',
+    html: `
+      <div style="margin:0; padding:32px 14px; background:#f3f6fa; font-family:Arial,Helvetica,sans-serif; color:#111827;">
+        <div style="max-width:560px; margin:0 auto; overflow:hidden; background:#ffffff; border:1px solid #e2e8f0; border-radius:18px; box-shadow:0 12px 30px rgba(15,23,42,0.08);">
+          <div style="padding:30px 28px 24px; text-align:center; border-bottom:1px solid #edf2f7; background:#ffffff;">
+            <img src="${logoUrl}" alt="AGAPAY" style="display:block; width:auto; max-width:190px; height:58px; margin:0 auto; object-fit:contain;" />
+            <h1 style="margin:18px 0 0; font-size:24px; line-height:1.25; color:#111827; font-weight:700;">Reset Your Password</h1>
+            <p style="margin:9px auto 0; max-width:430px; font-size:14px; line-height:1.65; color:#64748b;">
+              Use the verification code below to continue your AGAPAY password reset.
+            </p>
+          </div>
+
+          <div style="padding:28px;">
+            <p style="margin:0; font-size:15px; line-height:1.6; color:#334155;">
+              Hi <strong style="color:#111827;">${safeName}</strong>,
+            </p>
+            <p style="margin:12px 0 0; font-size:14px; line-height:1.7; color:#475569;">
+              We received a request to reset the password for your AGAPAY account. Enter this one-time verification code on the password reset screen:
+            </p>
+
+            <div style="margin:24px 0; padding:22px 18px; text-align:center; background:#eef5ff; border:1px solid #cfe0f5; border-radius:14px;">
+              <p style="margin:0 0 10px; font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#2e66a6;">Your verification code</p>
+              <div style="font-family:'Courier New',monospace; font-size:34px; line-height:1.2; font-weight:700; letter-spacing:8px; color:#163d6b;">${safeOtp}</div>
+            </div>
+
+            <div style="padding:14px 16px; background:#f8fafc; border-left:4px solid #2e66a6; border-radius:8px;">
+              <p style="margin:0; font-size:13px; line-height:1.6; color:#475569;">
+                This code will expire in <strong>${safeExpiry} minutes</strong>. For your security, do not share this code with anyone.
+              </p>
+            </div>
+
+            <p style="margin:22px 0 0; font-size:13px; line-height:1.7; color:#64748b;">
+              If you did not request a password reset, you can safely ignore this email. Your current password will remain unchanged.
+            </p>
+          </div>
+
+          <div style="padding:18px 28px 24px; text-align:center; background:#f8fafc; border-top:1px solid #edf2f7;">
+            <p style="margin:0; font-size:12px; line-height:1.6; color:#94a3b8;">
+              This is an automated message from AGAPAY. Please do not reply to this email.
+            </p>
+          </div>
+        </div>
+      </div>
+    `,
+  });
+};
+
 const sendResubmitDocumentEmail = async ({ to, fullName, docLabel, reasonMessage, resubmitUrl }) => {
   if (!to) throw new Error('Recipient email missing');
 
@@ -524,6 +582,7 @@ const sendEmployerRegistrationSummaryEmail = async ({
 module.exports = {
   sendCredentialsEmail,
   sendPasswordResetEmail,
+  sendPasswordResetOtpEmail,
   sendResubmitDocumentEmail,
   sendVerificationRejectedEmail,
   sendSettingsEmailVerificationCode,
