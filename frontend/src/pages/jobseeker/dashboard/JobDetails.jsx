@@ -1297,7 +1297,7 @@ const JobDetails = () => {
 
             {toast.show && (
               <div
-                className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none"
+                className="fixed top-[100px] left-1/2 -translate-x-1/2 z-[9999] pointer-events-none"
                 role={toast.type === 'error' ? 'alert' : 'status'}
                 aria-live="polite"
               >
