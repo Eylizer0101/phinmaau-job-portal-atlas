@@ -713,11 +713,12 @@ const CredentialRow = ({
             <button
               type="button"
               onClick={() => onDownload?.(item.key)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#d1d5db] bg-white text-[#2e66a6] transition hover:bg-[#f9fafb] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-3 text-[12px] font-semibold text-white transition hover:bg-[#255487] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
               aria-label={`Download ${item.label}`}
-              title="Download"
+              title={`Export ${item.label}`}
             >
               <DownloadIcon className="h-4 w-4" />
+              <span>Export {item.label}</span>
             </button>
           </>
         ) : (
@@ -831,6 +832,10 @@ const CompanyProfile = () => {
     error: '',
     verifying: false,
   });
+  const [showCredentialPassword, setShowCredentialPassword] = useState(false);
+  const [companyJobs, setCompanyJobs] = useState([]);
+  const [companyReviews, setCompanyReviews] = useState([]);
+  const [companyActivityLoading, setCompanyActivityLoading] = useState(false);
 
   const [docUploading, setDocUploading] = useState({
     secRegistration: false,
@@ -966,7 +971,7 @@ const CompanyProfile = () => {
           profileVisible: p?.profileVisible !== false,
 
           companyAddress: p?.companyAddress || '',
-          companyDescription: p?.companyDescription || p?.aboutCompany || p?.description || '',
+          companyDescription: p?.companyDescription || '',
           facebookUrl: p?.facebookUrl || '',
           instagramUrl: p?.instagramUrl || '',
           linkedinUrl: p?.linkedinUrl || '',
@@ -983,6 +988,25 @@ const CompanyProfile = () => {
         setCoverFile(null);
         revokeLocalPreviewUrls();
         setGalleryFiles([]);
+        setCompanyReviews(Array.isArray(p?.reviews) ? p.reviews : []);
+
+        setCompanyActivityLoading(true);
+        try {
+          const jobsResponse = await api.get('/jobs/employer/my-jobs');
+          const jobs = Array.isArray(jobsResponse?.data?.jobs) ? jobsResponse.data.jobs : [];
+          setCompanyJobs(
+            jobs.filter((job) =>
+              job?.isPublished === true &&
+              job?.isActive === true &&
+              job?.isArchived !== true
+            )
+          );
+        } catch (jobsError) {
+          console.error('Failed to load company jobs:', jobsError);
+          setCompanyJobs([]);
+        } finally {
+          setCompanyActivityLoading(false);
+        }
 
         const parsed = parseRegionLocation(next.regionCity, next.companyAddress);
         setSelectedRegion(parsed.region);
@@ -1436,6 +1460,7 @@ const CompanyProfile = () => {
 
   const openCredentialAccess = useCallback((docType, mode) => {
     clearMessages();
+    setShowCredentialPassword(false);
     setCredentialAccess({
       isOpen: true,
       docType,
@@ -1447,6 +1472,7 @@ const CompanyProfile = () => {
   }, [clearMessages]);
 
   const closeCredentialAccess = useCallback(() => {
+    setShowCredentialPassword(false);
     setCredentialAccess({
       isOpen: false,
       docType: '',
@@ -1743,6 +1769,9 @@ const CompanyProfile = () => {
                     <TabButton active={activeTab === 'about'} onClick={() => setActiveTab('about')}>
                       About
                     </TabButton>
+                    <TabButton active={activeTab === 'jobs'} onClick={() => setActiveTab('jobs')}>
+                      Jobs <span className="ml-1 text-xs text-[#6b7280]">({companyJobs.length})</span>
+                    </TabButton>
                     <TabButton active={activeTab === 'credentials'} onClick={() => setActiveTab('credentials')}>
                       Credentials
                     </TabButton>
@@ -1751,6 +1780,9 @@ const CompanyProfile = () => {
                     </TabButton>
                     <TabButton active={activeTab === 'gallery'} onClick={() => setActiveTab('gallery')}>
                       Gallery
+                    </TabButton>
+                    <TabButton active={activeTab === 'reviews'} onClick={() => setActiveTab('reviews')}>
+                      Reviews <span className="ml-1 text-xs text-[#6b7280]">({companyReviews.length})</span>
                     </TabButton>
                   </div>
                 </div>
@@ -1848,14 +1880,6 @@ const CompanyProfile = () => {
                           ) : null}
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={openEditModal}
-                          className="inline-flex h-[38px] items-center justify-center gap-2 rounded-[12px] border border-[#d1d5db] bg-white px-4 text-[13px] font-semibold text-[#374151] transition hover:bg-[#f9fafb]"
-                        >
-                          <MiniPencilIcon className="h-3.5 w-3.5" />
-                          Manage Gallery
-                        </button>
                       </div>
 
                       {hasGallery ? (
@@ -1884,6 +1908,71 @@ const CompanyProfile = () => {
                           title="No photos added yet."
                           subtitle={'Click "Edit Profile" to upload company photos.'}
                         />
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'jobs' && (
+                    <div className="rounded-[18px] border border-[#d1d5db] bg-white p-7 shadow-[0_2px_6px_rgba(15,23,42,0.05)]">
+                      <h2 className="text-[30px] font-semibold text-[#000000]">Jobs</h2>
+                      <p className="mt-1 text-[13px] text-[#6b7280]">Job posts from your company</p>
+
+                      {companyActivityLoading ? (
+                        <div className="flex justify-center py-12"><SpinnerIcon className="h-6 w-6 text-[#2e66a6]" /></div>
+                      ) : companyJobs.length ? (
+                        <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                          {companyJobs.map((job) => (
+                            <div
+                              key={job._id}
+                              className="rounded-[16px] border border-[#d1d5db] bg-white p-5 text-left"
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <h3 className="truncate text-base font-semibold text-[#111827]">{job.title || 'Untitled job'}</h3>
+                                  <p className="mt-2 truncate text-sm text-[#6b7280]">{job.location || 'Location not specified'}</p>
+                                </div>
+                                <span className="rounded-full border border-[#bdd5ef] bg-[#eef6ff] px-3 py-1 text-xs font-semibold text-[#2e66a6]">
+                                  {job.status || (job.isActive ? 'Open' : 'Closed')}
+                                </span>
+                              </div>
+                              <div className="mt-4 flex flex-wrap gap-2 text-xs text-[#4b5563]">
+                                <span className="rounded-full bg-[#f3f4f6] px-3 py-1.5">{job.jobType || 'Type not specified'}</span>
+                                <span className="rounded-full bg-[#f3f4f6] px-3 py-1.5">{job.workMode || 'Work mode not specified'}</span>
+                                <span className="rounded-full bg-[#f3f4f6] px-3 py-1.5">{Number(job.applicationCount) || 0} applicant(s)</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <EmptyState icon={AboutEmptyIcon} title="No job posts yet." subtitle="Your company's job posts will appear here." />
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'reviews' && (
+                    <div className="rounded-[18px] border border-[#d1d5db] bg-white p-7 shadow-[0_2px_6px_rgba(15,23,42,0.05)]">
+                      <h2 className="text-[30px] font-semibold text-[#000000]">Reviews</h2>
+                      <p className="mt-1 text-[13px] text-[#6b7280]">Hiring-process reviews shared by job seekers</p>
+
+                      {companyReviews.length ? (
+                        <div className="mt-5 space-y-4">
+                          {companyReviews.map((review, index) => (
+                            <div key={review._id || index} className="rounded-[16px] border border-[#d1d5db] bg-white p-5">
+                              <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                  <h3 className="font-semibold text-[#111827]">{review.reviewerName || 'Anonymous User'}</h3>
+                                  <p className="mt-1 text-sm text-[#6b7280]">{review.roleAppliedFor || 'Role not specified'}</p>
+                                </div>
+                                <span className="rounded-full bg-[#eef6ff] px-3 py-1 text-sm font-semibold text-[#2e66a6]">
+                                  ★ {Number(review.processRating ?? review.rating) || 0}/5
+                                </span>
+                              </div>
+                              {review.message ? <p className="mt-4 whitespace-pre-line text-sm leading-6 text-[#4b5563]">{review.message}</p> : null}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <EmptyState icon={AboutEmptyIcon} title="No reviews yet." subtitle="Job seeker reviews will appear here." />
                       )}
                     </div>
                   )}
@@ -1930,21 +2019,33 @@ const CompanyProfile = () => {
                   <label className="mb-1.5 block text-sm font-semibold text-gray-700">
                     Password
                   </label>
-                  <input
-                    type="password"
-                    value={credentialAccess.password}
-                    onChange={(event) =>
-                      setCredentialAccess((prev) => ({
-                        ...prev,
-                        password: event.target.value,
-                        error: '',
-                      }))
-                    }
-                    placeholder="Enter your password"
-                    autoFocus
-                    disabled={credentialAccess.verifying}
-                    className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20 disabled:bg-gray-50"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showCredentialPassword ? 'text' : 'password'}
+                      value={credentialAccess.password}
+                      onChange={(event) =>
+                        setCredentialAccess((prev) => ({
+                          ...prev,
+                          password: event.target.value,
+                          error: '',
+                        }))
+                      }
+                      placeholder="Enter your password"
+                      autoFocus
+                      disabled={credentialAccess.verifying}
+                      className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 pr-12 text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20 disabled:bg-gray-50"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCredentialPassword((visible) => !visible)}
+                      disabled={credentialAccess.verifying}
+                      className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-gray-500 hover:text-[#2e66a6] disabled:opacity-60"
+                      aria-label={showCredentialPassword ? 'Hide password' : 'Show password'}
+                      title={showCredentialPassword ? 'Hide password' : 'Show password'}
+                    >
+                      <EyeIcon className="h-5 w-5" />
+                    </button>
+                  </div>
                 </div>
 
                 {credentialAccess.error ? (

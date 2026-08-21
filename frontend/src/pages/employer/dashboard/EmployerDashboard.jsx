@@ -1993,10 +1993,6 @@ const EmployerDashboard = () => {
                   role="menu"
                   aria-label="Profile dropdown"
                 >
-                  <div className="px-5 py-4 border-b border-gray-100">
-                    <p className="text-[15px] font-semibold text-gray-900">Employer Account</p>
-                  </div>
-
                   <div className="py-2">
                     <button
                       ref={(el) => { profileMenuItemRefs.current[0] = el; }}

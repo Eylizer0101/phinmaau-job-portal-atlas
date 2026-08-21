@@ -77,11 +77,7 @@ const computeRatingBreakdown = (reviews = []) => {
 
 const mapCompanyFromUser = (user) => {
   const ep = user?.employerProfile || {};
-  const about =
-    ep.companyDescription ||
-    ep.aboutCompany ||
-    ep.description ||
-    '';
+  const about = ep.companyDescription || '';
 
   const reviews = Array.isArray(ep.reviews)
     ? [...ep.reviews]
@@ -253,11 +249,7 @@ exports.getVerifiedCompanies = async (req, res) => {
         mobileNumber: ep.mobileNumber || '',
         companyLogo: ep.companyLogo || '',
         companyWebsite: ep.companyWebsiteUrl || '',
-        about:
-          ep.companyDescription ||
-          ep.aboutCompany ||
-          ep.description ||
-          '',
+        about: ep.companyDescription || '',
         openingsCount: openingsByEmployer.get(String(u._id)) || 0,
         rating: summary.rating,
         reviewCount: summary.reviewCount,
