@@ -2727,9 +2727,9 @@ const PostJob = () => {
                       icon: 'clock',
                     },
                     {
-                      title: 'Employment Type',
-                      value: formData.jobType || 'Employment type not specified',
-                      icon: 'briefcase',
+                      title: 'Educational Requirement',
+                      value: formData.educationLevel || 'Educational requirement not specified',
+                      icon: 'graduation',
                     },
                     {
                       title: 'Website / Company URL',
@@ -2749,9 +2749,9 @@ const PostJob = () => {
                             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                          ) : metric.icon === 'briefcase' ? (
+                          ) : metric.icon === 'graduation' ? (
                             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m-3 0h14a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2zM3 13h18" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 3 2 8l10 5 8-4v6M6 10.5V15c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5" />
                             </svg>
                           ) : (
                             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

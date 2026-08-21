@@ -1113,9 +1113,9 @@ const AdminJobView = () => {
                   value={job.experienceLevel || 'No experience required'}
                 />
                 <TopMetricCard
-                  icon="briefcase"
-                  title="Employment Type"
-                  value={String(job.jobType || '').trim() || 'Employment type not specified'}
+                  icon="graduation"
+                  title="Educational Requirement"
+                  value={String(job.educationLevel || '').trim() || 'Educational requirement not specified'}
                 />
                 <TopMetricCard
                   icon="external"
