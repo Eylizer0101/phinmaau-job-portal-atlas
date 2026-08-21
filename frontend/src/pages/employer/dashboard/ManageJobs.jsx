@@ -477,7 +477,6 @@ const ManageJobs = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [openStatusMenuId, setOpenStatusMenuId] = useState('');
   const [statusConfirmationJob, setStatusConfirmationJob] = useState(null);
-  const [extendedDeadline, setExtendedDeadline] = useState('');
 
   const [action, setAction] = useState({ type: '', jobId: '' });
   const [editRequests, setEditRequests] = useState([]);
@@ -992,19 +991,6 @@ const ManageJobs = () => {
     if (!jobId || !['open', 'closed', 'expired'].includes(currentStatus) || action.jobId) return;
 
     const shouldOpen = currentStatus !== 'open';
-    const requiresDeadlineExtension = currentStatus === 'expired';
-
-    if (requiresDeadlineExtension) {
-      const selectedDeadline = new Date(`${extendedDeadline}T00:00:00`);
-      const tomorrow = new Date();
-      tomorrow.setHours(0, 0, 0, 0);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      if (!extendedDeadline || Number.isNaN(selectedDeadline.getTime()) || selectedDeadline < tomorrow) {
-        setError('Please select a new application deadline after today before reopening this job.');
-        return;
-      }
-    }
 
     try {
       setOpenStatusMenuId('');
@@ -1014,10 +1000,7 @@ const ManageJobs = () => {
       const token = localStorage.getItem('token');
       const response = await axios.patch(
         `https://phinmaau-job-portal-atlas.onrender.com/api/jobs/${jobId}/status`,
-        {
-          isActive: shouldOpen,
-          ...(requiresDeadlineExtension ? { applicationDeadline: extendedDeadline } : {}),
-        },
+        { isActive: shouldOpen },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -1031,7 +1014,6 @@ const ManageJobs = () => {
         isActive: shouldOpen,
         isPublished: true,
         status: shouldOpen ? 'published' : 'closed',
-        ...(requiresDeadlineExtension ? { applicationDeadline: extendedDeadline } : {}),
       };
 
       setJobs((prev) =>
@@ -1046,7 +1028,6 @@ const ManageJobs = () => {
           : 'The job is no longer visible in Job Offers, but its existing applicants are still available for review.',
       });
       setStatusConfirmationJob(null);
-      setExtendedDeadline('');
     } catch (err) {
       console.error(`Error ${shouldOpen ? 'opening' : 'closing'} job:`, err);
       setError(
@@ -1604,10 +1585,7 @@ const ManageJobs = () => {
                           {['open', 'closed', 'expired'].includes(derivedStatus) && (
                             <button
                               type="button"
-                              onClick={() => {
-                                setExtendedDeadline('');
-                                setStatusConfirmationJob(job);
-                              }}
+                              onClick={() => setStatusConfirmationJob(job)}
                               disabled={busyThisRow}
                               className={cn(
                                 'inline-flex h-10 items-center justify-center rounded-lg border px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
@@ -1840,10 +1818,7 @@ const ManageJobs = () => {
                                 {['open', 'closed', 'expired'].includes(derivedStatus) && (
                                   <button
                                     type="button"
-                                    onClick={() => {
-                                      setExtendedDeadline('');
-                                      setStatusConfirmationJob(job);
-                                    }}
+                                    onClick={() => setStatusConfirmationJob(job)}
                                     disabled={busyThisRow}
                                     className={cn(
                                       'inline-flex h-10 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
@@ -2115,17 +2090,7 @@ const ManageJobs = () => {
         {statusConfirmationJob && (() => {
           const status = getDerivedStatus(statusConfirmationJob);
           const isReopening = status !== 'open';
-          const requiresDeadlineExtension = status === 'expired';
-          const tomorrow = new Date();
-          tomorrow.setHours(0, 0, 0, 0);
-          tomorrow.setDate(tomorrow.getDate() + 1);
-          const maximumDeadline = new Date(tomorrow);
-          const maximumDay = maximumDeadline.getDate();
-          maximumDeadline.setDate(1);
-          maximumDeadline.setMonth(maximumDeadline.getMonth() + 6);
-          maximumDeadline.setDate(Math.min(maximumDay, new Date(maximumDeadline.getFullYear(), maximumDeadline.getMonth() + 1, 0).getDate()));
-          const minimumDeadlineValue = formatEmployerDateInput(tomorrow);
-          const maximumDeadlineValue = formatEmployerDateInput(maximumDeadline);
+          const isExpiredJob = status === 'expired';
           const busy =
             action.jobId === statusConfirmationJob._id &&
             ['open', 'close'].includes(action.type);
@@ -2169,7 +2134,7 @@ const ManageJobs = () => {
 
                     <div className="min-w-0">
                       <h2 id="status-confirmation-title" className="text-xl font-bold text-gray-900">
-                        {isReopening ? 'Open Job' : 'Close Job'}
+                        {isExpiredJob ? 'Application Deadline Expired' : isReopening ? 'Open Job' : 'Close Job'}
                       </h2>
                       <p className="mt-1 truncate text-sm font-semibold text-gray-600">
                         {safeTitle(statusConfirmationJob)}
@@ -2190,57 +2155,29 @@ const ManageJobs = () => {
                       'text-sm font-semibold',
                       isReopening ? 'text-blue-900' : 'text-amber-900'
                     )}>
-                      {isReopening
-                        ? requiresDeadlineExtension
-                          ? 'Extend the deadline to reopen this expired job.'
-                          : 'Are you sure you want to reopen this job post?'
+                      {isExpiredJob
+                        ? 'This job cannot be reopened because its application deadline has expired.'
+                        : isReopening
+                        ? 'Are you sure you want to reopen this job post?'
                         : 'Are you sure you want to close this job post?'}
                     </p>
                     <p className={cn(
                       'mt-2 text-sm leading-6',
                       isReopening ? 'text-blue-800' : 'text-amber-800'
                     )}>
-                      {isReopening
-                        ? requiresDeadlineExtension
-                          ? 'Choose a new future application deadline. After confirmation, the job will become visible and accept applications again.'
-                          : 'It will start accepting new applications again.'
+                      {isExpiredJob
+                        ? 'Please use the existing edit process and update the Application Deadline first. After the new deadline is approved and saved, you can return here and reopen the job.'
+                        : isReopening
+                        ? 'It will start accepting new applications again.'
                         : 'It will no longer be visible to job seekers or accept new applications.'}
                     </p>
                   </div>
 
-                  {requiresDeadlineExtension && (
-                    <div className="mt-5">
-                      <label htmlFor="extended-application-deadline" className="block text-sm font-bold text-gray-900">
-                        New application deadline <span className="text-red-600">*</span>
-                      </label>
-                      <div className="relative mt-2">
-                        <Icon name="calendar" className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
-                        <input
-                          id="extended-application-deadline"
-                          type="date"
-                          value={extendedDeadline}
-                          min={minimumDeadlineValue}
-                          max={maximumDeadlineValue}
-                          onChange={(event) => setExtendedDeadline(event.target.value)}
-                          disabled={busy}
-                          required
-                          className="h-12 w-full rounded-xl border border-gray-300 bg-white pl-11 pr-4 text-sm font-semibold text-gray-900 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20 disabled:bg-gray-100"
-                        />
-                      </div>
-                      <p className="mt-2 text-xs leading-5 text-gray-500">
-                        Select a date from tomorrow up to six months from now.
-                      </p>
-                    </div>
-                  )}
-
                   <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                     <button
                       type="button"
-                      onClick={() => {
-                        setStatusConfirmationJob(null);
-                        setExtendedDeadline('');
-                      }}
-                      disabled={busy || (requiresDeadlineExtension && !extendedDeadline)}
+                      onClick={() => setStatusConfirmationJob(null)}
+                      disabled={busy}
                       className="rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Cancel
@@ -2248,7 +2185,15 @@ const ManageJobs = () => {
 
                     <button
                       type="button"
-                      onClick={() => handleToggleJobStatus(statusConfirmationJob)}
+                      onClick={() => {
+                        if (isExpiredJob) {
+                          const jobToEdit = statusConfirmationJob;
+                          setStatusConfirmationJob(null);
+                          handleEditAction(jobToEdit);
+                          return;
+                        }
+                        handleToggleJobStatus(statusConfirmationJob);
+                      }}
                       disabled={busy}
                       className={cn(
                         'inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60',
@@ -2260,7 +2205,7 @@ const ManageJobs = () => {
                       {busy && (
                         <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                       )}
-                      {isReopening ? 'Open Job' : 'Close Job'}
+                      {isExpiredJob ? 'Go to Edit Job' : isReopening ? 'Open Job' : 'Close Job'}
                     </button>
                   </div>
                 </div>

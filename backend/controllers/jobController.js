@@ -1608,7 +1608,7 @@ exports.restoreJob = async (req, res) => {
 
 exports.updateJobStatus = async (req, res) => {
   try {
-    const job = await Job.findById(req.params.id).select('_id employer status isActive isPublished applicationDeadline');
+    const job = await Job.findById(req.params.id).select('_id employer status isActive isPublished');
 
     if (!job) {
       return res.status(404).json({ success: false, message: 'Job not found' });
@@ -1641,45 +1641,6 @@ exports.updateJobStatus = async (req, res) => {
     };
 
     if (shouldActivate) {
-      const currentDeadlineExpired = isPastApplicationDeadline(job.applicationDeadline);
-      const requestedDeadlineText = String(req.body.applicationDeadline || '').trim();
-
-      if (currentDeadlineExpired && !requestedDeadlineText) {
-        return res.status(400).json({
-          success: false,
-          code: 'DEADLINE_EXTENSION_REQUIRED',
-          message: 'Please extend the application deadline before reopening this expired job.'
-        });
-      }
-
-      if (requestedDeadlineText) {
-        const requestedDeadline = new Date(`${requestedDeadlineText}T00:00:00`);
-        const tomorrow = new Date();
-        tomorrow.setHours(0, 0, 0, 0);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-
-        const maximumDeadline = new Date(tomorrow);
-        const maximumDay = maximumDeadline.getDate();
-        maximumDeadline.setDate(1);
-        maximumDeadline.setMonth(maximumDeadline.getMonth() + 6);
-        maximumDeadline.setDate(Math.min(maximumDay, new Date(maximumDeadline.getFullYear(), maximumDeadline.getMonth() + 1, 0).getDate()));
-
-        if (
-          Number.isNaN(requestedDeadline.getTime()) ||
-          requestedDeadline < tomorrow ||
-          requestedDeadline > maximumDeadline
-        ) {
-          return res.status(400).json({
-            success: false,
-            code: 'INVALID_DEADLINE_EXTENSION',
-            message: 'The new application deadline must be from tomorrow up to six months from now.'
-          });
-        }
-
-        statusUpdate.applicationDeadline = requestedDeadline;
-        statusUpdate.deadlineExtendedAt = new Date();
-      }
-
       statusUpdate.filledAt = null;
       statusUpdate.filledReason = '';
     }
