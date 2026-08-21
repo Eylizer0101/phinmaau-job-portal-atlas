@@ -493,16 +493,37 @@ const userSchema = new mongoose.Schema(
     // Employer profile
     // ---------------------------
     employerProfile: {
-      companyName: { type: String, default: '', trim: true },
+      companyName: {
+        type: String,
+        default: '',
+        trim: true,
+        maxlength: [150, 'Company name must not exceed 150 characters.'],
+      },
       companyWebsiteUrl: { type: String, default: '', trim: true },
       businessEmail: { type: String, default: '', trim: true, lowercase: true },
       mobileNumber: { type: String, default: '', trim: true },
       regionCity: { type: String, default: '', trim: true },
-      industry: { type: String, default: '', trim: true },
+      industry: {
+        type: String,
+        default: '',
+        trim: true,
+        maxlength: [100, 'Industry must not exceed 100 characters.'],
+      },
       position: { type: String, default: '', trim: true },
 
-      companyAddress: { type: String, default: '', trim: true },
-      companyDescription: { type: String, default: '', trim: true },
+      companyAddress: {
+        type: String,
+        default: '',
+        trim: true,
+        maxlength: [150, 'Office address must not exceed 150 characters.'],
+      },
+      companyDescription: {
+        type: String,
+        default: '',
+        trim: true,
+        minlength: [500, 'Company description must contain at least 500 characters.'],
+        maxlength: [1500, 'Company description must not exceed 1500 characters.'],
+      },
       facebookUrl: { type: String, default: '', trim: true },
       instagramUrl: { type: String, default: '', trim: true },
       linkedinUrl: { type: String, default: '', trim: true },

@@ -78,6 +78,12 @@ const MAX_COVER_SIZE_BYTES = 8 * 1024 * 1024;
 const MAX_GALLERY_SIZE_BYTES = 8 * 1024 * 1024;
 const MAX_GALLERY_IMAGES = 12;
 
+const MAX_COMPANY_NAME_LENGTH = 150;
+const MAX_INDUSTRY_LENGTH = 100;
+const MIN_COMPANY_DESCRIPTION_LENGTH = 500;
+const MAX_COMPANY_DESCRIPTION_LENGTH = 1500;
+const MAX_OFFICE_ADDRESS_LENGTH = 150;
+
 const MIN_LOGO_DIM = 128;
 const MIN_RATIO = 0.25;
 const MAX_RATIO = 4;
@@ -1400,16 +1406,36 @@ const CompanyProfile = () => {
   const validateClient = useCallback(() => {
     const next = {};
 
-    if (!companyData.companyName?.trim()) next.companyName = 'Company name is required.';
+    const companyName = String(companyData.companyName || '').trim();
+    const industry = String(companyData.industry || '').trim();
+    const companyDescription = String(companyData.companyDescription || '').trim();
+    const officeAddress = composeCompanyAddress(selectedProvince, selectedCity);
+
+    if (!companyName) next.companyName = 'Company name is required.';
+    else if (companyName.length > MAX_COMPANY_NAME_LENGTH) {
+      next.companyName = `Company name must not exceed ${MAX_COMPANY_NAME_LENGTH} characters.`;
+    }
     if (!selectedRegion?.trim()) next.region = 'Region is required.';
     if (!selectedProvince?.trim()) next.province = 'Province is required.';
     if (!selectedCity?.trim()) next.city = 'City / Municipality is required.';
-    if (!companyData.industry?.trim()) next.industry = 'Industry is required.';
+    else if (officeAddress.length > MAX_OFFICE_ADDRESS_LENGTH) {
+      next.city = `Office address must not exceed ${MAX_OFFICE_ADDRESS_LENGTH} characters.`;
+    }
+    if (!industry) next.industry = 'Industry is required.';
+    else if (industry.length > MAX_INDUSTRY_LENGTH) {
+      next.industry = `Industry must not exceed ${MAX_INDUSTRY_LENGTH} characters.`;
+    }
+    if (companyDescription.length < MIN_COMPANY_DESCRIPTION_LENGTH) {
+      next.companyDescription = `Company description must contain at least ${MIN_COMPANY_DESCRIPTION_LENGTH} characters.`;
+    } else if (companyDescription.length > MAX_COMPANY_DESCRIPTION_LENGTH) {
+      next.companyDescription = `Company description must not exceed ${MAX_COMPANY_DESCRIPTION_LENGTH} characters.`;
+    }
 
     setFieldErrors(next);
     return { ok: Object.keys(next).length === 0 };
   }, [
     companyData.companyName,
+    companyData.companyDescription,
     companyData.industry,
     selectedCity,
     selectedProvince,
@@ -2317,8 +2343,12 @@ const CompanyProfile = () => {
                                     : 'border-[#d1d5db] focus:border-[#2e66a6]'
                                 )}
                                 placeholder="Enter company name"
+                                maxLength={MAX_COMPANY_NAME_LENGTH}
                                 disabled={saving}
                               />
+                              <p className="text-right text-[11px] text-[#6b7280]">
+                                {String(companyData.companyName || '').length} / {MAX_COMPANY_NAME_LENGTH} characters
+                              </p>
                             </FormField>
                           </div>
 
@@ -2467,6 +2497,7 @@ const CompanyProfile = () => {
                                 aria-expanded={industryDropdownOpen}
                                 aria-controls="company-industry-options"
                                 aria-autocomplete="list"
+                                maxLength={MAX_INDUSTRY_LENGTH}
                               />
 
                               <button
@@ -2542,6 +2573,9 @@ const CompanyProfile = () => {
                               </div>
                             ) : null}
                           </div>
+                          <p className="text-right text-[11px] text-[#6b7280]">
+                            {String(companyData.industry || '').length} / {MAX_INDUSTRY_LENGTH} characters
+                          </p>
                         </FormField>
 
                         <FormField label="Company Website" required={false} error={fieldErrors.companyWebsiteUrl}>
@@ -2556,7 +2590,7 @@ const CompanyProfile = () => {
                           />
                         </FormField>
 
-                        <FormField label="Company Description" required={false} error={fieldErrors.companyDescription}>
+                        <FormField label="Company Description" required error={fieldErrors.companyDescription}>
                           <textarea
                             name="companyDescription"
                             value={companyData.companyDescription}
@@ -2564,8 +2598,14 @@ const CompanyProfile = () => {
                             rows={5}
                             className="w-full rounded-[10px] border border-[#d1d5db] px-4 py-3 text-[14px] outline-none transition focus:border-[#2e66a6]"
                             placeholder="Tell jobseekers about your company."
+                            minLength={MIN_COMPANY_DESCRIPTION_LENGTH}
+                            maxLength={MAX_COMPANY_DESCRIPTION_LENGTH}
                             disabled={saving}
                           />
+                          <p className="text-right text-[11px] text-[#6b7280]">
+                            {String(companyData.companyDescription || '').length} / {MAX_COMPANY_DESCRIPTION_LENGTH} characters
+                            {' '} (minimum {MIN_COMPANY_DESCRIPTION_LENGTH})
+                          </p>
                         </FormField>
                       </div>
                     </div>
