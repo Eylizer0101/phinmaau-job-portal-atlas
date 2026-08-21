@@ -2,8 +2,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimesCircle } from '@fortawesome/free-solid-svg-icons';
 import JobSeekerLayout from '../../../layouts/JobSeekerLayout';
 import api from '../../../services/api';
 import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
@@ -149,7 +147,7 @@ const formatAppliedStatusBadgeText = (statusLabel) => {
     .trim()
     .replace(/\s+/g, ' ');
 
-  return cleanLabel ? `Applied ( ${cleanLabel} )` : 'Applied';
+  return cleanLabel ? `Applied (${cleanLabel})` : 'Applied';
 };
 
 const getRelocationDisplayLabel = (value) => {
@@ -1269,14 +1267,14 @@ const BookmarkCard = ({ job, selected, onClick, onRemove, removing }) => {
         onClick={() => onRemove(job._id)}
         disabled={removing}
         aria-label={`Remove ${job.title} from bookmarks`}
-        className={`absolute top-4 right-4 ${UI.btnBase} h-9 w-9 p-0 ${
+        className={`absolute top-4 right-4 ${UI.btnBase} h-10 w-10 p-0 ${
           'text-[#2e66a6] bg-[#FFFFFF] border border-[#2e66a6]/20 hover:bg-[#f7faff]'
         } ${UI.ring}`}
       >
         {removing ? (
           <span className="inline-block w-4 h-4 rounded-full border-2 border-black/20 border-t-black/70 animate-spin motion-reduce:animate-none" />
         ) : (
-          <SvgIcon name="bookmarkFilled" className="w-4 h-4 text-[#2e66a6]" />
+          <SvgIcon name="bookmarkFilled" className="w-5 h-5 text-[#2e66a6]" />
         )}
       </button>
     </div>
@@ -1315,14 +1313,14 @@ const SavedCompanyCard = ({ company, selected, onClick, onRemove, removing }) =>
         onClick={() => onRemove(company._id)}
         disabled={removing}
         aria-label={`Remove ${company.companyName} from bookmarks`}
-        className={`absolute top-4 right-4 ${UI.btnBase} h-9 w-9 p-0 ${
+        className={`absolute top-4 right-4 ${UI.btnBase} h-10 w-10 p-0 ${
           'text-[#2e66a6] bg-[#FFFFFF] border border-[#2e66a6]/20 hover:bg-[#f7faff]'
         } ${UI.ring}`}
       >
         {removing ? (
           <span className="inline-block w-4 h-4 rounded-full border-2 border-black/20 border-t-black/70 animate-spin motion-reduce:animate-none" />
         ) : (
-          <SvgIcon name="bookmarkFilled" className="w-4 h-4 text-[#2e66a6]" />
+          <SvgIcon name="bookmarkFilled" className="w-5 h-5 text-[#2e66a6]" />
         )}
       </button>
     </div>
@@ -1947,7 +1945,7 @@ const Bookmarks = () => {
           jobId: '',
           jobTitle: '',
         });
-        setToastMessage('success', 'Job removed from bookmarks.');
+        setToastMessage('success', 'Job removed successfully!');
       } else {
         setToastMessage('error', response.data?.message || 'Failed to remove bookmark.');
       }
@@ -2014,7 +2012,7 @@ const Bookmarks = () => {
           companyId: '',
           companyName: '',
         });
-        setToastMessage('success', 'Company removed from bookmarks.');
+        setToastMessage('success', 'Company removed successfully!');
       } else {
         setToastMessage('error', 'Failed to remove saved company.');
       }
@@ -2128,7 +2126,7 @@ const Bookmarks = () => {
       'for interview': { cls: 'bg-[#EAF2FB] border-[#BFD4EA] text-[#2e66a6]', icon: 'star', label: 'For Interview' },
       hired: { cls: 'bg-green-50 border-green-200 text-green-700', icon: 'checkCircle', label: 'Hired' },
       declined: { cls: 'bg-red-50 border-red-200 text-red-700', icon: 'xCircle', label: 'Declined' },
-      withdrawn: { cls: 'bg-gray-100 border-gray-300 text-gray-700', icon: 'withdrawnRecentApplications', label: 'Withdrawn' },
+      withdrawn: { cls: 'bg-gray-100 border-gray-300 text-gray-700', icon: 'minusCircle', label: 'Withdrawn' },
       cancelled: { cls: 'bg-gray-50 border-gray-200 text-gray-700', icon: 'minusCircle', label: 'Cancelled' },
       'vacancy full': { cls: 'bg-orange-50 border-orange-200 text-orange-800', icon: 'xCircle', label: 'Vacancy Full' },
     };
@@ -2139,9 +2137,7 @@ const Bookmarks = () => {
       <span
         className={`inline-flex max-w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold ${picked.cls}`}
       >
-        {picked.icon === 'withdrawnRecentApplications' ? (
-          <FontAwesomeIcon icon={faTimesCircle} className="h-3 w-3 flex-shrink-0" />
-        ) : picked.icon === 'star' ? (
+        {picked.icon === 'star' ? (
           <SvgIcon name="star" className="h-5 w-5 flex-shrink-0" />
         ) : (
           <SvgIcon name={picked.icon} className="h-3.5 w-3.5 flex-shrink-0" />
@@ -2509,7 +2505,7 @@ const Bookmarks = () => {
             setSavedJobs((prev) => [normalizedJob, ...prev]);
           }
 
-          showJobSaveToast(response.data?.alreadySaved ? 'Job already saved.' : 'Job Saved Successfully!');
+          showJobSaveToast(response.data?.alreadySaved ? 'Job already saved.' : 'Job saved successfully!');
         } else {
           setToastMessage('error', response.data?.message || 'Failed to save job.');
         }
@@ -2931,7 +2927,7 @@ const Bookmarks = () => {
                                 {removingId === selectedJob._id ? (
                                   <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[#2e66a6]/25 border-t-[#2e66a6] motion-reduce:animate-none" />
                                 ) : (
-                                  <SvgIcon name="bookmarkFilled" className="h-4 w-4 text-[#2e66a6]" />
+                                  <SvgIcon name="bookmarkFilled" className="h-5 w-5 text-[#2e66a6]" />
                                 )}
                                 Saved
                               </button>

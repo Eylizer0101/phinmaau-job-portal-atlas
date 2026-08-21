@@ -1230,7 +1230,7 @@ const JobSearch = () => {
         const response = await api.delete(`/jobs/saved/${jobId}`);
         if (response.data?.success) {
           setSavedJobIds((prev) => prev.filter((id) => id !== jobId));
-          showToast('Saved job removed', 'success');
+          showToast('Job removed successfully!', 'success');
         } else {
           alert(response.data?.message || 'Failed to remove saved job.');
         }
@@ -1238,7 +1238,7 @@ const JobSearch = () => {
         const response = await api.post(`/jobs/saved/${jobId}`);
         if (response.data?.success) {
           setSavedJobIds((prev) => (prev.includes(jobId) ? prev : [...prev, jobId]));
-          showToast('Job Saved Successfully!', 'success');
+          showToast('Job saved successfully!', 'success');
         } else {
           alert(response.data?.message || 'Failed to save job.');
         }

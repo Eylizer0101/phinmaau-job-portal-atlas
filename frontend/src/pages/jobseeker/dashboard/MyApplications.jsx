@@ -94,6 +94,17 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           />
         </svg>
       );
+    case 'minusCircle':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.8}
+            d="M8 12h8m5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+      );
     case 'eye':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -487,6 +498,24 @@ const MyApplications = () => {
       case 'pending':
       default:
         return 'text-gray-700';
+    }
+  };
+
+  const getStatusIconName = (status) => {
+    switch (String(status || '').toLowerCase()) {
+      case 'for interview':
+        return 'star';
+      case 'hired':
+        return 'checkCircle';
+      case 'declined':
+      case 'vacancy full':
+        return 'timesCircle';
+      case 'withdrawn':
+      case 'cancelled':
+        return 'minusCircle';
+      case 'pending':
+      default:
+        return 'clock';
     }
   };
 
@@ -987,7 +1016,7 @@ const MyApplications = () => {
               </div>
 
               <div className="grid grid-cols-1 border-t border-gray-200 md:grid-cols-4">
-                <div className="bg-slate-50 px-5 py-4 md:border-r md:border-gray-200">
+                <div className="bg-amber-50/60 px-5 py-4 md:border-r md:border-amber-200">
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 text-black/70">
                       <SvgIcon name="clock" className="h-5 w-5" />
@@ -1023,9 +1052,9 @@ const MyApplications = () => {
                   </div>
                 </div>
 
-                <div className="border-t border-gray-200 bg-gray-50 px-5 py-4 md:border-t-0">
+                <div className="border-t border-red-200 bg-red-50/60 px-5 py-4 md:border-t-0">
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 text-black/70">
+                    <div className="flex-shrink-0 text-red-700">
                       <SvgIcon name="timesCircle" className="h-5 w-5" />
                     </div>
                     <div>
@@ -1135,6 +1164,7 @@ const MyApplications = () => {
                   const statusValue = (application.status || '').toLowerCase();
                   const statusText = getStatusText(application);
                   const statusBadge = getStatusBadgeClass(application);
+                  const statusIconName = getStatusIconName(statusValue);
 
                   const jobId = application.job?._id;
                   const jobTitle = application.job?.title || 'Job Title Not Available';
@@ -1178,7 +1208,11 @@ const MyApplications = () => {
                               <h3 className={`${UI.heading3} ${UI.textPrimary}`} title={jobTitle}>
                                 {jobTitle}
                               </h3>
-                              <span className={`text-sm font-semibold ${statusBadge}`} aria-label={`Status: ${statusText}`}>
+                              <span className={`inline-flex items-center gap-1.5 text-sm font-semibold ${statusBadge}`} aria-label={`Status: ${statusText}`}>
+                                <SvgIcon
+                                  name={statusIconName}
+                                  className={`${statusIconName === 'star' ? 'h-[18px] w-[18px]' : 'h-4 w-4'} flex-shrink-0`}
+                                />
                                 {statusText}
                               </span>
                             </div>

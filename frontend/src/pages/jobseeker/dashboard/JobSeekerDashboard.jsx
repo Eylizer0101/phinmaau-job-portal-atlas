@@ -9,12 +9,37 @@ import {
   faCheckCircle,
   faTimes,
   faTimesCircle,
-  faCalendarAlt,
   faMapMarkerAlt,
 } from '@fortawesome/free-solid-svg-icons';
 
 const TOP_CARD_HEIGHT = '';
 const PROFILE_REMINDER_ICON = '/images/clock.png';
+
+const ApplicationStatusIcon = ({ name, className = 'h-4 w-4' }) => {
+  if (name === 'forInterview') {
+    return (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M11.48 3.499a1 1 0 011.04 0l2.4 1.384a1 1 0 00.75.105l2.74-.7a1 1 0 011.21 1.21l-.7 2.74a1 1 0 00.105.75l1.384 2.4a1 1 0 010 1.04l-1.384 2.4a1 1 0 00-.105.75l.7 2.74a1 1 0 01-1.21 1.21l-2.74-.7a1 1 0 00-.75.105l-2.4 1.384a1 1 0 01-1.04 0l-2.4-1.384a1 1 0 00-.75-.105l-2.74.7A1 1 0 013.5 19.3l.7-2.74a1 1 0 00-.105-.75l-1.384-2.4a1 1 0 010-1.04l1.384-2.4a1 1 0 00-.105-.75l-.7-2.74A1 1 0 014.71 3.594l2.74.7a1 1 0 00.75-.105l2.28-1.31z"
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.8}
+        d="M8 12h8m5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  );
+};
 
 const normalizeBoolean = (value) => {
   if (typeof value === 'boolean') return value;
@@ -977,7 +1002,7 @@ const JobSeekerDashboard = () => {
         border: 'border-yellow-200',
       },
       'for interview': {
-        icon: faCalendarAlt,
+        customIcon: 'forInterview',
         label: 'For Interview',
         bg: 'bg-[#EAF2FB]',
         text: 'text-[#2e66a6]',
@@ -1005,8 +1030,15 @@ const JobSeekerDashboard = () => {
         border: 'border-red-200',
       },
       withdrawn: {
-        icon: faTimesCircle,
+        customIcon: 'withdrawn',
         label: 'Withdrawn',
+        bg: 'bg-gray-100',
+        text: 'text-gray-700',
+        border: 'border-gray-300',
+      },
+      cancelled: {
+        customIcon: 'withdrawn',
+        label: 'Cancelled',
         bg: 'bg-gray-100',
         text: 'text-gray-700',
         border: 'border-gray-300',
@@ -1764,7 +1796,14 @@ const JobSeekerDashboard = () => {
                                 <span
                                   className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium ${status.bg} ${status.text} border ${status.border}`}
                                 >
-                                  <FontAwesomeIcon icon={status.icon} className="w-3 h-3 mr-1.5" />
+                                  {status.customIcon ? (
+                                    <ApplicationStatusIcon
+                                      name={status.customIcon}
+                                      className={`${status.customIcon === 'forInterview' ? 'h-4 w-4' : 'h-3.5 w-3.5'} mr-1.5`}
+                                    />
+                                  ) : (
+                                    <FontAwesomeIcon icon={status.icon} className="w-3 h-3 mr-1.5" />
+                                  )}
                                   {status.label}
                                 </span>
                               </div>
@@ -2035,7 +2074,7 @@ const JobSeekerDashboard = () => {
                               type="button"
                               onClick={(event) => handleToggleSavedJob(event, job)}
                               disabled={isSaving}
-                              className={`absolute right-2 top-3 z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#D9E3F2] bg-white shadow-sm transition hover:bg-[#EAF2FB] disabled:cursor-not-allowed disabled:opacity-60 sm:right-3 ${
+                              className={`absolute right-2 top-3 z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D9E3F2] bg-white shadow-sm transition hover:bg-[#EAF2FB] disabled:cursor-not-allowed disabled:opacity-60 sm:right-3 ${
                                 isSaved ? 'text-[#2e66a6]' : 'text-gray-600'
                               }`}
                               title={isSaved ? 'Remove from saved jobs' : 'Save job'}
@@ -2045,7 +2084,7 @@ const JobSeekerDashboard = () => {
                                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#2e66a6]/25 border-t-[#2e66a6]" />
                               ) : (
                                 <svg
-                                  className="h-4 w-4"
+                                  className="h-5 w-5"
                                   fill={isSaved ? 'currentColor' : 'none'}
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
