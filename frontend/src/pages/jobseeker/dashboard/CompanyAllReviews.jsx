@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import api from "../../../services/api";
 import Pagination from "../../../components/shared/Pagination";
 
@@ -30,6 +30,9 @@ const formatTimeAgo = (value) => {
 const CompanyAllReviews = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromEmployerProfile = location.state?.source === "employer-profile";
+  const handleBack = () => navigate(location.state?.returnTo || `/jobseeker/company-details/${id}`, { state: { activeTab: "reviews" } });
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -85,7 +88,7 @@ const CompanyAllReviews = () => {
       <div className="mx-auto w-full max-w-[1280px]">
         <button
           type="button"
-          onClick={() => navigate(`/jobseeker/company-details/${id}`, { state: { activeTab: "reviews" } })}
+          onClick={handleBack}
           className="mb-5 inline-flex items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-[#2e66a6] hover:bg-[#f7faff]"
         >
           <svg
@@ -97,7 +100,7 @@ const CompanyAllReviews = () => {
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
           </svg>
-          Back to Company Details
+          {fromEmployerProfile ? "Back to Company Profile" : "Back to Company Details"}
         </button>
 
         <section className="rounded-[1.35rem] border border-[#e6edf5] bg-white p-5 shadow-[0_18px_45px_rgba(46,102,166,0.08)] sm:p-7 lg:p-8">

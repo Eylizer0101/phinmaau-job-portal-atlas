@@ -11,6 +11,37 @@ import api from '../../../services/api';
 
 const cx = (...classes) => classes.filter(Boolean).join(' ');
 
+const formatJobSalary = (job) => {
+  if (job?.hideSalary) return 'Salary not disclosed';
+  const min = Number(job?.salaryMin || 0);
+  const max = Number(job?.salaryMax || min || 0);
+  if (!min && !max) return 'Salary not specified';
+  return `${min.toLocaleString('en-PH')} - ${max.toLocaleString('en-PH')}`;
+};
+
+const formatJobDeadline = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Deadline not specified';
+  return `Deadline of application: ${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`;
+};
+
+const formatReviewAge = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const days = Math.max(0, Math.floor((Date.now() - date.getTime()) / 86400000));
+  if (days === 0) return 'Today';
+  if (days < 30) return `${days} day${days === 1 ? '' : 's'} ago`;
+  const months = Math.floor(days / 30);
+  return `${months} month${months === 1 ? '' : 's'} ago`;
+};
+
+const getReviewOutcome = (value) => ({
+  still_in_process: 'Still in process',
+  offered: 'Offered',
+  not_offered: 'Not offered',
+  withdrew: 'Withdrew',
+}[String(value || '').toLowerCase()] || value || 'Outcome not provided');
+
 const MAX_LOGO_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_COVER_SIZE_BYTES = 8 * 1024 * 1024;
 const MAX_GALLERY_SIZE_BYTES = 8 * 1024 * 1024;
@@ -746,6 +777,8 @@ const CredentialRow = ({
 };
 
 const CompanyProfile = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [companyData, setCompanyData] = useState({
     companyName: '',
     companyWebsiteUrl: '',
@@ -774,7 +807,7 @@ const CompanyProfile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('about');
+  const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'about');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
@@ -821,6 +854,8 @@ const CompanyProfile = () => {
   const [showCredentialPassword, setShowCredentialPassword] = useState(false);
   const [companyJobs, setCompanyJobs] = useState([]);
   const [companyReviews, setCompanyReviews] = useState([]);
+  const [showAllCompanyJobs, setShowAllCompanyJobs] = useState(false);
+  const [showAllCompanyReviews, setShowAllCompanyReviews] = useState(false);
   const [companyActivityLoading, setCompanyActivityLoading] = useState(false);
 
   const [docUploading, setDocUploading] = useState({
@@ -837,9 +872,6 @@ const CompanyProfile = () => {
   const modalCoverInputRef = useRef(null);
   const modalGalleryInputRef = useRef(null);
   const industryComboboxRef = useRef(null);
-  const location = useLocation();
-  const navigate = useNavigate();
-
   const defaultBanner = '/images/jobback.png';
 
   const logoFallback = useMemo(() => {
@@ -1896,33 +1928,36 @@ const CompanyProfile = () => {
 
                   {activeTab === 'jobs' && (
                     <div className="rounded-[18px] border border-[#d1d5db] bg-white p-7 shadow-[0_2px_6px_rgba(15,23,42,0.05)]">
-                      <h2 className="text-[30px] font-semibold text-[#000000]">Jobs</h2>
-                      <p className="mt-1 text-[13px] text-[#6b7280]">Job posts from your company</p>
+                      {showAllCompanyJobs ? (
+                        <button type="button" onClick={() => setShowAllCompanyJobs(false)} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-[#d1d5db] bg-white px-4 py-2 text-[14px] font-semibold text-[#2e66a6] hover:bg-[#f5f8fc]">
+                          <span aria-hidden="true">‹</span> Back to Company Profile
+                        </button>
+                      ) : null}
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                          <h2 className="text-[24px] font-bold text-black">Jobs at {companyData.companyName || 'Company'}</h2>
+                          <p className="mt-1 text-[16px] text-black/65">{companyJobs.length} Open position{companyJobs.length === 1 ? '' : 's'}</p>
+                        </div>
+                        {companyJobs.length && !showAllCompanyJobs ? (
+                          <button type="button" onClick={() => setShowAllCompanyJobs(true)} className="inline-flex items-center gap-2 text-[15px] font-medium text-[#2e66a6] hover:text-[#25578f]">View all jobs <span aria-hidden="true">›</span></button>
+                        ) : null}
+                      </div>
 
                       {companyActivityLoading ? (
                         <div className="flex justify-center py-12"><SpinnerIcon className="h-6 w-6 text-[#2e66a6]" /></div>
                       ) : companyJobs.length ? (
-                        <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
-                          {companyJobs.map((job) => (
-                            <div
-                              key={job._id}
-                              className="rounded-[16px] border border-[#d1d5db] bg-white p-5 text-left"
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <h3 className="truncate text-base font-semibold text-[#111827]">{job.title || 'Untitled job'}</h3>
-                                  <p className="mt-2 truncate text-sm text-[#6b7280]">{job.location || 'Location not specified'}</p>
-                                </div>
-                                <span className="rounded-full border border-[#bdd5ef] bg-[#eef6ff] px-3 py-1 text-xs font-semibold text-[#2e66a6]">
-                                  {job.status || (job.isActive ? 'Open' : 'Closed')}
-                                </span>
+                        <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+                          {(showAllCompanyJobs ? companyJobs : companyJobs.slice(0, 6)).map((job) => (
+                            <article key={job._id} className="flex min-h-[350px] flex-col rounded-[22px] border border-[#E5E7EB] bg-white p-5 shadow-[0_6px_18px_rgba(0,0,0,0.045)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)]">
+                              <div className="flex items-start gap-4">
+                                <img src={previewLogo || logoFallback} alt="" className="h-14 w-14 shrink-0 rounded-xl border border-[#e5e7eb] object-cover" />
+                                <div className="min-w-0"><h3 className="truncate text-lg font-bold text-gray-800">{job.title || 'Job Title'}</h3><div className="mt-1 flex items-center gap-2"><span className="truncate text-sm font-medium text-gray-600">{companyData.companyName}</span><img src="/images/checkmo.png" alt="Verified" className="h-5 w-5 shrink-0 object-contain" /></div></div>
                               </div>
-                              <div className="mt-4 flex flex-wrap gap-2 text-xs text-[#4b5563]">
-                                <span className="rounded-full bg-[#f3f4f6] px-3 py-1.5">{job.jobType || 'Type not specified'}</span>
-                                <span className="rounded-full bg-[#f3f4f6] px-3 py-1.5">{job.workMode || 'Work mode not specified'}</span>
-                                <span className="rounded-full bg-[#f3f4f6] px-3 py-1.5">{Number(job.applicationCount) || 0} applicant(s)</span>
-                              </div>
-                            </div>
+                              <div className="mt-4 rounded-xl bg-[#F3F4F6] p-4 text-sm text-gray-700"><p className="truncate">⌖&nbsp; {job.location || 'Location not specified'}</p><p className="mt-2 truncate">₱&nbsp; {formatJobSalary(job)}</p><p className="mt-2 truncate">▣&nbsp; {job.jobType || 'Type not specified'}</p></div>
+                              <p className="mt-3 truncate text-[13px] font-medium text-gray-600">▣&nbsp; {formatJobDeadline(job.applicationDeadline)}</p>
+                              <div className="mt-4 flex flex-wrap gap-2">{[job.experienceLevel, job.workMode, job.openToFreshGraduates ? 'Open fresh grad' : ''].filter(Boolean).map((tag) => <span key={tag} className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-[#2e66a6]">{tag}</span>)}</div>
+                              <div className="mt-auto border-t border-gray-300/80 pt-4"><button type="button" onClick={() => navigate(`/employer/manage-jobs/${job._id}/view`)} className="h-10 w-full rounded-xl bg-[#1e4ba0] px-5 text-sm font-semibold text-white hover:bg-[#1b4290]">View Job</button></div>
+                            </article>
                           ))}
                         </div>
                       ) : (
@@ -1933,24 +1968,27 @@ const CompanyProfile = () => {
 
                   {activeTab === 'reviews' && (
                     <div className="rounded-[18px] border border-[#d1d5db] bg-white p-7 shadow-[0_2px_6px_rgba(15,23,42,0.05)]">
-                      <h2 className="text-[30px] font-semibold text-[#000000]">Reviews</h2>
-                      <p className="mt-1 text-[13px] text-[#6b7280]">Hiring-process reviews shared by job seekers</p>
+                      {showAllCompanyReviews ? (
+                        <button type="button" onClick={() => setShowAllCompanyReviews(false)} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-[#d1d5db] bg-white px-4 py-2 text-[14px] font-semibold text-[#2e66a6] hover:bg-[#f5f8fc]">
+                          <span aria-hidden="true">‹</span> Back to Company Profile
+                        </button>
+                      ) : null}
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div><h2 className="text-[24px] font-bold text-black">Application process at {companyData.companyName || 'Company'}</h2><p className="mt-1 text-[16px] text-black/65">{companyReviews.length} review{companyReviews.length === 1 ? '' : 's'}</p></div>
+                        {companyReviews.length && !showAllCompanyReviews ? <button type="button" onClick={() => setShowAllCompanyReviews(true)} className="inline-flex items-center gap-2 text-[15px] font-medium text-[#2e66a6] hover:text-[#25578f]">See all reviews <span aria-hidden="true">›</span></button> : null}
+                      </div>
 
                       {companyReviews.length ? (
-                        <div className="mt-5 space-y-4">
-                          {companyReviews.map((review, index) => (
-                            <div key={review._id || index} className="rounded-[16px] border border-[#d1d5db] bg-white p-5">
+                        <div className="mt-6 space-y-5">
+                          {(showAllCompanyReviews ? companyReviews : companyReviews.slice(0, 6)).map((review, index) => (
+                            <article key={review._id || index} className="rounded-2xl border border-[#dfe7f0] bg-white px-5 py-5 shadow-[0_10px_28px_rgba(46,102,166,0.06)] sm:px-6 sm:py-6">
                               <div className="flex flex-wrap items-start justify-between gap-3">
-                                <div>
-                                  <h3 className="font-semibold text-[#111827]">{review.reviewerName || 'Anonymous User'}</h3>
-                                  <p className="mt-1 text-sm text-[#6b7280]">{review.roleAppliedFor || 'Role not specified'}</p>
-                                </div>
-                                <span className="rounded-full bg-[#eef6ff] px-3 py-1 text-sm font-semibold text-[#2e66a6]">
-                                  ★ {Number(review.processRating ?? review.rating) || 0}/5
-                                </span>
+                                <div><h3 className="text-[17px] font-bold text-black">{review.reviewerName || 'Anonymous User'}</h3><p className="mt-1 text-sm text-black/55">{review.roleAppliedFor || 'Role not provided'}{formatReviewAge(review.createdAt) ? ` · ${formatReviewAge(review.createdAt)}` : ''}</p></div>
+                                <span className="rounded-full border border-[#dfe7f0] bg-[#fbfcfe] px-3 py-1 text-xs font-semibold text-[#2e66a6]">{getReviewOutcome(review.outcome)}</span>
                               </div>
-                              {review.message ? <p className="mt-4 whitespace-pre-line text-sm leading-6 text-[#4b5563]">{review.message}</p> : null}
-                            </div>
+                              {review.message ? <p className="mt-5 whitespace-pre-line text-[16px] leading-7 text-black/80">{review.message}</p> : null}
+                              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">{[['First reply', review.daysToFirstResponse == null ? 'Not provided' : `${Number(review.daysToFirstResponse) || 0}d`], ['Total length', review.totalProcessDays == null ? 'Not provided' : `${Number(review.totalProcessDays) || 0}d`], ['Process', review.processRating == null ? 'Not provided' : `${Number(review.processRating) || 0}/5`], ['Rating', `${Number(review.rating ?? review.processRating) || 0}/5`]].map(([label, value]) => <div key={label} className="rounded-xl border border-[#dfe7f0] bg-[#fbfcfe] px-4 py-3"><p className="text-sm text-black/50">{label}</p><p className="mt-1 text-[18px] font-bold text-black">{value}</p></div>)}</div>
+                            </article>
                           ))}
                         </div>
                       ) : (

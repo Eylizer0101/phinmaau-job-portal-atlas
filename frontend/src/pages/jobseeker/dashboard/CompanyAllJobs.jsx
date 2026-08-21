@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import api from "../../../services/api";
 import ApplyJobModal from "../../../components/jobseeker/ApplyJobModal";
 import Pagination from "../../../components/shared/Pagination";
@@ -55,6 +55,9 @@ const normalizeWorkModeLabel = (value) => {
 const CompanyAllJobs = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromEmployerProfile = location.state?.source === "employer-profile";
+  const handleBack = () => navigate(location.state?.returnTo || `/jobseeker/company-details/${id}`, { state: { activeTab: "jobs" } });
   const [company, setCompany] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -264,7 +267,7 @@ const CompanyAllJobs = () => {
         </div>
       )}
       <div className="mx-auto w-full max-w-[1280px]">
-        <button type="button" onClick={() => navigate(`/jobseeker/company-details/${id}`, { state: { activeTab: "jobs" } })} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-[#2e66a6] hover:bg-[#f7faff]">
+        <button type="button" onClick={handleBack} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-[#2e66a6] hover:bg-[#f7faff]">
           <svg
             className="w-[18px] h-[18px] shrink-0 rotate-180"
             fill="none"
@@ -274,7 +277,7 @@ const CompanyAllJobs = () => {
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
           </svg>
-          Back to Company Details
+          {fromEmployerProfile ? "Back to Company Profile" : "Back to Company Details"}
         </button>
 
         <section className="rounded-[1.35rem] border border-[#e6edf5] bg-white p-5 shadow-[0_18px_45px_rgba(46,102,166,0.08)] sm:p-7 lg:p-8">
