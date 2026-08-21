@@ -207,6 +207,10 @@ const applicationSchema = new mongoose.Schema({
         trim: true,
         maxlength: 80
     },
+    hiringStages: {
+        type: [String],
+        default: []
+    },
     customHiringStages: {
         type: [String],
         default: []

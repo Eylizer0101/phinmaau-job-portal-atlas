@@ -1236,18 +1236,12 @@ exports.getEmployerForInterviewApplications = async (req, res) => {
       })
       .sort({ appliedAt: -1 });
 
-    const [applicationsWithEmploymentStatus, defaultHiringStages, customHiringStages] = await Promise.all([
-      attachEmploymentStatus(applications),
-      getEmployerAvailableDefaultHiringStages(req.user._id),
-      getEmployerCustomHiringStages(req.user._id)
-    ]);
+    const applicationsWithEmploymentStatus = await attachEmploymentStatus(applications);
 
     res.status(200).json({
       success: true,
       count: applications.length,
-      applications: applicationsWithEmploymentStatus,
-      defaultHiringStages,
-      customHiringStages
+      applications: applicationsWithEmploymentStatus
     });
   } catch (error) {
     console.error('Error fetching for interview applications:', error);
@@ -2040,72 +2034,22 @@ exports.updateApplicationHiringStage = async (req, res) => {
       });
     }
 
+    const previousStage = normalizeHiringStage(application.hiringStage);
+    application.hiringStages = [
+      ...new Set((application.hiringStages || []).map(normalizeHiringStage).filter(Boolean))
+    ];
+
     if (action === 'addcustom') {
       if (!requestedStage) {
-        return res.status(400).json({ success: false, message: 'Custom stage is required' });
+        return res.status(400).json({ success: false, message: 'Hiring stage is required' });
       }
 
-      const matchingDefaultStage = DEFAULT_HIRING_STAGES.find((stage) =>
-        sameHiringStage(stage, requestedStage)
-      );
-
-      if (matchingDefaultStage) {
-        const hiddenDefaultStages = await getEmployerHiddenDefaultHiringStages(req.user._id);
-        const wasDeleted = hiddenDefaultStages.some((stage) =>
-          sameHiringStage(stage, matchingDefaultStage)
-        );
-
-        if (!wasDeleted) {
-          return res.status(400).json({ success: false, message: 'This stage already exists' });
-        }
-
-        await Application.updateMany(
-          { employer: req.user._id },
-          { $pull: { hiddenDefaultHiringStages: matchingDefaultStage } }
-        );
-
-        const [refreshedApplication, defaultHiringStages, customHiringStages] = await Promise.all([
-          Application.findById(applicationId)
-            .populate({ path: 'job', select: 'title companyName companyLogo' })
-            .populate({
-              path: 'jobseeker',
-              select: 'fullName firstName middleName lastName email profileImage phoneNumber contactNumber jobSeekerProfile.phoneNumber jobSeekerProfile.mobileNumber'
-            }),
-          getEmployerAvailableDefaultHiringStages(req.user._id),
-          getEmployerCustomHiringStages(req.user._id)
-        ]);
-
-        return res.status(200).json({
-          success: true,
-          message: 'Default hiring stage restored',
-          application: refreshedApplication,
-          defaultHiringStages,
-          customHiringStages
-        });
+      if (application.hiringStages.some((stage) => sameHiringStage(stage, requestedStage))) {
+        return res.status(400).json({ success: false, message: 'This stage already exists for this applicant' });
       }
 
-      const existingCustomStages = await getEmployerCustomHiringStages(req.user._id);
-      const existingStage = existingCustomStages.find((stage) => sameHiringStage(stage, requestedStage));
-      const stageToSave = existingStage || requestedStage;
-
-      await Application.updateMany(
-        { employer: req.user._id },
-        { $addToSet: { customHiringStages: stageToSave } }
-      );
-
-      const [defaultHiringStages, customHiringStages] = await Promise.all([
-        getEmployerAvailableDefaultHiringStages(req.user._id),
-        getEmployerCustomHiringStages(req.user._id)
-      ]);
-      application.customHiringStages = customHiringStages;
-
-      return res.status(200).json({
-        success: true,
-        message: existingStage ? 'Hiring stage already exists' : 'Custom hiring stage added',
-        application,
-        defaultHiringStages,
-        customHiringStages
-      });
+      application.hiringStages.push(requestedStage);
+      application.hiringStage = requestedStage;
     }
 
     if (action === 'delete' || action === 'deletecustom') {
@@ -2113,16 +2057,9 @@ exports.updateApplicationHiringStage = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Hiring stage is required' });
       }
 
-      const matchingDefaultStage = DEFAULT_HIRING_STAGES.find((stage) =>
+      const stageToDelete = application.hiringStages.find((stage) =>
         sameHiringStage(stage, requestedStage)
       );
-
-      const existingCustomStages = await getEmployerCustomHiringStages(req.user._id);
-      const matchingCustomStage = existingCustomStages.find((stage) =>
-        sameHiringStage(stage, requestedStage)
-      );
-
-      const stageToDelete = matchingDefaultStage || matchingCustomStage;
 
       if (!stageToDelete) {
         return res.status(404).json({
@@ -2131,70 +2068,45 @@ exports.updateApplicationHiringStage = async (req, res) => {
         });
       }
 
-      const stageRegex = buildExactHiringStageRegex(stageToDelete);
-
-      if (matchingDefaultStage) {
-        await Application.updateMany(
-          { employer: req.user._id },
-          { $addToSet: { hiddenDefaultHiringStages: matchingDefaultStage } }
-        );
-      } else {
-        await Application.updateMany(
-          { employer: req.user._id },
-          { $pull: { customHiringStages: matchingCustomStage } }
-        );
+      application.hiringStages = application.hiringStages.filter(
+        (stage) => !sameHiringStage(stage, stageToDelete)
+      );
+      if (sameHiringStage(application.hiringStage, stageToDelete)) {
+        application.hiringStage = '';
+        application.activityHistory.push({
+          type: 'interview',
+          title: 'Hiring stage removed',
+          description: `Hiring stage ${stageToDelete} was removed and reset to No stage set.`,
+          fromStatus: stageToDelete,
+          toStatus: '',
+          occurredAt: new Date(),
+          performedBy: req.user._id
+        });
       }
-
-      if (stageRegex) {
-        await Application.updateMany(
-          { employer: req.user._id, hiringStage: stageRegex },
-          { $set: { hiringStage: '' } }
-        );
-      }
-
-      const [refreshedApplication, defaultHiringStages, customHiringStages] = await Promise.all([
-        Application.findById(applicationId)
-          .populate({ path: 'job', select: 'title companyName companyLogo' })
-          .populate({
-            path: 'jobseeker',
-            select: 'fullName firstName middleName lastName email profileImage phoneNumber contactNumber jobSeekerProfile.phoneNumber jobSeekerProfile.mobileNumber'
-          }),
-        getEmployerAvailableDefaultHiringStages(req.user._id),
-        getEmployerCustomHiringStages(req.user._id)
-      ]);
+      await application.save();
 
       return res.status(200).json({
         success: true,
-        message: matchingDefaultStage
-          ? 'Default hiring stage deleted'
-          : 'Custom hiring stage deleted',
-        application: refreshedApplication,
-        defaultHiringStages,
-        customHiringStages
+        message: 'Hiring stage deleted',
+        application
       });
     }
 
-    const previousStage = normalizeHiringStage(application.hiringStage);
-
     if (action === 'reset') {
       application.hiringStage = '';
-    } else {
+    } else if (action === 'set') {
       if (!requestedStage) {
         return res.status(400).json({ success: false, message: 'Please select a hiring stage' });
       }
 
-      const [defaultHiringStages, customHiringStages] = await Promise.all([
-        getEmployerAvailableDefaultHiringStages(req.user._id),
-        getEmployerCustomHiringStages(req.user._id)
-      ]);
-      const allowedStage = [...defaultHiringStages, ...customHiringStages].find(
+      const allowedStage = application.hiringStages.find(
         (stage) => sameHiringStage(stage, requestedStage)
       );
 
       if (!allowedStage) {
         return res.status(400).json({
           success: false,
-          message: 'Select an existing stage or add it as a custom stage first'
+          message: 'Select an existing stage for this applicant or add a new one first'
         });
       }
 
@@ -2304,18 +2216,10 @@ exports.updateApplicationHiringStage = async (req, res) => {
 
     await application.save();
 
-    const [defaultHiringStages, customHiringStages] = await Promise.all([
-      getEmployerAvailableDefaultHiringStages(req.user._id),
-      getEmployerCustomHiringStages(req.user._id)
-    ]);
-    application.customHiringStages = customHiringStages;
-
     return res.status(200).json({
       success: true,
-      message: action === 'reset' ? 'Hiring stage reset' : 'Hiring stage updated',
-      application,
-      defaultHiringStages,
-      customHiringStages
+      message: action === 'addcustom' ? 'Hiring stage added and assigned' : action === 'reset' ? 'Hiring stage reset' : 'Hiring stage updated',
+      application
     });
   } catch (error) {
     console.error('Error updating hiring stage:', error);

@@ -1009,10 +1009,7 @@ const HiringStageModal = ({
     }
     setLocalError('');
     const added = await onAddCustom(value);
-    if (added) {
-      const applied = await onSelect(value);
-      if (applied) setCustomStage('');
-    }
+    if (added) setCustomStage('');
   };
 
   return (
@@ -1020,7 +1017,9 @@ const HiringStageModal = ({
       <div className="w-full max-w-[520px] overflow-hidden rounded-2xl bg-white shadow-2xl">
         <div className="flex items-start justify-between px-6 pb-3 pt-5">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Set Hiring Stage</h2>
+            <h2 className="text-xl font-bold text-gray-900">
+              {stages.length ? 'Update Hiring Stage' : 'Set Hiring Stage'}
+            </h2>
             <p className="mt-1 text-sm text-gray-500">
               {buildApplicantName(application.jobseeker)} — {application.job?.title || 'Job'} @ {application.job?.companyName || 'Company'}
             </p>
@@ -1032,11 +1031,16 @@ const HiringStageModal = ({
 
         <div className="px-6 pb-5">
           <div className="mb-2 flex items-center justify-between text-xs font-semibold text-gray-700">
-            <span>Select stage</span>
+            <span>Stages you added</span>
             <span className="text-gray-500">{stages.length} stage(s)</span>
           </div>
 
           <div className="max-h-[330px] space-y-2 overflow-y-auto pr-1">
+            {!stages.length ? (
+              <div className="rounded-xl border border-dashed border-gray-300 px-4 py-6 text-center text-sm text-gray-500">
+                No hiring stages added yet.
+              </div>
+            ) : null}
             {stages.map((stage, index) => {
               const selected = isSameHiringStage(stage, currentStage);
 
@@ -1292,7 +1296,8 @@ const ActionMenu = ({
       className="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
       aria-label={`View application of ${name}`}
     >
-      View Application
+      <Icon name="eye" className="mr-2 h-4 w-4" />
+      Application
     </Link>
   );
 };
@@ -1304,12 +1309,7 @@ const ForInterview = () => {
 
   const [applications, setApplications] = useState([]);
   const [jobs, setJobs] = useState([]);
-  const [defaultHiringStages, setDefaultHiringStages] = useState([
-    'Initial Interview',
-    'Assessment',
-    'Final Interview',
-    'Job Offer',
-  ]);
+  const [defaultHiringStages, setDefaultHiringStages] = useState([]);
   const [customHiringStages, setCustomHiringStages] = useState([]);
   const [hiringStageOrder, setHiringStageOrder] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1425,25 +1425,9 @@ const ForInterview = () => {
       if (res.data?.success) {
         setApplications(res.data.applications || []);
 
-        const nextDefaultStages = Array.isArray(res.data.defaultHiringStages)
-          ? res.data.defaultHiringStages
-          : [];
-        const nextCustomStages = Array.isArray(res.data.customHiringStages)
-          ? res.data.customHiringStages
-          : [];
-        const availableStages = getUniqueHiringStages([
-          ...nextDefaultStages,
-          ...nextCustomStages,
-        ]);
-        const nextStageOrder = reconcileHiringStageOrder(
-          readSavedHiringStageOrder(),
-          availableStages
-        );
-
-        setDefaultHiringStages(nextDefaultStages);
-        setCustomHiringStages(nextCustomStages);
-        setHiringStageOrder(nextStageOrder);
-        saveHiringStageOrder(nextStageOrder);
+        setDefaultHiringStages([]);
+        setCustomHiringStages([]);
+        setHiringStageOrder([]);
       } else {
         setApplications([]);
       }
@@ -1698,6 +1682,12 @@ const ForInterview = () => {
   }, []);
 
   const applyHiringStageResponse = useCallback((responseData, preferredLastStage = '') => {
+    if (responseData?.application) {
+      setHiringStageOrder(getUniqueHiringStages(responseData.application.hiringStages || []));
+      updateApplicationInState(responseData.application);
+      return;
+    }
+
     const hasDefaultStages = Array.isArray(responseData?.defaultHiringStages);
     const hasCustomStages = Array.isArray(responseData?.customHiringStages);
 
@@ -1752,6 +1742,7 @@ const ForInterview = () => {
     setSuccess('');
     setOpenMenuId(null);
     setStageTarget(application);
+    setHiringStageOrder(getUniqueHiringStages(application.hiringStages || []));
     setStageModalOpen(true);
   };
 
@@ -1811,8 +1802,17 @@ const ForInterview = () => {
         throw new Error(addResponseData.message || 'Failed to add custom hiring stage.');
       }
 
+      if (addResponseData.finalStatus === 'hired' || addResponseData.finalStatus === 'declined') {
+        setApplications((previous) => previous.filter((item) => item._id !== stageTarget._id));
+        setSuccess(addResponseData.message || `Applicant marked as ${addResponseData.finalStatus}.`);
+        setStageModalOpen(false);
+        setStageTarget(null);
+        setHiringStageOrder([]);
+        return true;
+      }
+
       applyHiringStageResponse(addResponseData, stage);
-      setSuccess('Custom hiring stage added. Select it from the list when you are ready.');
+      setSuccess('Hiring stage added and assigned to this applicant.');
       return true;
     } catch (stageError) {
       setError(stageError?.response?.data?.message || stageError?.message || 'Failed to add custom hiring stage.');
@@ -1841,35 +1841,6 @@ const ForInterview = () => {
       }
 
       applyHiringStageResponse(responseData);
-
-      setDefaultHiringStages((previous) =>
-        previous.filter((item) => !isSameHiringStage(item, stage))
-      );
-      setCustomHiringStages((previous) =>
-        previous.filter((item) => !isSameHiringStage(item, stage))
-      );
-
-      setApplications((previous) =>
-        previous.map((application) =>
-          isSameHiringStage(application?.hiringStage, stage)
-            ? { ...application, hiringStage: '' }
-            : application
-        )
-      );
-
-      setStageTarget((previous) =>
-        previous && isSameHiringStage(previous.hiringStage, stage)
-          ? { ...previous, hiringStage: '' }
-          : previous
-      );
-
-      setHiringStageOrder((previousOrder) => {
-        const nextOrder = previousOrder.filter(
-          (item) => !isSameHiringStage(item, stage)
-        );
-        saveHiringStageOrder(nextOrder);
-        return nextOrder;
-      });
 
       setSuccess(responseData.message || 'Hiring stage deleted.');
     } catch (stageError) {
@@ -2146,7 +2117,7 @@ const selectBase =
                             </td>
 
                             <td className="px-3 py-5 align-middle text-sm text-gray-600">
-                              <span className="block truncate" title={email}>{email}</span>
+                              <span className="block break-all" title={email}>{email}</span>
                             </td>
 
                             <td className="px-3 py-5 align-middle text-sm text-gray-600">
@@ -2181,7 +2152,9 @@ const selectBase =
                                   {hiringStage || 'No stage set'}
                                 </span>
                                 <span className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-gray-900 transition-colors duration-200 group-hover:text-[#2e66a6]">
-                                  {hiringStage ? 'Change stage' : 'Choose stage'}
+                                  <span className="group-hover:underline group-focus-visible:underline">
+                                    {hiringStage ? 'Change stage' : 'Set Hiring stage'}
+                                  </span>
                                   <Icon name="chevron-right" className="h-3.5 w-3.5" />
                                 </span>
                               </button>
@@ -2220,7 +2193,7 @@ const selectBase =
                           <Avatar img={app.jobseeker?.profileImage} name={name} size={44} altKey={`for_interview_mobile_${app._id}`} />
                           <div className="min-w-0">
                             <div className="truncate text-sm font-semibold text-gray-900">{name}</div>
-                            <div className="max-w-[230px] truncate text-xs text-gray-600" title={email}>{email}</div>
+                            <div className="max-w-[230px] break-all text-xs text-gray-600" title={email}>{email}</div>
                           </div>
                         </div>
 
@@ -2237,8 +2210,8 @@ const selectBase =
                             <span className={cn('block font-semibold', hiringStage ? 'text-gray-900' : 'italic text-gray-500')}>
                               {hiringStage || 'No stage set'}
                             </span>
-                            <span className="mt-1 inline-flex items-center gap-1 font-semibold text-gray-900">
-                              {hiringStage ? 'Change stage' : 'Choose stage'}
+                            <span className="mt-1 inline-flex items-center gap-1 font-semibold text-gray-900 group-hover:underline group-focus-visible:underline">
+                              {hiringStage ? 'Change stage' : 'Set Hiring stage'}
                               <Icon name="chevron-right" className="h-3.5 w-3.5" />
                             </span>
                           </button>
