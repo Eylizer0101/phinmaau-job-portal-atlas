@@ -1961,7 +1961,15 @@ const CompanyProfile = () => {
                     <div className="rounded-[18px] border border-[#d1d5db] bg-white p-7 shadow-[0_2px_6px_rgba(15,23,42,0.05)]">
                       {showAllCompanyJobs ? (
                         <button type="button" onClick={() => setShowAllCompanyJobs(false)} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-[#d1d5db] bg-white px-4 py-2 text-[14px] font-semibold text-[#2e66a6] hover:bg-[#f5f8fc]">
-                          <span aria-hidden="true">‹</span> Back to Company Profile
+                           <svg
+                            className="w-[18px] h-[18px] shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                          </svg> Back 
                         </button>
                       ) : null}
                       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -1970,7 +1978,17 @@ const CompanyProfile = () => {
                           <p className="mt-1 text-[16px] text-black/65">{companyJobs.length} Open position{companyJobs.length === 1 ? '' : 's'}</p>
                         </div>
                         {companyJobs.length && !showAllCompanyJobs ? (
-                          <button type="button" onClick={() => setShowAllCompanyJobs(true)} className="inline-flex items-center gap-2 text-[15px] font-medium text-[#2e66a6] hover:text-[#25578f]">View all jobs <span aria-hidden="true">›</span></button>
+                          <button type="button" onClick={() => setShowAllCompanyJobs(true)} className="inline-flex items-center gap-2 
+                          text-[15px] font-medium text-[#2e66a6] 
+                          hover:text-[#25578f]">View all jobs  <svg
+                            className="w-[18px] h-[18px] shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                          </svg></button>
                         ) : null}
                       </div>
 
@@ -2019,12 +2037,30 @@ const CompanyProfile = () => {
                     <div className="rounded-[18px] border border-[#d1d5db] bg-white p-7 shadow-[0_2px_6px_rgba(15,23,42,0.05)]">
                       {showAllCompanyReviews ? (
                         <button type="button" onClick={() => setShowAllCompanyReviews(false)} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-[#d1d5db] bg-white px-4 py-2 text-[14px] font-semibold text-[#2e66a6] hover:bg-[#f5f8fc]">
-                          <span aria-hidden="true">‹</span> Back to Company Profile
+                           <svg
+                            className="w-[18px] h-[18px] shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                          </svg>Back 
                         </button>
                       ) : null}
                       <div className="flex flex-wrap items-start justify-between gap-4">
                         <div><h2 className="text-[24px] font-bold text-black">Application process at {companyData.companyName || 'Company'}</h2><p className="mt-1 text-[16px] text-black/65">{companyReviews.length} review{companyReviews.length === 1 ? '' : 's'}</p></div>
-                        {companyReviews.length && !showAllCompanyReviews ? <button type="button" onClick={() => setShowAllCompanyReviews(true)} className="inline-flex items-center gap-2 text-[15px] font-medium text-[#2e66a6] hover:text-[#25578f]">See all reviews <span aria-hidden="true">›</span></button> : null}
+                        {companyReviews.length && !showAllCompanyReviews ? <button type="button" onClick={() => setShowAllCompanyReviews(true)} 
+                        className="inline-flex items-center gap-2 text-[15px] font-medium text-[#2e66a6] 
+                        hover:text-[#25578f]">See all reviews<svg
+                            className="w-[18px] h-[18px] shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                          </svg></button> : null}
                       </div>
 
                       {companyReviews.length ? (
