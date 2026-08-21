@@ -536,6 +536,7 @@ const HiredApplicants = () => {
 
   const getDeclineStageLabel = useCallback((value) => {
     const normalized = String(value || '').replace(/([a-z])([A-Z])/g, '$1 $2').trim();
+    if (normalized.toLowerCase() === 'applicants') return 'Screening';
     return normalized ? normalized.replace(/\b\w/g, (letter) => letter.toUpperCase()) : 'Declined';
   }, []);
 
@@ -1080,7 +1081,7 @@ const selectBase =
                       {statusFilter === 'all' && (
                         <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">Status</th>
                       )}
-                      {statusFilter !== 'hired' && (
+                      {statusFilter === 'declined' && (
                         <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">Decline Stage</th>
                       )}
                       <th className="px-6 py-5 text-center text-sm font-semibold uppercase tracking-wide text-gray-700">
@@ -1149,7 +1150,7 @@ const selectBase =
                             </td>
                           )}
 
-                          {statusFilter !== 'hired' && (
+                          {statusFilter === 'declined' && (
                             <td className="px-6 py-4 text-sm text-gray-700">
                               {app._recordStatus === 'declined' ? getDeclineStageLabel(app.declinedFrom) : '—'}
                             </td>
@@ -1162,7 +1163,8 @@ const selectBase =
                                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                                 aria-label={`View details of ${name}`}
                               >
-                                <span>View Application</span>
+                                <Icon name="eye" className="h-4 w-4" />
+                                <span>Application</span>
                               </Link>
                               {app._recordStatus === 'declined' && (
                                 <button
@@ -1225,7 +1227,7 @@ const selectBase =
                           <p className="text-sm font-semibold text-gray-900">{jobTitle}</p>
                         </div>
 
-                        {app._recordStatus === 'declined' && (
+                        {statusFilter === 'declined' && app._recordStatus === 'declined' && (
                           <div>
                             <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Decline Stage</p>
                             <p className="text-sm text-gray-800">{getDeclineStageLabel(app.declinedFrom)}</p>
@@ -1238,7 +1240,8 @@ const selectBase =
                           to={`/employer/application/${app._id}?from=hired`}
                           className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                         >
-                          View Application
+                          <Icon name="eye" className="h-4 w-4" />
+                          <span>Application</span>
                         </Link>
                         {app._recordStatus === 'declined' && (
                           <button
