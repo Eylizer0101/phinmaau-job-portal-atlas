@@ -1591,7 +1591,7 @@ const ManageJobs = () => {
                                 'inline-flex h-10 items-center justify-center rounded-lg border px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                                 derivedStatus === 'open'
                                   ? 'border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:ring-[#2e66a6]'
-                                  : 'border-amber-500 bg-amber-400 text-gray-900 hover:bg-amber-500 focus-visible:ring-amber-500'
+                                  : 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 focus-visible:ring-amber-500'
                               )}
                               aria-label={`${derivedStatus === 'open' ? 'Close Job' : 'Open Job'} ${title}`}
                               title={derivedStatus === 'open' ? 'Close Job' : 'Open Job'}
@@ -1824,7 +1824,7 @@ const ManageJobs = () => {
                                       'inline-flex h-10 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                                       derivedStatus === 'open'
                                         ? 'border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:ring-[#2e66a6]'
-                                        : 'border border-amber-500 bg-amber-400 text-gray-900 hover:bg-amber-500 focus-visible:ring-amber-500'
+                                        : 'border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 focus-visible:ring-amber-500'
                                     )}
                                     aria-label={`${derivedStatus === 'open' ? 'Close Job' : 'Open Job'} ${title}`}
                                     title={derivedStatus === 'open' ? 'Close Job' : 'Open Job'}
