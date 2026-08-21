@@ -354,6 +354,10 @@ const resumeStyles = `
   .resume-inner {
     padding: 16mm 16mm 12mm;
     position: relative;
+    min-height: 297mm;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
   }
 
   .resume-header {
@@ -593,7 +597,8 @@ const resumeStyles = `
   }
 
   .resume-declaration {
-    margin-top: 11px;
+    margin-top: auto;
+    padding-top: 11px;
     width: 100%;
     break-inside: avoid;
   }
@@ -887,6 +892,30 @@ const loadHtml2Pdf = () =>
     document.body.appendChild(script);
   });
 
+const alignDeclarationToLastPageBottom = (paper) => {
+  const inner = paper?.querySelector('.resume-inner');
+  const declaration = paper?.querySelector('.resume-declaration');
+  if (!inner || !declaration) return;
+
+  inner.style.minHeight = 'auto';
+  inner.style.display = 'block';
+  declaration.style.paddingTop = '0';
+  declaration.style.marginTop = '11px';
+
+  const paperRect = paper.getBoundingClientRect();
+  const declarationRect = declaration.getBoundingClientRect();
+  if (!paperRect.width || !declarationRect.height) return;
+
+  const pageHeight = paperRect.width * (297 / 210);
+  const bottomInset = paperRect.width * (12 / 210);
+  const currentBottom = declarationRect.bottom - paperRect.top;
+  const lastPage = Math.max(1, Math.ceil((currentBottom + bottomInset) / pageHeight));
+  const targetBottom = (lastPage * pageHeight) - bottomInset;
+  const extraSpace = Math.max(0, targetBottom - currentBottom);
+
+  declaration.style.marginTop = `${11 + extraSpace}px`;
+};
+
 export const openResumePrintWindow = async (resumeData = {}) => {
   const existingWrapper = document.getElementById('agapay-resume-pdf-wrapper');
   if (existingWrapper) {
@@ -925,6 +954,22 @@ export const openResumePrintWindow = async (resumeData = {}) => {
     const html2pdf = await loadHtml2Pdf();
     const paper = wrapper.querySelector('.resume-paper') || wrapper;
     paper.style.minHeight = 'auto';
+
+    if (document.fonts?.ready) {
+      await document.fonts.ready;
+    }
+
+    await Promise.all(
+      Array.from(paper.querySelectorAll('img')).map((image) => {
+        if (image.complete) return Promise.resolve();
+        return new Promise((resolve) => {
+          image.addEventListener('load', resolve, { once: true });
+          image.addEventListener('error', resolve, { once: true });
+        });
+      })
+    );
+
+    alignDeclarationToLastPageBottom(paper);
 
     const pdfWorker = html2pdf()
       .set({

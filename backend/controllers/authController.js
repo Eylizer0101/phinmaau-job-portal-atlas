@@ -1431,6 +1431,26 @@ exports.updateProfile = async (req, res) => {
     delete updateData.username;
     delete updateData.mustChangePassword;
 
+    const nameFieldLabels = {
+      firstName: 'First Name',
+      middleName: 'Middle Name',
+      lastName: 'Last Name',
+    };
+
+    for (const [field, label] of Object.entries(nameFieldLabels)) {
+      if (!Object.prototype.hasOwnProperty.call(updateData, field)) continue;
+
+      const cleanName = String(updateData[field] ?? '').trim();
+      if (cleanName.length > 50) {
+        return res.status(400).json({
+          success: false,
+          message: `${label} must not exceed 50 characters.`,
+        });
+      }
+
+      updateData[field] = cleanName;
+    }
+
     if (Object.prototype.hasOwnProperty.call(updateData, 'extensionName')) {
       updateData.extensionName = normalizeExtensionName(updateData.extensionName);
     }
@@ -1530,6 +1550,13 @@ exports.updateProfile = async (req, res) => {
     res.status(200).json({ success: true, message: 'Profile updated successfully', user: updatedUser });
   } catch (error) {
     console.error('Error updating profile:', error);
+    if (error?.name === 'ValidationError') {
+      const validationMessage = Object.values(error.errors || {})[0]?.message;
+      return res.status(400).json({
+        success: false,
+        message: validationMessage || 'Please check the profile information and try again.',
+      });
+    }
     res.status(500).json({ success: false, message: 'Error updating profile' });
   }
 };
@@ -3864,6 +3891,27 @@ exports.downloadResume = async (req, res) => {
     } catch (networkError) {
       console.warn('Resume PDF network idle warning:', networkError?.message || networkError);
     }
+
+    await page.evaluate(() => {
+      const paper = document.querySelector('.resume-paper');
+      const declaration = paper?.querySelector('.resume-declaration');
+      if (!paper || !declaration) return;
+
+      declaration.style.marginTop = '11px';
+
+      const paperRect = paper.getBoundingClientRect();
+      const declarationRect = declaration.getBoundingClientRect();
+      if (!paperRect.width || !declarationRect.height) return;
+
+      const pageHeight = paperRect.width * (297 / 210);
+      const bottomInset = paperRect.width * (12 / 210);
+      const currentBottom = declarationRect.bottom - paperRect.top;
+      const lastPage = Math.max(1, Math.ceil((currentBottom + bottomInset) / pageHeight));
+      const targetBottom = (lastPage * pageHeight) - bottomInset;
+      const extraSpace = Math.max(0, targetBottom - currentBottom);
+
+      declaration.style.marginTop = `${11 + extraSpace}px`;
+    });
 
     const pdf = await page.pdf({
       format: 'A4',

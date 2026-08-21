@@ -115,6 +115,7 @@ const CERTIFICATION_YEAR_OPTIONS = Array.from(
 );
 
 const EXTENSION_NAME_OPTIONS = ['Jr', 'Sr', 'II', 'III', 'IV', 'V'];
+const NAME_MAX_LENGTH = 50;
 
 const PREFERRED_WORK_MODE_OPTIONS = [
   'On-site',
@@ -2660,6 +2661,7 @@ const BasicInfoModal = ({
                   <input
                     value={drafts.firstName || ''}
                     required
+                    maxLength={NAME_MAX_LENGTH}
                     onChange={(e) => onChange('firstName', e.target.value)}
                     className="h-11 px-3 border border-gray-300 rounded-[3px] outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                   />
@@ -2668,6 +2670,7 @@ const BasicInfoModal = ({
                 <input
                   value={drafts.lastName || ''}
                   required
+                  maxLength={NAME_MAX_LENGTH}
                   onChange={(e) => onChange('lastName', e.target.value)}
                   placeholder="Last Name*"
                   className="h-11 px-3 border border-gray-300 rounded-[3px] outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
@@ -2677,6 +2680,7 @@ const BasicInfoModal = ({
                   <label className="text-sm text-gray-500">Middle Name</label>
                   <input
                     value={drafts.middleName || ''}
+                    maxLength={NAME_MAX_LENGTH}
                     onChange={(e) => onChange('middleName', e.target.value)}
                     className="h-11 px-3 border border-gray-300 rounded-[3px] outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
                   />
@@ -5269,6 +5273,20 @@ const MyProfile = () => {
     setError('');
 
     if (sectionKey === 'basic') {
+      const nameFields = [
+        ['First Name', activeDrafts.firstName],
+        ['Middle Name', activeDrafts.middleName],
+        ['Last Name', activeDrafts.lastName],
+      ];
+      const invalidNameField = nameFields.find(
+        ([, value]) => String(value || '').trim().length > NAME_MAX_LENGTH
+      );
+
+      if (invalidNameField) {
+        setError(`${invalidNameField[0]} must not exceed ${NAME_MAX_LENGTH} characters.`);
+        return false;
+      }
+
       const requiredBasicFields = [
         ['First Name', activeDrafts.firstName],
         ['Last Name', activeDrafts.lastName],
@@ -5312,9 +5330,9 @@ const MyProfile = () => {
 
       if (sectionKey === 'basic') {
         payload = {
-          firstName: activeDrafts.firstName,
-          middleName: activeDrafts.middleName,
-          lastName: activeDrafts.lastName,
+          firstName: String(activeDrafts.firstName || '').trim(),
+          middleName: String(activeDrafts.middleName || '').trim(),
+          lastName: String(activeDrafts.lastName || '').trim(),
           extensionName: normalizeExtensionName(activeDrafts.extensionName),
           jobSeekerProfile: {
             phoneNumber: activeDrafts.phoneNumber,

@@ -499,6 +499,10 @@ const ResumePreviewPage = () => {
         .resume-inner {
           padding: 16mm 16mm 12mm;
           position: relative;
+          min-height: 297mm;
+          box-sizing: border-box;
+          display: flex;
+          flex-direction: column;
         }
 
         .resume-header {
@@ -733,7 +737,8 @@ const ResumePreviewPage = () => {
         }
 
         .resume-declaration {
-          margin-top: 11px;
+          margin-top: auto;
+          padding-top: 11px;
           width: 100%;
           break-inside: avoid;
         }
@@ -783,6 +788,8 @@ const ResumePreviewPage = () => {
 
           .resume-inner {
             padding: 28px 24px;
+            min-height: auto;
+            display: block;
           }
 
           .resume-header {
