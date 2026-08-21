@@ -1945,7 +1945,7 @@ const Bookmarks = () => {
           jobId: '',
           jobTitle: '',
         });
-        setToastMessage('success', 'Job removed successfully!');
+        showJobSaveToast('Job removed successfully!');
       } else {
         setToastMessage('error', response.data?.message || 'Failed to remove bookmark.');
       }
@@ -1954,7 +1954,7 @@ const Bookmarks = () => {
     } finally {
       setRemovingId('');
     }
-  }, [removeJobModal.jobId, savedJobs, selectedJobId, setToastMessage]);
+  }, [removeJobModal.jobId, savedJobs, selectedJobId, setToastMessage, showJobSaveToast]);
 
   const handleRemoveSavedCompany = useCallback(
     (companyId) => {
@@ -2012,7 +2012,7 @@ const Bookmarks = () => {
           companyId: '',
           companyName: '',
         });
-        setToastMessage('success', 'Company removed successfully!');
+        showJobSaveToast('Company removed successfully!');
       } else {
         setToastMessage('error', 'Failed to remove saved company.');
       }
@@ -2021,7 +2021,7 @@ const Bookmarks = () => {
     } finally {
       setRemovingCompanyId('');
     }
-  }, [removeCompanyModal.companyId, savedCompanies, selectedCompanyId, setToastMessage]);
+  }, [removeCompanyModal.companyId, savedCompanies, selectedCompanyId, setToastMessage, showJobSaveToast]);
 
   const selectedJob = useMemo(() => savedJobs.find((job) => job._id === selectedJobId) || null, [savedJobs, selectedJobId]);
 

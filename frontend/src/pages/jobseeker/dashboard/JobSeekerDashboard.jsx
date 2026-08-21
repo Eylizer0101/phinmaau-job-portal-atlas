@@ -1,5 +1,5 @@
 // src/pages/jobseeker/dashboard/JobSeekerDashboard.jsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { getProvinceFromLocation } from "../../../constants/phLocations";
@@ -150,6 +150,8 @@ const JobSeekerDashboard = () => {
   const [jobOffersLoading, setJobOffersLoading] = useState(true);
   const [savedJobIds, setSavedJobIds] = useState(() => new Set());
   const [savingJobIds, setSavingJobIds] = useState(() => new Set());
+  const [savedJobToast, setSavedJobToast] = useState('');
+  const savedJobToastTimerRef = useRef(null);
 
   // ✅ FORCE CHANGE PASSWORD STATES
   const [mustChangePassword, setMustChangePassword] = useState(false);
@@ -406,6 +408,7 @@ const JobSeekerDashboard = () => {
           next.delete(jobId);
           return next;
         });
+        setSavedJobToast('Job removed successfully!');
       } else {
         const response = await api.post(`/jobs/saved/${jobId}`);
 
@@ -418,7 +421,16 @@ const JobSeekerDashboard = () => {
           next.add(jobId);
           return next;
         });
+        setSavedJobToast('Job saved successfully!');
       }
+
+      if (savedJobToastTimerRef.current) {
+        clearTimeout(savedJobToastTimerRef.current);
+      }
+      savedJobToastTimerRef.current = setTimeout(() => {
+        setSavedJobToast('');
+        savedJobToastTimerRef.current = null;
+      }, 2500);
     } catch (error) {
       console.error('Error updating saved job from dashboard:', error);
       window.alert(
@@ -702,6 +714,14 @@ const JobSeekerDashboard = () => {
       document.body.style.overflow = previousOverflow;
     };
   }, [passwordModalOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (savedJobToastTimerRef.current) {
+        clearTimeout(savedJobToastTimerRef.current);
+      }
+    };
+  }, []);
 
   const fetchUserData = async () => {
     try {
@@ -1622,6 +1642,30 @@ const JobSeekerDashboard = () => {
   return (
     <>
       {forcedPasswordModal}
+
+      {savedJobToast && (
+        <div
+          className="fixed left-1/2 top-24 z-[9999] -translate-x-1/2 pointer-events-none"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex items-center gap-3 rounded-2xl border border-[#B8D7FF] bg-[#E1EEFF] px-7 py-4 text-base font-semibold text-[#1D5ED6] shadow-xl">
+            <svg
+              className="h-5 w-5 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m5 12 4 4L19 6" />
+            </svg>
+            <span>{savedJobToast}</span>
+          </div>
+        </div>
+      )}
 
       <div
         className={`max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 ${
