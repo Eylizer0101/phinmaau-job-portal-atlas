@@ -788,6 +788,7 @@ const JobDetails = () => {
   const [toast, setToast] = useState({ show: false, type: '', message: '' });
 
   const toastTimerRef = useRef(null);
+  const processedApplyReopenRef = useRef('');
 
   const sourcePage = location.state?.sourcePage || 'jobsearch';
 
@@ -1035,6 +1036,13 @@ const JobDetails = () => {
 
     const reopenStep = Number(reopenState?.reopenApplyStep) === 3 ? 3 : 1;
     const stateJob = reopenState?.applyJob || {};
+    const reopenKey = String(
+      reopenState?.flowKey ||
+      `${reopenStep}:${stateJob?._id || stateJob?.id || job?._id || job?.id || ''}`
+    );
+
+    if (processedApplyReopenRef.current === reopenKey) return;
+    processedApplyReopenRef.current = reopenKey;
 
     setApplyModalInitialStep(reopenStep);
     setApplyingJob({
@@ -1052,9 +1060,7 @@ const JobDetails = () => {
       sessionStorage.removeItem('pendingApplyReopen');
       sessionStorage.removeItem('pendingApplyFlow');
     } catch {}
-
-    navigate(location.pathname, { replace: true, state: { sourcePage } });
-  }, [job, location.state, location.key, location.pathname, navigate, sourcePage]);
+  }, [job, location.state, location.key]);
 
   const statusBadge = useMemo(() => {
     if (!hasApplied) return null;
@@ -1614,6 +1620,19 @@ const JobDetails = () => {
             setShowApplyModal(false);
             setApplyingJob(null);
             setApplyModalInitialStep(1);
+
+            try {
+              sessionStorage.removeItem('pendingApplyReopen');
+              sessionStorage.removeItem('pendingApplyFlow');
+            } catch {}
+
+            if (location.state?.reopenApplyModal) {
+              navigate(`${location.pathname}${location.search}`, {
+                replace: true,
+                state: { sourcePage },
+              });
+            }
+
             fetchJobDetails();
             checkIfApplied();
           }}
