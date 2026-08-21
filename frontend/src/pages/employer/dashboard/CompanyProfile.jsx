@@ -11,6 +11,37 @@ import api from '../../../services/api';
 
 const cx = (...classes) => classes.filter(Boolean).join(' ');
 
+const JobCardIcon = ({ name, className = 'w-4 h-4' }) => {
+  if (name === 'location') {
+    return (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+          d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
+        />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    );
+  }
+
+  if (name === 'contract') {
+    return (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+          d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m3 0H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2z"
+        />
+      </svg>
+    );
+  }
+
+  return null;
+};
+
 const formatJobSalary = (job) => {
   if (job?.hideSalary) return 'Salary not disclosed';
   const min = Number(job?.salaryMin || 0);
@@ -1953,8 +1984,26 @@ const CompanyProfile = () => {
                                 <img src={previewLogo || logoFallback} alt="" className="h-14 w-14 shrink-0 rounded-xl border border-[#e5e7eb] object-cover" />
                                 <div className="min-w-0"><h3 className="truncate text-lg font-bold text-gray-800">{job.title || 'Job Title'}</h3><div className="mt-1 flex items-center gap-2"><span className="truncate text-sm font-medium text-gray-600">{companyData.companyName}</span><img src="/images/checkmo.png" alt="Verified" className="h-5 w-5 shrink-0 object-contain" /></div></div>
                               </div>
-                              <div className="mt-4 rounded-xl bg-[#F3F4F6] p-4 text-sm text-gray-700"><p className="truncate">⌖&nbsp; {job.location || 'Location not specified'}</p><p className="mt-2 truncate">₱&nbsp; {formatJobSalary(job)}</p><p className="mt-2 truncate">▣&nbsp; {job.jobType || 'Type not specified'}</p></div>
-                              <p className="mt-3 truncate text-[13px] font-medium text-gray-600">▣&nbsp; {formatJobDeadline(job.applicationDeadline)}</p>
+                              <div className="mt-4 rounded-xl bg-[#F3F4F6] p-4 text-sm text-gray-700">
+                                <div className="flex min-w-0 items-center gap-2">
+                                  <JobCardIcon name="location" className="h-4 w-4 shrink-0 text-gray-600" />
+                                  <span className="min-w-0 flex-1 truncate">{job.location || 'Location not specified'}</span>
+                                </div>
+                                <div className="mt-2 flex min-w-0 items-center gap-2">
+                                  <span className="flex h-4 w-4 shrink-0 items-center justify-center text-[14px] font-extrabold leading-none text-gray-600">₱</span>
+                                  <span className="min-w-0 flex-1 truncate">{formatJobSalary(job)}</span>
+                                </div>
+                                <div className="mt-2 flex min-w-0 items-center gap-2">
+                                  <JobCardIcon name="contract" className="h-4 w-4 shrink-0 text-gray-600" />
+                                  <span className="min-w-0 flex-1 truncate">{job.jobType || 'Type not specified'}</span>
+                                </div>
+                              </div>
+                              <div className="mt-3 flex min-w-0 items-center gap-2 text-[13px] font-medium text-gray-600">
+                                <svg className="h-4 w-4 flex-shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10m-11 9h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v11a2 2 0 002 2z" />
+                                </svg>
+                                <span className="min-w-0 flex-1 truncate">{formatJobDeadline(job.applicationDeadline)}</span>
+                              </div>
                               <div className="mt-4 flex flex-wrap gap-2">{[job.experienceLevel, job.workMode, job.openToFreshGraduates ? 'Open fresh grad' : ''].filter(Boolean).map((tag) => <span key={tag} className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-[#2e66a6]">{tag}</span>)}</div>
                               <div className="mt-auto border-t border-gray-300/80 pt-4"><button type="button" onClick={() => navigate(`/employer/manage-jobs/${job._id}/view`)} className="h-10 w-full rounded-xl bg-[#1e4ba0] px-5 text-sm font-semibold text-white hover:bg-[#1b4290]">View Job</button></div>
                             </article>
