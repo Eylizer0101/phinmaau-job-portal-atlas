@@ -471,6 +471,16 @@ const LoginPage = () => {
       const code = err.response?.data?.code;
       const message = err.response?.data?.message || 'Unable to log in. Please try again.';
 
+      if (
+        status === 403 &&
+        (code === 'JOBSEEKER_PENDING_APPROVAL' || code === 'ACCOUNT_UNAVAILABLE')
+      ) {
+        setError(message);
+        resetCaptcha();
+        remountCaptcha();
+        return;
+      }
+
       if (status === 403 && (code === 'PENDING_ADMIN_APPROVAL' || code === 'EMPLOYER_REJECTED')) {
         navigate('/employer/register/pending', {
           state: {

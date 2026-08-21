@@ -29,15 +29,16 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      const rawUser = localStorage.getItem('user');
-      let user = null;
-      try {
-        user = JSON.parse(rawUser || 'null');
-      } catch {
-        user = null;
-      }
+    const authBlockCodes = [
+      'ACCOUNT_UNAVAILABLE',
+      'JOBSEEKER_PENDING_APPROVAL',
+      'PENDING_ADMIN_APPROVAL',
+    ];
 
+    if (
+      error.response?.status === 401 ||
+      (error.response?.status === 403 && authBlockCodes.includes(error.response?.data?.code))
+    ) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
 

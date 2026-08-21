@@ -55,7 +55,33 @@ const getUploadedFileUrl = (req, file, fallbackRelativePath) => {
 
 const boolFromBody = (v) => String(v || '').toLowerCase() === 'true';
 
-const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
+const normalizeEmail = (email) =>
+  String(email || '')
+    .normalize('NFKC')
+    .trim()
+    .toLowerCase();
+const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const findExistingUserByEmail = (email) => {
+  const normalizedEmail = normalizeEmail(email);
+  return User.findOne({
+    $or: [
+      { email: normalizedEmail },
+      { email: { $regex: `^${escapeRegex(normalizedEmail)}_deleted_\\d+$`, $options: 'i' } },
+    ],
+  }).collation({ locale: 'en', strength: 2 });
+};
+const isDuplicateKeyError = (error) => Number(error?.code) === 11000;
+const canUsePasswordRecovery = (user) => {
+  if (!user || user.isActive !== true || String(user.status || '').toLowerCase() !== 'active') return false;
+  if (user.role === 'admin') return true;
+  if (user.role === 'jobseeker') {
+    return String(user.jobSeekerProfile?.verificationStatus || '').toLowerCase() === 'verified';
+  }
+  if (user.role === 'employer') {
+    return String(user.employerProfile?.verificationDocs?.overallStatus || '').toLowerCase() === 'verified';
+  }
+  return false;
+};
 const isGmailAddress = (email) => /^[^\s@]+@gmail\.com$/i.test(String(email || '').trim());
 const isValidPersonName = (value) => /^[\p{L}\s'-]+$/u.test(String(value || '').trim());
 const isValidIndustry = (value) => {
@@ -757,8 +783,13 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: `Missing required documents: ${missing.join(', ')}` });
     }
 
-    const existingEmail = await User.findOne({ email: emailLower });
-    if (existingEmail) return res.status(400).json({ message: 'User already exists with this email' });
+    const existingEmail = await findExistingUserByEmail(emailLower);
+    if (existingEmail) {
+      return res.status(409).json({
+        code: 'EMAIL_ALREADY_REGISTERED',
+        message: 'This email address is already registered. Please sign in or contact support instead.',
+      });
+    }
 
     const baseUsername = baseUsernameFromEmail(emailLower);
     const usernameUnique = await makeUniqueUsername(baseUsername);
@@ -802,6 +833,7 @@ exports.register = async (req, res) => {
       email: emailLower,
       password: hashedPassword,
       role: 'jobseeker',
+      status: 'pending',
 
       firstName: cleanFirstName,
       middleName: cleanMiddleName,
@@ -866,11 +898,8 @@ exports.register = async (req, res) => {
       });
     }
 
-    const token = signToken({ userId: user._id, role: user.role });
-
     res.status(201).json({
       message: 'Registration submitted successfully!',
-      token,
       user: {
         id: user._id,
         username: user.username,
@@ -887,6 +916,12 @@ exports.register = async (req, res) => {
     });
   } catch (error) {
     console.error('Registration error:', error);
+    if (isDuplicateKeyError(error)) {
+      return res.status(409).json({
+        code: 'EMAIL_ALREADY_REGISTERED',
+        message: 'This email address is already registered. Please sign in or contact support instead.',
+      });
+    }
     res.status(500).json({
       message: 'Server error. Please try again later.',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined,
@@ -970,8 +1005,13 @@ exports.registerEmployer = async (req, res) => {
       return res.status(400).json({ message: `Missing required documents: ${missing.join(', ')}` });
     }
 
-    const existingEmail = await User.findOne({ email: emailLower });
-    if (existingEmail) return res.status(400).json({ message: 'User already exists with this email.' });
+    const existingEmail = await findExistingUserByEmail(emailLower);
+    if (existingEmail) {
+      return res.status(409).json({
+        code: 'EMAIL_ALREADY_REGISTERED',
+        message: 'This email address is already registered. Please sign in or contact support instead.',
+      });
+    }
 
     const baseFromCompany = cleanCompanyName
       .toLowerCase()
@@ -1085,6 +1125,12 @@ exports.registerEmployer = async (req, res) => {
     });
   } catch (error) {
     console.error('Employer registration error:', error);
+    if (isDuplicateKeyError(error)) {
+      return res.status(409).json({
+        code: 'EMAIL_ALREADY_REGISTERED',
+        message: 'This email address is already registered. Please sign in or contact support instead.',
+      });
+    }
     res.status(500).json({
       message: 'Server error. Please try again later.',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined,
@@ -1134,7 +1180,24 @@ exports.login = async (req, res) => {
       return res.status(403).json({ message: `Invalid account type for this login page.` });
     }
 
-    if (!user.isActive) return res.status(400).json({ message: 'Account is deactivated. Please contact support.' });
+    if (!user.isActive || ['inactive', 'suspended', 'deleted'].includes(String(user.status || '').toLowerCase())) {
+      return res.status(403).json({
+        code: 'ACCOUNT_UNAVAILABLE',
+        message: 'This account is not available. Please contact support.',
+      });
+    }
+
+    if (user.role === 'jobseeker') {
+      const verificationStatus = String(user.jobSeekerProfile?.verificationStatus || 'not_submitted').toLowerCase();
+      if (verificationStatus !== 'verified' || String(user.status || '').toLowerCase() !== 'active') {
+        return res.status(403).json({
+          code: 'JOBSEEKER_PENDING_APPROVAL',
+          message: verificationStatus === 'rejected'
+            ? 'Your verification was rejected. Please contact support.'
+            : 'Your account is not verified. Your verification is pending approval from admin.',
+        });
+      }
+    }
 
     if (user.role === 'employer') {
       const overall = String(user?.employerProfile?.verificationDocs?.overallStatus || 'unverified');
@@ -1175,6 +1238,8 @@ exports.login = async (req, res) => {
         username: user.username,
         email: user.email,
         role: user.role,
+        status: user.status,
+        isActive: user.isActive,
         profileImage: user.profileImage,
         firstName: user.firstName,
         middleName: user.middleName,
@@ -1246,6 +1311,8 @@ exports.loginEmployer = async (req, res) => {
         id: user._id,
         email: user.email,
         role: user.role,
+        status: user.status,
+        isActive: user.isActive,
         firstName: user.firstName,
         middleName: user.middleName,
         lastName: user.lastName,
@@ -1281,9 +1348,9 @@ exports.forgotPassword = async (req, res) => {
     const expiresInSeconds = expiresInMinutes * 60;
     const genericMessage = 'If the email exists, we sent a password reset OTP.';
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).collation({ locale: 'en', strength: 2 });
 
-    if (!user) {
+    if (!user || !canUsePasswordRecovery(user)) {
       return res.status(200).json({
         message: genericMessage,
         expiresInSeconds,
@@ -1382,6 +1449,13 @@ exports.resetPassword = async (req, res) => {
 
     if (!user) {
       return res.status(400).json({ message: 'Invalid or expired OTP. Please request a new code.' });
+    }
+
+    if (!canUsePasswordRecovery(user)) {
+      return res.status(403).json({
+        code: 'ACCOUNT_NOT_ELIGIBLE_FOR_PASSWORD_RESET',
+        message: 'Password reset is unavailable until this account is active and approved.',
+      });
     }
 
     const salt = await bcrypt.genSalt(10);

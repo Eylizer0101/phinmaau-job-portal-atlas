@@ -1133,8 +1133,16 @@ exports.deleteUser = async (req, res) => {
     }
 
     user.status = 'deleted';
+    user.isActive = false;
+    user.isVerified = false;
     user.deletedAt = new Date();
-    user.email = `${user.email}_deleted_${Date.now()}`;
+    user.passwordReset = {
+      tokenHash: '',
+      otpHash: '',
+      expiresAt: null,
+      requestedAt: null,
+      usedAt: null,
+    };
 
     await user.save();
 

@@ -33,9 +33,30 @@ const protect = async (req, res, next) => {
             }
             
             // ✅ ADDED: Check if user is active
-            if (req.user.status !== 'active') {
+            if (req.user.status !== 'active' || req.user.isActive !== true) {
                 return res.status(403).json({ 
+                    code: 'ACCOUNT_UNAVAILABLE',
                     message: 'Account is ' + req.user.status + '. Please contact admin.' 
+                });
+            }
+
+            if (
+                req.user.role === 'jobseeker' &&
+                String(req.user.jobSeekerProfile?.verificationStatus || '').toLowerCase() !== 'verified'
+            ) {
+                return res.status(403).json({
+                    code: 'JOBSEEKER_PENDING_APPROVAL',
+                    message: 'Your account is not verified. Your verification is pending approval from admin.'
+                });
+            }
+
+            if (
+                req.user.role === 'employer' &&
+                String(req.user.employerProfile?.verificationDocs?.overallStatus || '').toLowerCase() !== 'verified'
+            ) {
+                return res.status(403).json({
+                    code: 'PENDING_ADMIN_APPROVAL',
+                    message: 'Your account is under review. You will be able to continue once admin approves your account.'
                 });
             }
             

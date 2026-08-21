@@ -571,6 +571,14 @@ exports.applyForJob = async (req, res) => {
       });
     }
 
+    if (jobseeker.isActive !== true || String(jobseeker.status || '').toLowerCase() !== 'active') {
+      return res.status(403).json({
+        success: false,
+        code: 'ACCOUNT_UNAVAILABLE',
+        message: 'Your account is not active. Please contact admin.'
+      });
+    }
+
     const verificationStatus = jobseeker.jobSeekerProfile?.verificationStatus || 'not_submitted';
 
     if (verificationStatus !== 'verified') {

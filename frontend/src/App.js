@@ -123,6 +123,26 @@ const RequireRole = ({ role, redirectTo, children }) => {
   if (!token || !user) return <Navigate to={redirectTo} replace />;
   if (user.role !== role) return <Navigate to={redirectTo} replace />;
 
+  if (
+    role === 'jobseeker' &&
+    (
+      String(user.status || '').toLowerCase() !== 'active' ||
+      String(user.jobSeekerProfile?.verificationStatus || '').toLowerCase() !== 'verified'
+    )
+  ) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (
+    role === 'employer' &&
+    (
+      String(user.status || '').toLowerCase() !== 'active' ||
+      String(user.employerProfile?.verificationDocs?.overallStatus || '').toLowerCase() !== 'verified'
+    )
+  ) {
+    return <Navigate to="/login" replace />;
+  }
+
   return children;
 };
 
