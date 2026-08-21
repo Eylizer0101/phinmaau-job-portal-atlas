@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import JobSeekerLayout from '../../../layouts/JobSeekerLayout';
 import api from '../../../services/api';
 import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
+import { filterOpenJobListings } from '../../../utils/jobVisibility';
 
 
 
@@ -284,7 +285,13 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
     case 'tools':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M14.7 6.3a4 4 0 01-5 5L4 17v3h3l5.7-5.7a4 4 0 005-5L15 12l-3-3 2.7-2.7z" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.5}
+            d="M14.7 6.3a4 4 0 01-5.657 5.657l-5.04 5.04a2 2 0 102.829 2.828l5.04-5.04A4 4 0 0114.7 6.3z"
+          />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-3 3" />
         </svg>
       );
     case 'star':
@@ -1747,7 +1754,7 @@ const Bookmarks = () => {
 
       if (response.data?.success) {
         const jobs = Array.isArray(response.data.jobs) ? response.data.jobs : [];
-        const normalizedJobs = jobs.map((job) => ({
+        const normalizedJobs = filterOpenJobListings(jobs).map((job) => ({
           ...job,
           location: normalizeLocation(job),
         }));

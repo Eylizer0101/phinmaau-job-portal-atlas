@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { getProvinceFromLocation } from "../../../constants/phLocations";
+import { filterOpenJobListings } from '../../../utils/jobVisibility';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faClock,
@@ -294,7 +295,7 @@ const JobSeekerDashboard = () => {
 
       try {
         const jobsRes = await api.get('/jobs');
-        const jobs = normalizeJobsResponse(jobsRes);
+        const jobs = filterOpenJobListings(normalizeJobsResponse(jobsRes));
 
         const countMap = {};
         (jobs || []).forEach((job) => {
@@ -332,21 +333,7 @@ const JobSeekerDashboard = () => {
         console.error('Error fetching recommended job offers, falling back to all jobs:', recommendedError);
         jobsRes = await api.get('/jobs');
       }
-      const jobs = normalizeJobsResponse(jobsRes);
-
-      const now = new Date();
-
-      const filteredJobs = (jobs || []).filter((job) => {
-        if (!job) return false;
-        if (job.isPublished === false) return false;
-        if (job.isActive === false) return false;
-
-        if (!job.applicationDeadline) return true;
-        const deadline = new Date(job.applicationDeadline);
-        if (Number.isNaN(deadline.getTime())) return true;
-
-        return deadline >= now;
-      });
+      const filteredJobs = filterOpenJobListings(normalizeJobsResponse(jobsRes));
 
       setJobOffers(filteredJobs.slice(0, 2));
     } catch (error) {
@@ -1038,9 +1025,9 @@ const JobSeekerDashboard = () => {
       'vacancy full': {
         icon: faTimesCircle,
         label: 'Positions Filled',
-        bg: 'bg-orange-50',
-        text: 'text-orange-800',
-        border: 'border-orange-200',
+        bg: 'bg-orange-100',
+        text: 'text-orange-900',
+        border: 'border-orange-300',
       },
       declined: {
         icon: faTimesCircle,

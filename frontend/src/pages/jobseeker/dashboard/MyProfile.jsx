@@ -4366,7 +4366,7 @@ const MyProfile = () => {
   const yearOptions = useMemo(() => {
     const now = new Date().getFullYear();
     const arr = [];
-    for (let y = now; y >= 1950; y--) arr.push(String(y));
+    for (let y = now; y >= 1982; y--) arr.push(String(y));
     return arr;
   }, []);
 

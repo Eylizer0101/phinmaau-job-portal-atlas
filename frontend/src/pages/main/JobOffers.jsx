@@ -6,6 +6,7 @@ import AboutUsModal from "../../components/shared/AboutUsModal";
 import api from "../../services/api";
 import { EDUCATION_LEVELS } from "../../constants/postJobDropdownOptions";
 import { PH_PROVINCES_BY_REGION, PH_CITIES_BY_PROVINCE } from "../../constants/phLocations";
+import { filterOpenJobListings } from "../../utils/jobVisibility";
 
 const normalizeAmount = (value) => String(value || "").replace(/[^\d]/g, "");
 
@@ -923,20 +924,7 @@ const JobOffers = () => {
       setErrorMsg("");
       setLoadingInitial(true);
       const response = await api.get("/jobs");
-      const jobsData = normalizeJobsResponse(response);
-
-      const now = new Date();
-      const eligible = (jobsData || []).filter((job) => {
-        if (!job) return false;
-
-        if (job.isPublished === false) return false;
-        if (job.isActive === false) return false;
-
-        if (!job.applicationDeadline) return true;
-        const d = new Date(job.applicationDeadline);
-        if (Number.isNaN(d.getTime())) return true;
-        return d >= now;
-      });
+      const eligible = filterOpenJobListings(normalizeJobsResponse(response));
 
       setAllJobs(eligible);
     } catch (e) {

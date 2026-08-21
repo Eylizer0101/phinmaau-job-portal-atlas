@@ -1,6 +1,7 @@
 const HIDDEN_PUBLIC_JOB_STATUSES = new Set([
   "draft",
   "closed",
+  "expired",
   "filled",
   "archived",
   "inactive",

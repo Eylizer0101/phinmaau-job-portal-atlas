@@ -494,7 +494,7 @@ const MyApplications = () => {
       case 'declined':
         return 'text-red-700';
       case 'vacancy full':
-        return 'text-orange-700';
+        return 'text-orange-900';
       case 'pending':
       default:
         return 'text-gray-700';
@@ -1305,11 +1305,13 @@ const MyApplications = () => {
                                 state={{ sourcePage: 'myapplications' }}
                                 className={`${UI.btnBase} ${UI.btnMd} ${UI.btnInfo} ${UI.ring}`}
                               >
-                                View Job
+                                <SvgIcon name="eye" className="w-4 h-4" />
+                                Job
                               </Link>
                             ) : (
                               <span className={`${UI.btnBase} ${UI.btnMd} ${UI.btnInfo} opacity-60 cursor-not-allowed`} aria-disabled="true">
-                                View Job
+                                <SvgIcon name="eye" className="w-4 h-4" />
+                                Job
                               </span>
                             )}
                           </div>

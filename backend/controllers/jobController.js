@@ -1751,19 +1751,12 @@ exports.getSavedJobs = async (req, res) => {
     const user = await User.findById(req.user._id).populate({
       path: 'savedJobs',
       match: {
-        $and: [
-          {
-            $or: [
-              { isPublished: true },
-              { status: { $in: ['filled', 'closed'] } }
-            ]
-          },
-          {
-            $or: [
-              { isArchived: false },
-              { isArchived: { $exists: false } }
-            ]
-          }
+        isPublished: true,
+        isActive: true,
+        status: 'published',
+        $or: [
+          { isArchived: false },
+          { isArchived: { $exists: false } }
         ],
       },
       populate: {
@@ -1780,7 +1773,7 @@ exports.getSavedJobs = async (req, res) => {
       });
     }
 
-    const jobs = (user.savedJobs || []).map(job => {
+    const jobs = (user.savedJobs || []).filter((job) => isPublicJobOpen(job)).map(job => {
       const jobObj = job.toObject ? job.toObject() : job;
 
       if (!jobObj.companyLogo && jobObj.employer?.employerProfile?.companyLogo) {
