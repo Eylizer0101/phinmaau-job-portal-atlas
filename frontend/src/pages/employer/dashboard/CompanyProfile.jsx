@@ -677,7 +677,6 @@ const CredentialRow = ({
   inputRef,
   onUpload,
   onView,
-  onDownload,
   editable,
   saving,
 }) => {
@@ -699,28 +698,15 @@ const CredentialRow = ({
 
       <div className="flex shrink-0 items-center gap-2">
         {hasUploadedFile ? (
-          <>
-            <button
-              type="button"
-              onClick={() => onView?.(item.key)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#d1d5db] bg-white text-[#2e66a6] transition hover:bg-[#f9fafb] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
-              aria-label={`View ${item.label}`}
-              title="View"
-            >
-              <EyeIcon className="h-4 w-4" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onDownload?.(item.key)}
-              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-3 text-[12px] font-semibold text-white transition hover:bg-[#255487] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
-              aria-label={`Download ${item.label}`}
-              title={`Export ${item.label}`}
-            >
-              <DownloadIcon className="h-4 w-4" />
-              <span>Export {item.label}</span>
-            </button>
-          </>
+          <button
+            type="button"
+            onClick={() => onView?.(item.key)}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#d1d5db] bg-white text-[#2e66a6] transition hover:bg-[#f9fafb] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
+            aria-label={`Export ${item.label}`}
+            title={`Export ${item.label}`}
+          >
+            <EyeIcon className="h-4 w-4" />
+          </button>
         ) : (
           <StatusPill status={verification.status} url={verification.url} />
         )}
@@ -1575,11 +1561,6 @@ const CompanyProfile = () => {
   );
 
   const viewVerificationDoc = useCallback(
-    (docType) => openCredentialAccess(docType, 'view'),
-    [openCredentialAccess]
-  );
-
-  const downloadVerificationDoc = useCallback(
     (docType) => openCredentialAccess(docType, 'download'),
     [openCredentialAccess]
   );
@@ -1641,6 +1622,8 @@ const CompanyProfile = () => {
   const coverImage = previewCover || companyData.coverPhoto || defaultBanner;
   const hasAbout = Boolean(String(companyData.companyDescription || '').trim());
   const hasGallery = galleryDisplayItems.length > 0;
+  const activeCredentialLabel =
+    DOC_TYPES.find((doc) => doc.key === credentialAccess.docType)?.label || 'Credential';
   const hasSocial = socialLinks.length > 0;
 
   if (loading) {
@@ -1824,7 +1807,6 @@ const CompanyProfile = () => {
                             inputRef={docInputRefs}
                             onUpload={handleDocPick}
                             onView={viewVerificationDoc}
-                            onDownload={downloadVerificationDoc}
                             editable={true}
                             saving={saving}
                           />
@@ -1998,8 +1980,7 @@ const CompanyProfile = () => {
                 <div>
                   <h3 className="text-xl font-bold text-gray-900">Enter Password</h3>
                   <p className="mt-1 text-sm leading-5 text-gray-500">
-                    For your security, enter your account password before
-                    {credentialAccess.mode === 'download' ? ' downloading' : ' viewing'} this credential.
+                    For your security, enter your account password before exporting this credential.
                   </p>
                 </div>
 
@@ -2066,17 +2047,18 @@ const CompanyProfile = () => {
                   <button
                     type="submit"
                     disabled={credentialAccess.verifying}
-                    className="inline-flex h-10 min-w-[110px] items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white hover:bg-[#255487] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex h-10 min-w-[110px] items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white hover:bg-[#255487] disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {credentialAccess.verifying ? (
                       <>
                         <SpinnerIcon className="h-4 w-4" />
                         Verifying
                       </>
-                    ) : credentialAccess.mode === 'download' ? (
-                      'Download'
                     ) : (
-                      'View'
+                      <>
+                        <DownloadIcon className="h-4 w-4" />
+                        Export {activeCredentialLabel}
+                      </>
                     )}
                   </button>
                 </div>
