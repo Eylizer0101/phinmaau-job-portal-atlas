@@ -1608,41 +1608,65 @@ exports.restoreJob = async (req, res) => {
 
 exports.updateJobStatus = async (req, res) => {
   try {
-    const job = await Job.findById(req.params.id);
+    const job = await Job.findById(req.params.id).select('_id employer status isActive isPublished');
 
     if (!job) {
-      return res.status(404).json({ message: 'Job not found' });
+      return res.status(404).json({ success: false, message: 'Job not found' });
     }
 
     if (job.employer.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized to update job status' });
+      return res.status(403).json({ success: false, message: 'Not authorized to update job status' });
     }
 
-    const shouldActivate = Boolean(req.body.isActive);
+    if (typeof req.body.isActive !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: 'isActive must be either true or false'
+      });
+    }
 
-    job.isActive = shouldActivate;
+    const shouldActivate = req.body.isActive;
+
+    if (String(job.status || '').toLowerCase() === 'filled' && shouldActivate) {
+      return res.status(400).json({
+        success: false,
+        message: 'A filled job cannot be reopened.'
+      });
+    }
+
+    const statusUpdate = {
+      isActive: shouldActivate,
+      isPublished: true,
+      status: shouldActivate ? 'published' : 'closed'
+    };
 
     if (shouldActivate) {
-      job.status = 'published';
-      job.isPublished = true;
-      job.filledAt = null;
-      job.filledReason = '';
-    } else if (String(job.status || '').toLowerCase() !== 'filled') {
-      job.status = 'closed';
+      statusUpdate.filledAt = null;
+      statusUpdate.filledReason = '';
     }
 
-    await job.save();
+    // Update only the status-related fields. This prevents unrelated legacy
+    // job-field validators from blocking a simple Open/Close action.
+    const updatedJob = await Job.findOneAndUpdate(
+      { _id: job._id, employer: req.user._id },
+      { $set: statusUpdate },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedJob) {
+      return res.status(404).json({ success: false, message: 'Job not found' });
+    }
 
     res.status(200).json({
       success: true,
-      message: `Job ${shouldActivate ? 'activated' : 'closed'} successfully`,
-      job
+      message: `Job ${shouldActivate ? 'opened' : 'closed'} successfully`,
+      job: updatedJob
     });
   } catch (error) {
     console.error('Error updating job status:', error);
     res.status(500).json({
       success: false,
-      message: 'Error updating job status'
+      message: error?.message || 'Error updating job status'
     });
   }
 };
