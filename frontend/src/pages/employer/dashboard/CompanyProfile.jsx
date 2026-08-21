@@ -277,6 +277,12 @@ const EyeIcon = ({ className = 'w-5 h-5' }) => (
   </svg>
 );
 
+const DownloadIcon = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M12 3v12m0 0l-4-4m4 4l4-4M5 20h14" />
+  </svg>
+);
+
 const BuildingIcon = ({ className = 'w-5 h-5' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor">
     <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M6 21V7l6-3v17M18 21V11l-6-2" />
@@ -1616,6 +1622,8 @@ const CompanyProfile = () => {
   const coverImage = previewCover || companyData.coverPhoto || defaultBanner;
   const hasAbout = Boolean(String(companyData.companyDescription || '').trim());
   const hasGallery = galleryDisplayItems.length > 0;
+  const activeCredentialLabel =
+    DOC_TYPES.find((doc) => doc.key === credentialAccess.docType)?.label || 'Credential';
   const hasSocial = socialLinks.length > 0;
 
   if (loading) {
@@ -2047,7 +2055,10 @@ const CompanyProfile = () => {
                         Verifying
                       </>
                     ) : (
-                      'View'
+                      <>
+                        <DownloadIcon className="h-4 w-4" />
+                        Export {activeCredentialLabel}
+                      </>
                     )}
                   </button>
                 </div>
