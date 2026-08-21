@@ -8,6 +8,29 @@ const createMathChallenge = () => {
   return { left, right, answer: left + right };
 };
 
+const getPasswordStrength = (password) => {
+  if (!password) return null;
+
+  let score = 0;
+  if (password.length >= 6) score += 1;
+  if (password.length >= 8) score += 1;
+  if (password.length >= 12) score += 1;
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1;
+  if (/\d/.test(password)) score += 1;
+  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+
+  const levels = [
+    { label: 'Very Weak', textClass: 'text-red-600', barClass: 'bg-red-500', width: 'w-1/6' },
+    { label: 'Weak', textClass: 'text-red-600', barClass: 'bg-red-500', width: 'w-2/6' },
+    { label: 'Fair', textClass: 'text-orange-600', barClass: 'bg-orange-500', width: 'w-3/6' },
+    { label: 'Good', textClass: 'text-amber-600', barClass: 'bg-amber-500', width: 'w-4/6' },
+    { label: 'Strong', textClass: 'text-green-600', barClass: 'bg-green-500', width: 'w-5/6' },
+    { label: 'Very Strong', textClass: 'text-green-700', barClass: 'bg-green-600', width: 'w-full' },
+  ];
+
+  return levels[Math.max(0, Math.min(score - 1, levels.length - 1))];
+};
+
 const ResetPassword = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -229,6 +252,7 @@ const ResetPassword = () => {
   );
 
   const isExpired = secondsRemaining <= 0;
+  const passwordStrength = getPasswordStrength(formData.newPassword);
 
   return (
     <div className="min-h-screen bg-[#f4f7fb] px-4 py-8 sm:py-12">
@@ -294,17 +318,6 @@ const ResetPassword = () => {
             {fieldErrors.otp ? <p className="text-xs text-red-600">{fieldErrors.otp}</p> : null}
           </div>
 
-          {isExpired ? (
-            <button
-              type="button"
-              onClick={handleResendOtp}
-              disabled={resendLoading || loading}
-              className="mx-auto block text-sm font-semibold text-[#2e66a6] hover:text-[#245387] disabled:opacity-50"
-            >
-              {resendLoading ? 'Sending new OTP...' : recoveryEmail ? 'Request New OTP' : 'Request an OTP'}
-            </button>
-          ) : null}
-
           <div className="space-y-1.5">
             <label htmlFor="newPassword" className="block text-xs font-bold text-gray-900">New Password</label>
             <div className="relative">
@@ -330,6 +343,18 @@ const ResetPassword = () => {
               </button>
             </div>
             {fieldErrors.newPassword ? <p className="text-xs text-red-600">{fieldErrors.newPassword}</p> : null}
+            {passwordStrength ? (
+              <div className="space-y-1.5" aria-live="polite">
+                <div className="h-1.5 overflow-hidden rounded-full bg-gray-200">
+                  <div
+                    className={`h-full rounded-full transition-all duration-200 ${passwordStrength.width} ${passwordStrength.barClass}`}
+                  />
+                </div>
+                <p className={`text-xs font-semibold ${passwordStrength.textClass}`}>
+                  {passwordStrength.label}
+                </p>
+              </div>
+            ) : null}
           </div>
 
           <div className="space-y-1.5">
@@ -402,6 +427,20 @@ const ResetPassword = () => {
             </div>
             {fieldErrors.math ? <p className="mt-2 text-center text-xs text-red-600">{fieldErrors.math}</p> : null}
           </div>
+
+          {isExpired ? (
+            <p className="text-center text-sm text-red-600" role="alert" aria-live="assertive">
+              Your OTP has expired.{' '}
+              <button
+                type="button"
+                onClick={handleResendOtp}
+                disabled={resendLoading || loading}
+                className="font-semibold text-[#2e66a6] underline underline-offset-2 hover:text-[#245387] disabled:opacity-50"
+              >
+                {resendLoading ? 'Sending a new OTP...' : 'Please request a new one.'}
+              </button>
+            </p>
+          ) : null}
 
           <div className="flex items-center justify-center gap-3 pt-1">
             <button

@@ -1121,41 +1121,23 @@ const MyApplications = () => {
                   : 'No Applications Found'}
               </h3>
 
-              <p className={`mt-2 max-w-lg mx-auto ${UI.body} ${UI.textSecondary}`}>
-                {statusFilter === 'declined'
-                  ? 'You have no declined applications right now.'
-                  : mainTab === 'inactive'
-                  ? 'You have no withdrawn or cancelled applications right now.'
-                  : 'No applications match the selected status filter.'}
-              </p>
+              {statusFilter === 'declined' ? (
+                <>
+                  <p className={`mt-2 max-w-lg mx-auto ${UI.body} ${UI.textSecondary}`}>
+                    You have no declined applications right now.
+                  </p>
 
-              <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-                {statusFilter === 'declined' ? (
-                  <button
-                    onClick={() => handleMainTabChange('active')}
-                    className={`${UI.btnBase} ${UI.btnLg} ${UI.btnSecondary} ${UI.ring}`}
-                    type="button"
-                  >
-                    View Active
-                  </button>
-                ) : mainTab === 'active' ? (
-                  <button
-                    onClick={() => handleStatusFilterChange('all')}
-                    className={`${UI.btnBase} ${UI.btnLg} ${UI.btnSecondary} ${UI.ring}`}
-                    type="button"
-                  >
-                    View All Active
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleMainTabChange('active')}
-                    className={`${UI.btnBase} ${UI.btnLg} ${UI.btnSecondary} ${UI.ring}`}
-                    type="button"
-                  >
-                    View Active
-                  </button>
-                )}
-              </div>
+                  <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+                    <button
+                      onClick={() => handleMainTabChange('active')}
+                      className={`${UI.btnBase} ${UI.btnLg} ${UI.btnSecondary} ${UI.ring}`}
+                      type="button"
+                    >
+                      View Active
+                    </button>
+                  </div>
+                </>
+              ) : null}
             </div>
           ) : (
             <div className="space-y-6">
