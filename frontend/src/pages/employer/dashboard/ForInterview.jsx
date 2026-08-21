@@ -989,17 +989,17 @@ const HiringStageModal = ({
 }) => {
   const [customStage, setCustomStage] = useState('');
   const [localError, setLocalError] = useState('');
+  const [selectedStage, setSelectedStage] = useState('');
 
   useEffect(() => {
     if (open) {
       setCustomStage('');
       setLocalError('');
+      setSelectedStage(String(application?.hiringStage || '').trim());
     }
   }, [open, application?._id]);
 
   if (!open || !application) return null;
-
-  const currentStage = String(application?.hiringStage || '').trim();
 
   const addCustomStage = async () => {
     const value = customStage.replace(/\s+/g, ' ').trim();
@@ -1009,7 +1009,21 @@ const HiringStageModal = ({
     }
     setLocalError('');
     const added = await onAddCustom(value);
-    if (added) setCustomStage('');
+    if (added) {
+      setCustomStage('');
+      setSelectedStage(value);
+    }
+  };
+
+  const finishHiringStage = async () => {
+    if (!selectedStage) {
+      onClose();
+      return;
+    }
+
+    setLocalError('');
+    const saved = await onSelect(selectedStage);
+    if (saved) onClose();
   };
 
   return (
@@ -1042,7 +1056,7 @@ const HiringStageModal = ({
               </div>
             ) : null}
             {stages.map((stage, index) => {
-              const selected = isSameHiringStage(stage, currentStage);
+              const selected = isSameHiringStage(stage, selectedStage);
 
               return (
                 <div
@@ -1057,7 +1071,7 @@ const HiringStageModal = ({
                   <button
                     type="button"
                     disabled={busy}
-                    onClick={() => onSelect(stage)}
+                    onClick={() => setSelectedStage(stage)}
                     className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6] disabled:cursor-not-allowed disabled:opacity-60"
                     aria-pressed={selected}
                   >
@@ -1084,7 +1098,12 @@ const HiringStageModal = ({
                   <button
                     type="button"
                     disabled={busy}
-                    onClick={() => onDeleteStage(stage)}
+                    onClick={async () => {
+                      const deleted = await onDeleteStage(stage);
+                      if (deleted && isSameHiringStage(stage, selectedStage)) {
+                        setSelectedStage('');
+                      }
+                    }}
                     className="flex w-12 shrink-0 items-center justify-center border-l border-inherit text-red-500 transition hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label={`Delete ${stage}`}
                     title={`Delete ${stage}`}
@@ -1126,7 +1145,7 @@ const HiringStageModal = ({
               </button>
               <button
                 type="button"
-                onClick={onClose}
+                onClick={finishHiringStage}
                 disabled={busy}
                 className="h-11 rounded-xl border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
               >
@@ -1802,17 +1821,8 @@ const ForInterview = () => {
         throw new Error(addResponseData.message || 'Failed to add custom hiring stage.');
       }
 
-      if (addResponseData.finalStatus === 'hired' || addResponseData.finalStatus === 'declined') {
-        setApplications((previous) => previous.filter((item) => item._id !== stageTarget._id));
-        setSuccess(addResponseData.message || `Applicant marked as ${addResponseData.finalStatus}.`);
-        setStageModalOpen(false);
-        setStageTarget(null);
-        setHiringStageOrder([]);
-        return true;
-      }
-
       applyHiringStageResponse(addResponseData, stage);
-      setSuccess('Hiring stage added and assigned to this applicant.');
+      setSuccess('Hiring stage added. Click Done to apply it.');
       return true;
     } catch (stageError) {
       setError(stageError?.response?.data?.message || stageError?.message || 'Failed to add custom hiring stage.');
@@ -1823,7 +1833,7 @@ const ForInterview = () => {
   };
 
   const handleDeleteHiringStage = async (stage) => {
-    if (!stageTarget?._id || stageBusy) return;
+    if (!stageTarget?._id || stageBusy) return false;
 
     try {
       setStageBusy(true);
@@ -1843,12 +1853,14 @@ const ForInterview = () => {
       applyHiringStageResponse(responseData);
 
       setSuccess(responseData.message || 'Hiring stage deleted.');
+      return true;
     } catch (stageError) {
       setError(
         stageError?.response?.data?.message ||
           stageError?.message ||
           'Failed to delete hiring stage.'
       );
+      return false;
     } finally {
       setStageBusy(false);
     }

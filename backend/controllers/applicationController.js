@@ -2049,7 +2049,13 @@ exports.updateApplicationHiringStage = async (req, res) => {
       }
 
       application.hiringStages.push(requestedStage);
-      application.hiringStage = requestedStage;
+      await application.save();
+
+      return res.status(200).json({
+        success: true,
+        message: 'Hiring stage added',
+        application
+      });
     }
 
     if (action === 'delete' || action === 'deletecustom') {
@@ -2218,7 +2224,7 @@ exports.updateApplicationHiringStage = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: action === 'addcustom' ? 'Hiring stage added and assigned' : action === 'reset' ? 'Hiring stage reset' : 'Hiring stage updated',
+      message: action === 'reset' ? 'Hiring stage reset' : 'Hiring stage updated',
       application
     });
   } catch (error) {
