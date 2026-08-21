@@ -171,10 +171,6 @@ const getJobTitleError = (value = '') => {
   return '';
 };
 
-const preventInvalidNumberKeys = (event) => {
-  if (['e', 'E', '+', '-', '.'].includes(event.key)) event.preventDefault();
-};
-
 const RichTextToolbarButton = ({
   title,
   children,
@@ -2573,9 +2569,15 @@ const EditJob = () => {
                               <input
                                 type="number"
                                 name="vacancies"
-                                onKeyDown={preventInvalidNumberKeys}
                                 value={formData.vacancies}
                                 onChange={handleChange}
+                                onKeyDown={(event) => {
+                                  if (['e', 'E', '+', '-', '.'].includes(event.key)) event.preventDefault();
+                                }}
+                                onPaste={(event) => {
+                                  const pasted = event.clipboardData.getData('text');
+                                  if (!/^\d+$/.test(pasted)) event.preventDefault();
+                                }}
                                 onBlur={() => markTouched('vacancies')}
                                 min="1"
                                 max="50"
@@ -2870,7 +2872,7 @@ const EditJob = () => {
                         })}
                       </div>
 
-                      <Field id="otherBenefits" label="Perks & Benefits (Optional)">
+                      <Field id="otherBenefits" label="More Perks & Benefits (Optional)">
                         <div className="flex min-h-[50px] items-center rounded-xl border border-gray-300 bg-white focus-within:border-[#2e66a6] focus-within:ring-2 focus-within:ring-[#2e66a6]"><input id="otherBenefits" value={customBenefitInput} onChange={(event) => setCustomBenefitInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addCustomBenefit(customBenefitInput); } }} maxLength={80} disabled={isBusy} className="min-w-0 flex-1 bg-transparent px-4 py-3 text-gray-900 outline-none" placeholder="e.g., Paid Bereavement Leave" /><button type="button" onClick={() => addCustomBenefit(customBenefitInput)} disabled={isBusy || !customBenefitInput.trim()} className="mr-2 h-9 rounded-lg bg-[#2e66a6] px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45">Add</button></div>
                       </Field>
                       {customBenefits.length > 0 && <div className="flex flex-wrap gap-2">{customBenefits.map((benefit, index) => <span key={`${benefit}-${index}`} className="inline-flex items-center gap-2 rounded-xl border border-[#cdddf0] bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#24558d]">{benefit}<button type="button" onClick={() => removeCustomBenefit(index)} disabled={isBusy} aria-label={`Remove ${benefit}`} className="text-base hover:text-red-600">×</button></span>)}</div>}
@@ -3199,7 +3201,7 @@ const EditJob = () => {
                                 </svg>
                               ) : metric.icon === 'graduation' ? (
                                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 3 2 8l10 5 8-4v6M6 10.5V15c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 3L2.5 8 12 13l7-3.684V15m-14-5v6.5L12 21l7-4.5V10" />
                                 </svg>
                               ) : (
                                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

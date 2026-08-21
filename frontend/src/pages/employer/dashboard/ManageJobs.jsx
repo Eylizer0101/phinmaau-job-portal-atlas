@@ -729,21 +729,6 @@ const ManageJobs = () => {
   const safeTitle = (job) => (job.title && job.title.trim() ? job.title : '—');
   const safeCompany = (job) => (job.companyName && job.companyName.trim() ? job.companyName : '—');
 
-  const getVacancyValue = (job) => {
-    const candidates = [
-      job?.vacancy,
-      job?.vacancies,
-      job?.numberOfVacancies,
-      job?.positionsAvailable,
-      job?.slots,
-      job?.headcount,
-      job?.openingCount,
-    ];
-
-    const found = candidates.find((value) => value !== undefined && value !== null && value !== '');
-    return found ?? '—';
-  };
-
   const getApplicantValue = (job) => {
     const candidates = [
       job?.applicationCount,
@@ -1149,7 +1134,6 @@ const ManageJobs = () => {
           j.category,
           j.jobType,
           j.workMode,
-          String(getVacancyValue(j)),
           String(getApplicantValue(j)),
           getStatusText(j),
           formatDate(j.createdAt),
@@ -1603,7 +1587,7 @@ const ManageJobs = () => {
                               type="button"
                               onClick={() => setStatusConfirmationJob(job)}
                               disabled={busyThisRow}
-                              className="inline-flex h-10 items-center justify-center rounded-lg border border-amber-300 bg-amber-50 px-3 text-sm font-semibold text-amber-900 transition hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex h-10 items-center justify-center rounded-lg border border-amber-500 bg-amber-400 px-3 text-sm font-semibold text-gray-900 transition hover:bg-amber-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                               aria-label={`${derivedStatus === 'open' ? 'Close Job' : 'Open Job'} ${title}`}
                               title={derivedStatus === 'open' ? 'Close Job' : 'Open Job'}
                             >
@@ -1620,7 +1604,7 @@ const ManageJobs = () => {
                               onClick={() => handlePublish(job._id)}
                               disabled={busyThisRow || !isEmployerVerified}
                               title={!isEmployerVerified ? 'Verify your company to publish jobs.' : 'Publish'}
-                              className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#173f8a] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                               aria-label={`Publish ${title}`}
                             >
                               {busyThisRow && action.type === 'publish' ? (
@@ -1654,11 +1638,11 @@ const ManageJobs = () => {
                   <table className="min-w-full divide-y divide-gray-200">
                     <colgroup>
                       <col className="w-[13%]" />
-                      <col className="w-[25%]" />
+                      <col className="w-[26%]" />
                       <col className="w-[10%]" />
                       <col className="w-[12%]" />
                       <col className="w-[15%]" />
-                      <col className="w-[25%]" />
+                      <col className="w-[24%]" />
                     </colgroup>
 
                     <thead className="bg-gray-50">
@@ -1833,7 +1817,7 @@ const ManageJobs = () => {
                                     disabled={busyThisRow}
                                     className={cn(
                                       'inline-flex h-10 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-                                      'border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 focus-visible:ring-amber-500'
+                                      'border border-amber-500 bg-amber-400 text-gray-900 hover:bg-amber-500 focus-visible:ring-amber-500'
                                     )}
                                     aria-label={`${derivedStatus === 'open' ? 'Close Job' : 'Open Job'} ${title}`}
                                     title={derivedStatus === 'open' ? 'Close Job' : 'Open Job'}
@@ -1851,7 +1835,7 @@ const ManageJobs = () => {
                                     onClick={() => handlePublish(job._id)}
                                     disabled={busyThisRow || !isEmployerVerified}
                                     title={!isEmployerVerified ? 'Verify your company to publish jobs.' : 'Publish'}
-                                    className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#173f8a] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                     aria-label={`Publish ${title}`}
                                   >
                                     {busyThisRow && action.type === 'publish' ? (
@@ -1994,15 +1978,15 @@ const ManageJobs = () => {
               }
             }}
           >
-            <div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl">
-              <div className="border-b border-gray-200 px-7 py-6">
+            <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl">
+              <div className="border-b border-gray-200 px-5 py-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3">
                     <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full bg-amber-50 text-amber-600">
                       <Icon name="shield" className="h-5 w-5" />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-bold text-[#173f8a]">Submit edit request</h2>
+                      <h2 className="text-xl font-bold text-[#173f8a]">Submit edit request</h2>
                       <p className="mt-1 text-sm leading-6 text-gray-500">
                         The administrator will review your request and temporarily unlock “{safeTitle(lockedJob)}” if approved.
                       </p>
@@ -2020,7 +2004,7 @@ const ManageJobs = () => {
                 </div>
               </div>
 
-              <div className="space-y-6 px-7 py-6">
+              <div className="space-y-4 px-5 py-4">
                 <div>
                   <p className="mb-3 text-base font-bold text-[#173f8a]">What needs to change?</p>
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -2031,7 +2015,6 @@ const ManageJobs = () => {
                       'Work Locations',
                       'Salary',
                       'Deadline',
-                      'Vacancies',
                     ].map((section) => (
                       <label
                         key={section}
@@ -2062,15 +2045,15 @@ const ManageJobs = () => {
                     id="edit-request-reason"
                     value={requestReason}
                     onChange={(event) => setRequestReason(event.target.value)}
-                    rows={5}
+                    rows={4}
                     maxLength={1000}
                     placeholder="Explain why this post needs to be edited..."
-                    className="mt-3 w-full resize-y rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+                    className="mt-2 w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 border-t border-gray-200 px-7 py-5">
+              <div className="flex justify-end gap-3 border-t border-gray-200 px-5 py-4">
                 <button
                   type="button"
                   onClick={() => setShowRequestModal(false)}
@@ -2099,7 +2082,7 @@ const ManageJobs = () => {
 
         {statusConfirmationJob && (() => {
           const status = getDerivedStatus(statusConfirmationJob);
-          const isReopening = status === 'closed' || status === 'expired';
+          const isReopening = status !== 'open';
           const busy =
             action.jobId === statusConfirmationJob._id &&
             ['open', 'close'].includes(action.type);

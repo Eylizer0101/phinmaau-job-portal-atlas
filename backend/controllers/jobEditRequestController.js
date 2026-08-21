@@ -11,7 +11,6 @@ const ALLOWED_SECTIONS = [
   'Work Locations',
   'Salary',
   'Deadline',
-  'Vacancies',
 ];
 
 const getPublishedAt = (job) => {

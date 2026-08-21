@@ -130,10 +130,6 @@ const getJobTitleError = (value = '') => {
   return '';
 };
 
-const preventInvalidNumberKeys = (event) => {
-  if (['e', 'E', '+', '-', '.'].includes(event.key)) event.preventDefault();
-};
-
 const addMonthsLocalISO = (date, months) => {
   const result = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const originalDay = result.getDate();
@@ -2091,9 +2087,15 @@ const PostJob = () => {
                                 id="vacancies"
                                 type="number"
                                 name="vacancies"
-                                onKeyDown={preventInvalidNumberKeys}
                                 value={formData.vacancies}
                                 onChange={handleChange}
+                                onKeyDown={(event) => {
+                                  if (['e', 'E', '+', '-', '.'].includes(event.key)) event.preventDefault();
+                                }}
+                                onPaste={(event) => {
+                                  const pasted = event.clipboardData.getData('text');
+                                  if (!/^\d+$/.test(pasted)) event.preventDefault();
+                                }}
                                 onBlur={() => markTouched('vacancies')}
                                 min="1"
                                 max="50"
@@ -2426,7 +2428,7 @@ const PostJob = () => {
 
                       <Field
                         id="otherBenefits"
-                        label="Perks & Benefits (Optional)"
+                        label="More Perks & Benefits (Optional)"
                       >
                         <div className="flex min-h-[50px] items-center rounded-xl border border-gray-300 bg-white focus-within:border-[#2e66a6] focus-within:ring-2 focus-within:ring-[#2e66a6]">
                           <input
@@ -2750,7 +2752,7 @@ const PostJob = () => {
                             </svg>
                           ) : metric.icon === 'graduation' ? (
                             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 3 2 8l10 5 8-4v6M6 10.5V15c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 3L2.5 8 12 13l7-3.684V15m-14-5v6.5L12 21l7-4.5V10" />
                             </svg>
                           ) : (
                             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
