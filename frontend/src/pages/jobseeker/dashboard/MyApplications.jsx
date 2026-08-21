@@ -1282,7 +1282,7 @@ const MyApplications = () => {
                                 disabled={isActionLoading}
                                 className={`${UI.btnBase} ${UI.btnMd} ${UI.btnDangerSoft} ${UI.ring}`}
                               >
-                                <SvgIcon name="timesCircle" className="w-4 h-4" />
+                                <SvgIcon name="minusCircle" className="w-4 h-4" />
                                 Withdraw
                               </button>
                             )}
