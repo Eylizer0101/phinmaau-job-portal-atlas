@@ -1627,6 +1627,12 @@ exports.updateJobStatus = async (req, res) => {
       job.isPublished = true;
       job.filledAt = null;
       job.filledReason = '';
+      const currentDeadline = job.applicationDeadline ? new Date(job.applicationDeadline) : null;
+      if (!currentDeadline || Number.isNaN(currentDeadline.getTime()) || currentDeadline < new Date()) {
+        const extendedDeadline = new Date();
+        extendedDeadline.setDate(extendedDeadline.getDate() + 30);
+        job.applicationDeadline = extendedDeadline;
+      }
     } else if (String(job.status || '').toLowerCase() !== 'filled') {
       job.status = 'closed';
     }

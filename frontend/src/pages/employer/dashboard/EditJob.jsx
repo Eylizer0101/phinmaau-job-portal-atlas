@@ -158,7 +158,6 @@ const JOB_TEXT_MIN = 1000;
 const JOB_TEXT_MAX = 2000;
 const MAX_SALARY = 999999;
 const INVALID_JOB_TITLE_WORDS = ['iloveyou', 'i love you', 'love you', 'mahal kita', 'fuck', 'shit', 'bitch', 'sex', 'sexy', 'porn', 'xxx', 'test', 'asdf', 'qwerty', 'sample', 'random'];
-const JOB_ROLE_WORDS = ['accountant', 'administrator', 'analyst', 'architect', 'assistant', 'auditor', 'cashier', 'clerk', 'consultant', 'coordinator', 'designer', 'developer', 'director', 'driver', 'electrician', 'engineer', 'instructor', 'manager', 'mechanic', 'nurse', 'officer', 'operator', 'programmer', 'recruiter', 'representative', 'secretary', 'specialist', 'staff', 'supervisor', 'teacher', 'technician', 'writer', 'teller', 'associate', 'executive', 'sales', 'marketing', 'human resources', 'information technology', 'hr', 'it'];
 const normalizeSingleLine = (value = '') => String(value || '').replace(/\s+/g, ' ').trim();
 const getJobTitleError = (value = '') => {
   const title = normalizeSingleLine(value);
@@ -169,8 +168,11 @@ const getJobTitleError = (value = '') => {
   if (!/^[a-zA-ZÀ-ÿ&/().,'’+\-\s]+$/.test(title)) return 'Enter a valid job title using letters only.';
   if (INVALID_JOB_TITLE_WORDS.some((word) => lower.includes(word))) return 'Enter a professional, job-related title.';
   if (/(.)\1{3,}/i.test(title) || !/[aeiou]/i.test(title.replace(/\b(hr|it)\b/gi, ''))) return 'Enter a valid, recognizable job title.';
-  if (!JOB_ROLE_WORDS.some((word) => new RegExp(`\\b${word.replace(/\s+/g, '\\s+')}\\b`, 'i').test(title))) return 'Enter a valid job title, such as Software Developer or Administrative Assistant.';
   return '';
+};
+
+const preventInvalidNumberKeys = (event) => {
+  if (['e', 'E', '+', '-', '.'].includes(event.key)) event.preventDefault();
 };
 
 const RichTextToolbarButton = ({
@@ -540,6 +542,8 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
         const point = markerRef.current.getLatLng();
         await reverseLookup(point.lat, point.lng);
       });
+    } else if (name === 'vacancies') {
+      setFormData((prev) => ({ ...prev, [name]: value.replace(/\D/g, '').slice(0, 2) }));
     } else {
       markerRef.current.setLatLng(nextPoint);
     }
@@ -2261,6 +2265,8 @@ const EditJob = () => {
       const payload = buildPayload({ mode: 'publish' });
       const response = await persist(payload);
       const savedId = response.data?.job?._id || response.data?.job?.id || id;
+      setSuccess('Job posted successfully!');
+      await new Promise((resolve) => setTimeout(resolve, 1200));
       navigate(`/employer/manage-jobs/${savedId}/view`, {
         state: { jobEditSuccess: true, successType: 'edit-publish' },
       });
@@ -2567,6 +2573,7 @@ const EditJob = () => {
                               <input
                                 type="number"
                                 name="vacancies"
+                                onKeyDown={preventInvalidNumberKeys}
                                 value={formData.vacancies}
                                 onChange={handleChange}
                                 onBlur={() => markTouched('vacancies')}
@@ -2863,7 +2870,7 @@ const EditJob = () => {
                         })}
                       </div>
 
-                      <Field id="otherBenefits" label="More Benefits & Perks (Optional)">
+                      <Field id="otherBenefits" label="Perks & Benefits (Optional)">
                         <div className="flex min-h-[50px] items-center rounded-xl border border-gray-300 bg-white focus-within:border-[#2e66a6] focus-within:ring-2 focus-within:ring-[#2e66a6]"><input id="otherBenefits" value={customBenefitInput} onChange={(event) => setCustomBenefitInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addCustomBenefit(customBenefitInput); } }} maxLength={80} disabled={isBusy} className="min-w-0 flex-1 bg-transparent px-4 py-3 text-gray-900 outline-none" placeholder="e.g., Paid Bereavement Leave" /><button type="button" onClick={() => addCustomBenefit(customBenefitInput)} disabled={isBusy || !customBenefitInput.trim()} className="mr-2 h-9 rounded-lg bg-[#2e66a6] px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45">Add</button></div>
                       </Field>
                       {customBenefits.length > 0 && <div className="flex flex-wrap gap-2">{customBenefits.map((benefit, index) => <span key={`${benefit}-${index}`} className="inline-flex items-center gap-2 rounded-xl border border-[#cdddf0] bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#24558d]">{benefit}<button type="button" onClick={() => removeCustomBenefit(index)} disabled={isBusy} aria-label={`Remove ${benefit}`} className="text-base hover:text-red-600">×</button></span>)}</div>}

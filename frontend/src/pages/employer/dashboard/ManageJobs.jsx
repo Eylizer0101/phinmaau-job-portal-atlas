@@ -1003,9 +1003,9 @@ const ManageJobs = () => {
     const jobId = job?._id;
     const currentStatus = getDerivedStatus(job);
 
-    if (!jobId || !['open', 'closed'].includes(currentStatus) || action.jobId) return;
+    if (!jobId || !['open', 'closed', 'expired'].includes(currentStatus) || action.jobId) return;
 
-    const shouldOpen = currentStatus === 'closed';
+    const shouldOpen = currentStatus !== 'open';
 
     try {
       setOpenStatusMenuId('');
@@ -1241,16 +1241,12 @@ const ManageJobs = () => {
       const createdB = safeDate(b?.createdAt);
       const applicantsA = Number(getApplicantValue(a)) || 0;
       const applicantsB = Number(getApplicantValue(b)) || 0;
-      const vacanciesA = Number(getVacancyValue(a)) || 0;
-      const vacanciesB = Number(getVacancyValue(b)) || 0;
       const expiryA = safeDate(a?.applicationDeadline);
       const expiryB = safeDate(b?.applicationDeadline);
 
       if (sortBy === 'oldest_first') return createdA - createdB;
       if (sortBy === 'most_applicants') return applicantsB - applicantsA || createdB - createdA;
       if (sortBy === 'fewest_applicants') return applicantsA - applicantsB || createdB - createdA;
-      if (sortBy === 'most_vacancies') return vacanciesB - vacanciesA || createdB - createdA;
-      if (sortBy === 'fewest_vacancies') return vacanciesA - vacanciesB || createdB - createdA;
       if (sortBy === 'expiring_soon') return expiryA - expiryB || createdB - createdA;
       if (sortBy === 'latest_expiration') return expiryB - expiryA || createdB - createdA;
 
@@ -1441,8 +1437,6 @@ const ManageJobs = () => {
                   <option value="oldest_first">Oldest First</option>
                   <option value="most_applicants">Most Applicants</option>
                   <option value="fewest_applicants">Fewest Applicants</option>
-                  <option value="most_vacancies">Most Vacancies</option>
-                  <option value="fewest_vacancies">Fewest Vacancies</option>
                   <option value="expiring_soon">Expiring Soon</option>
                   <option value="latest_expiration">Latest Expiration</option>
                 </select>
@@ -1571,10 +1565,6 @@ const ManageJobs = () => {
                             <p className="mt-1 font-medium text-gray-800">{formatDate(job.applicationDeadline)}</p>
                           </div>
                           <div className="rounded-xl bg-gray-50 p-3">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Vacancy</p>
-                            <p className="mt-1 font-medium text-gray-800">{getVacancyValue(job)}</p>
-                          </div>
-                          <div className="rounded-xl bg-gray-50 p-3">
                             <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Applicant</p>
                             <p className="mt-1 font-medium text-gray-800">{getApplicantValue(job)}</p>
                           </div>
@@ -1600,9 +1590,7 @@ const ManageJobs = () => {
                             onClick={() => handleEditAction(job)}
                             className={cn(
                               'inline-flex h-10 items-center justify-center rounded-lg border px-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-                              isJobEditLocked(job)
-                                ? 'border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 focus-visible:ring-amber-500'
-                                : 'border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:ring-[#2e66a6]'
+                              'border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:ring-[#2e66a6]'
                             )}
                             aria-label={`${isJobEditLocked(job) ? 'Request edit access for' : 'Edit'} ${title}`}
                             title={isJobEditLocked(job) ? 'Editing locked — request access' : 'Edit'}
@@ -1610,12 +1598,12 @@ const ManageJobs = () => {
                             <Icon name="edit" className="h-4 w-4" />
                           </button>
 
-                          {['open', 'closed'].includes(derivedStatus) && (
+                          {['open', 'closed', 'expired'].includes(derivedStatus) && (
                             <button
                               type="button"
                               onClick={() => setStatusConfirmationJob(job)}
                               disabled={busyThisRow}
-                              className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex h-10 items-center justify-center rounded-lg border border-amber-300 bg-amber-50 px-3 text-sm font-semibold text-amber-900 transition hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                               aria-label={`${derivedStatus === 'open' ? 'Close Job' : 'Open Job'} ${title}`}
                               title={derivedStatus === 'open' ? 'Close Job' : 'Open Job'}
                             >
@@ -1632,7 +1620,7 @@ const ManageJobs = () => {
                               onClick={() => handlePublish(job._id)}
                               disabled={busyThisRow || !isEmployerVerified}
                               title={!isEmployerVerified ? 'Verify your company to publish jobs.' : 'Publish'}
-                              className="inline-flex h-10 items-center justify-center rounded-lg bg-[#173f8a] px-3 text-sm font-semibold text-white transition hover:bg-[#12336f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#173f8a] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#173f8a] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                               aria-label={`Publish ${title}`}
                             >
                               {busyThisRow && action.type === 'publish' ? (
@@ -1666,12 +1654,11 @@ const ManageJobs = () => {
                   <table className="min-w-full divide-y divide-gray-200">
                     <colgroup>
                       <col className="w-[13%]" />
-                      <col className="w-[22%]" />
-                      <col className="w-[8%]" />
-                      <col className="w-[9%]" />
-                      <col className="w-[11%]" />
-                      <col className="w-[13%]" />
-                      <col className="w-[24%]" />
+                      <col className="w-[25%]" />
+                      <col className="w-[10%]" />
+                      <col className="w-[12%]" />
+                      <col className="w-[15%]" />
+                      <col className="w-[25%]" />
                     </colgroup>
 
                     <thead className="bg-gray-50">
@@ -1681,9 +1668,6 @@ const ManageJobs = () => {
                         </th>
                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Job Title
-                        </th>
-                        <th scope="col" className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
-                          Vacancy
                         </th>
                         <th scope="col" className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Applicant
@@ -1788,10 +1772,6 @@ const ManageJobs = () => {
                             </td>
 
                             <td className="px-6 py-4 text-center align-middle text-sm font-medium text-gray-800">
-                              {getVacancyValue(job)}
-                            </td>
-
-                            <td className="px-6 py-4 text-center align-middle text-sm font-medium text-gray-800">
                               {getApplicantValue(job)}
                             </td>
 
@@ -1838,9 +1818,7 @@ const ManageJobs = () => {
                                   onClick={() => handleEditAction(job)}
                                   className={cn(
                                     'inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-                                    isJobEditLocked(job)
-                                      ? 'border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 focus-visible:ring-amber-500'
-                                      : 'border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:ring-[#2e66a6]'
+                                    'border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:ring-[#2e66a6]'
                                   )}
                                   aria-label={`${isJobEditLocked(job) ? 'Request edit access for' : 'Edit'} ${title}`}
                                   title={isJobEditLocked(job) ? 'Editing locked — request access' : 'Edit'}
@@ -1848,16 +1826,14 @@ const ManageJobs = () => {
                                   <Icon name="edit" className="h-4 w-4" />
                                 </button>
 
-                                {['open', 'closed'].includes(derivedStatus) && (
+                                {['open', 'closed', 'expired'].includes(derivedStatus) && (
                                   <button
                                     type="button"
                                     onClick={() => setStatusConfirmationJob(job)}
                                     disabled={busyThisRow}
                                     className={cn(
                                       'inline-flex h-10 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-                                      derivedStatus === 'closed'
-                                        ? 'bg-amber-400 text-gray-900 hover:bg-amber-500 focus-visible:ring-amber-500'
-                                        : 'border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 focus-visible:ring-[#2e66a6]'
+                                      'border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 focus-visible:ring-amber-500'
                                     )}
                                     aria-label={`${derivedStatus === 'open' ? 'Close Job' : 'Open Job'} ${title}`}
                                     title={derivedStatus === 'open' ? 'Close Job' : 'Open Job'}
@@ -1875,7 +1851,7 @@ const ManageJobs = () => {
                                     onClick={() => handlePublish(job._id)}
                                     disabled={busyThisRow || !isEmployerVerified}
                                     title={!isEmployerVerified ? 'Verify your company to publish jobs.' : 'Publish'}
-                                    className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg bg-[#173f8a] px-3 text-sm font-semibold text-white transition hover:bg-[#12336f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#173f8a] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#173f8a] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                     aria-label={`Publish ${title}`}
                                   >
                                     {busyThisRow && action.type === 'publish' ? (
@@ -2123,7 +2099,7 @@ const ManageJobs = () => {
 
         {statusConfirmationJob && (() => {
           const status = getDerivedStatus(statusConfirmationJob);
-          const isReopening = status === 'closed';
+          const isReopening = status === 'closed' || status === 'expired';
           const busy =
             action.jobId === statusConfirmationJob._id &&
             ['open', 'close'].includes(action.type);
