@@ -1044,6 +1044,43 @@ const HiringStageModal = ({
         </div>
 
         <div className="px-6 pb-5">
+          <div>
+            <label htmlFor="customHiringStage" className="text-sm font-semibold text-gray-800">
+              Type the stage this applicant is currently in
+            </label>
+            <div className="mt-2 flex gap-2">
+              <input
+                id="customHiringStage"
+                value={customStage}
+                onChange={(event) => setCustomStage(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    addCustomStage();
+                  }
+                }}
+                maxLength={80}
+                placeholder="e.g. Initial Interview, Assessment, Job Offer"
+                className="h-11 min-w-0 flex-1 rounded-xl border border-gray-300 px-4 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
+              />
+              <button
+                type="button"
+                disabled={busy || !customStage.trim()}
+                onClick={addCustomStage}
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#102a78] px-5 text-sm font-semibold text-white hover:bg-[#0d2365] disabled:opacity-50"
+              >
+                <span className="text-lg leading-none">+</span>
+                Add
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              The stage you add is applied to this applicant after you click Done.
+            </p>
+            {localError ? <p className="mt-2 text-xs font-medium text-red-600">{localError}</p> : null}
+          </div>
+
+          <div className="my-4 border-t border-gray-200" />
+
           <div className="mb-2 flex items-center justify-between text-xs font-semibold text-gray-700">
             <span>Stages you added</span>
             <span className="text-gray-500">{stages.length} stage(s)</span>
@@ -1115,44 +1152,15 @@ const HiringStageModal = ({
             })}
           </div>
 
-          <div className="mt-4">
-            <label htmlFor="customHiringStage" className="text-sm font-semibold text-gray-800">
-              Type the stage this applicant is currently in
-            </label>
-            <div className="mt-2 flex gap-2">
-              <input
-                id="customHiringStage"
-                value={customStage}
-                onChange={(event) => setCustomStage(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault();
-                    addCustomStage();
-                  }
-                }}
-                maxLength={80}
-                placeholder="e.g. Initial Interview, Assessment, Job Offer"
-                className="h-11 min-w-0 flex-1 rounded-xl border border-gray-300 px-4 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
-              />
-              <button
-                type="button"
-                disabled={busy || !customStage.trim()}
-                onClick={addCustomStage}
-                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#102a78] px-5 text-sm font-semibold text-white hover:bg-[#0d2365] disabled:opacity-50"
-              >
-                <span className="text-lg leading-none">+</span>
-                Add
-              </button>
-              <button
-                type="button"
-                onClick={finishHiringStage}
-                disabled={busy}
-                className="h-11 rounded-xl border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-              >
-                Done
-              </button>
-            </div>
-            {localError ? <p className="mt-2 text-xs font-medium text-red-600">{localError}</p> : null}
+          <div className="mt-4 flex justify-end">
+            <button
+              type="button"
+              onClick={finishHiringStage}
+              disabled={busy}
+              className="h-11 rounded-xl border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              Done
+            </button>
           </div>
 
         </div>
