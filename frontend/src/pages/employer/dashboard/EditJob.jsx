@@ -542,8 +542,6 @@ const LocationMapPicker = ({ value, latitude, longitude, onChange, disabled, err
         const point = markerRef.current.getLatLng();
         await reverseLookup(point.lat, point.lng);
       });
-    } else if (name === 'vacancies') {
-      setFormData((prev) => ({ ...prev, [name]: value.replace(/\D/g, '').slice(0, 2) }));
     } else {
       markerRef.current.setLatLng(nextPoint);
     }
@@ -1287,6 +1285,8 @@ const EditJob = () => {
       setFormData((prev) => ({ ...prev, [name]: checked }));
     } else if (name === 'experienceLevel') {
       setFormData((prev) => ({ ...prev, [name]: normalizeExperienceLevel(value) }));
+    } else if (name === 'vacancies') {
+      setFormData((prev) => ({ ...prev, [name]: value.replace(/\D/g, '').slice(0, 2) }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
