@@ -1961,15 +1961,20 @@ const CompanyProfile = () => {
                     <div className="rounded-[18px] border border-[#d1d5db] bg-white p-7 shadow-[0_2px_6px_rgba(15,23,42,0.05)]">
                       {showAllCompanyJobs ? (
                         <button type="button" onClick={() => setShowAllCompanyJobs(false)} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-[#d1d5db] bg-white px-4 py-2 text-[14px] font-semibold text-[#2e66a6] hover:bg-[#f5f8fc]">
-                           <svg
-                            className="w-[18px] h-[18px] shrink-0"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                          </svg> Back 
+                          <svg
+  className="w-[18px] h-[18px] shrink-0"
+  fill="none"
+  stroke="currentColor"
+  viewBox="0 0 24 24"
+  aria-hidden="true"
+>
+  <path
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2"
+    d="M15 19l-7-7 7-7"
+  />
+</svg> Back 
                         </button>
                       ) : null}
                       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -2037,15 +2042,20 @@ const CompanyProfile = () => {
                     <div className="rounded-[18px] border border-[#d1d5db] bg-white p-7 shadow-[0_2px_6px_rgba(15,23,42,0.05)]">
                       {showAllCompanyReviews ? (
                         <button type="button" onClick={() => setShowAllCompanyReviews(false)} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-[#d1d5db] bg-white px-4 py-2 text-[14px] font-semibold text-[#2e66a6] hover:bg-[#f5f8fc]">
-                           <svg
-                            className="w-[18px] h-[18px] shrink-0"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                          </svg>Back 
+                          <svg
+  className="w-[18px] h-[18px] shrink-0"
+  fill="none"
+  stroke="currentColor"
+  viewBox="0 0 24 24"
+  aria-hidden="true"
+>
+  <path
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2"
+    d="M15 19l-7-7 7-7"
+  />
+</svg> Back 
                         </button>
                       ) : null}
                       <div className="flex flex-wrap items-start justify-between gap-4">
