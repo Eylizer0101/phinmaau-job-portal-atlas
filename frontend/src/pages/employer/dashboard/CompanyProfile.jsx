@@ -338,6 +338,13 @@ const UploadIcon = ({ className = 'w-5 h-5' }) => (
   </svg>
 );
 
+const SaveIcon = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+    <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M5 3h11l3 3v15H5V3z" />
+    <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M8 3v6h8V3M8 21v-7h8v7" />
+  </svg>
+);
+
 const CompanyLogoUploadIcon = ({ className = 'w-5 h-5' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
     <rect x="4" y="6" width="12" height="11" rx="1.8" strokeWidth="1.7" />
@@ -2445,7 +2452,7 @@ const CompanyProfile = () => {
                               <img src={previewLogo} alt="Company logo preview" className="h-full w-full object-cover" />
                             ) : (
                               <div className="flex flex-col items-center justify-center px-3">
-                                <CompanyLogoUploadIcon className="h-6 w-6 text-[#6f7d90]" />
+                                <CompanyLogoUploadIcon className="h-7 w-7 text-[#6f7d90]" />
                                 <span className="mt-2 max-w-[84px] text-center text-[9px] font-medium leading-[13px] text-[#66758b]">
                                   Drop or upload your logo
                                 </span>
@@ -2475,7 +2482,7 @@ const CompanyProfile = () => {
                             className="mt-3 inline-flex h-9 items-center justify-center gap-2 rounded-[9px] border border-[#d5dde8] bg-white px-4 text-[12px] font-semibold text-[#172033] shadow-sm transition hover:bg-[#f8fafc]"
                             disabled={saving}
                           >
-                            <UploadIcon className="h-4 w-4" />
+                            <CompanyLogoUploadIcon className="h-4 w-4" />
                             Upload
                           </button>
 
@@ -2590,6 +2597,13 @@ const CompanyProfile = () => {
                                 className={cx('w-full rounded-[10px] border px-4 py-3 text-[14px] outline-none', fieldErrors.mobileNumber ? 'border-red-400' : 'border-[#cbd5e1] focus:border-[#1769c2]')}
                               />
                             </FormField>
+                          </div>
+
+                          <div className="md:col-span-2 lg:col-span-3">
+                            <div className="flex items-center gap-2 pt-1 text-[11px] text-[#66758b]">
+                              <LocationIcon className="h-4 w-4 shrink-0" />
+                              <span>Job seekers use your location to find nearby opportunities.</span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -2873,15 +2887,30 @@ const CompanyProfile = () => {
                             Continue
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
                           </button>
-                        ) : (
-                          <button
-                            type="submit"
-                            disabled={saving || !isDirty}
-                            className="inline-flex h-11 items-center gap-2 rounded-[10px] bg-[#1769c2] px-5 text-[13px] font-semibold text-white hover:bg-[#105aa8] disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            {saving ? <><SpinnerIcon className="h-4 w-4" /> Saving...</> : <><EditIcon className="h-4 w-4" /> Save Changes</>}
-                          </button>
-                        )}
+                        ) : null}
+
+                        <button
+                          type="submit"
+                          disabled={saving || !isDirty}
+                          className={cx(
+                            'inline-flex h-11 items-center gap-2 rounded-[10px] border px-5 text-[13px] font-semibold transition',
+                            isDirty && !saving
+                              ? 'border-[#1769c2] bg-[#1769c2] text-white shadow-sm hover:bg-[#105aa8]'
+                              : 'cursor-not-allowed border-[#e2e8f0] bg-[#f1f5f9] text-[#64748b]'
+                          )}
+                        >
+                          {saving ? (
+                            <>
+                              <SpinnerIcon className="h-4 w-4" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <SaveIcon className="h-4 w-4" />
+                              Save Changes
+                            </>
+                          )}
+                        </button>
                       </div>
                     </div>
                   </div>
