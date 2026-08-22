@@ -198,6 +198,10 @@ const decodeHtmlEntities = (value = '') => {
   const text = String(value || '');
   if (!text) return '';
 
+  // MyProfile stores rich text as real HTML. Do not pass real markup through
+  // textContent because that would strip <strong>, <ul>, <ol>, alignment, etc.
+  if (/<\/?[a-z][\s\S]*>/i.test(text)) return text;
+
   if (typeof window === 'undefined' || typeof window.DOMParser === 'undefined') {
     return text
       .replace(/&nbsp;/gi, ' ')
@@ -251,6 +255,8 @@ const sanitizeProfileRichText = (value = '') => {
     'H2',
     'BLOCKQUOTE',
   ]);
+  const textAlignmentTags = new Set(['P', 'DIV', 'UL', 'OL', 'LI', 'H1', 'H2', 'BLOCKQUOTE']);
+  const allowedTextAlignments = new Set(['left', 'center', 'right', 'justify']);
 
   const cleanNode = (node) => {
     Array.from(node.childNodes).forEach((child) => {
@@ -260,9 +266,21 @@ const sanitizeProfileRichText = (value = '') => {
           return;
         }
 
+        const inlineAlignment = String(child.style?.textAlign || '').toLowerCase();
+        const alignAttribute = String(child.getAttribute('align') || '').toLowerCase();
+        const textAlignment = allowedTextAlignments.has(inlineAlignment)
+          ? inlineAlignment
+          : allowedTextAlignments.has(alignAttribute)
+            ? alignAttribute
+            : '';
+
         Array.from(child.attributes).forEach((attribute) => {
           child.removeAttribute(attribute.name);
         });
+
+        if (textAlignment && textAlignmentTags.has(child.tagName)) {
+          child.style.textAlign = textAlignment;
+        }
 
         cleanNode(child);
       }
@@ -284,6 +302,29 @@ const richText = (value) => {
       .split(/\n+/)
       .map((line) => line.trim())
       .filter(Boolean);
+
+    const isBulletList = lines.length > 0 && lines.every((line) => /^(?:•|\*|-)\s+/.test(line));
+    const isNumberedList = lines.length > 0 && lines.every((line) => /^\d+[.)]\s+/.test(line));
+
+    if (isBulletList) {
+      return (
+        <ul className="my-1 list-disc space-y-0.5 pl-5">
+          {lines.map((line, index) => (
+            <li key={`${line}-${index}`}>{line.replace(/^(?:•|\*|-)\s+/, '')}</li>
+          ))}
+        </ul>
+      );
+    }
+
+    if (isNumberedList) {
+      return (
+        <ol className="my-1 list-decimal space-y-0.5 pl-5">
+          {lines.map((line, index) => (
+            <li key={`${line}-${index}`}>{line.replace(/^\d+[.)]\s+/, '')}</li>
+          ))}
+        </ol>
+      );
+    }
 
     return (
       <div className="space-y-1">
