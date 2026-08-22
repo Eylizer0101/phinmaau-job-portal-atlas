@@ -521,7 +521,13 @@ const userSchema = new mongoose.Schema(
         type: String,
         default: '',
         trim: true,
-        minlength: [500, 'Company description must contain at least 500 characters.'],
+        validate: {
+          validator: function (value) {
+            const cleanValue = String(value || '').trim();
+            return cleanValue.length === 0 || cleanValue.length >= 500;
+          },
+          message: 'Company description must contain at least 500 characters.',
+        },
         maxlength: [1500, 'Company description must not exceed 1500 characters.'],
       },
       facebookUrl: { type: String, default: '', trim: true },
