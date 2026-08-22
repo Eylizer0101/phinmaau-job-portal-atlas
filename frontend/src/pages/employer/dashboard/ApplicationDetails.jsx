@@ -70,7 +70,7 @@ const SvgIcon = ({ name, className = 'h-5 w-5' }) => {
 
 const Spinner = () => <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-r-transparent" />;
 
-const AutoFitApplicationHeaderName = ({ children, maxFontSize = 30, minFontSize = 16 }) => {
+const AutoFitApplicationHeaderName = ({ children, maxFontSize = 30, minFontSize = 13 }) => {
   const containerRef = useRef(null);
   const textRef = useRef(null);
   const [fontSize, setFontSize] = useState(maxFontSize);
@@ -1321,7 +1321,7 @@ const ApplicationDetails = () => {
             <div className="flex min-w-0 flex-1 items-center gap-5">
               <div className="h-[108px] w-[108px] shrink-0 overflow-hidden rounded-full bg-[#eef5fc]">{image && !avatarBroken ? <img src={image} alt={name} onError={() => setAvatarBroken(true)} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-[#2e66a6]">{name[0]}</div>}</div>
               <div className="min-w-0 flex-1">
-                <div className="flex min-w-0 flex-wrap items-center gap-3">
+                <div className="flex min-w-0 items-center gap-3 whitespace-nowrap">
                   <AutoFitApplicationHeaderName>{name}</AutoFitApplicationHeaderName>
                   <span className={`shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-xs font-semibold ${isAlreadyEmployed ? 'bg-amber-100 text-amber-800' : 'bg-green-50 text-green-700'}`}>
                     {visibleStatusLabel}
