@@ -2543,7 +2543,7 @@ const CompanyProfile = () => {
                             className="mt-3 inline-flex h-9 items-center justify-center gap-2 rounded-[9px] border border-[#d5dde8] bg-white px-4 text-[12px] font-semibold text-[#172033] shadow-sm transition hover:bg-[#f8fafc]"
                             disabled={saving}
                           >
-                            <CompanyLogoUploadIcon className="h-4 w-4" />
+                            <CompanyLogoUploadIcon className="h-5 w-5" />
                             Upload
                           </button>
 
