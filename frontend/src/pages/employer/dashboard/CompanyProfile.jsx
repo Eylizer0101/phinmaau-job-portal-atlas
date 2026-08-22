@@ -3060,7 +3060,15 @@ const CompanyProfile = () => {
                             </span>
                             {label}
                           </button>
-                          {index < 3 ? <span className="text-[#98a5b6]">›</span> : null}
+                          {index < 3 ?  <svg
+                            className="w-[18px] h-[18px] shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                          </svg> : null}
                         </React.Fragment>
                       );
                     })}
