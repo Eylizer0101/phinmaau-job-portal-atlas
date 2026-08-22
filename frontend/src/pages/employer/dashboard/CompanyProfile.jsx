@@ -74,8 +74,8 @@ const getReviewOutcome = (value) => ({
 }[String(value || '').toLowerCase()] || value || 'Outcome not provided');
 
 const MAX_LOGO_SIZE_BYTES = 5 * 1024 * 1024;
-const MAX_COVER_SIZE_BYTES = 8 * 1024 * 1024;
-const MAX_GALLERY_SIZE_BYTES = 8 * 1024 * 1024;
+const MAX_COVER_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_GALLERY_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_GALLERY_IMAGES = 12;
 
 const MAX_COMPANY_NAME_LENGTH = 150;
@@ -829,6 +829,7 @@ const CompanyProfile = () => {
     companyDescription: '',
     facebookUrl: '',
     instagramUrl: '',
+    youtubeUrl: '',
     linkedinUrl: '',
     xUrl: '',
     coverPhoto: '',
@@ -844,6 +845,7 @@ const CompanyProfile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editStep, setEditStep] = useState(1);
   const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'about');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -916,8 +918,6 @@ const CompanyProfile = () => {
     return `https://ui-avatars.com/api/?name=${name}&background=e8eefc&color=24416b&size=256&bold=true`;
   }, [companyData.companyName]);
 
-  const requiredComplete = useMemo(() => Boolean(companyData.companyName?.trim()), [companyData.companyName]);
-
   const provinceOptions = useMemo(() => {
     const region = String(selectedRegion || '').trim();
     if (!region) return [];
@@ -945,10 +945,11 @@ const CompanyProfile = () => {
       [
         { key: 'facebookUrl', label: 'Facebook', url: companyData.facebookUrl },
         { key: 'instagramUrl', label: 'Instagram', url: companyData.instagramUrl },
+        { key: 'youtubeUrl', label: 'YouTube', url: companyData.youtubeUrl },
         { key: 'linkedinUrl', label: 'LinkedIn', url: companyData.linkedinUrl },
         { key: 'xUrl', label: 'X / Twitter', url: companyData.xUrl },
       ].filter((item) => String(item.url || '').trim()),
-    [companyData.facebookUrl, companyData.instagramUrl, companyData.linkedinUrl, companyData.xUrl]
+    [companyData.facebookUrl, companyData.instagramUrl, companyData.youtubeUrl, companyData.linkedinUrl, companyData.xUrl]
   );
 
   const persistedGalleryItems = useMemo(() => normalizeGalleryItems(companyData.galleryImages), [companyData.galleryImages]);
@@ -1029,6 +1030,7 @@ const CompanyProfile = () => {
           companyDescription: p?.companyDescription || '',
           facebookUrl: p?.facebookUrl || '',
           instagramUrl: p?.instagramUrl || '',
+          youtubeUrl: p?.youtubeUrl || '',
           linkedinUrl: p?.linkedinUrl || '',
           xUrl: p?.xUrl || '',
           coverPhoto: p?.coverPhoto || '',
@@ -1131,23 +1133,15 @@ const CompanyProfile = () => {
       selectedProvince,
       selectedCity
     );
-    const combinedCompanyAddress = composeCompanyAddress(
-      selectedProvince,
-      selectedCity
-    );
 
     setCompanyData((prev) => {
-      if (
-        prev.regionCity === combinedRegionCity &&
-        prev.companyAddress === combinedCompanyAddress
-      ) {
+      if (prev.regionCity === combinedRegionCity) {
         return prev;
       }
 
       return {
         ...prev,
         regionCity: combinedRegionCity,
-        companyAddress: combinedCompanyAddress,
       };
     });
   }, [selectedRegion, selectedProvince, selectedCity, isEditOpen]);
@@ -1269,7 +1263,7 @@ const CompanyProfile = () => {
       }
 
       if (file.size > MAX_COVER_SIZE_BYTES) {
-        setError('Cover photo must be less than 8MB.');
+        setError('Cover photo must be 5MB or smaller.');
         return;
       }
 
@@ -1328,7 +1322,7 @@ const CompanyProfile = () => {
 
       const tooLarge = pickedFiles.find((file) => file.size > MAX_GALLERY_SIZE_BYTES);
       if (tooLarge) {
-        setError('Each gallery image must be less than 8MB.');
+        setError('Each gallery image must be 5MB or smaller.');
         e.target.value = '';
         return;
       }
@@ -1384,6 +1378,7 @@ const CompanyProfile = () => {
     setSelectedProvince(parsed.province);
     setSelectedCity(parsed.city);
     setIndustryDropdownOpen(false);
+    setEditStep(1);
     setIsEditOpen(true);
   }, [
     clearFieldErrors,
@@ -1407,40 +1402,119 @@ const CompanyProfile = () => {
     const next = {};
 
     const companyName = String(companyData.companyName || '').trim();
+    const businessEmail = String(companyData.businessEmail || '').trim();
+    const mobileNumber = String(companyData.mobileNumber || '').trim();
+    const companyAddress = String(companyData.companyAddress || '').trim();
     const industry = String(companyData.industry || '').trim();
     const companyDescription = String(companyData.companyDescription || '').trim();
-    const officeAddress = composeCompanyAddress(selectedProvince, selectedCity);
+
+    if (!previewLogo) next.companyLogo = 'Company logo is required.';
 
     if (!companyName) next.companyName = 'Company name is required.';
     else if (companyName.length > MAX_COMPANY_NAME_LENGTH) {
       next.companyName = `Company name must not exceed ${MAX_COMPANY_NAME_LENGTH} characters.`;
     }
+
     if (!selectedRegion?.trim()) next.region = 'Region is required.';
     if (!selectedProvince?.trim()) next.province = 'Province is required.';
     if (!selectedCity?.trim()) next.city = 'City / Municipality is required.';
-    else if (officeAddress.length > MAX_OFFICE_ADDRESS_LENGTH) {
-      next.city = `Office address must not exceed ${MAX_OFFICE_ADDRESS_LENGTH} characters.`;
+
+    if (!companyAddress) {
+      next.companyAddress = 'Complete office address is required.';
+    } else if (companyAddress.length > MAX_OFFICE_ADDRESS_LENGTH) {
+      next.companyAddress = `Office address must not exceed ${MAX_OFFICE_ADDRESS_LENGTH} characters.`;
     }
+
+    if (!businessEmail) {
+      next.businessEmail = 'Contact email is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(businessEmail)) {
+      next.businessEmail = 'Enter a valid contact email.';
+    }
+
+    if (!mobileNumber) {
+      next.mobileNumber = 'Contact number is required.';
+    }
+
     if (!industry) next.industry = 'Industry is required.';
     else if (industry.length > MAX_INDUSTRY_LENGTH) {
       next.industry = `Industry must not exceed ${MAX_INDUSTRY_LENGTH} characters.`;
     }
-    if (companyDescription.length < MIN_COMPANY_DESCRIPTION_LENGTH) {
+
+    if (!companyDescription) {
+      next.companyDescription = 'Company description is required.';
+    } else if (companyDescription.length < MIN_COMPANY_DESCRIPTION_LENGTH) {
       next.companyDescription = `Company description must contain at least ${MIN_COMPANY_DESCRIPTION_LENGTH} characters.`;
     } else if (companyDescription.length > MAX_COMPANY_DESCRIPTION_LENGTH) {
       next.companyDescription = `Company description must not exceed ${MAX_COMPANY_DESCRIPTION_LENGTH} characters.`;
     }
 
+    if (!(previewCover || companyData.coverPhoto)) {
+      next.coverPhoto = 'Cover photo is required.';
+    }
+
+    if (galleryDisplayItems.length === 0) {
+      next.galleryImages = 'At least one gallery photo is required.';
+    }
+
     setFieldErrors(next);
-    return { ok: Object.keys(next).length === 0 };
+    return { ok: Object.keys(next).length === 0, errors: next };
   }, [
-    companyData.companyName,
+    companyData.businessEmail,
+    companyData.companyAddress,
     companyData.companyDescription,
+    companyData.companyName,
+    companyData.coverPhoto,
     companyData.industry,
+    companyData.mobileNumber,
+    galleryDisplayItems.length,
+    previewCover,
+    previewLogo,
     selectedCity,
     selectedProvince,
     selectedRegion,
   ]);
+
+  const validateEditStep = useCallback((step) => {
+    const all = validateClient().errors;
+    const stepKeys = {
+      1: ['companyLogo', 'companyName', 'region', 'province', 'city', 'companyAddress', 'businessEmail', 'mobileNumber'],
+      2: ['industry', 'companyDescription'],
+      3: ['coverPhoto'],
+      4: ['galleryImages'],
+    };
+
+    const allowedKeys = new Set(stepKeys[step] || []);
+    const stepErrors = Object.fromEntries(
+      Object.entries(all).filter(([key]) => allowedKeys.has(key))
+    );
+
+    setFieldErrors(stepErrors);
+
+    if (Object.keys(stepErrors).length > 0) {
+      setError('Please complete the required fields before continuing.');
+      return false;
+    }
+
+    clearMessages();
+    return true;
+  }, [clearMessages, validateClient]);
+
+  const goToNextEditStep = useCallback(() => {
+    if (!validateEditStep(editStep)) return;
+    setEditStep((current) => Math.min(4, current + 1));
+    window.requestAnimationFrame(() => {
+      document.querySelector('[data-company-edit-top="true"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [editStep, validateEditStep]);
+
+  const goToPreviousEditStep = useCallback(() => {
+    clearMessages();
+    setFieldErrors({});
+    setEditStep((current) => Math.max(1, current - 1));
+    window.requestAnimationFrame(() => {
+      document.querySelector('[data-company-edit-top="true"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [clearMessages]);
 
   const handleSubmit = useCallback(
     async (e) => {
@@ -1480,7 +1554,7 @@ const CompanyProfile = () => {
         );
         fd.set(
           'companyAddress',
-          composeCompanyAddress(selectedProvince, selectedCity)
+          String(companyData.companyAddress || '').trim()
         );
         fd.set('industry', normalizeIndustryValue(companyData.industry));
 
@@ -1705,8 +1779,6 @@ const CompanyProfile = () => {
     },
     [uploadVerificationDoc]
   );
-
-  const saveDisabled = saving || !requiredComplete || !isDirty;
 
   const coverImage = previewCover || companyData.coverPhoto || defaultBanner;
   const hasAbout = Boolean(String(companyData.companyDescription || '').trim());
@@ -2255,100 +2327,142 @@ const CompanyProfile = () => {
         ) : null}
 
         {isEditOpen && (
-          <div className="fixed inset-0 z-[70]">
-            <div className="absolute inset-0 bg-black/35" onClick={handleCancel} aria-hidden="true" />
+          <div className="fixed inset-0 z-[70] bg-[#f5f7fb]">
+            <div className="h-full overflow-y-auto">
+              <div data-company-edit-top="true" className="mx-auto min-h-full max-w-[1180px] px-4 py-5 sm:px-6 lg:px-8">
+                <div className="mb-5">
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    disabled={saving}
+                    className="inline-flex h-10 items-center gap-2 rounded-[10px] border border-[#d5dde8] bg-white px-4 text-[13px] font-medium text-[#172033] shadow-sm hover:bg-[#f8fafc] disabled:opacity-60"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back
+                  </button>
 
-            <div className="absolute inset-0 overflow-y-auto">
-              <div className="mx-auto min-h-full max-w-[1180px] px-4 py-8">
-                <div className="rounded-[18px] border border-[#d1d5db] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.18)]">
-                  <div className="flex items-start justify-between gap-4 px-8 pb-4 pt-6">
-                    <div>
-                      <h2 className="text-[34px] font-bold leading-tight text-[#000000]">Edit Company Profile</h2>
-                      <p className="mt-1 text-[14px] text-[#6b7280]">
-                        Fill in the details to set up your company page.
-                      </p>
-                    </div>
+                  <h2 className="mt-5 text-[34px] font-bold leading-tight text-[#061a35]">Edit Company Profile</h2>
+                  <p className="mt-1 text-[14px] text-[#66758b]">
+                    Fill in the details to set up your company page — step {editStep} of 4.
+                  </p>
+                </div>
 
-                    <button
-                      type="button"
-                      onClick={handleCancel}
-                      disabled={saving}
-                      className="rounded-full p-2 text-[#000000] transition hover:bg-[#f3f4f6] disabled:opacity-60"
-                      aria-label="Close"
-                    >
-                      <CloseIcon className="h-6 w-6" />
-                    </button>
+                <div className="mb-5 rounded-[18px] border border-[#d5dde8] bg-white px-5 py-4 shadow-[0_3px_10px_rgba(15,23,42,0.06)]">
+                  <div className="flex flex-wrap items-center justify-center gap-3 text-[12px] font-semibold sm:gap-4">
+                    {[
+                      [1, 'Company Information'],
+                      [2, 'Business Details'],
+                      [3, 'Cover Photo & Social Media'],
+                      [4, 'Gallery Photos'],
+                    ].map(([step, label], index) => {
+                      const completed = editStep > step;
+                      const active = editStep === step;
+                      return (
+                        <React.Fragment key={step}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (step < editStep) {
+                                setFieldErrors({});
+                                clearMessages();
+                                setEditStep(step);
+                              }
+                            }}
+                            className={cx(
+                              'inline-flex items-center gap-2 rounded-full px-3 py-2 transition',
+                              active ? 'bg-[#e7f1ff] text-[#145eb8]' : '',
+                              completed ? 'text-[#07854f]' : '',
+                              !active && !completed ? 'text-[#64748b]' : '',
+                              step > editStep ? 'cursor-default' : 'hover:bg-[#f4f7fb]'
+                            )}
+                          >
+                            <span
+                              className={cx(
+                                'inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold',
+                                active ? 'bg-[#1769c2] text-white' : '',
+                                completed ? 'bg-[#07854f] text-white' : '',
+                                !active && !completed ? 'bg-[#eef2f7] text-[#718096]' : ''
+                              )}
+                            >
+                              {completed ? '✓' : step}
+                            </span>
+                            {label}
+                          </button>
+                          {index < 3 ? <span className="text-[#98a5b6]">›</span> : null}
+                        </React.Fragment>
+                      );
+                    })}
                   </div>
+                </div>
 
-                  <form onSubmit={handleSubmit} className="space-y-4 px-4 pb-5">
-                    <div className="rounded-[14px] border border-[#d1d5db] bg-white px-6 py-6">
-                      <div className="mb-5 flex items-start gap-3">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f3f4f6] text-[#6b7280]">
+                <form onSubmit={handleSubmit}>
+                  {error ? (
+                    <div className="mb-4 rounded-[12px] border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                      {error}
+                    </div>
+                  ) : null}
+
+                  {editStep === 1 ? (
+                    <div className="rounded-[18px] border border-[#d5dde8] bg-white p-6 shadow-[0_3px_10px_rgba(15,23,42,0.05)]">
+                      <div className="mb-6 flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f1f5f9] text-[#66758b]">
                           <BuildingIcon className="h-5 w-5" />
                         </div>
                         <div>
-                          <h3 className="text-[28px] font-semibold leading-tight text-[#000000]">Company Identity</h3>
-                          <p className="text-[14px] text-[#6b7280]">Your brand and location details</p>
+                          <h3 className="text-[21px] font-bold text-[#081b35]">Company Information</h3>
+                          <p className="text-[13px] text-[#66758b]">Your company details & location.</p>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[90px_minmax(0,1fr)]">
-                        <div className="space-y-2">
+                      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[170px_minmax(0,1fr)]">
+                        <div>
                           <button
                             type="button"
                             onClick={() => modalLogoInputRef.current?.click()}
-                            className="flex h-[112px] w-[90px] flex-col items-center justify-center rounded-[12px] border border-dashed border-[#d1d5db] bg-[#FFFFFF] text-[#6b7280] transition hover:bg-[#FFFFFF]"
+                            className={cx(
+                              'flex h-[122px] w-[122px] flex-col items-center justify-center overflow-hidden rounded-[16px] border border-dashed bg-white text-[#66758b] transition hover:bg-[#f8fafc]',
+                              fieldErrors.companyLogo ? 'border-red-400' : 'border-[#cbd5e1]'
+                            )}
+                            disabled={saving}
                           >
                             {previewLogo ? (
-                              <img
-                                src={previewLogo}
-                                alt="Selected logo"
-                                className="h-full w-full rounded-[12px] object-cover"
-                              />
+                              <img src={previewLogo} alt="Company logo preview" className="h-full w-full object-cover" />
                             ) : (
                               <>
                                 <UploadIcon className="h-6 w-6" />
-                                <span className="mt-2 text-[10px] font-semibold tracking-[0.04em]">UPLOAD</span>
+                                <span className="mt-2 px-2 text-center text-[10px] font-medium">Drop or upload your logo</span>
                               </>
                             )}
                           </button>
-                          <p className="text-center text-[10px] font-medium text-[#6b7280]">
-                            Company
-                            <br />
-                            Logo
-                          </p>
-
-                          <input
-                            ref={modalLogoInputRef}
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handleLogoChange}
+                          <p className="mt-2 w-[122px] text-center text-[11px] text-[#66758b]">Company Logo *</p>
+                          {fieldErrors.companyLogo ? <p className="mt-1 text-[11px] font-medium text-red-600">{fieldErrors.companyLogo}</p> : null}
+                          <input ref={modalLogoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} disabled={saving} />
+                          <button
+                            type="button"
+                            onClick={() => modalLogoInputRef.current?.click()}
+                            className="mt-3 inline-flex h-9 items-center gap-2 rounded-[9px] border border-[#d5dde8] bg-white px-3 text-[12px] font-semibold text-[#172033] hover:bg-[#f8fafc]"
                             disabled={saving}
-                          />
+                          >
+                            <UploadIcon className="h-4 w-4" /> Upload
+                          </button>
+                          <p className="mt-3 text-[10px] leading-4 text-[#66758b]">Square image, JPG or PNG, max 5 MB.</p>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                          <div className="lg:col-span-3">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                          <div className="md:col-span-2 lg:col-span-3">
                             <FormField label="Company Name" required error={fieldErrors.companyName}>
                               <input
                                 type="text"
                                 name="companyName"
                                 value={companyData.companyName}
                                 onChange={handleInputChange}
-                                className={cx(
-                                  'w-full rounded-[10px] border px-4 py-3 text-[14px] outline-none transition',
-                                  fieldErrors.companyName
-                                    ? 'border-red-300 focus:border-red-500'
-                                    : 'border-[#d1d5db] focus:border-[#2e66a6]'
-                                )}
-                                placeholder="Enter company name"
                                 maxLength={MAX_COMPANY_NAME_LENGTH}
+                                placeholder="e.g. BDO Unibank"
                                 disabled={saving}
+                                className={cx('w-full rounded-[10px] border px-4 py-3 text-[14px] outline-none', fieldErrors.companyName ? 'border-red-400' : 'border-[#cbd5e1] focus:border-[#1769c2]')}
                               />
-                              <p className="text-right text-[11px] text-[#6b7280]">
-                                {String(companyData.companyName || '').length} / {MAX_COMPANY_NAME_LENGTH} characters
-                              </p>
                             </FormField>
                           </div>
 
@@ -2360,27 +2474,13 @@ const CompanyProfile = () => {
                                 setSelectedProvince('');
                                 setSelectedCity('');
                                 clearMessages();
-                                setFieldErrors((prev) => ({
-                                  ...prev,
-                                  region: undefined,
-                                  province: undefined,
-                                  city: undefined,
-                                }));
+                                setFieldErrors((prev) => ({ ...prev, region: undefined, province: undefined, city: undefined }));
                               }}
-                              className={cx(
-                                'w-full rounded-[10px] border bg-white px-4 py-3 text-[14px] outline-none transition',
-                                fieldErrors.region
-                                  ? 'border-red-300 focus:border-red-500'
-                                  : 'border-[#d1d5db] focus:border-[#2e66a6]'
-                              )}
                               disabled={saving}
+                              className={cx('w-full rounded-[10px] border bg-white px-4 py-3 text-[14px] outline-none', fieldErrors.region ? 'border-red-400' : 'border-[#cbd5e1] focus:border-[#1769c2]')}
                             >
                               <option value="">Select region</option>
-                              {PH_REGIONS.map((region) => (
-                                <option key={region} value={region}>
-                                  {region}
-                                </option>
-                              ))}
+                              {PH_REGIONS.map((region) => <option key={region} value={region}>{region}</option>)}
                             </select>
                           </FormField>
 
@@ -2391,28 +2491,13 @@ const CompanyProfile = () => {
                                 setSelectedProvince(event.target.value);
                                 setSelectedCity('');
                                 clearMessages();
-                                setFieldErrors((prev) => ({
-                                  ...prev,
-                                  province: undefined,
-                                  city: undefined,
-                                }));
+                                setFieldErrors((prev) => ({ ...prev, province: undefined, city: undefined }));
                               }}
-                              className={cx(
-                                'w-full rounded-[10px] border bg-white px-4 py-3 text-[14px] outline-none transition',
-                                fieldErrors.province
-                                  ? 'border-red-300 focus:border-red-500'
-                                  : 'border-[#d1d5db] focus:border-[#2e66a6]'
-                              )}
                               disabled={saving || !selectedRegion}
+                              className={cx('w-full rounded-[10px] border bg-white px-4 py-3 text-[14px] outline-none', fieldErrors.province ? 'border-red-400' : 'border-[#cbd5e1] focus:border-[#1769c2]')}
                             >
-                              <option value="">
-                                {selectedRegion ? 'Select province' : 'Select region first'}
-                              </option>
-                              {provinceOptions.map((province) => (
-                                <option key={province} value={province}>
-                                  {province}
-                                </option>
-                              ))}
+                              <option value="">{selectedRegion ? 'Select province' : 'Select region first'}</option>
+                              {provinceOptions.map((province) => <option key={province} value={province}>{province}</option>)}
                             </select>
                           </FormField>
 
@@ -2422,171 +2507,128 @@ const CompanyProfile = () => {
                               onChange={(event) => {
                                 setSelectedCity(event.target.value);
                                 clearMessages();
-                                setFieldErrors((prev) => ({
-                                  ...prev,
-                                  city: undefined,
-                                }));
+                                setFieldErrors((prev) => ({ ...prev, city: undefined }));
                               }}
-                              className={cx(
-                                'w-full rounded-[10px] border bg-white px-4 py-3 text-[14px] outline-none transition',
-                                fieldErrors.city
-                                  ? 'border-red-300 focus:border-red-500'
-                                  : 'border-[#d1d5db] focus:border-[#2e66a6]'
-                              )}
                               disabled={saving || !selectedProvince}
+                              className={cx('w-full rounded-[10px] border bg-white px-4 py-3 text-[14px] outline-none', fieldErrors.city ? 'border-red-400' : 'border-[#cbd5e1] focus:border-[#1769c2]')}
                             >
-                              <option value="">
-                                {selectedProvince
-                                  ? 'Select city / municipality'
-                                  : 'Select province first'}
-                              </option>
-                              {cityOptions.map((city) => (
-                                <option key={city} value={city}>
-                                  {city}
-                                </option>
-                              ))}
+                              <option value="">{selectedProvince ? 'Select city' : 'Select province first'}</option>
+                              {cityOptions.map((city) => <option key={city} value={city}>{city}</option>)}
                             </select>
                           </FormField>
+
+                          <div className="md:col-span-2 lg:col-span-3">
+                            <FormField label="Complete Office Address" required error={fieldErrors.companyAddress}>
+                              <input
+                                type="text"
+                                name="companyAddress"
+                                value={companyData.companyAddress}
+                                onChange={handleInputChange}
+                                maxLength={MAX_OFFICE_ADDRESS_LENGTH}
+                                placeholder="e.g., Bldg. 1, 3rd Floor, 123 Main St."
+                                disabled={saving}
+                                className={cx('w-full rounded-[10px] border px-4 py-3 text-[14px] outline-none', fieldErrors.companyAddress ? 'border-red-400' : 'border-[#cbd5e1] focus:border-[#1769c2]')}
+                              />
+                            </FormField>
+                          </div>
+
+                          <FormField label="Contact Email" required error={fieldErrors.businessEmail}>
+                            <input
+                              type="email"
+                              name="businessEmail"
+                              value={companyData.businessEmail}
+                              onChange={handleInputChange}
+                              placeholder="careers@company.com"
+                              disabled={saving}
+                              className={cx('w-full rounded-[10px] border px-4 py-3 text-[14px] outline-none', fieldErrors.businessEmail ? 'border-red-400' : 'border-[#cbd5e1] focus:border-[#1769c2]')}
+                            />
+                          </FormField>
+
+                          <div className="lg:col-span-2">
+                            <FormField label="Contact Number" required error={fieldErrors.mobileNumber}>
+                              <input
+                                type="text"
+                                name="mobileNumber"
+                                value={companyData.mobileNumber}
+                                onChange={handleInputChange}
+                                placeholder="+63 900 000 0000"
+                                disabled={saving}
+                                className={cx('w-full rounded-[10px] border px-4 py-3 text-[14px] outline-none', fieldErrors.mobileNumber ? 'border-red-400' : 'border-[#cbd5e1] focus:border-[#1769c2]')}
+                              />
+                            </FormField>
+                          </div>
                         </div>
                       </div>
                     </div>
+                  ) : null}
 
-                    <div className="rounded-[14px] border border-[#d1d5db] bg-white px-6 py-6">
-                      <div className="mb-5 flex items-start gap-3">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f3f4f6] text-[#6b7280]">
+                  {editStep === 2 ? (
+                    <div className="rounded-[18px] border border-[#d5dde8] bg-white p-6 shadow-[0_3px_10px_rgba(15,23,42,0.05)]">
+                      <div className="mb-6 flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f1f5f9] text-[#66758b]">
                           <BuildingIcon className="h-5 w-5" />
                         </div>
                         <div>
-                          <h3 className="text-[28px] font-semibold leading-tight text-[#000000]">Business Details</h3>
-                          <p className="text-[14px] text-[#6b7280]">Industry, website, and description.</p>
+                          <h3 className="text-[21px] font-bold text-[#081b35]">Business Details</h3>
+                          <p className="text-[13px] text-[#66758b]">Industry, website, and description.</p>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 gap-4">
+                      <div className="space-y-5">
                         <FormField label="Industry" required error={fieldErrors.industry}>
                           <div ref={industryComboboxRef} className="relative">
-                            <div className="relative">
-                              <input
-                                type="text"
-                                name="industry"
-                                value={companyData.industry}
-                                onChange={(event) => {
-                                  handleInputChange(event);
-                                  setIndustryDropdownOpen(true);
-                                }}
-                                onFocus={() => setIndustryDropdownOpen(true)}
-                                onBlur={() => {
-                                  window.setTimeout(() => {
-                                    const normalizedIndustry = normalizeIndustryValue(companyData.industry);
-                                    setCompanyData((prev) => ({
-                                      ...prev,
-                                      industry: normalizedIndustry,
-                                    }));
-                                  }, 0);
-                                }}
-                                autoComplete="off"
-                                className={cx(
-                                  'w-full rounded-[10px] border bg-white px-4 py-3 pr-11 text-[14px] outline-none transition',
-                                  fieldErrors.industry
-                                    ? 'border-red-300 focus:border-red-500'
-                                    : 'border-[#d1d5db] focus:border-[#2e66a6]'
-                                )}
-                                placeholder="Select or type an industry"
-                                disabled={saving}
-                                role="combobox"
-                                aria-expanded={industryDropdownOpen}
-                                aria-controls="company-industry-options"
-                                aria-autocomplete="list"
-                                maxLength={MAX_INDUSTRY_LENGTH}
-                              />
-
-                              <button
-                                type="button"
-                                onClick={() => setIndustryDropdownOpen((prev) => !prev)}
-                                disabled={saving}
-                                className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-[#374151] disabled:opacity-60"
-                                aria-label="Toggle industry options"
-                              >
-                                <svg
-                                  className={cx(
-                                    'h-4 w-4 transition-transform',
-                                    industryDropdownOpen ? 'rotate-180' : ''
-                                  )}
-                                  viewBox="0 0 20 20"
-                                  fill="currentColor"
-                                  aria-hidden="true"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.51a.75.75 0 01-1.08 0l-4.25-4.51a.75.75 0 01.02-1.06z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                              </button>
-                            </div>
-
+                            <input
+                              type="text"
+                              name="industry"
+                              value={companyData.industry}
+                              onChange={(event) => {
+                                handleInputChange(event);
+                                setIndustryDropdownOpen(true);
+                              }}
+                              onFocus={() => setIndustryDropdownOpen(true)}
+                              maxLength={MAX_INDUSTRY_LENGTH}
+                              placeholder="Select your industry"
+                              autoComplete="off"
+                              disabled={saving}
+                              className={cx('w-full rounded-[10px] border px-4 py-3 pr-10 text-[14px] outline-none', fieldErrors.industry ? 'border-red-400' : 'border-[#cbd5e1] focus:border-[#1769c2]')}
+                            />
+                            <button type="button" onClick={() => setIndustryDropdownOpen((open) => !open)} className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-[#64748b]">
+                              <span>⌄</span>
+                            </button>
                             {industryDropdownOpen ? (
-                              <div
-                                id="company-industry-options"
-                                role="listbox"
-                                className="absolute left-0 right-0 top-full z-[120] mt-2 max-h-64 overflow-y-auto rounded-[12px] border border-[#d1d5db] bg-white py-1 shadow-[0_12px_30px_rgba(15,23,42,0.16)]"
-                              >
-                                {filteredIndustryOptions.length > 0 ? (
-                                  filteredIndustryOptions.map((option) => (
-                                    <button
-                                      key={option}
-                                      type="button"
-                                      role="option"
-                                      aria-selected={
-                                        option.toLowerCase() ===
-                                        String(companyData.industry || '').trim().toLowerCase()
-                                      }
-                                      onMouseDown={(event) => event.preventDefault()}
-                                      onClick={() => {
-                                        setCompanyData((prev) => ({
-                                          ...prev,
-                                          industry: option,
-                                        }));
-                                        setFieldErrors((prev) => ({
-                                          ...prev,
-                                          industry: undefined,
-                                        }));
-                                        clearMessages();
-                                        setIndustryDropdownOpen(false);
-                                      }}
-                                      className={cx(
-                                        'block w-full px-4 py-3 text-left text-[14px] transition hover:bg-[#f3f6fb]',
-                                        option.toLowerCase() ===
-                                          String(companyData.industry || '').trim().toLowerCase()
-                                          ? 'bg-[#eef4fb] font-semibold text-[#2e66a6]'
-                                          : 'text-[#111827]'
-                                      )}
-                                    >
-                                      {option}
-                                    </button>
-                                  ))
-                                ) : (
-                                  <div className="px-4 py-3 text-[13px] text-[#6b7280]">
-                                    No matching option. Your typed industry can still be saved.
-                                  </div>
+                              <div className="absolute z-40 mt-2 max-h-64 w-full overflow-y-auto rounded-[12px] border border-[#d5dde8] bg-white py-1 shadow-[0_12px_30px_rgba(15,23,42,0.16)]">
+                                {filteredIndustryOptions.length ? filteredIndustryOptions.map((option) => (
+                                  <button
+                                    key={option}
+                                    type="button"
+                                    onMouseDown={(event) => event.preventDefault()}
+                                    onClick={() => {
+                                      setCompanyData((prev) => ({ ...prev, industry: option }));
+                                      setFieldErrors((prev) => ({ ...prev, industry: undefined }));
+                                      clearMessages();
+                                      setIndustryDropdownOpen(false);
+                                    }}
+                                    className="block w-full px-4 py-3 text-left text-[14px] text-[#172033] hover:bg-[#f3f6fb]"
+                                  >
+                                    {option}
+                                  </button>
+                                )) : (
+                                  <div className="px-4 py-3 text-[13px] text-[#66758b]">No matching option.</div>
                                 )}
                               </div>
                             ) : null}
                           </div>
-                          <p className="text-right text-[11px] text-[#6b7280]">
-                            {String(companyData.industry || '').length} / {MAX_INDUSTRY_LENGTH} characters
-                          </p>
                         </FormField>
 
-                        <FormField label="Company Website" required={false} error={fieldErrors.companyWebsiteUrl}>
+                        <FormField label="Company Website (Optional)" error={fieldErrors.companyWebsiteUrl}>
                           <input
                             type="text"
                             name="companyWebsiteUrl"
                             value={companyData.companyWebsiteUrl}
                             onChange={handleInputChange}
-                            className="w-full rounded-[10px] border border-[#d1d5db] px-4 py-3 text-[14px] outline-none transition focus:border-[#2e66a6]"
-                            placeholder="https://example.com"
+                            placeholder="https://www.yourcompany.com"
                             disabled={saving}
+                            className="w-full rounded-[10px] border border-[#cbd5e1] px-4 py-3 text-[14px] outline-none focus:border-[#1769c2]"
                           />
                         </FormField>
 
@@ -2595,252 +2637,221 @@ const CompanyProfile = () => {
                             name="companyDescription"
                             value={companyData.companyDescription}
                             onChange={handleInputChange}
-                            rows={5}
-                            className="w-full rounded-[10px] border border-[#d1d5db] px-4 py-3 text-[14px] outline-none transition focus:border-[#2e66a6]"
-                            placeholder="Tell jobseekers about your company."
+                            rows={9}
                             minLength={MIN_COMPANY_DESCRIPTION_LENGTH}
                             maxLength={MAX_COMPANY_DESCRIPTION_LENGTH}
+                            placeholder="Tell job seekers who you are, what you do, and what makes your company a great place to work."
                             disabled={saving}
+                            className={cx('w-full resize-y rounded-[10px] border px-4 py-3 text-[14px] outline-none', fieldErrors.companyDescription ? 'border-red-400' : 'border-[#cbd5e1] focus:border-[#1769c2]')}
                           />
-                          <p className="text-right text-[11px] text-[#6b7280]">
-                            {String(companyData.companyDescription || '').length} / {MAX_COMPANY_DESCRIPTION_LENGTH} characters
-                            {' '} (minimum {MIN_COMPANY_DESCRIPTION_LENGTH})
+                          <div className="mt-1 flex items-center justify-between gap-3 text-[11px] text-[#66758b]">
+                            <span>Write in short paragraphs — mention your services, culture, and growth opportunities.</span>
+                            <span>{String(companyData.companyDescription || '').length}/{MAX_COMPANY_DESCRIPTION_LENGTH}</span>
+                          </div>
+                        </FormField>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {editStep === 3 ? (
+                    <div className="space-y-5">
+                      <div className="rounded-[18px] border border-[#d5dde8] bg-white p-6 shadow-[0_3px_10px_rgba(15,23,42,0.05)]">
+                        <div className="mb-5 flex items-start gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f1f5f9] text-[#66758b]">
+                            <CoverPhotoIcon className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h3 className="text-[21px] font-bold text-[#081b35]">Cover Photo</h3>
+                            <p className="text-[13px] text-[#66758b]">Upload a header image for your company profile.</p>
+                          </div>
+                        </div>
+
+                        <div className="mb-5 rounded-[16px] border border-[#d5dde8] bg-[#f8fbff] p-5">
+                          <h4 className="text-[14px] font-bold text-[#081b35]">Make a Great First Impression</h4>
+                          <p className="mt-1 text-[12px] leading-5 text-[#66758b]">
+                            Choose a clear, professional image that represents your actual company or workplace.
                           </p>
-                        </FormField>
+                          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <div className="rounded-xl border border-[#d5dde8] bg-white px-4 py-3"><p className="text-[10px] uppercase tracking-wide text-[#66758b]">Accepted Formats</p><p className="mt-1 text-[12px] font-semibold">JPG, JPEG, PNG</p></div>
+                            <div className="rounded-xl border border-[#d5dde8] bg-white px-4 py-3"><p className="text-[10px] uppercase tracking-wide text-[#66758b]">Maximum File Size</p><p className="mt-1 text-[12px] font-semibold">5 MB</p></div>
+                            <div className="rounded-xl border border-[#d5dde8] bg-white px-4 py-3"><p className="text-[10px] uppercase tracking-wide text-[#66758b]">Recommended Aspect Ratio</p><p className="mt-1 text-[12px] font-semibold">16:9</p></div>
+                            <div className="rounded-xl border border-[#d5dde8] bg-white px-4 py-3"><p className="text-[10px] uppercase tracking-wide text-[#66758b]">Recommended Size</p><p className="mt-1 text-[12px] font-semibold">1920 × 1080 px or higher</p></div>
+                          </div>
+                        </div>
+
+                        <input ref={modalCoverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverChange} disabled={saving} />
+                        <button
+                          type="button"
+                          onClick={() => modalCoverInputRef.current?.click()}
+                          className={cx(
+                            'flex min-h-[320px] w-full flex-col items-center justify-center overflow-hidden rounded-[18px] border border-dashed bg-white text-center transition hover:bg-[#f8fafc]',
+                            fieldErrors.coverPhoto ? 'border-red-400' : 'border-[#cbd5e1]'
+                          )}
+                          disabled={saving}
+                        >
+                          {previewCover || companyData.coverPhoto ? (
+                            <img src={previewCover || companyData.coverPhoto} alt="Cover preview" className="h-[320px] w-full object-cover" />
+                          ) : (
+                            <>
+                              <UploadIcon className="h-8 w-8 text-[#66758b]" />
+                              <p className="mt-3 text-[13px] font-bold text-[#172033]">Drag and drop your cover photo here</p>
+                              <p className="mt-1 text-[11px] text-[#66758b]">or use the upload button — JPG, JPEG, PNG, max 5 MB</p>
+                            </>
+                          )}
+                        </button>
+                        {fieldErrors.coverPhoto ? <p className="mt-2 text-[12px] font-medium text-red-600">{fieldErrors.coverPhoto}</p> : null}
+
+                        <button
+                          type="button"
+                          onClick={() => modalCoverInputRef.current?.click()}
+                          className="mt-4 inline-flex h-10 items-center gap-2 rounded-[10px] border border-[#d5dde8] bg-white px-4 text-[12px] font-semibold text-[#172033] hover:bg-[#f8fafc]"
+                          disabled={saving}
+                        >
+                          <UploadIcon className="h-4 w-4" /> Upload Cover Photo
+                        </button>
+                      </div>
+
+                      <div className="rounded-[18px] border border-[#d5dde8] bg-white p-6 shadow-[0_3px_10px_rgba(15,23,42,0.05)]">
+                        <div className="mb-5 flex items-start gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f1f5f9] text-[#66758b]">
+                            <LinkIcon className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h3 className="text-[21px] font-bold text-[#081b35]">Social Media (Optional)</h3>
+                            <p className="text-[13px] text-[#66758b]">Connect your official company accounts.</p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <FormField label="Facebook">
+                            <input type="text" name="facebookUrl" value={companyData.facebookUrl} onChange={handleInputChange} placeholder="https://www.facebook.com/yourcompany" disabled={saving} className="w-full rounded-[10px] border border-[#cbd5e1] px-4 py-3 text-[14px] outline-none focus:border-[#1769c2]" />
+                          </FormField>
+                          <FormField label="Instagram">
+                            <input type="text" name="instagramUrl" value={companyData.instagramUrl} onChange={handleInputChange} placeholder="https://www.instagram.com/yourcompany" disabled={saving} className="w-full rounded-[10px] border border-[#cbd5e1] px-4 py-3 text-[14px] outline-none focus:border-[#1769c2]" />
+                          </FormField>
+                          <FormField label="YouTube">
+                            <input type="text" name="youtubeUrl" value={companyData.youtubeUrl} onChange={handleInputChange} placeholder="https://www.youtube.com/@yourcompany" disabled={saving} className="w-full rounded-[10px] border border-[#cbd5e1] px-4 py-3 text-[14px] outline-none focus:border-[#1769c2]" />
+                          </FormField>
+                          <FormField label="X / Twitter">
+                            <input type="text" name="xUrl" value={companyData.xUrl} onChange={handleInputChange} placeholder="https://x.com/yourcompany" disabled={saving} className="w-full rounded-[10px] border border-[#cbd5e1] px-4 py-3 text-[14px] outline-none focus:border-[#1769c2]" />
+                          </FormField>
+                        </div>
                       </div>
                     </div>
+                  ) : null}
 
-                    <div className="rounded-[14px] border border-[#d1d5db] bg-white px-6 py-6">
+                  {editStep === 4 ? (
+                    <div className="rounded-[18px] border border-[#d5dde8] bg-white p-6 shadow-[0_3px_10px_rgba(15,23,42,0.05)]">
                       <div className="mb-5 flex items-start gap-3">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f3f4f6] text-[#6b7280]">
-                          <CoverPhotoIcon className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <h3 className="text-[28px] font-semibold leading-tight text-[#000000]">Cover Photo</h3>
-                          <p className="text-[14px] text-[#6b7280]">Upload a header image for your company profile.</p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="overflow-hidden rounded-[16px] border border-[#d1d5db] bg-[#FFFFFF]">
-                          <img
-                            src={previewCover || companyData.coverPhoto || defaultBanner}
-                            alt="Cover preview"
-                            className="h-[220px] w-full object-cover"
-                          />
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-3">
-                          <input
-                            ref={modalCoverInputRef}
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handleCoverChange}
-                            disabled={saving}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => modalCoverInputRef.current?.click()}
-                            className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[12px] border border-[#d1d5db] bg-white px-4 text-sm font-semibold text-[#374151] transition hover:bg-[#f9fafb]"
-                            disabled={saving}
-                          >
-                            <UploadIcon className="h-4 w-4" />
-                            Upload Cover Photo
-                          </button>
-                          <p className="text-[12px] text-[#6b7280]">Recommended: wide image, max 8MB</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-[14px] border border-[#d1d5db] bg-white px-6 py-6">
-                      <div className="mb-5 flex items-start gap-3">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f3f4f6] text-[#6b7280]">
-                          <LinkIcon className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <h3 className="text-[28px] font-semibold leading-tight text-[#000000]">Social Media</h3>
-                          <p className="text-[14px] text-[#6b7280]">Connect your official company accounts.</p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <FormField label="Facebook" error={fieldErrors.facebookUrl}>
-                          <input
-                            type="text"
-                            name="facebookUrl"
-                            value={companyData.facebookUrl}
-                            onChange={handleInputChange}
-                            className="w-full rounded-[10px] border border-[#d1d5db] px-4 py-3 text-[14px] outline-none transition focus:border-[#2e66a6]"
-                            placeholder="https://facebook.com/yourcompany"
-                            disabled={saving}
-                          />
-                        </FormField>
-
-                        <FormField label="Instagram" error={fieldErrors.instagramUrl}>
-                          <input
-                            type="text"
-                            name="instagramUrl"
-                            value={companyData.instagramUrl}
-                            onChange={handleInputChange}
-                            className="w-full rounded-[10px] border border-[#d1d5db] px-4 py-3 text-[14px] outline-none transition focus:border-[#2e66a6]"
-                            placeholder="https://instagram.com/yourcompany"
-                            disabled={saving}
-                          />
-                        </FormField>
-
-                        <FormField label="LinkedIn" error={fieldErrors.linkedinUrl}>
-                          <input
-                            type="text"
-                            name="linkedinUrl"
-                            value={companyData.linkedinUrl}
-                            onChange={handleInputChange}
-                            className="w-full rounded-[10px] border border-[#d1d5db] px-4 py-3 text-[14px] outline-none transition focus:border-[#2e66a6]"
-                            placeholder="https://linkedin.com/company/yourcompany"
-                            disabled={saving}
-                          />
-                        </FormField>
-
-                        <FormField label="X / Twitter" error={fieldErrors.xUrl}>
-                          <input
-                            type="text"
-                            name="xUrl"
-                            value={companyData.xUrl}
-                            onChange={handleInputChange}
-                            className="w-full rounded-[10px] border border-[#d1d5db] px-4 py-3 text-[14px] outline-none transition focus:border-[#2e66a6]"
-                            placeholder="https://x.com/yourcompany"
-                            disabled={saving}
-                          />
-                        </FormField>
-                      </div>
-                    </div>
-
-                    <div className="rounded-[14px] border border-[#d1d5db] bg-white px-6 py-6">
-                      <div className="mb-5 flex items-start gap-3">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f3f4f6] text-[#6b7280]">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f1f5f9] text-[#66758b]">
                           <PhotoStackIcon className="h-5 w-5" />
                         </div>
                         <div>
-                          <h3 className="text-[28px] font-semibold leading-tight text-[#000000]">Gallery Photos</h3>
-                          <p className="text-[14px] text-[#6b7280]">Upload company images for your gallery tab.</p>
+                          <h3 className="text-[21px] font-bold text-[#081b35]">Gallery Photos</h3>
+                          <p className="text-[13px] text-[#66758b]">Upload company images for your gallery tab.</p>
                         </div>
                       </div>
 
-                      <div className="space-y-4">
-                        <div className="flex flex-wrap items-center gap-3">
-                          <input
-                            ref={modalGalleryInputRef}
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            className="hidden"
-                            onChange={handleGalleryPick}
-                            disabled={saving}
-                          />
-
-                          <button
-                            type="button"
-                            onClick={() => modalGalleryInputRef.current?.click()}
-                            className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[12px] border border-[#d1d5db] bg-white px-4 text-sm font-semibold text-[#374151] transition hover:bg-[#f9fafb]"
-                            disabled={saving}
-                          >
-                            <UploadIcon className="h-4 w-4" />
-                            Upload Gallery Images
-                          </button>
-
-                          <p className="text-[12px] text-[#6b7280]">
-                            Max {MAX_GALLERY_IMAGES} images total, 8MB each
-                          </p>
+                      <div className="mb-5 rounded-[16px] border border-[#d5dde8] bg-[#f8fbff] p-5">
+                        <h4 className="text-[14px] font-bold text-[#081b35]">Showcase Your Workplace</h4>
+                        <p className="mt-1 text-[12px] leading-5 text-[#66758b]">
+                          Upload clear photos that give job seekers a better look at your workplace, team, culture, and environment.
+                        </p>
+                        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          <div className="rounded-xl border border-[#d5dde8] bg-white px-4 py-3"><p className="text-[10px] uppercase tracking-wide text-[#66758b]">Accepted Formats</p><p className="mt-1 text-[12px] font-semibold">JPG, JPEG, PNG</p></div>
+                          <div className="rounded-xl border border-[#d5dde8] bg-white px-4 py-3"><p className="text-[10px] uppercase tracking-wide text-[#66758b]">Maximum File Size</p><p className="mt-1 text-[12px] font-semibold">5 MB per image</p></div>
                         </div>
+                      </div>
 
-                        {galleryDisplayItems.length > 0 ? (
-                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {persistedGalleryItems.map((item, index) => (
-                              <div
-                                key={`persisted-${item._id || item.url}-${index}`}
-                                className="overflow-hidden rounded-[16px] border border-[#d1d5db] bg-[#FFFFFF]"
-                              >
-                                <img
-                                  src={item.url}
-                                  alt={`Saved gallery ${index + 1}`}
-                                  className="h-[180px] w-full object-cover"
-                                />
-                                <div className="flex items-center justify-between border-t border-[#d1d5db] bg-white px-3 py-2">
-                                  <span className="truncate text-[12px] font-medium text-[#4b5563]">
-                                    {item.caption || 'Saved image'}
-                                  </span>
-                                  <span className="rounded-full bg-[#f3f4f6] px-2.5 py-1 text-[11px] font-semibold text-[#2e66a6]">
-                                    Saved
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
-
-                            {galleryPreviews.map((item, index) => (
-                              <div
-                                key={`local-${item.id}-${index}`}
-                                className="overflow-hidden rounded-[16px] border border-[#d1d5db] bg-[#FFFFFF]"
-                              >
-                                <img
-                                  src={item.url}
-                                  alt={`New gallery ${index + 1}`}
-                                  className="h-[180px] w-full object-cover"
-                                />
-                                <div className="flex items-center justify-between border-t border-[#d1d5db] bg-white px-3 py-2">
-                                  <span className="truncate text-[12px] font-medium text-[#4b5563]">
-                                    {item.file?.name || 'New image'}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => removeLocalGalleryPreview(item.id)}
-                                    className="rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600 hover:bg-red-100"
-                                  >
-                                    Remove
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="rounded-[16px] border border-dashed border-[#d1d5db] bg-[#FFFFFF] px-6 py-12 text-center">
-                            <ImageIcon className="mx-auto h-10 w-10 text-[#6b7280]" />
-                            <p className="mt-3 text-sm font-medium text-[#4b5563]">No gallery images selected yet.</p>
-                            <p className="mt-1 text-[13px] text-[#6b7280]">Upload images to show them in the Gallery tab.</p>
-                          </div>
+                      <input ref={modalGalleryInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleGalleryPick} disabled={saving} />
+                      <button
+                        type="button"
+                        onClick={() => modalGalleryInputRef.current?.click()}
+                        className={cx(
+                          'flex min-h-[180px] w-full flex-col items-center justify-center rounded-[18px] border border-dashed bg-white text-center hover:bg-[#f8fafc]',
+                          fieldErrors.galleryImages ? 'border-red-400' : 'border-[#cbd5e1]'
                         )}
-                      </div>
-                    </div>
+                        disabled={saving}
+                      >
+                        <UploadIcon className="h-8 w-8 text-[#66758b]" />
+                        <p className="mt-3 text-[13px] font-bold text-[#172033]">Drag and drop your photos here</p>
+                        <p className="mt-1 text-[11px] text-[#66758b]">JPG, JPEG, PNG · max 5 MB each · up to {MAX_GALLERY_IMAGES} images</p>
+                        <span className="mt-3 inline-flex h-9 items-center gap-2 rounded-[9px] border border-[#d5dde8] bg-white px-4 text-[12px] font-semibold">
+                          <UploadIcon className="h-4 w-4" /> Upload Gallery Images
+                        </span>
+                        <span className="mt-2 text-[11px] text-[#66758b]">{galleryDisplayItems.length} of {MAX_GALLERY_IMAGES} images used</span>
+                      </button>
+                      {fieldErrors.galleryImages ? <p className="mt-2 text-[12px] font-medium text-red-600">{fieldErrors.galleryImages}</p> : null}
 
-                    <div className="flex flex-col-reverse gap-3 border-t border-[#d1d5db] px-2 pt-5 sm:flex-row sm:items-center sm:justify-end">
+                      {galleryDisplayItems.length > 0 ? (
+                        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                          {persistedGalleryItems.map((item, index) => (
+                            <div key={`persisted-${item._id || item.url}-${index}`} className="overflow-hidden rounded-[14px] border border-[#d5dde8] bg-white">
+                              <img src={item.url} alt={`Saved gallery ${index + 1}`} className="h-[170px] w-full object-cover" />
+                              <div className="border-t border-[#e2e8f0] px-3 py-2 text-[11px] font-semibold text-[#66758b]">Saved image</div>
+                            </div>
+                          ))}
+                          {galleryPreviews.map((item, index) => (
+                            <div key={`local-${item.id}-${index}`} className="overflow-hidden rounded-[14px] border border-[#d5dde8] bg-white">
+                              <img src={item.url} alt={`New gallery ${index + 1}`} className="h-[170px] w-full object-cover" />
+                              <div className="flex items-center justify-between border-t border-[#e2e8f0] px-3 py-2">
+                                <span className="min-w-0 truncate text-[11px] font-semibold text-[#66758b]">{item.file?.name || 'New image'}</span>
+                                <button type="button" onClick={() => removeLocalGalleryPreview(item.id)} className="ml-2 rounded-full bg-red-50 px-2 py-1 text-[10px] font-bold text-red-600 hover:bg-red-100">Remove</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  <div className="sticky bottom-0 mt-5 rounded-[18px] border border-[#d5dde8] bg-white/95 px-5 py-4 shadow-[0_-4px_18px_rgba(15,23,42,0.07)] backdrop-blur">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <button
                         type="button"
                         onClick={handleCancel}
                         disabled={saving}
-                        className="inline-flex h-[46px] items-center justify-center rounded-[12px] border border-[#d1d5db] bg-white px-5 text-sm font-semibold text-[#374151] transition hover:bg-[#f9fafb] disabled:cursor-not-allowed disabled:opacity-60"
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-semibold text-[#172033] hover:bg-[#f8fafc] disabled:opacity-60"
                       >
-                        Cancel
+                        <CloseIcon className="h-4 w-4" /> Cancel
                       </button>
 
-                      <button
-                        type="submit"
-                        disabled={saveDisabled}
-                        className="inline-flex h-[46px] items-center justify-center gap-2 rounded-[12px] bg-[#2e66a6] px-6 text-sm font-semibold text-white transition hover:bg-[#255487] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {saving ? (
-                          <>
-                            <SpinnerIcon className="h-4 w-4" />
-                            Saving...
-                          </>
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        {editStep > 1 ? (
+                          <button
+                            type="button"
+                            onClick={goToPreviousEditStep}
+                            disabled={saving}
+                            className="inline-flex h-11 items-center gap-2 rounded-[10px] border border-[#d5dde8] bg-white px-5 text-[13px] font-semibold text-[#172033] hover:bg-[#f8fafc] disabled:opacity-60"
+                          >
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+                            Back
+                          </button>
+                        ) : null}
+
+                        {editStep < 4 ? (
+                          <button
+                            type="button"
+                            onClick={goToNextEditStep}
+                            disabled={saving}
+                            className="inline-flex h-11 items-center gap-2 rounded-[10px] bg-[#1769c2] px-5 text-[13px] font-semibold text-white hover:bg-[#105aa8] disabled:opacity-60"
+                          >
+                            Continue
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                          </button>
                         ) : (
-                          <>
-                            <EditIcon className="h-4 w-4" />
-                            Save Changes
-                          </>
+                          <button
+                            type="submit"
+                            disabled={saving || !isDirty}
+                            className="inline-flex h-11 items-center gap-2 rounded-[10px] bg-[#1769c2] px-5 text-[13px] font-semibold text-white hover:bg-[#105aa8] disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {saving ? <><SpinnerIcon className="h-4 w-4" /> Saving...</> : <><EditIcon className="h-4 w-4" /> Save Changes</>}
+                          </button>
                         )}
-                      </button>
+                      </div>
                     </div>
-                  </form>
-                </div>
+                  </div>
+                </form>
               </div>
             </div>
           </div>

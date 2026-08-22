@@ -524,7 +524,7 @@ const uploadProfileImage = multer({
 const uploadEmployerCompanyMedia = multer({
   storage: employerCompanyMediaStorage,
   fileFilter: imageFileFilter,
-  limits: { fileSize: 8 * 1024 * 1024 },
+  limits: { fileSize: 5 * 1024 * 1024 },
 });
 
 const uploadJobLocationImage = multer({

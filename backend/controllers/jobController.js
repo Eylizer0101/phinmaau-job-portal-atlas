@@ -525,6 +525,15 @@ const buildComprehensiveJobSearchCondition = (searchValue) => {
   return { $or: conditions };
 };
 
+const hasCompleteCompanyLocation = (value = '') => {
+  const parts = String(value || '')
+    .split(' - ')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  return parts.length >= 3;
+};
+
 const getMissingCompanyProfileFields = (employer) => {
   const profile = employer?.employerProfile || {};
   const galleryImages = Array.isArray(profile.galleryImages) ? profile.galleryImages : [];
@@ -537,11 +546,12 @@ const getMissingCompanyProfileFields = (employer) => {
     !String(profile.companyName || '').trim() ? 'Company Name' : null,
     !String(profile.businessEmail || '').trim() ? 'Business Email' : null,
     !String(profile.mobileNumber || '').trim() ? 'Mobile Number' : null,
-    !String(profile.regionCity || '').trim() ? 'City / Municipality' : null,
+    !hasCompleteCompanyLocation(profile.regionCity) ? 'Region, Province, and City / Municipality' : null,
     !String(profile.industry || '').trim() ? 'Industry' : null,
-    !String(profile.companyAddress || '').trim() ? 'Company Address' : null,
+    !String(profile.companyAddress || '').trim() ? 'Complete Office Address' : null,
     !String(profile.companyDescription || '').trim() ? 'About the Company' : null,
     !String(profile.companyLogo || '').trim() ? 'Company Logo' : null,
+    !String(profile.coverPhoto || '').trim() ? 'Cover Photo' : null,
     !hasSavedGalleryPhoto ? 'Gallery' : null,
   ].filter(Boolean);
 };

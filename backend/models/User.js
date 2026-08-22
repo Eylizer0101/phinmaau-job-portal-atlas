@@ -526,6 +526,7 @@ const userSchema = new mongoose.Schema(
       },
       facebookUrl: { type: String, default: '', trim: true },
       instagramUrl: { type: String, default: '', trim: true },
+      youtubeUrl: { type: String, default: '', trim: true },
       linkedinUrl: { type: String, default: '', trim: true },
       xUrl: { type: String, default: '', trim: true },
       coverPhoto: { type: String, default: '', trim: true },

@@ -128,6 +128,7 @@ const mapCompanyFromUser = (user) => {
     // ✅ added fields for dynamic tabs
     facebookUrl: ep.facebookUrl || '',
     instagramUrl: ep.instagramUrl || '',
+    youtubeUrl: ep.youtubeUrl || '',
     linkedinUrl: ep.linkedinUrl || '',
     xUrl: ep.xUrl || '',
     coverPhoto: ep.coverPhoto || '',

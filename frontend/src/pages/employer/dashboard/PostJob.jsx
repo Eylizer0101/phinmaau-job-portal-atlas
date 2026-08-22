@@ -991,6 +991,15 @@ const getRelocationDisplayLabel = (value = '') => {
   return cleanValue;
 };
 
+const hasCompleteCompanyLocation = (value = '') => {
+  const parts = String(value || '')
+    .split(' - ')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  return parts.length >= 3;
+};
+
 const normalizeExternalUrl = (value = '') => {
   const cleanValue = String(value || '').trim();
   if (!cleanValue || cleanValue.toLowerCase() === 'n/a') return '';
@@ -1076,11 +1085,12 @@ const PostJob = () => {
       !String(p.companyName || '').trim() ? 'Company Name' : null,
       !String(p.businessEmail || '').trim() ? 'Business Email' : null,
       !String(p.mobileNumber || '').trim() ? 'Mobile Number' : null,
-      !String(p.regionCity || '').trim() ? 'City / Municipality' : null,
+      !hasCompleteCompanyLocation(p.regionCity) ? 'Region, Province, and City / Municipality' : null,
       !String(p.industry || '').trim() ? 'Industry' : null,
-      !String(p.companyAddress || '').trim() ? 'Company Address' : null,
+      !String(p.companyAddress || '').trim() ? 'Complete Office Address' : null,
       !String(p.companyDescription || '').trim() ? 'About the Company' : null,
       !String(p.companyLogo || '').trim() ? 'Company Logo' : null,
+      !String(p.coverPhoto || '').trim() ? 'Cover Photo' : null,
       !hasSavedGalleryPhoto ? 'Gallery' : null,
     ].filter(Boolean);
   }, [storedUser]);
