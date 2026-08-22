@@ -79,6 +79,17 @@ const SvgIcon = ({ name, className = 'h-5 w-5' }) => {
 
 const Spinner = () => <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-r-transparent" />;
 
+const getApplicationStatusBadgeClass = (status = '') => {
+  const normalized = String(status || '').trim().toLowerCase();
+
+  if (normalized === 'pending') return 'bg-amber-50 text-amber-700';
+  if (normalized === 'for interview') return 'bg-[#eaf3ff] text-[#2e66a6]';
+  if (normalized === 'hired') return 'bg-emerald-50 text-emerald-700';
+  if (normalized === 'declined') return 'bg-red-50 text-red-700';
+
+  return 'bg-gray-100 text-gray-700';
+};
+
 const AutoFitApplicationHeaderName = ({ children, maxFontSize = 30, minFontSize = 13 }) => {
   const containerRef = useRef(null);
   const textRef = useRef(null);
@@ -2318,7 +2329,13 @@ const ApplicationDetails = () => {
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 items-center gap-3 whitespace-nowrap">
                   <AutoFitApplicationHeaderName>{name}</AutoFitApplicationHeaderName>
-                  <span className={`shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-xs font-semibold ${isAlreadyEmployed ? 'bg-amber-100 text-amber-800' : 'bg-green-50 text-green-700'}`}>
+                  <span
+                    className={`shrink-0 whitespace-nowrap rounded-md px-2 py-1 text-xs font-semibold ${
+                      isAlreadyEmployed
+                        ? 'bg-amber-100 text-amber-800'
+                        : getApplicationStatusBadgeClass(currentStatus)
+                    }`}
+                  >
                     {visibleStatusLabel}
                   </span>
                 </div>

@@ -264,9 +264,9 @@ const getApplicationStatusLabel = (status = '', hiringStage = '') => {
 const getApplicationStatusDotClass = (status = '') => {
   const normalized = String(status || '').trim().toLowerCase();
 
+  if (normalized === 'pending') return 'bg-amber-500';
   if (normalized === 'for interview') return 'bg-[#2e66a6]';
-  if (normalized === 'hired') return 'bg-green-600';
-  if (normalized === 'pending') return 'bg-yellow-500';
+  if (normalized === 'hired') return 'bg-emerald-600';
   if (normalized === 'declined') return 'bg-red-600';
   return 'bg-gray-500';
 };
@@ -274,10 +274,10 @@ const getApplicationStatusDotClass = (status = '') => {
 const getApplicationStatusClass = (status = '') => {
   const normalized = String(status || '').trim().toLowerCase();
 
+  if (normalized === 'pending') return 'bg-amber-50 text-amber-700';
   if (normalized === 'for interview') return 'bg-[#eaf3ff] text-[#2e66a6]';
-  if (normalized === 'hired') return 'bg-green-100 text-green-800';
-  if (normalized === 'pending') return 'bg-yellow-100 text-yellow-800';
-  if (normalized === 'declined') return 'bg-red-100 text-red-800';
+  if (normalized === 'hired') return 'bg-emerald-50 text-emerald-700';
+  if (normalized === 'declined') return 'bg-red-50 text-red-700';
   return 'bg-gray-100 text-gray-700';
 };
 
