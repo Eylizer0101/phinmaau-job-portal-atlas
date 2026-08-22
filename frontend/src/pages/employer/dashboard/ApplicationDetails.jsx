@@ -21,21 +21,27 @@ const API_HOST = process.env.REACT_APP_API_URL
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
 const FOR_INTERVIEW_DECLINE_REASONS = [
-  'Interview performance did not meet expectations',
-  'Skills assessment below required level',
-  'Communication skills need improvement',
-  'Schedule or availability conflict',
-  'Position requirements not fully met',
-  'Failed to attend scheduled interview',
+  'Did not meet minimum qualifications',
+  'Does not meet screening criteria',
+  'Insufficient relevant experience',
+  'Skills not aligned with job requirements',
+  'Incomplete application information',
+  'Position Requirements Have Changed',
+  'Position Has Been Filled',
+  'Educational Requirement Not Met',
+  'Too Many Qualified Applicants',
 ];
 
 const APPLICANTS_DECLINE_REASONS = [
   'Did not meet minimum qualifications',
+  'Does not meet screening criteria',
   'Insufficient relevant experience',
   'Skills not aligned with job requirements',
   'Incomplete application information',
-  'Unavailable for required work schedule',
-  'Does not meet screening criteria',
+  'Position Requirements Have Changed',
+  'Position Has Been Filled',
+  'Educational Requirement Not Met',
+  'Too Many Qualified Applicants',
 ];
 
 const PROFICIENCY_STYLES = {
@@ -66,6 +72,7 @@ const SvgIcon = ({ name, className = 'h-5 w-5' }) => {
     paperclip: 'M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48',
     eye: 'M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z M15 12a3 3 0 11-6 0 3 3 0 016 0z',
     user: 'M16 7a4 4 0 11-8 0 4 4 0 018 0z M5 21a7 7 0 0114 0',
+    userMinus: 'M16 7a4 4 0 11-8 0 4 4 0 018 0z M5 21a7 7 0 0114 0 M17 11h5',
   };
   return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.9} d={paths[name] || paths.user} /></svg>;
 };
@@ -1033,13 +1040,113 @@ const ProfileEntries = ({ items = [], type }) => {
 
 const DeclineReasonModal = ({ open, applicantName, reasons, selectedReason, comment, onReasonChange, onCommentChange, onClose, onConfirm, submitting }) => {
   if (!open) return null;
-  return <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4">
-    <div className="w-full max-w-4xl rounded-[26px] bg-white shadow-2xl">
-      <div className="flex items-start justify-between border-b p-6"><div><h2 className="text-2xl font-semibold">Decline application</h2><p className="mt-2 text-sm text-gray-500">Choose a reason for {applicantName}.</p></div><button onClick={onClose}><SvgIcon name="x" /></button></div>
-      <div className="p-6"><div className="grid gap-3 md:grid-cols-3">{reasons.map((reason) => <button key={reason} onClick={() => onReasonChange(reason)} className={cn('rounded-2xl border p-4 text-sm', selectedReason === reason ? 'border-[#2e66a6] bg-[#eef5fc]' : 'border-gray-200')}>{reason}</button>)}</div><textarea value={comment} onChange={(e) => onCommentChange(e.target.value)} rows={4} className="mt-5 w-full rounded-xl border p-3" placeholder="Additional comment..." /></div>
-      <div className="flex justify-end gap-3 border-t p-5"><button onClick={onClose} className="rounded-xl border px-5 py-2">Cancel</button><button disabled={!selectedReason || submitting} onClick={onConfirm} className="rounded-xl bg-red-600 px-5 py-2 font-semibold text-white disabled:opacity-50">{submitting ? 'Declining...' : 'Decline Application'}</button></div>
+
+  const commentLength = String(comment || '').length;
+
+  return (
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="decline-application-title"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !submitting) onClose();
+      }}
+    >
+      <div className="w-full max-w-[560px] overflow-hidden rounded-[22px] bg-white shadow-2xl">
+        <div className="flex items-start justify-between gap-5 px-7 pb-4 pt-6">
+          <div className="min-w-0">
+            <h2 id="decline-application-title" className="text-[20px] font-bold text-gray-900 sm:text-[22px]">
+              Do you want to decline this application?
+            </h2>
+            <p className="mt-2 max-w-[470px] text-[13px] leading-5 text-gray-500">
+              If yes, please choose one of the following reasons or leave a comment so the applicant receives feedback.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="Close decline application modal"
+          >
+            <SvgIcon name="x" className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="px-7 pb-5">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {reasons.map((reason) => (
+              <button
+                key={reason}
+                type="button"
+                onClick={() => onReasonChange(reason)}
+                disabled={submitting}
+                className={cn(
+                  'min-h-[48px] rounded-lg border px-3 py-2 text-[11px] font-medium leading-4 transition disabled:cursor-not-allowed disabled:opacity-60',
+                  selectedReason === reason
+                    ? 'border-[#2f67e8] bg-[#2f67e8] text-white shadow-sm'
+                    : 'border-gray-200 bg-[#f7f7f8] text-gray-800 hover:border-[#bfd0f8] hover:bg-[#f2f6ff]'
+                )}
+              >
+                {reason}
+              </button>
+            ))}
+          </div>
+
+          <div className="relative mt-3">
+            <textarea
+              value={comment}
+              onChange={(event) => onCommentChange(event.target.value.slice(0, 500))}
+              rows={4}
+              maxLength={500}
+              disabled={submitting}
+              className="min-h-[112px] w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-3 pb-8 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#2f67e8] focus:ring-2 focus:ring-[#2f67e8]/10 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-70"
+              placeholder="Leave a comment for the applicant..."
+            />
+            <span className="pointer-events-none absolute bottom-2.5 right-3 text-[10px] text-gray-400">
+              {commentLength}/500
+            </span>
+          </div>
+
+          <p className="mt-2 text-[10px] leading-4 text-gray-500">
+            * This feedback will be shared directly with the applicant to help their professional growth.
+          </p>
+        </div>
+
+        <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-7 py-4">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="h-10 rounded-lg bg-[#f7f7f8] px-5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            disabled={!selectedReason || submitting}
+            onClick={onConfirm}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#c8191f] px-5 text-sm font-semibold text-white transition hover:bg-[#aa151a] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {submitting ? (
+              <>
+                <Spinner />
+                Declining...
+              </>
+            ) : (
+              <>
+                <span>Decline Application</span>
+                <SvgIcon name="userMinus" className="h-4 w-4" />
+              </>
+            )}
+          </button>
+        </div>
+      </div>
     </div>
-  </div>;
+  );
 };
 
 
