@@ -2495,13 +2495,7 @@ const EmployerMessages = () => {
                         Open Conversations
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() => setShowSidebar(true)}
-                        className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSecondary} ${UI.ring}`}
-                      >
-                        View Applicants
-                      </button>
+                      
                     </div>
                   </div>
                 )}
