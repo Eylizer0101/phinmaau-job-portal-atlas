@@ -62,6 +62,8 @@ const SvgIcon = ({ name, className = 'h-5 w-5' }) => {
     message: 'M8 10h8m-8 4h5m7-2a8 8 0 01-8 8 8.7 8.7 0 01-3.7-.8L4 20l.8-4.3A8 8 0 1120 12z',
     resume: 'M7 3h7l4 4v14H7z M14 3v5h5 M10 13h5m-5 4h5', activity: 'M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z',
     send: 'M3 11l18-8-8 18-2-7-8-3z M11 14l4-4',
+    search: 'M21 21l-4.35-4.35m2.35-5.65a8 8 0 11-16 0 8 8 0 0116 0z',
+    paperclip: 'M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48',
     eye: 'M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z M15 12a3 3 0 11-6 0 3 3 0 016 0z',
     user: 'M16 7a4 4 0 11-8 0 4 4 0 018 0z M5 21a7 7 0 0114 0',
   };
@@ -1122,43 +1124,753 @@ const StatusConfirmationModal = ({
 };
 
 const MessagePopup = ({ open, onClose, applicant, application }) => {
+  const [conversations, setConversations] = useState([]);
+  const [selectedConversation, setSelectedConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [activeMessageTab, setActiveMessageTab] = useState('all');
+  const [loadingConversations, setLoadingConversations] = useState(false);
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
+
   const bottomRef = useRef(null);
-  const currentUser = useMemo(() => { try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; } }, []);
-  const applicantId = applicant?._id;
-  const employerId = currentUser?._id || application?.employer?._id || application?.employer;
-  const conversationId = applicantId && employerId ? [String(applicantId), String(employerId)].sort().join('_') : '';
+  const fileInputRef = useRef(null);
+
+  const currentUser = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem('user') || '{}');
+    } catch {
+      return {};
+    }
+  }, []);
+
+  const employerId = currentUser?._id || currentUser?.id || application?.employer?._id || application?.employer;
   const token = localStorage.getItem('token');
 
-  const load = useCallback(async () => {
-    if (!open || !conversationId) return;
-    try { setLoading(true); setError(''); const res = await axios.get(`${API_HOST}/api/messages/conversation/${conversationId}`, { headers: { Authorization: `Bearer ${token}` } }); setMessages(res.data?.data || []); await axios.put(`${API_HOST}/api/messages/mark-read/${conversationId}`, {}, { headers: { Authorization: `Bearer ${token}` } }).catch(() => {}); }
-    catch (err) { setError(err.response?.data?.message || 'Failed to load messages.'); }
-    finally { setLoading(false); }
-  }, [open, conversationId, token]);
+  const buildName = useCallback((user) => {
+    if (!user) return 'Applicant';
+    const fullName = String(user.fullName || '').trim();
+    if (fullName) return fullName;
+    const parts = [user.firstName, user.middleName, user.lastName, user.extensionName]
+      .map((part) => String(part || '').trim())
+      .filter(Boolean);
+    return parts.join(' ') || String(user.email || '').trim() || 'Applicant';
+  }, []);
 
-  useEffect(() => { load(); }, [load]);
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
-  if (!open) return null;
+  const getAvatar = useCallback((user) => {
+    const raw = String(user?.profileImage || '').trim();
+    if (!raw) return '';
+    return raw.startsWith('http') ? raw : `${API_HOST}${raw}`;
+  }, []);
 
-  const send = async () => {
-    const content = text.trim(); if (!content || sending) return;
-    try { setSending(true); setError(''); const res = await axios.post(`${API_HOST}/api/messages/send`, { receiverId: applicantId, content, jobId: application?.job?._id, applicationId: application?._id }, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }); setText(''); if (res.data?.data) setMessages((prev) => [...prev, res.data.data]); else await load(); }
-    catch (err) { setError(err.response?.data?.message || 'Failed to send message.'); }
-    finally { setSending(false); }
+  const formatConversationTime = useCallback((value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+
+    const diff = Date.now() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+
+    return date.toLocaleDateString('en-PH', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  }, []);
+
+  const currentApplicantId = applicant?._id;
+  const currentConversationId =
+    currentApplicantId && employerId
+      ? [String(currentApplicantId), String(employerId)].sort().join('_')
+      : '';
+
+  const selectedOtherUser = selectedConversation?.otherUser || applicant || {};
+  const selectedReceiverId = selectedOtherUser?._id || currentApplicantId;
+  const selectedApplication = selectedConversation?.application || application || null;
+  const selectedConversationId =
+    selectedConversation?.__temp
+      ? selectedConversation?._id
+      : selectedConversation?._id ||
+        (selectedReceiverId && employerId
+          ? [String(selectedReceiverId), String(employerId)].sort().join('_')
+          : '');
+
+  const loadMessages = useCallback(
+    async (conversation) => {
+      const otherUserId = conversation?.otherUser?._id || currentApplicantId;
+      const conversationId =
+        conversation?.__temp
+          ? conversation?._id
+          : conversation?._id ||
+            (otherUserId && employerId
+              ? [String(otherUserId), String(employerId)].sort().join('_')
+              : '');
+
+      if (!open || !conversationId) {
+        setMessages([]);
+        return;
+      }
+
+      if (conversation?.__temp) {
+        setMessages([]);
+        return;
+      }
+
+      try {
+        setLoadingMessages(true);
+        setError('');
+
+        const res = await axios.get(
+          `${API_HOST}/api/messages/conversation/${conversationId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        setMessages(res.data?.data || []);
+
+        await axios
+          .put(
+            `${API_HOST}/api/messages/mark-read/${conversationId}`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+          .catch(() => {});
+
+        setConversations((previous) =>
+          previous.map((item) =>
+            item._id === conversationId ? { ...item, unreadCount: 0 } : item
+          )
+        );
+
+        window.dispatchEvent(new Event('messages:unread-updated'));
+      } catch (err) {
+        setError(err.response?.data?.message || 'Failed to load messages.');
+      } finally {
+        setLoadingMessages(false);
+      }
+    },
+    [currentApplicantId, employerId, open, token]
+  );
+
+  const loadConversations = useCallback(async () => {
+    if (!open) return;
+
+    try {
+      setLoadingConversations(true);
+      setError('');
+
+      const res = await axios.get(`${API_HOST}/api/messages/conversations`, {
+        params: { view: 'active' },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const received = res.data?.success ? res.data?.data || [] : res.data?.data || [];
+      const next = Array.isArray(received) ? [...received] : [];
+
+      let currentEntry = next.find(
+        (conversation) =>
+          String(conversation?.otherUser?._id || '') === String(currentApplicantId || '')
+      );
+
+      if (currentApplicantId && !currentEntry) {
+        currentEntry = {
+          _id: currentConversationId || `temp_${currentApplicantId}`,
+          otherUser: applicant,
+          application,
+          lastMessage: null,
+          lastMessageTime: application?.appliedAt || application?.createdAt || null,
+          unreadCount: 0,
+          __temp: true,
+        };
+        next.unshift(currentEntry);
+      } else if (currentEntry) {
+        currentEntry = {
+          ...currentEntry,
+          application: currentEntry.application || application,
+          otherUser: {
+            ...(currentEntry.otherUser || {}),
+            ...(applicant || {}),
+          },
+        };
+        const currentIndex = next.findIndex(
+          (conversation) => conversation._id === currentEntry._id
+        );
+        if (currentIndex >= 0) next[currentIndex] = currentEntry;
+      }
+
+      setConversations(next);
+      setSelectedConversation(currentEntry || next[0] || null);
+
+      if (currentEntry || next[0]) {
+        await loadMessages(currentEntry || next[0]);
+      } else {
+        setMessages([]);
+      }
+    } catch (err) {
+      setConversations([]);
+      setMessages([]);
+      setError(err.response?.data?.message || 'Failed to load conversations.');
+    } finally {
+      setLoadingConversations(false);
+    }
+  }, [
+    applicant,
+    application,
+    currentApplicantId,
+    currentConversationId,
+    loadMessages,
+    open,
+    token,
+  ]);
+
+  useEffect(() => {
+    if (!open) return;
+    setSearch('');
+    setActiveMessageTab('all');
+    setSelectedFile(null);
+    setText('');
+    loadConversations();
+  }, [open, loadConversations]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const totalUnread = useMemo(
+    () =>
+      conversations.reduce(
+        (total, conversation) => total + Number(conversation?.unreadCount || 0),
+        0
+      ),
+    [conversations]
+  );
+
+  const filteredConversations = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    return conversations.filter((conversation) => {
+      if (
+        activeMessageTab === 'unread' &&
+        Number(conversation?.unreadCount || 0) <= 0
+      ) {
+        return false;
+      }
+
+      if (!query) return true;
+
+      const searchable = [
+        buildName(conversation?.otherUser),
+        conversation?.otherUser?.email,
+        conversation?.application?.job?.title,
+        conversation?.lastMessage?.content,
+      ];
+
+      return searchable.some((value) =>
+        String(value || '').toLowerCase().includes(query)
+      );
+    });
+  }, [activeMessageTab, buildName, conversations, search]);
+
+  const handleSelectConversation = async (conversation) => {
+    setSelectedConversation({
+      ...conversation,
+      unreadCount: 0,
+    });
+    setSelectedFile(null);
+    setText('');
+    await loadMessages(conversation);
   };
 
-  return <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/45 p-4">
-    <div className="flex h-[78vh] w-full max-w-2xl flex-col overflow-hidden rounded-[24px] bg-white shadow-2xl">
-      <div className="flex items-center justify-between border-b px-5 py-4"><div><h2 className="font-semibold text-gray-900">Messages</h2><p className="text-sm text-gray-500">{applicant?.fullName || [applicant?.firstName, applicant?.lastName].filter(Boolean).join(' ')}</p></div><button onClick={onClose} className="rounded-full p-2 hover:bg-gray-100"><SvgIcon name="x" /></button></div>
-      <div className="flex-1 overflow-y-auto bg-gray-50 p-5">{loading ? <div className="flex justify-center py-10 text-[#2e66a6]"><Spinner /></div> : messages.length ? <div className="space-y-3">{messages.map((msg) => { const mine = String(msg.sender?._id || msg.sender) === String(employerId); return <div key={msg._id || `${msg.createdAt}-${msg.content}`} className={cn('flex', mine ? 'justify-end' : 'justify-start')}><div className={cn('max-w-[78%] rounded-2xl px-4 py-3 text-sm', mine ? 'rounded-br-md bg-[#2e66a6] text-white' : 'rounded-bl-md border bg-white text-gray-900')}><p>{msg.content}</p><div className={cn('mt-1 text-[10px]', mine ? 'text-blue-100' : 'text-gray-400')}>{formatDateTime(msg.createdAt).time}</div></div></div>; })}<div ref={bottomRef} /></div> : <div className="py-16 text-center text-sm text-gray-500">No messages yet. Start the conversation with this applicant.</div>}{error ? <div className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}</div>
-      <div className="border-t p-4"><div className="flex gap-2"><textarea value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} rows={2} placeholder="Type a message..." className="flex-1 resize-none rounded-xl border px-3 py-2 text-sm focus:border-[#2e66a6] focus:outline-none" /><button onClick={send} disabled={!text.trim() || sending} className="flex h-11 w-11 items-center justify-center self-end rounded-xl bg-[#2e66a6] text-white disabled:opacity-50">{sending ? <Spinner /> : <SvgIcon name="send" />}</button></div></div>
+  const send = async () => {
+    const content = text.trim();
+    if ((!content && !selectedFile) || sending || !selectedReceiverId) return;
+
+    try {
+      setSending(true);
+      setError('');
+
+      const formData = new FormData();
+      formData.append('receiverId', selectedReceiverId);
+      formData.append('content', content);
+
+      if (selectedApplication?.job?._id) {
+        formData.append('jobId', selectedApplication.job._id);
+      }
+      if (selectedApplication?._id) {
+        formData.append('applicationId', selectedApplication._id);
+      }
+      if (selectedFile) {
+        formData.append('file', selectedFile);
+      }
+
+      const res = await axios.post(
+        `${API_HOST}/api/messages/send`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      setText('');
+      setSelectedFile(null);
+
+      if (res.data?.data) {
+        setMessages((previous) => [...previous, res.data.data]);
+      } else if (selectedConversation) {
+        await loadMessages(selectedConversation);
+      }
+
+      try {
+        const refreshed = await axios.get(
+          `${API_HOST}/api/messages/conversations`,
+          {
+            params: { view: 'active' },
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        if (Array.isArray(refreshed.data?.data)) {
+          const next = refreshed.data.data;
+          setConversations(next);
+
+          const refreshedSelected = next.find(
+            (conversation) =>
+              String(conversation?.otherUser?._id || '') ===
+              String(selectedReceiverId)
+          );
+
+          if (refreshedSelected) {
+            setSelectedConversation({
+              ...refreshedSelected,
+              application:
+                refreshedSelected.application || selectedApplication || null,
+              unreadCount: 0,
+            });
+          }
+        }
+      } catch {
+        // Message was sent successfully; conversation refresh is optional.
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to send message.');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (!open) return null;
+
+  const selectedName = buildName(selectedOtherUser);
+  const selectedAvatar = getAvatar(selectedOtherUser);
+  const selectedJobTitle =
+    selectedApplication?.job?.title ||
+    selectedConversation?.application?.job?.title ||
+    'Job Seeker';
+  const selectedStatus = String(selectedApplication?.status || '').trim().toLowerCase();
+  const selectedStatusClass =
+    selectedStatus === 'hired'
+      ? 'bg-green-100 text-green-800'
+      : selectedStatus === 'for interview'
+        ? 'bg-blue-50 text-[#2e66a6]'
+        : selectedStatus === 'declined'
+          ? 'bg-red-50 text-red-700'
+          : selectedStatus === 'pending'
+            ? 'bg-yellow-100 text-yellow-800'
+            : 'bg-gray-100 text-gray-700';
+
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/45 p-3 sm:p-5">
+      <div className="relative flex h-[84vh] min-h-[600px] w-full max-w-6xl overflow-hidden rounded-[24px] border border-[#e6edf5] bg-white shadow-2xl">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-white text-gray-600 shadow-sm transition hover:bg-gray-100"
+          aria-label="Close messages"
+        >
+          <SvgIcon name="x" className="h-5 w-5" />
+        </button>
+
+        <aside className="flex w-[350px] min-w-[310px] flex-col border-r border-[#e6edf5] bg-white">
+          <div className="border-b border-[#e6edf5] p-4">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">Messages</h2>
+              <p className="mt-1 text-sm text-gray-600">
+                {totalUnread} {totalUnread === 1 ? 'unread message' : 'unread messages'}
+              </p>
+            </div>
+
+            <div className="relative mt-3">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <SvgIcon name="search" className="h-4 w-4" />
+              </span>
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="h-10 w-full rounded-xl border border-gray-200 bg-white px-10 pr-4 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
+                placeholder="Search conversations..."
+                aria-label="Search conversations"
+              />
+            </div>
+
+            <div className="mt-3 flex items-center gap-1.5">
+              {[
+                { key: 'all', label: 'All' },
+                { key: 'unread', label: 'Unread' },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveMessageTab(tab.key)}
+                  className={cn(
+                    'rounded-full px-3 py-2 text-sm font-semibold transition',
+                    activeMessageTab === tab.key
+                      ? 'bg-[#eaf3ff] text-[#2e66a6]'
+                      : 'text-gray-600 hover:bg-[#f7faff]'
+                  )}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto p-3">
+            {loadingConversations ? (
+              <div className="flex justify-center py-12 text-[#2e66a6]">
+                <Spinner />
+              </div>
+            ) : filteredConversations.length ? (
+              <div className="space-y-2">
+                {filteredConversations.map((conversation) => {
+                  const title = buildName(conversation.otherUser);
+                  const avatar = getAvatar(conversation.otherUser);
+                  const active =
+                    String(selectedConversation?._id || '') ===
+                    String(conversation?._id || '');
+                  const lastMessage = conversation.__temp
+                    ? 'Tap to start chat'
+                    : conversation?.lastMessage?.content || 'No messages yet';
+                  const time = formatConversationTime(
+                    conversation?.lastMessageTime ||
+                      conversation?.lastMessage?.createdAt ||
+                      conversation?.application?.appliedAt
+                  );
+
+                  return (
+                    <button
+                      key={conversation?._entryId || conversation?._id}
+                      type="button"
+                      onClick={() => handleSelectConversation(conversation)}
+                      className={cn(
+                        'w-full rounded-2xl border p-3 text-left transition',
+                        active
+                          ? 'border-[#2e66a6] bg-[#f7faff] shadow-[0_8px_20px_rgba(46,102,166,0.08)] ring-1 ring-[#2e66a6]/80'
+                          : 'border-transparent hover:border-[#d8e2ee] hover:bg-[#f7faff]'
+                      )}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#2e66a6]/20 bg-[#2e66a6]/10">
+                          {avatar ? (
+                            <img
+                              src={avatar}
+                              alt={title}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-sm font-bold text-[#2e66a6]">
+                              {(title?.[0] || 'U').toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="truncate font-semibold text-gray-900">
+                              {title}
+                            </p>
+                            <span className="shrink-0 text-xs text-gray-500">
+                              {time}
+                            </span>
+                          </div>
+
+                          <p className="mt-1 truncate text-sm text-gray-600">
+                            {lastMessage}
+                          </p>
+
+                          {Number(conversation?.unreadCount || 0) > 0 ? (
+                            <p className="mt-1.5 text-xs font-semibold text-[#2e66a6]">
+                              {conversation.unreadCount}{' '}
+                              {Number(conversation.unreadCount) === 1
+                                ? 'unread message'
+                                : 'unread messages'}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="px-4 py-12 text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                  <SvgIcon name="message" className="h-6 w-6" />
+                </div>
+                <p className="mt-3 font-semibold text-gray-900">
+                  {activeMessageTab === 'unread'
+                    ? 'No unread conversations'
+                    : 'No conversations'}
+                </p>
+                <p className="mt-1 text-sm text-gray-500">
+                  {search
+                    ? 'Try another search term.'
+                    : 'Your applicant conversations will appear here.'}
+                </p>
+              </div>
+            )}
+          </div>
+        </aside>
+
+        <section className="flex min-w-0 flex-1 flex-col bg-white">
+          {selectedConversation ? (
+            <>
+              <header className="flex min-h-[94px] items-center gap-3 border-b border-[#e6edf5] bg-white px-5 pr-16">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#2e66a6]/20 bg-[#2e66a6]/10">
+                  {selectedAvatar ? (
+                    <img
+                      src={selectedAvatar}
+                      alt={selectedName}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-sm font-bold text-[#2e66a6]">
+                      {(selectedName?.[0] || 'U').toUpperCase()}
+                    </span>
+                  )}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-bold text-gray-900">{selectedName}</p>
+                  <p className="truncate text-sm text-gray-600">
+                    {selectedJobTitle !== 'Job Seeker'
+                      ? `Applied for: ${selectedJobTitle}`
+                      : selectedJobTitle}
+                  </p>
+                </div>
+
+                {selectedStatus ? (
+                  <span
+                    className={cn(
+                      'mr-1 inline-flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold capitalize',
+                      selectedStatusClass
+                    )}
+                  >
+                    <span className="h-2 w-2 rounded-full bg-current opacity-80" />
+                    {selectedStatus}
+                  </span>
+                ) : null}
+              </header>
+
+              <div className="min-h-0 flex-1 overflow-y-auto bg-[#f8fafc] px-5 py-5 sm:px-6">
+                {loadingMessages ? (
+                  <div className="flex justify-center py-16 text-[#2e66a6]">
+                    <Spinner />
+                  </div>
+                ) : messages.length ? (
+                  <div className="space-y-3 pb-4">
+                    {messages.map((msg) => {
+                      const mine =
+                        String(msg.sender?._id || msg.sender || '') ===
+                        String(employerId || '');
+                      const file = msg?.file;
+                      const fileName = file?.originalName || file?.filename || '';
+
+                      return (
+                        <div
+                          key={msg._id || `${msg.createdAt}-${msg.content}`}
+                          className={cn('flex', mine ? 'justify-end' : 'justify-start')}
+                        >
+                          <div
+                            className={cn(
+                              'flex max-w-[86%] flex-col',
+                              mine ? 'items-end' : 'items-start'
+                            )}
+                          >
+                            <div
+                              className={cn(
+                                'w-fit max-w-full rounded-2xl px-4 py-3 text-sm shadow-sm',
+                                mine
+                                  ? 'rounded-br-md bg-[#2e66a6] text-white'
+                                  : 'rounded-bl-md border border-gray-200 bg-white text-gray-900'
+                              )}
+                            >
+                              {fileName ? (
+                                <div
+                                  className={cn(
+                                    'mb-2 flex items-center gap-2 rounded-xl border px-3 py-2',
+                                    mine
+                                      ? 'border-white/25 bg-white/10'
+                                      : 'border-gray-200 bg-gray-50'
+                                  )}
+                                >
+                                  <SvgIcon name="paperclip" className="h-4 w-4 shrink-0" />
+                                  <span className="max-w-[260px] truncate text-xs font-semibold">
+                                    {fileName}
+                                  </span>
+                                </div>
+                              ) : null}
+
+                              {msg.content ? (
+                                <p className="whitespace-pre-wrap break-words">
+                                  {msg.content}
+                                </p>
+                              ) : null}
+                            </div>
+
+                            <span className="mt-1 px-1 text-[11px] text-gray-400">
+                              {formatDateTime(msg.createdAt).time}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div ref={bottomRef} />
+                  </div>
+                ) : (
+                  <div className="flex h-full min-h-[300px] flex-col items-center justify-center text-center">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                      <SvgIcon name="message" className="h-7 w-7" />
+                    </div>
+                    <p className="mt-4 font-semibold text-gray-900">No messages yet</p>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Send the first message to start the conversation.
+                    </p>
+                  </div>
+                )}
+
+                {error ? (
+                  <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    {error}
+                  </div>
+                ) : null}
+              </div>
+
+              {selectedFile ? (
+                <div className="border-t border-gray-200 bg-white px-4 pt-3">
+                  <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600">
+                        <SvgIcon name="paperclip" className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-gray-900">
+                          {selectedFile.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedFile(null)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200"
+                      aria-label="Remove selected file"
+                    >
+                      <SvgIcon name="x" className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="border-t border-gray-200 bg-white/95 p-4 backdrop-blur">
+                <div className="flex items-end gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.txt"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] || null;
+                      setSelectedFile(file);
+                      event.target.value = '';
+                    }}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={sending}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-800 transition hover:bg-gray-50 disabled:opacity-50"
+                    aria-label="Attach file"
+                  >
+                    <SvgIcon name="paperclip" className="h-5 w-5" />
+                  </button>
+
+                  <textarea
+                    value={text}
+                    onChange={(event) => setText(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.isComposing) return;
+                      if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault();
+                        send();
+                      }
+                    }}
+                    rows={1}
+                    placeholder="Type a message..."
+                    className="min-h-10 max-h-32 min-w-0 flex-1 resize-none rounded-xl border border-gray-200 px-4 py-2 text-sm focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
+                    disabled={sending}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={send}
+                    disabled={(!text.trim() && !selectedFile) || sending}
+                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white transition hover:bg-[#23508a] disabled:pointer-events-none disabled:opacity-50"
+                    aria-label="Send message"
+                  >
+                    {sending ? (
+                      <Spinner />
+                    ) : (
+                      <>
+                        <SvgIcon name="send" className="h-5 w-5" />
+                        <span className="hidden sm:inline">Send</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-1 flex-col items-center justify-center bg-white p-10 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                <SvgIcon name="message" className="h-8 w-8" />
+              </div>
+              <p className="mt-4 text-lg font-bold text-gray-900">
+                No conversation selected
+              </p>
+              <p className="mt-1 max-w-md text-sm text-gray-600">
+                Select an applicant or conversation from the list to start chatting.
+              </p>
+            </div>
+          )}
+        </section>
+      </div>
     </div>
-  </div>;
+  );
 };
 
 const ApplicationDetails = () => {
