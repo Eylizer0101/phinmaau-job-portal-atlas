@@ -963,20 +963,15 @@ const JobseekerVerification = () => {
 
                             <td className="px-5 py-4">
                               <div className="flex items-center gap-3 min-w-0">
-                                {item.profileImage ? (
-                                  <img
-                                    src={item.profileImage}
-                                    alt={fullName}
-                                    className="h-11 w-11 rounded-full object-cover border border-gray-200"
-                                    onError={(e) => {
-                                      e.currentTarget.style.display = "none";
-                                    }}
-                                  />
-                                ) : (
-                                  <div className="h-11 w-11 rounded-full border border-gray-200 bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-700">
-                                    {buildAvatar(item)}
-                                  </div>
-                                )}
+                                <img
+                                  src={item.profileImage || "/images/default-jobseeker.svg"}
+                                  alt={fullName}
+                                  className="h-11 w-11 rounded-full object-cover border border-gray-200 bg-white"
+                                  onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = "/images/default-jobseeker.svg";
+                                  }}
+                                />
 
                                 <div className="min-w-0">
                                   <div className="text-sm font-semibold text-gray-900 truncate">{fullName}</div>
@@ -1019,20 +1014,15 @@ const JobseekerVerification = () => {
                     return (
                       <Card key={item._id} className="p-4">
                         <div className="flex items-start gap-3">
-                          {item.profileImage ? (
-                            <img
-                              src={item.profileImage}
-                              alt={fullName}
-                              className="h-11 w-11 rounded-full object-cover border border-gray-200"
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none";
-                              }}
-                            />
-                          ) : (
-                            <div className="h-11 w-11 rounded-full border border-gray-200 bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-700 shrink-0">
-                              {buildAvatar(item)}
-                            </div>
-                          )}
+                          <img
+                            src={item.profileImage || "/images/default-jobseeker.svg"}
+                            alt={fullName}
+                            className="h-11 w-11 shrink-0 rounded-full object-cover border border-gray-200 bg-white"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = "/images/default-jobseeker.svg";
+                            }}
+                          />
 
                           <div className="min-w-0 flex-1">
                             <div className="text-sm font-semibold text-gray-900">{fullName}</div>

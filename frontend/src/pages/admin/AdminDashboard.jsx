@@ -13,7 +13,7 @@ import {
   UserRound,
   LogOut,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import * as XLSX from "xlsx";
 
@@ -1615,7 +1615,10 @@ const AdminTopActions = () => {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("overview");
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(
+    location.pathname === "/admin/analytics" ? "trends" : "overview"
+  );
   const [dashboard, setDashboard] = useState(defaultDashboard);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -1635,6 +1638,10 @@ const AdminDashboard = () => {
 
   const sampleDashboard = useMemo(() => buildDummyDashboardData(filters), [filters]);
   const activeDashboard = useSampleData ? sampleDashboard : dashboard;
+
+  useEffect(() => {
+    setActiveTab(location.pathname === "/admin/analytics" ? "trends" : "overview");
+  }, [location.pathname]);
 
   const fetchDashboard = async () => {
     try {

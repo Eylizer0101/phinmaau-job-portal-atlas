@@ -498,6 +498,16 @@ function App() {
           }
         />
         <Route
+          path="/admin/analytics"
+          element={
+            <RequireRole role="admin" redirectTo="/login">
+              <AdminLayout>
+                <AdminDashboard />
+              </AdminLayout>
+            </RequireRole>
+          }
+        />
+        <Route
           path="/admin/notifications"
           element={
             <RequireRole role="admin" redirectTo="/login">

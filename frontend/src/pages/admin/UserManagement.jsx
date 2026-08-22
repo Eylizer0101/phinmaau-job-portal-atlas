@@ -1007,9 +1007,11 @@ const useDebouncedValue = (value, delay = 300) => {
   return [debounced, cancel];
 };
 
-const Avatar = React.memo(({ img, name, size = 40, className }) => {
+const Avatar = React.memo(({ img, name, role = 'jobseeker', size = 40, className }) => {
   const [imageError, setImageError] = useState(false);
-  const initial = (name?.trim()?.[0] || 'U').toUpperCase();
+  const fallbackImage = role === 'employer'
+    ? '/images/default-company.svg'
+    : '/images/default-jobseeker.svg';
 
   const boxStyle = {
     height: `${size}px`,
@@ -1026,17 +1028,13 @@ const Avatar = React.memo(({ img, name, size = 40, className }) => {
       style={boxStyle}
       aria-label={`${name}'s profile picture`}
     >
-      {img && !imageError ? (
-        <img
-          src={img}
-          alt={`${name}'s profile`}
-          className="h-full w-full object-cover"
-          loading="lazy"
-          onError={() => setImageError(true)}
-        />
-      ) : (
-        <span className="font-bold" aria-hidden="true">{initial}</span>
-      )}
+      <img
+        src={img && !imageError ? img : fallbackImage}
+        alt={`${name}'s profile`}
+        className="h-full w-full object-cover bg-white"
+        loading="lazy"
+        onError={() => setImageError(true)}
+      />
     </div>
   );
 });
@@ -1818,6 +1816,7 @@ const UserManagement = () => {
                                 <Avatar
                                   img={user.avatarImage}
                                   name={user.role === 'employer' ? user.companyName || user.name : user.name}
+                                  role={user.role}
                                 />
                                 <div className="min-w-0">
                                   <div className="text-sm font-semibold text-gray-900 truncate">
@@ -1889,6 +1888,7 @@ const UserManagement = () => {
                             <Avatar
                               img={user.avatarImage}
                               name={user.role === 'employer' ? user.companyName || user.name : user.name}
+                              role={user.role}
                               size={44}
                             />
 
@@ -2077,6 +2077,7 @@ const UserManagement = () => {
                 <Avatar
                   img={actionTarget.user.avatarImage}
                   name={actionTarget.user.name}
+                  role={actionTarget.user.role}
                 />
                 <div>
                   <p className="font-medium text-gray-900">{actionTarget.user.name}</p>

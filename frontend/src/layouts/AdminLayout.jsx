@@ -7,6 +7,12 @@ const AdminLayout = ({ children }) => {
 
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [openDropdowns, setOpenDropdowns] = useState({
+    Main: true,
+    Records: true,
+    Approvals: true,
+    Settings: true,
+  });
 
   // ✅ Logout modal state (QA/UI confirm)
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -54,21 +60,46 @@ const AdminLayout = ({ children }) => {
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2";
 
 
-const navItems = useMemo(
-  () => [
-    { name: "Dashboard", path: "/admin/dashboard" },
-    { name: "User Management", path: "/admin/users" },
-    { name: "Jobseeker Verification", path: "/admin/jobseeker-verification" }, 
-    { name: "Employer Verification", path: "/admin/employer-verification" },// ✅ ADD THIS LINE
-    { name: "Job Offers", path: "/admin/job-offers" },
-    { name: "Applications", path: "/admin/applications" },
-    { name: "System Log", path: "/admin/system-logs" },
-    { name: "Archive", path: "/admin/archive" },
-   
+  const navSections = useMemo(
+    () => [
+      {
+        name: "Main",
+        items: [
+          { name: "Dashboard", path: "/admin/dashboard" },
+          { name: "Analytics", path: "/admin/analytics" },
+        ],
+      },
+      {
+        name: "Records",
+        items: [
+          { name: "Users", path: "/admin/users" },
+          { name: "Job Offers", path: "/admin/job-offers" },
+          { name: "Applications", path: "/admin/applications" },
+        ],
+      },
+      {
+        name: "Approvals",
+        items: [
+          { name: "Job Seeker", path: "/admin/jobseeker-verification" },
+          { name: "Employer", path: "/admin/employer-verification" },
+          { name: "Request Edit", path: "/admin/employer-job-edit-requests" },
+        ],
+      },
+      {
+        name: "Settings",
+        items: [
+          { name: "Activity Log", path: "/admin/system-logs" },
+          { name: "Archive", path: "/admin/archive" },
+        ],
+      },
+    ],
+    []
+  );
 
-  ],
-  []
-);
+  const navItems = useMemo(
+    () => navSections.flatMap((section) => section.items),
+    [navSections]
+  );
 
   const currentLabel = useMemo(() => {
     const match = navItems
@@ -76,6 +107,19 @@ const navItems = useMemo(
       .sort((a, b) => b.path.length - a.path.length)[0];
     return match?.name || "Dashboard";
   }, [location.pathname, navItems]);
+
+  useEffect(() => {
+    const activeSection = navSections.find((section) =>
+      section.items.some((item) => location.pathname.startsWith(item.path))
+    );
+
+    if (activeSection) {
+      setOpenDropdowns((previous) => ({
+        ...previous,
+        [activeSection.name]: true,
+      }));
+    }
+  }, [location.pathname, navSections]);
 
   useEffect(() => setIsMobileNavOpen(false), [location.pathname]);
 
@@ -289,11 +333,63 @@ const navItems = useMemo(
     );
   };
 
+  const SidebarDropdown = ({ section, onItemClick }) => {
+    const isOpen = openDropdowns[section.name];
+    const hasActiveChild = section.items.some((item) =>
+      location.pathname.startsWith(item.path)
+    );
+
+    return (
+      <li>
+        <button
+          type="button"
+          onClick={() =>
+            setOpenDropdowns((previous) => ({
+              ...previous,
+              [section.name]: !previous[section.name],
+            }))
+          }
+          className={[
+            "group flex w-full items-center rounded-xl px-3 py-2.5 text-sm font-semibold select-none",
+            "transition-colors duration-150 ease-out",
+            focusRing,
+            hasActiveChild
+              ? "text-slate-900"
+              : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
+          ].join(" ")}
+          aria-expanded={isOpen}
+        >
+          <span className="flex-1 truncate text-left">{section.name}</span>
+          <svg
+            className={[
+              "h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200",
+              isOpen ? "rotate-180" : "",
+            ].join(" ")}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {isOpen && (
+          <ul className="mt-1 space-y-1 pl-2">
+            {section.items.map((item) => (
+              <SideNavItem key={item.name} item={item} onItemClick={onItemClick} />
+            ))}
+          </ul>
+        )}
+      </li>
+    );
+  };
+
   const NavList = ({ onItemClick }) => (
     <nav className="p-3">
-      <ul className="space-y-1">
-        {navItems.map((item) => (
-          <SideNavItem key={item.name} item={item} onItemClick={onItemClick} />
+      <ul className="space-y-2">
+        {navSections.map((section) => (
+          <SidebarDropdown key={section.name} section={section} onItemClick={onItemClick} />
         ))}
       </ul>
     </nav>

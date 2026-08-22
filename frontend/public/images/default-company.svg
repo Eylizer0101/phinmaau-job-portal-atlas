@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title">
+  <title id="title">Default company</title>
+  <rect width="96" height="96" rx="16" fill="#ffffff"/>
+  <path d="M24 79V28c0-3 2-5 5-5h30c3 0 5 2 5 5v13h7c3 0 5 2 5 5v33" fill="#dbe7f4" stroke="#71839a" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M34 34h9m8 0h4M34 45h9m8 0h4M34 56h9m8 0h4M34 67h9m8 0h4m13-15h3m-3 11h3" fill="none" stroke="#71839a" stroke-width="3" stroke-linecap="round"/>
+  <path d="M18 79h64" fill="none" stroke="#71839a" stroke-width="3" stroke-linecap="round"/>
+  <rect x="43" y="66" width="10" height="13" rx="1" fill="#ffffff" stroke="#71839a" stroke-width="3"/>
+  <rect x="1.5" y="1.5" width="93" height="93" rx="14.5" fill="none" stroke="#d7dee8" stroke-width="3"/>
+</svg>
