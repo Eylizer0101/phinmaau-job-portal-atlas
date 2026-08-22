@@ -1365,7 +1365,6 @@ const ApplicationDetails = () => {
                 </button>
               </div>
 
-              <div className="relative max-h-[720px] overflow-hidden">
               <article className="mx-auto w-full bg-white font-serif text-[10px] leading-[1.22] text-black">
                 <header className="relative flex min-h-[110px] flex-col items-center justify-center pb-4 text-center sm:pl-[70px] sm:pr-[210px]">
                   <h2 className="text-[28px] font-bold uppercase leading-tight tracking-[0.02em]">
@@ -1495,56 +1494,60 @@ const ApplicationDetails = () => {
                 </section>
                 ) : null}
 
-                {meaningfulProfileSections.map(([sectionTitle, items]) => (
-                  <section key={sectionTitle} className="pt-2">
-                    <h3 className="border-b border-black text-[11px] font-bold uppercase">{sectionTitle}</h3>
-                    <div className="space-y-1 pt-1">
-                      {items.map((item, index) => (
-                        <div key={item._id || `${sectionTitle}-${index}`}>
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="min-w-0">
-                              {isMeaningfulResumeValue(item.title || item.name || item.organization) ? (
-                                <div className="font-bold">
-                                  {item.title || item.name || item.organization}
+                {meaningfulProfileSections.length || meaningfulReferences.length ? (
+                  <div className="relative max-h-[170px] overflow-hidden">
+                    {meaningfulProfileSections.map(([sectionTitle, items]) => (
+                      <section key={sectionTitle} className="pt-2">
+                        <h3 className="border-b border-black text-[11px] font-bold uppercase">{sectionTitle}</h3>
+                        <div className="space-y-1 pt-1">
+                          {items.map((item, index) => (
+                            <div key={item._id || `${sectionTitle}-${index}`}>
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="min-w-0">
+                                  {isMeaningfulResumeValue(item.title || item.name || item.organization) ? (
+                                    <div className="font-bold">
+                                      {item.title || item.name || item.organization}
+                                    </div>
+                                  ) : null}
+                                  {isMeaningfulResumeValue(item.issuer || item.role || item.company || item.organization) ? (
+                                    <div className="italic">
+                                      {item.issuer || item.role || item.company || item.organization}
+                                    </div>
+                                  ) : null}
                                 </div>
-                              ) : null}
-                              {isMeaningfulResumeValue(item.issuer || item.role || item.company || item.organization) ? (
-                                <div className="italic">
-                                  {item.issuer || item.role || item.company || item.organization}
-                                </div>
-                              ) : null}
+                                {isMeaningfulResumeValue(entryDate(item)) ? (
+                                  <div className="shrink-0 whitespace-nowrap italic">{entryDate(item)}</div>
+                                ) : null}
+                              </div>
+                              {isMeaningfulResumeValue(item.description) ? <div className="mt-0.5 text-justify">{richText(item.description)}</div> : null}
                             </div>
-                            {isMeaningfulResumeValue(entryDate(item)) ? (
-                              <div className="shrink-0 whitespace-nowrap italic">{entryDate(item)}</div>
-                            ) : null}
-                          </div>
-                          {isMeaningfulResumeValue(item.description) ? <div className="mt-0.5 text-justify">{richText(item.description)}</div> : null}
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </section>
-                ))}
+                      </section>
+                    ))}
 
-                {meaningfulReferences.length ? (
-                  <section className="pt-2">
-                    <h3 className="border-b border-black text-[11px] font-bold uppercase">References</h3>
-                    <div className="grid grid-cols-1 gap-x-8 gap-y-2 pt-1 sm:grid-cols-2">
-                      {meaningfulReferences.map((item, index) => (
-                        <div key={item._id || index}>
-                          {isMeaningfulResumeValue(item.name || item.title) ? <div className="font-bold">{item.name || item.title}</div> : null}
-                          {isMeaningfulResumeValue(item.position) ? <div className="italic">{item.position}</div> : null}
-                          {isMeaningfulResumeValue(item.company) ? <div>{item.company}</div> : null}
-                          {isMeaningfulResumeValue(item.phone) ? <div>{item.phone}</div> : null}
-                          {isMeaningfulResumeValue(item.email) ? <div className="break-all text-blue-700 underline">{item.email}</div> : null}
+                    {meaningfulReferences.length ? (
+                      <section className="pt-2">
+                        <h3 className="border-b border-black text-[11px] font-bold uppercase">References</h3>
+                        <div className="grid grid-cols-1 gap-x-8 gap-y-2 pt-1 sm:grid-cols-2">
+                          {meaningfulReferences.map((item, index) => (
+                            <div key={item._id || index}>
+                              {isMeaningfulResumeValue(item.name || item.title) ? <div className="font-bold">{item.name || item.title}</div> : null}
+                              {isMeaningfulResumeValue(item.position) ? <div className="italic">{item.position}</div> : null}
+                              {isMeaningfulResumeValue(item.company) ? <div>{item.company}</div> : null}
+                              {isMeaningfulResumeValue(item.phone) ? <div>{item.phone}</div> : null}
+                              {isMeaningfulResumeValue(item.email) ? <div className="break-all text-blue-700 underline">{item.email}</div> : null}
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </section>
+                      </section>
+                    ) : null}
+
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white via-white/90 to-transparent" />
+                  </div>
                 ) : null}
 
               </article>
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white via-white/90 to-transparent" />
-              </div>
             </div>
           ) : <div className="border-t border-[#d8e2ee] px-6 py-8 sm:px-10"><div className="relative ml-3 border-l-2 border-gray-200 pl-8">{activities.map((item, index) => { const dt = formatDateTime(item.occurredAt || item.createdAt); return <div key={item._id || `${item.type}-${index}`} className="relative pb-10 last:pb-0"><div className="absolute -left-[43px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-4 border-white bg-[#2e66a6] shadow"><SvgIcon name={item.type === 'message' ? 'message' : item.type === 'submitted' ? 'resume' : 'activity'} className="h-3 w-3 text-white" /></div><h3 className="text-lg font-semibold text-gray-900">{item.title || 'Application updated'}</h3><p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">{item.description || 'The application record was updated.'}</p><div className="mt-2 text-xs font-bold tracking-wide text-gray-500">{dt.date}{dt.time ? ` · ${dt.time}` : ''}</div></div>; })}</div></div>}
         </main>
