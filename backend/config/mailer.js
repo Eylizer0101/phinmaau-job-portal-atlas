@@ -82,12 +82,11 @@ const sendMail = async ({ to, subject, html }) => {
   });
 };
 
-const sendCredentialsEmail = async ({ to, fullName, username, password, role }) => {
+const sendCredentialsEmail = async ({ to, fullName, username, role }) => {
   if (!to) throw new Error("Recipient email missing");
 
   const safeName = escapeHtml(fullName || 'User');
   const safeUsername = escapeHtml(username);
-  const safePassword = escapeHtml(password);
   const safeRole = escapeHtml(role || 'User');
 
   const appUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://agapayy.onrender.com';
@@ -110,7 +109,7 @@ const sendCredentialsEmail = async ({ to, fullName, username, password, role }) 
 
           <p style="font-size:14px; color:#374151; line-height:1.6;">
             Your ${safeRole} account has been approved.  
-            You may now log in using the credentials below:
+            You may now log in using the account information below and the password you created during registration:
           </p>
 
           <div style="margin-top:20px; padding:15px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:6px;">
@@ -118,15 +117,10 @@ const sendCredentialsEmail = async ({ to, fullName, username, password, role }) 
               <strong>Username:</strong><br/>
               <span style="font-family:monospace; font-size:15px;">${safeUsername}</span>
             </p>
-
-            <p style="margin:0; font-size:14px;">
-              <strong>Temporary Password:</strong><br/>
-              <span style="font-family:monospace; font-size:15px;">${safePassword}</span>
-            </p>
           </div>
 
           <p style="margin-top:20px; font-size:13px; color:#6b7280;">
-            For security purposes, please change your password after logging in.
+            For your security, AGAPAY will never send or ask for your password by email.
           </p>
 
           <div style="margin-top:25px;">
@@ -141,6 +135,29 @@ const sendCredentialsEmail = async ({ to, fullName, username, password, role }) 
             This is an automated message from AGAPAY. Please do not reply.
           </p>
 
+        </div>
+      </div>
+    `,
+  });
+};
+
+const sendVerificationRestoredEmail = async ({ to, fullName, role }) => {
+  if (!to) throw new Error('Recipient email missing');
+  const safeName = escapeHtml(fullName || 'User');
+  const safeRole = escapeHtml(role === 'employer' ? 'employer' : 'jobseeker');
+
+  await sendMail({
+    to,
+    subject: 'AGAPAY Verification Restored',
+    html: `
+      <div style="background:#f4f6f9; padding:40px 15px; font-family:Arial, sans-serif;">
+        <div style="max-width:520px; margin:auto; background:#fff; padding:30px; border-radius:8px; border:1px solid #e5e7eb;">
+          <h2 style="margin:0; color:#1e3a8a;">AGAPAY</h2>
+          <p style="margin-top:24px; color:#111827;">Hello <strong>${safeName}</strong>,</p>
+          <p style="font-size:14px; color:#374151; line-height:1.6;">
+            Your ${safeRole} verification record has been restored. It is now pending and may proceed through the verification and review process again.
+          </p>
+          <p style="margin-top:28px; font-size:12px; color:#9ca3af;">This is an automated message from AGAPAY. Please do not reply.</p>
         </div>
       </div>
     `,
@@ -585,6 +602,7 @@ module.exports = {
   sendPasswordResetOtpEmail,
   sendResubmitDocumentEmail,
   sendVerificationRejectedEmail,
+  sendVerificationRestoredEmail,
   sendSettingsEmailVerificationCode,
   sendJobseekerRegistrationSummaryEmail,
   sendEmployerRegistrationSummaryEmail,

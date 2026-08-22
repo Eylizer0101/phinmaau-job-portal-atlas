@@ -366,6 +366,8 @@ const JobseekerVerificationDetails = () => {
   const [passwordError, setPasswordError] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [pendingCredentialAction, setPendingCredentialAction] = useState(null);
+  const [showCredentialPassword, setShowCredentialPassword] = useState(false);
+  const [checkingDoc, setCheckingDoc] = useState("");
 
   const API_BASE = api?.defaults?.baseURL || "";
   const DEFAULT_DECLINE_MESSAGE = "Your verification request was rejected. Please contact support.";
@@ -516,6 +518,35 @@ const JobseekerVerificationDetails = () => {
 
   const handleDownloadFile = (docType, fallbackName = "document") => {
     requestCredentialAccess("download", docType, fallbackName);
+  };
+
+  const handleCheckFile = async (docType) => {
+    try {
+      setCheckingDoc(docType);
+      setError("");
+      const response = await api.patch(`/admin/jobseekers/verification/${id}/docs/${docType}/check`);
+      setSuccess(response.data?.message || "Document marked as checked.");
+      await fetchJobseekerDetails();
+    } catch (checkError) {
+      setError(checkError.response?.data?.message || "Unable to check this document.");
+    } finally {
+      setCheckingDoc("");
+    }
+  };
+
+  const restoreJobseeker = async () => {
+    const name = jobseeker?.fullName || "this jobseeker";
+    if (!window.confirm(`Restore ${name}? This action will allow the jobseeker to proceed with verification and review again.`)) return;
+    try {
+      setActionLoading(true);
+      const response = await api.patch(`/admin/jobseekers/verification/${id}/restore`);
+      setSuccess(response.data?.message || "Jobseeker restored successfully.");
+      await fetchJobseekerDetails();
+    } catch (restoreError) {
+      setError(restoreError.response?.data?.message || "Unable to restore jobseeker.");
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const fetchJobseekerDetails = useCallback(async () => {
@@ -748,7 +779,6 @@ const JobseekerVerificationDetails = () => {
 
   const infoRowsLeft = [
     ["Full Name", completeName],
-    ["Registration ID", registrationId],
     ["Campus", profile.campus],
     ["Course", profile.course],
     ["Year Graduated", profile.yearGraduated],
@@ -837,7 +867,10 @@ const JobseekerVerificationDetails = () => {
                   </button>
                 </div>
               ) : (
-                getStatusBadge(overallStatus)
+                <div className="flex items-center gap-2">
+                  {getStatusBadge(overallStatus)}
+                  {isRejected ? <button type="button" onClick={restoreJobseeker} disabled={actionLoading} className={cn("inline-flex h-10 items-center justify-center rounded-lg border border-[#2e66a6] px-4 text-sm font-bold text-[#2e66a6]", UI.ring)}>Restore</button> : null}
+                </div>
               )}
             </div>
 
@@ -845,7 +878,7 @@ const JobseekerVerificationDetails = () => {
               <div className="space-y-2">
                 {infoRowsLeft.map(([label, value]) => (
                   <div key={label} className="grid grid-cols-[120px_1fr] gap-3 text-sm">
-                    <span className="text-black/60">{label}</span>
+                    <span className="text-black/60">{label}:</span>
                     <span className="font-semibold text-black">{value || "—"}</span>
                   </div>
                 ))}
@@ -860,17 +893,11 @@ const JobseekerVerificationDetails = () => {
                       label === "Date Registered" && "mt-3 border-t border-[#2e66a6]/35 pt-3"
                     )}
                   >
-                    <span className="text-black/65">{label}</span>
+                    <span className="text-black/65">{label}:</span>
                     <span className="font-semibold text-black">{value || "—"}</span>
                   </div>
                 ))}
 
-                {combinedSkills ? (
-                  <div className="grid grid-cols-[150px_1fr] gap-3 text-sm">
-                    <span className="text-black/60">Skills</span>
-                    <span className="font-semibold text-black">{combinedSkills}</span>
-                  </div>
-                ) : null}
               </div>
 
               <div className="flex flex-col items-center justify-center">
@@ -964,15 +991,16 @@ const JobseekerVerificationDetails = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDownloadFile(docType.key, docType.label)}
+                          onClick={() => handleCheckFile(docType.key)}
+                          disabled={checkingDoc === docType.key || doc.checked}
                           className={cn(
                             "flex h-8 items-center justify-center rounded border border-black/15 bg-white text-black/70 hover:bg-white",
                             UI.ring
                           )}
-                          aria-label={`Download ${docType.label}`}
-                          title={`Download ${docType.label}`}
+                          aria-label={`Check ${docType.label}`}
+                          title={doc.checked ? `${docType.label} checked` : `Check ${docType.label}`}
                         >
-                          <SvgIcon name="download" className="h-4 w-4" />
+                          <SvgIcon name="check" className="h-4 w-4" />
                         </button>
                       </div>
                     ) : (
@@ -1060,9 +1088,10 @@ const JobseekerVerificationDetails = () => {
                   <label htmlFor="credentialPassword" className="block text-sm font-semibold text-black">
                     Password
                   </label>
+                  <div className="relative">
                   <input
                     id="credentialPassword"
-                    type="password"
+                    type={showCredentialPassword ? "text" : "password"}
                     value={credentialPassword}
                     onChange={(event) => {
                       setCredentialPassword(event.target.value);
@@ -1077,12 +1106,14 @@ const JobseekerVerificationDetails = () => {
                     autoFocus
                     disabled={passwordLoading}
                     className={cn(
-                      "mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm text-black placeholder-black/35",
+                      "mt-2 h-11 w-full rounded-xl border bg-white px-4 pr-12 text-sm text-black placeholder-black/35",
                       passwordError ? "border-black" : "border-black/20",
                       UI.ring
                     )}
                     placeholder="Enter your password"
                   />
+                  <button type="button" onClick={() => setShowCredentialPassword((value) => !value)} className="absolute right-3 top-1/2 mt-1 -translate-y-1/2 text-black/55" aria-label={showCredentialPassword ? "Hide password" : "Show password"}><SvgIcon name="eye" className="h-5 w-5" /></button>
+                  </div>
 
                   {passwordError ? (
                     <p className="mt-2 text-sm font-medium text-black" role="alert">

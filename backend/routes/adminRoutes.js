@@ -34,6 +34,8 @@ router.get('/employers/verification', adminController.getEmployersForVerificatio
 router.get('/employers/verification/:id', adminController.getEmployerVerificationById);
 router.put('/employers/verification/:id/status', adminController.updateEmployerVerificationStatus);
 router.put('/employers/verification/:id/hold', adminController.holdEmployerVerification);
+router.patch('/employers/verification/:id/restore', adminController.restoreEmployerVerification);
+router.patch('/employers/verification/:id/docs/:docType/check', adminController.checkEmployerVerificationDocument);
 router.get('/employers/verification/:id/docs', adminController.getEmployerVerificationDocUrls);
 router.get(
   '/employers/verification/:id/docs/:docType',
@@ -46,6 +48,8 @@ router.get('/jobseekers/verification', adminController.getJobseekersForVerificat
 router.get('/jobseekers/verification/:id', adminController.getJobseekerVerificationById);
 router.put('/jobseekers/verification/:id/status', adminController.updateJobseekerVerificationStatus);
 router.put('/jobseekers/verification/:id/hold', adminController.holdJobseekerVerification);
+router.patch('/jobseekers/verification/:id/restore', adminController.restoreJobseekerVerification);
+router.patch('/jobseekers/verification/:id/docs/:docType/check', adminController.checkJobseekerVerificationDocument);
 router.get('/jobseekers/verification/:id/docs', adminController.getJobseekerVerificationDocUrls);
 router.get(
   '/jobseekers/verification/:id/docs/:docType',

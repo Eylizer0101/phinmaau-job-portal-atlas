@@ -50,6 +50,9 @@ const alumniVerificationDocSchema = new mongoose.Schema(
     filename: { type: String, default: '' },
     fileSize: { type: Number, default: 0 },
     mimeType: { type: String, default: '' },
+    checked: { type: Boolean, default: false },
+    checkedAt: { type: Date, default: null },
+    checkedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   },
   { _id: false }
 );
@@ -66,6 +69,9 @@ const verificationDocSchema = new mongoose.Schema(
     filename: { type: String, default: '' },
     fileSize: { type: Number, default: 0 },
     mimeType: { type: String, default: '' },
+    checked: { type: Boolean, default: false },
+    checkedAt: { type: Date, default: null },
+    checkedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   },
   { _id: false }
 );

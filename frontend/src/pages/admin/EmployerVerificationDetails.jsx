@@ -525,6 +525,8 @@ const EmployerVerificationDetails = () => {
   const [passwordError, setPasswordError] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [pendingCredentialAction, setPendingCredentialAction] = useState(null);
+  const [showCredentialPassword, setShowCredentialPassword] = useState(false);
+  const [checkingDoc, setCheckingDoc] = useState("");
   const [holdDocTypes, setHoldDocTypes] = useState([]);
   const [holdReason, setHoldReason] = useState("");
 
@@ -864,6 +866,34 @@ const EmployerVerificationDetails = () => {
     requestCredentialAccess("download", docType, fallbackName);
   };
 
+  const checkDoc = async (docType) => {
+    try {
+      setCheckingDoc(docType);
+      setError("");
+      const response = await api.patch(`/admin/employers/verification/${employerId}/docs/${docType}/check`);
+      setSuccess(response.data?.message || "Document marked as checked.");
+      await fetchDetails();
+    } catch (checkError) {
+      setError(checkError.response?.data?.message || "Unable to check this document.");
+    } finally {
+      setCheckingDoc("");
+    }
+  };
+
+  const restoreEmployer = async () => {
+    if (!window.confirm(`Restore ${companyName}? This action will allow the employer to proceed with verification and review again.`)) return;
+    try {
+      setAction("restore");
+      const response = await api.patch(`/admin/employers/verification/${employerId}/restore`);
+      setSuccess(response.data?.message || "Employer restored successfully.");
+      await fetchDetails();
+    } catch (restoreError) {
+      setError(restoreError.response?.data?.message || "Unable to restore employer.");
+    } finally {
+      setAction(null);
+    }
+  };
+
   const openConfirm = (nextStatus) => {
     setError("");
     setSuccess("");
@@ -895,14 +925,12 @@ const EmployerVerificationDetails = () => {
 
   const employerInfoLeft = [
     ["Full Name", employerFullName],
-    ["Registration ID", registrationId],
     ["Company Name", company.companyName],
     ["Industry", company.industry],
     ["Website URL", company.companyWebsiteUrl],
   ];
 
   const employerInfoRight = [
-    ["Region", regionCityParts[0] || company.regionCity],
     ["City / Province", regionCityParts.slice(1).join(" - ")],
     ["Email", company.businessEmail || employer?.email],
     ["Contact Number", company.mobileNumber],
@@ -1025,7 +1053,10 @@ const EmployerVerificationDetails = () => {
                   </button>
                 </div>
               ) : (
-                statusBadge(overallStatus)
+                <div className="flex items-center gap-2">
+                  {statusBadge(overallStatus)}
+                  {isRejected ? <button type="button" onClick={restoreEmployer} disabled={action !== null} className={cn(UI.btnBase, UI.btnMd, UI.btnSecondary, UI.ring)}>Restore</button> : null}
+                </div>
               )}
             </div>
 
@@ -1033,7 +1064,7 @@ const EmployerVerificationDetails = () => {
               <div className="space-y-2">
                 {employerInfoLeft.map(([label, value]) => (
                   <div key={label} className="grid grid-cols-[120px_1fr] gap-3 text-sm">
-                    <span className="text-black/60">{label}</span>
+                    <span className="text-black/60">{label}:</span>
                     <span className="font-semibold text-black break-words">{value || "—"}</span>
                   </div>
                 ))}
@@ -1048,7 +1079,7 @@ const EmployerVerificationDetails = () => {
                       label === "Date Registered" && "mt-3 border-t border-black/15 pt-3"
                     )}
                   >
-                    <span className="text-black/60">{label}</span>
+                    <span className="text-black/60">{label}:</span>
                     <span className="font-semibold text-black break-words">{value || "—"}</span>
                   </div>
                 ))}
@@ -1159,16 +1190,16 @@ const EmployerVerificationDetails = () => {
 
                         <button
                           type="button"
-                          onClick={() => downloadDoc(docType.key, docType.label)}
-                          disabled={action !== null}
+                          onClick={() => checkDoc(docType.key)}
+                          disabled={action !== null || checkingDoc === docType.key || doc.checked}
                           className={cn(
                             "flex h-8 items-center justify-center rounded border border-black/15 bg-white text-black/70 hover:bg-black/5 disabled:opacity-50",
                             UI.ring
                           )}
-                          aria-label={`Download ${docType.label}`}
-                          title={`Download ${docType.label}`}
+                          aria-label={`Check ${docType.label}`}
+                          title={doc.checked ? `${docType.label} checked` : `Check ${docType.label}`}
                         >
-                          <SvgIcon name="download" className="h-4 w-4" />
+                          <SvgIcon name="check" className="h-4 w-4" />
                         </button>
                       </div>
                     ) : (
@@ -1263,9 +1294,10 @@ const EmployerVerificationDetails = () => {
                     Password
                   </label>
 
+                  <div className="relative">
                   <input
                     id="employerCredentialPassword"
-                    type="password"
+                    type={showCredentialPassword ? "text" : "password"}
                     value={credentialPassword}
                     onChange={(event) => {
                       setCredentialPassword(event.target.value);
@@ -1280,12 +1312,14 @@ const EmployerVerificationDetails = () => {
                     autoFocus
                     disabled={passwordLoading}
                     className={cn(
-                      "mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm text-black placeholder-black/35",
+                      "mt-2 h-11 w-full rounded-xl border bg-white px-4 pr-12 text-sm text-black placeholder-black/35",
                       passwordError ? "border-black" : "border-black/20",
                       UI.ring
                     )}
                     placeholder="Enter your password"
                   />
+                  <button type="button" onClick={() => setShowCredentialPassword((value) => !value)} className="absolute right-3 top-1/2 mt-1 -translate-y-1/2 text-black/55" aria-label={showCredentialPassword ? "Hide password" : "Show password"}><SvgIcon name="eye" className="h-5 w-5" /></button>
+                  </div>
 
                   {passwordError ? (
                     <p

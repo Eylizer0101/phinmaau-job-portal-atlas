@@ -757,6 +757,8 @@ const EmployerVerification = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
+  const [archiveMode, setArchiveMode] = useState(false);
+  const [restoringId, setRestoringId] = useState("");
 
   const clearMessages = useCallback(() => {
     setError("");
@@ -791,7 +793,8 @@ const EmployerVerification = () => {
         if (filters.search) params.search = filters.search;
         if (filters.company !== "all") params.company = filters.company;
         if (filters.industry !== "all") params.industry = filters.industry;
-        if (filters.status !== "all") params.status = filters.status;
+        if (archiveMode) params.status = "rejected";
+        else if (filters.status !== "all") params.status = filters.status;
         if (filters.dateFrom) params.dateFrom = filters.dateFrom;
         if (filters.dateTo) params.dateTo = filters.dateTo;
 
@@ -838,7 +841,7 @@ const EmployerVerification = () => {
         setRefreshing(false);
       }
     },
-    [filters, clearMessages]
+    [filters, archiveMode, clearMessages]
   );
 
   useEffect(() => {
@@ -922,12 +925,29 @@ const EmployerVerification = () => {
     return `Showing ${start} to ${end} of ${pagination.totalItems} results`;
   }, [pagination]);
 
+  const restoreEmployer = async (item) => {
+    const companyName = item.companyName || item.employerProfile?.companyName || "this employer";
+    if (!window.confirm(`Restore ${companyName}? This will allow the employer to proceed with verification and review again.`)) return;
+    try {
+      setRestoringId(item._id);
+      const response = await api.patch(`/admin/employers/verification/${item._id}/restore`);
+      setSuccess(response.data?.message || "Employer restored successfully.");
+      await fetchEmployers({ silent: true });
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to restore employer.");
+    } finally {
+      setRestoringId("");
+    }
+  };
+
   const visibleRows = useMemo(() => {
     return rows.filter((item) => {
       const status = String(item?.overallStatus || "unverified").toLowerCase();
-      return status !== "verified" && status !== "rejected" && status !== "declined";
+      return archiveMode
+        ? status === "rejected" || status === "declined"
+        : status !== "verified" && status !== "rejected" && status !== "declined";
     });
-  }, [rows]);
+  }, [rows, archiveMode]);
 
   const visibleStatusOptions = useMemo(() => {
     return (filterOptions.statuses || []).filter((status) => {
@@ -951,9 +971,15 @@ const EmployerVerification = () => {
   return (
     <AdminLayout>
       <div className="mx-auto max-w-7xl px-1 py-8">
-        <div className="mb-6">
-          <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Employer Verification</h1>
-          <p className="mt-1 text-sm text-gray-600">Review, filter, and manage employer verification requests</p>
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Employer Verification</h1>
+            <p className="mt-1 text-sm text-gray-600">Review, filter, and manage employer verification requests</p>
+          </div>
+          <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
+            <button type="button" onClick={() => { setArchiveMode(false); setFilters((prev) => ({ ...prev, status: "all", page: 1 })); }} className={cn("rounded-lg px-4 py-2 text-sm font-semibold", !archiveMode ? "bg-[#2e66a6]/10 text-[#2e66a6]" : "text-gray-600")}>Active <span className="ml-1 rounded-full bg-white px-2 py-0.5">{Math.max(0, stats.total - stats.rejected - stats.verified)}</span></button>
+            <button type="button" onClick={() => { setArchiveMode(true); setFilters((prev) => ({ ...prev, status: "all", page: 1 })); }} className={cn("rounded-lg px-4 py-2 text-sm font-semibold", archiveMode ? "bg-[#2e66a6]/10 text-[#2e66a6]" : "text-gray-600")}>Archived <span className="ml-1 rounded-full bg-white px-2 py-0.5">{stats.rejected}</span></button>
+          </div>
         </div>
 
         {error ? (
@@ -1091,7 +1117,7 @@ const EmployerVerification = () => {
                   <table className="w-full table-fixed">
                     <thead className="bg-slate-50 border-b border-gray-100">
                       <tr>
-                        <th className="w-[14%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Registered</th>
+                        <th className="w-[14%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{archiveMode ? "Date Declined" : "Date Registered"}</th>
                         <th className="w-[24%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Name</th>
                         <th className="w-[20%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Company</th>
                         <th className="w-[18%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Industry</th>
@@ -1130,7 +1156,7 @@ const EmployerVerification = () => {
                             className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
                           >
                             <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-700">
-                              {formatDate(item.createdAt)}
+                              {formatDate(archiveMode ? item.rejectedAt : item.createdAt)}
                             </td>
 
                             <td className="px-4 py-4">
@@ -1167,11 +1193,12 @@ const EmployerVerification = () => {
                                   variant="secondary"
                                   size="sm"
                                   leftIcon={<Icon name="eye" className="h-4 w-4" />}
-                                  onClick={() => navigate(`/admin/employer-verification/${item._id}`)}
+                                  onClick={() => navigate(`/admin/employer-verification/${item._id}${archiveMode ? "?archived=1" : ""}`)}
                                   title="View"
                                 >
                                 
                                 </Button>
+                                {archiveMode ? <Button variant="secondary" size="sm" onClick={() => restoreEmployer(item)} disabled={restoringId === item._id}>Restore</Button> : null}
                               </div>
                             </td>
                           </tr>
@@ -1229,13 +1256,15 @@ const EmployerVerification = () => {
                                 <Icon name="eye" className="h-4 w-4" />
                               </IconButton>
 
-                              <IconButton
+                              {archiveMode ? <Button variant="secondary" size="sm" onClick={() => restoreEmployer(item)} disabled={restoringId === item._id}>Restore</Button> : null}
+
+                              {!archiveMode ? <IconButton
                                 label={`Delete ${companyName}`}
                                 onClick={() => setDeleteTarget(item)}
                                 className="text-red-600 hover:text-red-700"
                               >
                                 <Icon name="trash" className="h-4 w-4" />
-                              </IconButton>
+                              </IconButton> : null}
                             </div>
                           </div>
                         </div>

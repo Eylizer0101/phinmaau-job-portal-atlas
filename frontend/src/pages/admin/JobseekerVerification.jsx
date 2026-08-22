@@ -622,6 +622,8 @@ const JobseekerVerification = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
+  const [archiveMode, setArchiveMode] = useState(false);
+  const [restoringId, setRestoringId] = useState("");
 
   const clearMessages = useCallback(() => {
     setError("");
@@ -656,7 +658,8 @@ const JobseekerVerification = () => {
         if (filters.search) params.search = filters.search;
         if (filters.campus !== "all") params.campus = filters.campus;
         if (filters.course !== "all") params.course = filters.course;
-        if (filters.status !== "all") params.status = filters.status;
+        if (archiveMode) params.status = "rejected";
+        else if (filters.status !== "all") params.status = filters.status;
         if (filters.dateFrom) params.dateFrom = filters.dateFrom;
         if (filters.dateTo) params.dateTo = filters.dateTo;
 
@@ -703,7 +706,7 @@ const JobseekerVerification = () => {
         setRefreshing(false);
       }
     },
-    [filters, clearMessages]
+    [filters, archiveMode, clearMessages]
   );
 
   useEffect(() => {
@@ -751,6 +754,21 @@ const JobseekerVerification = () => {
     setFilters(DEFAULT_FILTERS);
   };
 
+  const restoreJobseeker = async (item) => {
+    const fullName = item.fullName || "this jobseeker";
+    if (!window.confirm(`Restore ${fullName}? This will allow the jobseeker to proceed with verification and review again.`)) return;
+    try {
+      setRestoringId(item._id);
+      const response = await api.patch(`/admin/jobseekers/verification/${item._id}/restore`);
+      setSuccess(response.data?.message || "Jobseeker restored successfully.");
+      await fetchJobseekers({ silent: true });
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to restore jobseeker.");
+    } finally {
+      setRestoringId("");
+    }
+  };
+
   const pageLabel = useMemo(() => {
     if (!pagination.totalItems) return "Showing 0 to 0 of 0 results";
     const start = (pagination.page - 1) * pagination.limit + 1;
@@ -758,13 +776,14 @@ const JobseekerVerification = () => {
     return `Showing ${start} to ${end} of ${pagination.totalItems} results`;
   }, [pagination]);
 
-  // Alisin sa listing ang verified at declined/rejected
   const visibleRows = useMemo(() => {
     return rows.filter((item) => {
       const status = String(item?.verificationStatus || "not_submitted").toLowerCase();
-      return status !== "verified" && status !== "rejected" && status !== "declined";
+      return archiveMode
+        ? status === "rejected" || status === "declined"
+        : status !== "verified" && status !== "rejected" && status !== "declined";
     });
-  }, [rows]);
+  }, [rows, archiveMode]);
 
   // Alisin sa status filter ang not_submitted, verified, declined/rejected
   const visibleStatusOptions = useMemo(() => {
@@ -777,9 +796,15 @@ const JobseekerVerification = () => {
   return (
     <AdminLayout>
       <div className="mx-auto max-w-7xl px-1 py-8">
-        <div className="mb-6">
-          <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Jobseeker Verification</h1>
-          <p className="mt-1 text-sm text-gray-600">Review, filter, and manage jobseeker verification requests</p>
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Jobseeker Verification</h1>
+            <p className="mt-1 text-sm text-gray-600">Review, filter, and manage jobseeker verification requests</p>
+          </div>
+          <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
+            <button type="button" onClick={() => { setArchiveMode(false); setFilters((prev) => ({ ...prev, status: "all", page: 1 })); }} className={cn("rounded-lg px-4 py-2 text-sm font-semibold", !archiveMode ? "bg-[#2e66a6]/10 text-[#2e66a6]" : "text-gray-600")}>Active <span className="ml-1 rounded-full bg-white px-2 py-0.5">{Math.max(0, stats.total - stats.rejected - stats.verified)}</span></button>
+            <button type="button" onClick={() => { setArchiveMode(true); setFilters((prev) => ({ ...prev, status: "all", page: 1 })); }} className={cn("rounded-lg px-4 py-2 text-sm font-semibold", archiveMode ? "bg-[#2e66a6]/10 text-[#2e66a6]" : "text-gray-600")}>Archived <span className="ml-1 rounded-full bg-white px-2 py-0.5">{stats.rejected}</span></button>
+          </div>
         </div>
 
         {error ? (
@@ -922,7 +947,7 @@ const JobseekerVerification = () => {
                   <table className="w-full min-w-[1000px]">
                     <thead className="bg-slate-50 border-b border-gray-100">
                       <tr>
-                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Registered</th>
+                        <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{archiveMode ? "Date Declined" : "Date Registered"}</th>
                         <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Name</th>
                         <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Campus</th>
                         <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Course</th>
@@ -958,7 +983,7 @@ const JobseekerVerification = () => {
                             className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
                           >
                             <td className="px-5 py-4 text-sm text-gray-700 whitespace-nowrap">
-                              {formatDate(item.createdAt)}
+                              {formatDate(archiveMode ? item.rejectedAt : item.createdAt)}
                             </td>
 
                             <td className="px-5 py-4">
@@ -989,11 +1014,12 @@ const JobseekerVerification = () => {
                                   variant="secondary"
                                   size="sm"
                                   leftIcon={<Icon name="eye" className="h-4 w-4" />}
-                                  onClick={() => navigate(`/admin/jobseeker-verification/${item._id}`)}
+                                  onClick={() => navigate(`/admin/jobseeker-verification/${item._id}${archiveMode ? "?archived=1" : ""}`)}
                                   title="View"
                                 >
                                  
                                 </Button>
+                                {archiveMode ? <Button variant="secondary" size="sm" onClick={() => restoreJobseeker(item)} disabled={restoringId === item._id}>Restore</Button> : null}
                               </div>
                             </td>
                           </tr>
@@ -1046,10 +1072,11 @@ const JobseekerVerification = () => {
                                 variant="secondary"
                                 size="sm"
                                 leftIcon={<Icon name="eye" className="h-4 w-4" />}
-                                onClick={() => navigate(`/admin/jobseeker-verification/${item._id}`)}
+                                onClick={() => navigate(`/admin/jobseeker-verification/${item._id}${archiveMode ? "?archived=1" : ""}`)}
                               >
                                 View
                               </Button>
+                              {archiveMode ? <Button variant="secondary" size="sm" onClick={() => restoreJobseeker(item)} disabled={restoringId === item._id}>Restore</Button> : null}
                             </div>
                           </div>
                         </div>

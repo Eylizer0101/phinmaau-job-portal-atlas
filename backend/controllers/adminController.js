@@ -6,7 +6,7 @@ const CommunityPost = require('../models/CommunityPost');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { v2: cloudinary } = require('cloudinary');
-const { sendCredentialsEmail, sendResubmitDocumentEmail, sendVerificationRejectedEmail } = require('../config/mailer');
+const { sendCredentialsEmail, sendResubmitDocumentEmail, sendVerificationRejectedEmail, sendVerificationRestoredEmail } = require('../config/mailer');
 
 // ==========================
 // ✅ HELPERS: username + password generator
@@ -1258,6 +1258,7 @@ const normalizeEmployerForList = (user) => {
     regionCity: profile.regionCity || '',
 
     overallStatus,
+    rejectedAt: docs?.rejectedAt || null,
     docsComplete: docStatus.status === 'complete',
     docStatus: docStatus.message,
     docSummary: {
@@ -1298,6 +1299,7 @@ exports.getEmployersForVerification = async (req, res) => {
     // belong in this page or in its Company/Industry filter options.
     const verificationQueue = normalizedAll.filter((item) => {
       const currentStatus = String(item.overallStatus || 'unverified').toLowerCase();
+      if (status === 'rejected' || status === 'declined') return currentStatus === 'rejected';
       return !['verified', 'approved', 'rejected', 'declined'].includes(currentStatus);
     });
 
@@ -1572,19 +1574,15 @@ exports.updateEmployerVerificationStatus = async (req, res) => {
     }
 
     if (overallStatus === 'verified' && prevStatus !== 'verified') {
-      const tempPassword = generateTempPassword();
-
-      const newUsername = await generateUniqueUsername({
-        role: 'employer',
-        companyName: employer?.employerProfile?.companyName || employer?.firstName || 'employer',
-        firstName: employer.firstName,
-        lastName: employer.lastName,
-      });
+      const newUsername = employer.username || await generateUniqueUsername({
+          role: 'employer',
+          companyName: employer?.employerProfile?.companyName || employer?.firstName || 'employer',
+          firstName: employer.firstName,
+          lastName: employer.lastName,
+        });
 
       employer.username = newUsername;
-      employer.password = await bcrypt.hash(tempPassword, 10);
       employer.status = 'active';
-      employer.mustChangePassword = true;
 
       await employer.save();
 
@@ -1592,7 +1590,6 @@ exports.updateEmployerVerificationStatus = async (req, res) => {
         to: employer.email,
         fullName: employer.fullName || employer.email,
         username: newUsername,
-        password: tempPassword,
         role: 'Employer',
       }).catch((emailError) => {
         console.error('Failed to send employer credentials email:', emailError);
@@ -1600,7 +1597,7 @@ exports.updateEmployerVerificationStatus = async (req, res) => {
 
       return res.status(200).json({
         success: true,
-        message: `Employer approved. Credentials sent to ${employer.email}`,
+        message: `Employer approved. Approval email sent to ${employer.email}`,
         employer: {
           _id: employer._id,
           username: employer.username,
@@ -1855,6 +1852,7 @@ const normalizeJobseekerForList = (user) => {
     jobSeekerProfile: profile,
 
     verificationStatus: verificationStatus.overallStatus,
+    rejectedAt: profile.verificationDocs?.rejectedAt || null,
     verificationDocs: profile.verificationDocs || {},
     submittedCount: verificationStatus.submittedCount,
     totalDocs: verificationStatus.totalDocs,
@@ -1896,6 +1894,8 @@ exports.getJobseekersForVerification = async (req, res) => {
 
     if (status && ['not_submitted', 'pending', 'verified', 'rejected', 'hold'].includes(status)) {
       query['jobSeekerProfile.verificationDocs.overallStatus'] = status;
+    } else {
+      query['jobSeekerProfile.verificationDocs.overallStatus'] = { $nin: ['verified', 'rejected'] };
     }
 
     if (search) {
@@ -1933,10 +1933,13 @@ exports.getJobseekersForVerification = async (req, res) => {
       }
     }
 
-    const users = await User.find(query).select('-password');
+    const [users, statsUsers] = await Promise.all([
+      User.find(query).select('-password'),
+      User.find({ role: 'jobseeker', status: { $ne: 'deleted' } }).select('-password'),
+    ]);
     const normalized = users.map(normalizeJobseekerForList);
 
-    const allStats = normalized.reduce(
+    const allStats = statsUsers.map(normalizeJobseekerForList).reduce(
       (acc, item) => {
         const currentStatus = String(item.verificationStatus || 'not_submitted').toLowerCase();
 
@@ -2253,8 +2256,6 @@ exports.updateJobseekerVerificationStatus = async (req, res) => {
     jobseeker.jobSeekerProfile.verificationStatus = overallStatus;
 
     if (overallStatus === 'verified' && prevStatus !== 'verified') {
-      const tempPassword = generateTempPassword();
-
       let finalUsername = jobseeker.username;
       if (!finalUsername) {
         finalUsername = await generateUniqueUsername({
@@ -2276,9 +2277,7 @@ exports.updateJobseekerVerificationStatus = async (req, res) => {
       }
 
       jobseeker.username = finalUsername;
-      jobseeker.password = await bcrypt.hash(tempPassword, 10);
       jobseeker.status = 'active';
-      jobseeker.mustChangePassword = true;
 
       await jobseeker.save();
 
@@ -2286,7 +2285,6 @@ exports.updateJobseekerVerificationStatus = async (req, res) => {
         to: jobseeker.email,
         fullName: jobseeker.fullName || jobseeker.email,
         username: finalUsername,
-        password: tempPassword,
         role: 'Jobseeker',
       }).catch((emailError) => {
         console.error('Failed to send jobseeker credentials email:', emailError);
@@ -2294,7 +2292,7 @@ exports.updateJobseekerVerificationStatus = async (req, res) => {
 
       return res.status(200).json({
         success: true,
-        message: `Jobseeker approved. Credentials sent to ${jobseeker.email}`,
+        message: `Jobseeker approved. Approval email sent to ${jobseeker.email}`,
         jobseeker: {
           _id: jobseeker._id,
           username: jobseeker.username,
@@ -2485,6 +2483,92 @@ exports.getJobseekerVerificationDocUrls = async (req, res) => {
     });
   }
 };
+
+const markVerificationDocumentChecked = async (req, res, role) => {
+  try {
+    const allowedTypes = role === 'employer' ? EMPLOYER_DOC_TYPES : JOBSEEKER_DOC_TYPES;
+    const docType = String(req.params.docType || '');
+    if (!allowedTypes.includes(docType)) {
+      return res.status(400).json({ success: false, message: 'Invalid document type.' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user || user.role !== role) {
+      return res.status(404).json({ success: false, message: `${role === 'employer' ? 'Employer' : 'Jobseeker'} not found.` });
+    }
+
+    const docs = role === 'employer'
+      ? user.employerProfile?.verificationDocs
+      : user.jobSeekerProfile?.verificationDocs;
+    const document = docs?.[docType];
+    if (!document?.url) {
+      return res.status(400).json({ success: false, message: 'This document has not been submitted.' });
+    }
+
+    document.checked = true;
+    document.checkedAt = new Date();
+    document.checkedBy = req.user?._id || req.userId || null;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Document marked as checked.',
+      document: { checked: true, checkedAt: document.checkedAt, checkedBy: document.checkedBy },
+    });
+  } catch (error) {
+    console.error('Error checking verification document:', error);
+    return res.status(500).json({ success: false, message: 'Unable to mark document as checked.' });
+  }
+};
+
+exports.checkJobseekerVerificationDocument = (req, res) => markVerificationDocumentChecked(req, res, 'jobseeker');
+exports.checkEmployerVerificationDocument = (req, res) => markVerificationDocumentChecked(req, res, 'employer');
+
+const restoreVerification = async (req, res, role) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user || user.role !== role) {
+      return res.status(404).json({ success: false, message: `${role === 'employer' ? 'Employer' : 'Jobseeker'} not found.` });
+    }
+
+    const docs = role === 'employer'
+      ? user.employerProfile?.verificationDocs
+      : user.jobSeekerProfile?.verificationDocs;
+    if (!docs || docs.overallStatus !== 'rejected') {
+      return res.status(400).json({ success: false, message: 'Only declined verification records can be restored.' });
+    }
+
+    docs.overallStatus = 'pending';
+    docs.rejectionReasons = [];
+    docs.rejectionMessage = '';
+    docs.rejectedAt = null;
+    if (role === 'employer') docs.remarks = '';
+    else {
+      docs.adminRemarks = '';
+      user.jobSeekerProfile.verificationStatus = 'pending';
+    }
+    await user.save();
+
+    sendVerificationRestoredEmail({
+      to: user.email,
+      fullName: role === 'employer'
+        ? user.employerProfile?.companyName || user.fullName || user.email
+        : user.fullName || user.email,
+      role,
+    }).catch((emailError) => console.error('Failed to send restoration email:', emailError));
+
+    return res.status(200).json({
+      success: true,
+      message: `${role === 'employer' ? 'Employer' : 'Jobseeker'} restored to pending verification.`,
+    });
+  } catch (error) {
+    console.error('Error restoring verification:', error);
+    return res.status(500).json({ success: false, message: 'Unable to restore verification.' });
+  }
+};
+
+exports.restoreJobseekerVerification = (req, res) => restoreVerification(req, res, 'jobseeker');
+exports.restoreEmployerVerification = (req, res) => restoreVerification(req, res, 'employer');
 
 exports.downloadUserVerificationDocument = async (req, res) => streamVerificationDocument(req, res, null);
 exports.requireAdminPasswordForCredential = async (req, res, next) => {
