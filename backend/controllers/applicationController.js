@@ -12,17 +12,14 @@ const INACTIVE_APPLICATION_STATUSES = ['declined', 'withdrawn', 'cancelled', 'va
 const VALID_APPLICATION_STATUSES = ['pending', 'for interview', 'hired', 'declined', 'withdrawn', 'cancelled', 'vacancy full'];
 const VALID_DECLINE_REASONS = [
   'Did not meet minimum qualifications',
+  'Does not meet screening criteria',
   'Insufficient relevant experience',
   'Skills not aligned with job requirements',
   'Incomplete application information',
-  'Unavailable for required work schedule',
-  'Does not meet screening criteria',
-  'Interview performance did not meet expectations',
-  'Skills assessment below required level',
-  'Communication skills need improvement',
-  'Schedule or availability conflict',
-  'Position requirements not fully met',
-  'Failed to attend scheduled interview'
+  'Position Requirements Have Changed',
+  'Position Has Been Filled',
+  'Educational Requirement Not Met',
+  'Too Many Qualified Applicants'
 ];
 
 const VALID_DECLINED_FROM = ['applicants', 'forInterview'];
