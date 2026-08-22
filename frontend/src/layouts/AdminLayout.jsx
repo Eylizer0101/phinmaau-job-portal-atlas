@@ -64,32 +64,76 @@ const AdminLayout = ({ children }) => {
     () => [
       {
         name: "Main",
+        icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
         items: [
-          { name: "Dashboard", path: "/admin/dashboard" },
-          { name: "Analytics", path: "/admin/analytics" },
+          {
+            name: "Dashboard",
+            path: "/admin/dashboard",
+            icon: "M4 6a2 2 0 012-2h4a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h4a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h4a2 2 0 012 2v2a2 2 0 01-2 2h-4a2 2 0 01-2-2v-2z",
+          },
+          {
+            name: "Analytics",
+            path: "/admin/analytics",
+            icon: "M3 3v18h18M7 16l4-5 4 3 5-7",
+          },
         ],
       },
       {
         name: "Records",
+        icon: "M9 12h6m-6 4h6M9 8h6m2 13H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z",
         items: [
-          { name: "Users", path: "/admin/users" },
-          { name: "Job Offers", path: "/admin/job-offers" },
-          { name: "Applications", path: "/admin/applications" },
+          {
+            name: "Users",
+            path: "/admin/users",
+            icon: "M17 20h5v-2a4 4 0 00-4-4h-1m-4 6H3v-2a4 4 0 014-4h2a4 4 0 014 4v2zm-5-8a4 4 0 100-8 4 4 0 000 8zm9-1a3 3 0 10-3-5.83",
+          },
+          {
+            name: "Job Offers",
+            path: "/admin/job-offers",
+            icon: "M20 7h-4V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM10 5h4v2h-4V5z",
+          },
+          {
+            name: "Applications",
+            path: "/admin/applications",
+            icon: "M9 12h6m-6 4h6M9 8h6m2 13H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z",
+          },
         ],
       },
       {
         name: "Approvals",
+        icon: "M9 12l2 2 4-4m5-2a9 9 0 11-18 0 9 9 0 0118 0z",
         items: [
-          { name: "Job Seeker", path: "/admin/jobseeker-verification" },
-          { name: "Employer", path: "/admin/employer-verification" },
-          { name: "Request Edit", path: "/admin/employer-job-edit-requests" },
+          {
+            name: "Job Seeker",
+            path: "/admin/jobseeker-verification",
+            icon: "M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zm8 0l2 2 4-4",
+          },
+          {
+            name: "Employer",
+            path: "/admin/employer-verification",
+            icon: "M3 21h18M5 21V5a2 2 0 012-2h6a2 2 0 012 2v16m0-12h4a2 2 0 012 2v10M9 7h2m-2 4h2m-2 4h2",
+          },
+          {
+            name: "Request Edit",
+            path: "/admin/employer-job-edit-requests",
+            icon: "M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7m-1.5-10.5a2.12 2.12 0 013 3L12 13l-4 1 1-4 7.5-7.5z",
+          },
         ],
       },
       {
         name: "Settings",
+        icon: "M12 15.5A3.5 3.5 0 1012 8a3.5 3.5 0 000 7.5zm7.4-3.5a7.8 7.8 0 00-.1-1l2-1.6-2-3.4-2.4 1a7.8 7.8 0 00-1.7-1L15 3.5h-4L10.6 6a7.8 7.8 0 00-1.7 1L6.5 6 4.5 9.4 6.5 11a7.8 7.8 0 000 2L4.5 14.6 6.5 18l2.4-1a7.8 7.8 0 001.7 1l.4 2.5h4l.4-2.5a7.8 7.8 0 001.7-1l2.4 1 2-3.4-2-1.6a7.8 7.8 0 00.1-1z",
         items: [
-          { name: "Activity Log", path: "/admin/system-logs" },
-          { name: "Archive", path: "/admin/archive" },
+          {
+            name: "Activity Log",
+            path: "/admin/system-logs",
+            icon: "M12 8v5l3 2m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
+          },
+          {
+            name: "Archive",
+            path: "/admin/archive",
+            icon: "M5 8h14M5 8l1 13h12l1-13M4 3h16v5H4V3zm6 9h4",
+          },
         ],
       },
     ],
@@ -327,6 +371,26 @@ const AdminLayout = ({ children }) => {
           aria-current={isActive ? "page" : undefined}
           end={isDashboard}
         >
+          <svg
+            className={[
+              "h-5 w-5 shrink-0 transition-colors",
+              isActive
+                ? "text-slate-700"
+                : "text-gray-500 group-hover:text-gray-700",
+            ].join(" ")}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d={item.icon}
+            />
+          </svg>
           <span className="truncate">{item.name}</span>
         </NavLink>
       </li>
@@ -350,7 +414,7 @@ const AdminLayout = ({ children }) => {
             }))
           }
           className={[
-            "group flex w-full items-center rounded-xl px-3 py-2.5 text-sm font-semibold select-none",
+            "group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold select-none",
             "transition-colors duration-150 ease-out",
             focusRing,
             hasActiveChild
@@ -359,6 +423,26 @@ const AdminLayout = ({ children }) => {
           ].join(" ")}
           aria-expanded={isOpen}
         >
+          <svg
+            className={[
+              "h-5 w-5 shrink-0 transition-colors",
+              hasActiveChild
+                ? "text-slate-700"
+                : "text-gray-500 group-hover:text-gray-700",
+            ].join(" ")}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d={section.icon}
+            />
+          </svg>
           <span className="flex-1 truncate text-left">{section.name}</span>
           <svg
             className={[
