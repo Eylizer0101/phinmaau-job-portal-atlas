@@ -338,6 +338,16 @@ const UploadIcon = ({ className = 'w-5 h-5' }) => (
   </svg>
 );
 
+const CompanyLogoUploadIcon = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+    <rect x="4" y="6" width="12" height="11" rx="1.8" strokeWidth="1.7" />
+    <circle cx="8" cy="10" r="1.35" strokeWidth="1.7" />
+    <path strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" d="M5.5 15l3.2-3.1 2.35 2.15 2.15-2.05 2.8 3" />
+    <circle cx="17.5" cy="7.5" r="3.5" fill="white" />
+    <path strokeWidth="1.7" strokeLinecap="round" d="M17.5 5.7v3.6M15.7 7.5h3.6" />
+  </svg>
+);
+
 const EyeIcon = ({ className = 'w-5 h-5' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor">
     <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z" />
@@ -2416,38 +2426,62 @@ const CompanyProfile = () => {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[170px_minmax(0,1fr)]">
-                        <div>
+                      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[170px_minmax(0,1fr)] lg:items-start">
+                        <div className="flex w-full flex-col items-center text-center lg:pt-1">
                           <button
                             type="button"
                             onClick={() => modalLogoInputRef.current?.click()}
                             className={cx(
-                              'flex h-[122px] w-[122px] flex-col items-center justify-center overflow-hidden rounded-[16px] border border-dashed bg-white text-[#66758b] transition hover:bg-[#f8fafc]',
-                              fieldErrors.companyLogo ? 'border-red-400' : 'border-[#cbd5e1]'
+                              'relative flex h-[122px] w-[122px] flex-col items-center justify-center overflow-hidden rounded-[16px] border border-dashed text-[#66758b] transition hover:border-[#9fb6d0] hover:bg-[#f8fafc]',
+                              fieldErrors.companyLogo ? 'border-red-400' : 'border-[#cbd5e1]',
+                              !previewLogo
+                                ? 'bg-[linear-gradient(45deg,#f1f5f9_25%,transparent_25%),linear-gradient(-45deg,#f1f5f9_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f1f5f9_75%),linear-gradient(-45deg,transparent_75%,#f1f5f9_75%)] bg-[length:14px_14px] bg-[position:0_0,0_7px,7px_-7px,-7px_0px] bg-white'
+                                : 'bg-white'
                             )}
                             disabled={saving}
+                            aria-label="Upload company logo"
                           >
                             {previewLogo ? (
                               <img src={previewLogo} alt="Company logo preview" className="h-full w-full object-cover" />
                             ) : (
-                              <>
-                                <UploadIcon className="h-6 w-6" />
-                                <span className="mt-2 px-2 text-center text-[10px] font-medium">Drop or upload your logo</span>
-                              </>
+                              <div className="flex flex-col items-center justify-center px-3">
+                                <CompanyLogoUploadIcon className="h-6 w-6 text-[#6f7d90]" />
+                                <span className="mt-2 max-w-[84px] text-center text-[9px] font-medium leading-[13px] text-[#66758b]">
+                                  Drop or upload your logo
+                                </span>
+                              </div>
                             )}
                           </button>
-                          <p className="mt-2 w-[122px] text-center text-[11px] text-[#66758b]">Company Logo *</p>
-                          {fieldErrors.companyLogo ? <p className="mt-1 text-[11px] font-medium text-red-600">{fieldErrors.companyLogo}</p> : null}
-                          <input ref={modalLogoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} disabled={saving} />
+
+                          <p className="mt-2 text-center text-[11px] font-medium text-[#66758b]">Company Logo *</p>
+                          {fieldErrors.companyLogo ? (
+                            <p className="mt-1 max-w-[160px] text-center text-[11px] font-medium leading-4 text-red-600">
+                              {fieldErrors.companyLogo}
+                            </p>
+                          ) : null}
+
+                          <input
+                            ref={modalLogoInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleLogoChange}
+                            disabled={saving}
+                          />
+
                           <button
                             type="button"
                             onClick={() => modalLogoInputRef.current?.click()}
-                            className="mt-3 inline-flex h-9 items-center gap-2 rounded-[9px] border border-[#d5dde8] bg-white px-3 text-[12px] font-semibold text-[#172033] hover:bg-[#f8fafc]"
+                            className="mt-3 inline-flex h-9 items-center justify-center gap-2 rounded-[9px] border border-[#d5dde8] bg-white px-4 text-[12px] font-semibold text-[#172033] shadow-sm transition hover:bg-[#f8fafc]"
                             disabled={saving}
                           >
-                            <UploadIcon className="h-4 w-4" /> Upload
+                            <UploadIcon className="h-4 w-4" />
+                            Upload
                           </button>
-                          <p className="mt-3 text-[10px] leading-4 text-[#66758b]">Square image, JPG or PNG, max 5 MB.</p>
+
+                          <p className="mt-3 max-w-[170px] text-center text-[10px] leading-4 text-[#66758b]">
+                            Square image, JPG or PNG, max 5 MB. Portrait photos can be cropped.
+                          </p>
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
