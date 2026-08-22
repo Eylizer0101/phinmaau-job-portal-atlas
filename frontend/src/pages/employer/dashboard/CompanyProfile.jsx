@@ -490,6 +490,248 @@ const CoverPhotoIcon = ({ className = 'w-5 h-5' }) => (
   </svg>
 );
 
+
+const GalleryCropEditor = ({ source, fileName, onCancel, onApply }) => {
+  const frameRef = useRef(null);
+  const imageRef = useRef(null);
+  const dragRef = useRef(null);
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const [frameSize, setFrameSize] = useState({ width: 0, height: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [applying, setApplying] = useState(false);
+
+  useEffect(() => {
+    const updateFrameSize = () => {
+      const rect = frameRef.current?.getBoundingClientRect();
+      if (rect) setFrameSize({ width: rect.width, height: rect.height });
+    };
+    updateFrameSize();
+    window.addEventListener('resize', updateFrameSize);
+    return () => window.removeEventListener('resize', updateFrameSize);
+  }, []);
+
+  const baseScale = useMemo(() => {
+    if (!frameSize.width || !frameSize.height || !imageSize.width || !imageSize.height) return 1;
+    return Math.max(frameSize.width / imageSize.width, frameSize.height / imageSize.height);
+  }, [frameSize, imageSize]);
+
+  const renderedScale = baseScale * zoom;
+  const renderedWidth = imageSize.width * renderedScale;
+  const renderedHeight = imageSize.height * renderedScale;
+  const maxOffsetX = Math.max(0, (renderedWidth - frameSize.width) / 2);
+  const maxOffsetY = Math.max(0, (renderedHeight - frameSize.height) / 2);
+
+  const clampPosition = useCallback(
+    (next) => ({
+      x: Math.max(-maxOffsetX, Math.min(maxOffsetX, next.x)),
+      y: Math.max(-maxOffsetY, Math.min(maxOffsetY, next.y)),
+    }),
+    [maxOffsetX, maxOffsetY]
+  );
+
+  useEffect(() => {
+    setPosition((current) => clampPosition(current));
+  }, [clampPosition]);
+
+  const resetCrop = () => {
+    setZoom(1);
+    setPosition({ x: 0, y: 0 });
+  };
+
+  const handlePointerDown = (event) => {
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: position.x,
+      originY: position.y,
+    };
+  };
+
+  const handlePointerMove = (event) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    setPosition(
+      clampPosition({
+        x: drag.originX + event.clientX - drag.startX,
+        y: drag.originY + event.clientY - drag.startY,
+      })
+    );
+  };
+
+  const handlePointerEnd = (event) => {
+    if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
+  };
+
+  const handleApply = async () => {
+    const image = imageRef.current;
+    if (!image || !frameSize.width || !frameSize.height || !renderedScale) return;
+
+    setApplying(true);
+    try {
+      const outputWidth = 1200;
+      const outputHeight = 800;
+      const sourceWidth = frameSize.width / renderedScale;
+      const sourceHeight = frameSize.height / renderedScale;
+      const sourceX = imageSize.width / 2 - sourceWidth / 2 - position.x / renderedScale;
+      const sourceY = imageSize.height / 2 - sourceHeight / 2 - position.y / renderedScale;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = outputWidth;
+      canvas.height = outputHeight;
+      const context = canvas.getContext('2d');
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = 'high';
+      context.drawImage(
+        image,
+        sourceX,
+        sourceY,
+        sourceWidth,
+        sourceHeight,
+        0,
+        0,
+        outputWidth,
+        outputHeight
+      );
+
+      const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob(
+          (result) => (result ? resolve(result) : reject(new Error('Unable to crop gallery image.'))),
+          'image/jpeg',
+          0.92
+        );
+      });
+
+      const cleanName = String(fileName || 'gallery-photo')
+        .replace(/\.[^/.]+$/, '')
+        .replace(/[^a-zA-Z0-9-_]+/g, '-');
+
+      onApply(new File([blob], `${cleanName}-cropped.jpg`, { type: 'image/jpeg' }));
+    } catch (cropError) {
+      console.error('Gallery crop failed:', cropError);
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 px-4 py-6">
+      <div className="w-full max-w-[700px] overflow-hidden rounded-[16px] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
+        <div className="flex items-start justify-between gap-4 px-6 pb-4 pt-5">
+          <div>
+            <h3 className="text-[20px] font-bold text-[#172033]">Crop gallery photo</h3>
+            <p className="mt-1 text-[12px] text-[#66758b]">
+              Drag the photo to capture exactly the part you want to show.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-full p-2 text-[#64748b] hover:bg-[#f1f5f9]"
+            aria-label="Close crop editor"
+          >
+            <CloseIcon className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="px-6">
+          <div
+            ref={frameRef}
+            className="relative mx-auto aspect-[3/2] w-full touch-none select-none overflow-hidden rounded-[12px] border-2 border-[#5b9df9] bg-[#0f172a] cursor-grab active:cursor-grabbing"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerEnd}
+            onPointerCancel={handlePointerEnd}
+          >
+            <img
+              ref={imageRef}
+              src={source}
+              alt="Gallery crop preview"
+              draggable="false"
+              onLoad={(event) => {
+                setImageSize({
+                  width: event.currentTarget.naturalWidth,
+                  height: event.currentTarget.naturalHeight,
+                });
+                setPosition({ x: 0, y: 0 });
+                setZoom(1);
+              }}
+              className="pointer-events-none absolute left-1/2 top-1/2 max-w-none"
+              style={{
+                width: renderedWidth || 'auto',
+                height: renderedHeight || 'auto',
+                transform: `translate(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px))`,
+              }}
+            />
+            <div className="pointer-events-none absolute inset-0">
+              <div className="absolute left-1/3 top-0 h-full w-px bg-white/45" />
+              <div className="absolute left-2/3 top-0 h-full w-px bg-white/45" />
+              <div className="absolute left-0 top-1/3 h-px w-full bg-white/45" />
+              <div className="absolute left-0 top-2/3 h-px w-full bg-white/45" />
+            </div>
+            <div className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-[#334155]/85 px-3 py-1.5 text-[11px] font-semibold text-white">
+              ✦ Drag to reposition
+            </div>
+          </div>
+        </div>
+
+        <div className="px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#d5dde8] text-[#172033]">
+              <span className="text-lg leading-none">−</span>
+            </div>
+            <input
+              type="range"
+              min="1"
+              max="3"
+              step="0.01"
+              value={zoom}
+              onChange={(event) => setZoom(Number(event.target.value))}
+              className="h-2 flex-1 cursor-pointer accent-[#1769c2]"
+              aria-label="Gallery image zoom"
+            />
+            <div className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#d5dde8] text-[#172033]">
+              <span className="text-lg leading-none">+</span>
+            </div>
+            <button
+              type="button"
+              onClick={resetCrop}
+              className="ml-1 inline-flex h-8 items-center gap-1.5 rounded-[8px] px-2 text-[11px] font-semibold text-[#172033] hover:bg-[#f8fafc]"
+            >
+              ↶ Reset
+            </button>
+          </div>
+
+          <p className="mt-3 text-[11px] text-[#66758b]">
+            Portrait photos are fine — just drag and zoom until the part you want fills the frame.
+          </p>
+
+          <div className="mt-5 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={applying}
+              className="h-10 rounded-[9px] border border-[#d5dde8] bg-white px-5 text-[12px] font-semibold text-[#172033] hover:bg-[#f8fafc] disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleApply}
+              disabled={applying || !imageSize.width}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-[9px] bg-[#1769c2] px-5 text-[12px] font-semibold text-white hover:bg-[#105aa8] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {applying ? <><SpinnerIcon className="h-4 w-4" /> Applying...</> : 'Apply crop'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const StatusPill = ({ status, url }) => {
   const hasUploadedFile = Boolean(String(url || '').trim());
   const normalized = String(status || '').toLowerCase();
@@ -904,6 +1146,21 @@ const CompanyProfile = () => {
 
   const [galleryFiles, setGalleryFiles] = useState([]);
   const [galleryPreviews, setGalleryPreviews] = useState([]);
+  const [isGalleryDragging, setIsGalleryDragging] = useState(false);
+  const [galleryDeleteConfirm, setGalleryDeleteConfirm] = useState({
+    isOpen: false,
+    kind: '',
+    id: '',
+    url: '',
+    fileName: '',
+  });
+  const [galleryCropEditor, setGalleryCropEditor] = useState({
+    isOpen: false,
+    kind: '',
+    id: '',
+    url: '',
+    fileName: '',
+  });
 
   const [verification, setVerification] = useState({
     secRegistration: { url: '', status: 'not_submitted' },
@@ -1502,73 +1759,271 @@ const CompanyProfile = () => {
     [closeCropEditor, cropEditor.mode, cropEditor.readyMadePath, previewCover, previewLogo]
   );
 
-  const handleGalleryPick = useCallback(
-    (e) => {
-      const pickedFiles = Array.from(e.target.files || []);
-      if (!pickedFiles.length) return;
+  const processGalleryFiles = useCallback(
+    (pickedFiles) => {
+      const files = Array.from(pickedFiles || []);
+      if (!files.length) return;
 
       clearMessages();
       clearFieldErrors();
 
       const currentCount = persistedGalleryItems.length + galleryPreviews.length;
-      if (currentCount + pickedFiles.length > MAX_GALLERY_IMAGES) {
+      if (currentCount + files.length > MAX_GALLERY_IMAGES) {
         setError(`You can upload up to ${MAX_GALLERY_IMAGES} gallery images only.`);
-        e.target.value = '';
         return;
       }
 
-      const invalid = pickedFiles.find((file) => !file.type.startsWith('image/'));
+      const allowedTypes = new Set(['image/jpeg', 'image/jpg', 'image/png']);
+      const invalid = files.find(
+        (file) => !allowedTypes.has(String(file.type || '').toLowerCase())
+      );
+
       if (invalid) {
-        setError('Only image files are allowed in the gallery.');
-        e.target.value = '';
+        setError('Only JPG, JPEG, or PNG images are allowed in the gallery.');
         return;
       }
 
-      const tooLarge = pickedFiles.find((file) => file.size > MAX_GALLERY_SIZE_BYTES);
+      const tooLarge = files.find((file) => file.size > MAX_GALLERY_SIZE_BYTES);
       if (tooLarge) {
         setError('Each gallery image must be 5MB or smaller.');
-        e.target.value = '';
         return;
       }
 
-      const nextFiles = [];
-      const nextPreviews = [];
+      const batchId = Date.now();
+      const nextPreviews = files.map((file, index) => ({
+        id: `${batchId}-${index}-${file.name}`,
+        file,
+        url: URL.createObjectURL(file),
+        caption: '',
+      }));
 
-      pickedFiles.forEach((file, index) => {
-        const blobUrl = URL.createObjectURL(file);
-        const id = `${Date.now()}-${index}-${file.name}`;
-        nextFiles.push(file);
-        nextPreviews.push({
-          id,
-          file,
-          url: blobUrl,
-          caption: '',
-        });
-      });
-
-      setGalleryFiles((prev) => [...prev, ...nextFiles]);
+      setGalleryFiles((prev) => [...prev, ...files]);
       setGalleryPreviews((prev) => [...prev, ...nextPreviews]);
-
-      e.target.value = '';
+      setFieldErrors((prev) => ({ ...prev, galleryImages: undefined }));
     },
-    [clearFieldErrors, clearMessages, galleryPreviews.length, persistedGalleryItems.length]
+    [
+      clearFieldErrors,
+      clearMessages,
+      galleryPreviews.length,
+      persistedGalleryItems.length,
+    ]
   );
 
-  const removeLocalGalleryPreview = useCallback((id) => {
-    setGalleryPreviews((prev) => {
-      const found = prev.find((item) => item.id === id);
-      if (found?.url?.startsWith('blob:')) {
-        URL.revokeObjectURL(found.url);
-      }
-      return prev.filter((item) => item.id !== id);
-    });
+  const handleGalleryPick = useCallback(
+    (event) => {
+      processGalleryFiles(event.target.files);
+      event.target.value = '';
+    },
+    [processGalleryFiles]
+  );
 
-    setGalleryFiles((prev) => {
-      const index = galleryPreviews.findIndex((item) => item.id === id);
-      if (index < 0) return prev;
-      return prev.filter((_, i) => i !== index);
+  const handleGalleryDragEnter = useCallback(
+    (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!saving) setIsGalleryDragging(true);
+    },
+    [saving]
+  );
+
+  const handleGalleryDragOver = useCallback(
+    (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+      if (!saving) setIsGalleryDragging(true);
+    },
+    [saving]
+  );
+
+  const handleGalleryDragLeave = useCallback((event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const currentTarget = event.currentTarget;
+    const relatedTarget = event.relatedTarget;
+
+    if (!relatedTarget || !currentTarget.contains(relatedTarget)) {
+      setIsGalleryDragging(false);
+    }
+  }, []);
+
+  const handleGalleryDrop = useCallback(
+    (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setIsGalleryDragging(false);
+      if (saving) return;
+      processGalleryFiles(event.dataTransfer?.files);
+    },
+    [processGalleryFiles, saving]
+  );
+
+  const getGalleryFileName = useCallback((item, fallback = 'Gallery photo') => {
+    if (item?.file?.name) return item.file.name;
+    if (item?.caption) return item.caption;
+
+    try {
+      const raw = String(item?.url || '').split('?')[0];
+      const last = decodeURIComponent(raw.split('/').pop() || '');
+      return last || fallback;
+    } catch {
+      return fallback;
+    }
+  }, []);
+
+  const requestRemoveGalleryPhoto = useCallback(
+    (kind, item, index = 0) => {
+      setGalleryDeleteConfirm({
+        isOpen: true,
+        kind,
+        id: kind === 'local' ? item.id : String(item._id || item.url),
+        url: item.url || '',
+        fileName: getGalleryFileName(item, `Gallery photo ${index + 1}`),
+      });
+    },
+    [getGalleryFileName]
+  );
+
+  const closeGalleryDeleteConfirm = useCallback(() => {
+    setGalleryDeleteConfirm({
+      isOpen: false,
+      kind: '',
+      id: '',
+      url: '',
+      fileName: '',
     });
-  }, [galleryPreviews]);
+  }, []);
+
+  const confirmRemoveGalleryPhoto = useCallback(() => {
+    const target = galleryDeleteConfirm;
+
+    if (target.kind === 'persisted') {
+      setCompanyData((prev) => ({
+        ...prev,
+        galleryImages: normalizeGalleryItems(prev.galleryImages).filter(
+          (item) => String(item._id || item.url) !== target.id
+        ),
+      }));
+    }
+
+    if (target.kind === 'local') {
+      const localIndex = galleryPreviews.findIndex((item) => item.id === target.id);
+      const localItem = galleryPreviews[localIndex];
+
+      if (localItem?.url?.startsWith('blob:')) {
+        URL.revokeObjectURL(localItem.url);
+      }
+
+      setGalleryPreviews((prev) => prev.filter((item) => item.id !== target.id));
+      setGalleryFiles((prev) =>
+        localIndex >= 0 ? prev.filter((_, index) => index !== localIndex) : prev
+      );
+    }
+
+    closeGalleryDeleteConfirm();
+  }, [closeGalleryDeleteConfirm, galleryDeleteConfirm, galleryPreviews]);
+
+  const closeGalleryCropEditor = useCallback(() => {
+    setGalleryCropEditor((current) => {
+      if (current.kind === 'persisted' && current.url?.startsWith('blob:')) {
+        URL.revokeObjectURL(current.url);
+      }
+
+      return {
+        isOpen: false,
+        kind: '',
+        id: '',
+        url: '',
+        fileName: '',
+      };
+    });
+  }, []);
+
+  const openGalleryCropEditor = useCallback(
+    async (kind, item, index = 0) => {
+      if (!item?.url || saving) return;
+
+      clearMessages();
+      clearFieldErrors();
+
+      try {
+        let editorUrl = item.url;
+
+        if (kind === 'persisted') {
+          const response = await fetch(item.url, { cache: 'no-store' });
+          if (!response.ok) throw new Error('Unable to load this gallery photo.');
+          const blob = await response.blob();
+          editorUrl = URL.createObjectURL(blob);
+        }
+
+        setGalleryCropEditor({
+          isOpen: true,
+          kind,
+          id: kind === 'local' ? item.id : String(item._id || item.url),
+          url: editorUrl,
+          fileName: getGalleryFileName(item, `gallery-photo-${index + 1}.jpg`),
+        });
+      } catch (cropOpenError) {
+        console.error('Unable to open gallery crop editor:', cropOpenError);
+        setError(cropOpenError.message || 'Unable to crop this gallery photo.');
+      }
+    },
+    [clearFieldErrors, clearMessages, getGalleryFileName, saving]
+  );
+
+  const applyGalleryCrop = useCallback(
+    (croppedFile) => {
+      const editor = galleryCropEditor;
+      const nextUrl = URL.createObjectURL(croppedFile);
+
+      if (editor.kind === 'local') {
+        const localIndex = galleryPreviews.findIndex((item) => item.id === editor.id);
+
+        if (localIndex >= 0) {
+          const oldPreview = galleryPreviews[localIndex];
+
+          if (oldPreview?.url?.startsWith('blob:')) {
+            URL.revokeObjectURL(oldPreview.url);
+          }
+
+          setGalleryPreviews((prev) =>
+            prev.map((item, index) =>
+              index === localIndex
+                ? { ...item, file: croppedFile, url: nextUrl }
+                : item
+            )
+          );
+
+          setGalleryFiles((prev) =>
+            prev.map((file, index) => (index === localIndex ? croppedFile : file))
+          );
+        }
+      } else if (editor.kind === 'persisted') {
+        setCompanyData((prev) => ({
+          ...prev,
+          galleryImages: normalizeGalleryItems(prev.galleryImages).filter(
+            (item) => String(item._id || item.url) !== editor.id
+          ),
+        }));
+
+        const id = `${Date.now()}-cropped-${croppedFile.name}`;
+        setGalleryFiles((prev) => [...prev, croppedFile]);
+        setGalleryPreviews((prev) => [
+          ...prev,
+          {
+            id,
+            file: croppedFile,
+            url: nextUrl,
+            caption: '',
+          },
+        ]);
+      }
+
+      closeGalleryCropEditor();
+    },
+    [closeGalleryCropEditor, galleryCropEditor, galleryPreviews]
+  );
 
   const openEditModal = useCallback(() => {
     clearMessages();
@@ -3206,7 +3661,7 @@ const CompanyProfile = () => {
                   ) : null}
 
                   {editStep === 4 ? (
-                    <div className="rounded-[18px] border border-[#d5dde8] bg-white p-6 shadow-[0_3px_10px_rgba(15,23,42,0.05)]">
+                    <div className="rounded-[18px] border border-[#d5dde8] bg-white p-5 shadow-[0_3px_10px_rgba(15,23,42,0.05)] sm:p-6">
                       <div className="mb-5 flex items-start gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f1f5f9] text-[#66758b]">
                           <PhotoStackIcon className="h-5 w-5" />
@@ -3217,57 +3672,262 @@ const CompanyProfile = () => {
                         </div>
                       </div>
 
-                      <div className="mb-5 rounded-[16px] border border-[#d5dde8] bg-[#f8fbff] p-5">
-                        <h4 className="text-[14px] font-bold text-[#081b35]">Showcase Your Workplace</h4>
-                        <p className="mt-1 text-[12px] leading-5 text-[#66758b]">
-                          Upload clear photos that give job seekers a better look at your workplace, team, culture, and environment.
-                        </p>
-                        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                          <div className="rounded-xl border border-[#d5dde8] bg-white px-4 py-3"><p className="text-[10px] uppercase tracking-wide text-[#66758b]">Accepted Formats</p><p className="mt-1 text-[12px] font-semibold">JPG, JPEG, PNG</p></div>
-                          <div className="rounded-xl border border-[#d5dde8] bg-white px-4 py-3"><p className="text-[10px] uppercase tracking-wide text-[#66758b]">Maximum File Size</p><p className="mt-1 text-[12px] font-semibold">5 MB per image</p></div>
+                      <div className="rounded-[16px] border border-[#d5dde8] bg-[#f7faff] p-4 sm:p-5">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#e8f2ff] text-[#1769c2]">
+                            <span className="text-[14px] font-bold">i</span>
+                          </div>
+                          <div>
+                            <h4 className="text-[15px] font-bold text-[#081b35]">Showcase Your Workplace</h4>
+                            <p className="mt-1 text-[12px] leading-5 text-[#66758b]">
+                              Upload photos that give job seekers a better look at your company, workplace, team, culture, and environment.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          <div className="rounded-[12px] border border-[#d5dde8] bg-white px-3 py-2.5">
+                            <p className="text-[9px] font-semibold uppercase tracking-[0.04em] text-[#66758b]">Accepted Formats</p>
+                            <p className="mt-0.5 text-[11px] font-semibold text-[#081b35]">JPG, JPEG, PNG</p>
+                          </div>
+                          <div className="rounded-[12px] border border-[#d5dde8] bg-white px-3 py-2.5">
+                            <p className="text-[9px] font-semibold uppercase tracking-[0.04em] text-[#66758b]">Maximum File Size</p>
+                            <p className="mt-0.5 text-[11px] font-semibold text-[#081b35]">5 MB per image</p>
+                          </div>
+                          <div className="rounded-[12px] border border-[#d5dde8] bg-white px-3 py-2.5">
+                            <p className="text-[9px] font-semibold uppercase tracking-[0.04em] text-[#66758b]">Recommended Quality</p>
+                            <p className="mt-0.5 text-[11px] font-semibold text-[#081b35]">Clear, high-resolution photos</p>
+                          </div>
+                          <div className="rounded-[12px] border border-[#d5dde8] bg-white px-3 py-2.5">
+                            <p className="text-[9px] font-semibold uppercase tracking-[0.04em] text-[#66758b]">Recommended Content</p>
+                            <p className="mt-0.5 text-[11px] font-semibold leading-4 text-[#081b35]">
+                              Workplace, office, facilities, team activities, events, and company culture
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-1 gap-x-6 gap-y-2 lg:grid-cols-2">
+                          <div className="space-y-2">
+                            {[
+                              'Make sure you have the right to use the photos you upload.',
+                              'Use photos that accurately represent your company and workplace.',
+                            ].map((item) => (
+                              <div key={item} className="flex items-start gap-2 text-[11px] leading-5 text-[#66758b]">
+                                <span className="mt-[2px] flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-full border border-[#13a36e] text-[9px] font-bold text-[#0a9464]">✓</span>
+                                <span>{item}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="space-y-2">
+                            {[
+                              'Avoid blurry, dark, heavily edited, unrelated, or inappropriate images.',
+                              'Avoid showing confidential information, personal documents, passwords, or sensitive employee information.',
+                            ].map((item) => (
+                              <div key={item} className="flex items-start gap-2 text-[11px] leading-5 text-[#66758b]">
+                                <span className="mt-[2px] flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-full border border-red-400 text-[9px] font-bold text-red-500">!</span>
+                                <span>{item}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="mt-4 flex items-center gap-2 rounded-[12px] bg-[#fff1c7] px-4 py-2.5 text-[11px] text-[#5b4310]">
+                          <span className="text-[14px]">💡</span>
+                          <span><strong>Tip:</strong> Upload a variety of photos rather than several nearly identical images.</span>
                         </div>
                       </div>
 
-                      <input ref={modalGalleryInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleGalleryPick} disabled={saving} />
-                      <button
-                        type="button"
-                        onClick={() => modalGalleryInputRef.current?.click()}
-                        className={cx(
-                          'flex min-h-[180px] w-full flex-col items-center justify-center rounded-[18px] border border-dashed bg-white text-center hover:bg-[#f8fafc]',
-                          fieldErrors.galleryImages ? 'border-red-400' : 'border-[#cbd5e1]'
-                        )}
+                      <input
+                        ref={modalGalleryInputRef}
+                        type="file"
+                        accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                        multiple
+                        className="hidden"
+                        onChange={handleGalleryPick}
                         disabled={saving}
+                      />
+
+                      <div
+                        role="button"
+                        tabIndex={saving ? -1 : 0}
+                        onClick={() => {
+                          if (!saving) modalGalleryInputRef.current?.click();
+                        }}
+                        onKeyDown={(event) => {
+                          if (!saving && (event.key === 'Enter' || event.key === ' ')) {
+                            event.preventDefault();
+                            modalGalleryInputRef.current?.click();
+                          }
+                        }}
+                        onDragEnter={handleGalleryDragEnter}
+                        onDragOver={handleGalleryDragOver}
+                        onDragLeave={handleGalleryDragLeave}
+                        onDrop={handleGalleryDrop}
+                        className={cx(
+                          'mt-5 flex min-h-[180px] w-full cursor-pointer flex-col items-center justify-center rounded-[18px] border border-dashed bg-[#fbfdff] text-center outline-none transition',
+                          fieldErrors.galleryImages
+                            ? 'border-red-400'
+                            : isGalleryDragging
+                              ? 'border-[#1769c2] bg-[#eef6ff] ring-4 ring-[#1769c2]/10'
+                              : 'border-[#cbd5e1] hover:border-[#9fb7d1] hover:bg-[#f8fbff] focus-visible:ring-4 focus-visible:ring-[#1769c2]/10',
+                          saving ? 'cursor-not-allowed opacity-60' : ''
+                        )}
                       >
-                        <UploadIcon className="h-8 w-8 text-[#66758b]" />
-                        <p className="mt-3 text-[13px] font-bold text-[#172033]">Drag and drop your photos here</p>
-                        <p className="mt-1 text-[11px] text-[#66758b]">JPG, JPEG, PNG · max 5 MB each · up to {MAX_GALLERY_IMAGES} images</p>
-                        <span className="mt-3 inline-flex h-9 items-center gap-2 rounded-[9px] border border-[#d5dde8] bg-white px-4 text-[12px] font-semibold">
-                          <UploadIcon className="h-4 w-4" /> Upload Gallery Images
+                        <UploadIcon className={cx('h-8 w-8', isGalleryDragging ? 'text-[#1769c2]' : 'text-[#66758b]')} />
+                        <p className="mt-3 text-[13px] font-bold text-[#172033]">
+                          {isGalleryDragging ? 'Drop your photos here' : 'Drag and drop your photos here'}
+                        </p>
+                        <p className="mt-1 text-[11px] text-[#66758b]">
+                          JPG, JPEG, PNG · max 5 MB each · up to {MAX_GALLERY_IMAGES} images
+                        </p>
+                        <span className="mt-3 inline-flex h-9 items-center gap-2 rounded-[9px] border border-[#d5dde8] bg-white px-4 text-[12px] font-semibold text-[#172033] shadow-sm">
+                          <UploadIcon className="h-4 w-4" />
+                          Upload Gallery Images
                         </span>
-                        <span className="mt-2 text-[11px] text-[#66758b]">{galleryDisplayItems.length} of {MAX_GALLERY_IMAGES} images used</span>
-                      </button>
-                      {fieldErrors.galleryImages ? <p className="mt-2 text-[12px] font-medium text-red-600">{fieldErrors.galleryImages}</p> : null}
+                        <span className="mt-2 text-[11px] text-[#66758b]">
+                          {galleryDisplayItems.length} of {MAX_GALLERY_IMAGES} images used
+                        </span>
+                      </div>
+
+                      {fieldErrors.galleryImages ? (
+                        <p className="mt-2 text-[12px] font-medium text-red-600">
+                          {fieldErrors.galleryImages}
+                        </p>
+                      ) : null}
 
                       {galleryDisplayItems.length > 0 ? (
                         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                           {persistedGalleryItems.map((item, index) => (
-                            <div key={`persisted-${item._id || item.url}-${index}`} className="overflow-hidden rounded-[14px] border border-[#d5dde8] bg-white">
-                              <img src={item.url} alt={`Saved gallery ${index + 1}`} className="h-[170px] w-full object-cover" />
-                              <div className="border-t border-[#e2e8f0] px-3 py-2 text-[11px] font-semibold text-[#66758b]">Saved image</div>
+                            <div
+                              key={`persisted-${item._id || item.url}-${index}`}
+                              className="overflow-hidden rounded-[14px] border border-[#d5dde8] bg-white shadow-sm"
+                            >
+                              <img
+                                src={item.url}
+                                alt={`Saved gallery ${index + 1}`}
+                                className="h-[190px] w-full object-cover"
+                              />
+                              <div className="flex items-center justify-between gap-2 border-t border-[#e2e8f0] px-3 py-2.5">
+                                <span className="min-w-0 truncate text-[11px] text-[#66758b]">
+                                  {getGalleryFileName(item, `Photo ${index + 1}`)}
+                                </span>
+                                <div className="flex shrink-0 items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => openGalleryCropEditor('persisted', item, index)}
+                                    className="flex h-8 w-8 items-center justify-center rounded-[8px] text-[#172033] hover:bg-[#f1f5f9]"
+                                    aria-label="Crop gallery photo"
+                                    title="Crop / Reposition"
+                                  >
+                                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                                      <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M7 3v14a4 4 0 004 4h10M3 7h14a4 4 0 014 4v10" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => requestRemoveGalleryPhoto('persisted', item, index)}
+                                    className="flex h-8 w-8 items-center justify-center rounded-[8px] text-red-600 hover:bg-red-50"
+                                    aria-label="Remove gallery photo"
+                                    title="Remove"
+                                  >
+                                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                                      <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           ))}
+
                           {galleryPreviews.map((item, index) => (
-                            <div key={`local-${item.id}-${index}`} className="overflow-hidden rounded-[14px] border border-[#d5dde8] bg-white">
-                              <img src={item.url} alt={`New gallery ${index + 1}`} className="h-[170px] w-full object-cover" />
-                              <div className="flex items-center justify-between border-t border-[#e2e8f0] px-3 py-2">
-                                <span className="min-w-0 truncate text-[11px] font-semibold text-[#66758b]">{item.file?.name || 'New image'}</span>
-                                <button type="button" onClick={() => removeLocalGalleryPreview(item.id)} className="ml-2 rounded-full bg-red-50 px-2 py-1 text-[10px] font-bold text-red-600 hover:bg-red-100">Remove</button>
+                            <div
+                              key={`local-${item.id}-${index}`}
+                              className="overflow-hidden rounded-[14px] border border-[#d5dde8] bg-white shadow-sm"
+                            >
+                              <img
+                                src={item.url}
+                                alt={`New gallery ${index + 1}`}
+                                className="h-[190px] w-full object-cover"
+                              />
+                              <div className="flex items-center justify-between gap-2 border-t border-[#e2e8f0] px-3 py-2.5">
+                                <span className="min-w-0 truncate text-[11px] text-[#66758b]">
+                                  {item.file?.name || `New photo ${index + 1}`}
+                                </span>
+                                <div className="flex shrink-0 items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => openGalleryCropEditor('local', item, index)}
+                                    className="flex h-8 w-8 items-center justify-center rounded-[8px] text-[#172033] hover:bg-[#f1f5f9]"
+                                    aria-label="Crop gallery photo"
+                                    title="Crop / Reposition"
+                                  >
+                                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                                      <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M7 3v14a4 4 0 004 4h10M3 7h14a4 4 0 014 4v10" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => requestRemoveGalleryPhoto('local', item, index)}
+                                    className="flex h-8 w-8 items-center justify-center rounded-[8px] text-red-600 hover:bg-red-50"
+                                    aria-label="Remove gallery photo"
+                                    title="Remove"
+                                  >
+                                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                                      <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5" />
+                                    </svg>
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           ))}
                         </div>
                       ) : null}
                     </div>
+                  ) : null}
+
+                  {galleryDeleteConfirm.isOpen ? (
+                    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 px-4">
+                      <div className="w-full max-w-[500px] rounded-[16px] bg-white p-5 shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-red-50 text-red-500">
+                          <WarningIcon className="h-5 w-5" />
+                        </div>
+
+                        <h3 className="mt-3 text-[18px] font-bold text-[#172033]">
+                          Remove this gallery photo?
+                        </h3>
+
+                        <p className="mt-2 text-[12px] leading-5 text-[#66758b]">
+                          Are you sure you want to remove “{galleryDeleteConfirm.fileName}” from your gallery? This cannot be undone once you save your changes.
+                        </p>
+
+                        <div className="mt-5 flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={closeGalleryDeleteConfirm}
+                            className="h-10 rounded-[9px] border border-[#d5dde8] bg-white px-4 text-[12px] font-semibold text-[#172033] hover:bg-[#f8fafc]"
+                          >
+                            Keep photo
+                          </button>
+                          <button
+                            type="button"
+                            onClick={confirmRemoveGalleryPhoto}
+                            className="h-10 rounded-[9px] bg-red-600 px-4 text-[12px] font-semibold text-white hover:bg-red-700"
+                          >
+                            Yes, remove photo
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {galleryCropEditor.isOpen ? (
+                    <GalleryCropEditor
+                      source={galleryCropEditor.url}
+                      fileName={galleryCropEditor.fileName}
+                      onCancel={closeGalleryCropEditor}
+                      onApply={applyGalleryCrop}
+                    />
                   ) : null}
 
                   <div className="sticky bottom-0 mt-5 rounded-[18px] border border-[#d5dde8] bg-white/95 px-5 py-4 shadow-[0_-4px_18px_rgba(15,23,42,0.07)] backdrop-blur">
