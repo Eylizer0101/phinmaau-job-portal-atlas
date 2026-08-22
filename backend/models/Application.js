@@ -147,6 +147,18 @@ const applicationSchema = new mongoose.Schema({
         type: appliedResumeSchema,
         default: () => ({})
     },
+    resumeSnapshot: {
+        type: mongoose.Schema.Types.Mixed,
+        default: null
+    },
+    resumeSnapshotVersion: {
+        type: Number,
+        default: 0
+    },
+    resumeSnapshotCreatedAt: {
+        type: Date,
+        default: null
+    },
     appliedAt: {
         type: Date,
         default: Date.now

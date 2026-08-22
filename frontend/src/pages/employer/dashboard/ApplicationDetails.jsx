@@ -847,12 +847,9 @@ const JobSeekerLevelBadgeCard = ({
           <div className="w-full max-w-[980px] overflow-hidden rounded-[22px] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
             <div className="flex items-center justify-between gap-4 bg-[#2e66a6] px-5 py-4 sm:px-7">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/75">
-                  Job Seeker Ranking
-                </p>
                 <h2
                   id="employer-job-seeker-levels-title"
-                  className="mt-1 text-[21px] font-bold text-white sm:text-[24px]"
+                  className="text-[21px] font-bold text-white sm:text-[24px]"
                 >
                   Job Seeker Levels
                 </h2>
@@ -870,23 +867,8 @@ const JobSeekerLevelBadgeCard = ({
 
             <div className="max-h-[78vh] overflow-y-auto px-5 py-6 sm:px-7 sm:py-7">
               <p className="text-sm leading-6 text-gray-600">
-                View the applicant&apos;s current rank and the complete job seeker level progression.
+                Improve your profile to progress through each job seeker level.
               </p>
-
-              <div className="mt-4 overflow-x-auto rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-3">
-                <div className="flex min-w-max items-center gap-2 text-sm font-semibold text-[#2e66a6]">
-                  {jobSeekerLevels.map(([levelName], index) => (
-                    <React.Fragment key={levelName}>
-                      <span className={levelName === currentRank ? 'font-extrabold text-black' : ''}>
-                        {levelName}
-                      </span>
-                      {index < jobSeekerLevels.length - 1 ? (
-                        <span className="text-gray-400" aria-hidden="true">→</span>
-                      ) : null}
-                    </React.Fragment>
-                  ))}
-                </div>
-              </div>
 
               <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
                 {jobSeekerLevels.map(([levelName, levelBadge], index) => {
@@ -931,15 +913,6 @@ const JobSeekerLevelBadgeCard = ({
                 })}
               </div>
 
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setShowLevelModal(false)}
-                  className="h-11 rounded-lg bg-[#2e66a6] px-6 text-sm font-semibold text-white transition hover:opacity-90"
-                >
-                  Close
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -1038,11 +1011,11 @@ const StatusConfirmationModal = ({
   if (!open || !action) return null;
 
   const isInterview = action === 'for interview';
-  const title = isInterview ? 'Move applicant to interview?' : 'Mark applicant as hired?';
+  const title = isInterview ? 'Move applicant to For Interview?' : 'Mark applicant as hired?';
   const description = isInterview
-    ? `Are you sure you want to move ${applicantName} to the interview stage?`
+    ? `Are you sure you want to move ${applicantName} to the For Interview stage?`
     : `Are you sure you want to mark ${applicantName} as hired?`;
-  const confirmLabel = isInterview ? 'Move to Interview' : 'Confirm Hired';
+  const confirmLabel = isInterview ? 'Move to For Interview' : 'Confirm Hired';
   const iconName = isInterview ? 'calendar' : 'check';
 
   return (
@@ -1216,7 +1189,16 @@ const ApplicationDetails = () => {
   if (loading) return <EmployerLayout><div className="mx-auto max-w-7xl px-4 py-10"><div className="flex justify-center rounded-2xl border bg-white py-16 text-[#2e66a6]"><Spinner /></div></div></EmployerLayout>;
   if (!application) return <EmployerLayout><div className="mx-auto max-w-7xl px-4 py-10"><div className="rounded-2xl border bg-white p-10 text-center"><p>{error || 'Application not found.'}</p><Link to={backDestination} className="mt-5 inline-block text-[#2e66a6]">Back to Applicants</Link></div></div></EmployerLayout>;
 
-  const user = application.jobseeker || {};
+  const liveUser = application.jobseeker || {};
+  const resumeSnapshot = application.resumeSnapshot || null;
+  const hasResumeSnapshot = Boolean(resumeSnapshot?.profile);
+  const user = hasResumeSnapshot
+    ? {
+        ...liveUser,
+        ...(resumeSnapshot.user || {}),
+        jobSeekerProfile: resumeSnapshot.profile,
+      }
+    : liveUser;
   const profile = user.jobSeekerProfile || {};
   const name = user.fullName || [user.firstName, user.middleName, user.lastName, user.extensionName].filter(Boolean).join(' ') || 'Applicant';
   const currentStatus = String(application.status || 'pending').toLowerCase();
@@ -1226,7 +1208,7 @@ const ApplicationDetails = () => {
   const education = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
   const work = Array.isArray(profile.workExperiences) ? profile.workExperiences : [];
   const skills = [...parseSkills(profile.technicalSkills), ...parseSkills(profile.softSkills)];
-  const jobSeekerLevel = calculateJobSeekerLevel({
+  const calculatedJobSeekerLevel = calculateJobSeekerLevel({
     skills,
     certifications: profile.certifications || [],
     projects: profile.projects || [],
@@ -1234,6 +1216,12 @@ const ApplicationDetails = () => {
     awards: profile.awards || [],
     workExperiences: work,
   });
+  const jobSeekerLevel = resumeSnapshot?.jobSeekerLevel?.currentRank
+    ? {
+        ...calculatedJobSeekerLevel,
+        ...resumeSnapshot.jobSeekerLevel,
+      }
+    : calculatedJobSeekerLevel;
   const matchSummary = calculateApplicationMatch({
     job: application.job || {},
     profile,
@@ -1276,9 +1264,10 @@ const ApplicationDetails = () => {
       ['Employment Type', profile.employmentType],
       ['Willing to Relocate', profile.willingToRelocate],
       ['How Soon Can Start', profile.howSoonCanYouStart],
-      ['Preferred Language', profile.preferredLanguage],
+      ['Experience', profile.experience || profile.whatHaveYouDone],
     ],
     [
+      ['Preferred Language', profile.preferredLanguage],
       ['Educational Attainment', profile.educationalAttainment],
       ['Double Degree', profile.studyField],
       ['Salary', salary],
@@ -1372,10 +1361,11 @@ const ApplicationDetails = () => {
                   className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 hover:text-[#174b91] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
                 >
                   <SvgIcon name="eye" className="h-4 w-4" />
-                  Open full view
+                  Full Resume
                 </button>
               </div>
 
+              <div className="relative max-h-[720px] overflow-hidden">
               <article className="mx-auto w-full bg-white font-serif text-[10px] leading-[1.22] text-black">
                 <header className="relative flex min-h-[110px] flex-col items-center justify-center pb-4 text-center sm:pl-[70px] sm:pr-[210px]">
                   <h2 className="text-[28px] font-bold uppercase leading-tight tracking-[0.02em]">
@@ -1552,20 +1542,15 @@ const ApplicationDetails = () => {
                   </section>
                 ) : null}
 
-                <section className="break-inside-avoid pt-3">
-                  <p className="mb-2 text-justify">
-                    I hereby certify that the above information is true and correct to the best of my knowledge.
-                  </p>
-                  <div className="font-bold">{name}</div>
-                  <div className="mt-0.5">Applicant</div>
-                </section>
               </article>
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white via-white/90 to-transparent" />
+              </div>
             </div>
           ) : <div className="border-t border-[#d8e2ee] px-6 py-8 sm:px-10"><div className="relative ml-3 border-l-2 border-gray-200 pl-8">{activities.map((item, index) => { const dt = formatDateTime(item.occurredAt || item.createdAt); return <div key={item._id || `${item.type}-${index}`} className="relative pb-10 last:pb-0"><div className="absolute -left-[43px] top-0 flex h-6 w-6 items-center justify-center rounded-full border-4 border-white bg-[#2e66a6] shadow"><SvgIcon name={item.type === 'message' ? 'message' : item.type === 'submitted' ? 'resume' : 'activity'} className="h-3 w-3 text-white" /></div><h3 className="text-lg font-semibold text-gray-900">{item.title || 'Application updated'}</h3><p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">{item.description || 'The application record was updated.'}</p><div className="mt-2 text-xs font-bold tracking-wide text-gray-500">{dt.date}{dt.time ? ` · ${dt.time}` : ''}</div></div>; })}</div></div>}
         </main>
 
         <aside className="space-y-5">
-          <div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5"><h2 className="text-lg font-bold">Employer Actions</h2>{isAlreadyEmployed ? <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">This applicant is already employed through another job application.</p> : null}<div className="mt-5 space-y-3">{!isAlreadyEmployed && currentStatus === 'pending' ? <button onClick={() => setConfirmationAction('for interview')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="calendar" /> Move to Interview</button> : null}{!isAlreadyEmployed && currentStatus === 'for interview' ? <button onClick={() => setConfirmationAction('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="check" /> Hired</button> : null}{!isAlreadyEmployed ? <button onClick={() => setMessageOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91]"><SvgIcon name="message" /> Send Message</button> : null}{(isAlreadyEmployed || ['pending', 'for interview'].includes(currentStatus)) ? <button onClick={() => setDeclineOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400 px-4 py-3 text-sm font-semibold text-red-600"><SvgIcon name="x" /> Decline Application</button> : null}</div></div>
+          <div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5"><h2 className="text-lg font-bold">Employer Actions</h2>{isAlreadyEmployed ? <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">This applicant is already employed through another job application.</p> : null}<div className="mt-5 space-y-3">{!isAlreadyEmployed && currentStatus === 'pending' ? <button onClick={() => setConfirmationAction('for interview')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="calendar" /> Move to For Interview</button> : null}{!isAlreadyEmployed && currentStatus === 'for interview' ? <button onClick={() => setConfirmationAction('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="check" /> Hired</button> : null}{!isAlreadyEmployed ? <button onClick={() => setMessageOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91]"><SvgIcon name="message" /> Send Message</button> : null}{(isAlreadyEmployed || ['pending', 'for interview'].includes(currentStatus)) ? <button onClick={() => setDeclineOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400 px-4 py-3 text-sm font-semibold text-red-600"><SvgIcon name="x" /> Decline Application</button> : null}</div></div>
           <div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5 sm:p-6">
             <h2 className="text-[18px] font-bold text-gray-900">Application Summary</h2>
 

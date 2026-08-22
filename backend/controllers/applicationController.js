@@ -153,6 +153,181 @@ const buildUserDisplayName = (u, fallback = 'User') => {
   return String(u.email || '').trim() || fallback;
 };
 
+
+const cloneApplicationSnapshotValue = (value) => {
+  if (value === null || value === undefined) return value;
+
+  if (typeof value?.toObject === 'function') {
+    return value.toObject({ depopulate: true, getters: false, virtuals: false });
+  }
+
+  return JSON.parse(JSON.stringify(value));
+};
+
+const normalizeSnapshotSkills = (raw) => {
+  if (Array.isArray(raw)) {
+    return raw
+      .flatMap((item) => {
+        if (item && typeof item === 'object') {
+          const skill = String(item.skill || item.name || '').trim();
+          if (!skill) return [];
+          const proficiency = String(item.proficiency || '').trim();
+          return [proficiency ? `${skill} — ${proficiency}` : skill];
+        }
+
+        const cleanItem = String(item || '').trim();
+        if (!cleanItem) return [];
+
+        if (cleanItem.includes('||')) {
+          return cleanItem
+            .split('||')
+            .map((value) => value.trim())
+            .filter(Boolean);
+        }
+
+        return [cleanItem];
+      })
+      .filter(Boolean);
+  }
+
+  const clean = String(raw || '').trim();
+  if (!clean) return [];
+
+  if (clean.includes('||')) {
+    return clean
+      .split('||')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  if (/\s[—-]\s(Basic|Novice|Intermediate|Advanced|Expert)$/i.test(clean)) {
+    return [clean];
+  }
+
+  return clean
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const hasMeaningfulSnapshotObject = (item) => {
+  if (!item || typeof item !== 'object' || Array.isArray(item)) return false;
+
+  return Object.entries(item).some(([key, value]) => {
+    if (['_id', 'id', 'createdAt', 'updatedAt', '__v'].includes(key)) return false;
+    if (value === null || value === undefined || value === false) return false;
+
+    if (Array.isArray(value)) return value.some((nested) => {
+      if (nested && typeof nested === 'object') return hasMeaningfulSnapshotObject(nested);
+      return Boolean(String(nested || '').trim());
+    });
+
+    if (value && typeof value === 'object') return hasMeaningfulSnapshotObject(value);
+    return Boolean(String(value || '').replace(/<[^>]*>/g, ' ').trim());
+  });
+};
+
+const calculateSnapshotJobSeekerLevel = (profile = {}) => {
+  const counts = {
+    skills: [
+      ...normalizeSnapshotSkills(profile.technicalSkills),
+      ...normalizeSnapshotSkills(profile.softSkills),
+    ].filter(Boolean).length,
+    certifications: Array.isArray(profile.certifications)
+      ? profile.certifications.filter(hasMeaningfulSnapshotObject).length
+      : 0,
+    projects: Array.isArray(profile.projects)
+      ? profile.projects.filter(hasMeaningfulSnapshotObject).length
+      : 0,
+    seminars: Array.isArray(profile.seminars)
+      ? profile.seminars.filter(hasMeaningfulSnapshotObject).length
+      : 0,
+    awards: Array.isArray(profile.awards)
+      ? profile.awards.filter(hasMeaningfulSnapshotObject).length
+      : 0,
+    work: Array.isArray(profile.workExperiences) ? profile.workExperiences.length : 0,
+  };
+
+  const tiers = [
+    {
+      name: 'First Time Job Seeker',
+      requirements: { skills: 0, certifications: 0, projects: 0, seminars: 0, awards: 0, work: 0 },
+    },
+    {
+      name: 'Intermediate',
+      requirements: { skills: 5, certifications: 1, projects: 1, seminars: 1, awards: 1, work: 0 },
+    },
+    {
+      name: 'Expert',
+      requirements: { skills: 9, certifications: 2, projects: 2, seminars: 2, awards: 2, work: 1 },
+    },
+    {
+      name: 'Pro',
+      requirements: { skills: 13, certifications: 5, projects: 5, seminars: 5, awards: 5, work: 2 },
+    },
+    {
+      name: 'Legend',
+      requirements: { skills: 17, certifications: 7, projects: 7, seminars: 7, awards: 7, work: 3 },
+    },
+  ];
+
+  const meetsRequirements = (requirements) =>
+    Object.entries(requirements).every(([key, required]) => counts[key] >= required);
+
+  let currentTierIndex = 0;
+  tiers.forEach((tier, index) => {
+    if (meetsRequirements(tier.requirements)) currentTierIndex = index;
+  });
+
+  const currentTier = tiers[currentTierIndex];
+  const nextTier = tiers[currentTierIndex + 1];
+
+  if (!nextTier) {
+    return {
+      currentRank: currentTier.name,
+      nextTier: 'Completed',
+      percentage: 100,
+      counts,
+    };
+  }
+
+  const requirementEntries = Object.entries(nextTier.requirements).filter(([, required]) => required > 0);
+  const ratios = requirementEntries.map(([key, required]) =>
+    Math.min(1, counts[key] / required)
+  );
+  const percentage = ratios.length
+    ? Math.round((ratios.reduce((total, ratio) => total + ratio, 0) / ratios.length) * 100)
+    : 0;
+
+  return {
+    currentRank: currentTier.name,
+    nextTier: nextTier.name,
+    percentage,
+    counts,
+  };
+};
+
+const buildApplicationResumeSnapshot = (jobseeker = {}) => {
+  const profile = cloneApplicationSnapshotValue(jobseeker.jobSeekerProfile || {}) || {};
+
+  return {
+    capturedAt: new Date(),
+    user: {
+      fullName: String(jobseeker.fullName || '').trim(),
+      firstName: String(jobseeker.firstName || '').trim(),
+      middleName: String(jobseeker.middleName || '').trim(),
+      lastName: String(jobseeker.lastName || '').trim(),
+      extensionName: String(jobseeker.extensionName || '').trim(),
+      email: String(jobseeker.email || '').trim(),
+      profileImage: String(jobseeker.profileImage || '').trim(),
+      phoneNumber: String(jobseeker.phoneNumber || '').trim(),
+      contactNumber: String(jobseeker.contactNumber || '').trim(),
+    },
+    profile,
+    jobSeekerLevel: calculateSnapshotJobSeekerLevel(profile),
+  };
+};
+
 const formatInterviewDateLabel = (value) => {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return 'TBS';
@@ -653,6 +828,12 @@ exports.applyForJob = async (req, res) => {
         fileSize: Number(profileCv.fileSize || 0),
         uploadedAt: profileCv.uploadedAt || new Date(),
       },
+
+      // Freeze the exact job seeker resume/profile state at the time of application.
+      resumeSnapshot: buildApplicationResumeSnapshot(jobseeker),
+      resumeSnapshotVersion: 1,
+      resumeSnapshotCreatedAt: new Date(),
+
       activityHistory: [{
         type: 'submitted',
         title: 'Application submitted',
@@ -2492,7 +2673,16 @@ exports.downloadApplicationResume = async (req, res) => {
       });
     }
 
-    const { lines, fullName } = buildProfileResumeLines(application.jobseeker || {});
+    const snapshot = application.resumeSnapshot;
+    const resumeOwner = snapshot?.profile
+      ? {
+          ...(application.jobseeker?.toObject ? application.jobseeker.toObject() : application.jobseeker || {}),
+          ...(snapshot.user || {}),
+          jobSeekerProfile: snapshot.profile,
+        }
+      : (application.jobseeker || {});
+
+    const { lines, fullName } = buildProfileResumeLines(resumeOwner);
     const pdfBuffer = createPdfBufferFromLines(lines);
     const filename = `${sanitizeFilename(fullName, 'Applicant')}_CV.pdf`;
 
