@@ -10,8 +10,8 @@ const AdminLayout = ({ children }) => {
   const [openDropdowns, setOpenDropdowns] = useState({
     Main: true,
     Records: true,
-    Approvals: true,
-    Settings: true,
+    Approvals: false,
+    Settings: false,
   });
 
   // ✅ Logout modal state (QA/UI confirm)
@@ -151,19 +151,6 @@ const AdminLayout = ({ children }) => {
       .sort((a, b) => b.path.length - a.path.length)[0];
     return match?.name || "Dashboard";
   }, [location.pathname, navItems]);
-
-  useEffect(() => {
-    const activeSection = navSections.find((section) =>
-      section.items.some((item) => location.pathname.startsWith(item.path))
-    );
-
-    if (activeSection) {
-      setOpenDropdowns((previous) => ({
-        ...previous,
-        [activeSection.name]: true,
-      }));
-    }
-  }, [location.pathname, navSections]);
 
   useEffect(() => setIsMobileNavOpen(false), [location.pathname]);
 
