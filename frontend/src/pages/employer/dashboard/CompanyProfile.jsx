@@ -78,6 +78,25 @@ const MAX_COVER_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_GALLERY_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_GALLERY_IMAGES = 12;
 
+const READY_MADE_COVERS = [
+  { id: 1, src: '/images/banners/1.png', title: 'Corporate Office', subtitle: 'Banking / Financial Services' },
+  { id: 2, src: '/images/banners/2.png', title: 'Retail Store', subtitle: 'Retail / Wholesale' },
+  { id: 3, src: '/images/banners/3.jpg', title: 'Clinic & Hospital', subtitle: 'Healthcare / Medical' },
+  { id: 4, src: '/images/banners/4.jpg', title: 'Tech Workspace', subtitle: 'Information Technology / BPO' },
+  { id: 5, src: '/images/banners/5.jpg', title: 'Restaurant & Cafe', subtitle: 'Food & Beverage' },
+  { id: 6, src: '/images/banners/6.jpg', title: 'Hotel & Hospitality', subtitle: 'Hotel / Hospitality' },
+  { id: 7, src: '/images/banners/7.jpg', title: 'Construction & Engineering', subtitle: 'Construction / Engineering' },
+  { id: 8, src: '/images/banners/8.jpg', title: 'Manufacturing & Industrial', subtitle: 'Manufacturing / Production' },
+  { id: 9, src: '/images/banners/9.jpg', title: 'Education & Training', subtitle: 'Education / Training' },
+  { id: 10, src: '/images/banners/10.jpg', title: 'Logistics & Warehouse', subtitle: 'Transportation / Logistics' },
+  { id: 11, src: '/images/banners/11.jpg', title: 'Real Estate & Property', subtitle: 'Property / Real Estate' },
+  { id: 12, src: '/images/banners/12.jpg', title: 'Creative & Marketing', subtitle: 'Advertising / Marketing' },
+  { id: 13, src: '/images/banners/13.jpg', title: 'Automotive Services', subtitle: 'Automotive / Vehicle' },
+  { id: 14, src: '/images/banners/14.jpg', title: 'Travel & Tourism', subtitle: 'Travel / Tourism' },
+  { id: 15, src: '/images/banners/15.jpg', title: 'Beauty & Wellness', subtitle: 'Beauty / Fitness' },
+  { id: 16, src: '/images/banners/16.jpg', title: 'Customer Support Center', subtitle: 'BPO / Customer Service' },
+];
+
 const MAX_COMPANY_NAME_LENGTH = 150;
 const MAX_INDUSTRY_LENGTH = 100;
 const MIN_COMPANY_DESCRIPTION_LENGTH = 500;
@@ -873,11 +892,14 @@ const CompanyProfile = () => {
   const [previewCover, setPreviewCover] = useState(null);
   const [coverFile, setCoverFile] = useState(null);
   const [isCoverDragging, setIsCoverDragging] = useState(false);
+  const [showMoreReadyMadeCovers, setShowMoreReadyMadeCovers] = useState(false);
+  const [selectedReadyMadeCover, setSelectedReadyMadeCover] = useState('');
   const [cropEditor, setCropEditor] = useState({
     isOpen: false,
     mode: 'logo',
     source: '',
     fileName: '',
+    readyMadePath: '',
   });
 
   const [galleryFiles, setGalleryFiles] = useState([]);
@@ -1019,7 +1041,7 @@ const CompanyProfile = () => {
   const closeCropEditor = useCallback(() => {
     setCropEditor((current) => {
       if (current.source?.startsWith('blob:')) URL.revokeObjectURL(current.source);
-      return { isOpen: false, mode: 'logo', source: '', fileName: '' };
+      return { isOpen: false, mode: 'logo', source: '', fileName: '', readyMadePath: '' };
     });
   }, []);
 
@@ -1061,6 +1083,8 @@ const CompanyProfile = () => {
         setPreviewCover(p?.coverPhoto || null);
         setLogoFile(null);
         setCoverFile(null);
+        setSelectedReadyMadeCover('');
+        setShowMoreReadyMadeCovers(false);
         revokeLocalPreviewUrls();
         setGalleryFiles([]);
         setCompanyReviews(Array.isArray(p?.reviews) ? p.reviews : []);
@@ -1256,6 +1280,7 @@ const CompanyProfile = () => {
           mode: 'logo',
           source: blobUrl,
           fileName: file.name,
+          readyMadePath: '',
         });
       } catch (err) {
         console.error(err);
@@ -1286,11 +1311,13 @@ const CompanyProfile = () => {
       }
 
       const blobUrl = URL.createObjectURL(file);
+      setSelectedReadyMadeCover('');
       setCropEditor({
         isOpen: true,
         mode: 'cover',
         source: blobUrl,
         fileName: file.name,
+        readyMadePath: '',
       });
     },
     [clearFieldErrors, clearMessages]
@@ -1357,6 +1384,44 @@ const CompanyProfile = () => {
     [processCoverFile, saving]
   );
 
+  const handleReadyMadeCoverSelect = useCallback(
+    async (cover) => {
+      if (!cover?.src || saving) return;
+
+      clearMessages();
+      clearFieldErrors();
+
+      try {
+        const response = await fetch(cover.src, { cache: 'force-cache' });
+        if (!response.ok) {
+          throw new Error('Unable to load this ready-made cover.');
+        }
+
+        const blob = await response.blob();
+        const mimeType = blob.type || (cover.src.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
+        const extension = mimeType.includes('png') ? 'png' : 'jpg';
+        const file = new File(
+          [blob],
+          `ready-made-cover-${cover.id}.${extension}`,
+          { type: mimeType }
+        );
+        const blobUrl = URL.createObjectURL(file);
+
+        setCropEditor({
+          isOpen: true,
+          mode: 'cover',
+          source: blobUrl,
+          fileName: file.name,
+          readyMadePath: cover.src,
+        });
+      } catch (readyMadeError) {
+        console.error('Ready-made cover failed to load:', readyMadeError);
+        setError(readyMadeError.message || 'Unable to load this ready-made cover.');
+      }
+    },
+    [clearFieldErrors, clearMessages, saving]
+  );
+
   const applyCroppedImage = useCallback(
     (croppedFile) => {
       const previewUrl = URL.createObjectURL(croppedFile);
@@ -1369,11 +1434,12 @@ const CompanyProfile = () => {
         if (previewCover?.startsWith('blob:')) URL.revokeObjectURL(previewCover);
         setCoverFile(croppedFile);
         setPreviewCover(previewUrl);
+        setSelectedReadyMadeCover(cropEditor.readyMadePath || '');
       }
 
       closeCropEditor();
     },
-    [closeCropEditor, cropEditor.mode, previewCover, previewLogo]
+    [closeCropEditor, cropEditor.mode, cropEditor.readyMadePath, previewCover, previewLogo]
   );
 
   const handleGalleryPick = useCallback(
@@ -2933,6 +2999,91 @@ const CompanyProfile = () => {
                           <span className="text-[10px] text-[#66758b]">
                             Recommended: wide 16:9 image, 1920 × 1080 px or higher
                           </span>
+                        </div>
+
+                        <div className="mt-5 rounded-[16px] border border-[#d5dde8] bg-[#f7faff] p-4 sm:p-5">
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#e8f2ff] text-[#1769c2]">
+                              <svg className="h-[17px] w-[17px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                                <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M12 3l1.35 4.15L17.5 8.5l-4.15 1.35L12 14l-1.35-4.15L6.5 8.5l4.15-1.35L12 3zM18.5 14.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2zM5.5 14l.65 1.85L8 16.5l-1.85.65L5.5 19l-.65-1.85L3 16.5l1.85-.65L5.5 14z" />
+                              </svg>
+                            </div>
+                            <div>
+                              <h4 className="text-[14px] font-bold text-[#081b35]">
+                                No cover photo yet? Use a ready-made one
+                              </h4>
+                              <p className="mt-1 text-[12px] leading-5 text-[#66758b]">
+                                Pick a professional 16:9 cover made for your industry — you can crop and reposition it after selecting.
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                            {(showMoreReadyMadeCovers ? READY_MADE_COVERS : READY_MADE_COVERS.slice(0, 4)).map((cover) => {
+                              const isSelected = selectedReadyMadeCover === cover.src;
+
+                              return (
+                                <button
+                                  key={cover.id}
+                                  type="button"
+                                  onClick={() => handleReadyMadeCoverSelect(cover)}
+                                  disabled={saving}
+                                  className={cx(
+                                    'overflow-hidden rounded-[13px] border bg-white text-left shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1769c2]/30 disabled:cursor-not-allowed disabled:opacity-60',
+                                    isSelected
+                                      ? 'border-[#1769c2] ring-2 ring-[#1769c2]/20'
+                                      : 'border-[#d5dde8] hover:-translate-y-0.5 hover:border-[#9fb7d1] hover:shadow-md'
+                                  )}
+                                  aria-pressed={isSelected}
+                                >
+                                  <div className="relative aspect-[16/9] overflow-hidden bg-[#eef2f7]">
+                                    <img
+                                      src={cover.src}
+                                      alt={cover.title}
+                                      className="h-full w-full object-cover"
+                                      draggable="false"
+                                    />
+                                    {isSelected ? (
+                                      <span className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#1769c2] text-[12px] font-bold text-white shadow">
+                                        ✓
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                  <div className="px-3 py-2.5">
+                                    <p className="truncate text-[12px] font-bold text-[#081b35]">
+                                      {cover.title}
+                                    </p>
+                                    <p className="mt-0.5 truncate text-[10px] text-[#66758b]">
+                                      {cover.subtitle}
+                                    </p>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          <div className="mt-4 flex justify-center">
+                            <button
+                              type="button"
+                              onClick={() => setShowMoreReadyMadeCovers((current) => !current)}
+                              disabled={saving}
+                              className="inline-flex h-9 items-center gap-2 rounded-[9px] border border-[#d5dde8] bg-white px-4 text-[11px] font-semibold text-[#172033] shadow-sm hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              <svg
+                                className={cx(
+                                  'h-4 w-4 transition-transform',
+                                  showMoreReadyMadeCovers ? 'rotate-180' : ''
+                                )}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                              </svg>
+                              {showMoreReadyMadeCovers ? 'Show less' : 'View more covers (12)'}
+                            </button>
+                          </div>
                         </div>
                       </div>
 
