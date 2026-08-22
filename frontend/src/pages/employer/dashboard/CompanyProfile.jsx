@@ -2782,7 +2782,7 @@ const CompanyProfile = () => {
                             </div>
                             <div>
                               <h4 className="text-[14px] font-bold text-[#081b35]">Make a Great First Impression</h4>
-                              <p className="mt-1 text-[11px] leading-5 text-[#66758b]">
+                              <p className="mt-1 text-[13px] leading-5 text-[#5f6f83]">
                                 Your cover photo is the first visual employers showcase to job seekers. Choose an image that represents your company and looks professional.
                               </p>
                             </div>
@@ -2814,8 +2814,8 @@ const CompanyProfile = () => {
                                 'Keep important logos, text, and people away from the edges.',
                                 'Make sure the image represents your actual company or workplace.',
                               ].map((item) => (
-                                <div key={item} className="flex items-start gap-2 text-[10px] leading-4 text-[#66758b]">
-                                  <span className="mt-[1px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-[#13a36e] text-[9px] font-bold text-[#0a9464]">✓</span>
+                                <div key={item} className="flex items-start gap-2 text-[12px] leading-5 text-[#5f6f83]">
+                                  <span className="mt-[2px] flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border border-[#13a36e] text-[10px] font-bold text-[#0a9464]">✓</span>
                                   <span>{item}</span>
                                 </div>
                               ))}
@@ -2827,8 +2827,8 @@ const CompanyProfile = () => {
                                 'Do not upload documents, advertisements, screenshots, or unrelated images.',
                                 "Don't use vertical or narrow images that don't fit the cover area.",
                               ].map((item) => (
-                                <div key={item} className="flex items-start gap-2 text-[10px] leading-4 text-[#66758b]">
-                                  <span className="mt-[1px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-red-400 text-[9px] font-bold text-red-500">!</span>
+                                <div key={item} className="flex items-start gap-2 text-[12px] leading-5 text-[#5f6f83]">
+                                  <span className="mt-[2px] flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border border-red-400 text-[10px] font-bold text-red-500">!</span>
                                   <span>{item}</span>
                                 </div>
                               ))}
