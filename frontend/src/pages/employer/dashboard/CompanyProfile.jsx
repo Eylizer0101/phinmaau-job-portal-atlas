@@ -3838,7 +3838,7 @@ const CompanyProfile = () => {
                                   <button
                                     type="button"
                                     onClick={() => requestRemoveGalleryPhoto('persisted', item, index)}
-                                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center text-red-600 transition hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                     aria-label="Remove gallery photo"
                                     title="Remove"
                                   >
@@ -3880,7 +3880,7 @@ const CompanyProfile = () => {
                                   <button
                                     type="button"
                                     onClick={() => requestRemoveGalleryPhoto('local', item, index)}
-                                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center text-red-600 transition hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                     aria-label="Remove gallery photo"
                                     title="Remove"
                                   >
