@@ -1422,6 +1422,66 @@ const CompanyProfile = () => {
     [clearFieldErrors, clearMessages, saving]
   );
 
+  const handleRepositionCover = useCallback(async () => {
+    const source = previewCover || companyData.coverPhoto;
+    if (!source || saving) return;
+
+    clearMessages();
+    clearFieldErrors();
+
+    try {
+      const response = await fetch(source, { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error('Unable to load the current cover photo.');
+      }
+
+      const blob = await response.blob();
+      const mimeType = blob.type || 'image/jpeg';
+      const extension = mimeType.includes('png') ? 'png' : 'jpg';
+      const fileName = selectedReadyMadeCover
+        ? `ready-made-cover-reposition.${extension}`
+        : `company-cover-reposition.${extension}`;
+      const blobUrl = URL.createObjectURL(blob);
+
+      setCropEditor({
+        isOpen: true,
+        mode: 'cover',
+        source: blobUrl,
+        fileName,
+        readyMadePath: selectedReadyMadeCover || '',
+      });
+    } catch (repositionError) {
+      console.error('Cover reposition failed:', repositionError);
+      setError(repositionError.message || 'Unable to reposition this cover photo.');
+    }
+  }, [
+    clearFieldErrors,
+    clearMessages,
+    companyData.coverPhoto,
+    previewCover,
+    saving,
+    selectedReadyMadeCover,
+  ]);
+
+  const handleRemoveCover = useCallback(() => {
+    if (saving) return;
+
+    clearMessages();
+    setFieldErrors((prev) => ({ ...prev, coverPhoto: undefined }));
+
+    if (previewCover?.startsWith('blob:')) {
+      URL.revokeObjectURL(previewCover);
+    }
+
+    setPreviewCover(null);
+    setCoverFile(null);
+    setSelectedReadyMadeCover('');
+    setCompanyData((prev) => ({
+      ...prev,
+      coverPhoto: '',
+    }));
+  }, [clearMessages, previewCover, saving]);
+
   const applyCroppedImage = useCallback(
     (croppedFile) => {
       const previewUrl = URL.createObjectURL(croppedFile);
@@ -2996,6 +3056,35 @@ const CompanyProfile = () => {
                             <UploadIcon className="h-4 w-4" />
                             Upload Cover Photo
                           </button>
+
+                          {(previewCover || companyData.coverPhoto) ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={handleRepositionCover}
+                                className="inline-flex h-9 items-center gap-2 rounded-[9px] border border-[#d5dde8] bg-white px-4 text-[11px] font-semibold text-[#172033] shadow-sm hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-60"
+                                disabled={saving}
+                              >
+                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                                  <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M8 3v3H5m11-3v3h3M8 21v-3H5m11 3v-3h3M8 6h8a2 2 0 012 2v8a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2z" />
+                                </svg>
+                                Crop / Reposition
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={handleRemoveCover}
+                                className="inline-flex h-9 items-center gap-2 rounded-[9px] px-3 text-[11px] font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                disabled={saving}
+                              >
+                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                                  <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5" />
+                                </svg>
+                                Remove
+                              </button>
+                            </>
+                          ) : null}
+
                           <span className="text-[10px] text-[#66758b]">
                             Recommended: wide 16:9 image, 1920 × 1080 px or higher
                           </span>
