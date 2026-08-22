@@ -872,6 +872,7 @@ const CompanyProfile = () => {
 
   const [previewCover, setPreviewCover] = useState(null);
   const [coverFile, setCoverFile] = useState(null);
+  const [isCoverDragging, setIsCoverDragging] = useState(false);
   const [cropEditor, setCropEditor] = useState({
     isOpen: false,
     mode: 'logo',
@@ -1266,16 +1267,16 @@ const CompanyProfile = () => {
     [clearFieldErrors, clearMessages, validateImageDimensions]
   );
 
-  const handleCoverChange = useCallback(
-    async (e) => {
-      const file = e.target.files?.[0];
+  const processCoverFile = useCallback(
+    async (file) => {
       if (!file) return;
 
       clearMessages();
       clearFieldErrors();
 
-      if (!file.type.startsWith('image/')) {
-        setError('Please select a valid cover image.');
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      if (!allowedTypes.includes(String(file.type || '').toLowerCase())) {
+        setError('Please upload a JPG, JPEG, or PNG cover photo only.');
         return;
       }
 
@@ -1291,9 +1292,69 @@ const CompanyProfile = () => {
         source: blobUrl,
         fileName: file.name,
       });
-      e.target.value = '';
     },
     [clearFieldErrors, clearMessages]
+  );
+
+  const handleCoverChange = useCallback(
+    async (e) => {
+      const file = e.target.files?.[0];
+      await processCoverFile(file);
+      e.target.value = '';
+    },
+    [processCoverFile]
+  );
+
+  const handleCoverDragEnter = useCallback((event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!saving) setIsCoverDragging(true);
+  }, [saving]);
+
+  const handleCoverDragOver = useCallback((event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'copy';
+    }
+
+    if (!saving) setIsCoverDragging(true);
+  }, [saving]);
+
+  const handleCoverDragLeave = useCallback((event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const currentTarget = event.currentTarget;
+    const relatedTarget = event.relatedTarget;
+
+    if (!relatedTarget || !currentTarget.contains(relatedTarget)) {
+      setIsCoverDragging(false);
+    }
+  }, []);
+
+  const handleCoverDrop = useCallback(
+    async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setIsCoverDragging(false);
+
+      if (saving) return;
+
+      const files = Array.from(event.dataTransfer?.files || []);
+      const file = files[0];
+
+      if (!file) return;
+
+      if (files.length > 1) {
+        setError('Please drop one cover photo only.');
+        return;
+      }
+
+      await processCoverFile(file);
+    },
+    [processCoverFile, saving]
   );
 
   const applyCroppedImage = useCallback(
@@ -2703,60 +2764,176 @@ const CompanyProfile = () => {
 
                   {editStep === 3 ? (
                     <div className="space-y-5">
-                      <div className="rounded-[18px] border border-[#d5dde8] bg-white p-6 shadow-[0_3px_10px_rgba(15,23,42,0.05)]">
+                      <div className="rounded-[18px] border border-[#d5dde8] bg-white p-5 shadow-[0_3px_10px_rgba(15,23,42,0.05)] sm:p-6">
                         <div className="mb-5 flex items-start gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f1f5f9] text-[#66758b]">
-                            <CoverPhotoIcon className="h-5 w-5" />
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-[#f1f5f9] text-[#66758b]">
+                            <CoverPhotoIcon className="h-[18px] w-[18px]" />
                           </div>
                           <div>
-                            <h3 className="text-[21px] font-bold text-[#081b35]">Cover Photo</h3>
-                            <p className="text-[13px] text-[#66758b]">Upload a header image for your company profile.</p>
+                            <h3 className="text-[19px] font-bold leading-tight text-[#081b35]">Cover Photo</h3>
+                            <p className="mt-0.5 text-[12px] text-[#66758b]">Upload a header image for your company profile.</p>
                           </div>
                         </div>
 
-                        <div className="mb-5 rounded-[16px] border border-[#d5dde8] bg-[#f8fbff] p-5">
-                          <h4 className="text-[14px] font-bold text-[#081b35]">Make a Great First Impression</h4>
-                          <p className="mt-1 text-[12px] leading-5 text-[#66758b]">
-                            Choose a clear, professional image that represents your actual company or workplace.
+                        <div className="rounded-[16px] border border-[#d5dde8] bg-[#f7faff] p-4 sm:p-5">
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#e8f2ff] text-[#1769c2]">
+                              <span className="text-[14px] font-bold">i</span>
+                            </div>
+                            <div>
+                              <h4 className="text-[14px] font-bold text-[#081b35]">Make a Great First Impression</h4>
+                              <p className="mt-1 text-[11px] leading-5 text-[#66758b]">
+                                Your cover photo is the first visual employers showcase to job seekers. Choose an image that represents your company and looks professional.
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            <div className="rounded-[12px] border border-[#d5dde8] bg-white px-3 py-2.5">
+                              <p className="text-[9px] font-semibold uppercase tracking-[0.04em] text-[#66758b]">Accepted Formats</p>
+                              <p className="mt-0.5 text-[11px] font-semibold text-[#081b35]">JPG, JPEG, PNG</p>
+                            </div>
+                            <div className="rounded-[12px] border border-[#d5dde8] bg-white px-3 py-2.5">
+                              <p className="text-[9px] font-semibold uppercase tracking-[0.04em] text-[#66758b]">Maximum File Size</p>
+                              <p className="mt-0.5 text-[11px] font-semibold text-[#081b35]">5 MB</p>
+                            </div>
+                            <div className="rounded-[12px] border border-[#d5dde8] bg-white px-3 py-2.5">
+                              <p className="text-[9px] font-semibold uppercase tracking-[0.04em] text-[#66758b]">Recommended Aspect Ratio</p>
+                              <p className="mt-0.5 text-[11px] font-semibold text-[#081b35]">16:9</p>
+                            </div>
+                            <div className="rounded-[12px] border border-[#d5dde8] bg-white px-3 py-2.5">
+                              <p className="text-[9px] font-semibold uppercase tracking-[0.04em] text-[#66758b]">Recommended Size</p>
+                              <p className="mt-0.5 text-[11px] font-semibold text-[#081b35]">1920 × 1080 px or higher</p>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 grid grid-cols-1 gap-x-6 gap-y-2 lg:grid-cols-2">
+                            <div className="space-y-2">
+                              {[
+                                'Use a wide, high-quality image that works well on both desktop and mobile.',
+                                'Keep important logos, text, and people away from the edges.',
+                                'Make sure the image represents your actual company or workplace.',
+                              ].map((item) => (
+                                <div key={item} className="flex items-start gap-2 text-[10px] leading-4 text-[#66758b]">
+                                  <span className="mt-[1px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-[#13a36e] text-[9px] font-bold text-[#0a9464]">✓</span>
+                                  <span>{item}</span>
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="space-y-2">
+                              {[
+                                'Avoid blurry, stretched, pixelated, or poorly cropped images.',
+                                'Do not upload documents, advertisements, screenshots, or unrelated images.',
+                                "Don't use vertical or narrow images that don't fit the cover area.",
+                              ].map((item) => (
+                                <div key={item} className="flex items-start gap-2 text-[10px] leading-4 text-[#66758b]">
+                                  <span className="mt-[1px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-red-400 text-[9px] font-bold text-red-500">!</span>
+                                  <span>{item}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <input
+                          ref={modalCoverInputRef}
+                          type="file"
+                          accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                          className="hidden"
+                          onChange={handleCoverChange}
+                          disabled={saving}
+                        />
+
+                        <div className="mt-5 flex justify-center">
+                          <div
+                            role="button"
+                            tabIndex={saving ? -1 : 0}
+                            aria-label="Upload company cover photo"
+                            onClick={() => {
+                              if (!saving) modalCoverInputRef.current?.click();
+                            }}
+                            onKeyDown={(event) => {
+                              if (!saving && (event.key === 'Enter' || event.key === ' ')) {
+                                event.preventDefault();
+                                modalCoverInputRef.current?.click();
+                              }
+                            }}
+                            onDragEnter={handleCoverDragEnter}
+                            onDragOver={handleCoverDragOver}
+                            onDragLeave={handleCoverDragLeave}
+                            onDrop={handleCoverDrop}
+                            className={cx(
+                              'group relative flex min-h-[360px] w-full max-w-[760px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[16px] border border-dashed text-center outline-none transition',
+                              fieldErrors.coverPhoto
+                                ? 'border-red-400'
+                                : isCoverDragging
+                                  ? 'border-[#1769c2] ring-4 ring-[#1769c2]/10'
+                                  : 'border-[#cbd5e1] hover:border-[#9fb7d1] focus-visible:ring-4 focus-visible:ring-[#1769c2]/10',
+                              saving ? 'cursor-not-allowed opacity-60' : ''
+                            )}
+                            style={
+                              previewCover || companyData.coverPhoto
+                                ? undefined
+                                : {
+                                    backgroundColor: '#ffffff',
+                                    backgroundImage:
+                                      'linear-gradient(45deg, #edf3f8 25%, transparent 25%), linear-gradient(-45deg, #edf3f8 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #edf3f8 75%), linear-gradient(-45deg, transparent 75%, #edf3f8 75%)',
+                                    backgroundSize: '16px 16px',
+                                    backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0px',
+                                  }
+                            }
+                          >
+                            {previewCover || companyData.coverPhoto ? (
+                              <>
+                                <img
+                                  src={previewCover || companyData.coverPhoto}
+                                  alt="Cover preview"
+                                  className="h-[360px] w-full object-cover"
+                                />
+                                <div className={cx(
+                                  'absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/25',
+                                  isCoverDragging ? 'bg-[#1769c2]/20' : ''
+                                )}>
+                                  <div className="rounded-[10px] bg-white/95 px-4 py-2 text-[12px] font-semibold text-[#172033] opacity-0 shadow-sm transition group-hover:opacity-100">
+                                    Drop or click to replace cover photo
+                                  </div>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="pointer-events-none flex flex-col items-center justify-center px-4">
+                                <UploadIcon className={cx('h-7 w-7', isCoverDragging ? 'text-[#1769c2]' : 'text-[#66758b]')} />
+                                <p className="mt-2 text-[12px] font-bold text-[#172033]">
+                                  {isCoverDragging ? 'Drop your cover photo here' : 'Drag and drop your cover photo here'}
+                                </p>
+                                <p className="mt-0.5 text-[10px] text-[#66758b]">
+                                  or use the buttons below — JPG, JPEG, PNG, max 5 MB
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {fieldErrors.coverPhoto ? (
+                          <p className="mx-auto mt-2 max-w-[760px] text-[11px] font-medium text-red-600">
+                            {fieldErrors.coverPhoto}
                           </p>
-                          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            <div className="rounded-xl border border-[#d5dde8] bg-white px-4 py-3"><p className="text-[10px] uppercase tracking-wide text-[#66758b]">Accepted Formats</p><p className="mt-1 text-[12px] font-semibold">JPG, JPEG, PNG</p></div>
-                            <div className="rounded-xl border border-[#d5dde8] bg-white px-4 py-3"><p className="text-[10px] uppercase tracking-wide text-[#66758b]">Maximum File Size</p><p className="mt-1 text-[12px] font-semibold">5 MB</p></div>
-                            <div className="rounded-xl border border-[#d5dde8] bg-white px-4 py-3"><p className="text-[10px] uppercase tracking-wide text-[#66758b]">Recommended Aspect Ratio</p><p className="mt-1 text-[12px] font-semibold">16:9</p></div>
-                            <div className="rounded-xl border border-[#d5dde8] bg-white px-4 py-3"><p className="text-[10px] uppercase tracking-wide text-[#66758b]">Recommended Size</p><p className="mt-1 text-[12px] font-semibold">1920 × 1080 px or higher</p></div>
-                          </div>
+                        ) : null}
+
+                        <div className="mt-4 flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => modalCoverInputRef.current?.click()}
+                            className="inline-flex h-9 items-center gap-2 rounded-[9px] border border-[#d5dde8] bg-white px-4 text-[11px] font-semibold text-[#172033] shadow-sm hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-60"
+                            disabled={saving}
+                          >
+                            <UploadIcon className="h-4 w-4" />
+                            Upload Cover Photo
+                          </button>
+                          <span className="text-[10px] text-[#66758b]">
+                            Recommended: wide 16:9 image, 1920 × 1080 px or higher
+                          </span>
                         </div>
-
-                        <input ref={modalCoverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverChange} disabled={saving} />
-                        <button
-                          type="button"
-                          onClick={() => modalCoverInputRef.current?.click()}
-                          className={cx(
-                            'flex min-h-[320px] w-full flex-col items-center justify-center overflow-hidden rounded-[18px] border border-dashed bg-white text-center transition hover:bg-[#f8fafc]',
-                            fieldErrors.coverPhoto ? 'border-red-400' : 'border-[#cbd5e1]'
-                          )}
-                          disabled={saving}
-                        >
-                          {previewCover || companyData.coverPhoto ? (
-                            <img src={previewCover || companyData.coverPhoto} alt="Cover preview" className="h-[320px] w-full object-cover" />
-                          ) : (
-                            <>
-                              <UploadIcon className="h-8 w-8 text-[#66758b]" />
-                              <p className="mt-3 text-[13px] font-bold text-[#172033]">Drag and drop your cover photo here</p>
-                              <p className="mt-1 text-[11px] text-[#66758b]">or use the upload button — JPG, JPEG, PNG, max 5 MB</p>
-                            </>
-                          )}
-                        </button>
-                        {fieldErrors.coverPhoto ? <p className="mt-2 text-[12px] font-medium text-red-600">{fieldErrors.coverPhoto}</p> : null}
-
-                        <button
-                          type="button"
-                          onClick={() => modalCoverInputRef.current?.click()}
-                          className="mt-4 inline-flex h-10 items-center gap-2 rounded-[10px] border border-[#d5dde8] bg-white px-4 text-[12px] font-semibold text-[#172033] hover:bg-[#f8fafc]"
-                          disabled={saving}
-                        >
-                          <UploadIcon className="h-4 w-4" /> Upload Cover Photo
-                        </button>
                       </div>
 
                       <div className="rounded-[18px] border border-[#d5dde8] bg-white p-6 shadow-[0_3px_10px_rgba(15,23,42,0.05)]">
