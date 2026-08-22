@@ -1166,6 +1166,56 @@ const MessagePopup = ({ open, onClose, applicant, application }) => {
     return raw.startsWith('http') ? raw : `${API_HOST}${raw}`;
   }, []);
 
+  const getMessageFileUrl = useCallback((fileData) => {
+    const raw = String(
+      fileData?.fileUrl ||
+      fileData?.url ||
+      fileData?.path ||
+      ''
+    ).trim();
+
+    if (!raw) return '';
+    if (raw.startsWith('http')) return raw;
+    return `${API_HOST}${raw.startsWith('/') ? raw : `/${raw}`}`;
+  }, []);
+
+  const getMessageFileType = useCallback((fileData) => {
+    const mime = String(
+      fileData?.fileType ||
+      fileData?.mimeType ||
+      fileData?.mimetype ||
+      ''
+    ).toLowerCase();
+
+    const name = String(
+      fileData?.originalName ||
+      fileData?.filename ||
+      fileData?.name ||
+      ''
+    ).toLowerCase();
+
+    const extension = name.includes('.') ? name.split('.').pop() : '';
+
+    if (
+      mime.startsWith('image/') ||
+      ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)
+    ) {
+      return 'image';
+    }
+
+    if (mime === 'application/pdf' || extension === 'pdf') return 'pdf';
+
+    if (
+      mime.includes('word') ||
+      mime.includes('msword') ||
+      ['doc', 'docx'].includes(extension)
+    ) {
+      return 'document';
+    }
+
+    return 'other';
+  }, []);
+
   const formatConversationTime = useCallback((value) => {
     if (!value) return '';
     const date = new Date(value);
@@ -1695,7 +1745,14 @@ const MessagePopup = ({ open, onClose, applicant, application }) => {
                         String(msg.sender?._id || msg.sender || '') ===
                         String(employerId || '');
                       const file = msg?.file;
-                      const fileName = file?.originalName || file?.filename || '';
+                      const fileName =
+                        file?.originalName ||
+                        file?.filename ||
+                        file?.name ||
+                        '';
+                      const fileType = getMessageFileType(file);
+                      const fileUrl = getMessageFileUrl(file);
+                      const isImageAttachment = Boolean(fileName) && fileType === 'image';
 
                       return (
                         <div
@@ -1704,40 +1761,108 @@ const MessagePopup = ({ open, onClose, applicant, application }) => {
                         >
                           <div
                             className={cn(
-                              'flex max-w-[86%] flex-col',
+                              'flex w-full flex-col',
                               mine ? 'items-end' : 'items-start'
                             )}
                           >
-                            <div
-                              className={cn(
-                                'w-fit max-w-full rounded-2xl px-4 py-3 text-sm shadow-sm',
-                                mine
-                                  ? 'rounded-br-md bg-[#2e66a6] text-white'
-                                  : 'rounded-bl-md border border-gray-200 bg-white text-gray-900'
-                              )}
-                            >
-                              {fileName ? (
-                                <div
-                                  className={cn(
-                                    'mb-2 flex items-center gap-2 rounded-xl border px-3 py-2',
-                                    mine
-                                      ? 'border-white/25 bg-white/10'
-                                      : 'border-gray-200 bg-gray-50'
-                                  )}
-                                >
-                                  <SvgIcon name="paperclip" className="h-4 w-4 shrink-0" />
-                                  <span className="max-w-[260px] truncate text-xs font-semibold">
-                                    {fileName}
-                                  </span>
-                                </div>
-                              ) : null}
+                            {isImageAttachment ? (
+                              <div className="w-full max-w-[92%] sm:max-w-[70%] lg:max-w-[68%]">
+                                {fileUrl ? (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      window.open(fileUrl, '_blank', 'noopener,noreferrer')
+                                    }
+                                    className="block w-full overflow-hidden rounded-xl border border-gray-200 bg-white text-left shadow-sm"
+                                    title="View image"
+                                  >
+                                    <img
+                                      src={fileUrl}
+                                      alt={fileName || 'Attachment'}
+                                      className="max-h-80 w-full object-contain"
+                                      loading="lazy"
+                                      onError={(event) => {
+                                        event.currentTarget.style.display = 'none';
+                                      }}
+                                    />
+                                  </button>
+                                ) : (
+                                  <div className="flex min-h-[120px] w-full items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-6 text-sm text-gray-500">
+                                    Image preview unavailable
+                                  </div>
+                                )}
 
-                              {msg.content ? (
-                                <p className="whitespace-pre-wrap break-words">
-                                  {msg.content}
-                                </p>
-                              ) : null}
-                            </div>
+                                {msg.content ? (
+                                  <p className="mt-2 whitespace-pre-wrap break-words text-sm text-gray-800">
+                                    {msg.content}
+                                  </p>
+                                ) : null}
+                              </div>
+                            ) : fileName ? (
+                              <div className="w-full max-w-[92%] sm:max-w-[70%] lg:max-w-[68%]">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (fileUrl) {
+                                      window.open(
+                                        fileUrl,
+                                        '_blank',
+                                        'noopener,noreferrer'
+                                      );
+                                    }
+                                  }}
+                                  disabled={!fileUrl}
+                                  className={cn(
+                                    'flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left shadow-sm transition',
+                                    mine
+                                      ? 'border-[#2e66a6] bg-[#2e66a6]/10'
+                                      : 'border-gray-200 bg-white',
+                                    fileUrl
+                                      ? 'cursor-pointer hover:bg-gray-50'
+                                      : 'cursor-default'
+                                  )}
+                                  title={fileUrl ? 'Open attachment' : fileName}
+                                >
+                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700">
+                                    <SvgIcon name="paperclip" className="h-5 w-5" />
+                                  </div>
+
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-sm font-semibold text-gray-900">
+                                      {fileName}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      {fileType === 'pdf'
+                                        ? 'PDF file'
+                                        : fileType === 'document'
+                                          ? 'Document'
+                                          : 'Attachment'}
+                                    </p>
+                                  </div>
+                                </button>
+
+                                {msg.content ? (
+                                  <p className="mt-2 whitespace-pre-wrap break-words text-sm text-gray-800">
+                                    {msg.content}
+                                  </p>
+                                ) : null}
+                              </div>
+                            ) : (
+                              <div
+                                className={cn(
+                                  'w-fit max-w-[86%] rounded-2xl px-4 py-3 text-sm shadow-sm',
+                                  mine
+                                    ? 'rounded-br-md bg-[#2e66a6] text-white'
+                                    : 'rounded-bl-md border border-gray-200 bg-white text-gray-900'
+                                )}
+                              >
+                                {msg.content ? (
+                                  <p className="whitespace-pre-wrap break-words">
+                                    {msg.content}
+                                  </p>
+                                ) : null}
+                              </div>
+                            )}
 
                             <span className="mt-1 px-1 text-[11px] text-gray-400">
                               {formatDateTime(msg.createdAt).time}
@@ -1769,11 +1894,12 @@ const MessagePopup = ({ open, onClose, applicant, application }) => {
 
               {selectedFile ? (
                 <div className="border-t border-gray-200 bg-white px-4 pt-3">
-                  <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600">
-                        <SvgIcon name="paperclip" className="h-4 w-4" />
+                  <div className="flex items-start justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700">
+                        <SvgIcon name="paperclip" className="h-5 w-5" />
                       </div>
+
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-gray-900">
                           {selectedFile.name}
@@ -1781,12 +1907,21 @@ const MessagePopup = ({ open, onClose, applicant, application }) => {
                         <p className="text-xs text-gray-500">
                           {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                         </p>
+
+                        {selectedFile.type?.startsWith('image/') ? (
+                          <img
+                            src={URL.createObjectURL(selectedFile)}
+                            alt="Selected attachment preview"
+                            className="mt-2 max-h-32 rounded-xl border border-gray-200 bg-white object-contain"
+                          />
+                        ) : null}
                       </div>
                     </div>
+
                     <button
                       type="button"
                       onClick={() => setSelectedFile(null)}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200"
                       aria-label="Remove selected file"
                     >
                       <SvgIcon name="x" className="h-4 w-4" />
