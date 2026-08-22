@@ -1143,6 +1143,7 @@ const CompanyProfile = () => {
     fileName: '',
     readyMadePath: '',
   });
+  const [coverDeleteConfirm, setCoverDeleteConfirm] = useState(false);
 
   const [galleryFiles, setGalleryFiles] = useState([]);
   const [galleryPreviews, setGalleryPreviews] = useState([]);
@@ -1722,6 +1723,15 @@ const CompanyProfile = () => {
 
   const handleRemoveCover = useCallback(() => {
     if (saving) return;
+    setCoverDeleteConfirm(true);
+  }, [saving]);
+
+  const closeCoverDeleteConfirm = useCallback(() => {
+    setCoverDeleteConfirm(false);
+  }, []);
+
+  const confirmRemoveCover = useCallback(() => {
+    if (saving) return;
 
     clearMessages();
     setFieldErrors((prev) => ({ ...prev, coverPhoto: undefined }));
@@ -1737,6 +1747,7 @@ const CompanyProfile = () => {
       ...prev,
       coverPhoto: '',
     }));
+    setCoverDeleteConfirm(false);
   }, [clearMessages, previewCover, saving]);
 
   const applyCroppedImage = useCallback(
@@ -3883,6 +3894,41 @@ const CompanyProfile = () => {
                           ))}
                         </div>
                       ) : null}
+                    </div>
+                  ) : null}
+
+                  {coverDeleteConfirm ? (
+                    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 px-4">
+                      <div className="w-full max-w-[500px] rounded-[16px] bg-white p-5 shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-red-50 text-red-500">
+                          <WarningIcon className="h-5 w-5" />
+                        </div>
+
+                        <h3 className="mt-3 text-[18px] font-bold text-[#172033]">
+                          Remove cover photo?
+                        </h3>
+
+                        <p className="mt-2 text-[12px] leading-5 text-[#66758b]">
+                          Are you sure you want to remove your cover photo? Your profile header will be empty until you upload or choose a new one.
+                        </p>
+
+                        <div className="mt-5 flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={closeCoverDeleteConfirm}
+                            className="h-10 rounded-[9px] border border-[#d5dde8] bg-white px-4 text-[12px] font-semibold text-[#172033] hover:bg-[#f8fafc]"
+                          >
+                            Keep photo
+                          </button>
+                          <button
+                            type="button"
+                            onClick={confirmRemoveCover}
+                            className="h-10 rounded-[9px] bg-red-600 px-4 text-[12px] font-semibold text-white hover:bg-red-700"
+                          >
+                            Yes, remove cover
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   ) : null}
 
