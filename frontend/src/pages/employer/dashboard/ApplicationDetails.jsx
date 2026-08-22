@@ -1053,13 +1053,13 @@ const DeclineReasonModal = ({ open, applicantName, reasons, selectedReason, comm
         if (event.target === event.currentTarget && !submitting) onClose();
       }}
     >
-      <div className="w-full max-w-[560px] overflow-hidden rounded-[22px] bg-white shadow-2xl">
+      <div className="w-full max-w-[720px] overflow-hidden rounded-[22px] bg-white shadow-2xl">
         <div className="flex items-start justify-between gap-5 px-7 pb-4 pt-6">
           <div className="min-w-0">
-            <h2 id="decline-application-title" className="text-[20px] font-bold text-gray-900 sm:text-[22px]">
+            <h2 id="decline-application-title" className="text-[22px] font-bold text-gray-900 sm:text-[24px]">
               Do you want to decline this application?
             </h2>
-            <p className="mt-2 max-w-[470px] text-[13px] leading-5 text-gray-500">
+            <p className="mt-2 max-w-[590px] text-[14px] leading-6 text-gray-500">
               If yes, please choose one of the following reasons or leave a comment so the applicant receives feedback.
             </p>
           </div>
@@ -1084,7 +1084,7 @@ const DeclineReasonModal = ({ open, applicantName, reasons, selectedReason, comm
                 onClick={() => onReasonChange(reason)}
                 disabled={submitting}
                 className={cn(
-                  'min-h-[48px] rounded-lg border px-3 py-2 text-[11px] font-medium leading-4 transition disabled:cursor-not-allowed disabled:opacity-60',
+                  'min-h-[56px] rounded-lg border px-4 py-3 text-[13px] font-medium leading-[18px] transition disabled:cursor-not-allowed disabled:opacity-60',
                   selectedReason === reason
                     ? 'border-[#2f67e8] bg-[#2f67e8] text-white shadow-sm'
                     : 'border-gray-200 bg-[#f7f7f8] text-gray-800 hover:border-[#bfd0f8] hover:bg-[#f2f6ff]'
@@ -1102,7 +1102,7 @@ const DeclineReasonModal = ({ open, applicantName, reasons, selectedReason, comm
               rows={4}
               maxLength={500}
               disabled={submitting}
-              className="min-h-[112px] w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-3 pb-8 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#2f67e8] focus:ring-2 focus:ring-[#2f67e8]/10 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-70"
+              className="min-h-[125px] w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-3 pb-8 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#2f67e8] focus:ring-2 focus:ring-[#2f67e8]/10 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-70"
               placeholder="Leave a comment for the applicant..."
             />
             <span className="pointer-events-none absolute bottom-2.5 right-3 text-[10px] text-gray-400">
@@ -1110,7 +1110,7 @@ const DeclineReasonModal = ({ open, applicantName, reasons, selectedReason, comm
             </span>
           </div>
 
-          <p className="mt-2 text-[10px] leading-4 text-gray-500">
+          <p className="mt-2 text-[11px] leading-4 text-gray-500">
             * This feedback will be shared directly with the applicant to help their professional growth.
           </p>
         </div>
