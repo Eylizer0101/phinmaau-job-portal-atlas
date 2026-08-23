@@ -1,493 +1,81 @@
-// BACKEND/controllers/authController.js
+// backend/controllers/adminController.js
 const User = require('../models/User');
+const Job = require('../models/Job');
+const Application = require('../models/Application');
+const CommunityPost = require('../models/CommunityPost');
 const Notification = require('../models/Notification');
-const notificationController = require('./notificationController');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const https = require('https');
-const querystring = require('querystring');
-const {
-  sendCredentialsEmail,
-  sendPasswordResetOtpEmail,
-  sendSettingsEmailVerificationCode,
-  sendJobseekerRegistrationSummaryEmail,
-  sendEmployerRegistrationSummaryEmail,
-} = require('../config/mailer');
-const puppeteer = require('puppeteer');
 const { v2: cloudinary } = require('cloudinary');
+const { sendCredentialsEmail, sendResubmitDocumentEmail, sendVerificationRejectedEmail, sendVerificationRestoredEmail } = require('../config/mailer');
 
-if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-    secure: true,
-  });
-}
+// ==========================
+// ✅ HELPERS: username + password generator
+// ==========================
+const normalizeBase = (v) =>
+  String(v || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '')
+    .trim();
 
-// Optional email sending
-let nodemailer = null;
-try {
-  nodemailer = require('nodemailer');
-} catch {
-  nodemailer = null;
-}
-
-const makePublicUrl = (req, relativePath) => {
-  const base = process.env.PUBLIC_BASE_URL || 'https://phinmaau-job-portal-atlas.onrender.com';
-  if (/^https?:\/\//i.test(relativePath)) return relativePath;
-  if (!relativePath.startsWith('/')) return `${base}/${relativePath}`;
-  return `${base}${relativePath}`;
+const randomDigits = (len = 4) => {
+  let out = '';
+  for (let i = 0; i < len; i++) out += Math.floor(Math.random() * 10);
+  return out;
 };
 
-const getUploadedFileUrl = (req, file, fallbackRelativePath) => {
-  if (file?.path && /^https?:\/\//i.test(file.path)) {
-    return file.path;
+const escapeRegex = (value = '') =>
+  String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const generateTempPassword = () => {
+  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  const nums = '23456789';
+  const symbols = '!@#$%';
+  const pick = (s) => s[Math.floor(Math.random() * s.length)];
+  let pwd = '';
+  pwd += pick(letters);
+  pwd += pick(letters);
+  pwd += pick(nums);
+  pwd += pick(nums);
+  pwd += pick(symbols);
+  pwd += pick(letters);
+  pwd += pick(nums);
+  pwd += pick(letters);
+  pwd = pwd.split('').sort(() => Math.random() - 0.5).join('');
+  return pwd;
+};
+
+const generateUniqueUsername = async ({ role, firstName, lastName, companyName }) => {
+  let base = '';
+
+  if (role === 'jobseeker') {
+    base = normalizeBase(`${firstName}${lastName}`) || 'jobseeker';
+  } else if (role === 'employer') {
+    base = normalizeBase(companyName) || 'employer';
+  } else {
+    base = 'user';
   }
 
-  if (file?.secure_url && /^https?:\/\//i.test(file.secure_url)) {
-    return file.secure_url;
+  if (base.length < 4) base = `${base}${randomDigits(2)}`;
+
+  let username = base;
+  let tries = 0;
+
+  while (tries < 50) {
+    const exists = await User.findOne({ username }).select('_id');
+    if (!exists) return username;
+
+    username = `${base}${randomDigits(4)}`;
+    tries++;
   }
 
-  return makePublicUrl(req, fallbackRelativePath);
+  return `${base}${Date.now()}`.slice(0, 20);
 };
 
-const boolFromBody = (v) => String(v || '').toLowerCase() === 'true';
+const JOBSEEKER_DOC_TYPES = ['cv', 'tor', 'diploma', 'sss', 'philhealth', 'pagibig', 'tin', 'validId'];
+const JOBSEEKER_REQUIRED_DOC_TYPES = ['cv', 'tor', 'diploma', 'validId'];
 
-const normalizeEmail = (email) =>
-  String(email || '')
-    .normalize('NFKC')
-    .trim()
-    .toLowerCase();
-const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const findExistingUserByEmail = (email) => {
-  const normalizedEmail = normalizeEmail(email);
-  return User.findOne({
-    $or: [
-      { email: normalizedEmail },
-      { email: { $regex: `^${escapeRegex(normalizedEmail)}_deleted_\\d+$`, $options: 'i' } },
-    ],
-  }).collation({ locale: 'en', strength: 2 });
-};
-const isDuplicateKeyError = (error) => Number(error?.code) === 11000;
-const isApprovedJobseekerAccount = (user) => {
-  if (!user || user.role !== 'jobseeker') return false;
-  return (
-    user.isVerified === true ||
-    String(user.jobSeekerProfile?.verificationStatus || '').toLowerCase() === 'verified' ||
-    String(user.jobSeekerProfile?.verificationDocs?.overallStatus || '').toLowerCase() === 'verified' ||
-    (
-      String(user.status || '').toLowerCase() === 'active' &&
-      Boolean(String(user.username || '').trim())
-    )
-  );
-};
-const canUsePasswordRecovery = (user) => {
-  if (!user || user.isActive !== true || String(user.status || '').toLowerCase() !== 'active') return false;
-  if (user.role === 'admin') return true;
-  if (user.role === 'jobseeker') {
-    return isApprovedJobseekerAccount(user);
-  }
-  if (user.role === 'employer') {
-    return String(user.employerProfile?.verificationDocs?.overallStatus || '').toLowerCase() === 'verified';
-  }
-  return false;
-};
-const isGmailAddress = (email) => /^[^\s@]+@gmail\.com$/i.test(String(email || '').trim());
-const isValidPersonName = (value) => /^[\p{L}\s'-]+$/u.test(String(value || '').trim());
-const isValidIndustry = (value) => {
-  const clean = String(value || '').trim();
-  return /^[^<>\u0000-\u001F\u007F]+$/u.test(clean) && !/^\s*(?:javascript|data):/i.test(clean);
-};
-const isValidBusinessEmail = (email) => /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i.test(String(email || '').trim());
-
-const normalizeCompanyWebsiteUrl = (value) => {
-  const trimmed = String(value || '').trim();
-  if (!trimmed) return '';
-  if (/\s|<|>|["'`]/.test(trimmed) || /^(?:javascript|data):/i.test(trimmed)) return null;
-
-  const candidate = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-  try {
-    const parsed = new URL(candidate);
-    if (!['http:', 'https:'].includes(parsed.protocol)) return null;
-    if (parsed.username || parsed.password || !parsed.hostname || !parsed.hostname.includes('.')) return null;
-    if (!/^[a-z0-9.-]+$/i.test(parsed.hostname) || parsed.hostname.startsWith('.') || parsed.hostname.endsWith('.')) return null;
-    return parsed.toString();
-  } catch {
-    return null;
-  }
-};
-
-const getJwtSecret = () => {
-  const secret = process.env.JWT_SECRET;
-
-  if (!secret) {
-    throw new Error('JWT_SECRET is not configured');
-  }
-
-  return secret;
-};
-
-const signToken = (payload, expiresIn = '7d') =>
-  jwt.sign(payload, getJwtSecret(), { expiresIn });
-
-const generateEmailVerifyToken = () => crypto.randomBytes(32).toString('hex');
-const generatePasswordResetToken = () => crypto.randomBytes(32).toString('hex');
-const hashToken = (token) => crypto.createHash('sha256').update(String(token)).digest('hex');
-const generateNumericOtp = () => String(crypto.randomInt(100000, 1000000));
-const SETTINGS_OTP_EXPIRES_MINUTES = 10;
-
-const normalizePhoneNumber = (phoneNumber) => {
-  const raw = String(phoneNumber || '').trim();
-  if (!raw) return '';
-
-  let clean = raw.replace(/[\s()-]/g, '');
-  if (clean.startsWith('+')) return clean;
-  if (clean.startsWith('63')) return `+${clean}`;
-  if (clean.startsWith('09')) return `+63${clean.slice(1)}`;
-  if (clean.startsWith('9') && clean.length === 10) return `+63${clean}`;
-  return clean;
-};
-
-const normalizeCourseValue = (value) => {
-  const clean = String(value || '').trim();
-
-  if (
-    clean === 'BS Information Technology (Business Informatics)' ||
-    clean === 'BS Information Technology (System Development)'
-  ) {
-    return 'BS Information Technology';
-  }
-
-  return clean;
-};
-
-const normalizeExtensionName = (value) => {
-  const clean = String(value || '').trim();
-  return clean.toLowerCase() === 'none' ? '' : clean;
-};
-
-const sendBrevoSms = async ({ to, message }) => {
-  const apiKey = process.env.BREVO_API_KEY;
-  if (!apiKey || apiKey === 'your_brevo_api_key_here') {
-    throw new Error('Brevo SMS API key is not configured. Please set BREVO_API_KEY in your backend .env.');
-  }
-
-  const recipient = normalizePhoneNumber(to);
-  if (!recipient) throw new Error('Recipient phone number is required.');
-
-  const payload = JSON.stringify({
-    sender: 'AGAPAY',
-    recipient,
-    content: message,
-    type: 'transactional',
-  });
-
-  return new Promise((resolve, reject) => {
-    const req = https.request(
-      {
-        hostname: 'api.brevo.com',
-        path: '/v3/transactionalSMS/sms',
-        method: 'POST',
-        headers: {
-          accept: 'application/json',
-          'api-key': apiKey,
-          'content-type': 'application/json',
-          'content-length': Buffer.byteLength(payload),
-        },
-      },
-      (res) => {
-        let body = '';
-        res.on('data', (chunk) => {
-          body += chunk;
-        });
-        res.on('end', () => {
-          if (res.statusCode >= 200 && res.statusCode < 300) return resolve(body);
-          return reject(new Error(`Brevo SMS failed: ${body || res.statusCode}`));
-        });
-      }
-    );
-
-    req.on('error', reject);
-    req.write(payload);
-    req.end();
-  });
-};
-
-
-const verifyRecaptchaToken = (token, remoteIp) =>
-  new Promise((resolve, reject) => {
-    const secret = process.env.RECAPTCHA_SECRET_KEY;
-
-    if (!secret) {
-      return resolve({
-        ok: false,
-        code: 'RECAPTCHA_NOT_CONFIGURED',
-        message: 'reCAPTCHA is not configured on the server.',
-      });
-    }
-
-    if (!token || !String(token).trim()) {
-      return resolve({
-        ok: false,
-        code: 'RECAPTCHA_REQUIRED',
-        message: 'Please complete the CAPTCHA.',
-      });
-    }
-
-    const postData = querystring.stringify({
-      secret,
-      response: String(token).trim(),
-      remoteip: remoteIp || '',
-    });
-
-    const req = https.request(
-      {
-        hostname: 'www.google.com',
-        path: '/recaptcha/api/siteverify',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Content-Length': Buffer.byteLength(postData),
-        },
-      },
-      (res) => {
-        let body = '';
-
-        res.on('data', (chunk) => {
-          body += chunk;
-        });
-
-        res.on('end', () => {
-          try {
-            const parsed = JSON.parse(body || '{}');
-
-            if (parsed.success) {
-              return resolve({ ok: true, data: parsed });
-            }
-
-            return resolve({
-              ok: false,
-              code: 'RECAPTCHA_FAILED',
-              message: 'CAPTCHA verification failed. Please try again.',
-              data: parsed,
-            });
-          } catch (error) {
-            return reject(error);
-          }
-        });
-      }
-    );
-
-    req.on('error', (error) => reject(error));
-    req.write(postData);
-    req.end();
-  });
-
-const sendEmailIfConfigured = async ({ to, subject, html }) => {
-  if (!nodemailer) return { ok: false, reason: 'nodemailer_not_installed' };
-
-  const host = process.env.SMTP_HOST;
-  const port = Number(process.env.SMTP_PORT || 0);
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
-
-  if (!host || !port || !user || !pass || !from) {
-    return { ok: false, reason: 'smtp_not_configured' };
-  }
-
-  const transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass },
-    disableFileAccess: true,
-    disableUrlAccess: true,
-  });
-
-  await transporter.sendMail({ from, to, subject, html });
-  return { ok: true };
-};
-
-// Alumni doc meta
-const buildAlumniDocMeta = (req, file, fieldName) => {
-  if (!file) return null;
-  const rel = `/uploads/verification/alumni/${fieldName}/${file.filename}`;
-  return {
-    url: getUploadedFileUrl(req, file, rel),
-    status: 'pending',
-    uploadedAt: new Date(),
-    filename: file.originalname,
-    fileSize: file.size,
-    mimeType: file.mimetype,
-  };
-};
-
-// Employer doc meta
-const buildEmployerDocMeta = (req, file, folder) => {
-  if (!file) return null;
-  const rel = `/uploads/verification/employer/${folder}/${file.filename}`;
-  return {
-    url: getUploadedFileUrl(req, file, rel),
-    status: 'pending',
-    uploadedAt: new Date(),
-    filename: file.originalname,
-    fileSize: file.size,
-    mimeType: file.mimetype,
-  };
-};
-
-const generateRandomPassword = () => crypto.randomBytes(16).toString('hex');
-
-// Generate username from email local-part
-const baseUsernameFromEmail = (email) => {
-  const local = String(email || '').split('@')[0] || 'user';
-  return local.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24) || 'user';
-};
-
-const makeUniqueUsername = async (base) => {
-  let candidate = base;
-  let i = 0;
-  while (true) {
-    const exists = await User.findOne({ username: candidate });
-    if (!exists) return candidate;
-    i += 1;
-    candidate = `${base}_${i}`.slice(0, 30);
-  }
-};
-
-const normalizeWorkExperienceOutput = (entry) => ({
-  _id: entry?._id,
-  companyName: entry?.companyName || '',
-  positionTitle: entry?.positionTitle || '',
-  startDate: entry?.startDate || null,
-  endDate: entry?.endDate || null,
-  isPresent: Boolean(entry?.isPresent),
-  description: entry?.description || '',
-  createdAt: entry?.createdAt || null,
-  updatedAt: entry?.updatedAt || null,
-});
-
-const sortWorkExperiences = (items = []) => {
-  return [...items].sort((a, b) => {
-    const aDate = a?.startDate ? new Date(a.startDate).getTime() : 0;
-    const bDate = b?.startDate ? new Date(b.startDate).getTime() : 0;
-    return bDate - aDate;
-  });
-};
-
-const isStrongPassword = (value) => {
-  const password = String(value || '');
-  return (
-    password.length >= 8 &&
-    /[A-Z]/.test(password) &&
-    /[a-z]/.test(password) &&
-    /\d/.test(password) &&
-    /[^A-Za-z0-9]/.test(password)
-  );
-};
-
-// NEW helpers for employer media
-const buildEmployerCoverPhotoMeta = (req, file) => {
-  if (!file) return '';
-  return getUploadedFileUrl(req, file, `/uploads/company-cover-photos/${file.filename}`);
-};
-
-const buildEmployerGalleryImageMeta = (req, file) => {
-  if (!file) return null;
-  return {
-    url: getUploadedFileUrl(req, file, `/uploads/company-gallery/${file.filename}`),
-    caption: '',
-    uploadedAt: new Date(),
-  };
-};
-
-const normalizeGalleryImagesInput = (incoming, current = []) => {
-  if (incoming === undefined || incoming === null || incoming === '') return current;
-
-  let parsed = incoming;
-
-  if (typeof incoming === 'string') {
-    const trimmed = incoming.trim();
-
-    if (!trimmed) return [];
-
-    try {
-      parsed = JSON.parse(trimmed);
-    } catch {
-      parsed = trimmed
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean);
-    }
-  }
-
-  if (!Array.isArray(parsed)) return current;
-
-  return parsed
-    .map((item) => {
-      if (typeof item === 'string') {
-        const url = item.trim();
-        if (!url) return null;
-        return { url, caption: '', uploadedAt: new Date() };
-      }
-
-      if (item && typeof item === 'object') {
-        const url = String(item.url || '').trim();
-        if (!url) return null;
-        return {
-          url,
-          caption: String(item.caption || '').trim(),
-          uploadedAt: item.uploadedAt || new Date(),
-        };
-      }
-
-      return null;
-    })
-    .filter(Boolean);
-};
-
-// ✅ NEW: required docs for jobseeker registration/verification
-const REQUIRED_ALUMNI_DOC_TYPES = ['cv', 'diploma', 'validId', 'tor'];
-const OPTIONAL_ALUMNI_DOC_TYPES = ['sss', 'philhealth', 'pagibig', 'tin'];
-const ALL_ALUMNI_DOC_TYPES = [...REQUIRED_ALUMNI_DOC_TYPES, ...OPTIONAL_ALUMNI_DOC_TYPES];
-
-const getAlumniOverallStatus = (verificationDocs = {}, forceVerified = false) => {
-  if (forceVerified) return 'verified';
-
-  const overallStatus = String(verificationDocs?.overallStatus || '').toLowerCase();
-  if (overallStatus === 'hold') return 'hold';
-
-  const requiredStatuses = REQUIRED_ALUMNI_DOC_TYPES.map((type) =>
-    String(verificationDocs?.[type]?.status || 'not_submitted').toLowerCase()
-  );
-
-  const hasHoldRequired = requiredStatuses.some((status) => status === 'hold');
-  if (hasHoldRequired) return 'hold';
-
-  const hasRejectedRequired = requiredStatuses.some((status) => status === 'rejected');
-  if (hasRejectedRequired) return 'rejected';
-
-  const allStatuses = ALL_ALUMNI_DOC_TYPES.map((type) =>
-    String(verificationDocs?.[type]?.status || 'not_submitted').toLowerCase()
-  );
-  if (allStatuses.some((status) => ['pending', 'submitted'].includes(status))) return 'pending';
-  if (allStatuses.some((status) => ['hold', 'rejected'].includes(status))) return 'hold';
-
-  const allRequiredApproved = requiredStatuses.every((status) => status === 'approved');
-  if (allRequiredApproved) return 'verified';
-
-  const hasAnyRequiredSubmitted = requiredStatuses.some((status) =>
-    ['pending', 'submitted', 'approved'].includes(status)
-  );
-  if (hasAnyRequiredSubmitted) return 'pending';
-
-  return 'not_submitted';
-};
-
-const ALUMNI_DOC_LABELS = {
+const JOBSEEKER_DOC_LABELS = {
   cv: 'CV / Resume',
   tor: 'Transcript of Records',
   diploma: 'Diploma',
@@ -497,141 +85,79 @@ const ALUMNI_DOC_LABELS = {
   tin: 'TIN ID',
   validId: 'Valid ID',
 };
-
-
-const ALUMNI_VERIFICATION_DOWNLOAD_DOC_TYPES = ['cv', 'tor', 'diploma', 'sss', 'philhealth', 'pagibig', 'tin', 'validId'];
-
-const sanitizeDownloadFileName = (value, fallback = 'credential') => {
-  const clean = String(value || fallback)
-    .trim()
-    .replace(/[\\/:*?"<>|]+/g, '-')
-    .replace(/\s+/g, ' ');
-
-  return clean || fallback;
+const JOBSEEKER_NOTIFICATION_LABELS = {
+  cv: 'Resume',
+  tor: 'TOR',
+  diploma: 'Diploma',
+  sss: 'SSS',
+  philhealth: 'PhilHealth',
+  pagibig: 'Pag-IBIG',
+  tin: 'TIN',
+  validId: 'Valid ID',
 };
 
-const parseCloudinaryDeliveryUrl = (rawUrl = '') => {
+const isApprovedJobseekerAccount = (user = {}) =>
+  user.isVerified === true ||
+  String(user.jobSeekerProfile?.verificationStatus || '').toLowerCase() === 'verified' ||
+  String(user.jobSeekerProfile?.verificationDocs?.overallStatus || '').toLowerCase() === 'verified';
+
+const getJobseekerCredentialReviewStatus = (docs = {}) => {
+  const getStatus = (type) =>
+    String(docs?.[type]?.status || 'not_submitted').toLowerCase();
+
+  const statuses = JOBSEEKER_DOC_TYPES.map(getStatus);
+  const requiredStatuses = JOBSEEKER_REQUIRED_DOC_TYPES.map(getStatus);
+  if (statuses.some((status) => ['pending', 'submitted'].includes(status))) return 'pending';
+  if (statuses.some((status) => ['hold', 'rejected'].includes(status))) return 'hold';
+  if (requiredStatuses.every((status) => status === 'approved')) return 'verified';
+  if (requiredStatuses.some((status) => status === 'approved')) return 'pending';
+  return 'not_submitted';
+};
+
+const createJobseekerCredentialNotification = async ({ user, docType, action, feedback = '' }) => {
   try {
-    const parsed = new URL(rawUrl);
-    if (!/res\.cloudinary\.com$/i.test(parsed.hostname)) return null;
+    if (!user?._id) return;
+    const docs = user.jobSeekerProfile?.verificationDocs || {};
+    const docLabel = JOBSEEKER_NOTIFICATION_LABELS[docType] || JOBSEEKER_DOC_LABELS[docType] || docType;
+    const approvedCount = JOBSEEKER_DOC_TYPES.filter(
+      (type) => String(docs?.[type]?.status || '').toLowerCase() === 'approved'
+    ).length;
+    const allApproved = approvedCount === JOBSEEKER_DOC_TYPES.length;
 
-    const pathParts = parsed.pathname.split('/').filter(Boolean);
-    const resourceType = pathParts[1] || 'image';
-    const deliveryType = pathParts[2] || 'upload';
-    const versionIndex = pathParts.findIndex((part) => /^v\d+$/.test(part));
-    const publicParts = versionIndex >= 0 ? pathParts.slice(versionIndex + 1) : pathParts.slice(3);
-    const publicIdWithExtension = publicParts.join('/');
+    let title = 'Credential Approved';
+    let message = `Your “${docLabel}” credential has been verified. Continue uploading your remaining credentials to strengthen your profile.`;
 
-    if (!publicIdWithExtension) return null;
+    if (action === 'action_needed') {
+      title = 'Action Needed';
+      message = `Your “${docLabel}” credential wasn't approved during verification. Please check the administrator's feedback, make the necessary corrections, and upload a new copy for review.${feedback ? ` Admin note: ${feedback}` : ''}`;
+    } else if (allApproved) {
+      title = "You're All Set!";
+      message = 'All your credentials have been successfully verified. A fully completed profile can improve your visibility and increase your chances of getting hired.';
+    }
 
-    const lastSlashIndex = publicIdWithExtension.lastIndexOf('/');
-    const filePart = lastSlashIndex >= 0 ? publicIdWithExtension.slice(lastSlashIndex + 1) : publicIdWithExtension;
-    const dotIndex = filePart.lastIndexOf('.');
-    const format = dotIndex > 0 ? filePart.slice(dotIndex + 1) : '';
-    const publicId = format ? publicIdWithExtension.slice(0, -(format.length + 1)) : publicIdWithExtension;
-
-    return { resourceType, deliveryType, publicId, format, originalUrl: rawUrl };
-  } catch {
-    return null;
+    await Notification.create({
+      user: user._id,
+      type: 'verification',
+      title,
+      message,
+      relatedId: user._id,
+      relatedModel: 'User',
+      link: '/jobseeker/my-profile#credentials',
+      metadata: {
+        credentialType: docType,
+        credentialName: docLabel,
+        credentialStatus: action === 'action_needed' ? 'action_needed' : 'approved',
+        approvedCredentials: approvedCount,
+        remainingCredentials: Math.max(0, JOBSEEKER_DOC_TYPES.length - approvedCount),
+        adminFeedback: feedback || '',
+      },
+    });
+  } catch (notificationError) {
+    console.error('Failed to create jobseeker credential notification:', notificationError);
   }
 };
 
-const getContentTypeFromFileName = (fileName = '', fallback = 'application/octet-stream') => {
-  const lower = String(fileName || '').toLowerCase();
-  if (lower.endsWith('.pdf')) return 'application/pdf';
-  if (lower.endsWith('.png')) return 'image/png';
-  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
-  return fallback;
-};
-
-const fetchUrlBuffer = (rawUrl, redirectCount = 0) => new Promise((resolve, reject) => {
-  if (redirectCount > 5) return reject(new Error('Too many redirects while downloading file.'));
-
-  let parsed;
-  try {
-    parsed = new URL(rawUrl);
-  } catch (error) {
-    return reject(error);
-  }
-
-  const client = parsed.protocol === 'http:' ? require('http') : https;
-  const request = client.get(parsed, (response) => {
-    const statusCode = response.statusCode || 0;
-
-    if ([301, 302, 303, 307, 308].includes(statusCode) && response.headers.location) {
-      response.resume();
-      const redirectUrl = new URL(response.headers.location, rawUrl).toString();
-      return resolve(fetchUrlBuffer(redirectUrl, redirectCount + 1));
-    }
-
-    if (statusCode < 200 || statusCode >= 300) {
-      let body = '';
-      response.setEncoding('utf8');
-      response.on('data', (chunk) => { body += chunk; });
-      response.on('end', () => reject(new Error(`File source responded with ${statusCode}${body ? `: ${body.slice(0, 160)}` : ''}`)));
-      return;
-    }
-
-    const chunks = [];
-    response.on('data', (chunk) => chunks.push(chunk));
-    response.on('end', () => resolve({
-      buffer: Buffer.concat(chunks),
-      contentType: response.headers['content-type'] || '',
-    }));
-  });
-
-  request.on('error', reject);
-  request.setTimeout(45000, () => {
-    request.destroy(new Error('File download timed out.'));
-  });
-});
-
-const buildCredentialDownloadCandidates = ({ rawUrl, fileName, disposition }) => {
-  const candidates = [];
-  const cloudinaryInfo = parseCloudinaryDeliveryUrl(rawUrl);
-  const attachmentFlag = disposition === 'attachment'
-    ? `attachment:${sanitizeDownloadFileName(fileName || 'credential')}`
-    : undefined;
-
-  if (cloudinaryInfo && process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
-    const { publicId, format, resourceType, deliveryType } = cloudinaryInfo;
-
-    try {
-      if (typeof cloudinary.utils.private_download_url === 'function' && format) {
-        candidates.push(cloudinary.utils.private_download_url(publicId, format, {
-          resource_type: resourceType,
-          type: deliveryType,
-          attachment: disposition === 'attachment',
-        }));
-      }
-    } catch (error) {
-      console.warn('Unable to build Cloudinary private download URL:', error.message);
-    }
-
-    try {
-      candidates.push(cloudinary.url(publicId, {
-        resource_type: resourceType,
-        type: deliveryType,
-        secure: true,
-        sign_url: true,
-        format: format || undefined,
-        flags: attachmentFlag || undefined,
-      }));
-    } catch (error) {
-      console.warn('Unable to build signed Cloudinary URL:', error.message);
-    }
-  }
-
-  if (rawUrl) {
-    if (disposition === 'attachment' && /\/upload\//.test(rawUrl)) {
-      candidates.push(rawUrl.replace('/upload/', `/upload/fl_attachment:${encodeURIComponent(sanitizeDownloadFileName(fileName || 'credential'))}/`));
-      candidates.push(rawUrl.replace('/upload/', '/upload/fl_attachment/'));
-    }
-    candidates.push(rawUrl);
-  }
-
-  return [...new Set(candidates.filter(Boolean))];
-};
+const EMPLOYER_DOC_TYPES = ['secRegistration', 'birRegistration', 'dtiRegistration', 'cityPermit', 'businessPermit'];
 
 const EMPLOYER_DOC_LABELS = {
   secRegistration: 'SEC Registration',
@@ -641,3456 +167,4101 @@ const EMPLOYER_DOC_LABELS = {
   businessPermit: 'Business Permit',
 };
 
-const EMPLOYER_DOC_FOLDERS = {
-  secRegistration: 'sec',
-  birRegistration: 'bir',
-  dtiRegistration: 'dti',
-  cityPermit: 'city',
-  businessPermit: 'business',
+// ==========================
+// ✅ HELPERS: secure document delivery for Cloudinary credentials
+// ==========================
+const isCloudinaryConfiguredForDelivery = () =>
+  Boolean(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
+
+if (isCloudinaryConfiguredForDelivery()) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true,
+  });
+}
+
+const isCloudinaryUrl = (url = '') => /^https?:\/\/res\.cloudinary\.com\//i.test(String(url || ''));
+
+const getFileNameFromDocumentUrl = (url = '', fallback = 'document') => {
+  try {
+    const cleanPath = new URL(url).pathname.split('?')[0];
+    const lastPart = decodeURIComponent(cleanPath.split('/').filter(Boolean).pop() || '');
+    return lastPart || fallback;
+  } catch {
+    const lastPart = String(url || '').split('?')[0].split('/').filter(Boolean).pop();
+    return lastPart || fallback;
+  }
 };
 
-const findResubmitRequestByToken = async (tokenHash) => {
-  const jobseeker = await User.findOne({
-    role: 'jobseeker',
-    'jobSeekerProfile.verificationDocs.resubmitRequest.tokenHash': tokenHash,
-  });
+const toSafeDownloadName = (name = 'document') =>
+  String(name || 'document')
+    .replace(/[\\/:*?"<>|]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim() || 'document';
 
-  if (jobseeker) {
-    return {
-      accountType: 'jobseeker',
-      user: jobseeker,
-      docs: jobseeker?.jobSeekerProfile?.verificationDocs || {},
-      resubmitRequest: jobseeker?.jobSeekerProfile?.verificationDocs?.resubmitRequest || {},
-      labels: ALUMNI_DOC_LABELS,
-    };
+const DOCUMENT_EXTENSION_BY_MIME_TYPE = {
+  'application/pdf': 'pdf',
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+};
+
+const detectDocumentExtensionFromBuffer = (buffer) => {
+  if (!Buffer.isBuffer(buffer) || buffer.length < 4) return '';
+
+  if (buffer.subarray(0, 4).toString('ascii') === '%PDF') return 'pdf';
+  if (buffer.subarray(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47]))) return 'png';
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'jpg';
+
+  const signature = buffer.subarray(0, 4).toString('ascii');
+  if (signature === 'GIF8') return 'gif';
+  if (signature === 'RIFF' && buffer.length >= 12 && buffer.subarray(8, 12).toString('ascii') === 'WEBP') {
+    return 'webp';
   }
 
-  const employer = await User.findOne({
-    role: 'employer',
-    'employerProfile.verificationDocs.resubmitRequest.tokenHash': tokenHash,
+  return '';
+};
+
+const ensureDocumentFileExtension = ({ fileName, contentType, doc, buffer }) => {
+  const safeFileName = toSafeDownloadName(fileName);
+
+  if (/\.[a-z0-9]{1,10}$/i.test(safeFileName)) {
+    return safeFileName;
+  }
+
+  const cleanContentType = String(contentType || '')
+    .split(';')[0]
+    .trim()
+    .toLowerCase();
+  const mimeExtension = DOCUMENT_EXTENSION_BY_MIME_TYPE[cleanContentType] || '';
+  const storedFormat = String(doc?.format || '')
+    .trim()
+    .replace(/^\./, '')
+    .toLowerCase();
+  const safeStoredFormat = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp'].includes(storedFormat)
+    ? storedFormat === 'jpeg' ? 'jpg' : storedFormat
+    : '';
+  const detectedExtension = detectDocumentExtensionFromBuffer(buffer);
+  const extension = mimeExtension || safeStoredFormat || detectedExtension;
+
+  return extension ? `${safeFileName}.${extension}` : safeFileName;
+};
+
+const getCloudinaryAssetParts = (doc = {}) => {
+  const originalUrl = String(doc?.url || '').trim();
+  if (!originalUrl || !isCloudinaryUrl(originalUrl) || !isCloudinaryConfiguredForDelivery()) return null;
+
+  try {
+    const parsed = new URL(originalUrl);
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    const uploadIndex = parts.findIndex((part) => part === 'upload');
+
+    if (uploadIndex < 1) return null;
+
+    const resourceTypeFromUrl = parts[uploadIndex - 1] || '';
+    const resourceType = ['image', 'raw', 'video'].includes(resourceTypeFromUrl)
+      ? resourceTypeFromUrl
+      : String(doc?.resource_type || 'image').trim() || 'image';
+
+    const versionIndex = parts.findIndex((part, index) => index > uploadIndex && /^v\d+$/.test(part));
+    const publicParts = parts.slice(versionIndex >= 0 ? versionIndex + 1 : uploadIndex + 1);
+    const version = versionIndex >= 0 ? Number(parts[versionIndex].slice(1)) : undefined;
+    const publicPathWithFormat = decodeURIComponent(publicParts.join('/'));
+
+    if (!publicPathWithFormat) return null;
+
+    const lastSegment = publicPathWithFormat.split('/').pop() || '';
+    const extensionMatch = lastSegment.match(/\.([a-zA-Z0-9]+)$/);
+    const format = String(doc?.format || (extensionMatch ? extensionMatch[1] : '') || '').toLowerCase();
+    const publicIdFromUrl = format
+      ? publicPathWithFormat.slice(0, -(format.length + 1))
+      : publicPathWithFormat;
+
+    const storedPublicId = String(doc?.public_id || doc?.filename || '').trim();
+    const publicId = storedPublicId && !storedPublicId.includes('.') ? storedPublicId : publicIdFromUrl;
+
+    return {
+      originalUrl,
+      resourceType,
+      version,
+      publicId,
+      format,
+    };
+  } catch (error) {
+    console.error('Error parsing Cloudinary document URL:', error);
+    return null;
+  }
+};
+
+const addUniqueUrl = (urls, url) => {
+  if (url && !urls.includes(url)) urls.push(url);
+};
+
+const buildCloudinaryDeliveryUrls = (doc = {}, disposition = 'inline') => {
+  const originalUrl = String(doc?.url || '').trim();
+  if (!originalUrl) return [];
+
+  const asset = getCloudinaryAssetParts(doc);
+  if (!asset) return [originalUrl];
+
+  const urls = [];
+  const attachment = disposition === 'attachment';
+  const expiresAt = Math.floor(Date.now() / 1000) + 10 * 60;
+
+  const resourceTypesToTry = [asset.resourceType];
+  if (asset.format === 'pdf') {
+    if (!resourceTypesToTry.includes('raw')) resourceTypesToTry.push('raw');
+    if (!resourceTypesToTry.includes('image')) resourceTypesToTry.push('image');
+  }
+
+  resourceTypesToTry.forEach((resourceType) => {
+    try {
+      const signedOptions = {
+        resource_type: resourceType,
+        type: 'upload',
+        secure: true,
+        sign_url: true,
+      };
+
+      if (asset.version) signedOptions.version = asset.version;
+      if (asset.format && resourceType !== 'raw') signedOptions.format = asset.format;
+      if (attachment) signedOptions.flags = 'attachment';
+
+      addUniqueUrl(urls, cloudinary.url(asset.publicId, signedOptions));
+    } catch (error) {
+      console.error('Error creating signed Cloudinary URL:', error);
+    }
+
+    try {
+      const privateDownloadUrl = cloudinary.utils.private_download_url(
+        asset.publicId,
+        asset.format || undefined,
+        {
+          resource_type: resourceType,
+          type: 'upload',
+          expires_at: expiresAt,
+          attachment,
+        }
+      );
+
+      addUniqueUrl(urls, privateDownloadUrl);
+    } catch (error) {
+      console.error('Error creating private Cloudinary download URL:', error);
+    }
   });
 
-  if (employer) {
-    return {
-      accountType: 'employer',
-      user: employer,
-      docs: employer?.employerProfile?.verificationDocs || {},
-      resubmitRequest: employer?.employerProfile?.verificationDocs?.resubmitRequest || {},
-      labels: EMPLOYER_DOC_LABELS,
-    };
+  addUniqueUrl(urls, originalUrl);
+  return urls;
+};
+
+const getVerificationDocFromUser = (user, docType) => {
+  const cleanDocType = String(docType || '').trim();
+
+  if (user?.role === 'jobseeker') {
+    if (!JOBSEEKER_DOC_TYPES.includes(cleanDocType)) return null;
+    return user?.jobSeekerProfile?.verificationDocs?.[cleanDocType] || null;
+  }
+
+  if (user?.role === 'employer') {
+    if (!EMPLOYER_DOC_TYPES.includes(cleanDocType)) return null;
+    return user?.employerProfile?.verificationDocs?.[cleanDocType] || null;
   }
 
   return null;
 };
 
-const createAdminResubmissionNotifications = async ({ subjectUser, accountType, docType, docLabel }) => {
+const streamVerificationDocument = async (req, res, userRole) => {
   try {
-    const admins = await User.find({ role: 'admin', status: { $ne: 'deleted' } }).select('_id');
-    if (!admins.length) return;
+    const user = await User.findById(req.params.id).select('-password');
 
-    const displayName =
-      accountType === 'employer'
-        ? subjectUser?.employerProfile?.companyName ||
-          subjectUser.fullName ||
-          subjectUser.email
-        : subjectUser.fullName ||
-          `${subjectUser.firstName || ''} ${subjectUser.lastName || ''}`.replace(/\s+/g, ' ').trim() ||
-          subjectUser.email;
-
-    const link =
-      accountType === 'employer'
-        ? `/admin/employer-verification/${subjectUser._id}`
-        : `/admin/jobseeker-verification/${subjectUser._id}`;
-
-    const notifications = admins.map((admin) => ({
-      user: admin._id,
-      type: 'system',
-      title: 'Verification Resubmission',
-      message: `${displayName} has resubmitted a new ${docLabel || docType}.`,
-      relatedId: subjectUser._id,
-      relatedModel: 'User',
-      link,
-      isRead: false,
-      isArchived: false,
-      metadata: {
-        accountType,
-        docType,
-        docLabel: docLabel || docType,
-        subjectUserId: subjectUser._id,
-      },
-    }));
-
-    await Notification.insertMany(notifications);
-  } catch (notificationError) {
-    console.error('Error creating admin notifications for resubmission:', notificationError);
-  }
-};
-
-// ---------------------------
-// JOBSEEKER REGISTER (AGAPAY UPDATED)
-// ---------------------------
-exports.register = async (req, res) => {
-  try {
-    const {
-      // Step 1
-      course,
-      campus,
-      yearGraduated,
-      preferredWorkMode,
-      technicalSkills,
-      softSkills,
-      whatHaveYouDone,
-      howSoonCanYouStart,
-
-      // Step 2
-      firstName,
-      middleName,
-      lastName,
-      extensionName,
-      email,
-      phoneNumber,
-    } = req.body;
-
-    const emailLower = normalizeEmail(email);
-    if (!emailLower) return res.status(400).json({ message: 'Email is required' });
-    if (!isGmailAddress(emailLower)) {
-      return res.status(400).json({ message: 'Gmail account required to continue.' });
-    }
-
-    const cleanFirstName = String(firstName || '').trim();
-    const cleanMiddleName = String(middleName || '').trim();
-    const cleanLastName = String(lastName || '').trim();
-    const nameValues = [
-      ['First Name', cleanFirstName, true],
-      ['Middle Name', cleanMiddleName, false],
-      ['Last Name', cleanLastName, true],
-    ];
-
-    for (const [label, value, required] of nameValues) {
-      if (required && !value) return res.status(400).json({ message: `${label} is required` });
-      if (value.length > 50) return res.status(400).json({ message: 'Maximum of 50 characters only.' });
-      if (value && !isValidPersonName(value)) {
-        return res.status(400).json({ message: `${label} may contain letters, spaces, hyphens, and apostrophes only.` });
-      }
-    }
-
-    const currentYear = new Date().getFullYear();
-    const numericGraduationYear = Number(yearGraduated);
-    if (!Number.isInteger(numericGraduationYear) || numericGraduationYear < 1982 || numericGraduationYear > currentYear) {
-      return res.status(400).json({ message: `Year Graduated must be between 1982 and ${currentYear}` });
-    }
-
-    if (
-      !course ||
-      !campus ||
-      !yearGraduated ||
-      !preferredWorkMode ||
-      !howSoonCanYouStart
-    ) {
-      return res.status(400).json({ message: 'Please complete Career Profile fields' });
-    }
-
-    if (!cleanFirstName || !cleanLastName || !phoneNumber) {
-      return res.status(400).json({ message: 'Please complete Basic Information fields' });
-    }
-
-    const files = req.files || {};
-    const requiredDocs = ['cv', 'diploma', 'validId', 'tor'];
-    const missing = requiredDocs.filter((k) => !(files?.[k]?.[0]));
-    if (missing.length) {
-      return res.status(400).json({ message: `Missing required documents: ${missing.join(', ')}` });
-    }
-
-    const existingEmail = await findExistingUserByEmail(emailLower);
-    if (existingEmail) {
-      return res.status(409).json({
-        code: 'EMAIL_ALREADY_REGISTERED',
-        message: 'This email address is already registered. Please sign in or contact support instead.',
+    if (!user || (userRole && user.role !== userRole)) {
+      return res.status(404).json({
+        success: false,
+        message: userRole === 'employer' ? 'Employer not found' : userRole === 'jobseeker' ? 'Jobseeker not found' : 'User not found',
       });
     }
 
-    const baseUsername = baseUsernameFromEmail(emailLower);
-    const usernameUnique = await makeUniqueUsername(baseUsername);
+    const docType = String(req.params.docType || '').trim();
+    const doc = getVerificationDocFromUser(user, docType);
 
-    const rawPassword = generateRandomPassword();
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(rawPassword, salt);
-
-    const cvMeta = buildAlumniDocMeta(req, files?.cv?.[0], 'cv');
-    const diplomaMeta = buildAlumniDocMeta(req, files?.diploma?.[0], 'diploma');
-    const validIdMeta = buildAlumniDocMeta(req, files?.validId?.[0], 'validId');
-    const torMeta = buildAlumniDocMeta(req, files?.tor?.[0], 'tor');
-
-    const sssMeta = buildAlumniDocMeta(req, files?.sss?.[0], 'sss');
-    const philhealthMeta = buildAlumniDocMeta(req, files?.philhealth?.[0], 'philhealth');
-    const pagibigMeta = buildAlumniDocMeta(req, files?.pagibig?.[0], 'pagibig');
-    const tinMeta = buildAlumniDocMeta(req, files?.tin?.[0], 'tin');
-    const profileImageFile = files?.profileImage?.[0];
-    const profileImage = profileImageFile
-      ? getUploadedFileUrl(
-          req,
-          profileImageFile,
-          `/uploads/profile-images/${profileImageFile.filename}`
-        )
-      : '';
-
-    const verificationDocs = {
-      cv: cvMeta,
-      diploma: diplomaMeta,
-      validId: validIdMeta,
-      tor: torMeta,
-      sss: sssMeta,
-      philhealth: philhealthMeta,
-      pagibig: pagibigMeta,
-      tin: tinMeta,
-      overallStatus: 'pending',
-    };
-
-    const userData = {
-      username: usernameUnique,
-      email: emailLower,
-      password: hashedPassword,
-      role: 'jobseeker',
-      status: 'pending',
-
-      firstName: cleanFirstName,
-      middleName: cleanMiddleName,
-      lastName: cleanLastName,
-      extensionName: normalizeExtensionName(extensionName),
-      profileImage,
-
-      jobSeekerProfile: {
-        course: normalizeCourseValue(course),
-        campus: String(campus || '').trim(),
-        yearGraduated: String(yearGraduated || '').trim(),
-        preferredWorkMode: String(preferredWorkMode || '').trim(),
-        technicalSkills: String(technicalSkills || '').trim(),
-        softSkills: String(softSkills || '').trim(),
-        whatHaveYouDone: String(whatHaveYouDone || '').trim(),
-        howSoonCanYouStart: String(howSoonCanYouStart || '').trim(),
-        phoneNumber: String(phoneNumber || '').trim(),
-        salaryCurrency: 'PHP',
-
-        verificationDocs,
-        verificationStatus: 'pending',
-      },
-    };
-
-    const user = new User(userData);
-    await user.save();
-    await notificationController.createAdminUserRegistrationNotification(user, 'jobseeker');
-
-    const uploadedCredentialLabels = {
-      cv: 'CV/Resume',
-      diploma: 'Diploma',
-      validId: 'Valid ID',
-      tor: 'Transcript of Records (TOR)',
-      sss: 'SSS',
-      philhealth: 'PhilHealth',
-      pagibig: 'Pag-IBIG',
-      tin: 'TIN',
-    };
-    const uploadedCredentialTypes = Object.entries(uploadedCredentialLabels)
-      .filter(([key]) => Boolean(files?.[key]?.[0]))
-      .map(([, label]) => label);
-    const fullName = [user.firstName, user.middleName, user.lastName, user.extensionName]
-      .filter(Boolean)
-      .join(' ');
-
-    try {
-      await sendJobseekerRegistrationSummaryEmail({
-        to: user.email,
-        fullName,
-        contactNumber: user.jobSeekerProfile?.phoneNumber,
-        campus: user.jobSeekerProfile?.campus,
-        course: user.jobSeekerProfile?.course,
-        yearGraduated: user.jobSeekerProfile?.yearGraduated,
-        preferredWorkMode: user.jobSeekerProfile?.preferredWorkMode,
-        availabilityToStart: user.jobSeekerProfile?.howSoonCanYouStart,
-        uploadedCredentialTypes,
-        registeredAt: user.createdAt || new Date(),
-      });
-    } catch (mailError) {
-      console.error('Jobseeker registration summary email failed.', {
-        code: mailError?.code || 'EMAIL_SEND_FAILED',
+    if (!doc || !doc.url) {
+      return res.status(404).json({
+        success: false,
+        message: 'Document not found',
       });
     }
 
-    res.status(201).json({
-      message: 'Registration submitted successfully!',
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        firstName: user.firstName,
-        middleName: user.middleName,
-        lastName: user.lastName,
-        extensionName: user.extensionName,
-        profileImage: user.profileImage,
-        mustChangePassword: user.mustChangePassword,
-        jobSeekerProfile: user.jobSeekerProfile,
-      },
-    });
-  } catch (error) {
-    console.error('Registration error:', error);
-    if (isDuplicateKeyError(error)) {
-      return res.status(409).json({
-        code: 'EMAIL_ALREADY_REGISTERED',
-        message: 'This email address is already registered. Please sign in or contact support instead.',
-      });
-    }
-    res.status(500).json({
-      message: 'Server error. Please try again later.',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
-    });
-  }
-};
+    const disposition = String(req.query.disposition || 'inline').toLowerCase() === 'attachment' ? 'attachment' : 'inline';
+    const deliveryUrls = buildCloudinaryDeliveryUrls(doc, disposition);
 
-// ---------------------------
-// EMPLOYER REGISTER
-// ---------------------------
-exports.registerEmployer = async (req, res) => {
-  try {
-    const {
-      firstName,
-      middleName,
-      lastName,
-      extensionName,
-      companyName,
-      companyWebsiteUrl,
-      businessEmail,
-      mobileNumber,
-      regionCity,
-      industry,
-    } = req.body;
+    let fileResponse = null;
+    let lastStatus = 500;
 
-    const cleanFirstName = String(firstName || '').trim();
-    const cleanMiddleName = String(middleName || '').trim();
-    const cleanLastName = String(lastName || '').trim();
-    const nameValues = [
-      ['First name', cleanFirstName, true],
-      ['Middle name', cleanMiddleName, false],
-      ['Last name', cleanLastName, true],
-    ];
-    for (const [label, value, required] of nameValues) {
-      if (required && !value) return res.status(400).json({ message: `${label} is required.` });
-      if (value.length > 50) return res.status(400).json({ message: 'Maximum of 50 characters only.' });
-      if (value && !isValidPersonName(value)) {
-        return res.status(400).json({ message: `${label} may contain letters, spaces, hyphens, and apostrophes only.` });
-      }
-    }
-
-    const cleanCompanyName = String(companyName || '').trim();
-    if (!cleanCompanyName) return res.status(400).json({ message: 'Company name is required.' });
-    if (cleanCompanyName.length < 2) {
-      return res.status(400).json({ message: 'Company name must contain at least 2 characters.' });
-    }
-    if (cleanCompanyName.length > 200) {
-      return res.status(400).json({ message: 'Company name must not exceed 200 characters.' });
-    }
-
-    const normalizedWebsiteUrl = normalizeCompanyWebsiteUrl(companyWebsiteUrl);
-    if (normalizedWebsiteUrl === null) {
-      return res.status(400).json({ message: 'Enter a valid company website URL.' });
-    }
-
-    const emailLower = normalizeEmail(businessEmail);
-    if (!emailLower) return res.status(400).json({ message: 'Business email is required.' });
-    if (!isValidBusinessEmail(emailLower)) {
-      return res.status(400).json({ message: 'Invalid business email address.' });
-    }
-
-    if (!mobileNumber || !String(mobileNumber).trim()) {
-      return res.status(400).json({ message: 'Phone / Mobile number is required.' });
-    }
-
-    const cleanIndustry = String(industry || '').trim().normalize('NFKC').replace(/\s+/g, ' ');
-    if (!cleanIndustry) {
-      return res.status(400).json({ message: 'Industry is required.' });
-    }
-    if (cleanIndustry.length > 100) {
-      return res.status(400).json({ message: 'Industry must not exceed 100 characters.' });
-    }
-    if (!isValidIndustry(cleanIndustry)) {
-      return res.status(400).json({ message: 'Enter a valid industry without HTML or script content.' });
-    }
-
-    const files = req.files || {};
-    const required = ['secRegistration', 'birRegistration', 'dtiRegistration', 'cityPermit', 'businessPermit'];
-    const missing = required.filter((k) => !(files?.[k]?.[0]));
-    if (missing.length) {
-      return res.status(400).json({ message: `Missing required documents: ${missing.join(', ')}` });
-    }
-
-    const existingEmail = await findExistingUserByEmail(emailLower);
-    if (existingEmail) {
-      return res.status(409).json({
-        code: 'EMAIL_ALREADY_REGISTERED',
-        message: 'This email address is already registered. Please sign in or contact support instead.',
-      });
-    }
-
-    const baseFromCompany = cleanCompanyName
-      .toLowerCase()
-      .replace(/[^a-z0-9_]/g, '')
-      .slice(0, 20);
-
-    const base = baseFromCompany || baseUsernameFromEmail(emailLower) || 'employer';
-    const tempUsername = await makeUniqueUsername(`emp_${base}`.slice(0, 24));
-
-    const tempRawPassword = generateRandomPassword();
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(tempRawPassword, salt);
-
-    const secMeta = buildEmployerDocMeta(req, files?.secRegistration?.[0], 'sec');
-    const birMeta = buildEmployerDocMeta(req, files?.birRegistration?.[0], 'bir');
-    const dtiMeta = buildEmployerDocMeta(req, files?.dtiRegistration?.[0], 'dti');
-    const cityMeta = buildEmployerDocMeta(req, files?.cityPermit?.[0], 'city');
-    const businessPermitMeta = buildEmployerDocMeta(req, files?.businessPermit?.[0], 'business');
-
-    let companyLogoUrl = '';
-    if (files?.companyLogo?.[0]) {
-      const logoRel = `/uploads/logos/${files.companyLogo[0].filename}`;
-      companyLogoUrl = getUploadedFileUrl(req, files.companyLogo[0], logoRel);
-    }
-
-    const userData = {
-      username: tempUsername,
-      role: 'employer',
-
-      email: emailLower,
-      password: hashedPassword,
-
-      firstName: cleanFirstName,
-      middleName: cleanMiddleName,
-      lastName: cleanLastName,
-      extensionName: normalizeExtensionName(extensionName),
-
-      status: 'pending',
-      isVerified: true,
-
-      employerProfile: {
-        companyName: cleanCompanyName,
-        companyWebsiteUrl: normalizedWebsiteUrl,
-        businessEmail: emailLower,
-        mobileNumber: String(mobileNumber || '').trim(),
-        regionCity: String(regionCity || '').trim(),
-        industry: cleanIndustry,
-        companyLogo: companyLogoUrl,
-
-        verificationDocs: {
-          secRegistration: secMeta,
-          birRegistration: birMeta,
-          dtiRegistration: dtiMeta,
-          cityPermit: cityMeta,
-          businessPermit: businessPermitMeta,
-          overallStatus: 'pending',
-        },
-      },
-    };
-
-    const user = new User(userData);
-    await user.save();
-    try {
-      await notificationController.createAdminUserRegistrationNotification(user, 'employer');
-    } catch (notificationError) {
-      console.error('Employer registration notification failed.', {
-        code: notificationError?.code || 'NOTIFICATION_CREATE_FAILED',
-      });
-    }
-
-    const credentialLabels = {
-      secRegistration: 'SEC Registration',
-      birRegistration: 'BIR Registration',
-      dtiRegistration: 'DTI Registration',
-      cityPermit: 'City/Municipality Permit',
-      businessPermit: 'Business Permit',
-    };
-    const uploadedCredentialTypes = Object.entries(credentialLabels)
-      .filter(([key]) => Boolean(files?.[key]?.[0]))
-      .map(([, label]) => label);
-    const primaryContactFullName = [user.firstName, user.middleName, user.lastName, user.extensionName]
-      .filter(Boolean)
-      .join(' ');
-    const [region = '', province = ''] = String(user.employerProfile?.regionCity || '')
-      .split(' - ')
-      .map((item) => item.trim());
-
-    try {
-      await sendEmployerRegistrationSummaryEmail({
-        to: user.email,
-        companyName: user.employerProfile?.companyName,
-        website: user.employerProfile?.companyWebsiteUrl,
-        industry: user.employerProfile?.industry,
-        region,
-        province,
-        primaryContactFullName,
-        contactNumber: user.employerProfile?.mobileNumber,
-        uploadedCredentialTypes,
-        registeredAt: user.createdAt || new Date(),
-        verificationStatus: 'Pending Verification',
-      });
-    } catch (mailError) {
-      console.error('Employer registration summary email failed.', {
-        code: mailError?.code || 'EMAIL_SEND_FAILED',
-      });
-    }
-
-    return res.status(201).json({
-      message: 'Thank you for signing up! Your account is under review.',
-      businessEmail: emailLower,
-    });
-  } catch (error) {
-    console.error('Employer registration error:', error);
-    if (isDuplicateKeyError(error)) {
-      return res.status(409).json({
-        code: 'EMAIL_ALREADY_REGISTERED',
-        message: 'This email address is already registered. Please sign in or contact support instead.',
-      });
-    }
-    res.status(500).json({
-      message: 'Server error. Please try again later.',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
-    });
-  }
-};
-
-// ---------------------------
-// LOGIN
-// ---------------------------
-exports.login = async (req, res) => {
-  try {
-    const { username, password, role, recaptchaToken } = req.body;
-
-    if (!username || !password) {
-      return res.status(400).json({ message: 'Please provide username and password' });
-    }
-
-    const recaptcha = await verifyRecaptchaToken(recaptchaToken, req.ip);
-    if (!recaptcha.ok) {
-      const status = recaptcha.code === 'RECAPTCHA_NOT_CONFIGURED' ? 500 : 400;
-      return res.status(status).json({
-        code: recaptcha.code,
-        message: recaptcha.message,
-      });
-    }
-
-    const raw = String(username).trim();
-    const looksLikeEmail = raw.includes('@');
-
-    let user = null;
-
-    if (looksLikeEmail) {
-      const emailLower = normalizeEmail(raw);
-      user = await User.findOne({ email: emailLower });
-    } else {
-      const usernameNorm = raw.toLowerCase();
-      user = await User.findOne({ username: usernameNorm });
-    }
-
-    if (!user) return res.status(400).json({ message: 'Invalid username or password' });
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid username or password' });
-
-    if (role && user.role !== role) {
-      return res.status(403).json({ message: `Invalid account type for this login page.` });
-    }
-
-    if (!user.isActive || ['inactive', 'suspended', 'deleted'].includes(String(user.status || '').toLowerCase())) {
-      return res.status(403).json({
-        code: 'ACCOUNT_UNAVAILABLE',
-        message: 'This account is not available. Please contact support.',
-      });
-    }
-
-    if (user.role === 'jobseeker') {
-      const verificationStatus = String(user.jobSeekerProfile?.verificationStatus || 'not_submitted').toLowerCase();
-      if (!isApprovedJobseekerAccount(user) || String(user.status || '').toLowerCase() !== 'active') {
-        return res.status(403).json({
-          code: 'JOBSEEKER_PENDING_APPROVAL',
-          message: verificationStatus === 'rejected'
-            ? 'Your verification was rejected. Please contact support.'
-            : 'Your account is not verified. Your verification is pending approval from admin.',
+    for (const deliveryUrl of deliveryUrls) {
+      try {
+        const response = await fetch(deliveryUrl, {
+          headers: {
+            'User-Agent': 'AGAPAY-admin-document-delivery/1.0',
+          },
         });
-      }
-    }
 
-    if (user.role === 'employer') {
-      const overall = String(user?.employerProfile?.verificationDocs?.overallStatus || 'unverified');
-
-      if (overall !== 'verified') {
-        if (overall === 'rejected') {
-          return res.status(403).json({
-            code: 'EMPLOYER_REJECTED',
-            message: user?.employerProfile?.verificationDocs?.remarks
-              ? `Your employer account was rejected. Remarks: ${user.employerProfile.verificationDocs.remarks}`
-              : 'Your employer account was rejected by admin.',
-          });
+        if (response.ok) {
+          fileResponse = response;
+          break;
         }
 
-        return res.status(403).json({
-          code: 'PENDING_ADMIN_APPROVAL',
-          message: 'Your account is under review. You will be able to log in once admin approves your account.',
-        });
-      }
-
-      if (user.status === 'pending') {
-        user.status = 'active';
+        lastStatus = response.status;
+        console.error('Document delivery failed:', response.status, deliveryUrl);
+      } catch (fetchError) {
+        console.error('Document delivery request error:', fetchError?.message || fetchError, deliveryUrl);
       }
     }
 
-    const isFirstLogin = user.role === 'jobseeker' && !user.lastLogin;
+    if (!fileResponse) {
+      return res.status(lastStatus || 500).json({
+        success: false,
+        message: 'Unable to access document file. Please check Cloudinary PDF/raw delivery settings or re-upload the document.',
+      });
+    }
 
-    user.lastLogin = Date.now();
-    await user.save();
-
-    const token = signToken({ userId: user._id, role: user.role });
-
-    return res.json({
-      message: 'Login successful',
-      token,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-        isActive: user.isActive,
-        profileImage: user.profileImage,
-        firstName: user.firstName,
-        middleName: user.middleName,
-        lastName: user.lastName,
-        extensionName: user.extensionName,
-        mustChangePassword: Boolean(user.mustChangePassword),
-        isFirstLogin,
-        jobSeekerProfile: user.role === 'jobseeker' ? user.jobSeekerProfile : undefined,
-        employerProfile: user.role === 'employer' ? user.employerProfile : undefined,
-      },
+    const arrayBuffer = await fileResponse.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const contentType = fileResponse.headers.get('content-type') || doc.mimeType || 'application/octet-stream';
+    const fallbackName = `${docType}-${user._id}`;
+    const filename = ensureDocumentFileExtension({
+      fileName: getFileNameFromDocumentUrl(doc.url, fallbackName),
+      contentType,
+      doc,
+      buffer,
     });
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Length', buffer.length);
+    res.setHeader('Content-Disposition', `${disposition}; filename="${filename}"`);
+    res.setHeader('Cache-Control', 'private, max-age=300');
+
+    return res.send(buffer);
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ message: 'Server error', error: process.env.NODE_ENV === 'development' ? error.message : undefined });
+    console.error('Error streaming verification document:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error downloading document',
+    });
   }
 };
 
-// ---------------------------
-// EMPLOYER LOGIN
-// ---------------------------
-exports.loginEmployer = async (req, res) => {
-  try {
-    const emailLower = normalizeEmail(req.body?.businessEmail || req.body?.email);
-    const password = req.body?.password;
 
-    if (!emailLower || !password) {
-      return res.status(400).json({ message: 'Please provide email and password' });
-    }
 
-    const user = await User.findOne({ email: emailLower, role: 'employer' });
-    if (!user) return res.status(400).json({ message: 'Invalid email or password' });
+// ==========================
+// ✅ ADMIN DASHBOARD ANALYTICS
+// ==========================
+const DASHBOARD_CAMPUSES = ['AU Main', 'AU South', 'AU San Jose'];
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid email or password' });
-
-    if (!user.isActive) return res.status(400).json({ message: 'Account is deactivated. Please contact support.' });
-
-    const overall = String(user?.employerProfile?.verificationDocs?.overallStatus || 'unverified');
-
-    if (overall !== 'verified') {
-      if (overall === 'rejected') {
-        return res.status(403).json({
-          code: 'EMPLOYER_REJECTED',
-          message: user?.employerProfile?.verificationDocs?.remarks
-            ? `Your employer account was rejected. Remarks: ${user.employerProfile.verificationDocs.remarks}`
-            : 'Your employer account was rejected by admin.',
-        });
-      }
-
-      return res.status(403).json({
-        code: 'PENDING_ADMIN_APPROVAL',
-        message: 'Your account is under review. You will be able to log in once admin approves your account.',
-      });
-    }
-
-    if (user.status === 'pending') {
-      user.status = 'active';
-    }
-
-    user.lastLogin = Date.now();
-    await user.save();
-
-    const token = signToken({ userId: user._id, role: user.role });
-
-    return res.json({
-      message: 'Login successful',
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-        isActive: user.isActive,
-        firstName: user.firstName,
-        middleName: user.middleName,
-        lastName: user.lastName,
-        extensionName: user.extensionName,
-        mustChangePassword: Boolean(user.mustChangePassword),
-        employerProfile: user.employerProfile,
-      },
-    });
-  } catch (error) {
-    console.error('Employer login error:', error);
-    res.status(500).json({ message: 'Server error', error: process.env.NODE_ENV === 'development' ? error.message : undefined });
-  }
+const toStartOfDay = (date) => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
 };
 
-// ---------------------------
-// FORGOT PASSWORD - OTP
-// ---------------------------
-exports.forgotPassword = async (req, res) => {
+const toEndOfDay = (date) => {
+  const d = new Date(date);
+  d.setHours(23, 59, 59, 999);
+  return d;
+};
+
+const addDays = (date, days) => {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+};
+
+const addMonths = (date, months) => {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + months);
+  return d;
+};
+
+const normalizeDashboardText = (value) => {
+  return String(value || '').trim();
+};
+
+const normalizeDashboardCampus = (value) => {
+  const text = String(value || '').trim();
+  if (!text) return '';
+
+  const compact = text
+    .toLowerCase()
+    .replace(/phinma/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!compact) return '';
+
+  if (compact.includes('san jose') || compact.includes('sanjose')) return 'AU San Jose';
+  if (compact.includes('south')) return 'AU South';
+  if (compact.includes('main')) return 'AU Main';
+
+  return text;
+};
+
+const getDashboardDateRange = (dateFilter, customStartDate, customEndDate) => {
+  const now = new Date();
+  const filter = normalizeDashboardText(dateFilter || 'all').toLowerCase();
+
+  if (filter === 'custom') {
+    const start = customStartDate ? toStartOfDay(customStartDate) : null;
+    const end = customEndDate ? toEndOfDay(customEndDate) : null;
+
+    if (start && end && !Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+      return { start, end, label: 'Custom Range' };
+    }
+  }
+
+  if (filter === 'today') return { start: toStartOfDay(now), end: toEndOfDay(now), label: 'Today' };
+  if (filter === 'yesterday') {
+    const yesterday = addDays(now, -1);
+    return { start: toStartOfDay(yesterday), end: toEndOfDay(yesterday), label: 'Yesterday' };
+  }
+  if (filter === '7days') return { start: toStartOfDay(addDays(now, -6)), end: toEndOfDay(now), label: 'Last 7 days' };
+  if (filter === '30days') return { start: toStartOfDay(addDays(now, -29)), end: toEndOfDay(now), label: 'Last 30 days' };
+  if (filter === 'thismonth') {
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    return { start: toStartOfDay(start), end: toEndOfDay(now), label: 'This Month' };
+  }
+  if (filter === 'lastmonth') {
+    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const end = new Date(now.getFullYear(), now.getMonth(), 0);
+    return { start: toStartOfDay(start), end: toEndOfDay(end), label: 'Last Month' };
+  }
+  if (filter === '90days') return { start: toStartOfDay(addDays(now, -89)), end: toEndOfDay(now), label: 'Last 90 days' };
+  if (filter === '12months') return { start: toStartOfDay(addMonths(now, -11)), end: toEndOfDay(now), label: 'Last 12 months' };
+
+  return { start: null, end: null, label: 'All Time' };
+};
+
+const getMonthKey = (date) => {
+  const d = new Date(date);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+};
+
+const getMonthLabel = (date) => {
+  const d = new Date(date);
+  return d.toLocaleString('en-US', { month: 'short', year: '2-digit' });
+};
+
+const buildMonthBuckets = (start, end) => {
+  const now = new Date();
+  const rangeStart = start ? new Date(start) : addMonths(now, -11);
+  const rangeEnd = end ? new Date(end) : now;
+
+  const cursor = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1);
+  const last = new Date(rangeEnd.getFullYear(), rangeEnd.getMonth(), 1);
+  const buckets = [];
+
+  while (cursor <= last && buckets.length < 18) {
+    buckets.push({ key: getMonthKey(cursor), label: getMonthLabel(cursor) });
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+
+  return buckets;
+};
+
+const getJobseekerCampus = (user) => {
+  const profile = user?.jobSeekerProfile || {};
+  return (
+    normalizeDashboardCampus(profile.campus) ||
+    normalizeDashboardCampus(Array.isArray(profile.educationEntries) && profile.educationEntries.find((entry) => entry?.campus)?.campus) ||
+    'Unspecified'
+  );
+};
+
+const applyDateMatch = (field, range) => {
+  if (!range.start && !range.end) return {};
+  const match = {};
+  if (range.start) match.$gte = range.start;
+  if (range.end) match.$lte = range.end;
+  return { [field]: match };
+};
+
+exports.getAdminDashboardAnalytics = async (req, res) => {
   try {
-    const email = normalizeEmail(req.body?.email);
+    const dateFilter = normalizeDashboardText(req.query.date || 'all');
+    const campusFilter = req.query.campus && String(req.query.campus).toLowerCase() !== 'all' ? normalizeDashboardCampus(req.query.campus) : 'all';
+    const applicationStatusFilter = normalizeDashboardText(req.query.applicationStatus || 'all').toLowerCase();
+    const employmentTypeFilter = normalizeDashboardText(req.query.employmentType || 'all');
+    const workModeFilter = normalizeDashboardText(req.query.workMode || 'all');
+    const range = getDashboardDateRange(dateFilter, req.query.startDate, req.query.endDate);
 
-    if (!email) {
-      return res.status(400).json({
-        message: 'Email is required.',
-      });
-    }
+    const [users, jobs, applications] = await Promise.all([
+      User.find({ status: { $ne: 'deleted' } }).select('-password').lean(),
+      Job.find({ isArchived: { $ne: true } }).populate('employer', 'employerProfile companyName firstName lastName').lean(),
+      Application.find({}).populate('job').populate('jobseeker', 'jobSeekerProfile').lean(),
+    ]);
 
-    if (!isValidBusinessEmail(email)) {
-      return res.status(400).json({ message: 'Please enter a valid email address.' });
-    }
+    const jobseekers = users.filter((user) => user.role === 'jobseeker');
+    const employers = users.filter((user) => user.role === 'employer');
 
-    const expiresInMinutes = 3;
-    const expiresInSeconds = expiresInMinutes * 60;
-    const genericMessage = 'If the email exists, we sent a password reset OTP.';
+    const pendingSeekers = jobseekers.filter((user) => {
+      const status = String(user?.jobSeekerProfile?.verificationDocs?.overallStatus || user?.jobSeekerProfile?.verificationStatus || '').toLowerCase();
+      return status === 'pending';
+    }).length;
 
-    const user = await User.findOne({ email }).collation({ locale: 'en', strength: 2 });
+    const pendingEmployers = employers.filter((user) => {
+      const status = String(user?.employerProfile?.verificationDocs?.overallStatus || '').toLowerCase();
+      return status === 'pending';
+    }).length;
 
-    if (!user || !canUsePasswordRecovery(user)) {
-      return res.status(200).json({
-        message: genericMessage,
-        expiresInSeconds,
-      });
-    }
+    const campusOptions = DASHBOARD_CAMPUSES;
 
-    const otp = generateNumericOtp();
-    const otpHash = hashToken(otp);
-    const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
+    const employmentTypeOptions = [...new Set(jobs.map((job) => job.jobType).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const workModeOptions = [...new Set(jobs.map((job) => job.workMode).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 
-    user.passwordReset = {
-      tokenHash: '',
-      otpHash,
-      expiresAt,
-      requestedAt: new Date(),
-      usedAt: null,
+    const inRange = (dateValue) => {
+      const d = new Date(dateValue);
+      if (Number.isNaN(d.getTime())) return false;
+      if (range.start && d < range.start) return false;
+      if (range.end && d > range.end) return false;
+      return true;
     };
 
-    await user.save();
+    const campusMatches = (campus) => {
+      const normalizedCampus = normalizeDashboardCampus(campus);
+      return campusFilter.toLowerCase() === 'all' || normalizedCampus.toLowerCase() === campusFilter.toLowerCase();
+    };
+    const jobMatches = (job) => {
+      if (!job) return false;
+      if (!inRange(job.createdAt)) return false;
+      if (employmentTypeFilter.toLowerCase() !== 'all' && String(job.jobType || '').toLowerCase() !== employmentTypeFilter.toLowerCase()) return false;
+      if (workModeFilter.toLowerCase() !== 'all' && String(job.workMode || '').toLowerCase() !== workModeFilter.toLowerCase()) return false;
+      return true;
+    };
 
-    try {
-      await sendPasswordResetOtpEmail({
-        to: user.email,
-        fullName: user.fullName || user.firstName || user.username || 'User',
-        otp,
-        expiresInMinutes,
+    const applicationMatches = (application) => {
+      const job = application.job || {};
+      const seekerCampus = getJobseekerCampus(application.jobseeker || {});
+      if (!inRange(application.appliedAt || application.createdAt)) return false;
+      if (!campusMatches(seekerCampus)) return false;
+      if (applicationStatusFilter !== 'all' && String(application.status || '').toLowerCase() !== applicationStatusFilter) return false;
+      if (employmentTypeFilter.toLowerCase() !== 'all' && String(job.jobType || '').toLowerCase() !== employmentTypeFilter.toLowerCase()) return false;
+      if (workModeFilter.toLowerCase() !== 'all' && String(job.workMode || '').toLowerCase() !== workModeFilter.toLowerCase()) return false;
+      return true;
+    };
+
+    const filteredJobs = jobs.filter(jobMatches);
+    const filteredApplications = applications.filter(applicationMatches);
+    const months = buildMonthBuckets(range.start, range.end);
+
+    const makeCampusSeries = (items, dateGetter, campusGetter) => {
+      const map = {};
+      months.forEach(({ key, label }) => {
+        map[key] = { label };
+        campusOptions.forEach((campus) => { map[key][campus] = 0; });
       });
-    } catch (mailError) {
-      console.error('Forgot password OTP email sending error:', mailError);
 
-      user.passwordReset = {
-        tokenHash: '',
-        otpHash: '',
-        expiresAt: null,
-        requestedAt: null,
-        usedAt: null,
-      };
-      await user.save().catch(() => {});
-
-      return res.status(503).json({
-        message: 'Unable to send the verification code right now. Please try again later.',
+      items.forEach((item) => {
+        const key = getMonthKey(dateGetter(item));
+        const campus = normalizeDashboardCampus(campusGetter(item));
+        if (!map[key]) return;
+        if (!map[key][campus]) map[key][campus] = 0;
+        map[key][campus] += 1;
       });
-    }
+
+      return months.map(({ key }) => map[key]);
+    };
+
+    const applicationTrends = makeCampusSeries(
+      filteredApplications,
+      (item) => item.appliedAt || item.createdAt,
+      (item) => getJobseekerCampus(item.jobseeker || {})
+    );
+
+    const jobPostingTrends = makeCampusSeries(
+      filteredJobs,
+      (item) => item.createdAt,
+      (item) => {
+        const employer = item.employer || {};
+        return normalizeDashboardCampus(employer?.employerProfile?.campus) || normalizeDashboardCampus(item.campus) || 'Unspecified';
+      }
+    );
+
+    const registrationTrends = makeCampusSeries(
+      jobseekers.filter((user) => inRange(user.createdAt) && campusMatches(getJobseekerCampus(user))),
+      (item) => item.createdAt,
+      (item) => getJobseekerCampus(item)
+    );
+
+    const hireRateByCampus = months.map(({ key, label }) => {
+      const row = { label };
+
+      campusOptions.forEach((campus) => {
+        const monthCampusApps = filteredApplications.filter((app) => {
+          const appMonth = getMonthKey(app.appliedAt || app.createdAt);
+          const seekerCampus = normalizeDashboardCampus(getJobseekerCampus(app.jobseeker || {}));
+          return appMonth === key && seekerCampus.toLowerCase() === String(campus || '').toLowerCase();
+        });
+
+        const hiredCount = monthCampusApps.filter((app) => String(app.status || '').toLowerCase() === 'hired').length;
+        row[campus] = monthCampusApps.length ? Math.round((hiredCount / monthCampusApps.length) * 100) : 0;
+      });
+
+      return row;
+    });
+
+    const applicationStatus = ['pending', 'for interview', 'hired', 'declined'].map((status) => ({
+      name: status,
+      value: filteredApplications.filter((app) => String(app.status || '').toLowerCase() === status).length,
+    }));
+
+    const workModeDistribution = workModeOptions.map((mode) => ({
+      name: mode,
+      value: filteredJobs.filter((job) => String(job.workMode || '').toLowerCase() === mode.toLowerCase()).length,
+    }));
+
+    const employmentTypeDistribution = employmentTypeOptions.map((type) => ({
+      name: type,
+      value: filteredJobs.filter((job) => String(job.jobType || '').toLowerCase() === type.toLowerCase()).length,
+    }));
+
+    const categoryCounts = {};
+    filteredJobs.forEach((job) => {
+      const category = normalizeDashboardText(job.category) || 'Others';
+      categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+    });
+
+    const topJobCategories = Object.entries(categoryCounts)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 6);
+
+    const companyCounts = {};
+    filteredJobs.forEach((job) => {
+      const company = normalizeDashboardText(job.companyName) || normalizeDashboardText(job.employer?.employerProfile?.companyName) || 'Unknown Company';
+      companyCounts[company] = (companyCounts[company] || 0) + 1;
+    });
+
+    const topHiringCompanies = Object.entries(companyCounts)
+      .map(([companyName, count]) => ({ companyName, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
 
     return res.status(200).json({
-      message: genericMessage,
-      expiresInSeconds,
+      success: true,
+      filters: {
+        selected: {
+          date: dateFilter,
+          startDate: req.query.startDate || '',
+          endDate: req.query.endDate || '',
+          campus: campusFilter,
+          applicationStatus: applicationStatusFilter,
+          employmentType: employmentTypeFilter,
+          workMode: workModeFilter,
+        },
+        options: {
+          campuses: campusOptions,
+          employmentTypes: employmentTypeOptions,
+          workModes: workModeOptions,
+          applicationStatuses: ['pending', 'for interview', 'hired', 'declined', 'withdrawn', 'cancelled'],
+        },
+      },
+      stats: {
+        totalJobs: jobs.filter((job) => job.isActive !== false && job.isPublished !== false && job.isArchived !== true).length,
+        totalJobSeekers: jobseekers.length,
+        totalEmployers: employers.length,
+        pendingSeekers,
+        pendingEmployers,
+      },
+      charts: {
+        applicationTrends,
+        jobPostingTrends,
+        registrationTrends,
+        hireRateByCampus,
+        applicationStatus,
+        workModeDistribution,
+        employmentTypeDistribution,
+        topJobCategories,
+        topHiringCompanies,
+      },
     });
   } catch (error) {
-    console.error('Forgot password error:', error);
+    console.error('Error fetching admin dashboard analytics:', error);
     return res.status(500).json({
-      message: 'Server error. Please try again later.',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      success: false,
+      message: 'Server error fetching dashboard analytics',
     });
   }
 };
 
-// ---------------------------
-// RESET PASSWORD - OTP
-// ---------------------------
-exports.resetPassword = async (req, res) => {
+exports.getAllUsers = async (req, res) => {
   try {
-    const email = normalizeEmail(req.body?.email);
-    const otp = String(req.body?.otp || '').trim();
-    const newPassword = String(req.body?.newPassword || '');
-    const confirmPassword = String(req.body?.confirmPassword || '');
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
 
-    if (!email || !isValidBusinessEmail(email)) {
-      return res.status(400).json({ message: 'A valid registered email address is required.' });
+    const status = String(req.query.status || '').trim().toLowerCase();
+    const role = String(req.query.role || '').trim().toLowerCase();
+    const search = String(req.query.search || '').trim();
+    const sort = String(req.query.sort || 'newest').trim().toLowerCase();
+    const verificationStatus = String(req.query.verificationStatus || '').trim().toLowerCase();
+    const campus = String(req.query.campus || '').trim();
+    const course = String(req.query.course || '').trim();
+    const company = String(req.query.company || '').trim();
+    const industry = String(req.query.industry || '').trim();
+    const verifiedParam = req.query.verified;
+
+    const baseQuery = {
+      status: { $ne: 'deleted' },
+      // System-archived inactive employers belong in Admin Archive, not User Management.
+      $nor: [{ role: 'employer', inactiveBySystem: true }],
+    };
+    const andConditions = [];
+
+    if (role && role !== 'all') {
+      baseQuery.role = role;
     }
 
-    if (!/^\d{6}$/.test(otp)) {
-      return res.status(400).json({ message: 'Enter the valid 6-digit OTP sent to your email.' });
+    if (status && status !== 'all') {
+      baseQuery.status = status;
     }
 
-    if (!newPassword || newPassword.trim().length < 6) {
-      return res.status(400).json({ message: 'New password must be at least 6 characters long.' });
-    }
+    if (campus && campus.toLowerCase() !== 'all') {
+      const normalizedCampus = normalizeDashboardCampus(campus);
+      const campusRegex = new RegExp(`^${escapeRegex(normalizedCampus)}$`, 'i');
 
-    if (!confirmPassword) {
-      return res.status(400).json({ message: 'Confirm password is required.' });
-    }
-
-    if (newPassword !== confirmPassword) {
-      return res.status(400).json({ message: 'Passwords do not match.' });
-    }
-
-    const otpHash = hashToken(otp);
-
-    const user = await User.findOne({
-      email,
-      'passwordReset.otpHash': otpHash,
-      'passwordReset.expiresAt': { $gt: new Date() },
-      'passwordReset.usedAt': null,
-    });
-
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired OTP. Please request a new code.' });
-    }
-
-    if (!canUsePasswordRecovery(user)) {
-      return res.status(403).json({
-        code: 'ACCOUNT_NOT_ELIGIBLE_FOR_PASSWORD_RESET',
-        message: 'Password reset is unavailable until this account is active and approved.',
+      andConditions.push({
+        $or: [
+          { 'jobSeekerProfile.campus': campusRegex },
+          { 'jobSeekerProfile.educationEntries.campus': campusRegex },
+        ],
       });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword.trim(), salt);
-    user.mustChangePassword = false;
+    if (course && course.toLowerCase() !== 'all') {
+      baseQuery['jobSeekerProfile.course'] = course;
+    }
 
+    if (company && company.toLowerCase() !== 'all') {
+      baseQuery['employerProfile.companyName'] = company;
+    }
+
+    if (industry && industry.toLowerCase() !== 'all') {
+      baseQuery['employerProfile.industry'] = industry;
+    }
+
+    if (typeof verifiedParam !== 'undefined') {
+      baseQuery.isVerified = String(verifiedParam) === 'true';
+    }
+
+    if (verificationStatus && verificationStatus !== 'all') {
+      if (verificationStatus === 'verified') {
+        andConditions.push({
+          $or: [
+            { role: 'employer', 'employerProfile.verificationDocs.overallStatus': 'verified' },
+            { role: 'jobseeker', 'jobSeekerProfile.verificationDocs.overallStatus': 'verified' },
+            { role: { $nin: ['employer', 'jobseeker'] }, isVerified: true }
+          ]
+        });
+      } else if (verificationStatus === 'hold' || verificationStatus === 'onhold') {
+        andConditions.push({
+          $or: [
+            { role: 'employer', 'employerProfile.verificationDocs.overallStatus': 'hold' },
+            { role: 'jobseeker', 'jobSeekerProfile.verificationDocs.overallStatus': 'hold' }
+          ]
+        });
+      } else if (verificationStatus === 'unverified') {
+        andConditions.push({
+          $or: [
+            { role: 'employer', 'employerProfile.verificationDocs.overallStatus': { $nin: ['verified', 'hold'] } },
+            { role: 'employer', 'employerProfile.verificationDocs.overallStatus': { $exists: false } },
+            { role: 'jobseeker', 'jobSeekerProfile.verificationDocs.overallStatus': { $nin: ['verified', 'hold'] } },
+            { role: 'jobseeker', 'jobSeekerProfile.verificationDocs.overallStatus': { $exists: false } },
+            { role: { $nin: ['employer', 'jobseeker'] }, isVerified: { $ne: true } }
+          ]
+        });
+      }
+    }
+
+    if (search) {
+      const searchRegex = new RegExp(escapeRegex(search), 'i');
+      andConditions.push({
+        $or: [
+          { firstName: searchRegex },
+          { middleName: searchRegex },
+          { lastName: searchRegex },
+          { email: searchRegex },
+          { username: searchRegex },
+          { 'jobSeekerProfile.studentId': searchRegex },
+          { 'jobSeekerProfile.address': searchRegex },
+          { 'jobSeekerProfile.cityProvince': searchRegex },
+          { 'jobSeekerProfile.region': searchRegex },
+          { 'employerProfile.companyName': searchRegex },
+          { 'employerProfile.regionCity': searchRegex }
+        ]
+      });
+    }
+
+    if (andConditions.length) {
+      baseQuery.$and = andConditions;
+    }
+
+    const sortOption = {};
+    if (sort === 'oldest') sortOption.createdAt = 1;
+    else if (sort === 'name_asc') {
+      sortOption.firstName = 1;
+      sortOption.lastName = 1;
+    } else if (sort === 'name_desc') {
+      sortOption.firstName = -1;
+      sortOption.lastName = -1;
+    } else {
+      sortOption.createdAt = -1;
+    }
+
+    const allUsersForStats = await User.find({
+      status: { $ne: 'deleted' },
+      $nor: [{ role: 'employer', inactiveBySystem: true }],
+    }).select('-password');
+
+    const stats = allUsersForStats.reduce(
+      (acc, user) => {
+        const userRole = String(user.role || '').toLowerCase();
+
+        acc.total += 1;
+        if (userRole === 'jobseeker') acc.jobseekers += 1;
+        if (userRole === 'employer') acc.employers += 1;
+
+        const employerVerificationStatus = String(user?.employerProfile?.verificationDocs?.overallStatus || '').toLowerCase();
+        const jobseekerVerificationStatus = String(user?.jobSeekerProfile?.verificationDocs?.overallStatus || '').toLowerCase();
+
+        const verificationStatus =
+          userRole === 'employer'
+            ? employerVerificationStatus
+            : userRole === 'jobseeker'
+            ? jobseekerVerificationStatus
+            : '';
+
+        if (verificationStatus === 'pending') acc.pending += 1;
+        else if (verificationStatus === 'verified') acc.verified += 1;
+        else if (verificationStatus === 'rejected') acc.rejected += 1;
+
+        return acc;
+      },
+      {
+        total: 0,
+        jobseekers: 0,
+        employers: 0,
+        pending: 0,
+        verified: 0,
+        rejected: 0
+      }
+    );
+
+    const totalItems = await User.countDocuments(baseQuery);
+    const totalPages = Math.max(Math.ceil(totalItems / limit), 1);
+    const safePage = Math.min(page, totalPages);
+    const skip = (safePage - 1) * limit;
+
+    const users = await User.find(baseQuery)
+      .select('-password')
+      .sort(sortOption)
+      .skip(skip)
+      .limit(limit);
+
+    const normalizedUsers = users.map((user) => {
+      const userObject = user.toObject ? user.toObject() : user;
+      const userRole = String(userObject.role || '').toLowerCase();
+      const employerVerificationStatus = String(userObject?.employerProfile?.verificationDocs?.overallStatus || '').toLowerCase();
+      const jobseekerVerificationStatus = String(userObject?.jobSeekerProfile?.verificationDocs?.overallStatus || '').toLowerCase();
+
+      const rawVerificationStatus =
+        userRole === 'employer'
+          ? employerVerificationStatus
+          : userRole === 'jobseeker'
+          ? jobseekerVerificationStatus
+          : '';
+
+      const normalizedVerificationStatus =
+        userRole === 'employer' || userRole === 'jobseeker'
+          ? rawVerificationStatus === 'verified' || rawVerificationStatus === 'approved'
+            ? 'verified'
+            : rawVerificationStatus === 'hold' || rawVerificationStatus === 'onhold'
+            ? 'hold'
+            : 'unverified'
+          : userObject.isVerified === true
+          ? 'verified'
+          : 'unverified';
+
+      return {
+        ...userObject,
+        verificationStatus: normalizedVerificationStatus,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      users: normalizedUsers,
+      stats,
+      total: totalItems,
+      pagination: {
+        page: safePage,
+        limit,
+        totalItems,
+        totalPages,
+        hasPrevPage: safePage > 1,
+        hasNextPage: safePage < totalPages
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Get single user
+exports.getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const applications =
+      user.role === 'jobseeker'
+        ? await Application.find({ jobseeker: user._id })
+            .populate('job', 'title jobTitle companyName location address workMode jobType')
+            .populate('employer', 'firstName lastName email employerProfile.companyName employerProfile.regionCity')
+            .sort({ appliedAt: -1, createdAt: -1 })
+            .lean()
+        : [];
+
+    const applicationCount = applications.length;
+    const jobPosts =
+      user.role === 'employer'
+        ? await Job.find({ employer: user._id })
+            .select(
+              'title jobTitle jobType workMode experienceLevel openToFreshGraduates salaryMin salaryMax hideSalary location companyName companyLogo isUrgent vacancies createdAt validUntil deadline applicationDeadline status isActive isPublished isArchived'
+            )
+            .sort({ createdAt: -1 })
+            .lean()
+        : [];
+
+    let jobPostsWithCounts = jobPosts;
+    if (user.role === 'employer' && jobPosts.length) {
+      const jobIds = jobPosts.map((job) => job._id);
+      const applicantCounts = await Application.aggregate([
+        { $match: { job: { $in: jobIds } } },
+        { $group: { _id: '$job', count: { $sum: 1 } } }
+      ]);
+
+      const countMap = applicantCounts.reduce((acc, item) => {
+        acc[String(item._id)] = item.count;
+        return acc;
+      }, {});
+
+      jobPostsWithCounts = jobPosts.map((job) => ({
+        ...job,
+        applicantCount: countMap[String(job._id)] || 0,
+      }));
+    }
+
+    const jobPostCount = jobPostsWithCounts.length;
+
+    res.status(200).json({
+      success: true,
+      user: {
+        ...user.toObject(),
+        applicationCount,
+        jobPostCount,
+      },
+      applications,
+      jobPosts: jobPostsWithCounts,
+    });
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Update user status
+exports.updateUserStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const validStatuses = ['active', 'inactive', 'suspended', 'pending', 'deleted'];
+
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status'
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    if (status === 'active') {
+      user.isActive = true;
+      user.lastLogin = Date.now();
+      user.inactiveBySystem = false;
+      user.inactiveAt = null;
+      user.inactiveReason = '';
+      user.inactiveThresholdMonths = null;
+      await user.save();
+    } else if (status === 'inactive') {
+      user.isActive = false;
+      await user.save();
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `User status updated to ${status}`,
+      user
+    });
+  } catch (error) {
+    console.error('Error updating user status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Quick actions
+exports.quickAction = async (req, res) => {
+  try {
+    const { action } = req.body;
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    switch (action) {
+      case 'verify':
+        user.isVerified = true;
+        break;
+      case 'unverify':
+        user.isVerified = false;
+        break;
+      default:
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid action'
+        });
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `User ${action}ed successfully`,
+      user: {
+        _id: user._id,
+        isVerified: user.isVerified
+      }
+    });
+  } catch (error) {
+    console.error('Error performing quick action:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Delete user (soft delete)
+exports.deleteUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    user.status = 'deleted';
+    user.isActive = false;
+    user.isVerified = false;
+    user.deletedAt = new Date();
     user.passwordReset = {
       tokenHash: '',
       otpHash: '',
       expiresAt: null,
       requestedAt: null,
-      usedAt: new Date(),
+      usedAt: null,
     };
 
     await user.save();
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
-      message: 'Password reset successful. You can now sign in with your new password.',
+      message: 'User deleted successfully'
     });
   } catch (error) {
-    console.error('Reset password error:', error);
-    return res.status(500).json({
-      message: 'Server error. Please try again later.',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    console.error('Error deleting user:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
     });
   }
 };
 
-// ---------------------------
-// UPDATE PROFILE
-// ---------------------------
-exports.updateProfile = async (req, res) => {
+// Bulk actions
+exports.bulkUpdateStatus = async (req, res) => {
   try {
-    const userId = req.user._id;
-    const updateData = req.body;
-    // Capture only the fields actually sent by the current profile modal before
-    // merging them with the existing profile. Because updateData and req.body
-    // point to the same object, reading req.body.jobSeekerProfile after the merge
-    // would incorrectly make every existing personal-information field look like
-    // it was submitted by the Basic Information modal.
-    const requestedProfileKeys = Object.keys(req.body?.jobSeekerProfile || {});
+    const { userIds, status } = req.body;
 
-    delete updateData.email;
-    delete updateData.password;
-    delete updateData.role;
-    delete updateData.username;
-    delete updateData.mustChangePassword;
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user IDs'
+      });
+    }
 
-    const nameFieldLabels = {
-      firstName: 'First Name',
-      middleName: 'Middle Name',
-      lastName: 'Last Name',
+    const validStatuses = ['active', 'inactive', 'suspended'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status'
+      });
+    }
+
+    const result = await User.updateMany(
+      { _id: { $in: userIds } },
+      { $set: { status } }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `Updated ${result.modifiedCount} user(s) to ${status}`,
+      modifiedCount: result.modifiedCount
+    });
+  } catch (error) {
+    console.error('Error in bulk update:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// ==========================
+// ✅ EMPLOYER VERIFICATION
+// ==========================
+
+const hasRequiredEmployerDocs = (emp) => {
+  const docs = emp?.employerProfile?.verificationDocs || {};
+
+  const hasBusinessReg =
+    docs?.secRegistration?.url ||
+    docs?.birRegistration?.url ||
+    docs?.dtiRegistration?.url;
+
+  const hasCityPermit = docs?.cityPermit?.url;
+
+  return !!(hasBusinessReg && hasCityPermit);
+};
+
+const getVerificationStatus = (docs) => {
+  const hasBusinessReg =
+    docs?.secRegistration?.url ||
+    docs?.birRegistration?.url ||
+    docs?.dtiRegistration?.url;
+  const hasCityPermit = docs?.cityPermit?.url;
+
+  if (!hasBusinessReg && !hasCityPermit) return { status: 'none', message: 'No documents submitted' };
+  if (hasBusinessReg && !hasCityPermit) return { status: 'partial', message: 'Missing City Permit' };
+  if (!hasBusinessReg && hasCityPermit) return { status: 'partial', message: 'Missing Business Registration' };
+  return { status: 'complete', message: 'Documents complete' };
+};
+
+const EMPLOYER_STATUS_LABELS = {
+  unverified: 'Unverified',
+  pending: 'Pending',
+  hold: 'On Hold',
+  verified: 'Verified',
+  rejected: 'Rejected',
+};
+
+const normalizeEmployerForList = (user) => {
+  const profile = user.employerProfile || {};
+  const overallStatus = profile?.verificationDocs?.overallStatus || 'unverified';
+  const docs = profile?.verificationDocs || {};
+  const docStatus = getVerificationStatus(docs);
+
+  return {
+    _id: user._id,
+    username: user.username || '',
+    email: user.email || '',
+    createdAt: user.createdAt,
+    fullName: `${user.firstName || ''} ${user.middleName || ''} ${user.lastName || ''}`.replace(/\s+/g, ' ').trim(),
+    employerProfile: profile,
+
+    companyName: profile.companyName || '',
+    businessEmail: profile.businessEmail || user.email || '',
+    industry: profile.industry || '',
+    address: profile.regionCity || '',
+    companyLogo: profile.companyLogo || '',
+    regionCity: profile.regionCity || '',
+
+    overallStatus,
+    rejectedAt: docs?.rejectedAt || null,
+    docsComplete: docStatus.status === 'complete',
+    docStatus: docStatus.message,
+    docSummary: {
+      secRegistration: !!docs?.secRegistration?.url,
+      birRegistration: !!docs?.birRegistration?.url,
+      dtiRegistration: !!docs?.dtiRegistration?.url,
+      cityPermit: !!docs?.cityPermit?.url
+    }
+  };
+};
+
+// GET list of employers for verification
+exports.getEmployersForVerification = async (req, res) => {
+  try {
+    const search = String(req.query.search || '').trim();
+    const status = String(req.query.status || '').trim().toLowerCase();
+    const company = String(req.query.company || '').trim();
+    const industry = String(req.query.industry || '').trim();
+    const address = String(req.query.address || '').trim();
+    const sort = String(req.query.sort || 'newest').trim().toLowerCase();
+
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
+
+    const dateFrom = String(req.query.dateFrom || '').trim();
+    const dateTo = String(req.query.dateTo || '').trim();
+
+    const baseQuery = {
+      role: 'employer',
+      status: { $ne: 'deleted' }
     };
 
-    for (const [field, label] of Object.entries(nameFieldLabels)) {
-      if (!Object.prototype.hasOwnProperty.call(updateData, field)) continue;
+    const employers = await User.find(baseQuery).select('-password');
+    const normalizedAll = employers.map(normalizeEmployerForList);
 
-      const cleanName = String(updateData[field] ?? '').trim();
-      if (cleanName.length > 50) {
-        return res.status(400).json({
-          success: false,
-          message: `${label} must not exceed 50 characters.`,
-        });
+    // Employer Verification must only contain accounts that still need an
+    // admin verification decision. Approved and declined accounts do not
+    // belong in this page or in its Company/Industry filter options.
+    const verificationQueue = normalizedAll.filter((item) => {
+      const currentStatus = String(item.overallStatus || 'unverified').toLowerCase();
+      if (status === 'rejected' || status === 'declined') return currentStatus === 'rejected';
+      return !['verified', 'approved', 'rejected', 'declined'].includes(currentStatus);
+    });
+
+    const stats = normalizedAll.reduce(
+      (acc, item) => {
+        const currentStatus = String(item.overallStatus || 'unverified').toLowerCase();
+        acc.total += 1;
+        if (currentStatus === 'pending') acc.pending += 1;
+        else if (currentStatus === 'hold') acc.hold += 1;
+        else if (currentStatus === 'verified') acc.verified += 1;
+        else if (currentStatus === 'rejected') acc.rejected += 1;
+        else acc.unverified += 1;
+        return acc;
+      },
+      {
+        total: 0,
+        pending: 0,
+        hold: 0,
+        verified: 0,
+        rejected: 0,
+        unverified: 0,
       }
+    );
 
-      updateData[field] = cleanName;
-    }
+    const companies = [
+      ...new Set(
+        verificationQueue
+          .map((item) => String(item.companyName || '').trim())
+          .filter(Boolean)
+      ),
+    ].sort((a, b) => a.localeCompare(b));
 
-    if (Object.prototype.hasOwnProperty.call(updateData, 'extensionName')) {
-      updateData.extensionName = normalizeExtensionName(updateData.extensionName);
-    }
+    const industries = [
+      ...new Set(
+        verificationQueue
+          .map((item) => String(item.industry || '').trim())
+          .filter(Boolean)
+      ),
+    ].sort((a, b) => a.localeCompare(b));
 
-    if (updateData.jobSeekerProfile) {
-      const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({ success: false, message: 'User not found' });
-      }
+    const addresses = [
+      ...new Set(
+        verificationQueue
+          .map((item) => String(item.address || '').trim())
+          .filter(Boolean)
+      ),
+    ].sort((a, b) => a.localeCompare(b));
 
-      const existingProfile = user.jobSeekerProfile || {};
-      if (Object.prototype.hasOwnProperty.call(updateData.jobSeekerProfile, 'addedResumeSections')) {
-        const allowedResumeSections = [
-          'seminars',
-          'awards',
-          'certifications',
-          'projects',
-          'affiliations',
-          'cocurricular',
-          'references',
-        ];
-        const requestedSections = Array.isArray(updateData.jobSeekerProfile.addedResumeSections)
-          ? updateData.jobSeekerProfile.addedResumeSections
-          : [];
+    let filtered = verificationQueue;
 
-        updateData.jobSeekerProfile.addedResumeSections = allowedResumeSections.filter((key) =>
-          requestedSections.includes(key)
+    if (search) {
+      const searchRegex = new RegExp(escapeRegex(search), 'i');
+      filtered = filtered.filter((item) => {
+        return (
+          searchRegex.test(item.companyName || '') ||
+          searchRegex.test(item.businessEmail || '') ||
+          searchRegex.test(item.email || '') ||
+          searchRegex.test(item.username || '') ||
+          searchRegex.test(item.address || '')
         );
-      }
-      updateData.jobSeekerProfile = {
-        ...(existingProfile.toObject?.() || existingProfile),
-        ...updateData.jobSeekerProfile,
-      };
+      });
+    }
 
-      if (Object.prototype.hasOwnProperty.call(updateData.jobSeekerProfile, 'course')) {
-        updateData.jobSeekerProfile.course = normalizeCourseValue(updateData.jobSeekerProfile.course);
-      }
+    if (status && status !== 'all') {
+      filtered = filtered.filter((item) => String(item.overallStatus || '').toLowerCase() === status);
+    }
 
-      const cleanRequiredValue = (value) => String(value ?? '').trim();
-      const basicProfileKeys = ['phoneNumber', 'address', 'campus', 'course', 'yearGraduated'];
-      const personalProfileKeys = [
-        'preferredWorkMode', 'employmentType', 'willingToRelocate', 'howSoonCanYouStart',
-        'experience', 'preferredLanguage', 'educationalAttainment', 'studyField',
-        'minimumSalary', 'maximumSalary', 'height', 'weight', 'nationality',
-        'gender', 'civilStatus', 'birthday',
-      ];
+    if (company && company.toLowerCase() !== 'all') {
+      filtered = filtered.filter(
+        (item) =>
+          String(item.companyName || '').trim().toLowerCase() ===
+          company.toLowerCase()
+      );
+    }
 
-      const isBasicProfileUpdate = basicProfileKeys.some((key) => requestedProfileKeys.includes(key))
-        || ['firstName', 'lastName'].some((key) => Object.prototype.hasOwnProperty.call(req.body || {}, key));
+    if (industry && industry !== 'all') {
+      filtered = filtered.filter((item) => String(item.industry || '').toLowerCase() === industry.toLowerCase());
+    }
 
-      if (isBasicProfileUpdate) {
-        const requiredBasicValues = {
-          'First Name': updateData.firstName ?? user.firstName,
-          'Last Name': updateData.lastName ?? user.lastName,
-          Email: user.email,
-          'Mobile Number': updateData.jobSeekerProfile.phoneNumber,
-          Campus: updateData.jobSeekerProfile.campus,
-          Course: updateData.jobSeekerProfile.course,
-          'Year Graduated': updateData.jobSeekerProfile.yearGraduated,
-          Address: updateData.jobSeekerProfile.address,
-        };
-        const missingBasic = Object.entries(requiredBasicValues)
-          .filter(([, value]) => !cleanRequiredValue(value))
-          .map(([label]) => label);
-        const addressParts = cleanRequiredValue(updateData.jobSeekerProfile.address)
-          .split(',')
-          .map((part) => part.trim())
-          .filter(Boolean);
-        if (addressParts.length < 4 && !missingBasic.includes('Address')) {
-          missingBasic.push('Region, Province, City / Municipality, and Street Address');
+    if (address && address !== 'all') {
+      filtered = filtered.filter((item) => String(item.address || '').toLowerCase() === address.toLowerCase());
+    }
+
+    if (dateFrom || dateTo) {
+      filtered = filtered.filter((item) => {
+        const createdAt = new Date(item.createdAt);
+        if (Number.isNaN(createdAt.getTime())) return false;
+
+        let matches = true;
+
+        if (dateFrom) {
+          const start = new Date(dateFrom);
+          start.setHours(0, 0, 0, 0);
+          matches = matches && createdAt >= start;
         }
 
-        if (missingBasic.length) {
-          return res.status(400).json({
-            success: false,
-            message: `Please complete the required fields before saving: ${missingBasic.join(', ')}.`,
+        if (dateTo) {
+          const end = new Date(dateTo);
+          end.setHours(23, 59, 59, 999);
+          matches = matches && createdAt <= end;
+        }
+
+        return matches;
+      });
+    }
+
+    filtered = filtered.sort((a, b) => {
+      const aDate = new Date(a.createdAt).getTime();
+      const bDate = new Date(b.createdAt).getTime();
+
+      if (sort === 'oldest') return aDate - bDate;
+      return bDate - aDate;
+    });
+
+    const totalItems = filtered.length;
+    const totalPages = Math.max(Math.ceil(totalItems / limit), 1);
+    const safePage = Math.min(page, totalPages);
+    const skip = (safePage - 1) * limit;
+    const paginated = filtered.slice(skip, skip + limit);
+
+    res.status(200).json({
+      success: true,
+      employers: paginated,
+      stats,
+      filters: {
+        companies,
+        industries,
+        addresses,
+        statuses: [
+          { value: 'unverified', label: EMPLOYER_STATUS_LABELS.unverified },
+          { value: 'pending', label: EMPLOYER_STATUS_LABELS.pending },
+          { value: 'hold', label: EMPLOYER_STATUS_LABELS.hold },
+          { value: 'verified', label: EMPLOYER_STATUS_LABELS.verified },
+          { value: 'rejected', label: EMPLOYER_STATUS_LABELS.rejected },
+        ],
+      },
+      pagination: {
+        page: safePage,
+        limit,
+        totalItems,
+        totalPages,
+        hasPrevPage: safePage > 1,
+        hasNextPage: safePage < totalPages,
+      },
+      count: paginated.length
+    });
+  } catch (error) {
+    console.error('Error fetching employers for verification:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// GET employer verification details by id
+exports.getEmployerVerificationById = async (req, res) => {
+  try {
+    const employer = await User.findById(req.params.id).select('-password');
+
+    if (!employer || employer.role !== 'employer') {
+      return res.status(404).json({
+        success: false,
+        message: 'Employer not found'
+      });
+    }
+
+    const docs = employer?.employerProfile?.verificationDocs || {};
+    const docStatus = getVerificationStatus(docs);
+
+    res.status(200).json({
+      success: true,
+      employer: {
+        ...employer.toObject(),
+        registrationId: `EM-${new Date(employer.createdAt || Date.now()).getFullYear()}-${String(employer._id).slice(-6).toUpperCase()}`,
+        docsComplete: docStatus.status === 'complete',
+        docStatus: docStatus.message,
+        documentDetails: {
+          secRegistration: docs?.secRegistration || {},
+          birRegistration: docs?.birRegistration || {},
+          dtiRegistration: docs?.dtiRegistration || {},
+          cityPermit: docs?.cityPermit || {},
+          businessPermit: docs?.businessPermit || {},
+        },
+        verificationSummary: {
+          overallStatus: docs?.overallStatus || 'unverified',
+          remarks: docs?.remarks || '',
+          rejectionReasons: docs?.rejectionReasons || [],
+          rejectionMessage: docs?.rejectionMessage || '',
+          rejectedAt: docs?.rejectedAt || null,
+          resubmitRequest: docs?.resubmitRequest || {},
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching employer verification details:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// UPDATE employer verification status
+exports.updateEmployerVerificationStatus = async (req, res) => {
+  try {
+    const { overallStatus, remarks, rejectionReasons, rejectionMessage } = req.body;
+
+    const valid = ['unverified', 'pending', 'hold', 'verified', 'rejected'];
+    if (!valid.includes(overallStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid overallStatus'
+      });
+    }
+
+    const employer = await User.findById(req.params.id);
+    if (!employer || employer.role !== 'employer') {
+      return res.status(404).json({
+        success: false,
+        message: 'Employer not found'
+      });
+    }
+
+    if (overallStatus === 'verified') {
+      const docs = employer?.employerProfile?.verificationDocs || {};
+      const hasBusinessReg =
+        docs?.secRegistration?.url ||
+        docs?.birRegistration?.url ||
+        docs?.dtiRegistration?.url;
+      const hasCityPermit = docs?.cityPermit?.url;
+
+      if (!hasBusinessReg || !hasCityPermit) {
+        return res.status(400).json({
+          success: false,
+          message: 'Documents incomplete. Business Registration (SEC/BIR/DTI) and City Permit are required.'
+        });
+      }
+    }
+
+    if (overallStatus === 'rejected') {
+      if (!Array.isArray(rejectionReasons) || rejectionReasons.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'At least one rejection reason is required'
+        });
+      }
+    }
+
+    if (!employer.employerProfile) employer.employerProfile = {};
+    if (!employer.employerProfile.verificationDocs) employer.employerProfile.verificationDocs = {};
+
+    const prevStatus = employer.employerProfile.verificationDocs.overallStatus || 'unverified';
+
+    employer.employerProfile.verificationDocs.overallStatus = overallStatus;
+    employer.employerProfile.verificationDocs.remarks = remarks || '';
+
+    if (overallStatus === 'verified') {
+      employer.employerProfile.verificationDocs.rejectionReasons = [];
+      employer.employerProfile.verificationDocs.rejectionMessage = '';
+      employer.employerProfile.verificationDocs.rejectedAt = null;
+    } else if (overallStatus === 'rejected') {
+      employer.employerProfile.verificationDocs.rejectionReasons = rejectionReasons
+        .map((item) => String(item || '').trim())
+        .filter(Boolean);
+      employer.employerProfile.verificationDocs.rejectionMessage = String(rejectionMessage || '').trim();
+      employer.employerProfile.verificationDocs.rejectedAt = new Date();
+    } else {
+      employer.employerProfile.verificationDocs.rejectionReasons = [];
+      employer.employerProfile.verificationDocs.rejectionMessage = '';
+      employer.employerProfile.verificationDocs.rejectedAt = null;
+    }
+
+    if (overallStatus === 'verified' && prevStatus !== 'verified') {
+      const newUsername = employer.username || await generateUniqueUsername({
+          role: 'employer',
+          companyName: employer?.employerProfile?.companyName || employer?.firstName || 'employer',
+          firstName: employer.firstName,
+          lastName: employer.lastName,
+        });
+
+      employer.username = newUsername;
+      employer.status = 'active';
+
+      await employer.save();
+
+      sendCredentialsEmail({
+        to: employer.email,
+        fullName: employer.fullName || employer.email,
+        username: newUsername,
+        role: 'Employer',
+      }).catch((emailError) => {
+        console.error('Failed to send employer credentials email:', emailError);
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: `Employer approved. Approval email sent to ${employer.email}`,
+        employer: {
+          _id: employer._id,
+          username: employer.username,
+          overallStatus: employer.employerProfile.verificationDocs.overallStatus,
+          remarks: employer.employerProfile.verificationDocs.remarks || '',
+          rejectionReasons: employer.employerProfile.verificationDocs.rejectionReasons || [],
+          rejectionMessage: employer.employerProfile.verificationDocs.rejectionMessage || '',
+          rejectedAt: employer.employerProfile.verificationDocs.rejectedAt || null,
+          mustChangePassword: employer.mustChangePassword,
+        }
+      });
+    }
+
+    await employer.save();
+
+    if (overallStatus === 'rejected') {
+      sendVerificationRejectedEmail({
+        to: employer.email,
+        fullName: employer.employerProfile?.companyName || employer.fullName || employer.email,
+        reasons: employer.employerProfile.verificationDocs.rejectionReasons || [],
+        message: employer.employerProfile.verificationDocs.rejectionMessage || '',
+      }).catch((emailError) => {
+        console.error('Failed to send employer rejection email:', emailError);
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Employer verification status updated to ${overallStatus}`,
+      employer: {
+        _id: employer._id,
+        username: employer.username,
+        overallStatus: employer.employerProfile.verificationDocs.overallStatus,
+        remarks: employer.employerProfile.verificationDocs.remarks || '',
+        rejectionReasons: employer.employerProfile.verificationDocs.rejectionReasons || [],
+        rejectionMessage: employer.employerProfile.verificationDocs.rejectionMessage || '',
+        rejectedAt: employer.employerProfile.verificationDocs.rejectedAt || null,
+        mustChangePassword: employer.mustChangePassword,
+      }
+    });
+  } catch (error) {
+    console.error('Error updating employer verification status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// HOLD employer verification and send resubmit email
+exports.holdEmployerVerification = async (req, res) => {
+  try {
+    const { docType, reasonMessage } = req.body;
+
+    if (!EMPLOYER_DOC_TYPES.includes(String(docType || ''))) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid document type selected for resubmission'
+      });
+    }
+
+    if (!String(reasonMessage || '').trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reason/message is required'
+      });
+    }
+
+    const employer = await User.findById(req.params.id);
+    if (!employer || employer.role !== 'employer') {
+      return res.status(404).json({
+        success: false,
+        message: 'Employer not found'
+      });
+    }
+
+    if (!employer.employerProfile) employer.employerProfile = {};
+    if (!employer.employerProfile.verificationDocs) {
+      employer.employerProfile.verificationDocs = {};
+    }
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = User.hashToken(rawToken);
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 1000 * 60 * 60 * 48);
+
+    employer.employerProfile.verificationDocs.overallStatus = 'hold';
+    employer.employerProfile.verificationDocs.remarks = String(reasonMessage).trim();
+    employer.employerProfile.verificationDocs.rejectionReasons = [];
+    employer.employerProfile.verificationDocs.rejectionMessage = '';
+    employer.employerProfile.verificationDocs.rejectedAt = null;
+
+    if (!employer.employerProfile.verificationDocs[docType]) {
+      employer.employerProfile.verificationDocs[docType] = {};
+    }
+
+    employer.employerProfile.verificationDocs[docType].status = 'hold';
+    employer.employerProfile.verificationDocs.resubmitRequest = {
+      tokenHash,
+      docType,
+      reasonMessage: String(reasonMessage).trim(),
+      requestedAt: now,
+      expiresAt,
+      usedAt: null,
+      requestedBy: req.user?._id || null,
+    };
+
+    await employer.save();
+
+    const frontendUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://agapayy.onrender.com';
+    const resubmitUrl = `${frontendUrl}/resubmit-document?token=${rawToken}`;
+
+    sendResubmitDocumentEmail({
+      to: employer.email,
+      fullName: employer.fullName || employer.email,
+      docLabel: EMPLOYER_DOC_LABELS[docType] || docType,
+      reasonMessage: String(reasonMessage).trim(),
+      resubmitUrl,
+    }).catch((emailError) => {
+      console.error('Failed to send employer resubmit email:', emailError);
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Employer placed on HOLD and resubmit email sent successfully.',
+      employer: {
+        _id: employer._id,
+        email: employer.email,
+        overallStatus: employer.employerProfile.verificationDocs.overallStatus,
+        remarks: employer.employerProfile.verificationDocs.remarks || '',
+        resubmitRequest: {
+          docType,
+          reasonMessage: String(reasonMessage).trim(),
+          requestedAt: now,
+          expiresAt,
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error placing employer on hold:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error placing employer on HOLD'
+    });
+  }
+};
+
+// Get employer verification document URLs
+exports.getEmployerVerificationDocUrls = async (req, res) => {
+  try {
+    const employer = await User.findById(req.params.id).select('-password');
+
+    if (!employer || employer.role !== 'employer') {
+      return res.status(404).json({
+        success: false,
+        message: 'Employer not found'
+      });
+    }
+
+    const docs = employer?.employerProfile?.verificationDocs || {};
+
+    res.status(200).json({
+      success: true,
+      documents: {
+        secRegistration: docs?.secRegistration?.url || null,
+        birRegistration: docs?.birRegistration?.url || null,
+        dtiRegistration: docs?.dtiRegistration?.url || null,
+        cityPermit: docs?.cityPermit?.url || null,
+        businessPermit: docs?.businessPermit?.url || null,
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching employer document URLs:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// ==========================
+// ✅ JOBSEEKER VERIFICATION FUNCTIONS
+// ==========================
+
+const getJobseekerVerificationStatus = (user) => {
+  const verificationDocs = user?.jobSeekerProfile?.verificationDocs || {};
+  const overallStatus = verificationDocs.overallStatus || 'not_submitted';
+
+  const docKeys = ['cv', 'tor', 'diploma', 'sss', 'philhealth', 'pagibig', 'tin', 'validId'];
+  const submittedCount = docKeys.filter((key) =>
+    verificationDocs[key]?.url && verificationDocs[key]?.url.trim() !== ''
+  ).length;
+
+  const totalDocs = docKeys.length;
+
+  return {
+    overallStatus,
+    submittedCount,
+    totalDocs,
+    isComplete: submittedCount === totalDocs,
+    docStatus:
+      submittedCount === 0
+        ? 'No documents'
+        : submittedCount < totalDocs
+        ? 'Partial documents'
+        : 'All documents submitted'
+  };
+};
+
+const JOBSEEKER_STATUS_LABELS = {
+  not_submitted: 'Not Submitted',
+  pending: 'Pending',
+  verified: 'Verified',
+  rejected: 'Rejected',
+  hold: 'On Hold',
+};
+
+const normalizeJobseekerForList = (user) => {
+  const verificationStatus = getJobseekerVerificationStatus(user);
+  const profile = user.jobSeekerProfile || {};
+
+  const fieldOfStudyValue =
+    profile.fieldOfStudy ||
+    profile.studyField ||
+    (Array.isArray(profile.fieldOfStudyList) ? profile.fieldOfStudyList.filter(Boolean).join(', ') : '');
+
+  const campus =
+    profile.campus ||
+    (Array.isArray(profile.educationEntries) && profile.educationEntries.find((entry) => entry?.campus)?.campus) ||
+    '';
+
+  const course =
+    profile.course ||
+    (Array.isArray(profile.educationEntries) && profile.educationEntries.find((entry) => entry?.course)?.course) ||
+    '';
+
+  const address =
+    profile.address ||
+    [profile.cityProvince, profile.region].filter(Boolean).join(', ');
+
+  return {
+    _id: user._id,
+    username: user.username,
+    email: user.email,
+    fullName: `${user.firstName || ''} ${user.middleName || ''} ${user.lastName || ''}`.replace(/\s+/g, ' ').trim(),
+    firstName: user.firstName || '',
+    middleName: user.middleName || '',
+    lastName: user.lastName || '',
+    profileImage: user.profileImage || '',
+    createdAt: user.createdAt,
+
+    jobSeekerProfile: profile,
+
+    verificationStatus: verificationStatus.overallStatus,
+    rejectedAt: profile.verificationDocs?.rejectedAt || null,
+    verificationDocs: profile.verificationDocs || {},
+    submittedCount: verificationStatus.submittedCount,
+    totalDocs: verificationStatus.totalDocs,
+    docsComplete: verificationStatus.isComplete,
+    docStatus: verificationStatus.docStatus,
+
+    mobileNumber: profile.phoneNumber || profile.mobileNumber || '',
+    region: profile.region || '',
+    cityProvince: profile.cityProvince || '',
+    educationalAttainment: profile.educationalAttainment || '',
+    fieldOfStudy: fieldOfStudyValue || '',
+
+    campus,
+    course,
+    address,
+  };
+};
+
+// GET list of jobseekers for verification
+exports.getJobseekersForVerification = async (req, res) => {
+  try {
+    const status = String(req.query.status || '').trim().toLowerCase();
+    const search = String(req.query.search || '').trim();
+    const campus = String(req.query.campus || '').trim();
+    const course = String(req.query.course || '').trim();
+    const address = String(req.query.address || '').trim();
+    const sort = String(req.query.sort || 'newest').trim().toLowerCase();
+
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
+
+    const dateFrom = String(req.query.dateFrom || '').trim();
+    const dateTo = String(req.query.dateTo || '').trim();
+
+    const query = {
+      role: 'jobseeker',
+      status: { $ne: 'deleted' },
+    };
+
+    if (status && ['not_submitted', 'pending', 'verified', 'rejected', 'hold'].includes(status)) {
+      query['jobSeekerProfile.verificationDocs.overallStatus'] = status;
+    } else {
+      query['jobSeekerProfile.verificationDocs.overallStatus'] = { $nin: ['verified', 'rejected'] };
+    }
+
+    if (search) {
+      const searchRegex = new RegExp(escapeRegex(search), 'i');
+      query.$or = [
+        { firstName: searchRegex },
+        { middleName: searchRegex },
+        { lastName: searchRegex },
+        { email: searchRegex },
+        { username: searchRegex },
+      ];
+    }
+
+    if (dateFrom || dateTo) {
+      query.createdAt = {};
+
+      if (dateFrom) {
+        const start = new Date(dateFrom);
+        if (!Number.isNaN(start.getTime())) {
+          start.setHours(0, 0, 0, 0);
+          query.createdAt.$gte = start;
+        }
+      }
+
+      if (dateTo) {
+        const end = new Date(dateTo);
+        if (!Number.isNaN(end.getTime())) {
+          end.setHours(23, 59, 59, 999);
+          query.createdAt.$lte = end;
+        }
+      }
+
+      if (Object.keys(query.createdAt).length === 0) {
+        delete query.createdAt;
+      }
+    }
+
+    const [users, statsUsers] = await Promise.all([
+      User.find(query).select('-password'),
+      User.find({ role: 'jobseeker', status: { $ne: 'deleted' } }).select('-password'),
+    ]);
+    const normalized = users.map(normalizeJobseekerForList);
+
+    const allStats = statsUsers.map(normalizeJobseekerForList).reduce(
+      (acc, item) => {
+        const currentStatus = String(item.verificationStatus || 'not_submitted').toLowerCase();
+
+        acc.total += 1;
+        if (currentStatus === 'pending') acc.pending += 1;
+        else if (currentStatus === 'verified') acc.verified += 1;
+        else if (currentStatus === 'rejected') acc.rejected += 1;
+        else if (currentStatus === 'hold') acc.hold += 1;
+        else acc.notSubmitted += 1;
+
+        return acc;
+      },
+      {
+        total: 0,
+        pending: 0,
+        verified: 0,
+        rejected: 0,
+        hold: 0,
+        notSubmitted: 0,
+      }
+    );
+
+    const uniqueNormalizedOptions = (values, normalizer = (value) => String(value || '').trim()) => {
+      const optionMap = new Map();
+
+      values.forEach((value) => {
+        const normalizedValue = normalizer(value);
+        if (!normalizedValue) return;
+
+        const duplicateKey = normalizedValue.toLocaleLowerCase();
+        if (!optionMap.has(duplicateKey)) {
+          optionMap.set(duplicateKey, normalizedValue);
+        }
+      });
+
+      return [...optionMap.values()].sort((a, b) => a.localeCompare(b));
+    };
+
+    const campuses = uniqueNormalizedOptions(
+      normalized.map((item) => item.campus),
+      normalizeDashboardCampus
+    );
+    const courses = uniqueNormalizedOptions(normalized.map((item) => item.course));
+    const addresses = uniqueNormalizedOptions(normalized.map((item) => item.address));
+
+    let filtered = normalized;
+
+    if (campus && campus !== 'all') {
+      filtered = filtered.filter((item) => String(item.campus || '').toLowerCase() === campus.toLowerCase());
+    }
+
+    if (course && course !== 'all') {
+      filtered = filtered.filter((item) => String(item.course || '').toLowerCase() === course.toLowerCase());
+    }
+
+    if (address && address !== 'all') {
+      filtered = filtered.filter((item) => String(item.address || '').toLowerCase() === address.toLowerCase());
+    }
+
+    filtered = filtered.sort((a, b) => {
+      const aDate = new Date(a.createdAt).getTime();
+      const bDate = new Date(b.createdAt).getTime();
+
+      if (sort === 'oldest') return aDate - bDate;
+      return bDate - aDate;
+    });
+
+    const totalItems = filtered.length;
+    const totalPages = Math.max(Math.ceil(totalItems / limit), 1);
+    const safePage = Math.min(page, totalPages);
+    const skip = (safePage - 1) * limit;
+
+    const paginated = filtered.slice(skip, skip + limit);
+
+    res.status(200).json({
+      success: true,
+      jobseekers: paginated,
+      stats: allStats,
+      filters: {
+        campuses,
+        courses,
+        addresses,
+        statuses: [
+          { value: 'not_submitted', label: JOBSEEKER_STATUS_LABELS.not_submitted },
+          { value: 'pending', label: JOBSEEKER_STATUS_LABELS.pending },
+          { value: 'hold', label: JOBSEEKER_STATUS_LABELS.hold },
+          { value: 'verified', label: JOBSEEKER_STATUS_LABELS.verified },
+          { value: 'rejected', label: JOBSEEKER_STATUS_LABELS.rejected },
+        ],
+      },
+      pagination: {
+        page: safePage,
+        limit,
+        totalItems,
+        totalPages,
+        hasPrevPage: safePage > 1,
+        hasNextPage: safePage < totalPages,
+      },
+      count: paginated.length
+    });
+  } catch (error) {
+    console.error('Error fetching jobseekers for verification:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching jobseekers'
+    });
+  }
+};
+
+// GET jobseeker verification details by ID
+exports.getJobseekerVerificationById = async (req, res) => {
+  try {
+    const jobseeker = await User.findById(req.params.id).select('-password');
+
+    if (!jobseeker || jobseeker.role !== 'jobseeker') {
+      return res.status(404).json({
+        success: false,
+        message: 'Jobseeker not found'
+      });
+    }
+
+    const verificationStatus = getJobseekerVerificationStatus(jobseeker);
+    const profile = jobseeker.jobSeekerProfile || {};
+    const verificationDocs = profile.verificationDocs || {};
+
+    const docDetails = {};
+    const docTypes = ['cv', 'tor', 'diploma', 'sss', 'philhealth', 'pagibig', 'tin', 'validId'];
+
+    docTypes.forEach((type) => {
+      const storedDocument = verificationDocs[type] || {
+        url: '',
+        status: 'not_submitted',
+        uploadedAt: null,
+        filename: '',
+        fileSize: 0
+      };
+      docDetails[type] = {
+        ...(storedDocument.toObject ? storedDocument.toObject() : storedDocument),
+        status: storedDocument.status,
+        checked: storedDocument.checked,
+      };
+    });
+
+    const fieldOfStudyValue =
+      profile.fieldOfStudy ||
+      profile.studyField ||
+      (Array.isArray(profile.fieldOfStudyList) ? profile.fieldOfStudyList.filter(Boolean).join(', ') : '');
+
+    const campus =
+      profile.campus ||
+      (Array.isArray(profile.educationEntries) && profile.educationEntries.find((entry) => entry?.campus)?.campus) ||
+      '';
+
+    const course =
+      profile.course ||
+      (Array.isArray(profile.educationEntries) && profile.educationEntries.find((entry) => entry?.course)?.course) ||
+      '';
+
+    const address =
+      profile.address ||
+      [profile.cityProvince, profile.region].filter(Boolean).join(', ');
+
+    res.status(200).json({
+      success: true,
+      jobseeker: {
+        _id: jobseeker._id,
+        isVerified: isApprovedJobseekerAccount(jobseeker),
+        username: jobseeker.username,
+        email: jobseeker.email,
+        firstName: jobseeker.firstName,
+        middleName: jobseeker.middleName,
+        lastName: jobseeker.lastName,
+        extensionName: jobseeker.extensionName || '',
+        registrationId: `JS-${new Date(jobseeker.createdAt || Date.now()).getFullYear()}-${String(jobseeker._id).slice(-6).toUpperCase()}`,
+        profileImage: jobseeker.profileImage,
+        createdAt: jobseeker.createdAt,
+
+        jobSeekerProfile: {
+          course: course || '',
+          campus: campus || '',
+          yearGraduated: profile.yearGraduated || '',
+          preferredWorkMode: profile.preferredWorkMode || '',
+          technicalSkills: profile.technicalSkills || '',
+          softSkills: profile.softSkills || '',
+          whatHaveYouDone: profile.whatHaveYouDone || '',
+          howSoonCanYouStart: profile.howSoonCanYouStart || '',
+
+          phoneNumber: profile.phoneNumber || '',
+          mobileNumber: profile.phoneNumber || profile.mobileNumber || '',
+
+          birthday: profile.birthday || null,
+          region: profile.region || '',
+          cityProvince: profile.cityProvince || '',
+          gender: profile.gender || '',
+          studentId: profile.studentId || '',
+          educationalAttainment: profile.educationalAttainment || '',
+          fieldOfStudy: fieldOfStudyValue || '',
+          dateGraduated: profile.dateGraduated || null,
+          specialization: profile.specialization || '',
+          subSpecialization: profile.subSpecialization || '',
+          recentExperience: profile.recentExperience || '',
+          fieldOfStudyList: profile.fieldOfStudyList || [],
+          majorCourse: profile.majorCourse || '',
+          hasRecentExperience: typeof profile.hasRecentExperience === 'boolean' ? profile.hasRecentExperience : undefined,
+          address: address || '',
+
+          verificationDocs: verificationDocs,
+          verificationStatus: profile.verificationStatus || 'not_submitted'
+        },
+
+        verificationSummary: {
+          overallStatus: verificationStatus.overallStatus,
+          submittedCount: verificationStatus.submittedCount,
+          totalDocs: verificationStatus.totalDocs,
+          isComplete: verificationStatus.isComplete,
+          docStatus: verificationStatus.docStatus,
+          adminRemarks: verificationDocs.adminRemarks || '',
+          verifiedBy: verificationDocs.verifiedBy || null,
+          verifiedAt: verificationDocs.verifiedAt || null,
+          rejectionReasons: verificationDocs.rejectionReasons || [],
+          rejectionMessage: verificationDocs.rejectionMessage || '',
+          rejectedAt: verificationDocs.rejectedAt || null,
+          resubmitRequest: verificationDocs.resubmitRequest || {}
+        },
+
+        documentDetails: docDetails
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching jobseeker verification details:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching jobseeker details'
+    });
+  }
+};
+
+// UPDATE jobseeker verification status
+exports.updateJobseekerVerificationStatus = async (req, res) => {
+  try {
+    const { overallStatus, adminRemarks, rejectionReasons, rejectionMessage } = req.body;
+    const DEFAULT_JOBSEEKER_REJECTION_MESSAGE = 'Your verification request was rejected. Please contact support.';
+
+    let adminId = null;
+    if (req.user && req.user._id) {
+      adminId = req.user._id;
+    }
+    console.log('Admin ID from request:', adminId);
+
+    const validStatuses = ['not_submitted', 'pending', 'verified', 'rejected', 'hold'];
+    if (!validStatuses.includes(overallStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status. Must be: not_submitted, pending, verified, rejected, or hold'
+      });
+    }
+
+    const jobseeker = await User.findById(req.params.id);
+    if (!jobseeker || jobseeker.role !== 'jobseeker') {
+      return res.status(404).json({
+        success: false,
+        message: 'Jobseeker not found'
+      });
+    }
+
+    const prevStatus = jobseeker?.jobSeekerProfile?.verificationDocs?.overallStatus || 'not_submitted';
+
+    const verificationStatus = getJobseekerVerificationStatus(jobseeker);
+    if (verificationStatus.submittedCount === 0 && overallStatus === 'verified') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot verify jobseeker with no uploaded documents'
+      });
+    }
+
+    if (!jobseeker.jobSeekerProfile) jobseeker.jobSeekerProfile = {};
+    if (!jobseeker.jobSeekerProfile.verificationDocs) {
+      jobseeker.jobSeekerProfile.verificationDocs = {};
+    }
+
+    jobseeker.jobSeekerProfile.verificationDocs.overallStatus = overallStatus;
+
+    if (adminRemarks) {
+      jobseeker.jobSeekerProfile.verificationDocs.adminRemarks = adminRemarks;
+    } else if (overallStatus !== 'rejected') {
+      jobseeker.jobSeekerProfile.verificationDocs.adminRemarks = '';
+    }
+
+    if (overallStatus === 'verified') {
+      JOBSEEKER_DOC_TYPES.forEach((docType) => {
+        const document = jobseeker.jobSeekerProfile.verificationDocs[docType];
+        if (!document?.url) return;
+        document.status = 'approved';
+        document.checked = true;
+        document.checkedAt = new Date();
+        document.checkedBy = adminId;
+      });
+      jobseeker.jobSeekerProfile.verificationDocs.verifiedBy = adminId;
+      jobseeker.jobSeekerProfile.verificationDocs.verifiedAt = new Date();
+      jobseeker.jobSeekerProfile.verificationDocs.rejectionReasons = [];
+      jobseeker.jobSeekerProfile.verificationDocs.rejectionMessage = '';
+      jobseeker.jobSeekerProfile.verificationDocs.rejectedAt = null;
+      jobseeker.isVerified = true;
+    } else {
+      jobseeker.jobSeekerProfile.verificationDocs.verifiedBy = null;
+      jobseeker.jobSeekerProfile.verificationDocs.verifiedAt = null;
+
+      if (overallStatus === 'rejected') {
+        const normalizedRejectionReasons = Array.isArray(rejectionReasons)
+          ? rejectionReasons.map((item) => String(item || '').trim()).filter(Boolean)
+          : [];
+
+        const finalRejectionMessage = String(rejectionMessage || '').trim() || DEFAULT_JOBSEEKER_REJECTION_MESSAGE;
+
+        jobseeker.jobSeekerProfile.verificationDocs.rejectionReasons = normalizedRejectionReasons;
+        jobseeker.jobSeekerProfile.verificationDocs.rejectionMessage = finalRejectionMessage;
+        jobseeker.jobSeekerProfile.verificationDocs.rejectedAt = new Date();
+
+        if (!jobseeker.jobSeekerProfile.verificationDocs.adminRemarks) {
+          jobseeker.jobSeekerProfile.verificationDocs.adminRemarks = `Declined verification request. Message to user: ${finalRejectionMessage}`;
+        }
+      } else {
+        jobseeker.jobSeekerProfile.verificationDocs.rejectionReasons = [];
+        jobseeker.jobSeekerProfile.verificationDocs.rejectionMessage = '';
+        jobseeker.jobSeekerProfile.verificationDocs.rejectedAt = null;
+      }
+    }
+
+    jobseeker.jobSeekerProfile.verificationStatus = overallStatus;
+
+    if (overallStatus === 'verified' && prevStatus !== 'verified') {
+      let finalUsername = jobseeker.username;
+      if (!finalUsername) {
+        finalUsername = await generateUniqueUsername({
+          role: 'jobseeker',
+          firstName: jobseeker.firstName,
+          lastName: jobseeker.lastName,
+          companyName: '',
+        });
+      } else {
+        const exists = await User.findOne({ username: finalUsername, _id: { $ne: jobseeker._id } }).select('_id');
+        if (exists) {
+          finalUsername = await generateUniqueUsername({
+            role: 'jobseeker',
+            firstName: jobseeker.firstName,
+            lastName: jobseeker.lastName,
+            companyName: '',
           });
         }
       }
 
-      if (!updateData.jobSeekerProfile.salaryCurrency) {
-        updateData.jobSeekerProfile.salaryCurrency = existingProfile.salaryCurrency || 'PHP';
-      }
+      jobseeker.username = finalUsername;
+      jobseeker.status = 'active';
 
-      if (Object.prototype.hasOwnProperty.call(updateData.jobSeekerProfile, 'salaryPrivacy')) {
-        const requestedPrivacy = String(updateData.jobSeekerProfile.salaryPrivacy || '').trim();
-        updateData.jobSeekerProfile.salaryPrivacy = ['limited', 'only_me'].includes(requestedPrivacy)
-          ? requestedPrivacy
-          : 'only_me';
-      } else {
-        updateData.jobSeekerProfile.salaryPrivacy = existingProfile.salaryPrivacy || 'only_me';
-      }
-    }
+      await jobseeker.save();
 
-    const updatedUser = await User.findByIdAndUpdate(userId, { $set: updateData }, { new: true, runValidators: true }).select('-password');
-
-    res.status(200).json({ success: true, message: 'Profile updated successfully', user: updatedUser });
-  } catch (error) {
-    console.error('Error updating profile:', error);
-    if (error?.name === 'ValidationError') {
-      const validationMessage = Object.values(error.errors || {})[0]?.message;
-      return res.status(400).json({
-        success: false,
-        message: validationMessage || 'Please check the profile information and try again.',
+      sendCredentialsEmail({
+        to: jobseeker.email,
+        fullName: jobseeker.fullName || jobseeker.email,
+        username: finalUsername,
+        role: 'Jobseeker',
+      }).catch((emailError) => {
+        console.error('Failed to send jobseeker credentials email:', emailError);
       });
-    }
-    res.status(500).json({ success: false, message: 'Error updating profile' });
-  }
-};
 
-// ---------------------------
-// SALARY EXPECTATION APIs
-// ---------------------------
-exports.getSalaryExpectation = async (req, res) => {
-  try {
-    if (req.user.role !== 'jobseeker') {
-      return res.status(403).json({ success: false, message: 'Only job seekers can access salary expectation.' });
-    }
-
-    const user = await User.findById(req.user._id).select('jobSeekerProfile');
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-
-    const profile = user.jobSeekerProfile || {};
-
-    return res.status(200).json({
-      success: true,
-      salaryExpectation: {
-        userId: req.user._id,
-        minSalary: profile.minimumSalary || '',
-        maxSalary: profile.maximumSalary || '',
-        currency: profile.salaryCurrency || 'PHP',
-        privacy: profile.salaryPrivacy || 'only_me',
-      },
-    });
-  } catch (error) {
-    console.error('Error fetching salary expectation:', error);
-    res.status(500).json({ success: false, message: 'Error fetching salary expectation' });
-  }
-};
-
-exports.updateSalaryExpectation = async (req, res) => {
-  try {
-    if (req.user.role !== 'jobseeker') {
-      return res.status(403).json({ success: false, message: 'Only job seekers can update salary expectation.' });
-    }
-
-    const { minSalary, maxSalary, currency, privacy } = req.body;
-    const normalizedPrivacy = ['limited', 'only_me'].includes(String(privacy || '').trim())
-      ? String(privacy).trim()
-      : 'only_me';
-
-    const payload = {
-      'jobSeekerProfile.minimumSalary': minSalary !== undefined && minSalary !== null ? String(minSalary).trim() : '',
-      'jobSeekerProfile.maximumSalary': maxSalary !== undefined && maxSalary !== null ? String(maxSalary).trim() : '',
-      'jobSeekerProfile.salaryCurrency': currency ? String(currency).trim() : 'PHP',
-      'jobSeekerProfile.salaryPrivacy': normalizedPrivacy,
-    };
-
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user._id,
-      { $set: payload },
-      { new: true, runValidators: true }
-    ).select('-password');
-
-    return res.status(200).json({
-      success: true,
-      message: 'Salary expectation updated successfully',
-      salaryExpectation: {
-        userId: req.user._id,
-        minSalary: updatedUser?.jobSeekerProfile?.minimumSalary || '',
-        maxSalary: updatedUser?.jobSeekerProfile?.maximumSalary || '',
-        currency: updatedUser?.jobSeekerProfile?.salaryCurrency || 'PHP',
-        privacy: updatedUser?.jobSeekerProfile?.salaryPrivacy || 'only_me',
-      },
-      user: updatedUser,
-    });
-  } catch (error) {
-    console.error('Error updating salary expectation:', error);
-    res.status(500).json({ success: false, message: 'Error updating salary expectation' });
-  }
-};
-
-// ---------------------------
-// WORK EXPERIENCE APIs
-// ---------------------------
-exports.getWorkExperiences = async (req, res) => {
-  try {
-    if (req.user.role !== 'jobseeker') {
-      return res.status(403).json({ success: false, message: 'Only job seekers can access work experiences.' });
-    }
-
-    const user = await User.findById(req.user._id).select('jobSeekerProfile.workExperiences');
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-
-    const items = Array.isArray(user?.jobSeekerProfile?.workExperiences)
-      ? sortWorkExperiences(user.jobSeekerProfile.workExperiences).map(normalizeWorkExperienceOutput)
-      : [];
-
-    return res.status(200).json({
-      success: true,
-      workExperiences: items,
-    });
-  } catch (error) {
-    console.error('Error fetching work experiences:', error);
-    res.status(500).json({ success: false, message: 'Error fetching work experiences' });
-  }
-};
-
-exports.createWorkExperience = async (req, res) => {
-  try {
-    if (req.user.role !== 'jobseeker') {
-      return res.status(403).json({ success: false, message: 'Only job seekers can create work experiences.' });
-    }
-
-    const { companyName, positionTitle, startDate, endDate, isPresent, description } = req.body;
-
-    if (!String(companyName || '').trim()) {
-      return res.status(400).json({ success: false, message: 'Company / Organization name is required.' });
-    }
-
-    if (!String(positionTitle || '').trim()) {
-      return res.status(400).json({ success: false, message: 'Position / Role title is required.' });
-    }
-
-    if (!startDate) {
-      return res.status(400).json({ success: false, message: 'Start date is required.' });
-    }
-
-    const start = new Date(startDate);
-    if (Number.isNaN(start.getTime())) {
-      return res.status(400).json({ success: false, message: 'Invalid start date.' });
-    }
-
-    let normalizedEndDate = null;
-    const present = Boolean(isPresent);
-
-    if (!present && endDate) {
-      normalizedEndDate = new Date(endDate);
-      if (Number.isNaN(normalizedEndDate.getTime())) {
-        return res.status(400).json({ success: false, message: 'Invalid end date.' });
-      }
-    }
-
-    if (!present && !normalizedEndDate) {
-      return res.status(400).json({ success: false, message: 'End date is required unless the role is marked as Present.' });
-    }
-
-    if (normalizedEndDate && start > normalizedEndDate) {
-      return res.status(400).json({ success: false, message: 'Start date cannot be later than end date.' });
-    }
-
-    const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-
-    if (!user.jobSeekerProfile) {
-      user.jobSeekerProfile = {};
-    }
-
-    if (!Array.isArray(user.jobSeekerProfile.workExperiences)) {
-      user.jobSeekerProfile.workExperiences = [];
-    }
-
-    const newEntry = {
-      companyName: String(companyName || '').trim(),
-      positionTitle: String(positionTitle || '').trim(),
-      startDate: start,
-      endDate: present ? null : normalizedEndDate,
-      isPresent: present,
-      description: String(description || '').trim(),
-    };
-
-    user.jobSeekerProfile.workExperiences.push(newEntry);
-    await user.save();
-
-    const createdEntry = user.jobSeekerProfile.workExperiences[user.jobSeekerProfile.workExperiences.length - 1];
-
-    return res.status(201).json({
-      success: true,
-      message: 'Work experience created successfully',
-      workExperience: normalizeWorkExperienceOutput(createdEntry),
-      workExperiences: sortWorkExperiences(user.jobSeekerProfile.workExperiences).map(normalizeWorkExperienceOutput),
-    });
-  } catch (error) {
-    console.error('Error creating work experience:', error);
-    res.status(500).json({ success: false, message: 'Error creating work experience' });
-  }
-};
-
-exports.updateWorkExperience = async (req, res) => {
-  try {
-    if (req.user.role !== 'jobseeker') {
-      return res.status(403).json({ success: false, message: 'Only job seekers can update work experiences.' });
-    }
-
-    const { workExperienceId } = req.params;
-    const { companyName, positionTitle, startDate, endDate, isPresent, description } = req.body;
-
-    if (!String(companyName || '').trim()) {
-      return res.status(400).json({ success: false, message: 'Company / Organization name is required.' });
-    }
-
-    if (!String(positionTitle || '').trim()) {
-      return res.status(400).json({ success: false, message: 'Position / Role title is required.' });
-    }
-
-    if (!startDate) {
-      return res.status(400).json({ success: false, message: 'Start date is required.' });
-    }
-
-    const start = new Date(startDate);
-    if (Number.isNaN(start.getTime())) {
-      return res.status(400).json({ success: false, message: 'Invalid start date.' });
-    }
-
-    let normalizedEndDate = null;
-    const present = Boolean(isPresent);
-
-    if (!present && endDate) {
-      normalizedEndDate = new Date(endDate);
-      if (Number.isNaN(normalizedEndDate.getTime())) {
-        return res.status(400).json({ success: false, message: 'Invalid end date.' });
-      }
-    }
-
-    if (!present && !normalizedEndDate) {
-      return res.status(400).json({ success: false, message: 'End date is required unless the role is marked as Present.' });
-    }
-
-    if (normalizedEndDate && start > normalizedEndDate) {
-      return res.status(400).json({ success: false, message: 'Start date cannot be later than end date.' });
-    }
-
-    const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-
-    const items = user?.jobSeekerProfile?.workExperiences || [];
-    const target = items.id(workExperienceId);
-
-    if (!target) {
-      return res.status(404).json({ success: false, message: 'Work experience not found.' });
-    }
-
-    target.companyName = String(companyName || '').trim();
-    target.positionTitle = String(positionTitle || '').trim();
-    target.startDate = start;
-    target.endDate = present ? null : normalizedEndDate;
-    target.isPresent = present;
-    target.description = String(description || '').trim();
-
-    await user.save();
-
-    return res.status(200).json({
-      success: true,
-      message: 'Work experience updated successfully',
-      workExperience: normalizeWorkExperienceOutput(target),
-      workExperiences: sortWorkExperiences(user.jobSeekerProfile.workExperiences).map(normalizeWorkExperienceOutput),
-    });
-  } catch (error) {
-    console.error('Error updating work experience:', error);
-    res.status(500).json({ success: false, message: 'Error updating work experience' });
-  }
-};
-
-exports.deleteWorkExperience = async (req, res) => {
-  try {
-    if (req.user.role !== 'jobseeker') {
-      return res.status(403).json({ success: false, message: 'Only job seekers can delete work experiences.' });
-    }
-
-    const { workExperienceId } = req.params;
-
-    const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-
-    const items = user?.jobSeekerProfile?.workExperiences || [];
-    const target = items.id(workExperienceId);
-
-    if (!target) {
-      return res.status(404).json({ success: false, message: 'Work experience not found.' });
-    }
-
-    target.deleteOne();
-    await user.save();
-
-    return res.status(200).json({
-      success: true,
-      message: 'Work experience deleted successfully',
-      workExperiences: sortWorkExperiences(user.jobSeekerProfile.workExperiences).map(normalizeWorkExperienceOutput),
-    });
-  } catch (error) {
-    console.error('Error deleting work experience:', error);
-    res.status(500).json({ success: false, message: 'Error deleting work experience' });
-  }
-};
-
-// ---------------------------
-// UPLOAD RESUME
-// ---------------------------
-exports.uploadResume = async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({ success: false, message: 'Please upload a resume file' });
-
-    const resumeUrl = `/uploads/resumes/${req.file.filename}`;
-    const fullResumeUrl = getUploadedFileUrl(req, req.file, resumeUrl);
-
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user._id,
-      { $set: { 'jobSeekerProfile.resumeUrl': fullResumeUrl } },
-      { new: true }
-    ).select('-password');
-
-    res.status(200).json({ success: true, message: 'Resume uploaded successfully', resumeUrl: fullResumeUrl, user: updatedUser });
-  } catch (error) {
-    console.error('Error uploading resume:', error);
-    res.status(500).json({ success: false, message: error.message || 'Error uploading resume' });
-  }
-};
-
-// ---------------------------
-// UPLOAD PROFILE IMAGE
-// ---------------------------
-exports.uploadProfileImage = async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({ success: false, message: 'Please upload an image file' });
-
-    const imageUrl = `/uploads/profile-images/${req.file.filename}`;
-    const fullImageUrl = getUploadedFileUrl(req, req.file, imageUrl);
-
-    const updatedUser = await User.findByIdAndUpdate(req.user._id, { $set: { profileImage: fullImageUrl } }, { new: true }).select('-password');
-
-    res.status(200).json({ success: true, message: 'Profile image uploaded successfully', profileImage: fullImageUrl, user: updatedUser });
-  } catch (error) {
-    console.error('Error uploading profile image:', error);
-    res.status(500).json({ success: false, message: error.message || 'Error uploading profile image' });
-  }
-};
-
-// ---------------------------
-// GET CURRENT USER
-// ---------------------------
-exports.getCurrentUser = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id).select('-password');
-
-    if (user?.role === 'jobseeker' && isApprovedJobseekerAccount(user)) {
-      if (!user.jobSeekerProfile) user.jobSeekerProfile = {};
-      if (!user.jobSeekerProfile.verificationDocs) user.jobSeekerProfile.verificationDocs = {};
-      const verificationDocs = user.jobSeekerProfile.verificationDocs;
-      let repairedRequiredCredentials = false;
-
-      REQUIRED_ALUMNI_DOC_TYPES.forEach((requiredType) => {
-        const requiredDocument = verificationDocs[requiredType];
-        if (!requiredDocument?.url || verificationDocs?.resubmitRequest?.docType === requiredType) return;
-        if (String(requiredDocument.status || '').toLowerCase() !== 'approved' || requiredDocument.checked !== true) {
-          requiredDocument.status = 'approved';
-          requiredDocument.checked = true;
-          repairedRequiredCredentials = true;
+      return res.status(200).json({
+        success: true,
+        message: `Jobseeker approved. Approval email sent to ${jobseeker.email}`,
+        jobseeker: {
+          _id: jobseeker._id,
+          username: jobseeker.username,
+          fullName: `${jobseeker.firstName || ''} ${jobseeker.lastName || ''}`.trim(),
+          verificationStatus: overallStatus,
+          adminRemarks: jobseeker.jobSeekerProfile.verificationDocs.adminRemarks || '',
+          verifiedBy: jobseeker.jobSeekerProfile.verificationDocs.verifiedBy,
+          verifiedAt: jobseeker.jobSeekerProfile.verificationDocs.verifiedAt,
+          rejectionReasons: jobseeker.jobSeekerProfile.verificationDocs.rejectionReasons || [],
+          rejectionMessage: jobseeker.jobSeekerProfile.verificationDocs.rejectionMessage || '',
+          rejectedAt: jobseeker.jobSeekerProfile.verificationDocs.rejectedAt || null,
+          mustChangePassword: jobseeker.mustChangePassword,
         }
       });
+    }
 
-      if (repairedRequiredCredentials || user.isVerified !== true) {
-        user.isVerified = true;
-        user.jobSeekerProfile.verificationStatus = 'verified';
-        await user.save();
-      }
+    await jobseeker.save();
+
+    if (overallStatus === 'rejected') {
+      sendVerificationRejectedEmail({
+        to: jobseeker.email,
+        fullName: jobseeker.fullName || jobseeker.email,
+        reasons: jobseeker.jobSeekerProfile.verificationDocs.rejectionReasons || [],
+        message: jobseeker.jobSeekerProfile.verificationDocs.rejectionMessage || '',
+      }).catch((emailError) => {
+        console.error('Failed to send jobseeker rejection email:', emailError);
+      });
     }
 
     res.status(200).json({
       success: true,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        firstName: user.firstName,
-        middleName: user.middleName,
-        lastName: user.lastName,
-        extensionName: user.extensionName,
-        profileImage: user.profileImage,
-        isVerified:
-          user.isVerified === true ||
-          String(user.jobSeekerProfile?.verificationStatus || '').toLowerCase() === 'verified' ||
-          String(user.jobSeekerProfile?.verificationDocs?.overallStatus || '').toLowerCase() === 'verified' ||
-          (user.role === 'jobseeker' && String(user.status || '').toLowerCase() === 'active' && Boolean(user.username)),
-        isActive: user.isActive,
-        status: user.status,
-        lastLogin: user.lastLogin,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        mustChangePassword: Boolean(user.mustChangePassword),
-        notificationPreferences: user.notificationPreferences,
-        settingsVerification: user.settingsVerification,
-        jobSeekerProfile: user.role === 'jobseeker' ? user.jobSeekerProfile : undefined,
-        employerProfile: user.role === 'employer' ? user.employerProfile : undefined,
-      },
+      message: `Jobseeker verification status updated to ${overallStatus}`,
+      jobseeker: {
+        _id: jobseeker._id,
+        username: jobseeker.username,
+        fullName: `${jobseeker.firstName || ''} ${jobseeker.lastName || ''}`.trim(),
+        verificationStatus: overallStatus,
+        adminRemarks: jobseeker.jobSeekerProfile.verificationDocs.adminRemarks || '',
+        verifiedBy: jobseeker.jobSeekerProfile.verificationDocs.verifiedBy,
+        verifiedAt: jobseeker.jobSeekerProfile.verificationDocs.verifiedAt,
+        rejectionReasons: jobseeker.jobSeekerProfile.verificationDocs.rejectionReasons || [],
+        rejectionMessage: jobseeker.jobSeekerProfile.verificationDocs.rejectionMessage || '',
+        rejectedAt: jobseeker.jobSeekerProfile.verificationDocs.rejectedAt || null,
+        mustChangePassword: jobseeker.mustChangePassword,
+      }
     });
   } catch (error) {
-    console.error('Error fetching user data:', error);
-    res.status(500).json({ success: false, message: 'Error fetching user data' });
+    console.error('Error updating jobseeker verification status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating verification status'
+    });
   }
 };
 
-// ---------------------------
-// Alumni verification functions + employer functions
-// ---------------------------
-
-exports.uploadAlumniVerificationDoc = async (req, res) => {
+// HOLD jobseeker verification and send resubmit email
+exports.holdJobseekerVerification = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const { docType, reasonMessage } = req.body;
 
-    if (req.user.role !== 'jobseeker') {
-      return res.status(403).json({ success: false, message: 'Only job seekers can upload verification documents' });
+    if (!JOBSEEKER_DOC_TYPES.includes(String(docType || ''))) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid document type selected for resubmission'
+      });
     }
 
-    const docType = String(req.params.docType || '').trim();
-    const allowed = ['cv', 'tor', 'diploma', 'sss', 'philhealth', 'pagibig', 'tin', 'validId'];
-    if (!allowed.includes(docType)) return res.status(400).json({ success: false, message: 'Invalid document type.' });
+    if (!String(reasonMessage || '').trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reason/message is required'
+      });
+    }
 
-    if (!req.file) return res.status(400).json({ success: false, message: 'Please upload a file' });
+    const jobseeker = await User.findById(req.params.id);
+    if (!jobseeker || jobseeker.role !== 'jobseeker') {
+      return res.status(404).json({
+        success: false,
+        message: 'Jobseeker not found'
+      });
+    }
 
-    const docUrl = `/uploads/verification/alumni/${docType}/${req.file.filename}`;
-    const fullDocUrl = getUploadedFileUrl(req, req.file, docUrl);
+    if (!jobseeker.jobSeekerProfile) jobseeker.jobSeekerProfile = {};
+    if (!jobseeker.jobSeekerProfile.verificationDocs) {
+      jobseeker.jobSeekerProfile.verificationDocs = {};
+    }
 
-    const user = await User.findById(userId);
-    const currentProfile = user.jobSeekerProfile || {};
-    const currentDocs = currentProfile.verificationDocs || {};
+    const targetDocument = jobseeker.jobSeekerProfile.verificationDocs[docType];
+    if (!targetDocument?.url) {
+      return res.status(400).json({ success: false, message: 'Only submitted credentials can be requested for resubmission.' });
+    }
+    if (!['pending', 'submitted', 'hold'].includes(String(targetDocument.status || '').toLowerCase())) {
+      return res.status(400).json({ success: false, message: 'Only pending credentials can be requested for resubmission.' });
+    }
 
+    const wasAccountVerified = isApprovedJobseekerAccount(jobseeker);
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = User.hashToken(rawToken);
     const now = new Date();
-    currentDocs[docType] = {
-      url: fullDocUrl,
-      status: 'pending',
-      uploadedAt: now,
-      filename: req.file.originalname,
-      fileSize: req.file.size,
-      mimeType: req.file.mimetype,
+    const expiresAt = new Date(now.getTime() + 1000 * 60 * 60 * 48);
+
+    jobseeker.jobSeekerProfile.verificationDocs.overallStatus = 'hold';
+    jobseeker.jobSeekerProfile.verificationDocs.adminRemarks = String(reasonMessage).trim();
+    if (!wasAccountVerified) {
+      jobseeker.jobSeekerProfile.verificationDocs.verifiedBy = null;
+      jobseeker.jobSeekerProfile.verificationDocs.verifiedAt = null;
+    }
+    jobseeker.jobSeekerProfile.verificationDocs.rejectionReasons = [];
+    jobseeker.jobSeekerProfile.verificationDocs.rejectionMessage = '';
+    jobseeker.jobSeekerProfile.verificationDocs.rejectedAt = null;
+
+    if (!jobseeker.jobSeekerProfile.verificationDocs[docType]) {
+      jobseeker.jobSeekerProfile.verificationDocs[docType] = {};
+    }
+
+    jobseeker.jobSeekerProfile.verificationDocs[docType].status = 'hold';
+    jobseeker.jobSeekerProfile.verificationDocs[docType].checked = false;
+    jobseeker.jobSeekerProfile.verificationDocs[docType].checkedAt = null;
+    jobseeker.jobSeekerProfile.verificationDocs[docType].checkedBy = null;
+    jobseeker.jobSeekerProfile.verificationDocs.resubmitRequest = {
+      tokenHash,
+      docType,
+      reasonMessage: String(reasonMessage).trim(),
+      requestedAt: now,
+      expiresAt,
+      usedAt: null,
+      requestedBy: req.user?._id || null,
     };
+
+    jobseeker.jobSeekerProfile.verificationStatus = wasAccountVerified ? 'verified' : 'hold';
+
+    await jobseeker.save();
+
+    await createJobseekerCredentialNotification({
+      user: jobseeker,
+      docType,
+      action: 'action_needed',
+      feedback: String(reasonMessage).trim(),
+    });
+
+    const frontendUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://agapayy.onrender.com';
+    const resubmitUrl = `${frontendUrl}/resubmit-document?token=${rawToken}`;
+
+    sendResubmitDocumentEmail({
+      to: jobseeker.email,
+      fullName: jobseeker.fullName || jobseeker.email,
+      docLabel: JOBSEEKER_DOC_LABELS[docType] || docType,
+      reasonMessage: String(reasonMessage).trim(),
+      resubmitUrl,
+    }).catch((emailError) => {
+      console.error('Failed to send jobseeker resubmit email:', emailError);
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Jobseeker placed on HOLD and resubmit email sent successfully.',
+      jobseeker: {
+        _id: jobseeker._id,
+        email: jobseeker.email,
+        verificationStatus: jobseeker.jobSeekerProfile.verificationStatus,
+        overallStatus: jobseeker.jobSeekerProfile.verificationDocs.overallStatus,
+        adminRemarks: jobseeker.jobSeekerProfile.verificationDocs.adminRemarks || '',
+        resubmitRequest: {
+          docType,
+          reasonMessage: String(reasonMessage).trim(),
+          requestedAt: now,
+          expiresAt,
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error placing jobseeker on hold:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error placing jobseeker on HOLD'
+    });
+  }
+};
+
+// GET jobseeker verification document URLs
+exports.getJobseekerVerificationDocUrls = async (req, res) => {
+  try {
+    const jobseeker = await User.findById(req.params.id).select('-password');
+
+    if (!jobseeker || jobseeker.role !== 'jobseeker') {
+      return res.status(404).json({
+        success: false,
+        message: 'Jobseeker not found'
+      });
+    }
+
+    const verificationDocs = jobseeker.jobSeekerProfile?.verificationDocs || {};
+    const docTypes = ['cv', 'tor', 'diploma', 'sss', 'philhealth', 'pagibig', 'tin', 'validId'];
+
+    const documents = {};
+    docTypes.forEach((type) => {
+      documents[type] = verificationDocs[type]?.url || null;
+    });
+
+    res.status(200).json({
+      success: true,
+      documents
+    });
+  } catch (error) {
+    console.error('Error fetching jobseeker document URLs:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching document URLs'
+    });
+  }
+};
+
+const markVerificationDocumentChecked = async (req, res, role) => {
+  try {
+    const allowedTypes = role === 'employer' ? EMPLOYER_DOC_TYPES : JOBSEEKER_DOC_TYPES;
+    const docType = String(req.params.docType || '');
+    if (!allowedTypes.includes(docType)) {
+      return res.status(400).json({ success: false, message: 'Invalid document type.' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user || user.role !== role) {
+      return res.status(404).json({ success: false, message: `${role === 'employer' ? 'Employer' : 'Jobseeker'} not found.` });
+    }
+
+    const docs = role === 'employer'
+      ? user.employerProfile?.verificationDocs
+      : user.jobSeekerProfile?.verificationDocs;
+    const document = docs?.[docType];
+    if (!document?.url) {
+      return res.status(400).json({ success: false, message: 'This document has not been submitted.' });
+    }
+
+    const wasAccountVerified = role === 'jobseeker'
+      ? isApprovedJobseekerAccount(user)
+      : user.isVerified === true;
+    document.status = 'approved';
+    document.checked = true;
+    document.checkedAt = new Date();
+    document.checkedBy = req.user?._id || req.userId || null;
+
+    if (role === 'jobseeker' && wasAccountVerified) {
+      const nextStatus = getJobseekerCredentialReviewStatus(docs);
+      docs.overallStatus = nextStatus;
+      user.jobSeekerProfile.verificationStatus = 'verified';
+      user.isVerified = true;
+    }
+    await user.save();
+
+    if (role === 'jobseeker' && wasAccountVerified) {
+      await createJobseekerCredentialNotification({ user, docType, action: 'approved' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: role === 'jobseeker'
+        ? `${JOBSEEKER_DOC_LABELS[docType] || 'Credential'} approved successfully.`
+        : 'Document marked as checked.',
+      document: { status: document.status, checked: true, checkedAt: document.checkedAt, checkedBy: document.checkedBy },
+    });
+  } catch (error) {
+    console.error('Error checking verification document:', error);
+    return res.status(500).json({ success: false, message: 'Unable to mark document as checked.' });
+  }
+};
+
+exports.checkJobseekerVerificationDocument = (req, res) => markVerificationDocumentChecked(req, res, 'jobseeker');
+exports.checkEmployerVerificationDocument = (req, res) => markVerificationDocumentChecked(req, res, 'employer');
+
+const restoreVerification = async (req, res, role) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user || user.role !== role) {
+      return res.status(404).json({ success: false, message: `${role === 'employer' ? 'Employer' : 'Jobseeker'} not found.` });
+    }
+
+    const docs = role === 'employer'
+      ? user.employerProfile?.verificationDocs
+      : user.jobSeekerProfile?.verificationDocs;
+    if (!docs || docs.overallStatus !== 'rejected') {
+      return res.status(400).json({ success: false, message: 'Only declined verification records can be restored.' });
+    }
+
+    docs.overallStatus = 'pending';
+    docs.rejectionReasons = [];
+    docs.rejectionMessage = '';
+    docs.rejectedAt = null;
+    if (role === 'employer') docs.remarks = '';
+    else {
+      docs.adminRemarks = '';
+      user.jobSeekerProfile.verificationStatus = 'pending';
+    }
+    await user.save();
+
+    sendVerificationRestoredEmail({
+      to: user.email,
+      fullName: role === 'employer'
+        ? user.employerProfile?.companyName || user.fullName || user.email
+        : user.fullName || user.email,
+      role,
+    }).catch((emailError) => console.error('Failed to send restoration email:', emailError));
+
+    return res.status(200).json({
+      success: true,
+      message: `${role === 'employer' ? 'Employer' : 'Jobseeker'} restored to pending verification.`,
+    });
+  } catch (error) {
+    console.error('Error restoring verification:', error);
+    return res.status(500).json({ success: false, message: 'Unable to restore verification.' });
+  }
+};
+
+exports.restoreJobseekerVerification = (req, res) => restoreVerification(req, res, 'jobseeker');
+exports.restoreEmployerVerification = (req, res) => restoreVerification(req, res, 'employer');
+
+exports.downloadUserVerificationDocument = async (req, res) => streamVerificationDocument(req, res, null);
+exports.requireAdminPasswordForCredential = async (req, res, next) => {
+  try {
+    const password = String(req.headers['x-admin-password'] || '');
+
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password is required.',
+      });
+    }
+
+    const admin = await User.findById(req.userId).select('password role email');
+
+    if (!admin || admin.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access is required.',
+      });
+    }
+
+    let isPasswordValid = false;
+
+    if (admin.password) {
+      isPasswordValid = await bcrypt.compare(password, admin.password);
+    }
+
+    const defaultAdminEmail = String(process.env.DEFAULT_ADMIN_EMAIL || '')
+      .trim()
+      .toLowerCase();
+    const defaultAdminPassword = String(process.env.DEFAULT_ADMIN_PASSWORD || '');
+
+    const isDefaultAdmin =
+      defaultAdminEmail &&
+      String(admin.email || '').trim().toLowerCase() === defaultAdminEmail;
 
     if (
-      currentDocs?.resubmitRequest &&
-      String(currentDocs.resubmitRequest.docType || '') === docType &&
-      !currentDocs.resubmitRequest.usedAt
+      !isPasswordValid &&
+      isDefaultAdmin &&
+      defaultAdminPassword &&
+      password === defaultAdminPassword
     ) {
-      currentDocs.resubmitRequest.usedAt = now;
-      currentDocs.adminRemarks = '';
-      currentDocs.overallStatus = 'pending';
+      isPasswordValid = true;
+
+      const salt = await bcrypt.genSalt(10);
+      admin.password = await bcrypt.hash(defaultAdminPassword, salt);
+      await admin.save();
     }
 
-    const alreadyVerified =
-      isApprovedJobseekerAccount(user);
-
-    if (alreadyVerified) {
-      REQUIRED_ALUMNI_DOC_TYPES.forEach((requiredType) => {
-        const requiredDocument = currentDocs[requiredType];
-        if (!requiredDocument?.url || currentDocs?.resubmitRequest?.docType === requiredType) return;
-        requiredDocument.status = 'approved';
-        requiredDocument.checked = true;
-      });
-    }
-
-    const overallStatus = getAlumniOverallStatus(currentDocs, false);
-
-    currentDocs.overallStatus = overallStatus;
-
-    const updateFields = {
-      'jobSeekerProfile.verificationDocs': currentDocs,
-      'jobSeekerProfile.verificationStatus': alreadyVerified ? 'verified' : overallStatus,
-    };
-
-    if (alreadyVerified || overallStatus === 'verified') {
-      updateFields.isVerified = true;
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { $set: updateFields },
-      { new: true }
-    ).select('-password');
-
-    if (alreadyVerified) {
-      await createAdminResubmissionNotifications({
-        subjectUser: updatedUser,
-        accountType: 'jobseeker',
-        docType,
-        docLabel: ALUMNI_DOC_LABELS[docType],
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'Verification document uploaded successfully',
-      docType: docType.toUpperCase(),
-      url: fullDocUrl,
-      status: 'pending',
-      user: updatedUser,
-    });
-  } catch (error) {
-    console.error('Error uploading alumni verification document:', error);
-    res.status(500).json({ success: false, message: error.message || 'Error uploading verification document' });
-  }
-};
-
-exports.deleteAlumniVerificationDoc = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const docType = req.params.docType;
-
-    if (req.user.role !== 'jobseeker') return res.status(403).json({ success: false, message: 'Only job seekers can delete verification documents' });
-
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-
-    const updatePath = `jobSeekerProfile.verificationDocs.${docType}`;
-
-    const updatedUser = await User.findByIdAndUpdate(userId, { $unset: { [updatePath]: 1 } }, { new: true }).select('-password');
-
-    const currentDocs = updatedUser.jobSeekerProfile?.verificationDocs || {};
-    const overallStatus = getAlumniOverallStatus(currentDocs, false);
-
-    const finalUser = await User.findByIdAndUpdate(
-      userId,
-      {
-        $set: {
-          'jobSeekerProfile.verificationDocs.overallStatus': overallStatus,
-          'jobSeekerProfile.verificationStatus': isApprovedJobseekerAccount(updatedUser) ? 'verified' : overallStatus,
-        },
-      },
-      { new: true }
-    ).select('-password');
-
-    res.status(200).json({ success: true, message: 'Document deleted successfully', docType, user: finalUser });
-  } catch (error) {
-    console.error('Error deleting verification document:', error);
-    res.status(500).json({ success: false, message: error.message || 'Error deleting document' });
-  }
-};
-
-
-const CREDENTIAL_PREVIEW_TTL_MS = 5 * 60 * 1000;
-const credentialPreviewStore = new Map();
-
-const clearExpiredCredentialPreviews = () => {
-  const now = Date.now();
-
-  for (const [token, item] of credentialPreviewStore.entries()) {
-    if (!item || item.expiresAt <= now) credentialPreviewStore.delete(token);
-  }
-};
-
-exports.createAlumniCredentialPreview = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const docType = String(req.params.docType || '').trim();
-
-    if (req.user.role !== 'jobseeker') {
-      return res.status(403).json({ success: false, message: 'Only job seekers can preview verification documents.' });
-    }
-
-    if (!ALUMNI_VERIFICATION_DOWNLOAD_DOC_TYPES.includes(docType)) {
-      return res.status(400).json({ success: false, message: 'Invalid document type.' });
-    }
-
-    const { password } = req.body || {};
-    if (!password || !String(password).trim()) {
-      return res.status(400).json({ success: false, message: 'Please enter your password.' });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-
-    const isMatch = await bcrypt.compare(String(password), user.password);
-    if (!isMatch) {
-      return res.status(400).json({ success: false, message: 'Incorrect password. Please try again.' });
-    }
-
-    const doc = user.jobSeekerProfile?.verificationDocs?.[docType] || {};
-    const rawUrl = String(doc.url || '').trim();
-
-    if (!rawUrl) {
-      return res.status(404).json({ success: false, message: 'Document not found.' });
-    }
-
-    const fallbackFileName = `${ALUMNI_DOC_LABELS[docType] || docType}.pdf`;
-    const fileName = sanitizeDownloadFileName(doc.filename || fallbackFileName, fallbackFileName);
-    const sourceUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : makePublicUrl(req, rawUrl);
-    const candidates = buildCredentialDownloadCandidates({ rawUrl: sourceUrl, fileName, disposition: 'inline' });
-
-    let downloaded = null;
-    let lastError = null;
-
-    for (const candidate of candidates) {
-      try {
-        downloaded = await fetchUrlBuffer(candidate);
-        if (downloaded?.buffer?.length) break;
-      } catch (error) {
-        lastError = error;
-      }
-    }
-
-    if (!downloaded?.buffer?.length) {
-      console.error('Credential preview preparation failed:', lastError);
-      return res.status(502).json({ success: false, message: 'Unable to prepare credential preview.' });
-    }
-
-    clearExpiredCredentialPreviews();
-
-    const previewToken = crypto.randomBytes(32).toString('hex');
-    const contentType = downloaded.contentType || doc.mimeType || getContentTypeFromFileName(fileName);
-
-    credentialPreviewStore.set(previewToken, {
-      buffer: downloaded.buffer,
-      contentType,
-      fileName,
-      userId: String(userId),
-      expiresAt: Date.now() + CREDENTIAL_PREVIEW_TTL_MS,
-    });
-
-    const apiBase = `${req.protocol}://${req.get('host')}${req.baseUrl}`;
-    const previewUrl = `${apiBase}/credential/preview/${previewToken}/${encodeURIComponent(fileName)}`;
-
-    return res.status(201).json({
-      success: true,
-      previewUrl,
-      fileName,
-      expiresInMs: CREDENTIAL_PREVIEW_TTL_MS,
-    });
-  } catch (error) {
-    console.error('Error creating credential preview:', error);
-    return res.status(500).json({ success: false, message: error.message || 'Unable to prepare credential preview.' });
-  }
-};
-
-exports.viewAlumniCredentialPreview = async (req, res) => {
-  try {
-    clearExpiredCredentialPreviews();
-
-    const preview = credentialPreviewStore.get(req.params.previewToken);
-    if (!preview || preview.expiresAt <= Date.now()) {
-      credentialPreviewStore.delete(req.params.previewToken);
-      return res.status(404).send('This credential preview has expired. Please prepare it again.');
-    }
-
-    const fileName = sanitizeDownloadFileName(preview.fileName, 'credential');
-    res.set({
-      'Content-Type': preview.contentType || getContentTypeFromFileName(fileName),
-      'Content-Disposition': `inline; filename="${fileName.replace(/"/g, '')}"`,
-      'Content-Length': preview.buffer.length,
-      'Cache-Control': 'private, no-store, max-age=0',
-      'X-Content-Type-Options': 'nosniff',
-    });
-
-    return res.end(preview.buffer);
-  } catch (error) {
-    console.error('Error opening credential preview:', error);
-    return res.status(500).send('Unable to open credential preview.');
-  }
-};
-
-exports.downloadAlumniVerificationDoc = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const docType = String(req.params.docType || '').trim();
-    const disposition = String(req.query.disposition || 'attachment').toLowerCase() === 'inline' ? 'inline' : 'attachment';
-
-    if (req.user.role !== 'jobseeker') {
-      return res.status(403).json({ success: false, message: 'Only job seekers can download verification documents' });
-    }
-
-    if (!ALUMNI_VERIFICATION_DOWNLOAD_DOC_TYPES.includes(docType)) {
-      return res.status(400).json({ success: false, message: 'Invalid document type.' });
-    }
-
-    const user = await User.findById(userId).select('jobSeekerProfile');
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-
-    const doc = user.jobSeekerProfile?.verificationDocs?.[docType] || {};
-    const rawUrl = String(doc.url || '').trim();
-
-    if (!rawUrl) {
-      return res.status(404).json({ success: false, message: 'Document not found.' });
-    }
-
-    const fallbackFileName = `${ALUMNI_DOC_LABELS[docType] || docType}.pdf`;
-    const fileName = sanitizeDownloadFileName(doc.filename || fallbackFileName, fallbackFileName);
-    const sourceUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : makePublicUrl(req, rawUrl);
-    const candidates = buildCredentialDownloadCandidates({ rawUrl: sourceUrl, fileName, disposition });
-
-    let downloaded = null;
-    let lastError = null;
-
-    for (const candidate of candidates) {
-      try {
-        downloaded = await fetchUrlBuffer(candidate);
-        if (downloaded?.buffer?.length) break;
-      } catch (error) {
-        lastError = error;
-      }
-    }
-
-    if (!downloaded?.buffer?.length) {
-      console.error('Credential download failed:', lastError);
-      return res.status(502).json({ success: false, message: 'Unable to download credential file from storage.' });
-    }
-
-    const contentType = downloaded.contentType || doc.mimeType || getContentTypeFromFileName(fileName);
-
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Length', downloaded.buffer.length);
-    res.setHeader('Content-Disposition', `${disposition}; filename="${fileName.replace(/"/g, '')}"`);
-    res.setHeader('Cache-Control', 'private, no-store, max-age=0');
-
-    return res.send(downloaded.buffer);
-  } catch (error) {
-    console.error('Error downloading alumni verification document:', error);
-    return res.status(500).json({ success: false, message: error.message || 'Error downloading verification document' });
-  }
-};
-
-exports.getAlumniVerificationStatus = async (req, res) => {
-  try {
-    const userId = req.user._id;
-
-    if (req.user.role !== 'jobseeker') return res.status(403).json({ success: false, message: 'Only job seekers can view verification status' });
-
-    const user = await User.findById(userId).select('jobSeekerProfile');
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-
-    const verificationDocs = user.jobSeekerProfile?.verificationDocs || {};
-    const verificationStatus = user.jobSeekerProfile?.verificationStatus || 'not_submitted';
-
-    const totalDocuments = REQUIRED_ALUMNI_DOC_TYPES.length;
-    const submittedDocuments = REQUIRED_ALUMNI_DOC_TYPES.filter((docType) => {
-      const status = String(verificationDocs?.[docType]?.status || 'not_submitted');
-      return status !== 'not_submitted';
-    }).length;
-
-    res.status(200).json({ success: true, verificationDocs, verificationStatus, overallProgress: { submitted: submittedDocuments, total: totalDocuments } });
-  } catch (error) {
-    console.error('Error fetching verification status:', error);
-    res.status(500).json({ success: false, message: 'Error fetching verification status' });
-  }
-};
-
-exports.updateCompanyProfile = async (req, res) => {
-  try {
-    const userId = req.user._id;
-
-    if (req.user.role !== 'employer') {
-      return res.status(403).json({ success: false, message: 'Only employers can update company profile' });
-    }
-
-    const updateData = req.body || {};
-
-    const currentUser = await User.findById(userId);
-    if (!currentUser) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-
-    const currentProfile = currentUser.employerProfile || {};
-
-    const pickText = (incoming, fallback = '') => {
-      if (incoming === undefined || incoming === null) return fallback;
-      return String(incoming).trim();
-    };
-
-    const nextGallery = normalizeGalleryImagesInput(updateData.galleryImages, currentProfile.galleryImages || []);
-    const newGalleryFiles = Array.isArray(req.files?.galleryImagesFiles) ? req.files.galleryImagesFiles : [];
-    const newGalleryItems = newGalleryFiles.map((file) => buildEmployerGalleryImageMeta(req, file)).filter(Boolean);
-
-    const employerProfileUpdate = {
-      companyName: pickText(updateData.companyName, currentProfile.companyName),
-      companyWebsiteUrl: pickText(updateData.companyWebsiteUrl, currentProfile.companyWebsiteUrl),
-      businessEmail: normalizeEmail(pickText(updateData.businessEmail, currentProfile.businessEmail)),
-      mobileNumber: pickText(updateData.mobileNumber, currentProfile.mobileNumber),
-      regionCity: pickText(updateData.regionCity, currentProfile.regionCity),
-      industry: pickText(updateData.industry, currentProfile.industry),
-      position: pickText(updateData.position, currentProfile.position),
-
-      companyAddress: pickText(updateData.companyAddress, currentProfile.companyAddress),
-      companyDescription: pickText(updateData.companyDescription, currentProfile.companyDescription),
-      facebookUrl: pickText(updateData.facebookUrl, currentProfile.facebookUrl),
-      instagramUrl: pickText(updateData.instagramUrl, currentProfile.instagramUrl),
-      linkedinUrl: pickText(updateData.linkedinUrl, currentProfile.linkedinUrl),
-      xUrl: pickText(updateData.xUrl, currentProfile.xUrl),
-
-      coverPhoto: currentProfile.coverPhoto || '',
-      galleryImages: [...nextGallery, ...newGalleryItems],
-      companyLogo: currentProfile.companyLogo || '',
-
-      profileVisible:
-        updateData.profileVisible !== undefined
-          ? boolFromBody(updateData.profileVisible)
-          : currentProfile.profileVisible !== false,
-
-      verificationDocs: currentProfile.verificationDocs || {},
-      reviews: Array.isArray(currentProfile.reviews) ? currentProfile.reviews : [],
-    };
-
-    if (req.files?.companyLogo?.[0]) {
-      const logoUrl = `/uploads/logos/${req.files.companyLogo[0].filename}`;
-      employerProfileUpdate.companyLogo = getUploadedFileUrl(req, req.files.companyLogo[0], logoUrl);
-    }
-
-    if (req.files?.coverPhotoFile?.[0]) {
-      employerProfileUpdate.coverPhoto = buildEmployerCoverPhotoMeta(req, req.files.coverPhotoFile[0]);
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { $set: { employerProfile: employerProfileUpdate } },
-      { new: true, runValidators: true }
-    ).select('-password');
-
-    return res.status(200).json({
-      success: true,
-      message: 'Company profile updated successfully',
-      user: updatedUser,
-    });
-  } catch (error) {
-    console.error('Error updating company profile:', error);
-    return res.status(500).json({ success: false, message: 'Error updating company profile' });
-  }
-};
-
-exports.uploadEmployerVerificationDoc = async (req, res) => {
-  try {
-    const userId = req.user._id;
-
-    if (req.user.role !== 'employer') return res.status(403).json({ success: false, message: 'Only employers can upload verification documents' });
-
-    const docType = String(req.params.docType || '').trim();
-    const allowed = ['secRegistration', 'birRegistration', 'dtiRegistration', 'cityPermit', 'businessPermit'];
-    if (!allowed.includes(docType)) {
-      return res.status(400).json({ success: false, message: 'Invalid document type. Allowed: SEC, BIR, DTI, City Permit' });
-    }
-
-    if (!req.file) return res.status(400).json({ success: false, message: 'Please upload a file' });
-
-    let folder = 'sec';
-    if (docType === 'birRegistration') folder = 'bir';
-    else if (docType === 'dtiRegistration') folder = 'dti';
-    else if (docType === 'cityPermit') folder = 'city';
-    else if (docType === 'businessPermit') folder = 'business';
-
-    const docUrl = `/uploads/verification/employer/${folder}/${req.file.filename}`;
-    const fullDocUrl = getUploadedFileUrl(req, req.file, docUrl);
-
-    const user = await User.findById(userId);
-    const currentProfile = user.employerProfile || {};
-    const currentDocs = currentProfile.verificationDocs || {};
-
-    const now = new Date();
-    currentDocs[docType] = {
-      url: fullDocUrl,
-      status: 'pending',
-      uploadedAt: now,
-      filename: req.file.originalname,
-      fileSize: req.file.size,
-      mimeType: req.file.mimetype,
-    };
-
-    const statuses = allowed.map((type) => String(currentDocs[type]?.status || 'not_submitted'));
-    const anyPending = statuses.some((s) => ['pending', 'submitted'].includes(s));
-    const allApproved = statuses.every((s) => s === 'approved');
-    const anyRejected = statuses.some((s) => s === 'rejected');
-
-    currentDocs.overallStatus = allApproved ? 'verified' : anyRejected ? 'rejected' : anyPending ? 'pending' : 'unverified';
-
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { $set: { 'employerProfile.verificationDocs': currentDocs } },
-      { new: true }
-    ).select('-password');
-
-    res.status(200).json({ success: true, message: 'Verification document uploaded successfully', docType, url: fullDocUrl, user: updatedUser });
-  } catch (error) {
-    console.error('Error uploading verification document:', error);
-    res.status(500).json({ success: false, message: error.message || 'Error uploading verification document' });
-  }
-};
-
-exports.getCompanyProfile = async (req, res) => {
-  try {
-    const userId = req.user._id;
-
-    if (req.user.role !== 'employer') return res.status(403).json({ success: false, message: 'Only employers can view company profile' });
-
-    const user = await User.findById(userId).select('-password');
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-
-    res.status(200).json({
-      success: true,
-      companyProfile: user.employerProfile || {},
-      user: { id: user._id, email: user.email, username: user.username },
-    });
-  } catch (error) {
-    console.error('Error fetching company profile:', error);
-    res.status(500).json({ success: false, message: 'Error fetching company profile' });
-  }
-};
-
-exports.changePassword = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const { currentPassword, newPassword } = req.body;
-
-    if (!currentPassword || !newPassword) return res.status(400).json({ success: false, message: 'Please provide current and new password' });
-
-    if (newPassword.length < 6) return res.status(400).json({ success: false, message: 'New password must be at least 6 characters long' });
-
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch) return res.status(400).json({ success: false, message: 'Current password is incorrect' });
-
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
-    user.mustChangePassword = false;
-    await user.save();
-
-    res.status(200).json({
-      success: true,
-      message: 'Password changed successfully',
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        firstName: user.firstName,
-        middleName: user.middleName,
-        lastName: user.lastName,
-        extensionName: user.extensionName,
-        profileImage: user.profileImage,
-        mustChangePassword: Boolean(user.mustChangePassword),
-        jobSeekerProfile: user.role === 'jobseeker' ? user.jobSeekerProfile : undefined,
-        employerProfile: user.role === 'employer' ? user.employerProfile : undefined,
-      }
-    });
-  } catch (error) {
-    console.error('Error changing password:', error);
-    res.status(500).json({ success: false, message: 'Error changing password' });
-  }
-};
-
-// ✅ NEW: FORCED TEMP PASSWORD CHANGE
-exports.changeTemporaryPassword = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const { currentPassword, newPassword, confirmNewPassword } = req.body;
-
-    if (!currentPassword || !String(currentPassword).trim()) {
-      return res.status(400).json({ success: false, message: 'Current password is required.' });
-    }
-
-    if (!newPassword || !String(newPassword).trim()) {
-      return res.status(400).json({ success: false, message: 'New password is required.' });
-    }
-
-    if (!confirmNewPassword || !String(confirmNewPassword).trim()) {
-      return res.status(400).json({ success: false, message: 'Confirm new password is required.' });
-    }
-
-    if (String(newPassword) !== String(confirmNewPassword)) {
-      return res.status(400).json({ success: false, message: 'Confirm password does not match.' });
-    }
-
-    if (!isStrongPassword(newPassword)) {
-      return res.status(400).json({
+    if (!isPasswordValid) {
+      return res.status(401).json({
         success: false,
-        message: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.',
+        message: 'Incorrect password.',
       });
     }
 
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+    return next();
+  } catch (error) {
+    console.error('Error verifying admin password for credential access:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to verify password.',
+    });
+  }
+};
 
-    const isMatch = await bcrypt.compare(String(currentPassword), user.password);
-    if (!isMatch) {
-      return res.status(400).json({ success: false, message: 'Current password is incorrect.' });
+exports.downloadJobseekerVerificationDocument = async (req, res) => streamVerificationDocument(req, res, 'jobseeker');
+exports.downloadEmployerVerificationDocument = async (req, res) => streamVerificationDocument(req, res, 'employer');
+
+// ==========================
+// ✅ ADMIN JOB OFFERS
+// ==========================
+const getAdminJobOfferStatus = (job) => {
+  const deadline = job?.applicationDeadline ? new Date(job.applicationDeadline) : null;
+  const isExpired = deadline && !Number.isNaN(deadline.getTime()) && deadline < new Date();
+
+  if (isExpired) return 'Expired';
+  if (job?.isActive === false || job?.isPublished === false || job?.status === 'draft') return 'Closed';
+  return 'Open';
+};
+
+const getAdminJobDateRange = (dateFilter) => {
+  const now = new Date();
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+
+  const filter = String(dateFilter || 'all').toLowerCase();
+  if (filter === 'today') return { $gte: start };
+  if (filter === '7days') {
+    start.setDate(start.getDate() - 6);
+    return { $gte: start };
+  }
+  if (filter === '30days') {
+    start.setDate(start.getDate() - 29);
+    return { $gte: start };
+  }
+  return null;
+};
+
+exports.getAdminJobOffers = async (req, res) => {
+  try {
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 4, 1), 100);
+    const search = String(req.query.search || '').trim();
+    const status = String(req.query.status || '').trim().toLowerCase();
+    const company = String(req.query.company || '').trim();
+    const industry = String(req.query.industry || '').trim();
+    const jobTitle = String(req.query.jobTitle || '').trim();
+    const dateRange = getAdminJobDateRange(req.query.date);
+
+    const baseQuery = {
+      isArchived: { $ne: true },
+      isPublished: true,
+    };
+
+    if (dateRange) baseQuery.createdAt = dateRange;
+
+    if (search) {
+      const regex = new RegExp(escapeRegex(search), 'i');
+      baseQuery.$or = [
+        { title: regex },
+        { companyName: regex },
+        { category: regex },
+        { location: regex },
+      ];
     }
 
-    const isSameAsCurrent = await bcrypt.compare(String(newPassword), user.password);
-    if (isSameAsCurrent) {
-      return res.status(400).json({ success: false, message: 'New password must be different from your current password.' });
-    }
+    if (company) baseQuery.companyName = { $regex: `^${escapeRegex(company)}$`, $options: 'i' };
+    if (industry) baseQuery.category = { $regex: `^${escapeRegex(industry)}$`, $options: 'i' };
+    if (jobTitle) baseQuery.title = { $regex: `^${escapeRegex(jobTitle)}$`, $options: 'i' };
 
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(String(newPassword), salt);
-    user.mustChangePassword = false;
-    await user.save();
+    const allJobs = await Job.find(baseQuery)
+      .populate('employer', 'employerProfile.companyLogo employerProfile.industry employerProfile.companyName')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const allJobIds = allJobs.map((job) => job._id);
+    const applicationCounts = await Application.aggregate([
+      { $match: { job: { $in: allJobIds } } },
+      { $group: { _id: '$job', count: { $sum: 1 } } },
+    ]);
+
+    const countMap = applicationCounts.reduce((acc, row) => {
+      acc[String(row._id)] = row.count;
+      return acc;
+    }, {});
+
+    const transformedJobs = allJobs.map((job) => {
+      const employerProfile = job?.employer?.employerProfile || {};
+      const companyLogo = job.companyLogo || employerProfile.companyLogo || '';
+      const category = job.category || employerProfile.industry || 'N/A';
+      return {
+        ...job,
+        companyLogo,
+        category,
+        applicantCount: countMap[String(job._id)] || job.applicationCount || 0,
+        adminStatus: getAdminJobOfferStatus(job),
+      };
+    });
+
+    const stats = transformedJobs.reduce(
+      (acc, job) => {
+        acc.totalJobs += 1;
+        if (job.adminStatus === 'Open') acc.active += 1;
+        if (job.adminStatus === 'Closed') acc.closed += 1;
+        if (job.adminStatus === 'Expired') acc.expired += 1;
+        return acc;
+      },
+      { totalJobs: 0, active: 0, closed: 0, expired: 0 }
+    );
+
+    const statusFilteredJobs = status
+      ? transformedJobs.filter((job) => String(job.adminStatus || '').toLowerCase() === status)
+      : transformedJobs;
+
+    const total = statusFilteredJobs.length;
+    const paginatedJobs = statusFilteredJobs.slice((page - 1) * limit, page * limit);
+
+    const uniqueSorted = (values) => [...new Set(values.map((v) => String(v || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 
     return res.status(200).json({
       success: true,
-      message: 'Password updated successfully.',
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        firstName: user.firstName,
-        middleName: user.middleName,
-        lastName: user.lastName,
-        extensionName: user.extensionName,
-        profileImage: user.profileImage,
-        mustChangePassword: Boolean(user.mustChangePassword),
-        jobSeekerProfile: user.role === 'jobseeker' ? user.jobSeekerProfile : undefined,
-        employerProfile: user.role === 'employer' ? user.employerProfile : undefined,
+      jobs: paginatedJobs,
+      stats,
+      options: {
+        companies: uniqueSorted(transformedJobs.map((job) => job.companyName)),
+        industries: uniqueSorted(transformedJobs.map((job) => job.category)),
+        jobTitles: uniqueSorted(transformedJobs.map((job) => job.title)),
+      },
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
       },
     });
   } catch (error) {
-    console.error('Error changing temporary password:', error);
+    console.error('Error fetching admin job offers:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error changing temporary password',
+      message: 'Server error fetching admin job offers',
     });
   }
 };
 
 
-exports.secureAccessEmployerVerificationDoc = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const docType = String(req.params.docType || '').trim();
-    const password = String(req.body?.password || '');
-    const disposition =
-      String(req.body?.disposition || 'inline').toLowerCase() === 'attachment'
-        ? 'attachment'
-        : 'inline';
+// ==========================
+// ✅ ADMIN ARCHIVE MANAGEMENT
+// ==========================
+const escapeArchiveRegex = (value = '') =>
+  String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    if (req.user.role !== 'employer') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only employers can access verification documents.',
-      });
-    }
+const getArchiveUserName = (user = {}) => {
+  const employerName = user?.employerProfile?.companyName || user?.companyName || '';
+  const fullName = user?.fullName || [user?.firstName, user?.middleName, user?.lastName].filter(Boolean).join(' ');
+  return employerName || fullName || user?.email || 'User';
+};
 
-    if (!Object.keys(EMPLOYER_DOC_LABELS).includes(docType)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid document type.',
-      });
-    }
+const getArchiveAccountHolderName = (user = {}) => {
+  const fullName =
+    user?.fullName ||
+    [user?.firstName, user?.middleName, user?.lastName, user?.extensionName]
+      .map((part) => String(part || '').trim())
+      .filter(Boolean)
+      .join(' ');
 
-    if (!password.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please enter your password.',
-      });
-    }
+  return fullName || user?.email || user?.username || 'Archived account';
+};
 
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found.',
-      });
-    }
-
-    const isPasswordMatch = await bcrypt.compare(password, user.password);
-    if (!isPasswordMatch) {
-      return res.status(400).json({
-        success: false,
-        message: 'Incorrect password. Please try again.',
-      });
-    }
-
-    const doc = user.employerProfile?.verificationDocs?.[docType] || {};
-    const rawUrl = String(doc.url || '').trim();
-
-    if (!rawUrl) {
-      return res.status(404).json({
-        success: false,
-        message: 'Document not found.',
-      });
-    }
-
-    const fallbackFileName = `${EMPLOYER_DOC_LABELS[docType] || docType}.pdf`;
-    const fileName = sanitizeDownloadFileName(
-      doc.filename || fallbackFileName,
-      fallbackFileName
+const getArchiveContactNumber = (user = {}) => {
+  if (String(user?.role || '').toLowerCase() === 'employer') {
+    return (
+      user?.employerProfile?.mobileNumber ||
+      user?.mobileNumber ||
+      user?.phoneNumber ||
+      user?.phone ||
+      ''
     );
-    const sourceUrl = /^https?:\/\//i.test(rawUrl)
-      ? rawUrl
-      : makePublicUrl(req, rawUrl);
-    const candidates = buildCredentialDownloadCandidates({
-      rawUrl: sourceUrl,
-      fileName,
-      disposition,
-    });
-
-    let downloaded = null;
-    let lastError = null;
-
-    for (const candidate of candidates) {
-      try {
-        downloaded = await fetchUrlBuffer(candidate);
-        if (downloaded?.buffer?.length) break;
-      } catch (error) {
-        lastError = error;
-      }
-    }
-
-    if (!downloaded?.buffer?.length) {
-      console.error('Secure employer credential delivery failed:', lastError);
-      return res.status(502).json({
-        success: false,
-        message: 'Unable to download credential file from storage.',
-      });
-    }
-
-    const contentType =
-      downloaded.contentType ||
-      doc.mimeType ||
-      getContentTypeFromFileName(fileName);
-
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Length', downloaded.buffer.length);
-    res.setHeader(
-      'Content-Disposition',
-      `${disposition}; filename="${fileName.replace(/"/g, '')}"`
-    );
-    res.setHeader('Cache-Control', 'private, no-store, max-age=0');
-
-    return res.send(downloaded.buffer);
-  } catch (error) {
-    console.error('Error securely accessing employer verification document:', error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || 'Error accessing verification document.',
-    });
   }
-};
 
-
-exports.downloadEmployerVerificationDoc = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const docType = String(req.params.docType || '').trim();
-    const disposition = String(req.query.disposition || 'inline').toLowerCase() === 'attachment' ? 'attachment' : 'inline';
-
-    if (req.user.role !== 'employer') {
-      return res.status(403).json({ success: false, message: 'Only employers can view verification documents' });
-    }
-
-    if (!Object.keys(EMPLOYER_DOC_LABELS).includes(docType)) {
-      return res.status(400).json({ success: false, message: 'Invalid document type.' });
-    }
-
-    const user = await User.findById(userId).select('employerProfile');
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-
-    const doc = user.employerProfile?.verificationDocs?.[docType] || {};
-    const rawUrl = String(doc.url || '').trim();
-
-    if (!rawUrl) {
-      return res.status(404).json({ success: false, message: 'Document not found.' });
-    }
-
-    const fallbackFileName = `${EMPLOYER_DOC_LABELS[docType] || docType}.pdf`;
-    const fileName = sanitizeDownloadFileName(doc.filename || fallbackFileName, fallbackFileName);
-    const sourceUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : makePublicUrl(req, rawUrl);
-    const candidates = buildCredentialDownloadCandidates({ rawUrl: sourceUrl, fileName, disposition });
-
-    let downloaded = null;
-    let lastError = null;
-
-    for (const candidate of candidates) {
-      try {
-        downloaded = await fetchUrlBuffer(candidate);
-        if (downloaded?.buffer?.length) break;
-      } catch (error) {
-        lastError = error;
-      }
-    }
-
-    if (!downloaded?.buffer?.length) {
-      console.error('Employer credential delivery failed:', lastError);
-      return res.status(502).json({ success: false, message: 'Unable to download credential file from storage.' });
-    }
-
-    const contentType = downloaded.contentType || doc.mimeType || getContentTypeFromFileName(fileName);
-
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Length', downloaded.buffer.length);
-    res.setHeader('Content-Disposition', `${disposition}; filename="${fileName.replace(/"/g, '')}"`);
-    res.setHeader('Cache-Control', 'private, no-store, max-age=0');
-
-    return res.send(downloaded.buffer);
-  } catch (error) {
-    console.error('Error downloading employer verification document:', error);
-    return res.status(500).json({ success: false, message: error.message || 'Error downloading verification document' });
-  }
-};
-
-
-// ---------------------------
-// JOBSEEKER SETTINGS: EMAIL / PHONE VERIFICATION
-// ---------------------------
-exports.requestEmailChangeVerification = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const { currentPassword, newEmail } = req.body;
-
-    const emailLower = normalizeEmail(newEmail);
-    if (!currentPassword || !String(currentPassword).trim()) {
-      return res.status(400).json({ success: false, message: 'Current password is required.' });
-    }
-
-    if (!emailLower || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailLower)) {
-      return res.status(400).json({ success: false, message: 'Please enter a valid new email address.' });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
-
-    const isMatch = await bcrypt.compare(String(currentPassword), user.password);
-    if (!isMatch) return res.status(400).json({ success: false, message: 'Current password is incorrect.' });
-
-    if (String(user.email || '').toLowerCase() === emailLower) {
-      return res.status(400).json({ success: false, message: 'New email must be different from your current email.' });
-    }
-
-    const existing = await User.findOne({ email: emailLower, _id: { $ne: userId } });
-    if (existing) return res.status(400).json({ success: false, message: 'Email is already used by another account.' });
-
-    const code = generateNumericOtp();
-    const expiresAt = new Date(Date.now() + SETTINGS_OTP_EXPIRES_MINUTES * 60 * 1000);
-
-    user.settingsVerification = {
-      ...(user.settingsVerification?.toObject?.() || user.settingsVerification || {}),
-      pendingEmail: emailLower,
-      emailOtpHash: hashToken(code),
-      emailOtpExpiresAt: expiresAt,
-      emailOtpRequestedAt: new Date(),
-      emailVerified: false,
-    };
-
-    await user.save();
-
-    await sendSettingsEmailVerificationCode({
-      to: emailLower,
-      fullName: user.fullName || user.firstName || user.username || 'User',
-      code,
-      expiresInMinutes: SETTINGS_OTP_EXPIRES_MINUTES,
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: 'Verification code sent to your new email address.',
-      pendingEmail: emailLower,
-    });
-  } catch (error) {
-    console.error('Error requesting email verification:', error);
-    return res.status(500).json({ success: false, message: error.message || 'Error sending email verification code.' });
-  }
-};
-
-exports.resendEmailVerificationCode = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
-
-    const targetEmail = normalizeEmail(user.settingsVerification?.pendingEmail || user.email);
-    if (!targetEmail) return res.status(400).json({ success: false, message: 'No email address available for verification.' });
-
-    const code = generateNumericOtp();
-    const expiresAt = new Date(Date.now() + SETTINGS_OTP_EXPIRES_MINUTES * 60 * 1000);
-
-    user.settingsVerification = {
-      ...(user.settingsVerification?.toObject?.() || user.settingsVerification || {}),
-      pendingEmail: user.settingsVerification?.pendingEmail || '',
-      emailOtpHash: hashToken(code),
-      emailOtpExpiresAt: expiresAt,
-      emailOtpRequestedAt: new Date(),
-    };
-
-    await user.save();
-
-    await sendSettingsEmailVerificationCode({
-      to: targetEmail,
-      fullName: user.fullName || user.firstName || user.username || 'User',
-      code,
-      expiresInMinutes: SETTINGS_OTP_EXPIRES_MINUTES,
-    });
-
-    return res.status(200).json({ success: true, message: 'Verification code sent.' });
-  } catch (error) {
-    console.error('Error resending email verification:', error);
-    return res.status(500).json({ success: false, message: error.message || 'Error resending verification code.' });
-  }
-};
-
-exports.verifyEmailChangeCode = async (req, res) => {
-  try {
-    const { code } = req.body;
-    if (!code || !String(code).trim()) {
-      return res.status(400).json({ success: false, message: 'Verification code is required.' });
-    }
-
-    const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
-
-    const verification = user.settingsVerification || {};
-    if (!verification.emailOtpHash || !verification.emailOtpExpiresAt) {
-      return res.status(400).json({ success: false, message: 'Please request a verification code first.' });
-    }
-
-    if (new Date(verification.emailOtpExpiresAt).getTime() < Date.now()) {
-      return res.status(400).json({ success: false, message: 'Verification code has expired. Please resend code.' });
-    }
-
-    if (hashToken(String(code).trim()) !== verification.emailOtpHash) {
-      return res.status(400).json({ success: false, message: 'Invalid verification code.' });
-    }
-
-    const nextEmail = normalizeEmail(verification.pendingEmail || user.email);
-    if (verification.pendingEmail) {
-      const existing = await User.findOne({ email: nextEmail, _id: { $ne: user._id } });
-      if (existing) return res.status(400).json({ success: false, message: 'Email is already used by another account.' });
-      user.email = nextEmail;
-      if (user.role === 'employer') {
-        if (!user.employerProfile) user.employerProfile = {};
-        user.employerProfile.businessEmail = nextEmail;
-      }
-    }
-
-    user.settingsVerification = {
-      ...(verification.toObject?.() || verification),
-      emailVerified: true,
-      pendingEmail: '',
-      emailOtpHash: '',
-      emailOtpExpiresAt: null,
-      emailOtpRequestedAt: null,
-    };
-
-    await user.save();
-
-    const updatedUser = await User.findById(user._id).select('-password');
-    return res.status(200).json({ success: true, message: 'Email verified successfully.', user: updatedUser });
-  } catch (error) {
-    console.error('Error verifying email code:', error);
-    return res.status(500).json({ success: false, message: error.message || 'Error verifying email.' });
-  }
-};
-
-exports.requestPhoneChangeVerification = async (req, res) => {
-  try {
-    const { phoneNumber } = req.body;
-    const cleanPhone = normalizePhoneNumber(phoneNumber);
-
-    if (!cleanPhone) return res.status(400).json({ success: false, message: 'Mobile number is required.' });
-
-    const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
-
-    const code = generateNumericOtp();
-    const expiresAt = new Date(Date.now() + SETTINGS_OTP_EXPIRES_MINUTES * 60 * 1000);
-
-    user.settingsVerification = {
-      ...(user.settingsVerification?.toObject?.() || user.settingsVerification || {}),
-      pendingPhoneNumber: cleanPhone,
-      phoneOtpHash: hashToken(code),
-      phoneOtpExpiresAt: expiresAt,
-      phoneOtpRequestedAt: new Date(),
-      phoneVerified: false,
-    };
-
-    await user.save();
-
-    await sendBrevoSms({
-      to: cleanPhone,
-      message: `Your AGAPAY mobile verification code is ${code}. This code expires in ${SETTINGS_OTP_EXPIRES_MINUTES} minutes.`,
-    });
-
-    return res.status(200).json({ success: true, message: 'Verification code sent to your mobile number.', pendingPhoneNumber: cleanPhone });
-  } catch (error) {
-    console.error('Error requesting phone verification:', error);
-    return res.status(500).json({ success: false, message: error.message || 'Error sending mobile verification code.' });
-  }
-};
-
-exports.resendPhoneVerificationCode = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
-
-    const targetPhone = normalizePhoneNumber(
-      user.settingsVerification?.pendingPhoneNumber ||
-      (user.role === 'employer' ? user.employerProfile?.mobileNumber : user.jobSeekerProfile?.phoneNumber)
-    );
-    if (!targetPhone) return res.status(400).json({ success: false, message: 'No mobile number available for verification.' });
-
-    const code = generateNumericOtp();
-    const expiresAt = new Date(Date.now() + SETTINGS_OTP_EXPIRES_MINUTES * 60 * 1000);
-
-    user.settingsVerification = {
-      ...(user.settingsVerification?.toObject?.() || user.settingsVerification || {}),
-      pendingPhoneNumber: user.settingsVerification?.pendingPhoneNumber || targetPhone,
-      phoneOtpHash: hashToken(code),
-      phoneOtpExpiresAt: expiresAt,
-      phoneOtpRequestedAt: new Date(),
-    };
-
-    await user.save();
-
-    await sendBrevoSms({
-      to: targetPhone,
-      message: `Your AGAPAY mobile verification code is ${code}. This code expires in ${SETTINGS_OTP_EXPIRES_MINUTES} minutes.`,
-    });
-
-    return res.status(200).json({ success: true, message: 'Mobile verification code sent.' });
-  } catch (error) {
-    console.error('Error resending phone verification:', error);
-    return res.status(500).json({ success: false, message: error.message || 'Error resending mobile verification code.' });
-  }
-};
-
-exports.verifyPhoneChangeCode = async (req, res) => {
-  try {
-    const { code } = req.body;
-    if (!code || !String(code).trim()) return res.status(400).json({ success: false, message: 'Verification code is required.' });
-
-    const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
-
-    const verification = user.settingsVerification || {};
-    if (!verification.phoneOtpHash || !verification.phoneOtpExpiresAt) {
-      return res.status(400).json({ success: false, message: 'Please request a mobile verification code first.' });
-    }
-
-    if (new Date(verification.phoneOtpExpiresAt).getTime() < Date.now()) {
-      return res.status(400).json({ success: false, message: 'Verification code has expired. Please resend code.' });
-    }
-
-    if (hashToken(String(code).trim()) !== verification.phoneOtpHash) {
-      return res.status(400).json({ success: false, message: 'Invalid verification code.' });
-    }
-
-    if (user.role === 'employer') {
-      if (!user.employerProfile) user.employerProfile = {};
-      user.employerProfile.mobileNumber = verification.pendingPhoneNumber || user.employerProfile.mobileNumber || '';
-    } else {
-      if (!user.jobSeekerProfile) user.jobSeekerProfile = {};
-      user.jobSeekerProfile.phoneNumber = verification.pendingPhoneNumber || user.jobSeekerProfile.phoneNumber || '';
-    }
-
-    user.settingsVerification = {
-      ...(verification.toObject?.() || verification),
-      phoneVerified: true,
-      pendingPhoneNumber: '',
-      phoneOtpHash: '',
-      phoneOtpExpiresAt: null,
-      phoneOtpRequestedAt: null,
-    };
-
-    await user.save();
-
-    const updatedUser = await User.findById(user._id).select('-password');
-    return res.status(200).json({ success: true, message: 'Mobile number verified successfully.', user: updatedUser });
-  } catch (error) {
-    console.error('Error verifying phone code:', error);
-    return res.status(500).json({ success: false, message: error.message || 'Error verifying mobile number.' });
-  }
-};
-
-exports.updateNotifications = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const notificationData = req.body;
-
-    const notificationPreferences = {
-      emailNotifications: notificationData.emailNotifications !== false,
-      jobAlerts: notificationData.jobAlerts !== false,
-      applicationUpdates: notificationData.applicationUpdates !== false,
-      marketingEmails: notificationData.marketingEmails === true,
-      newsletter: notificationData.newsletter !== false,
-    };
-
-    const updatedUser = await User.findByIdAndUpdate(userId, { $set: { notificationPreferences } }, { new: true }).select('-password');
-
-    res.status(200).json({
-      success: true,
-      message: 'Notification preferences updated successfully',
-      notificationPreferences: updatedUser.notificationPreferences,
-    });
-  } catch (error) {
-    console.error('Error updating notifications:', error);
-    res.status(500).json({ success: false, message: 'Error updating notification preferences' });
-  }
-};
-
-exports.updateUserProfile = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const updateData = req.body;
-
-    delete updateData.email;
-    delete updateData.password;
-    delete updateData.role;
-    delete updateData.username;
-    delete updateData.mustChangePassword;
-
-    if (Object.prototype.hasOwnProperty.call(updateData, 'extensionName')) {
-      updateData.extensionName = normalizeExtensionName(updateData.extensionName);
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(userId, { $set: updateData }, { new: true, runValidators: true }).select('-password');
-
-    res.status(200).json({ success: true, message: 'Profile updated successfully', user: updatedUser });
-  } catch (error) {
-    console.error('Error updating profile:', error);
-    res.status(500).json({ success: false, message: 'Error updating profile' });
-  }
-};
-
-// ---------------------------
-// RESUBMIT DOCUMENT - VALIDATE TOKEN
-// ---------------------------
-exports.validateResubmitDocumentToken = async (req, res) => {
-  try {
-    const token = String(req.query?.token || '').trim();
-
-    if (!token) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid resubmit link. Missing token.',
-      });
-    }
-
-    const tokenHash = hashToken(token);
-    const found = await findResubmitRequestByToken(tokenHash);
-
-    if (!found) {
-      return res.status(400).json({
-        success: false,
-        message: 'This resubmit link is invalid or expired.',
-      });
-    }
-
-    const { accountType, resubmitRequest, labels } = found;
-
-    const docType = String(resubmitRequest.docType || '').trim();
-    const reasonMessage = String(resubmitRequest.reasonMessage || '').trim();
-    const expiresAt = resubmitRequest.expiresAt ? new Date(resubmitRequest.expiresAt) : null;
-    const usedAt = resubmitRequest.usedAt ? new Date(resubmitRequest.usedAt) : null;
-
-    if (!docType || !labels[docType]) {
-      return res.status(400).json({
-        success: false,
-        message: 'This resubmit link is invalid or expired.',
-      });
-    }
-
-    if (usedAt) {
-      return res.status(400).json({
-        success: false,
-        message: 'This resubmit link has already been used.',
-      });
-    }
-
-    if (!expiresAt || Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() < Date.now()) {
-      return res.status(400).json({
-        success: false,
-        message: 'This resubmit link is invalid or expired.',
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      accountType,
-      docType,
-      docLabel: labels[docType] || docType,
-      reasonMessage,
-      expiresAt,
-    });
-  } catch (error) {
-    console.error('Error validating resubmit document token:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Server error validating resubmit link.',
-    });
-  }
-};
-
-// ---------------------------
-// RESUBMIT DOCUMENT - SUBMIT NEW FILE
-// ---------------------------
-exports.resubmitDocument = async (req, res) => {
-  try {
-    const token = String(req.body?.token || '').trim();
-
-    if (!token) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid resubmit request. Missing token.',
-      });
-    }
-
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please choose a file to upload.',
-      });
-    }
-
-    const tokenHash = hashToken(token);
-    const found = await findResubmitRequestByToken(tokenHash);
-
-    if (!found) {
-      return res.status(400).json({
-        success: false,
-        message: 'This resubmit link is invalid or expired.',
-      });
-    }
-
-    const { accountType, user, resubmitRequest, labels } = found;
-
-    const docType = String(resubmitRequest.docType || '').trim();
-    const expiresAt = resubmitRequest.expiresAt ? new Date(resubmitRequest.expiresAt) : null;
-    const usedAt = resubmitRequest.usedAt ? new Date(resubmitRequest.usedAt) : null;
-
-    if (!docType || !labels[docType]) {
-      return res.status(400).json({
-        success: false,
-        message: 'This resubmit link is invalid or expired.',
-      });
-    }
-
-    if (usedAt) {
-      return res.status(400).json({
-        success: false,
-        message: 'This resubmit link has already been used.',
-      });
-    }
-
-    if (!expiresAt || Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() < Date.now()) {
-      return res.status(400).json({
-        success: false,
-        message: 'This resubmit link is invalid or expired.',
-      });
-    }
-
-    if (accountType === 'jobseeker') {
-      if (!user.jobSeekerProfile) user.jobSeekerProfile = {};
-      if (!user.jobSeekerProfile.verificationDocs) user.jobSeekerProfile.verificationDocs = {};
-
-      const verificationDocs = user.jobSeekerProfile.verificationDocs;
-
-      const fileUrl = getUploadedFileUrl(req, req.file, `/uploads/verification/alumni/${docType}/${req.file.filename}`);
-
-      verificationDocs[docType] = {
-        url: fileUrl,
-        status: 'pending',
-        uploadedAt: new Date(),
-        filename: req.file.originalname,
-        fileSize: req.file.size,
-        mimeType: req.file.mimetype,
-      };
-
-      verificationDocs.overallStatus = 'pending';
-      verificationDocs.adminRemarks = '';
-      if (user.isVerified !== true) {
-        verificationDocs.verifiedBy = null;
-        verificationDocs.verifiedAt = null;
-      }
-      verificationDocs.resubmitRequest = {
-        ...resubmitRequest,
-        usedAt: new Date(),
-      };
-
-      const accountWasVerified = isApprovedJobseekerAccount(user);
-      user.jobSeekerProfile.verificationDocs = verificationDocs;
-      user.jobSeekerProfile.verificationStatus = accountWasVerified ? 'verified' : 'pending';
-      if (accountWasVerified) user.isVerified = true;
-
-      await user.save();
-
-      await createAdminResubmissionNotifications({
-        subjectUser: user,
-        accountType: 'jobseeker',
-        docType,
-        docLabel: labels[docType],
-      });
-
-      return res.status(200).json({
-        success: true,
-        message: 'Document resubmitted successfully. Redirecting to login...',
-        accountType: 'jobseeker',
-        docType,
-        docLabel: labels[docType] || docType,
-      });
-    }
-
-    if (accountType === 'employer') {
-      if (!user.employerProfile) user.employerProfile = {};
-      if (!user.employerProfile.verificationDocs) user.employerProfile.verificationDocs = {};
-
-      const verificationDocs = user.employerProfile.verificationDocs;
-      const folder = EMPLOYER_DOC_FOLDERS[docType];
-
-      if (!folder) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid document type for employer resubmission.',
-        });
-      }
-
-      const fileUrl = getUploadedFileUrl(req, req.file, `/uploads/verification/employer/${folder}/${req.file.filename}`);
-
-      verificationDocs[docType] = {
-        url: fileUrl,
-        status: 'pending',
-        uploadedAt: new Date(),
-        filename: req.file.originalname,
-        fileSize: req.file.size,
-        mimeType: req.file.mimetype,
-      };
-
-      verificationDocs.overallStatus = 'pending';
-      verificationDocs.remarks = '';
-      verificationDocs.resubmitRequest = {
-        ...resubmitRequest,
-        usedAt: new Date(),
-      };
-
-      user.employerProfile.verificationDocs = verificationDocs;
-
-      await user.save();
-
-      await createAdminResubmissionNotifications({
-        subjectUser: user,
-        accountType: 'employer',
-        docType,
-        docLabel: labels[docType],
-      });
-
-      return res.status(200).json({
-        success: true,
-        message: 'Document resubmitted successfully. Redirecting to login...',
-        accountType: 'employer',
-        docType,
-        docLabel: labels[docType] || docType,
-      });
-    }
-
-    return res.status(400).json({
-      success: false,
-      message: 'Unsupported resubmit account type.',
-    });
-  } catch (error) {
-    console.error('Error resubmitting document:', error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to resubmit document.',
-    });
-  }
-};
-
-// ---------------------------
-// DOWNLOAD RESUME AS PDF
-// ---------------------------
-const resumeEscapeHtml = (value = '') =>
-  String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-
-const isMeaningfulResumeValue = (value) => {
-  const text = String(value ?? '').trim();
-  return Boolean(text) && !/^(null|undefined|not\s+provided|n\/?a)$/i.test(text);
-};
-
-const RESUME_OPTIONAL_SECTION_KEYS = [
-  'seminars',
-  'awards',
-  'certifications',
-  'projects',
-  'affiliations',
-  'cocurricular',
-  'references',
-];
-
-const hasResumeListData = (items = []) =>
-  Array.isArray(items) && items.some((item) =>
-    Object.entries(item || {}).some(([key, value]) =>
-      !['_id', 'id', 'createdAt', 'updatedAt', '__v'].includes(key) &&
-      typeof value !== 'boolean' &&
-      isMeaningfulResumeValue(value)
-    )
-  );
-
-const getAddedResumeSections = (profile = {}) => {
-  const savedSections = Array.isArray(profile.addedResumeSections)
-    ? profile.addedResumeSections
-    : [];
-
-  return RESUME_OPTIONAL_SECTION_KEYS.filter((key) =>
-    savedSections.includes(key) || hasResumeListData(profile[key])
+  return (
+    user?.jobSeekerProfile?.phoneNumber ||
+    user?.phoneNumber ||
+    user?.mobileNumber ||
+    user?.phone ||
+    ''
   );
 };
 
-const resumeText = (value = '', fallback = '') => {
-  const text = String(value || '').trim();
-  return isMeaningfulResumeValue(text) ? text : fallback;
+const getArchiveCompanyName = (source = {}) => {
+  const employer = source?.employer || source?.job?.employer || source;
+  return (
+    source?.companyName ||
+    source?.job?.companyName ||
+    employer?.employerProfile?.companyName ||
+    employer?.companyName ||
+    getArchiveUserName(employer)
+  );
 };
 
-const resumeArray = (value = '') => {
+const getArchiveUserStatus = (user = {}) => {
+  const role = String(user.role || '').toLowerCase();
+  const employerStatus = user?.employerProfile?.verificationDocs?.overallStatus;
+  const seekerStatus =
+    user?.jobSeekerProfile?.verificationDocs?.overallStatus ||
+    user?.jobSeekerProfile?.verificationStatus;
+  const raw = role === 'employer' ? employerStatus : seekerStatus;
+  const status = String(raw || user.status || '').toLowerCase();
+
+  if (['rejected', 'declined', 'deleted', 'suspended'].includes(status)) return 'Declined';
+  return 'Declined';
+};
+
+const getArchiveJobStatus = (job = {}) => {
+  const now = new Date();
+  const deadline = job?.applicationDeadline ? new Date(job.applicationDeadline) : null;
+  if (deadline && !Number.isNaN(deadline.getTime()) && deadline < now) return 'Expired';
+  return 'Closed';
+};
+
+
+const countArchiveSkills = (value) => {
   if (Array.isArray(value)) {
     return value
-      .map((item) => resumeText(item))
-      .filter(isMeaningfulResumeValue);
-  }
+      .flatMap((item) => {
+        if (item && typeof item === 'object') {
+          const skill = String(item.skill || item.name || '').trim();
+          return skill ? [skill] : [];
+        }
 
-  if (typeof value === 'string') {
-    const clean = value.trim();
-    if (!isMeaningfulResumeValue(clean)) return [];
-
-    const parts = clean.includes('||')
-      ? clean.split('||')
-      : /\s[—-]\s(Basic|Novice|Intermediate|Advanced|Expert)$/i.test(clean)
-        ? [clean]
-        : clean.split(',');
-
-    return parts
-      .map((item) => resumeText(item))
-      .filter(isMeaningfulResumeValue);
-  }
-
-  return [];
-};
-
-const resumeMonthYear = (value) => {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value || '');
-  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-};
-
-const resumeDateRange = (item = {}) => {
-  if (item.date) return resumeText(item.date);
-
-  const start = item.startDate ? resumeMonthYear(item.startDate) : '';
-  const end = item.isPresent ? 'Present' : item.endDate ? resumeMonthYear(item.endDate) : '';
-
-  if (start && end) return `${start} - ${end}`;
-  if (start) return start;
-  if (end) return end;
-  return '';
-};
-
-const resumeEducationDateRange = (entry = {}) => {
-  const startMonth = resumeText(entry.startMonth);
-  const startYear = resumeText(entry.startYear);
-  const endMonth = resumeText(entry.endMonth);
-  const endYear = resumeText(entry.endYear || entry.yearGraduated);
-
-  const start = [startMonth, startYear].filter(Boolean).join(' ');
-  const end = [endMonth, endYear].filter(Boolean).join(' ');
-
-  if (start && end) return `${start} - ${end}`;
-  return end || start;
-};
-
-const resumeWeight = (value = '') => {
-  const clean = resumeText(value);
-  if (!clean) return '';
-  return /kg$/i.test(clean) ? clean : `${clean} kg`;
-};
-
-const resumeFullName = (user = {}) =>
-  [user.firstName, user.middleName, user.lastName, user.extensionName]
-    .map((item) => resumeText(item))
-    .filter(Boolean)
-    .join(' ');
-
-const resumeInitials = (fullName = '') => {
-  const parts = String(fullName || '').split(' ').filter(Boolean);
-  if (parts.length >= 2) return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
-  return (fullName || 'JA').slice(0, 2).toUpperCase();
-};
-
-const renderResumeSection = (title, content) => {
-  if (!content || !String(content).trim()) return '';
-  return `
-    <section class="resume-section">
-      <h2>${resumeEscapeHtml(title)}</h2>
-      ${content}
-    </section>
-  `;
-};
-
-const renderResumeRows = (rows = []) => {
-  const cleanRows = rows.filter((row) => resumeText(row.value));
-  if (!cleanRows.length) return '';
-
-  const middle = Math.ceil(cleanRows.length / 2);
-  const columns = [cleanRows.slice(0, middle), cleanRows.slice(middle)];
-
-  return `
-    <div class="two-column-rows">
-      ${columns
-        .map(
-          (column) => `
-            <div class="info-column">
-              ${column
-                .map(
-                  (row) => `
-                    <div class="info-row">
-                      <span class="info-label">${resumeEscapeHtml(row.label)}:</span>
-                      <span class="info-value">${resumeEscapeHtml(row.value)}</span>
-                    </div>
-                  `
-                )
-                .join('')}
-            </div>
-          `
-        )
-        .join('')}
-    </div>
-  `;
-};
-
-const renderResumeBullets = (description = '') => {
-  const items = String(description || '')
-    .split(/\n|•|\*|;/)
-    .map((item) => resumeText(item))
-    .filter(Boolean);
-
-  if (!items.length) return '';
-
-  return `
-    <ul class="resume-bullets">
-      ${items.map((item) => `<li>${resumeEscapeHtml(item)}</li>`).join('')}
-    </ul>
-  `;
-};
-
-const renderResumeDatedItem = ({ title, subtitle, date, description, meta }) => {
-  const titleText = resumeText(title, 'Untitled');
-
-  return `
-    <div class="dated-item">
-      <div class="dated-header">
-        <div class="dated-main">
-          <div class="item-title">${resumeEscapeHtml(titleText)}</div>
-          ${subtitle ? `<div class="item-subtitle">${resumeEscapeHtml(subtitle)}</div>` : ''}
-          ${meta ? `<div class="item-meta">${resumeEscapeHtml(meta)}</div>` : ''}
-        </div>
-        ${date ? `<div class="item-date">${resumeEscapeHtml(date)}</div>` : ''}
-      </div>
-      ${renderResumeBullets(description)}
-    </div>
-  `;
-};
-
-const renderResumeProfileList = (title, items = [], type = 'default') => {
-  const cleanItems = Array.isArray(items)
-    ? items.filter((item) => hasResumeListData([item]))
-    : [];
-
-  if (!cleanItems.length) return '';
-
-  if (type === 'references') {
-    return renderResumeSection(
-      title,
-      `
-        <div class="references-grid">
-          ${cleanItems
-            .map((item) => {
-              const subtitle = [item.position, item.company].map((value) => resumeText(value)).filter(Boolean).join(' / ');
-              return `
-                <div class="reference-card">
-                  <div class="item-title">${resumeEscapeHtml(resumeText(item.name, 'Reference'))}</div>
-                  ${subtitle ? `<div class="item-subtitle">${resumeEscapeHtml(subtitle)}</div>` : ''}
-                  ${item.phone ? `<div>${resumeEscapeHtml(item.phone)}</div>` : ''}
-                  ${item.email ? `<div class="link-text">${resumeEscapeHtml(item.email)}</div>` : ''}
-                </div>
-              `;
-            })
-            .join('')}
-        </div>
-      `
-    );
-  }
-
-  return renderResumeSection(
-    title,
-    cleanItems
-      .map((item) => {
-        const itemTitle = resumeText(item.title || item.organization || item.name, 'Untitled');
-        const subtitle =
-          type === 'awards'
-            ? resumeText(item.issuer ? `Issued by: ${item.issuer}` : '')
-            : resumeText(item.role || item.issuer || item.organization || item.company);
-
-        return renderResumeDatedItem({
-          title: itemTitle,
-          subtitle,
-          date: resumeDateRange(item),
-          description: item.description,
-        });
+        const clean = String(item || '').trim();
+        if (!clean) return [];
+        if (clean.includes('||')) {
+          return clean.split('||').map((entry) => entry.trim()).filter(Boolean);
+        }
+        return [clean];
       })
-      .join('')
-  );
+      .filter(Boolean).length;
+  }
+
+  const clean = String(value || '').trim();
+  if (!clean) return 0;
+  if (clean.includes('||')) {
+    return clean.split('||').map((entry) => entry.trim()).filter(Boolean).length;
+  }
+  if (/\s[—-]\s(Basic|Novice|Intermediate|Advanced|Expert)$/i.test(clean)) return 1;
+  return clean.split(',').map((entry) => entry.trim()).filter(Boolean).length;
 };
 
-const buildResumeHtmlForPdf = (user = {}) => {
+const hasMeaningfulArchiveObjectValue = (item = {}) =>
+  Boolean(
+    item &&
+      typeof item === 'object' &&
+      Object.entries(item).some(([key, value]) => {
+        if (['_id', 'id', 'createdAt', 'updatedAt', '__v'].includes(key)) return false;
+        if (Array.isArray(value)) return value.length > 0;
+        if (value && typeof value === 'object') return hasMeaningfulArchiveObjectValue(value);
+        return Boolean(String(value ?? '').trim());
+      })
+  );
+
+const getArchiveJobSeekerLevel = (user = {}) => {
   const profile = user.jobSeekerProfile || {};
-  const fullName = resumeFullName(user) || 'Your Name';
-  const initials = resumeInitials(fullName);
-  const profileImage = resumeText(user.profileImage);
-  const addedResumeSections = getAddedResumeSections(profile);
-  const showOptionalSection = (sectionKey) =>
-    addedResumeSections.includes(sectionKey) && hasResumeListData(profile[sectionKey]);
+  const counts = {
+    skills:
+      countArchiveSkills(profile.technicalSkills) +
+      countArchiveSkills(profile.softSkills),
+    certifications: Array.isArray(profile.certifications)
+      ? profile.certifications.filter(hasMeaningfulArchiveObjectValue).length
+      : 0,
+    projects: Array.isArray(profile.projects)
+      ? profile.projects.filter(hasMeaningfulArchiveObjectValue).length
+      : 0,
+    seminars: Array.isArray(profile.seminars)
+      ? profile.seminars.filter(hasMeaningfulArchiveObjectValue).length
+      : 0,
+    awards: Array.isArray(profile.awards)
+      ? profile.awards.filter(hasMeaningfulArchiveObjectValue).length
+      : 0,
+    work: Array.isArray(profile.workExperiences) ? profile.workExperiences.length : 0,
+  };
 
-  const educationSummary = [
-    resumeText(profile.campus),
-    resumeText(profile.course),
-    profile.yearGraduated ? `Class of ${profile.yearGraduated}` : '',
-  ]
-    .filter(Boolean)
-    .join(', ');
-
-  const availabilityRows = [
-    { label: 'Preferred Work Mode', value: profile.preferredWorkMode },
-    { label: 'Employment Type', value: profile.employmentType },
-    { label: 'Educational Attainment', value: profile.educationalAttainment },
-    { label: 'Field / Study', value: profile.studyField },
-    { label: 'Civil Status', value: profile.civilStatus },
-    { label: 'Birthday', value: profile.birthday },
-    { label: 'Salary', value: [profile.minimumSalary, profile.maximumSalary].filter(Boolean).join(' - ') },
-    { label: 'How Soon Can Start', value: profile.howSoonCanYouStart },
-    { label: 'Willing to Relocate', value: profile.willingToRelocate },
-    { label: 'Nationality', value: profile.nationality },
-    { label: 'Gender', value: profile.gender },
-    { label: 'Weight', value: resumeWeight(profile.weight) },
-    { label: 'Preferred Language', value: profile.preferredLanguage },
+  const tiers = [
+    {
+      name: 'First Time Job Seeker',
+      requirements: { skills: 0, certifications: 0, projects: 0, seminars: 0, awards: 0, work: 0 },
+    },
+    {
+      name: 'Intermediate',
+      requirements: { skills: 5, certifications: 1, projects: 1, seminars: 1, awards: 1, work: 0 },
+    },
+    {
+      name: 'Expert',
+      requirements: { skills: 9, certifications: 2, projects: 2, seminars: 2, awards: 2, work: 1 },
+    },
+    {
+      name: 'Pro',
+      requirements: { skills: 13, certifications: 5, projects: 5, seminars: 5, awards: 5, work: 2 },
+    },
+    {
+      name: 'Legend',
+      requirements: { skills: 17, certifications: 7, projects: 7, seminars: 7, awards: 7, work: 3 },
+    },
   ];
 
-  const technicalSkills = resumeArray(profile.technicalSkills);
-  const softSkills = resumeArray(profile.softSkills);
-  const workExperiences = Array.isArray(profile.workExperiences) ? sortWorkExperiences(profile.workExperiences) : [];
-  const educationEntries = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
-
-  const photoHtml = profileImage
-    ? `<img class="resume-photo" src="${resumeEscapeHtml(profileImage)}" alt="${resumeEscapeHtml(fullName)}" />`
-    : `<div class="resume-initials">${resumeEscapeHtml(initials)}</div>`;
-
-  const workExperienceHtml = workExperiences.length
-    ? renderResumeSection(
-        'Work Experience',
-        workExperiences
-          .map((item) =>
-            renderResumeDatedItem({
-              title: resumeText(item.positionTitle, 'Position not provided'),
-              subtitle: resumeText(item.companyName, 'Company not provided'),
-              date: resumeDateRange(item),
-              description: item.description,
-            })
-          )
-          .join('')
-      )
-    : '';
-
-  const allSkills = [...technicalSkills, ...softSkills].filter(isMeaningfulResumeValue);
-
-  const skillsHtml = allSkills.length
-    ? renderResumeSection(
-        'Skills',
-        `
-          <div class="skills-grid">
-            ${allSkills
-              .map((skill) => `<div class="skill-row"><span class="skill-label">${resumeEscapeHtml(skill)}</span></div>`)
-              .join('')}
-          </div>
-        `
-      )
-    : '';
-
-  const educationHtml = educationEntries.length
-    ? renderResumeSection(
-        'Education',
-        educationEntries
-          .map((entry) =>
-            renderResumeDatedItem({
-              title: resumeText(entry.level || entry.educationalAttainment, 'Education'),
-              subtitle: resumeText(entry.school || entry.campus),
-              meta: '',
-              date: resumeEducationDateRange(entry),
-              description: entry.description,
-            })
-          )
-          .join('')
-      )
-    : '';
-
-  return `
-    <!doctype html>
-    <html>
-      <head>
-        <meta charset="utf-8" />
-        <style>
-          @page { size: A4; margin: 0; }
-          * { box-sizing: border-box; }
-          body { margin: 0; background: #ffffff; color: #111111; font-family: Georgia, 'Times New Roman', serif; font-size: 8.7px; line-height: 1.18; }
-          .resume-paper { width: 210mm; background: #ffffff; }
-          .resume-inner { padding: 16mm 16mm 12mm; position: relative; }
-          .resume-header { position: relative; min-height: 62px; padding-right: 98px; text-align: center; }
-          .resume-name { margin: 0; padding-top: 5px; font-size: 17px; line-height: 1; font-weight: 700; letter-spacing: 0.55px; text-transform: uppercase; }
-          .resume-contact { margin-top: 5px; color: #222222; font-size: 6.7px; line-height: 1.35; }
-          .resume-contact span + span::before { content: ' | '; }
-          .resume-education-summary { margin-top: 3px; color: #222222; font-size: 7.2px; line-height: 1.25; font-style: italic; }
-          .resume-initials, .resume-photo { position: absolute; top: 0; right: 3px; width: 61px; height: 61px; display: flex; align-items: center; justify-content: center; background: #343434; color: #ffffff; font-family: Arial, Helvetica, sans-serif; font-size: 27px; font-weight: 500; letter-spacing: 0.8px; overflow: hidden; object-fit: cover; }
-          .resume-section { margin-top: 12px; break-inside: auto; }
-          .resume-section h2 { margin: 0 0 3px; padding-bottom: 2px; border-bottom: 1px solid #777777; font-size: 8.8px; line-height: 1; font-weight: 700; letter-spacing: 0.25px; text-transform: uppercase; break-after: avoid-page; page-break-after: avoid; }
-          .resume-section h2 + * { break-before: avoid-page; page-break-before: avoid; }
-          .objective-text { margin: 0; text-align: justify; }
-          .two-column-rows, .skills-grid, .references-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 35px; }
-          .info-row { display: grid; grid-template-columns: 112px 1fr; gap: 4px; min-height: 11px; }
-          .info-label, .skill-label, .item-title { font-weight: 700; }
-          .info-label { white-space: nowrap; font-size: 8.1px; }
-          .info-value { min-width: 0; }
-          .dated-item { margin-top: 4px; break-inside: avoid; }
-          .dated-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-          .dated-main { min-width: 0; }
-          .item-title, .item-subtitle, .item-meta { line-height: 1.16; }
-          .item-subtitle { font-style: italic; }
-          .item-date { flex: 0 0 auto; max-width: 150px; text-align: right; font-style: italic; white-space: nowrap; }
-          .resume-bullets { margin: 2px 0 0 13px; padding: 0; }
-          .resume-bullets li { margin: 0; padding-left: 1px; }
-          .skill-row { display: block; min-height: 10px; }
-          .skill-label { white-space: nowrap; }
-          .references-grid { row-gap: 7px; }
-          .reference-card { break-inside: avoid; }
-          .link-text { color: #1d4ed8; text-decoration: underline; word-break: break-all; }
-          .empty-text { margin: 0; color: #777777; }
-          .resume-declaration { margin-top: 11px; break-inside: avoid; text-align: left; }
-          .declaration-text { margin: 0 0 9px; text-align: justify; }
-          .declaration-name { font-weight: 700; }
-          .declaration-role { margin-top: 2px; }
-        </style>
-      </head>
-      <body>
-        <main class="resume-paper">
-          <div class="resume-inner">
-            <header class="resume-header">
-              <h1 class="resume-name">${resumeEscapeHtml(fullName)}</h1>
-              <div class="resume-contact">
-                ${profile.address ? `<span>${resumeEscapeHtml(profile.address)}</span>` : ''}
-                ${profile.phoneNumber ? `<span>${resumeEscapeHtml(profile.phoneNumber)}</span>` : ''}
-                ${user.email ? `<span>${resumeEscapeHtml(user.email)}</span>` : ''}
-              </div>
-              ${educationSummary ? `<div class="resume-education-summary">${resumeEscapeHtml(educationSummary)}</div>` : ''}
-              ${photoHtml}
-            </header>
-            ${resumeText(profile.aboutMe) ? renderResumeSection('Objective', `<p class="objective-text">${resumeEscapeHtml(resumeText(profile.aboutMe))}</p>`) : ''}
-            ${renderResumeRows(availabilityRows) ? renderResumeSection('Availability & Preferences', renderResumeRows(availabilityRows)) : ''}
-            ${workExperienceHtml}
-            ${skillsHtml}
-            ${educationHtml}
-            ${showOptionalSection('seminars') ? renderResumeProfileList('Seminars and Trainings', profile.seminars) : ''}
-            ${showOptionalSection('awards') ? renderResumeProfileList('Awards and Achievements', profile.awards, 'awards') : ''}
-            ${showOptionalSection('certifications') ? renderResumeProfileList('Certifications', profile.certifications) : ''}
-            ${showOptionalSection('projects') ? renderResumeProfileList('Projects', profile.projects) : ''}
-            ${showOptionalSection('affiliations') ? renderResumeProfileList('Affiliations', profile.affiliations) : ''}
-            ${showOptionalSection('cocurricular') ? renderResumeProfileList('Co-curricular Activities', profile.cocurricular) : ''}
-            ${showOptionalSection('references') ? renderResumeProfileList('References', profile.references, 'references') : ''}
-            <section class="resume-declaration">
-              <p class="declaration-text">I hereby certify that the above information is true and correct to the best of my knowledge.</p>
-              <div class="declaration-name">${resumeEscapeHtml(fullName)}</div>
-              <div class="declaration-role">Applicant</div>
-            </section>
-          </div>
-        </main>
-      </body>
-    </html>
-  `;
-};
-
-
-
-const RESUME_PREVIEW_TTL_MS = 5 * 60 * 1000;
-const resumePreviewStore = new Map();
-
-const sanitizeResumePreviewFileName = (value = 'Resume_CV.pdf') => {
-  let decoded = String(value || '').trim();
-
-  try {
-    decoded = decodeURIComponent(decoded);
-  } catch {
-    // Keep the original value when it is not URI encoded.
-  }
-
-  const clean = decoded
-    .replace(/[\\/:*?"<>|]+/g, '_')
-    .replace(/\s+/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_+|_+$/g, '');
-
-  const baseName = clean || 'Resume_CV.pdf';
-  return baseName.toLowerCase().endsWith('.pdf') ? baseName : `${baseName}.pdf`;
-};
-
-const clearExpiredResumePreviews = () => {
-  const now = Date.now();
-
-  for (const [token, item] of resumePreviewStore.entries()) {
-    if (!item || item.expiresAt <= now) {
-      resumePreviewStore.delete(token);
-    }
-  }
-};
-
-exports.createResumePreview = async (req, res) => {
-  try {
-    if (req.user.role !== 'jobseeker') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only job seekers can create a resume preview.',
-      });
-    }
-
-    if (!Buffer.isBuffer(req.body) || !req.body.length) {
-      return res.status(400).json({
-        success: false,
-        message: 'The generated resume PDF is required.',
-      });
-    }
-
-    clearExpiredResumePreviews();
-
-    const previewToken = crypto.randomBytes(32).toString('hex');
-    const fileName = sanitizeResumePreviewFileName(
-      req.get('X-Resume-Filename') || 'Resume_CV.pdf'
+  let currentLevel = tiers[0].name;
+  tiers.forEach((tier) => {
+    const passed = Object.entries(tier.requirements).every(
+      ([key, required]) => counts[key] >= required
     );
+    if (passed) currentLevel = tier.name;
+  });
 
-    resumePreviewStore.set(previewToken, {
-      buffer: Buffer.from(req.body),
-      fileName,
-      userId: String(req.user._id),
-      expiresAt: Date.now() + RESUME_PREVIEW_TTL_MS,
-    });
-
-    const apiBase = `${req.protocol}://${req.get('host')}${req.baseUrl}`;
-    const previewUrl = `${apiBase}/resume/preview/${previewToken}/${encodeURIComponent(fileName)}`;
-
-    return res.status(201).json({
-      success: true,
-      previewUrl,
-      fileName,
-      expiresInMs: RESUME_PREVIEW_TTL_MS,
-    });
-  } catch (error) {
-    console.error('Error creating named resume preview:', error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || 'Unable to create resume preview.',
-    });
-  }
+  return currentLevel;
 };
 
-exports.viewResumePreview = async (req, res) => {
-  try {
-    clearExpiredResumePreviews();
+const buildArchiveDateMatch = (dateFilter, field = 'updatedAt') => {
+  const value = String(dateFilter || 'all').toLowerCase();
+  if (value === 'all') return {};
+  const now = new Date();
+  const start = new Date(now);
 
-    const preview = resumePreviewStore.get(req.params.previewToken);
+  if (value === 'today') start.setHours(0, 0, 0, 0);
+  else if (value === '7days') start.setDate(start.getDate() - 7);
+  else if (value === '30days') start.setDate(start.getDate() - 30);
+  else return {};
 
-    if (!preview || preview.expiresAt <= Date.now()) {
-      resumePreviewStore.delete(req.params.previewToken);
-      return res.status(404).send('This resume preview has expired. Please generate it again.');
-    }
-
-    const requestedFileName = sanitizeResumePreviewFileName(
-      req.params.fileName || preview.fileName
-    );
-    const fileName = requestedFileName || preview.fileName;
-
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `inline; filename="${fileName}"`,
-      'Content-Length': preview.buffer.length,
-      'Cache-Control': 'private, no-store, max-age=0',
-      'X-Content-Type-Options': 'nosniff',
-    });
-
-    return res.end(preview.buffer);
-  } catch (error) {
-    console.error('Error opening named resume preview:', error);
-    return res.status(500).send('Unable to open resume preview.');
-  }
+  return { [field]: { $gte: start, $lte: now } };
 };
 
-exports.verifyResumeDownloadPassword = async (req, res) => {
+exports.getAdminArchive = async (req, res) => {
   try {
-    if (req.user.role !== 'jobseeker') {
-      return res.status(403).json({ success: false, message: 'Only job seekers can download generated resumes.' });
-    }
+    const q = String(req.query.q || '').trim().toLowerCase();
+    const roleFilter = String(req.query.role || 'all').trim().toLowerCase();
+    const typeFilter = String(req.query.type || 'all').trim().toLowerCase();
+    const campusFilter = String(req.query.campus || 'all').trim();
+    const courseFilter = String(req.query.course || 'all').trim();
+    const companyFilter = String(req.query.company || 'all').trim();
+    const industryFilter = String(req.query.industry || 'all').trim();
+    const dateFilter = String(req.query.date || 'all').trim().toLowerCase();
+    const customFrom = String(req.query.dateFrom || '').trim();
+    const customTo = String(req.query.dateTo || '').trim();
+    const sort = String(req.query.sort || 'newest').trim().toLowerCase();
 
-    const { password } = req.body;
+    const archiveUserFields = [
+      'email',
+      'username',
+      'firstName',
+      'middleName',
+      'lastName',
+      'extensionName',
+      'profileImage',
+      'role',
+      'status',
+      'isActive',
+      'lastLogin',
+      'inactiveBySystem',
+      'inactiveAt',
+      'inactiveReason',
+      'inactiveThresholdMonths',
+      'createdAt',
+      'updatedAt',
+      'jobSeekerProfile.campus',
+      'jobSeekerProfile.course',
+      'jobSeekerProfile.program',
+      'jobSeekerProfile.educationEntries',
+      'jobSeekerProfile.address',
+      'jobSeekerProfile.phoneNumber',
+      'employerProfile.companyName',
+      'employerProfile.companyLogo',
+      'employerProfile.industry',
+      'employerProfile.businessType',
+      'employerProfile.companyAddress',
+      'employerProfile.regionCity',
+      'employerProfile.address',
+      'employerProfile.mobileNumber',
+      'phoneNumber',
+      'mobileNumber',
+      'phone',
+    ].join(' ');
 
-    if (!password || !String(password).trim()) {
-      return res.status(400).json({ success: false, message: 'Please enter your password.' });
-    }
+    const getDateBounds = () => {
+      const now = new Date();
+      let start = null;
+      let end = new Date(now);
+      end.setHours(23, 59, 59, 999);
 
-    const user = await User.findById(req.user._id);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found.' });
-    }
+      if (dateFilter === 'today') {
+        start = new Date(now);
+        start.setHours(0, 0, 0, 0);
+      } else if (dateFilter === 'yesterday') {
+        start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+        end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999);
+      } else if (dateFilter === 'thisweek') {
+        const dayOfWeek = now.getDay();
+        const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset);
+        start.setHours(0, 0, 0, 0);
+      } else if (dateFilter === '7days') {
+        start = new Date(now);
+        start.setDate(start.getDate() - 6);
+        start.setHours(0, 0, 0, 0);
+      } else if (dateFilter === 'thismonth') {
+        start = new Date(now.getFullYear(), now.getMonth(), 1);
+        start.setHours(0, 0, 0, 0);
+      } else if (dateFilter === 'lastmonth') {
+        start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+      } else if (dateFilter === 'thisyear') {
+        start = new Date(now.getFullYear(), 0, 1);
+        start.setHours(0, 0, 0, 0);
+      } else if (dateFilter === 'lastyear') {
+        start = new Date(now.getFullYear() - 1, 0, 1);
+        end = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
+      } else if (dateFilter === 'custom') {
+        start = customFrom ? new Date(`${customFrom}T00:00:00`) : null;
+        end = customTo ? new Date(`${customTo}T23:59:59.999`) : end;
+      }
 
-    const isMatch = await bcrypt.compare(String(password), user.password);
-    if (!isMatch) {
-      return res.status(400).json({ success: false, message: 'Incorrect password. Please try again.' });
-    }
-
-    return res.status(200).json({ success: true, message: 'Password verified successfully.' });
-  } catch (error) {
-    console.error('Error verifying resume download password:', error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || 'Error verifying password',
-    });
-  }
-};
-
-exports.downloadResume = async (req, res) => {
-  let browser;
-
-  try {
-    if (req.user.role !== 'jobseeker') {
-      return res.status(403).json({ success: false, message: 'Only job seekers can download generated resumes.' });
-    }
-
-    const user = await User.findById(req.user._id).select('-password');
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found.' });
-    }
-
-    const html = buildResumeHtmlForPdf(user);
-    const fullName = resumeFullName(user) || 'Resume';
-    const safeFileName = `${fullName.replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '') || 'Resume'}_CV.pdf`;
-
-    const launchOptions = {
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--no-zygote',
-        '--single-process',
-      ],
+      return { start, end };
     };
 
-    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
-      launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
-    }
+    const { start, end } = getDateBounds();
+    const isWithinDate = (value) => {
+      if (dateFilter === 'all') return true;
+      const date = new Date(value || 0);
+      if (Number.isNaN(date.getTime())) return false;
+      if (start && date < start) return false;
+      if (end && date > end) return false;
+      return true;
+    };
 
-    browser = await puppeteer.launch(launchOptions);
+    const getCourse = (user = {}) => {
+      const profile = user.jobSeekerProfile || {};
+      const education = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
+      const entry = education.find((item) => item?.course || item?.program || item?.degree);
+      return (
+        profile.course ||
+        profile.program ||
+        entry?.course ||
+        entry?.program ||
+        entry?.degree ||
+        ''
+      );
+    };
 
-    const page = await browser.newPage();
+    const getCampus = (user = {}) => {
+      const profile = user.jobSeekerProfile || {};
+      const education = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
+      return profile.campus || education.find((item) => item?.campus)?.campus || '';
+    };
 
-    page.setDefaultNavigationTimeout(60000);
-    page.setDefaultTimeout(60000);
+    const getSecondaryText = (user = {}) => user?.email || '';
 
-    await page.setViewport({
-      width: 1240,
-      height: 1754,
-      deviceScaleFactor: 1,
-    });
+    const typeDefinitions = {
+      post: { key: 'post', label: 'Post', order: 1 },
+      comment: { key: 'comment', label: 'Comment', order: 2 },
+      'job-post': { key: 'job-post', label: 'Job Post', order: 3 },
+      'declined-applicants': {
+        key: 'declined-applicants',
+        label: 'Declined Applicants',
+        order: 4,
+      },
+      'inactive-account': {
+        key: 'inactive-account',
+        label: 'Inactive Account',
+        order: 5,
+      },
+    };
 
-    await page.setContent(html, {
-      waitUntil: 'domcontentloaded',
-      timeout: 60000,
-    });
+    const grouped = new Map();
 
-    try {
-      await page.evaluateHandle('document.fonts.ready');
-    } catch (fontError) {
-      console.warn('Resume PDF font loading warning:', fontError?.message || fontError);
-    }
+    const ensureGroup = (account) => {
+      if (!account?._id) return null;
+      const accountId = String(account._id);
 
-    try {
-      await page.waitForNetworkIdle({
-        idleTime: 500,
-        timeout: 10000,
+      if (!grouped.has(accountId)) {
+        const role = String(account.role || '').toLowerCase();
+        const employerProfile = account.employerProfile || {};
+
+        grouped.set(accountId, {
+          accountId,
+          account,
+          displayName: getArchiveAccountHolderName(account),
+          secondaryText: getSecondaryText(account),
+          contactNumber: getArchiveContactNumber(account),
+          role,
+          campus: role === 'jobseeker' ? getCampus(account) : '',
+          course: role === 'jobseeker' ? getCourse(account) : '',
+          company:
+            role === 'employer'
+              ? employerProfile.companyName || account.companyName || ''
+              : '',
+          industry:
+            role === 'employer'
+              ? employerProfile.industry || employerProfile.businessType || ''
+              : '',
+          records: [],
+          searchableText: [],
+          latestArchivedAt: null,
+        });
+      }
+
+      return grouped.get(accountId);
+    };
+
+    const addRecord = (account, record) => {
+      if (!record?.archiveType || !isWithinDate(record.archivedAt)) return;
+      const group = ensureGroup(account);
+      if (!group) return;
+
+      group.records.push(record);
+      group.searchableText.push(
+        [
+          record.typeLabel,
+          record.title,
+          record.content,
+          record.postContent,
+          record.searchText,
+        ]
+          .filter(Boolean)
+          .join(' ')
+      );
+
+      if (
+        !group.latestArchivedAt ||
+        new Date(record.archivedAt || 0) > new Date(group.latestArchivedAt || 0)
+      ) {
+        group.latestArchivedAt = record.archivedAt;
+      }
+    };
+
+    const [communityPosts, archivedJobs, archivedDeclinedApplications, inactiveUsers] =
+      await Promise.all([
+        CommunityPost.find({
+          $or: [
+            { isDeleted: true },
+            { comments: { $elemMatch: { isDeleted: true } } },
+          ],
+        })
+          .populate('author', archiveUserFields)
+          .populate('comments.author', archiveUserFields)
+          .lean(),
+        Job.find({
+          $or: [{ isArchived: true }, { archivedAt: { $ne: null } }],
+        })
+          .populate('employer', archiveUserFields)
+          .select(
+            'title companyName companyLogo employer status isActive isPublished isArchived archivedAt applicationDeadline createdAt updatedAt'
+          )
+          .lean(),
+        Application.find({
+          status: 'declined',
+          isDeclinedArchived: true,
+        })
+          .populate('employer', archiveUserFields)
+          .populate('job', 'title companyName')
+          .populate('jobseeker', 'email firstName middleName lastName fullName')
+          .select(
+            'employer job jobseeker status hiringStage lastActiveStatus declinedFrom declinedArchivedAt reviewedAt updatedAt'
+          )
+          .lean(),
+        User.find({
+          role: 'employer',
+          status: 'inactive',
+          isActive: false,
+          inactiveBySystem: true,
+        })
+          .select(archiveUserFields)
+          .lean(),
+      ]);
+
+    communityPosts.forEach((post) => {
+      if (post.isDeleted === true) {
+        addRecord(post.author, {
+          archiveType: 'post',
+          typeLabel: 'Post',
+          title: 'Community Post',
+          content: post.content || '',
+          archivedAt: post.deletedAt || post.updatedAt,
+          searchText: [post.category, ...(post.topics || [])].filter(Boolean).join(' '),
+        });
+      }
+
+      (post.comments || []).forEach((comment) => {
+        if (comment.isDeleted !== true) return;
+        addRecord(comment.author, {
+          archiveType: 'comment',
+          typeLabel: 'Comment',
+          title: 'Community Comment',
+          content: comment.content || '',
+          postContent: post.content || '',
+          archivedAt: comment.deletedAt || comment.updatedAt,
+        });
       });
-    } catch (networkError) {
-      console.warn('Resume PDF network idle warning:', networkError?.message || networkError);
+    });
+
+    archivedJobs.forEach((job) => {
+      addRecord(job.employer, {
+        archiveType: 'job-post',
+        typeLabel: 'Job Post',
+        title: job.title || 'Unfinished Posting',
+        archivedAt: job.archivedAt || job.updatedAt,
+        searchText: [job.companyName, job.status].filter(Boolean).join(' '),
+      });
+    });
+
+    archivedDeclinedApplications.forEach((application) => {
+      const jobTitle = application.job?.title || 'Archived Job';
+      const jobseekerName = getArchiveUserName(application.jobseeker || {});
+      addRecord(application.employer, {
+        archiveType: 'declined-applicants',
+        typeLabel: 'Declined Applicants',
+        title: jobTitle,
+        archivedAt:
+          application.declinedArchivedAt || application.reviewedAt || application.updatedAt,
+        searchText: [jobTitle, jobseekerName, application.hiringStage].filter(Boolean).join(' '),
+      });
+    });
+
+    inactiveUsers.forEach((user) => {
+      addRecord(user, {
+        archiveType: 'inactive-account',
+        typeLabel: 'Inactive Account',
+        title: 'Inactive Account',
+        archivedAt: user.inactiveAt || user.updatedAt || user.lastLogin || user.createdAt,
+        searchText: [user.status, user.email, user.inactiveReason].filter(Boolean).join(' '),
+      });
+    });
+
+    let archiveGroups = Array.from(grouped.values()).map((group) => {
+      const archivedTypeKeys = [...new Set(group.records.map((record) => record.archiveType))];
+      const archivedTypes = archivedTypeKeys
+        .map((key) => typeDefinitions[key])
+        .filter(Boolean)
+        .sort((first, second) => first.order - second.order)
+        .map(({ order, ...type }) => type);
+
+      return {
+        accountId: group.accountId,
+        account: group.account,
+        displayName: group.displayName,
+        secondaryText: group.secondaryText,
+        contactNumber: group.contactNumber,
+        role: group.role,
+        campus: group.campus,
+        course: group.course,
+        company: group.company,
+        industry: group.industry,
+        archivedTypes,
+        latestArchivedAt: group.latestArchivedAt,
+        recordCount: group.records.length,
+        searchableText: group.searchableText,
+      };
+    });
+
+    const uniqueSortedArchiveValues = (values = []) =>
+      [...new Set(values.map((value) => String(value || '').trim()).filter(Boolean))].sort(
+        (first, second) => first.localeCompare(second)
+      );
+
+    const archiveFilterOptions = {
+      campuses: uniqueSortedArchiveValues(
+        archiveGroups
+          .filter((group) => group.role === 'jobseeker')
+          .map((group) => group.campus)
+      ),
+      courses: uniqueSortedArchiveValues(
+        archiveGroups
+          .filter((group) => group.role === 'jobseeker')
+          .map((group) => group.course)
+      ),
+      companies: uniqueSortedArchiveValues(
+        archiveGroups
+          .filter((group) => group.role === 'employer')
+          .map((group) => group.company)
+      ),
+      industries: uniqueSortedArchiveValues(
+        archiveGroups
+          .filter((group) => group.role === 'employer')
+          .map((group) => group.industry)
+      ),
+    };
+
+    if (roleFilter !== 'all') {
+      archiveGroups = archiveGroups.filter((group) => group.role === roleFilter);
     }
 
-    await page.evaluate(() => {
-      const paper = document.querySelector('.resume-paper');
-      const declaration = paper?.querySelector('.resume-declaration');
-      if (!paper || !declaration) return;
+    if (campusFilter.toLowerCase() !== 'all') {
+      archiveGroups = archiveGroups.filter(
+        (group) =>
+          String(group.campus || '').toLowerCase() === campusFilter.toLowerCase()
+      );
+    }
 
-      declaration.style.marginTop = '11px';
+    if (courseFilter.toLowerCase() !== 'all') {
+      archiveGroups = archiveGroups.filter(
+        (group) =>
+          String(group.course || '').toLowerCase() === courseFilter.toLowerCase()
+      );
+    }
 
-      const paperRect = paper.getBoundingClientRect();
-      const declarationRect = declaration.getBoundingClientRect();
-      if (!paperRect.width || !declarationRect.height) return;
+    if (companyFilter.toLowerCase() !== 'all') {
+      archiveGroups = archiveGroups.filter(
+        (group) =>
+          String(group.company || '').toLowerCase() === companyFilter.toLowerCase()
+      );
+    }
 
-      const pageHeight = paperRect.width * (297 / 210);
-      const bottomInset = paperRect.width * (12 / 210);
-      const currentBottom = declarationRect.bottom - paperRect.top;
-      const lastPage = Math.max(1, Math.ceil((currentBottom + bottomInset) / pageHeight));
-      const targetBottom = (lastPage * pageHeight) - bottomInset;
-      const extraSpace = Math.max(0, targetBottom - currentBottom);
+    if (industryFilter.toLowerCase() !== 'all') {
+      archiveGroups = archiveGroups.filter(
+        (group) =>
+          String(group.industry || '').toLowerCase() === industryFilter.toLowerCase()
+      );
+    }
 
-      declaration.style.marginTop = `${11 + extraSpace}px`;
+    if (typeFilter !== 'all') {
+      archiveGroups = archiveGroups.filter((group) =>
+        group.archivedTypes.some((type) => type.key === typeFilter)
+      );
+    }
+
+    if (q) {
+      archiveGroups = archiveGroups.filter((group) => {
+        const searchable = [
+          group.displayName,
+          group.secondaryText,
+          group.role,
+          group.campus,
+          group.course,
+          group.company,
+          group.industry,
+          group.account?.email,
+          group.contactNumber,
+          ...group.archivedTypes.map((type) => type.label),
+          ...group.searchableText,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+
+        return searchable.includes(q);
+      });
+    }
+
+    archiveGroups.sort((first, second) => {
+      if (sort === 'oldest') {
+        return new Date(first.latestArchivedAt || 0) - new Date(second.latestArchivedAt || 0);
+      }
+      if (sort === 'name_asc' || sort === 'name-asc') {
+        return first.displayName.localeCompare(second.displayName);
+      }
+      if (sort === 'name_desc' || sort === 'name-desc') {
+        return second.displayName.localeCompare(first.displayName);
+      }
+      return new Date(second.latestArchivedAt || 0) - new Date(first.latestArchivedAt || 0);
     });
 
-    const pdf = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      preferCSSPageSize: true,
-      margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' },
+    archiveGroups = archiveGroups.map(({ searchableText, ...group }) => group);
+
+    return res.json({
+      success: true,
+      archiveGroups,
+      total: archiveGroups.length,
+      options: {
+        roles: ['jobseeker', 'employer'],
+        types: Object.values(typeDefinitions)
+          .sort((first, second) => first.order - second.order)
+          .map(({ order, ...type }) => type),
+        campuses: archiveFilterOptions.campuses,
+        courses: archiveFilterOptions.courses,
+        companies: archiveFilterOptions.companies,
+        industries: archiveFilterOptions.industries,
+      },
     });
-
-    const pdfBuffer = Buffer.from(pdf);
-
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${safeFileName}"`,
-      'Content-Length': pdfBuffer.length,
-      'Cache-Control': 'no-store',
-    });
-
-    return res.end(pdfBuffer);
   } catch (error) {
-    console.error('Error generating resume PDF:', {
-      message: error?.message,
-      name: error?.name,
-      stack: error?.stack,
-    });
-
+    console.error('Error loading admin archive:', error);
     return res.status(500).json({
       success: false,
-      message: error.message || 'Error generating resume PDF',
+      message: 'Failed to load admin archive',
     });
-  } finally {
-    if (browser) {
-      try {
-        await browser.close();
-      } catch (closeError) {
-        console.warn('Resume PDF browser close warning:', closeError?.message || closeError);
+  }
+};
+
+
+exports.getAdminArchiveDetails = async (req, res) => {
+  try {
+    const type = String(req.params.type || '').toLowerCase();
+    const { id } = req.params;
+
+
+    if (type === 'account') {
+      const archiveUserFields = [
+        'email',
+        'username',
+        'firstName',
+        'middleName',
+        'lastName',
+        'extensionName',
+        'profileImage',
+        'role',
+        'status',
+        'isActive',
+        'lastLogin',
+        'inactiveBySystem',
+        'inactiveAt',
+        'inactiveReason',
+        'inactiveThresholdMonths',
+        'createdAt',
+        'updatedAt',
+        'jobSeekerProfile',
+        'employerProfile',
+      ].join(' ');
+
+      const account = await User.findById(id).select(archiveUserFields).lean();
+
+      if (!account || account.role === 'admin') {
+        return res.status(404).json({
+          success: false,
+          message: 'Archived account not found',
+        });
       }
+
+      const [communityPosts, archivedJobs, archivedDeclinedApplications] = await Promise.all([
+        CommunityPost.find({
+          $or: [
+            { author: id, isDeleted: true },
+            { comments: { $elemMatch: { author: id, isDeleted: true } } },
+          ],
+        })
+          .populate('deletedBy', 'email firstName middleName lastName fullName')
+          .populate('comments.deletedBy', 'email firstName middleName lastName fullName')
+          .lean(),
+        account.role === 'employer'
+          ? Job.find({
+              employer: id,
+              $or: [{ isArchived: true }, { archivedAt: { $ne: null } }],
+            })
+              .select(
+                'title companyName companyLogo employer status applicationDeadline isActive isPublished isArchived archivedAt createdAt updatedAt'
+              )
+              .lean()
+          : [],
+        account.role === 'employer'
+          ? Application.find({
+              employer: id,
+              status: 'declined',
+              isDeclinedArchived: true,
+            })
+              .populate('job', 'title companyName companyLogo')
+              .populate(
+                'jobseeker',
+                'email firstName middleName lastName fullName profileImage jobSeekerProfile'
+              )
+              .select(
+                'job jobseeker employer status hiringStage lastActiveStatus declinedFrom declineReason declineComment appliedAt reviewedAt updatedAt activityHistory isDeclinedArchived declinedArchivedAt'
+              )
+              .sort({ declinedArchivedAt: -1, updatedAt: -1 })
+              .lean()
+          : [],
+      ]);
+
+      const records = [];
+
+      communityPosts.forEach((post) => {
+        if (String(post.author || '') === String(id) && post.isDeleted === true) {
+          records.push({
+            recordId: `post-${post._id}`,
+            archiveType: 'post',
+            typeLabel: 'Post',
+            title: 'Community Post',
+            subtitle: post.category ? `Category: ${post.category}` : '',
+            content: post.content || '',
+            category: post.category || '',
+            topics: post.topics || [],
+            imageUrl: post.imageUrl || '',
+            linkUrl: post.linkUrl || '',
+            archivedAt: post.deletedAt || post.updatedAt,
+            archivedBy: getArchiveUserName(post.deletedBy || {}),
+            postId: String(post._id),
+          });
+        }
+
+        (post.comments || []).forEach((comment) => {
+          if (String(comment.author || '') !== String(id) || comment.isDeleted !== true) return;
+
+          records.push({
+            recordId: `comment-${comment._id}`,
+            archiveType: 'comment',
+            typeLabel: 'Comment',
+            title: 'Community Comment',
+            subtitle: post.category ? `Category: ${post.category}` : '',
+            content: comment.content || '',
+            postContent: post.content || '',
+            category: post.category || '',
+            topics: post.topics || [],
+            archivedAt: comment.deletedAt || comment.updatedAt,
+            archivedBy: getArchiveUserName(comment.deletedBy || {}),
+            postId: String(post._id),
+            commentId: String(comment._id),
+          });
+        });
+      });
+
+      archivedJobs.forEach((job) => {
+        records.push({
+          recordId: `job-${job._id}`,
+          archiveType: 'job-post',
+          typeLabel: 'Job Post',
+          title: job.title || 'Unfinished Posting',
+          subtitle: '',
+          archivedAt: job.archivedAt || job.updatedAt,
+          jobId: String(job._id),
+          companyName: job.companyName || getArchiveUserName(account),
+        });
+      });
+
+      const declinedByJob = new Map();
+
+      archivedDeclinedApplications.forEach((application) => {
+        const jobId = String(application.job?._id || application.job || 'unknown-job');
+        const jobTitle = application.job?.title || 'Archived Job';
+        const archivedAt =
+          application.declinedArchivedAt || application.reviewedAt || application.updatedAt;
+
+        if (!declinedByJob.has(jobId)) {
+          declinedByJob.set(jobId, {
+            recordId: `declined-${jobId}`,
+            archiveType: 'declined-applicants',
+            typeLabel: 'Declined Applicants',
+            title: jobTitle,
+            subtitle: '',
+            archivedAt,
+            jobId: jobId === 'unknown-job' ? '' : jobId,
+            companyName: application.job?.companyName || getArchiveUserName(account),
+            applicants: [],
+          });
+        }
+
+        const group = declinedByJob.get(jobId);
+        if (new Date(archivedAt || 0) > new Date(group.archivedAt || 0)) {
+          group.archivedAt = archivedAt;
+        }
+
+        const jobseeker = application.jobseeker || {};
+        const profile = jobseeker.jobSeekerProfile || {};
+        const declinedActivity = [...(Array.isArray(application.activityHistory)
+          ? application.activityHistory
+          : [])]
+          .reverse()
+          .find(
+            (activity) =>
+              String(activity?.type || '').toLowerCase() === 'declined' ||
+              String(activity?.toStatus || '').toLowerCase() === 'declined'
+          );
+        const declinedStage =
+          String(application.hiringStage || '').trim() ||
+          (application.declinedFrom === 'forInterview'
+            ? 'For Interview'
+            : application.declinedFrom === 'applicants'
+              ? 'Initial Screening'
+              : application.lastActiveStatus === 'for interview'
+                ? 'For Interview'
+                : 'Application Review');
+
+        group.applicants.push({
+          applicationId: String(application._id),
+          _id: String(application._id),
+          applicantName:
+            jobseeker.fullName ||
+            [jobseeker.firstName, jobseeker.middleName, jobseeker.lastName]
+              .filter(Boolean)
+              .join(' ') ||
+            jobseeker.email ||
+            'Jobseeker',
+          email: jobseeker.email || '',
+          profileImage: jobseeker.profileImage || profile.profileImage || '',
+          jobTitle,
+          jobSeekerLevel: getArchiveJobSeekerLevel(jobseeker),
+          declinedStage,
+          declineReason: application.declineReason || '',
+          declineComment: application.declineComment || '',
+          appliedAt: application.appliedAt,
+          declinedAt:
+            declinedActivity?.occurredAt || application.reviewedAt || application.updatedAt,
+          archivedAt,
+        });
+      });
+
+      records.push(...declinedByJob.values());
+
+      const isInactive =
+        account.role === 'employer' &&
+        account.inactiveBySystem === true &&
+        account.status === 'inactive' &&
+        account.isActive === false;
+      if (isInactive) {
+        records.push({
+          recordId: `inactive-${account._id}`,
+          archiveType: 'inactive-account',
+          typeLabel: 'Inactive Account',
+          title: 'Account Details',
+          subtitle: account.role === 'employer' ? 'Employer account' : 'Jobseeker account',
+          archivedAt: account.inactiveAt || account.updatedAt || account.lastLogin || account.createdAt,
+          accountId: String(account._id),
+          inactiveReason: account.inactiveReason || '',
+          inactiveThresholdMonths: account.inactiveThresholdMonths || null,
+        });
+      }
+
+      records.sort(
+        (first, second) =>
+          new Date(second.archivedAt || 0) - new Date(first.archivedAt || 0)
+      );
+
+      const jobSeekerProfile = account.jobSeekerProfile || {};
+      const employerProfile = account.employerProfile || {};
+      const educationEntries = Array.isArray(jobSeekerProfile.educationEntries)
+        ? jobSeekerProfile.educationEntries
+        : [];
+      const educationItem = educationEntries.find(
+        (entry) => entry?.course || entry?.program || entry?.degree
+      );
+
+      const industryOrCourse =
+        account.role === 'employer'
+          ? employerProfile.industry || employerProfile.businessType || 'Unspecified'
+          : jobSeekerProfile.course ||
+            jobSeekerProfile.program ||
+            educationItem?.course ||
+            educationItem?.program ||
+            educationItem?.degree ||
+            'Unspecified';
+
+      const location =
+        account.role === 'employer'
+          ? employerProfile.companyAddress ||
+            employerProfile.regionCity ||
+            employerProfile.address ||
+            'Unspecified'
+          : jobSeekerProfile.campus ||
+            educationEntries.find((entry) => entry?.campus)?.campus ||
+            jobSeekerProfile.address ||
+            'Unspecified';
+
+      const graduationYear =
+        jobSeekerProfile.yearGraduated ||
+        educationEntries.find((entry) => entry?.yearGraduated || entry?.endYear)?.yearGraduated ||
+        educationEntries.find((entry) => entry?.yearGraduated || entry?.endYear)?.endYear ||
+        '';
+
+      const lastActive = account.lastLogin || account.createdAt;
+      const lastActiveDate = new Date(lastActive || 0);
+      const inactivityDays = Number.isNaN(lastActiveDate.getTime())
+        ? 0
+        : Math.max(0, Math.floor((Date.now() - lastActiveDate.getTime()) / 86400000));
+
+      return res.json({
+        success: true,
+        account,
+        records,
+        summary: {
+          industryOrCourse,
+          location,
+          lastActive,
+          inactivityDays,
+          graduationYear,
+          inactiveAt: account.inactiveAt || null,
+          inactiveReason: account.inactiveReason || '',
+          inactiveThresholdMonths: account.inactiveThresholdMonths || null,
+          latestArchivedAt: records[0]?.archivedAt || null,
+        },
+      });
     }
+
+    if (type === 'job') {
+      let job = await Job.findById(id)
+        .populate(
+          'employer',
+          'email firstName middleName lastName fullName employerProfile.companyName employerProfile.companyLogo employerProfile.companyAddress employerProfile.industry employerProfile.companyWebsiteUrl employerProfile.companyWebsite'
+        )
+        .lean();
+
+      if (!job) {
+        return res.status(404).json({
+          success: false,
+          message: 'Archived job not found',
+        });
+      }
+
+      const employer = job.employer || {};
+      const employerProfile = employer.employerProfile || {};
+      job = {
+        ...job,
+        companyName:
+          job.companyName || employerProfile.companyName || getArchiveUserName(employer),
+        companyLogo: job.companyLogo || employerProfile.companyLogo || '',
+        employerDetails: {
+          companyName: employerProfile.companyName || job.companyName || '',
+          companyAddress: employerProfile.companyAddress || '',
+          industry: employerProfile.industry || '',
+          companyWebsite:
+            employerProfile.companyWebsiteUrl || employerProfile.companyWebsite || '',
+        },
+      };
+
+      const applications = await Application.find({
+        job: id,
+        status: 'declined',
+      })
+        .populate(
+          'jobseeker',
+          'email firstName middleName lastName fullName jobSeekerProfile'
+        )
+        .select(
+          'jobseeker lastActiveStatus declinedFrom declineReason declineComment appliedAt reviewedAt updatedAt isDeclinedArchived declinedArchivedAt'
+        )
+        .sort({ reviewedAt: -1, updatedAt: -1 })
+        .lean();
+
+      const now = new Date();
+
+      const isExpired =
+        Boolean(job.applicationDeadline) &&
+        new Date(job.applicationDeadline) < now;
+
+      const isClosed =
+        job.status === 'closed' ||
+        job.isArchived === true ||
+        Boolean(job.archivedAt) ||
+        (job.isPublished === true && job.isActive === false);
+
+      /*
+       * A job with declined applicants must remain viewable even when the job
+       * itself is still active and has not yet expired.
+       */
+      if (!isClosed && !isExpired && applications.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'This job is not part of the Jobs archive',
+        });
+      }
+
+      const declinedApplicants = applications.map((application) => {
+        const jobseeker = application.jobseeker || {};
+        const profile = jobseeker.jobSeekerProfile || {};
+
+        return {
+          _id: application._id,
+          applicantName:
+            jobseeker.fullName ||
+            [jobseeker.firstName, jobseeker.middleName, jobseeker.lastName]
+              .filter(Boolean)
+              .join(' ') ||
+            jobseeker.email ||
+            'Jobseeker',
+          jobseekerLevel:
+            profile.jobseekerLevel ||
+            profile.jobSeekerLevel ||
+            profile.experienceLevel ||
+            profile.careerLevel ||
+            'Not specified',
+          declinedStage:
+            application.declinedFrom === 'forInterview'
+              ? 'For Interview'
+              : application.declinedFrom === 'applicants'
+                ? 'Initial Screening'
+                : application.lastActiveStatus === 'for interview'
+                  ? 'For Interview'
+                  : 'Application Review',
+          declineReason: application.declineReason || '',
+          declineComment: application.declineComment || '',
+          appliedAt: application.appliedAt,
+          declinedAt: application.reviewedAt || application.updatedAt,
+          isDeclinedArchived: Boolean(application.isDeclinedArchived),
+          declinedArchivedAt: application.declinedArchivedAt,
+        };
+      });
+
+      return res.json({
+        success: true,
+        job,
+        isClosed,
+        isExpired,
+        declinedApplicants,
+      });
+    }
+
+    if (type === 'dormant-user') {
+      const user = await User.findById(id)
+        .select(
+          'email username firstName middleName lastName fullName profileImage role status isActive lastLogin createdAt jobSeekerProfile employerProfile'
+        )
+        .lean();
+
+      if (!user || user.role === 'admin') {
+        return res.status(404).json({
+          success: false,
+          message: 'Dormant account not found',
+        });
+      }
+
+      const now = new Date();
+      const lastActive = user.lastLogin || user.createdAt;
+      const activityDate = new Date(lastActive);
+
+      let inactivityMonths =
+        (now.getFullYear() - activityDate.getFullYear()) * 12 +
+        (now.getMonth() - activityDate.getMonth());
+
+      if (now.getDate() < activityDate.getDate()) inactivityMonths -= 1;
+      inactivityMonths = Math.max(0, inactivityMonths);
+
+      if (inactivityMonths < 6 || inactivityMonths > 12) {
+        return res.status(404).json({
+          success: false,
+          message: 'This account is no longer within the 6–12 month dormant period',
+        });
+      }
+
+      const jobSeekerProfile = user.jobSeekerProfile || {};
+      const employerProfile = user.employerProfile || {};
+      const educationEntries = Array.isArray(jobSeekerProfile.educationEntries)
+        ? jobSeekerProfile.educationEntries
+        : [];
+      const educationItem = educationEntries.find(
+        (entry) => entry?.course || entry?.program || entry?.degree
+      );
+
+      const industryOrCourse =
+        user.role === 'employer'
+          ? employerProfile.industry ||
+            employerProfile.businessType ||
+            'Unspecified'
+          : jobSeekerProfile.course ||
+            jobSeekerProfile.program ||
+            educationItem?.course ||
+            educationItem?.program ||
+            educationItem?.degree ||
+            'Unspecified';
+
+      const location =
+        user.role === 'employer'
+          ? employerProfile.companyAddress ||
+            employerProfile.regionCity ||
+            employerProfile.address ||
+            'Unspecified'
+          : jobSeekerProfile.campus ||
+            educationEntries.find((entry) => entry?.campus)?.campus ||
+            jobSeekerProfile.address ||
+            'Unspecified';
+
+      const phoneNumber =
+        user.role === 'employer'
+          ? employerProfile.mobileNumber ||
+            employerProfile.phoneNumber ||
+            employerProfile.contactNumber ||
+            '—'
+          : jobSeekerProfile.mobileNumber ||
+            jobSeekerProfile.phoneNumber ||
+            user.phoneNumber ||
+            '—';
+
+      return res.json({
+        success: true,
+        user,
+        lastActive,
+        inactivityMonths,
+        industryOrCourse,
+        location,
+        phoneNumber,
+        dormantStatus: 'Dormant Account',
+      });
+    }
+
+    if (type !== 'community-author') {
+      return res.status(400).json({
+        success: false,
+        message: 'Unsupported archive detail type',
+      });
+    }
+
+    const author = await User.findById(id)
+      .select('email firstName middleName lastName fullName profileImage role jobSeekerProfile')
+      .lean();
+
+    if (!author) {
+      return res.status(404).json({
+        success: false,
+        message: 'Community author not found',
+      });
+    }
+
+    const posts = await CommunityPost.find({
+      $or: [
+        { author: id, isDeleted: true },
+        { comments: { $elemMatch: { author: id, isDeleted: true } } },
+      ],
+    })
+      .populate('deletedBy', 'email firstName middleName lastName fullName')
+      .populate('comments.deletedBy', 'email firstName middleName lastName fullName')
+      .sort({ deletedAt: -1, updatedAt: -1 })
+      .lean();
+
+    const items = [];
+
+    posts.forEach((post) => {
+      if (String(post.author) === String(id) && post.isDeleted === true) {
+        items.push({
+          _id: post._id,
+          archiveType: 'post',
+          content: post.content,
+          category: post.category,
+          topics: post.topics || [],
+          imageUrl: post.imageUrl || '',
+          linkUrl: post.linkUrl || '',
+          deletedAt: post.deletedAt || post.updatedAt,
+          deletedByName: getArchiveUserName(post.deletedBy || {}),
+          postId: post._id,
+        });
+      }
+
+      (post.comments || []).forEach((comment) => {
+        if (String(comment.author) !== String(id) || comment.isDeleted !== true) return;
+        items.push({
+          _id: comment._id,
+          archiveType: 'comment',
+          content: comment.content,
+          postContent: post.content,
+          deletedAt: comment.deletedAt || comment.updatedAt,
+          deletedByName: getArchiveUserName(comment.deletedBy || {}),
+          postId: post._id,
+          commentId: comment._id,
+        });
+      });
+    });
+
+    items.sort((a, b) => new Date(b.deletedAt || 0) - new Date(a.deletedAt || 0));
+
+    const profile = author.jobSeekerProfile || {};
+    const educationEntries = Array.isArray(profile.educationEntries)
+      ? profile.educationEntries
+      : [];
+    const educationItem = educationEntries.find(
+      (entry) => entry?.course || entry?.program || entry?.degree
+    );
+
+    return res.json({
+      success: true,
+      author: {
+        ...author,
+        campus:
+          profile.campus ||
+          educationEntries.find((entry) => entry?.campus)?.campus ||
+          'Unspecified',
+        course:
+          profile.course ||
+          profile.program ||
+          educationItem?.course ||
+          educationItem?.program ||
+          educationItem?.degree ||
+          'Unspecified',
+      },
+      items,
+    });
+  } catch (error) {
+    console.error('Error loading admin archive details:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to load archive details',
+    });
+  }
+};
+
+exports.restoreAdminArchiveItem = async (req, res) => {
+  try {
+    const type = String(req.params.type || '').toLowerCase();
+    const { id } = req.params;
+
+
+    if (type === 'community-post') {
+      const post = await CommunityPost.findById(id);
+      if (!post) return res.status(404).json({ success: false, message: 'Community post not found' });
+      post.isDeleted = false;
+      post.deletedAt = null;
+      post.deletedBy = null;
+      await post.save({ validateBeforeSave: false });
+      return res.json({ success: true, message: 'Community post restored successfully', item: post });
+    }
+
+    if (type === 'community-comment') {
+      const post = await CommunityPost.findOne({ 'comments._id': id });
+      if (!post) return res.status(404).json({ success: false, message: 'Community comment not found' });
+      const comment = post.comments.id(id);
+      comment.isDeleted = false;
+      comment.deletedAt = null;
+      comment.deletedBy = null;
+      post.commentsCount = post.comments.filter((item) => item.isDeleted !== true).length;
+      await post.save({ validateBeforeSave: false });
+      return res.json({ success: true, message: 'Community comment restored successfully', item: comment });
+    }
+
+    if (type === 'user') {
+      const user = await User.findById(id);
+      if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+      const wasSystemInactive = user.inactiveBySystem === true;
+
+      user.status = 'active';
+      user.isActive = true;
+      user.lastLogin = new Date();
+      user.inactiveBySystem = false;
+      user.inactiveAt = null;
+      user.inactiveReason = '';
+      user.inactiveThresholdMonths = null;
+
+      if (user.role === 'employer' && !wasSystemInactive) {
+        if (user.employerProfile?.verificationDocs) {
+          user.employerProfile.verificationDocs.overallStatus = 'pending';
+          user.employerProfile.verificationDocs.remarks = '';
+          user.employerProfile.verificationDocs.rejectionReasons = [];
+          user.employerProfile.verificationDocs.rejectionMessage = '';
+        }
+      }
+
+      if (user.role === 'jobseeker') {
+        if (user.jobSeekerProfile?.verificationDocs) {
+          user.jobSeekerProfile.verificationDocs.overallStatus = 'pending';
+          user.jobSeekerProfile.verificationDocs.rejectionReasons = [];
+          user.jobSeekerProfile.verificationDocs.rejectionMessage = '';
+        }
+        if (user.jobSeekerProfile) {
+          user.jobSeekerProfile.verificationStatus = 'pending';
+        }
+      }
+
+      await user.save();
+      return res.json({ success: true, message: 'User restored successfully', item: user });
+    }
+
+    if (type === 'job') {
+      const job = await Job.findById(id);
+      if (!job) return res.status(404).json({ success: false, message: 'Job not found' });
+
+      job.isArchived = false;
+      job.archivedAt = null;
+      job.isActive = true;
+      job.isPublished = true;
+      job.status = 'published';
+
+      await job.save();
+      return res.json({ success: true, message: 'Job restored successfully', item: job });
+    }
+
+    if (type === 'application') {
+      const application = await Application.findById(id);
+      if (!application) return res.status(404).json({ success: false, message: 'Application not found' });
+
+      application.status = application.lastActiveStatus || 'pending';
+      application.declineReason = '';
+      application.declineComment = '';
+      application.declinedFrom = '';
+      application.reviewedAt = null;
+      application.isDeclinedArchived = false;
+
+      await application.save();
+      return res.json({ success: true, message: 'Application restored successfully', item: application });
+    }
+
+    return res.status(400).json({ success: false, message: 'Invalid archive type' });
+  } catch (error) {
+    console.error('Error restoring archive item:', error);
+    return res.status(500).json({ success: false, message: 'Failed to restore archive item' });
+  }
+};
+
+
+exports.permanentlyDeleteAdminArchiveItem = async (req, res) => {
+  try {
+    const type = String(req.params.type || '').toLowerCase();
+    const { id } = req.params;
+
+    if (type === 'community-post') {
+      const post = await CommunityPost.findOne({ _id: id, isDeleted: true });
+      if (!post) return res.status(404).json({ success: false, message: 'Archived community post not found' });
+      await post.deleteOne();
+      return res.json({ success: true, message: 'Community post permanently deleted' });
+    }
+
+    if (type === 'community-comment') {
+      const post = await CommunityPost.findOne({ 'comments._id': id });
+      if (!post) return res.status(404).json({ success: false, message: 'Archived community comment not found' });
+      const comment = post.comments.id(id);
+      if (!comment || comment.isDeleted !== true) {
+        return res.status(404).json({ success: false, message: 'Archived community comment not found' });
+      }
+      post.comments.pull(id);
+      post.commentsCount = post.comments.filter((item) => item.isDeleted !== true).length;
+      await post.save({ validateBeforeSave: false });
+      return res.json({ success: true, message: 'Community comment permanently deleted' });
+    }
+
+    return res.status(400).json({ success: false, message: 'Permanent deletion is only available for archived community content' });
+  } catch (error) {
+    console.error('Error permanently deleting archive item:', error);
+    return res.status(500).json({ success: false, message: 'Failed to permanently delete archive item' });
   }
 };

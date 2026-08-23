@@ -1987,6 +1987,29 @@ exports.getCurrentUser = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
 
+    if (user?.role === 'jobseeker' && isApprovedJobseekerAccount(user)) {
+      if (!user.jobSeekerProfile) user.jobSeekerProfile = {};
+      if (!user.jobSeekerProfile.verificationDocs) user.jobSeekerProfile.verificationDocs = {};
+      const verificationDocs = user.jobSeekerProfile.verificationDocs;
+      let repairedRequiredCredentials = false;
+
+      REQUIRED_ALUMNI_DOC_TYPES.forEach((requiredType) => {
+        const requiredDocument = verificationDocs[requiredType];
+        if (!requiredDocument?.url || verificationDocs?.resubmitRequest?.docType === requiredType) return;
+        if (String(requiredDocument.status || '').toLowerCase() !== 'approved' || requiredDocument.checked !== true) {
+          requiredDocument.status = 'approved';
+          requiredDocument.checked = true;
+          repairedRequiredCredentials = true;
+        }
+      });
+
+      if (repairedRequiredCredentials || user.isVerified !== true) {
+        user.isVerified = true;
+        user.jobSeekerProfile.verificationStatus = 'verified';
+        await user.save();
+      }
+    }
+
     res.status(200).json({
       success: true,
       user: {
@@ -2069,6 +2092,15 @@ exports.uploadAlumniVerificationDoc = async (req, res) => {
 
     const alreadyVerified =
       isApprovedJobseekerAccount(user);
+
+    if (alreadyVerified) {
+      REQUIRED_ALUMNI_DOC_TYPES.forEach((requiredType) => {
+        const requiredDocument = currentDocs[requiredType];
+        if (!requiredDocument?.url || currentDocs?.resubmitRequest?.docType === requiredType) return;
+        requiredDocument.status = 'approved';
+        requiredDocument.checked = true;
+      });
+    }
 
     const overallStatus = getAlumniOverallStatus(currentDocs, false);
 
