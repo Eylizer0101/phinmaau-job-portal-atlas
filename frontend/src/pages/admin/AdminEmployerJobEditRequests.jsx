@@ -50,7 +50,7 @@ const AdminEmployerJobEditRequests = () => {
   }, [requests, search, status, time, sort]);
 
   return <div className="mx-auto max-w-[1500px] space-y-6 py-8">
-    <header><h1 className="text-4xl font-extrabold tracking-tight text-slate-950">Edit Requests</h1><p className="mt-2 text-base text-slate-600">Review employer requests and grant temporary edit access to locked job postings.</p></header>
+    <header> <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Edit Requests</h1><p className="mt-2 text-base text-slate-600">Review employer requests and grant temporary edit access to locked job postings.</p></header>
     <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:grid-cols-[minmax(300px,1fr)_220px_220px_220px]">
       <label className="relative block"><Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search company, job title..." className="h-14 w-full rounded-xl border border-slate-200 pl-12 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></label>
       <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-14 rounded-xl border border-slate-200 bg-white px-4 text-sm"><option value="all">All Status</option><option value="pending">Pending</option><option value="reviewed">Reviewed</option></select>
