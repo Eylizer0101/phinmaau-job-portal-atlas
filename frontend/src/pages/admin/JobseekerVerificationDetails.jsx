@@ -547,20 +547,68 @@ const documentTypes = [
 ];
 
 const RESUBMISSION_REASONS = [
-  "Unclear or unreadable document",
+  "Blurry or unreadable document",
   "Incomplete document",
-  "Expired document",
-  "Incorrect document uploaded",
-  "Information does not match",
-  "Missing required information",
+  "Incorrect document upload",
+  "Information does not match your profile",
+  "Expired Credential",
+  "Missing required pages",
+  "Low-quality image",
+  "Other",
 ];
 
-const DECLINE_REASONS = [
-  "Unable to verify PHINMA AU graduate status",
-  "Invalid or unverifiable credentials",
-  "Submitted information does not match the documents",
-  "Verification requirements were not met",
-];
+const DECLINE_REASONS = [...RESUBMISSION_REASONS];
+
+const ReasonDropdown = ({ value, onChange, options, placeholder = "Add a clear reason..." }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen((open) => !open)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        className={cn(
+          "flex h-10 w-full items-center justify-between rounded-lg border bg-white px-3 text-left text-[13px] font-normal leading-5 shadow-sm transition",
+          "border-[#CBD5E1] text-[#475467] hover:border-[#94A3B8]",
+          "focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20",
+          isOpen && "border-[#2e66a6] ring-2 ring-[#2e66a6]/10",
+        )}
+      >
+        <span className={cn("truncate", !value && "text-[#98A2B3]")}>{value || placeholder}</span>
+        <svg className={cn("ml-3 h-4 w-4 shrink-0 text-[#98A2B3] transition-transform", isOpen && "rotate-180")} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+
+      {isOpen ? (
+        <div className="mt-1 max-h-[220px] overflow-y-auto rounded-lg border border-[#D0D5DD] bg-white py-1 shadow-lg" role="listbox">
+          {options.map((option) => (
+            <button
+              key={option}
+              type="button"
+              role="option"
+              aria-selected={value === option}
+              onClick={() => {
+                onChange(option);
+                setIsOpen(false);
+              }}
+              className={cn(
+                "block w-full px-3 py-2 text-left text-[13px] font-normal leading-5 transition",
+                value === option
+                  ? "bg-[#EEF4FB] text-[#245487]"
+                  : "text-[#344054] hover:bg-[#F2F4F7] hover:text-[#1D2939]",
+              )}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+};
 
 // ======================= MAIN PAGE =======================
 const JobseekerVerificationDetails = () => {
@@ -1796,20 +1844,11 @@ const JobseekerVerificationDetails = () => {
                       Reason for Resubmission (Select at least one reason){" "}
                       <span className="text-[#667085]">(Optional)</span>
                     </label>
-                    <select
+                    <ReasonDropdown
                       value={holdSelectedReason}
-                      onChange={(event) =>
-                        setHoldSelectedReason(event.target.value)
-                      }
-                      className="h-10 w-full rounded-lg border border-[#CBD5E1] bg-white px-3 text-sm text-black outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
-                    >
-                      <option value="">Add a clear reason...</option>
-                      {RESUBMISSION_REASONS.map((reason) => (
-                        <option key={reason} value={reason}>
-                          {reason}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={setHoldSelectedReason}
+                      options={RESUBMISSION_REASONS}
+                    />
                   </div>
 
                   <div className="mt-4">
@@ -1917,18 +1956,11 @@ const JobseekerVerificationDetails = () => {
                     (Select at least one reason){" "}
                     <span className="text-[#667085]">(Optional)</span>
                   </label>
-                  <select
+                  <ReasonDropdown
                     value={declineReason}
-                    onChange={(event) => setDeclineReason(event.target.value)}
-                    className="h-10 w-full rounded-lg border border-[#2e66a6] bg-white px-3 text-sm text-black outline-none ring-1 ring-[#2e66a6]/10 focus:ring-2 focus:ring-[#2e66a6]/25"
-                  >
-                    <option value="">Add a clear reason...</option>
-                    {DECLINE_REASONS.map((reason) => (
-                      <option key={reason} value={reason}>
-                        {reason}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setDeclineReason}
+                    options={DECLINE_REASONS}
+                  />
                 </div>
 
                 <div className="mt-4">
