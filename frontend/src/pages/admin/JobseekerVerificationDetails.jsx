@@ -1323,15 +1323,11 @@ const JobseekerVerificationDetails = () => {
                 ))}
               </div>
 
-              <div className="space-y-2 border-black/15 lg:border-l lg:pl-6">
+              <div className="space-y-2">
                 {infoRowsRight.map(([label, value]) => (
                   <div
                     key={label}
-                    className={cn(
-                      "grid grid-cols-[150px_1fr] gap-3 text-sm",
-                      label === "Date Registered" &&
-                        "mt-3 border-t border-[#2e66a6]/35 pt-3",
-                    )}
+                    className="grid grid-cols-[150px_1fr] gap-3 text-sm"
                   >
                     <span className="text-black/65">{label}:</span>
                     <span className="font-semibold text-black">
