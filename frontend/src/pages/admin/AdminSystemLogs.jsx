@@ -106,7 +106,7 @@ const AdminSystemLogs = () => {
     <section className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="overflow-x-auto"><div className="min-w-[820px]">
         <div className="grid grid-cols-[1fr_1.5fr_0.8fr_1.2fr] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
-          <span>Date & Time</span><span>Performed By</span><span>Role</span><span>Action / Module</span>
+          <span>Date & Time</span><span>Performed By</span><span>Role</span><span>Action</span>
         </div>
         {loading ? <div className="p-16 text-center text-sm text-slate-500">Loading activity logs...</div>
           : error ? <div className="p-16 text-center"><p className="font-bold text-rose-600">{error}</p><button type="button" onClick={loadLogs} className="mt-4 rounded-xl bg-[#212C61] px-4 py-2 text-sm font-bold text-white">Retry</button></div>
