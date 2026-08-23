@@ -583,7 +583,10 @@ const ReasonDropdown = ({ value, onChange, options, placeholder = "Add a clear r
       </button>
 
       {isOpen ? (
-        <div className="mt-1 max-h-[220px] overflow-y-auto rounded-lg border border-[#D0D5DD] bg-white py-1 shadow-lg" role="listbox">
+        <div
+          className="absolute left-0 right-0 top-full z-[80] mt-1 max-h-[220px] overflow-y-auto rounded-lg border border-[#D0D5DD] bg-white py-1 shadow-[0_12px_30px_rgba(15,23,42,0.18)]"
+          role="listbox"
+        >
           {options.map((option) => (
             <button
               key={option}
@@ -1769,7 +1772,7 @@ const JobseekerVerificationDetails = () => {
             />
 
             <div
-              className="relative w-full max-w-[480px] overflow-hidden rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
+              className="relative w-full max-w-[480px] overflow-visible rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="hold-modal-title"
@@ -1909,7 +1912,7 @@ const JobseekerVerificationDetails = () => {
             />
 
             <div
-              className="relative w-full max-w-[430px] overflow-hidden rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
+              className="relative w-full max-w-[430px] overflow-visible rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="decline-modal-title"
