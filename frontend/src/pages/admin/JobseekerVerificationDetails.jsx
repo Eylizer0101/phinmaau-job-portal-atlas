@@ -15,8 +15,10 @@ const UI = {
 
   // Surfaces
   card: "bg-[#F8FAFC] border border-[#E2E8F0] rounded-3xl shadow-[0_8px_24px_rgba(15,23,42,0.05)]",
-  cardSoft: "bg-[#F8FAFC] border border-[#E2E8F0] rounded-3xl shadow-[0_10px_28px_rgba(15,23,42,0.06)]",
-  inset: "bg-[#FFFFFF]/85 border border-[#E2E8F0] rounded-2xl shadow-[0_1px_0_rgba(15,23,42,0.03)]",
+  cardSoft:
+    "bg-[#F8FAFC] border border-[#E2E8F0] rounded-3xl shadow-[0_10px_28px_rgba(15,23,42,0.06)]",
+  inset:
+    "bg-[#FFFFFF]/85 border border-[#E2E8F0] rounded-2xl shadow-[0_1px_0_rgba(15,23,42,0.03)]",
   panel: "bg-[#EEF2F6] border border-[#E2E8F0] rounded-2xl",
   divider: "border-t border-[#E2E8F0]",
 
@@ -38,52 +40,117 @@ const UI = {
   btnMd: "min-h-10 px-4 text-sm",
   btnLg: "min-h-12 px-5 text-sm sm:text-base",
 
-  btnPrimary: "bg-[#2e66a6] text-white shadow-[0_8px_18px_rgba(46,102,166,0.22)] hover:bg-[#255587]",
-  btnSecondary: "bg-[#FFFFFF] text-black border border-[#CBD5E1] hover:bg-[#F1F5F9]",
-  btnDanger: "bg-[#FFFFFF] text-black border border-[#CBD5E1] hover:bg-[#F1F5F9]",
-  btnSoft: "bg-[#EEF4FB] text-[#2e66a6] border border-[#BFD3EA] hover:bg-[#E2EDF8]",
+  btnPrimary:
+    "bg-[#2e66a6] text-white shadow-[0_8px_18px_rgba(46,102,166,0.22)] hover:bg-[#255587]",
+  btnSecondary:
+    "bg-[#FFFFFF] text-black border border-[#CBD5E1] hover:bg-[#F1F5F9]",
+  btnDanger:
+    "bg-[#FFFFFF] text-black border border-[#CBD5E1] hover:bg-[#F1F5F9]",
+  btnSoft:
+    "bg-[#EEF4FB] text-[#2e66a6] border border-[#BFD3EA] hover:bg-[#E2EDF8]",
 
   // Badges
-  badgeBase: "inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold border",
+  badgeBase:
+    "inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold border",
 };
 
 // ======================= ICONS =======================
 const SvgIcon = ({ name, className = "w-5 h-5" }) => {
   const icons = {
     back: (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M10 19l-7-7m0 0l7-7m-7 7h18"
+        />
       </svg>
     ),
     eye: (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
           strokeWidth={1.8}
           d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
         />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+        />
       </svg>
     ),
     check: (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
       </svg>
     ),
     x: (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 9l-6 6m0-6l6 6" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M15 9l-6 6m0-6l6 6"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
       </svg>
     ),
     user: (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+        />
       </svg>
     ),
     document: (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -93,12 +160,27 @@ const SvgIcon = ({ name, className = "w-5 h-5" }) => {
       </svg>
     ),
     graduation: (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 14l9-5-9-5-9 5 9 5zm0 0v6m0-6l-9 5m9-5l9 5" />
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M12 14l9-5-9-5-9 5 9 5zm0 0v6m0-6l-9 5m9-5l9 5"
+        />
       </svg>
     ),
     mail: (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -108,7 +190,12 @@ const SvgIcon = ({ name, className = "w-5 h-5" }) => {
       </svg>
     ),
     phone: (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -118,44 +205,119 @@ const SvgIcon = ({ name, className = "w-5 h-5" }) => {
       </svg>
     ),
     calendar: (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+        />
       </svg>
     ),
     briefcase: (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m-3 0h14a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 13h18" />
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m-3 0h14a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M3 13h18"
+        />
       </svg>
     ),
     download: (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 3v12m0 0l4-4m-4 4l-4-4m-5 8h18" />
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M12 3v12m0 0l4-4m-4 4l-4-4m-5 8h18"
+        />
       </svg>
     ),
     info: (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M13 16h-1v-4h-1m1-4h.01" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M13 16h-1v-4h-1m1-4h.01"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
       </svg>
     ),
     pause: (
-      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10 9v6m4-6v6" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M10 9v6m4-6v6"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
       </svg>
     ),
     warning: (
       <svg className={className} viewBox="0 0 24 24" fill="none">
         <circle cx="12" cy="12" r="10" fill="#EEF2FF" />
-        <path d="M12 7v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path
+          d="M12 7v5"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
         <circle cx="12" cy="15.5" r="1" fill="currentColor" />
       </svg>
     ),
     dangerTriangle: (
       <svg className={className} viewBox="0 0 24 24" fill="none">
         <circle cx="12" cy="12" r="10" fill="#FEE4E2" />
-        <path d="M12 8v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path
+          d="M12 8v5"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
         <circle cx="12" cy="16" r="1" fill="currentColor" />
       </svg>
     ),
@@ -165,9 +327,25 @@ const SvgIcon = ({ name, className = "w-5 h-5" }) => {
 };
 
 const Spinner = ({ className = "w-4 h-4" }) => (
-  <svg className={`${className} animate-spin`} viewBox="0 0 24 24" aria-hidden="true">
-    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z" />
+  <svg
+    className={`${className} animate-spin`}
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+  >
+    <circle
+      className="opacity-25"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      strokeWidth="4"
+      fill="none"
+    />
+    <path
+      className="opacity-75"
+      fill="currentColor"
+      d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z"
+    />
   </svg>
 );
 
@@ -225,7 +403,14 @@ const Button = ({
   return (
     <button
       type="button"
-      className={cn(UI.btnBase, sizes[size], variants[variant], UI.ring, className, loading && "opacity-70 cursor-wait")}
+      className={cn(
+        UI.btnBase,
+        sizes[size],
+        variants[variant],
+        UI.ring,
+        className,
+        loading && "opacity-70 cursor-wait",
+      )}
       onClick={onClick}
       disabled={disabled || loading}
       {...props}
@@ -253,7 +438,11 @@ const Alert = ({ type = "error", children, onClose }) => {
   };
 
   return (
-    <div className={cn("border rounded-2xl p-4", styles[type])} role="alert" aria-live="polite">
+    <div
+      className={cn("border rounded-2xl p-4", styles[type])}
+      role="alert"
+      aria-live="polite"
+    >
       <div className="flex items-start gap-3">
         <div className="mt-0.5">{icons[type]}</div>
         <div className="flex-1 text-sm font-medium">{children}</div>
@@ -261,7 +450,13 @@ const Alert = ({ type = "error", children, onClose }) => {
           <button
             type="button"
             onClick={onClose}
-            className={cn(UI.btnBase, UI.btnSm, UI.btnSecondary, UI.ring, "!h-8 !px-2")}
+            className={cn(
+              UI.btnBase,
+              UI.btnSm,
+              UI.btnSecondary,
+              UI.ring,
+              "!h-8 !px-2",
+            )}
             aria-label="Close alert"
           >
             <span className="text-black/70">✕</span>
@@ -273,9 +468,19 @@ const Alert = ({ type = "error", children, onClose }) => {
 };
 
 const InfoCard = ({ icon, label, value, className }) => (
-  <div className={cn(UI.inset, "p-4 transition hover:border-black/20 hover:shadow-[0_8px_18px_rgba(0,0,0,0.05)]", className)}>
+  <div
+    className={cn(
+      UI.inset,
+      "p-4 transition hover:border-black/20 hover:shadow-[0_8px_18px_rgba(0,0,0,0.05)]",
+      className,
+    )}
+  >
     <div className="flex items-start gap-3">
-      {icon && <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F1F5F9] text-black/55">{icon}</div>}
+      {icon && (
+        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F1F5F9] text-black/55">
+          {icon}
+        </div>
+      )}
       <div className="min-w-0 flex-1">
         <p className={UI.label}>{label}</p>
         <p className={cn(UI.value, "mt-1 break-words")}>{value || "—"}</p>
@@ -341,6 +546,22 @@ const documentTypes = [
   { key: "tin", label: "TIN", icon: "document" },
 ];
 
+const RESUBMISSION_REASONS = [
+  "Unclear or unreadable document",
+  "Incomplete document",
+  "Expired document",
+  "Incorrect document uploaded",
+  "Information does not match",
+  "Missing required information",
+];
+
+const DECLINE_REASONS = [
+  "Unable to verify PHINMA AU graduate status",
+  "Invalid or unverifiable credentials",
+  "Submitted information does not match the documents",
+  "Verification requirements were not met",
+];
+
 // ======================= MAIN PAGE =======================
 const JobseekerVerificationDetails = () => {
   const { id } = useParams();
@@ -356,9 +577,11 @@ const JobseekerVerificationDetails = () => {
   const [showHoldModal, setShowHoldModal] = useState(false);
 
   const [declineMessage, setDeclineMessage] = useState("");
+  const [declineReason, setDeclineReason] = useState("");
 
   const [holdDocTypes, setHoldDocTypes] = useState([]);
   const [holdReason, setHoldReason] = useState("");
+  const [holdSelectedReason, setHoldSelectedReason] = useState("");
   const [reviewNotes, setReviewNotes] = useState("");
 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -371,7 +594,8 @@ const JobseekerVerificationDetails = () => {
   const [verifyCredential, setVerifyCredential] = useState(null);
 
   const API_BASE = api?.defaults?.baseURL || "";
-  const DEFAULT_DECLINE_MESSAGE = "Your verification request was rejected. Please contact support.";
+  const DEFAULT_DECLINE_MESSAGE =
+    "Your verification request was rejected. Please contact support.";
   const DEFAULT_DECLINE_REASON = "Verification requirements were not met.";
 
   const buildFileUrl = (url) => {
@@ -392,7 +616,10 @@ const JobseekerVerificationDetails = () => {
     }
   };
 
-  const getDownloadFileName = (contentDisposition, fallbackName = "document") => {
+  const getDownloadFileName = (
+    contentDisposition,
+    fallbackName = "document",
+  ) => {
     const disposition = String(contentDisposition || "");
     const utfMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
     const normalMatch = disposition.match(/filename="?([^";]+)"?/i);
@@ -407,17 +634,28 @@ const JobseekerVerificationDetails = () => {
     return fallbackName;
   };
 
-  const fetchDocumentBlob = async (docType, disposition = "inline", password = "") => {
-    const response = await api.get(`/admin/jobseekers/verification/${id}/docs/${docType}`, {
-      params: { disposition },
-      responseType: "blob",
-      headers: {
-        "x-admin-password": password,
+  const fetchDocumentBlob = async (
+    docType,
+    disposition = "inline",
+    password = "",
+  ) => {
+    const response = await api.get(
+      `/admin/jobseekers/verification/${id}/docs/${docType}`,
+      {
+        params: { disposition },
+        responseType: "blob",
+        headers: {
+          "x-admin-password": password,
+        },
       },
-    });
+    );
 
-    const contentType = response.headers?.["content-type"] || "application/octet-stream";
-    const fileName = getDownloadFileName(response.headers?.["content-disposition"], docType);
+    const contentType =
+      response.headers?.["content-type"] || "application/octet-stream";
+    const fileName = getDownloadFileName(
+      response.headers?.["content-disposition"],
+      docType,
+    );
     const blob = new Blob([response.data], { type: contentType });
 
     return { blob, fileName };
@@ -446,7 +684,11 @@ const JobseekerVerificationDetails = () => {
   };
 
   const performDownloadFile = async (docType, fallbackName, password) => {
-    const { blob, fileName } = await fetchDocumentBlob(docType, "attachment", password);
+    const { blob, fileName } = await fetchDocumentBlob(
+      docType,
+      "attachment",
+      password,
+    );
     const blobUrl = window.URL.createObjectURL(blob);
     const downloadLink = document.createElement("a");
 
@@ -472,12 +714,15 @@ const JobseekerVerificationDetails = () => {
       setPasswordError("");
 
       if (pendingCredentialAction.action === "view") {
-        await performViewFile(pendingCredentialAction.docType, credentialPassword);
+        await performViewFile(
+          pendingCredentialAction.docType,
+          credentialPassword,
+        );
       } else {
         await performDownloadFile(
           pendingCredentialAction.docType,
           pendingCredentialAction.label,
-          credentialPassword
+          credentialPassword,
         );
       }
 
@@ -502,10 +747,13 @@ const JobseekerVerificationDetails = () => {
       }
 
       if (credentialError.response?.status === 401) {
-        setPasswordError(serverMessage || "Incorrect password. Please try again.");
+        setPasswordError(
+          serverMessage || "Incorrect password. Please try again.",
+        );
       } else {
         setPasswordError(
-          serverMessage || "Unable to access this credential. Please try again."
+          serverMessage ||
+            "Unable to access this credential. Please try again.",
         );
       }
     } finally {
@@ -525,11 +773,15 @@ const JobseekerVerificationDetails = () => {
     try {
       setCheckingDoc(docType);
       setError("");
-      const response = await api.patch(`/admin/jobseekers/verification/${id}/docs/${docType}/check`);
+      const response = await api.patch(
+        `/admin/jobseekers/verification/${id}/docs/${docType}/check`,
+      );
       setSuccess(response.data?.message || "Document marked as checked.");
       await fetchJobseekerDetails();
     } catch (checkError) {
-      setError(checkError.response?.data?.message || "Unable to check this document.");
+      setError(
+        checkError.response?.data?.message || "Unable to check this document.",
+      );
     } finally {
       setCheckingDoc("");
     }
@@ -537,14 +789,23 @@ const JobseekerVerificationDetails = () => {
 
   const restoreJobseeker = async () => {
     const name = jobseeker?.fullName || "this jobseeker";
-    if (!window.confirm(`Restore ${name}? This action will allow the jobseeker to proceed with verification and review again.`)) return;
+    if (
+      !window.confirm(
+        `Restore ${name}? This action will allow the jobseeker to proceed with verification and review again.`,
+      )
+    )
+      return;
     try {
       setActionLoading(true);
-      const response = await api.patch(`/admin/jobseekers/verification/${id}/restore`);
+      const response = await api.patch(
+        `/admin/jobseekers/verification/${id}/restore`,
+      );
       setSuccess(response.data?.message || "Jobseeker restored successfully.");
       await fetchJobseekerDetails();
     } catch (restoreError) {
-      setError(restoreError.response?.data?.message || "Unable to restore jobseeker.");
+      setError(
+        restoreError.response?.data?.message || "Unable to restore jobseeker.",
+      );
     } finally {
       setActionLoading(false);
     }
@@ -559,13 +820,17 @@ const JobseekerVerificationDetails = () => {
 
       if (res.data?.success) {
         setJobseeker(res.data.jobseeker);
-        setReviewNotes(res.data.jobseeker?.verificationSummary?.adminRemarks || "");
+        setReviewNotes(
+          res.data.jobseeker?.verificationSummary?.adminRemarks || "",
+        );
       } else {
         setError("Jobseeker not found");
       }
     } catch (e) {
       console.error("Error fetching jobseeker details:", e);
-      setError(e.response?.data?.message || "Failed to load jobseeker details.");
+      setError(
+        e.response?.data?.message || "Failed to load jobseeker details.",
+      );
     } finally {
       setLoading(false);
     }
@@ -578,21 +843,29 @@ const JobseekerVerificationDetails = () => {
   const resetDeclineModal = () => {
     setShowDeclineModal(false);
     setDeclineMessage("");
+    setDeclineReason("");
   };
 
   const resetHoldModal = () => {
     setShowHoldModal(false);
     setHoldDocTypes([]);
     setHoldReason("");
+    setHoldSelectedReason("");
   };
 
   const toggleHoldDocType = (docKey) => {
     setHoldDocTypes((prev) =>
-      prev.includes(docKey) ? prev.filter((item) => item !== docKey) : [...prev, docKey]
+      prev.includes(docKey)
+        ? prev.filter((item) => item !== docKey)
+        : [...prev, docKey],
     );
   };
 
-  const handleStatusUpdate = async (newStatus, remarks = "", extraPayload = {}) => {
+  const handleStatusUpdate = async (
+    newStatus,
+    remarks = "",
+    extraPayload = {},
+  ) => {
     try {
       setActionLoading(true);
       setError("");
@@ -609,8 +882,8 @@ const JobseekerVerificationDetails = () => {
           newStatus === "verified"
             ? "approved"
             : newStatus === "rejected"
-            ? "declined"
-            : newStatus;
+              ? "declined"
+              : newStatus;
 
         setSuccess(`Jobseeker ${successLabel} successfully.`);
         await fetchJobseekerDetails();
@@ -621,7 +894,9 @@ const JobseekerVerificationDetails = () => {
       }
     } catch (e) {
       console.error("Error updating status:", e);
-      setError(e.response?.data?.message || "Failed to update verification status.");
+      setError(
+        e.response?.data?.message || "Failed to update verification status.",
+      );
     } finally {
       setActionLoading(false);
     }
@@ -633,8 +908,8 @@ const JobseekerVerificationDetails = () => {
       return;
     }
 
-    if (!holdReason.trim()) {
-      setError("Please provide the message for the user.");
+    if (!holdSelectedReason && !holdReason.trim()) {
+      setError("Please select a reason or write a message for the user.");
       return;
     }
 
@@ -647,15 +922,21 @@ const JobseekerVerificationDetails = () => {
       setError("");
       setSuccess("");
 
+      const finalHoldMessage = [holdSelectedReason, holdReason.trim()]
+        .filter(Boolean)
+        .join(" — ");
       const res = await api.put(`/admin/jobseekers/verification/${id}/hold`, {
         docType: holdDocTypes[0],
         docTypes: holdDocTypes,
         requestedDocuments: selectedDocs,
-        reasonMessage: holdReason.trim(),
+        reasonMessage: finalHoldMessage,
       });
 
       if (res.data?.success) {
-        setSuccess(res.data?.message || "Jobseeker placed on hold and resubmission request sent successfully.");
+        setSuccess(
+          res.data?.message ||
+            "Jobseeker placed on hold and resubmission request sent successfully.",
+        );
         await fetchJobseekerDetails();
         resetHoldModal();
       } else {
@@ -663,18 +944,21 @@ const JobseekerVerificationDetails = () => {
       }
     } catch (e) {
       console.error("Error placing jobseeker on hold:", e);
-      setError(e.response?.data?.message || "Failed to place jobseeker on hold.");
+      setError(
+        e.response?.data?.message || "Failed to place jobseeker on hold.",
+      );
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleDeclineSubmit = async () => {
-    const finalDeclineMessage = declineMessage.trim() || DEFAULT_DECLINE_MESSAGE;
+    const finalDeclineMessage =
+      declineMessage.trim() || declineReason || DEFAULT_DECLINE_MESSAGE;
     const remarks = `Declined verification request. Message to user: ${finalDeclineMessage}`;
 
     await handleStatusUpdate("rejected", remarks, {
-      rejectionReasons: [DEFAULT_DECLINE_REASON],
+      rejectionReasons: [declineReason || DEFAULT_DECLINE_REASON],
       declineMessage: finalDeclineMessage,
       rejectionMessage: finalDeclineMessage,
     });
@@ -696,7 +980,9 @@ const JobseekerVerificationDetails = () => {
           <div className={cn(UI.card, "p-10")}>
             <div className="flex flex-col items-center justify-center gap-3">
               <Spinner className="w-10 h-10 text-[#2e66a6]" />
-              <p className="text-sm text-black/70">Loading jobseeker details…</p>
+              <p className="text-sm text-black/70">
+                Loading jobseeker details…
+              </p>
             </div>
           </div>
         </div>
@@ -715,7 +1001,10 @@ const JobseekerVerificationDetails = () => {
             <h3 className="mt-4 text-lg font-bold text-black">Error</h3>
             <p className="mt-2 text-sm text-black/70">{error}</p>
             <div className="mt-6">
-              <Link to="/admin/jobseeker-verification" className={cn(UI.btnBase, UI.btnLg, UI.btnPrimary, UI.ring)}>
+              <Link
+                to="/admin/jobseeker-verification"
+                className={cn(UI.btnBase, UI.btnLg, UI.btnPrimary, UI.ring)}
+              >
                 <SvgIcon name="back" className="w-4 h-4" />
                 Back to List
               </Link>
@@ -735,9 +1024,15 @@ const JobseekerVerificationDetails = () => {
               <SvgIcon name="user" className="w-7 h-7" />
             </div>
             <h3 className="mt-4 text-lg font-bold text-black">Not Found</h3>
-            <p className="mt-2 text-sm text-black/70">The jobseeker you're looking for doesn't exist or has been removed.</p>
+            <p className="mt-2 text-sm text-black/70">
+              The jobseeker you're looking for doesn't exist or has been
+              removed.
+            </p>
             <div className="mt-6">
-              <Link to="/admin/jobseeker-verification" className={cn(UI.btnBase, UI.btnLg, UI.btnSecondary, UI.ring)}>
+              <Link
+                to="/admin/jobseeker-verification"
+                className={cn(UI.btnBase, UI.btnLg, UI.btnSecondary, UI.ring)}
+              >
                 <SvgIcon name="back" className="w-4 h-4" />
                 Back to List
               </Link>
@@ -756,15 +1051,23 @@ const JobseekerVerificationDetails = () => {
   const isApproved = overallStatus === "verified";
   const isRejected = overallStatus === "rejected";
   const canShowActionButtons = !isApproved && !isRejected;
-  const fullName = `${jobseeker.firstName || ""} ${jobseeker.middleName || ""} ${jobseeker.lastName || ""}`.replace(/\s+/g, " ").trim();
+  const fullName =
+    `${jobseeker.firstName || ""} ${jobseeker.middleName || ""} ${jobseeker.lastName || ""}`
+      .replace(/\s+/g, " ")
+      .trim();
   const displayPhone = profile.phoneNumber || profile.mobileNumber || "—";
   const submittedCount = verificationSummary.submittedCount || 0;
   const totalDocs = verificationSummary.totalDocs || 8;
-  const combinedSkills = formatSkills(profile.technicalSkills, profile.softSkills);
+  const combinedSkills = formatSkills(
+    profile.technicalSkills,
+    profile.softSkills,
+  );
 
   const registrationId =
     jobseeker.registrationId ||
-    `JS-${new Date(jobseeker.createdAt || Date.now()).getFullYear()}-${String(jobseeker._id || "")
+    `JS-${new Date(jobseeker.createdAt || Date.now()).getFullYear()}-${String(
+      jobseeker._id || "",
+    )
       .slice(-6)
       .toUpperCase()}`;
 
@@ -796,9 +1099,12 @@ const JobseekerVerificationDetails = () => {
     <AdminLayout>
       <div className="mx-auto max-w-7xl px-1 py-8">
         <div className="mb-5">
-          <h1 className="text-2xl font-bold text-black sm:text-3xl">Account Review</h1>
+          <h1 className="text-2xl font-bold text-black sm:text-3xl">
+            Account Review
+          </h1>
           <p className="mt-1 text-sm text-black/60">
-            Review and verify job seeker account registrations and submitted documents.
+            Review and verify job seeker account registrations and submitted
+            documents.
           </p>
         </div>
 
@@ -820,7 +1126,7 @@ const JobseekerVerificationDetails = () => {
               to="/admin/jobseeker-verification"
               className={cn(
                 "inline-flex w-fit items-center gap-2 text-sm font-semibold text-[#2e66a6] hover:text-[#245487]",
-                UI.ring
+                UI.ring,
               )}
             >
               <SvgIcon name="back" className="h-4 w-4" />
@@ -828,12 +1134,60 @@ const JobseekerVerificationDetails = () => {
             </Link>
             {canShowActionButtons ? (
               <div className="flex flex-wrap items-center gap-2">
-                <button type="button" onClick={() => setShowApproveModal(true)} disabled={actionLoading} className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white shadow-sm hover:bg-[#255587] disabled:opacity-50", UI.ring)}><SvgIcon name="check" className="h-4 w-4" />Approve</button>
-                <button type="button" onClick={() => setShowDeclineModal(true)} disabled={actionLoading} className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-bold text-black shadow-sm hover:bg-black/5 disabled:opacity-50", UI.ring)}><SvgIcon name="x" className="h-4 w-4" />Decline</button>
-                <button type="button" onClick={() => setShowHoldModal(true)} disabled={actionLoading} className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-black px-4 text-sm font-bold text-white shadow-sm hover:bg-black/90 disabled:opacity-50", UI.ring)}><SvgIcon name="pause" className="h-4 w-4" />Hold</button>
+                <button
+                  type="button"
+                  onClick={() => setShowApproveModal(true)}
+                  disabled={actionLoading}
+                  className={cn(
+                    "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white shadow-sm hover:bg-[#255587] disabled:opacity-50",
+                    UI.ring,
+                  )}
+                >
+                  <SvgIcon name="check" className="h-4 w-4" />
+                  Approve
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeclineModal(true)}
+                  disabled={actionLoading}
+                  className={cn(
+                    "inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-bold text-black shadow-sm hover:bg-black/5 disabled:opacity-50",
+                    UI.ring,
+                  )}
+                >
+                  <SvgIcon name="x" className="h-4 w-4" />
+                  Decline
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowHoldModal(true)}
+                  disabled={actionLoading}
+                  className={cn(
+                    "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-black px-4 text-sm font-bold text-white shadow-sm hover:bg-black/90 disabled:opacity-50",
+                    UI.ring,
+                  )}
+                >
+                  <SvgIcon name="pause" className="h-4 w-4" />
+                  Hold
+                </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">{getStatusBadge(overallStatus)}{isRejected ? <button type="button" onClick={restoreJobseeker} disabled={actionLoading} className={cn("inline-flex h-10 items-center justify-center rounded-lg border border-[#2e66a6] px-4 text-sm font-bold text-[#2e66a6]", UI.ring)}>Restore</button> : null}</div>
+              <div className="flex items-center gap-2">
+                {getStatusBadge(overallStatus)}
+                {isRejected ? (
+                  <button
+                    type="button"
+                    onClick={restoreJobseeker}
+                    disabled={actionLoading}
+                    className={cn(
+                      "inline-flex h-10 items-center justify-center rounded-lg border border-[#2e66a6] px-4 text-sm font-bold text-[#2e66a6]",
+                      UI.ring,
+                    )}
+                  >
+                    Restore
+                  </button>
+                ) : null}
+              </div>
             )}
           </div>
 
@@ -850,7 +1204,10 @@ const JobseekerVerificationDetails = () => {
                     type="button"
                     onClick={() => setShowApproveModal(true)}
                     disabled={actionLoading}
-                    className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white hover:bg-[#255587] disabled:opacity-50", UI.ring)}
+                    className={cn(
+                      "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white hover:bg-[#255587] disabled:opacity-50",
+                      UI.ring,
+                    )}
                   >
                     <SvgIcon name="check" className="h-4 w-4" />
                     Approve
@@ -859,7 +1216,10 @@ const JobseekerVerificationDetails = () => {
                     type="button"
                     onClick={() => setShowDeclineModal(true)}
                     disabled={actionLoading}
-                    className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#2e66a6] bg-white px-4 text-sm font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:opacity-50", UI.ring)}
+                    className={cn(
+                      "inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#2e66a6] bg-white px-4 text-sm font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:opacity-50",
+                      UI.ring,
+                    )}
                   >
                     <SvgIcon name="x" className="h-4 w-4" />
                     Decline
@@ -868,7 +1228,10 @@ const JobseekerVerificationDetails = () => {
                     type="button"
                     onClick={() => setShowHoldModal(true)}
                     disabled={actionLoading}
-                    className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-black px-4 text-sm font-bold text-white hover:bg-black/90 disabled:opacity-50", UI.ring)}
+                    className={cn(
+                      "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-black px-4 text-sm font-bold text-white hover:bg-black/90 disabled:opacity-50",
+                      UI.ring,
+                    )}
                   >
                     <SvgIcon name="pause" className="h-4 w-4" />
                     Hold
@@ -877,7 +1240,19 @@ const JobseekerVerificationDetails = () => {
               ) : (
                 <div className="hidden items-center gap-2">
                   {getStatusBadge(overallStatus)}
-                  {isRejected ? <button type="button" onClick={restoreJobseeker} disabled={actionLoading} className={cn("inline-flex h-10 items-center justify-center rounded-lg border border-[#2e66a6] px-4 text-sm font-bold text-[#2e66a6]", UI.ring)}>Restore</button> : null}
+                  {isRejected ? (
+                    <button
+                      type="button"
+                      onClick={restoreJobseeker}
+                      disabled={actionLoading}
+                      className={cn(
+                        "inline-flex h-10 items-center justify-center rounded-lg border border-[#2e66a6] px-4 text-sm font-bold text-[#2e66a6]",
+                        UI.ring,
+                      )}
+                    >
+                      Restore
+                    </button>
+                  ) : null}
                 </div>
               )}
             </div>
@@ -885,9 +1260,14 @@ const JobseekerVerificationDetails = () => {
             <div className="grid gap-5 lg:grid-cols-[1fr_1fr_220px]">
               <div className="space-y-2">
                 {infoRowsLeft.map(([label, value]) => (
-                  <div key={label} className="grid grid-cols-[120px_1fr] gap-3 text-sm">
+                  <div
+                    key={label}
+                    className="grid grid-cols-[120px_1fr] gap-3 text-sm"
+                  >
                     <span className="text-black/60">{label}:</span>
-                    <span className="font-semibold text-black">{value || "—"}</span>
+                    <span className="font-semibold text-black">
+                      {value || "—"}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -898,14 +1278,16 @@ const JobseekerVerificationDetails = () => {
                     key={label}
                     className={cn(
                       "grid grid-cols-[150px_1fr] gap-3 text-sm",
-                      label === "Date Registered" && "mt-3 border-t border-[#2e66a6]/35 pt-3"
+                      label === "Date Registered" &&
+                        "mt-3 border-t border-[#2e66a6]/35 pt-3",
                     )}
                   >
                     <span className="text-black/65">{label}:</span>
-                    <span className="font-semibold text-black">{value || "—"}</span>
+                    <span className="font-semibold text-black">
+                      {value || "—"}
+                    </span>
                   </div>
                 ))}
-
               </div>
 
               <div className="flex flex-col items-center justify-center">
@@ -926,10 +1308,12 @@ const JobseekerVerificationDetails = () => {
                     "mt-3 rounded-full border px-3 py-1 text-xs font-semibold",
                     jobseeker.profileImage
                       ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                      : "border-black/15 bg-white text-black/60"
+                      : "border-black/15 bg-white text-black/60",
                   )}
                 >
-                  {jobseeker.profileImage ? "ID Photo Submitted" : "No Photo Submitted"}
+                  {jobseeker.profileImage
+                    ? "ID Photo Submitted"
+                    : "No Photo Submitted"}
                 </span>
               </div>
             </div>
@@ -938,7 +1322,9 @@ const JobseekerVerificationDetails = () => {
           <section className="mt-4 rounded-xl border border-black/15 bg-white p-4 sm:p-5">
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <SvgIcon name="document" className="h-5 w-5 text-[#2e66a6]" />
-              <h2 className="text-base font-bold text-[#2e66a6]">Credentials</h2>
+              <h2 className="text-base font-bold text-[#2e66a6]">
+                Credentials
+              </h2>
               <span className="text-xs font-semibold text-[#2e66a6]">
                 ({submittedCount}/{totalDocs} Submitted)
               </span>
@@ -948,7 +1334,8 @@ const JobseekerVerificationDetails = () => {
               {documentTypes.map((docType, index) => {
                 const doc = documentDetails[docType.key] || {};
                 const hasFile = Boolean(doc.url);
-                const fileName = doc.filename || getFileNameFromUrl(doc.url, docType.label);
+                const fileName =
+                  doc.filename || getFileNameFromUrl(doc.url, docType.label);
                 const fileSize = formatFileSize(doc.fileSize);
 
                 return (
@@ -969,17 +1356,26 @@ const JobseekerVerificationDetails = () => {
                       <div
                         className={cn(
                           "flex h-10 w-9 shrink-0 items-center justify-center rounded",
-                          hasFile ? "bg-red-50 text-red-600" : "bg-black/5 text-black/45"
+                          hasFile
+                            ? "bg-red-50 text-red-600"
+                            : "bg-black/5 text-black/45",
                         )}
                       >
                         <SvgIcon name="document" className="h-5 w-5" />
                       </div>
 
                       <div className="min-w-0">
-                        <p className="truncate text-[11px] font-semibold text-black/75" title={fileName}>
+                        <p
+                          className="truncate text-[11px] font-semibold text-black/75"
+                          title={fileName}
+                        >
                           {hasFile ? fileName : "No file"}
                         </p>
-                        {fileSize ? <p className="mt-1 text-[10px] text-black/45">({fileSize})</p> : null}
+                        {fileSize ? (
+                          <p className="mt-1 text-[10px] text-black/45">
+                            ({fileSize})
+                          </p>
+                        ) : null}
                       </div>
                     </div>
 
@@ -987,10 +1383,12 @@ const JobseekerVerificationDetails = () => {
                       <div className="mt-3 grid grid-cols-2 gap-1.5">
                         <button
                           type="button"
-                          onClick={() => handleViewFile(docType.key, docType.label)}
+                          onClick={() =>
+                            handleViewFile(docType.key, docType.label)
+                          }
                           className={cn(
                             "flex h-8 items-center justify-center rounded border border-black/15 bg-white text-[#2e66a6] hover:bg-[#2e66a6]/10",
-                            UI.ring
+                            UI.ring,
                           )}
                           aria-label={`View ${docType.label}`}
                           title={`View ${docType.label}`}
@@ -999,15 +1397,26 @@ const JobseekerVerificationDetails = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setVerifyCredential({ key: docType.key, label: docType.label })}
+                          onClick={() =>
+                            setVerifyCredential({
+                              key: docType.key,
+                              label: docType.label,
+                            })
+                          }
                           disabled={checkingDoc === docType.key || doc.checked}
                           className={cn(
                             "flex h-8 items-center justify-center rounded border border-black/15 text-black/70",
-                            doc.checked ? "border-emerald-200 bg-emerald-50 text-emerald-600" : "bg-white hover:bg-black/5",
-                            UI.ring
+                            doc.checked
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-600"
+                              : "bg-white hover:bg-black/5",
+                            UI.ring,
                           )}
                           aria-label={`Check ${docType.label}`}
-                          title={doc.checked ? `${docType.label} checked` : `Check ${docType.label}`}
+                          title={
+                            doc.checked
+                              ? `${docType.label} checked`
+                              : `Check ${docType.label}`
+                          }
                         >
                           <SvgIcon name="check" className="h-4 w-4" />
                         </button>
@@ -1021,25 +1430,68 @@ const JobseekerVerificationDetails = () => {
                 );
               })}
             </div>
-
           </section>
-
         </div>
       </div>
 
       {verifyCredential && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4">
-          <div className="w-full max-w-md overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="verify-credential-title">
+          <div
+            className="w-full max-w-md overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="verify-credential-title"
+          >
             <div className="flex items-start justify-between px-5 pt-5">
               <div>
-                <h3 id="verify-credential-title" className="text-lg font-bold text-black">Approve {verifyCredential.label} Credential?</h3>
-                <p className="mt-1 text-sm text-[#2e66a6]">This will mark the {verifyCredential.label} credential as verified.</p>
+                <h3
+                  id="verify-credential-title"
+                  className="text-lg font-bold text-black"
+                >
+                  Approve {verifyCredential.label} Credential?
+                </h3>
+                <p className="mt-1 text-sm text-[#2e66a6]">
+                  This will mark the {verifyCredential.label} credential as
+                  verified.
+                </p>
               </div>
-              <button type="button" onClick={() => setVerifyCredential(null)} disabled={Boolean(checkingDoc)} className="rounded p-1 text-black/60 hover:bg-black/5" aria-label="Close"><SvgIcon name="x" className="h-4 w-4" /></button>
+              <button
+                type="button"
+                onClick={() => setVerifyCredential(null)}
+                disabled={Boolean(checkingDoc)}
+                className="rounded p-1 text-black/60 hover:bg-black/5"
+                aria-label="Close"
+              >
+                <SvgIcon name="x" className="h-4 w-4" />
+              </button>
             </div>
             <div className="mt-5 flex justify-end gap-2 border-t border-slate-100 bg-slate-50 px-5 py-4">
-              <button type="button" onClick={() => setVerifyCredential(null)} disabled={Boolean(checkingDoc)} className={cn("h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-black shadow-sm", UI.ring)}>Cancel</button>
-              <button type="button" disabled={Boolean(checkingDoc)} onClick={async () => { const target = verifyCredential; await handleCheckFile(target.key); setVerifyCredential(null); }} className={cn("inline-flex h-10 items-center justify-center rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white shadow-sm hover:bg-[#255587] disabled:opacity-50", UI.ring)}>{checkingDoc ? "Verifying..." : "Verify"}</button>
+              <button
+                type="button"
+                onClick={() => setVerifyCredential(null)}
+                disabled={Boolean(checkingDoc)}
+                className={cn(
+                  "h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-black shadow-sm",
+                  UI.ring,
+                )}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={Boolean(checkingDoc)}
+                onClick={async () => {
+                  const target = verifyCredential;
+                  await handleCheckFile(target.key);
+                  setVerifyCredential(null);
+                }}
+                className={cn(
+                  "inline-flex h-10 items-center justify-center rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white shadow-sm hover:bg-[#255587] disabled:opacity-50",
+                  UI.ring,
+                )}
+              >
+                {checkingDoc ? "Verifying..." : "Verify"}
+              </button>
             </div>
           </div>
         </div>
@@ -1063,7 +1515,11 @@ const JobseekerVerificationDetails = () => {
               <div className="p-6 sm:p-7">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#2e66a6]/10 text-[#2e66a6]">
                   <SvgIcon
-                    name={pendingCredentialAction?.action === "download" ? "download" : "eye"}
+                    name={
+                      pendingCredentialAction?.action === "download"
+                        ? "download"
+                        : "eye"
+                    }
                     className="h-6 w-6"
                   />
                 </div>
@@ -1077,43 +1533,64 @@ const JobseekerVerificationDetails = () => {
 
                 <p className="mt-2 text-center text-sm leading-6 text-black/65">
                   Enter your admin password to{" "}
-                  {pendingCredentialAction?.action === "download" ? "download" : "view"}{" "}
+                  {pendingCredentialAction?.action === "download"
+                    ? "download"
+                    : "view"}{" "}
                   {pendingCredentialAction?.label || "this credential"}.
                 </p>
 
                 <div className="mt-5">
-                  <label htmlFor="credentialPassword" className="block text-sm font-semibold text-black">
+                  <label
+                    htmlFor="credentialPassword"
+                    className="block text-sm font-semibold text-black"
+                  >
                     Password
                   </label>
                   <div className="relative">
-                  <input
-                    id="credentialPassword"
-                    type={showCredentialPassword ? "text" : "password"}
-                    value={credentialPassword}
-                    onChange={(event) => {
-                      setCredentialPassword(event.target.value);
-                      setPasswordError("");
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        confirmCredentialAccess();
+                    <input
+                      id="credentialPassword"
+                      type={showCredentialPassword ? "text" : "password"}
+                      value={credentialPassword}
+                      onChange={(event) => {
+                        setCredentialPassword(event.target.value);
+                        setPasswordError("");
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          confirmCredentialAccess();
+                        }
+                      }}
+                      autoFocus
+                      disabled={passwordLoading}
+                      className={cn(
+                        "mt-2 h-11 w-full rounded-xl border bg-white px-4 pr-12 text-sm text-black placeholder-black/35",
+                        passwordError ? "border-black" : "border-black/20",
+                        UI.ring,
+                      )}
+                      placeholder="Enter your password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowCredentialPassword((value) => !value)
                       }
-                    }}
-                    autoFocus
-                    disabled={passwordLoading}
-                    className={cn(
-                      "mt-2 h-11 w-full rounded-xl border bg-white px-4 pr-12 text-sm text-black placeholder-black/35",
-                      passwordError ? "border-black" : "border-black/20",
-                      UI.ring
-                    )}
-                    placeholder="Enter your password"
-                  />
-                  <button type="button" onClick={() => setShowCredentialPassword((value) => !value)} className="absolute right-3 top-1/2 mt-1 -translate-y-1/2 text-black/55" aria-label={showCredentialPassword ? "Hide password" : "Show password"}><SvgIcon name="eye" className="h-5 w-5" /></button>
+                      className="absolute right-3 top-1/2 mt-1 -translate-y-1/2 text-black/55"
+                      aria-label={
+                        showCredentialPassword
+                          ? "Hide password"
+                          : "Show password"
+                      }
+                    >
+                      <SvgIcon name="eye" className="h-5 w-5" />
+                    </button>
                   </div>
 
                   {passwordError ? (
-                    <p className="mt-2 text-sm font-medium text-black" role="alert">
+                    <p
+                      className="mt-2 text-sm font-medium text-black"
+                      role="alert"
+                    >
                       {passwordError}
                     </p>
                   ) : null}
@@ -1127,7 +1604,7 @@ const JobseekerVerificationDetails = () => {
                   disabled={passwordLoading}
                   className={cn(
                     "h-11 rounded-xl border border-black/20 bg-white text-sm font-semibold text-black hover:bg-black/5 disabled:opacity-50",
-                    UI.ring
+                    UI.ring,
                   )}
                 >
                   Cancel
@@ -1139,7 +1616,7 @@ const JobseekerVerificationDetails = () => {
                   disabled={passwordLoading}
                   className={cn(
                     "flex h-11 items-center justify-center gap-2 rounded-xl bg-[#2e66a6] text-sm font-semibold text-white hover:bg-[#2e66a6]/90 disabled:opacity-50",
-                    UI.ring
+                    UI.ring,
                   )}
                 >
                   {passwordLoading ? <Spinner /> : null}
@@ -1161,51 +1638,54 @@ const JobseekerVerificationDetails = () => {
             />
 
             <div
-              className="relative w-full max-w-[440px] rounded-[22px] bg-[#F8FAFC] border border-[#D8E0EA] shadow-[0_18px_50px_rgba(15,23,42,0.18)] overflow-hidden"
+              className="relative w-full max-w-[375px] overflow-hidden rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="confirm-approval-title"
               aria-describedby="confirm-approval-description"
             >
-              <div className="px-6 pt-6 pb-5 sm:px-7">
+              <button
+                type="button"
+                onClick={() => !actionLoading && setShowApproveModal(false)}
+                disabled={actionLoading}
+                className="absolute right-4 top-4 rounded p-1 text-[#667085] hover:bg-black/5"
+                aria-label="Close approval modal"
+              >
+                <SvgIcon name="x" className="h-4 w-4" />
+              </button>
+              <div className="px-5 pb-5 pt-7 sm:px-6">
                 <div className="mx-auto text-center">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2e66a6]/10 text-[#2e66a6]">
-                    <SvgIcon name="check" className="w-6 h-6" />
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#EEF6FF] text-[#2e66a6]">
+                    <SvgIcon name="check" className="h-5 w-5" />
                   </div>
 
                   <h3
                     id="confirm-approval-title"
-                    className="mt-4 text-[24px] sm:text-[28px] leading-tight font-bold tracking-[-0.02em] text-black"
+                    className="mt-4 text-[25px] font-bold leading-tight tracking-[-0.03em] text-black"
                   >
-                    Confirm Approval
+                    Verified {fullName}?
                   </h3>
 
                   <div
                     id="confirm-approval-description"
-                    className="mt-3 space-y-3 text-[15px] leading-7 text-[#475467]"
+                    className="mt-3 text-sm leading-6 text-[#667085]"
                   >
+                    <p>Are you sure you want to verified this Job Seeker?</p>
                     <p>
-                      Are you sure you want to approve <span className="font-bold text-black">{fullName}</span>?
+                      This will confirm that{" "}
+                      <span className="font-bold text-black">{fullName}</span>{" "}
+                      has been reviewed and verified as a PHINMA AU graduate.
                     </p>
-
-                    <div className="rounded-2xl border border-[#D8E0EA] bg-white/80 px-4 py-3 text-left">
-                      <div className="flex gap-3">
-                        <SvgIcon name="info" className="mt-0.5 h-5 w-5 shrink-0 text-[#2e66a6]" />
-                        <p className="text-sm leading-6 text-[#475467]">
-                          Make sure all submitted documents are reviewed and the applicant is verified as a PHINMA AU Graduate.
-                        </p>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="border-t border-[#D8E0EA] bg-[#EEF2F6] px-5 py-4 sm:px-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="border-t border-[#D8E0EA] bg-[#F8FAFC] px-5 py-4">
+                <div className="grid grid-cols-2 gap-4">
                   <Button
                     variant="secondary"
                     size="lg"
-                    className="w-full !h-11 rounded-[14px] text-sm"
+                    className="w-full !h-10 rounded-lg text-sm"
                     onClick={() => setShowApproveModal(false)}
                     disabled={actionLoading}
                   >
@@ -1215,12 +1695,14 @@ const JobseekerVerificationDetails = () => {
                   <Button
                     variant="primary"
                     size="lg"
-                    className="w-full !h-11 rounded-[14px] text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
-                    onClick={() => handleStatusUpdate("verified", "Approved by admin")}
+                    className="w-full !h-10 rounded-lg text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
+                    onClick={() =>
+                      handleStatusUpdate("verified", "Approved by admin")
+                    }
                     loading={actionLoading}
                     disabled={actionLoading}
                   >
-                    Confirm
+                    Verified
                   </Button>
                 </div>
               </div>
@@ -1232,86 +1714,125 @@ const JobseekerVerificationDetails = () => {
       {showHoldModal && !isApproved && !isRejected && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex min-h-screen items-center justify-center p-4 sm:p-6">
-            <div className="fixed inset-0 bg-black/45 backdrop-blur-[1px]" onClick={() => !actionLoading && resetHoldModal()} aria-hidden="true" />
+            <div
+              className="fixed inset-0 bg-black/45 backdrop-blur-[1px]"
+              onClick={() => !actionLoading && resetHoldModal()}
+              aria-hidden="true"
+            />
 
-           <div
-  className="relative w-full max-w-2xl rounded-[24px] bg-[#F8FAFC] border border-[#D8E0EA] shadow-[0_18px_50px_rgba(15,23,42,0.18)] overflow-hidden"
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="hold-modal-title"
->
-              <div className="max-h-[75vh] overflow-y-auto px-6 pt-6 pb-5 sm:px-7">
+            <div
+              className="relative w-full max-w-[480px] overflow-hidden rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="hold-modal-title"
+            >
+              <button
+                type="button"
+                onClick={() => !actionLoading && resetHoldModal()}
+                disabled={actionLoading}
+                className="absolute right-4 top-4 z-10 rounded p-1 text-[#667085] hover:bg-black/5"
+                aria-label="Close resubmission modal"
+              >
+                <SvgIcon name="x" className="h-4 w-4" />
+              </button>
+              <div className="max-h-[82vh] overflow-y-auto px-5 pb-4 pt-5 sm:px-6">
                 <div>
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#2e66a6]/10 text-[#2e66a6]">
-                      <SvgIcon name="pause" className="w-6 h-6" />
+                  <div className="flex items-start gap-3 pr-6">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EEF6FF] text-[#2e66a6]">
+                      <SvgIcon name="pause" className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
-                      <h3 id="hold-modal-title" className="text-[24px] sm:text-[28px] leading-tight font-bold tracking-[-0.02em] text-black">
+                      <h3
+                        id="hold-modal-title"
+                        className="text-xl font-bold leading-tight tracking-[-0.02em] text-black"
+                      >
                         Request Resubmission
                       </h3>
 
-                      <p className="mt-2 text-[14px] sm:text-[15px] leading-6 text-[#475467]">
-                        Select the documents that need to be resubmitted and write the message for{" "}
-                        <span className="font-bold text-black">{fullName}</span>.
+                      <p className="mt-2 text-sm leading-5 text-[#667085]">
+                        Select the documents that need to be resubmitted and
+                        choose at least one reason or write message for{" "}
+                        <span className="font-bold text-black">{fullName}</span>
+                        .
                       </p>
                     </div>
                   </div>
 
-         <div className="mt-6">
-  <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]">Documents needed</p>
-  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-    {documentTypes.map((doc) => {
-      const checked = holdDocTypes.includes(doc.key);
+                  <div className="mt-5">
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#475467]">
+                      Documents needed
+                    </p>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {documentTypes.map((doc) => {
+                        const checked = holdDocTypes.includes(doc.key);
 
-      return (
-        <label
-          key={doc.key}
-          className={cn(
-            "flex min-h-11 items-center gap-3 rounded-2xl border px-3 py-2 cursor-pointer select-none transition",
-            checked
-              ? "border-[#2e66a6]/50 bg-[#2e66a6]/[0.08]"
-              : "border-[#D8E0EA] bg-white/85 hover:border-[#2e66a6]/30 hover:bg-[#2e66a6]/[0.04]"
-          )}
-        >
-          <input
-            type="checkbox"
-            checked={checked}
-            onChange={() => toggleHoldDocType(doc.key)}
-            className="h-5 w-5 rounded-md border border-[#94A3B8] text-[#2e66a6] focus:ring-[#2e66a6] focus:ring-2"
-          />
-          <span className="text-sm sm:text-[15px] font-medium text-black/75">{doc.label}</span>
-        </label>
-      );
-    })}
-  </div>
-</div>
+                        return (
+                          <label
+                            key={doc.key}
+                            className={cn(
+                              "flex min-h-9 cursor-pointer select-none items-center gap-3 rounded-lg border px-3 py-2 transition",
+                              checked
+                                ? "border-[#2e66a6]/50 bg-[#2e66a6]/[0.08]"
+                                : "border-[#D8E0EA] bg-white/85 hover:border-[#2e66a6]/30 hover:bg-[#2e66a6]/[0.04]",
+                            )}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleHoldDocType(doc.key)}
+                              className="h-4 w-4 rounded border border-[#94A3B8] text-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]"
+                            />
+                            <span className="text-sm sm:text-[15px] font-medium text-black/75">
+                              {doc.label}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
 
-                  <div className="mt-6">
-                    <label className="block text-sm font-semibold text-black mb-2">Message to User</label>
+                  <div className="mt-4">
+                    <label className="mb-1 block text-xs font-medium text-[#475467]">
+                      Reason for Resubmission (Select at least one reason){" "}
+                      <span className="text-[#667085]">(Optional)</span>
+                    </label>
+                    <select
+                      value={holdSelectedReason}
+                      onChange={(event) =>
+                        setHoldSelectedReason(event.target.value)
+                      }
+                      className="h-10 w-full rounded-lg border border-[#CBD5E1] bg-white px-3 text-sm text-black outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+                    >
+                      <option value="">Add a clear reason...</option>
+                      {RESUBMISSION_REASONS.map((reason) => (
+                        <option key={reason} value={reason}>
+                          {reason}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="mb-1 block text-sm font-semibold text-black">
+                      Message to {fullName}
+                    </label>
                     <textarea
                       value={holdReason}
                       onChange={(e) => setHoldReason(e.target.value)}
                       rows={4}
                       placeholder="Explain what needs to be corrected or re-uploaded."
-                      className="w-full resize-none rounded-2xl border border-[#CBD5E1] bg-white/90 px-4 py-3 text-sm leading-6 text-black placeholder:text-black/35 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/30"
+                      className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm leading-5 text-black placeholder:text-black/35 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
                     />
                   </div>
-
-                  {(!holdDocTypes.length || !holdReason.trim()) && (
-                    <p className="mt-4 rounded-2xl border border-[#D8E0EA] bg-white/70 px-4 py-3 text-sm text-[#64748B]">
-                      Please select at least one document and add a message before sending.
-                    </p>
-                  )}
                 </div>
               </div>
 
-              <div className="border-t border-[#D8E0EA] bg-[#EEF2F6] px-6 py-4 sm:px-7">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="border-t border-[#D8E0EA] bg-[#F8FAFC] px-5 py-3 sm:px-6">
+                <div className="flex justify-end gap-2">
                   <Button
                     variant="secondary"
                     size="lg"
-                    className="w-full !h-11 rounded-[14px] text-sm border-[#CBD5E1]"
+                    className="!h-10 rounded-lg border-[#CBD5E1] px-5 text-sm"
                     onClick={resetHoldModal}
                     disabled={actionLoading}
                   >
@@ -1321,9 +1842,13 @@ const JobseekerVerificationDetails = () => {
                   <Button
                     variant="primary"
                     size="lg"
-                    className="w-full !h-11 rounded-[14px] text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
+                    className="!h-10 rounded-lg px-5 text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
                     onClick={handleHoldSubmit}
-                    disabled={!holdDocTypes.length || !holdReason.trim() || actionLoading}
+                    disabled={
+                      !holdDocTypes.length ||
+                      (!holdSelectedReason && !holdReason.trim()) ||
+                      actionLoading
+                    }
                     loading={actionLoading}
                   >
                     Send
@@ -1338,54 +1863,94 @@ const JobseekerVerificationDetails = () => {
       {showDeclineModal && !isApproved && !isRejected && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex min-h-screen items-center justify-center p-4 sm:p-6">
-            <div className="fixed inset-0 bg-black/45 backdrop-blur-[1px]" onClick={() => !actionLoading && resetDeclineModal()} aria-hidden="true" />
+            <div
+              className="fixed inset-0 bg-black/45 backdrop-blur-[1px]"
+              onClick={() => !actionLoading && resetDeclineModal()}
+              aria-hidden="true"
+            />
 
             <div
-              className="relative w-full max-w-xl rounded-[24px] bg-[#F8FAFC] border border-[#D8E0EA] shadow-[0_18px_50px_rgba(15,23,42,0.18)] overflow-hidden"
+              className="relative w-full max-w-[430px] overflow-hidden rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="decline-modal-title"
             >
-              <div className="px-6 pt-6 pb-5 sm:px-7">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#FEE4E2] text-[#D92D20]">
-                    <SvgIcon name="dangerTriangle" className="w-6 h-6 text-[#D92D20]" />
+              <button
+                type="button"
+                onClick={() => !actionLoading && resetDeclineModal()}
+                disabled={actionLoading}
+                className="absolute right-4 top-4 rounded p-1 text-[#667085] hover:bg-black/5"
+                aria-label="Close decline modal"
+              >
+                <SvgIcon name="x" className="h-4 w-4" />
+              </button>
+              <div className="px-5 pb-4 pt-5 sm:px-6">
+                <div className="flex items-start gap-3 pr-6">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FEE4E2] text-[#D92D20]">
+                    <SvgIcon
+                      name="dangerTriangle"
+                      className="h-5 w-5 text-[#D92D20]"
+                    />
                   </div>
 
                   <div className="min-w-0">
-                    <h3 id="decline-modal-title" className="text-[24px] sm:text-[28px] leading-tight font-bold tracking-[-0.02em] text-black">
+                    <h3
+                      id="decline-modal-title"
+                      className="text-xl font-bold leading-tight tracking-[-0.02em] text-black"
+                    >
                       Decline Verification
                     </h3>
 
-                    <p className="mt-2 text-[14px] sm:text-[15px] leading-6 text-[#475467]">
-                      Are you sure you want to decline <span className="font-bold text-black">{fullName}</span>? The applicant will be notified that they do not meet the PHINMA AU Graduate requirement.
+                    <p className="mt-2 text-sm leading-5 text-[#667085]">
+                      Are you sure you want to decline{" "}
+                      <span className="font-bold text-black">{fullName}</span>?
+                      The Job Seeker will be notified that they do not meet the
+                      PHINMA AU Graduate requirements.
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-6">
-                  <label className="block text-sm font-semibold text-black mb-2">
-                    Message to User
+                <div className="mt-5">
+                  <label className="mb-1 block text-xs font-medium leading-5 text-[#475467]">
+                    Reason for Declining{" "}
+                    <span className="font-semibold text-black">{fullName}</span>{" "}
+                    (Select at least one reason){" "}
+                    <span className="text-[#667085]">(Optional)</span>
+                  </label>
+                  <select
+                    value={declineReason}
+                    onChange={(event) => setDeclineReason(event.target.value)}
+                    className="h-10 w-full rounded-lg border border-[#2e66a6] bg-white px-3 text-sm text-black outline-none ring-1 ring-[#2e66a6]/10 focus:ring-2 focus:ring-[#2e66a6]/25"
+                  >
+                    <option value="">Add a clear reason...</option>
+                    {DECLINE_REASONS.map((reason) => (
+                      <option key={reason} value={reason}>
+                        {reason}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="mt-4">
+                  <label className="mb-1 block text-sm font-semibold text-black">
+                    Message to {fullName}
                   </label>
                   <textarea
                     value={declineMessage}
                     onChange={(e) => setDeclineMessage(e.target.value)}
                     rows={4}
-                    placeholder="Add a clear reason or leave blank to use the default message."
-                    className="w-full resize-none rounded-2xl border border-[#CBD5E1] bg-white/90 px-4 py-3 text-sm leading-6 text-black placeholder:text-black/35 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/30"
+                    placeholder="Add a clear reason why the credential was not verified and what the Job Seeker needs to do next."
+                    className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm leading-5 text-black placeholder:text-black/45 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
                   />
-                  <p className="mt-3 rounded-2xl border border-[#D8E0EA] bg-white/70 px-4 py-3 text-sm leading-6 text-[#64748B]">
-                    The candidate will receive this message in their notification portal. If left blank, the default rejection message will be used.
-                  </p>
                 </div>
               </div>
 
-              <div className="border-t border-[#E2E8F0] bg-[#F8FAFC] px-6 py-5 sm:px-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="border-t border-[#E2E8F0] bg-[#F8FAFC] px-5 py-3 sm:px-6">
+                <div className="flex justify-end gap-2">
                   <Button
                     variant="secondary"
                     size="lg"
-                    className="w-full !h-11 rounded-[14px] text-sm border-[#CBD5E1]"
+                    className="!h-10 rounded-lg border-[#CBD5E1] px-5 text-sm"
                     onClick={resetDeclineModal}
                     disabled={actionLoading}
                   >
@@ -1395,12 +1960,12 @@ const JobseekerVerificationDetails = () => {
                   <Button
                     variant="primary"
                     size="lg"
-                    className="w-full !h-11 rounded-[14px] text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
+                    className="!h-10 rounded-lg px-5 text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
                     onClick={handleDeclineSubmit}
                     disabled={actionLoading}
                     loading={actionLoading}
                   >
-                    Confirm
+                    Decline
                   </Button>
                 </div>
               </div>
