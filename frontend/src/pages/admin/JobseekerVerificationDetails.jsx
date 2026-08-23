@@ -915,11 +915,7 @@ const JobseekerVerificationDetails = () => {
   };
 
   const toggleHoldDocType = (docKey) => {
-    setHoldDocTypes((prev) =>
-      prev.includes(docKey)
-        ? prev.filter((item) => item !== docKey)
-        : [...prev, docKey],
-    );
+    setHoldDocTypes((prev) => (prev.includes(docKey) ? [] : [docKey]));
   };
 
   const handleStatusUpdate = async (
@@ -1111,6 +1107,7 @@ const JobseekerVerificationDetails = () => {
   const overallStatus = verificationSummary.overallStatus || "not_submitted";
   const isApproved = overallStatus === "verified";
   const isRejected = overallStatus === "rejected";
+  const isFollowUpReview = jobseeker.isVerified === true;
   const canShowActionButtons = !isApproved && !isRejected;
   const fullName =
     `${jobseeker.firstName || ""} ${jobseeker.middleName || ""} ${jobseeker.lastName || ""}`
@@ -1195,6 +1192,8 @@ const JobseekerVerificationDetails = () => {
             </Link>
             {canShowActionButtons ? (
               <div className="flex flex-wrap items-center gap-2">
+                {!isFollowUpReview ? (
+                  <>
                 <button
                   type="button"
                   onClick={() => setShowApproveModal(true)}
@@ -1219,6 +1218,8 @@ const JobseekerVerificationDetails = () => {
                   <SvgIcon name="x" className="h-4 w-4" />
                   Decline
                 </button>
+                  </>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => setShowHoldModal(true)}
@@ -1261,6 +1262,8 @@ const JobseekerVerificationDetails = () => {
 
               {canShowActionButtons ? (
                 <div className="hidden flex-wrap items-center gap-2">
+                  {!isFollowUpReview ? (
+                    <>
                   <button
                     type="button"
                     onClick={() => setShowApproveModal(true)}
@@ -1285,6 +1288,8 @@ const JobseekerVerificationDetails = () => {
                     <SvgIcon name="x" className="h-4 w-4" />
                     Decline
                   </button>
+                    </>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => setShowHoldModal(true)}
@@ -1391,6 +1396,18 @@ const JobseekerVerificationDetails = () => {
               {documentTypes.map((docType, index) => {
                 const doc = documentDetails[docType.key] || {};
                 const hasFile = Boolean(doc.url);
+                const credentialStatus = String(
+                  doc.status || (doc.checked ? "approved" : hasFile ? "pending" : "not_submitted"),
+                ).toLowerCase();
+                const credentialApproved = credentialStatus === "approved" || doc.checked;
+                const credentialNeedsAction = ["hold", "rejected", "action_needed"].includes(credentialStatus);
+                const credentialStatusLabel = credentialApproved
+                  ? "Approved"
+                  : credentialNeedsAction
+                    ? "Action Needed"
+                    : ["pending", "submitted"].includes(credentialStatus)
+                      ? "Pending"
+                      : "Not submitted";
                 const fileName =
                   doc.filename || getFileNameFromUrl(doc.url, docType.label);
                 const fileSize = formatFileSize(doc.fileSize);
@@ -1408,6 +1425,21 @@ const JobseekerVerificationDetails = () => {
                         {docType.label}
                       </h3>
                     </div>
+
+                    <span
+                      className={cn(
+                        "mt-2 inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                        credentialApproved
+                          ? "bg-emerald-50 text-emerald-700"
+                          : credentialNeedsAction
+                            ? "bg-red-50 text-red-700"
+                            : hasFile
+                              ? "bg-amber-50 text-amber-700"
+                              : "bg-black/5 text-black/50",
+                      )}
+                    >
+                      {credentialStatusLabel}
+                    </span>
 
                     <div className="mt-3 flex flex-1 items-start gap-2">
                       <div
@@ -1460,17 +1492,21 @@ const JobseekerVerificationDetails = () => {
                               label: docType.label,
                             })
                           }
-                          disabled={checkingDoc === docType.key || doc.checked}
+                          disabled={
+                            checkingDoc === docType.key ||
+                            credentialApproved ||
+                            !["pending", "submitted"].includes(credentialStatus)
+                          }
                           className={cn(
                             "flex h-8 items-center justify-center rounded border border-black/15 text-black/70",
-                            doc.checked
+                            credentialApproved
                               ? "border-emerald-200 bg-emerald-50 text-emerald-600"
                               : "bg-white hover:bg-black/5",
                             UI.ring,
                           )}
                           aria-label={`Check ${docType.label}`}
                           title={
-                            doc.checked
+                            credentialApproved
                               ? `${docType.label} checked`
                               : `Check ${docType.label}`
                           }
@@ -1820,7 +1856,10 @@ const JobseekerVerificationDetails = () => {
                       Documents needed
                     </p>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      {documentTypes.map((doc) => {
+                      {documentTypes.filter((doc) => {
+                        const status = String(documentDetails[doc.key]?.status || "").toLowerCase();
+                        return ["pending", "submitted", "hold"].includes(status);
+                      }).map((doc) => {
                         const checked = holdDocTypes.includes(doc.key);
 
                         return (
