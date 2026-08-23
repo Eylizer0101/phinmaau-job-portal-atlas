@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
+import Pagination from '../../../components/shared/Pagination';
 
 const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
   const common = { className, fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', ...props };
@@ -672,6 +673,8 @@ const ArchivedDeclinedApplicants = () => {
   const [customDateFrom, setCustomDateFrom] = useState('');
   const [customDateTo, setCustomDateTo] = useState('');
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const [restoreTarget, setRestoreTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -931,6 +934,20 @@ const ArchivedDeclinedApplicants = () => {
     });
   }, [applications, buildApplicantName, debouncedQuery, sort, customDateFrom, customDateTo, selectedJob, getDeclinedStageLabel]);
 
+  const totalItems = filteredApplications.length;
+  const numericPageSize = pageSize === 'all' ? Math.max(totalItems, 1) : Number(pageSize);
+  const totalPages = Math.max(1, Math.ceil(totalItems / numericPageSize));
+  const paginatedApplications = useMemo(() => {
+    if (pageSize === 'all') return filteredApplications;
+    const start = (currentPage - 1) * numericPageSize;
+    return filteredApplications.slice(start, start + numericPageSize);
+  }, [filteredApplications, currentPage, numericPageSize, pageSize]);
+
+  useEffect(() => setCurrentPage(1), [debouncedQuery, selectedJob, sort, customDateFrom, customDateTo, pageSize]);
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
   const hasActiveFilters = useMemo(() => {
     return query.trim() !== '' || sort !== 'all' || selectedJob !== 'all';
   }, [query, sort, selectedJob]);
@@ -1187,7 +1204,7 @@ const ArchivedDeclinedApplicants = () => {
                     </thead>
 
                     <tbody className="divide-y divide-gray-200 bg-white">
-                      {filteredApplications.map((app) => {
+                      {paginatedApplications.map((app) => {
                         const name = buildApplicantName(app.jobseeker);
                         const email = app.jobseeker?.email || '—';
                         const jobTitle = app.job?.title || 'Job Title';
@@ -1261,7 +1278,7 @@ const ArchivedDeclinedApplicants = () => {
                 </div>
 
                 <div className="space-y-3 md:hidden">
-                  {filteredApplications.map((app) => {
+                  {paginatedApplications.map((app) => {
                     const name = buildApplicantName(app.jobseeker);
                     const email = app.jobseeker?.email || '—';
                     const jobTitle = app.job?.title || 'Job Title';
@@ -1332,6 +1349,7 @@ const ArchivedDeclinedApplicants = () => {
                     );
                   })}
                 </div>
+                <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Archived declined applicants pagination" />
               </>
             )}
           </div>

@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
+import Pagination from '../../../components/shared/Pagination';
 
 const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
   const common = { className, fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', ...props };
@@ -422,7 +423,6 @@ const EmployerCustomDateRangeModal = ({ open, startDate, endDate, onCancel, onAp
   );
 };
 
-const ITEMS_PER_PAGE = 9;
 
 const Button = ({
   variant = 'secondary',
@@ -596,6 +596,7 @@ const DeclinedApplicants = () => {
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
   const [sortBy, setSortBy] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
 
@@ -874,13 +875,13 @@ const DeclinedApplicants = () => {
 
 
   const totalItems = filteredApplications.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+  const numericPageSize = pageSize === 'all' ? Math.max(totalItems, 1) : Number(pageSize);
+  const totalPages = Math.max(1, Math.ceil(totalItems / numericPageSize));
   const paginatedApplications = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredApplications.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredApplications, currentPage]);
-  const showingStart = totalItems === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
-  const showingEnd = Math.min(currentPage * ITEMS_PER_PAGE, totalItems);
+    if (pageSize === 'all') return filteredApplications;
+    const start = (currentPage - 1) * numericPageSize;
+    return filteredApplications.slice(start, start + numericPageSize);
+  }, [filteredApplications, currentPage, numericPageSize, pageSize]);
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
@@ -1296,32 +1297,7 @@ const DeclinedApplicants = () => {
                   })}
                 </div>
 
-              <div className="flex flex-col gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4 text-sm text-gray-600 sm:flex-row sm:items-center sm:justify-between">
-                <span>
-                  Showing {showingStart} to {showingEnd} of {totalItems} results
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                    disabled={currentPage === 1}
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Previous
-                  </button>
-                  <span className="rounded-lg bg-[#2e66a6] px-3 py-2 text-sm font-semibold text-white">
-                    {currentPage}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                    disabled={currentPage >= totalPages}
-                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
+              <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Declined applicants pagination" />
 
               </>
             )}

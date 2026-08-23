@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
+import Pagination from '../../../components/shared/Pagination';
 
 const API_HOST = process.env.REACT_APP_API_URL
   ? process.env.REACT_APP_API_URL.replace(/\/api\/?$/, '')
@@ -429,7 +430,7 @@ const JobApplicants = () => {
   const [dateTo, setDateTo] = useState('');
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const [pageSize, setPageSize] = useState(10);
 
   const fetchApplicants = useCallback(async () => {
     try {
@@ -490,11 +491,13 @@ const JobApplicants = () => {
     });
   }, [applicantCards, searchTerm, statusFilter, dateFrom, dateTo, job]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredApplicants.length / itemsPerPage));
+  const totalItems = filteredApplicants.length;
+  const numericPageSize = pageSize === 'all' ? Math.max(totalItems, 1) : Number(pageSize);
+  const totalPages = Math.max(1, Math.ceil(totalItems / numericPageSize));
   useEffect(() => { if (currentPage > totalPages) setCurrentPage(totalPages); }, [currentPage, totalPages]);
-  const paginatedApplicants = filteredApplicants.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-  const firstShown = filteredApplicants.length ? (currentPage - 1) * itemsPerPage + 1 : 0;
-  const lastShown = Math.min(currentPage * itemsPerPage, filteredApplicants.length);
+  const paginatedApplicants = pageSize === 'all'
+    ? filteredApplicants
+    : filteredApplicants.slice((currentPage - 1) * numericPageSize, currentPage * numericPageSize);
 
   const changeDateFilter = (value) => {
     if (value === 'custom') {
@@ -615,16 +618,7 @@ const JobApplicants = () => {
                 );
               })}
             </div>
-            <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-[#e3e5ef] bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-gray-500">Showing {firstShown} to {lastShown} of {filteredApplicants.length} results</p>
-              <div className="flex items-center gap-2 self-end sm:self-auto">
-                <button type="button" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => page - 1)} className="inline-flex h-9 items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"><SvgIcon name="chevronLeft" />Previous</button>
-                <div className="inline-flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, index) => index + 1).slice(Math.max(0, currentPage - 3), Math.min(totalPages, currentPage + 2)).map((pageNumber) => <button key={pageNumber} type="button" onClick={() => setCurrentPage(pageNumber)} className={cn('inline-flex h-9 min-w-[36px] items-center justify-center rounded-lg border px-3 text-sm font-semibold transition', pageNumber === currentPage ? 'border-[#2e66a6] bg-[#2e66a6] text-white' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50')}>{pageNumber}</button>)}
-                </div>
-                <button type="button" disabled={currentPage === totalPages} onClick={() => setCurrentPage((page) => page + 1)} className="inline-flex h-9 items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50">Next<SvgIcon name="chevronRight" /></button>
-              </div>
-            </div>
+            <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Job applicants pagination" />
           </>
         ) : (
           <div className="mt-8 rounded-3xl bg-white p-12 text-center text-[#6b7280]">No applicants found for the selected filters.</div>

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
+import Pagination from '../../../components/shared/Pagination';
 
 /* =======================
    Small UI helpers
@@ -1572,6 +1573,7 @@ const Applicants = () => {
   const [openFilterMenu, setOpenFilterMenu] = useState(null);
   const sortMenuRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     if (openFilterMenu !== 'sort') return undefined;
@@ -1596,7 +1598,6 @@ const Applicants = () => {
       document.removeEventListener('keydown', handleEscape);
     };
   }, [openFilterMenu]);
-  const itemsPerPage = 6;
   const [updatingId, setUpdatingId] = useState(null);
 
   // Reject confirm modal state
@@ -1901,13 +1902,15 @@ const Applicants = () => {
     statusFilter,
   ]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredApplications.length / itemsPerPage));
+  const totalItems = filteredApplications.length;
+  const numericPageSize = pageSize === 'all' ? Math.max(totalItems, 1) : Number(pageSize);
+  const totalPages = Math.max(1, Math.ceil(totalItems / numericPageSize));
   const paginatedApplications = useMemo(
-    () => filteredApplications.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage),
-    [filteredApplications, currentPage]
+    () => pageSize === 'all'
+      ? filteredApplications
+      : filteredApplications.slice((currentPage - 1) * numericPageSize, currentPage * numericPageSize),
+    [filteredApplications, currentPage, numericPageSize, pageSize]
   );
-  const firstShown = filteredApplications.length ? (currentPage - 1) * itemsPerPage + 1 : 0;
-  const lastShown = Math.min(currentPage * itemsPerPage, filteredApplications.length);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -2317,51 +2320,7 @@ const Applicants = () => {
               })}
             </div>
 
-            <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-[#e3e5ef] bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-gray-500">
-                Showing {firstShown} to {lastShown} of {filteredApplications.length} results
-              </p>
-
-              <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
-                <button
-                  type="button"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                  className="inline-flex h-9 items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Icon name="chevron-left" className="h-4 w-4" />
-                  Previous
-                </button>
-
-                <div className="inline-flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
-                    <button
-                      key={pageNumber}
-                      type="button"
-                      onClick={() => setCurrentPage(pageNumber)}
-                      className={cn(
-                        'inline-flex h-9 min-w-[36px] items-center justify-center rounded-lg border px-3 text-sm font-semibold transition',
-                        pageNumber === currentPage
-                          ? 'border-[#2e66a6] bg-[#2e66a6] text-white'
-                          : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-                      )}
-                    >
-                      {pageNumber}
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  type="button"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                  className="inline-flex h-9 items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Next
-                  <Icon name="chevron-right" className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
+            <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Applicants pagination" />
           </>
         ) : (
           <div className="rounded-3xl border border-[#e3e5ef] bg-white p-12 text-center shadow-sm">

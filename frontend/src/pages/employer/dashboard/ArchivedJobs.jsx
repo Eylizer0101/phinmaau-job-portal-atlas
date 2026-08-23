@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
+import Pagination from '../../../components/shared/Pagination';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
@@ -534,6 +535,8 @@ const ArchivedJobs = () => {
   const navigate = useNavigate();
 
   const [jobs, setJobs] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
 
   const [error, setError] = useState('');
@@ -1013,6 +1016,20 @@ const ArchivedJobs = () => {
     return list;
   }, [jobs, jobFilter, q, sortBy, customDateFrom, customDateTo]);
 
+  const totalItems = filteredJobs.length;
+  const numericPageSize = pageSize === 'all' ? Math.max(totalItems, 1) : Number(pageSize);
+  const totalPages = Math.max(1, Math.ceil(totalItems / numericPageSize));
+  const paginatedJobs = useMemo(() => {
+    if (pageSize === 'all') return filteredJobs;
+    const start = (currentPage - 1) * numericPageSize;
+    return filteredJobs.slice(start, start + numericPageSize);
+  }, [filteredJobs, currentPage, numericPageSize, pageSize]);
+
+  useEffect(() => setCurrentPage(1), [q, jobFilter, sortBy, customDateFrom, customDateTo, pageSize]);
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
   const hasActiveFilters = useMemo(() => {
     return q.trim() !== '' || jobFilter !== 'all' || sortBy !== 'all';
   }, [q, jobFilter, sortBy]);
@@ -1182,7 +1199,7 @@ const ArchivedJobs = () => {
             ) : (
               <>
                 <div className="space-y-4 md:hidden">
-                  {filteredJobs.map((job) => {
+                  {paginatedJobs.map((job) => {
                     const title = safeTitle(job);
                     const busyThisRow = action.jobId === job._id;
                     const logoUrl = job.companyLogo && String(job.companyLogo).trim() ? job.companyLogo : '';
@@ -1331,7 +1348,7 @@ const ArchivedJobs = () => {
                     </thead>
 
                     <tbody className="divide-y divide-gray-200 bg-white">
-                      {filteredJobs.map((job) => {
+                      {paginatedJobs.map((job) => {
                         const title = safeTitle(job);
                         const busyThisRow = action.jobId === job._id;
                         const logoUrl = job.companyLogo && String(job.companyLogo).trim() ? job.companyLogo : '';
@@ -1443,6 +1460,7 @@ const ArchivedJobs = () => {
                     </tbody>
                   </table>
                 </div>
+                <Pagination currentPage={currentPage} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} ariaLabel="Archived jobs pagination" />
               </>
             )}
           </div>
