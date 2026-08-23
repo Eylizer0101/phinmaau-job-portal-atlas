@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import AdminLayout from '../../layouts/AdminLayout';
 import api from '../../services/api';
+import Pagination from '../../components/shared/Pagination';
 
-const ITEMS_PER_PAGE = 15;
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 const ROLE_OPTIONS = [['all', 'All Roles'], ['jobseeker', 'Jobseeker'], ['employer', 'Employer']];
 const ACTION_CODES = {
@@ -456,6 +456,7 @@ const AdminSystemLogs = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [pagination, setPagination] = useState({ page: 1, pageCount: 1, total: 0 });
   const [filters, setFilters] = useState({
     search: '',
@@ -483,7 +484,7 @@ const AdminSystemLogs = () => {
           dateFrom: filters.dateFrom,
           dateTo: filters.dateTo,
           page,
-          limit: ITEMS_PER_PAGE,
+          limit: pageSize === 'all' ? 100000 : pageSize,
         },
       });
       if (!response.data?.success) throw new Error(response.data?.message || 'Unable to load activity logs.');
@@ -492,7 +493,7 @@ const AdminSystemLogs = () => {
     } catch (requestError) {
       setLogs([]); setError(requestError.response?.data?.message || requestError.message || 'Failed to load activity logs.');
     } finally { setLoading(false); }
-  }, [search, filters.role, filters.date, filters.dateFrom, filters.dateTo, page]);
+  }, [search, filters.role, filters.date, filters.dateFrom, filters.dateTo, page, pageSize]);
   useEffect(() => { loadLogs(); }, [loadLogs]);
 
   return <AdminLayout><main className="mx-auto w-full max-w-[1420px] px-1 py-8">
@@ -534,10 +535,15 @@ const AdminSystemLogs = () => {
             </div>;
           })}</div>}
       </div></div>
-      <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50/50 px-5 py-3 text-xs text-slate-500">
-        <span>Showing {pagination.total ? (pagination.page - 1) * ITEMS_PER_PAGE + 1 : 0} to {Math.min(pagination.page * ITEMS_PER_PAGE, pagination.total || 0)} of {pagination.total || 0} results</span>
-        <div className="flex items-center gap-2"><button type="button" disabled={page <= 1 || loading} onClick={() => setPage((old) => Math.max(1, old - 1))} className="h-9 rounded-lg border bg-white px-3 font-bold disabled:opacity-40">Previous</button><span className="rounded-lg bg-[#212C61] px-3 py-2 font-bold text-white">{pagination.page || page}</span><button type="button" disabled={page >= (pagination.pageCount || 1) || loading} onClick={() => setPage((old) => Math.min(pagination.pageCount || 1, old + 1))} className="h-9 rounded-lg border bg-white px-3 font-bold disabled:opacity-40">Next</button></div>
-      </div>
+      <Pagination
+        currentPage={pagination.page || page}
+        totalItems={pagination.total || 0}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+        ariaLabel="Activity logs pagination"
+        className={loading ? 'pointer-events-none opacity-60' : ''}
+      />
     </section>
   </main></AdminLayout>;
 };
