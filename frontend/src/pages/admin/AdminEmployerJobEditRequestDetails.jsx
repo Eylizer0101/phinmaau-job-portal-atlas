@@ -159,14 +159,116 @@ const UI = {
   skillChip: 'rounded-xl border border-[#d7e6f5] bg-[#f8fafc] px-3 py-2 text-xs font-medium text-[#374151]',
 };
 
-const TopMetricCard = ({ label, value, icon: Icon, href = '' }) => (
+
+const SvgIcon = ({ name, className = 'h-4 w-4' }) => {
+  switch (name) {
+    case 'building':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.6}
+            d="M3 21h18M6 21V5a2 2 0 012-2h8a2 2 0 012 2v16M9 7h.01M9 11h.01M9 15h.01M12 7h.01M12 11h.01M12 15h.01M15 7h.01M15 11h.01M15 15h.01"
+          />
+        </svg>
+      );
+    case 'briefcase':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.6}
+            d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m-3 0h14a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z"
+          />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M3 13h18" />
+        </svg>
+      );
+    case 'location':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.6}
+            d="M12 21s7-4.438 7-11a7 7 0 10-14 0c0 6.562 7 11 7 11z"
+          />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M12 10a2 2 0 100-4 2 2 0 000 4z" />
+        </svg>
+      );
+    case 'users':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.6}
+            d="M17 20h5v-1a4 4 0 00-4-4h-1M9 20H2v-1a4 4 0 014-4h1m7-4a4 4 0 10-8 0 4 4 0 008 0zm8 2a3 3 0 10-6 0 3 3 0 006 0z"
+          />
+        </svg>
+      );
+    case 'clock':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      );
+    case 'graduation':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M12 14l9-5-9-5-9 5 9 5z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M6 12v5c0 1.657 2.686 3 6 3s6-1.343 6-3v-5" />
+        </svg>
+      );
+    case 'external':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M14 3h7v7" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M10 14L21 3" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M21 14v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6" />
+        </svg>
+      );
+    case 'file':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.6}
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+      );
+    case 'tools':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.6}
+            d="M14.7 6.3a4 4 0 01-5.657 5.657l-5.04 5.04a2 2 0 102.829 2.828l5.04-5.04A4 4 0 0114.7 6.3z"
+          />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M19 7l-3 3" />
+        </svg>
+      );
+    default:
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" strokeWidth="1.6" />
+        </svg>
+      );
+  }
+};
+
+const TopMetricCard = ({ title, value, icon, isPeso = false, href = '' }) => (
   <article className={`${UI.metricCard} min-w-0`}>
     <div className="flex h-full min-w-0 items-start gap-3">
       <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[#d9dbe3] bg-[#f9fafb] text-[#6b7280]">
-        <Icon size={18} />
+        {isPeso ? <span className="text-sm font-bold">₱</span> : <SvgIcon name={icon} className="h-4 w-4" />}
       </span>
       <div className="min-w-0">
-        <p className={UI.label}>{label}</p>
+        <p className={UI.label}>{title}</p>
         {href ? (
           <a href={href} target="_blank" rel="noopener noreferrer" className="mt-1.5 block break-all text-[15px] font-semibold leading-6 text-[#2e66a6] hover:underline">
             {value}
@@ -179,9 +281,11 @@ const TopMetricCard = ({ label, value, icon: Icon, href = '' }) => (
   </article>
 );
 
-const SectionHeader = ({ icon: Icon, title }) => (
+const SectionHeader = ({ icon, title }) => (
   <div className="flex items-center gap-2">
-    <span className="text-[#374151]"><Icon size={16} /></span>
+    <span className="text-[#374151]">
+      <SvgIcon name={icon} className="h-4 w-4" />
+    </span>
     <h2 className={UI.title}>{title}</h2>
   </div>
 );
@@ -260,10 +364,10 @@ const AdminEmployerJobEditRequestDetails = () => {
   const vacancyText = job.vacancies ? `${job.vacancies} ${Number(job.vacancies) === 1 ? 'Vacancy' : 'Vacancies'}` : 'Number of vacancies not specified';
 
   const infoCards = [
-    { label: 'Salary', value: salary(job), icon: WalletCards },
-    { label: 'Experience', value: job.experienceLevel || 'No experience required', icon: Clock3 },
-    { label: 'Educational Requirement', value: job.educationLevel || 'Educational requirement not specified', icon: BriefcaseBusiness },
-    { label: 'Website / Company URL', value: website || 'N/A', icon: ExternalLink, href: normalizeExternalUrl(website) },
+    { title: 'Salary', value: salary(job), icon: 'money', isPeso: true },
+    { title: 'Experience', value: job.experienceLevel || 'No experience required', icon: 'clock' },
+    { title: 'Educational Requirement', value: job.educationLevel || 'Educational requirement not specified', icon: 'graduation' },
+    { title: 'Website / Company URL', value: website || 'N/A', icon: 'external', href: normalizeExternalUrl(website) },
   ];
 
   return <div className="min-h-screen bg-[#f8fafc]">
@@ -289,14 +393,14 @@ const AdminEmployerJobEditRequestDetails = () => {
                 <h1 className="text-[28px] font-bold leading-tight text-[#111827] sm:text-[32px]" title={job.title || 'Untitled Job'}>{job.title || 'Untitled Job'}</h1>
 
                 <div className="mt-2 flex items-center gap-2 text-[#6b7280]">
-                  <MapPin size={16} />
+                  <SvgIcon name="location" className="h-4 w-4" />
                   <span className="text-sm">{job.location || 'Location not specified'}</span>
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <span className={UI.chip}><BriefcaseBusiness size={14} />{job.jobType || 'Employment type not specified'}</span>
-                  <span className={UI.chip}>{job.workMode || 'Work mode not specified'}</span>
-                  <span className={UI.chip}><Users size={14} />{vacancyText}</span>
+                  <span className={UI.chip}><SvgIcon name="briefcase" className="h-3.5 w-3.5" />{job.jobType || 'Employment type not specified'}</span>
+                  <span className={UI.chip}><SvgIcon name="building" className="h-3.5 w-3.5" />{job.workMode || 'Work mode not specified'}</span>
+                  <span className={UI.chip}><SvgIcon name="users" className="h-3.5 w-3.5" />{vacancyText}</span>
                   <span className={UI.chip}>{getRelocationDisplayLabel(job.willingToRelocate)}</span>
                 </div>
 
@@ -306,19 +410,19 @@ const AdminEmployerJobEditRequestDetails = () => {
               </div>
             </div>
 
-            <div className="w-full max-w-sm lg:self-center"><button type="button" onClick={() => setModalOpen(true)} className="flex w-full items-center justify-between rounded-2xl bg-[#1456ad] px-5 py-4 text-left text-white shadow-lg hover:bg-[#10478f]"><span className="flex items-center gap-3"><span className="rounded-full bg-white/15 p-3"><UnlockKeyhole size={22} /></span><span><strong className="block">Review Request</strong><small className="text-blue-100">See what’s been requested.</small></span></span><ChevronRight /></button><p className="mt-2 flex items-center justify-end gap-1 text-xs text-slate-500"><CalendarClock size={14} />Request On: {formatDateTime(request.createdAt)}</p></div>
+            <div className="flex w-full flex-col items-start lg:w-auto lg:self-center lg:items-end"><button type="button" onClick={() => setModalOpen(true)} className="group flex w-full max-w-[285px] items-center gap-3 rounded-xl bg-[#1456ad] px-4 py-3 text-left text-white shadow-md transition hover:bg-[#10478f] sm:w-[285px]"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15"><UnlockKeyhole size={18} /></span><span className="min-w-0 flex-1"><strong className="block text-sm">Review Request</strong><small className="block truncate text-[10px] text-blue-100">See what’s been requested.</small></span><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-white transition group-hover:translate-x-0.5"><ChevronRight size={18} /></span></button><p className="mt-2 flex items-center justify-end gap-1 text-xs text-slate-500"><CalendarClock size={14} />Request On: {formatDateTime(request.createdAt)}</p></div>
           </div>
         </div>
       </section>
 
       <div className="space-y-5">
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {infoCards.map(({ label, value, icon, href }) => <TopMetricCard key={label} label={label} value={value} icon={icon} href={href} />)}
+          {infoCards.map(({ title, value, icon, isPeso, href }) => <TopMetricCard key={title} title={title} value={value} icon={icon} isPeso={isPeso} href={href} />)}
         </section>
 
         <section className={`${UI.sectionCard} overflow-hidden`}>
           <div className="p-5 sm:p-6">
-            <SectionHeader icon={FileEdit} title="Job Description" />
+            <SectionHeader icon="file" title="Job Description" />
             <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
               <RichTextContent value={job.description} fallback="No job description provided." />
             </div>
@@ -327,7 +431,7 @@ const AdminEmployerJobEditRequestDetails = () => {
 
         <section className={`${UI.sectionCard} overflow-hidden`}>
           <div className="p-5 sm:p-6">
-            <SectionHeader icon={BriefcaseBusiness} title="Qualification" />
+            <SectionHeader icon="tools" title="Qualification" />
             <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
               <RichTextContent value={job.requirements} fallback="No qualifications specified." />
             </div>
@@ -336,7 +440,7 @@ const AdminEmployerJobEditRequestDetails = () => {
 
         <section className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className={`${UI.sectionCard} p-5 sm:p-6`}>
-            <SectionHeader icon={BriefcaseBusiness} title="Required Skills" />
+            <SectionHeader icon="tools" title="Required Skills" />
             {requiredSkills.length > 0 ? (
               <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {requiredSkills.map((skill, index) => <div key={`${skill}-${index}`} className={UI.skillChip}>{skill}</div>)}
@@ -348,13 +452,13 @@ const AdminEmployerJobEditRequestDetails = () => {
 
           <div className={`${UI.sectionCard} overflow-hidden`}>
             <div className="px-5 pt-5 sm:px-6 sm:pt-6">
-              <SectionHeader icon={MapPin} title="Work Location" />
+              <SectionHeader icon="location" title="Work Location" />
             </div>
             <div className="mt-4 overflow-hidden">
               {job.locationImage ? (
                 <img src={assetUrl(job.locationImage)} alt="Work location" className="h-[180px] w-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />
               ) : (
-                <div className="flex h-[180px] items-center justify-center bg-[#eef2f7] text-[#9ca3af]"><MapPin size={32} /></div>
+                <div className="flex h-[180px] items-center justify-center bg-[#eef2f7] text-[#9ca3af]"><SvgIcon name="location" className="h-8 w-8" /></div>
               )}
             </div>
             <div className="border-t border-[#e5e7eb] px-4 py-3 sm:px-5">
