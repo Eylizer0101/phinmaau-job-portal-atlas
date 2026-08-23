@@ -208,9 +208,7 @@ const NotificationsPage = () => {
     if (type === 'job_match') return 'New Job Match!';
     if (type === 'new_message') return 'New Message';
     if (type === 'application_update') return 'Application Update';
-    if (type === 'verification') {
-      return String(notification?.title || 'Credentials').trim() || 'Credentials';
-    }
+    if (type === 'verification') return 'Credentials';
 
     return String(notification?.title || 'Notification').trim() || 'Notification';
   };
@@ -219,7 +217,17 @@ const NotificationsPage = () => {
     const type = String(notification?.type || '').trim().toLowerCase();
     const metadata = notification?.metadata || {};
 
-    if (type === 'verification') return String(notification?.message || '').trim();
+    if (type === 'verification') {
+      const remaining = Number(
+        metadata?.remainingCredentials ??
+        metadata?.missingCredentialCount ??
+        metadata?.remainingCount
+      );
+
+      if (Number.isFinite(remaining) && remaining > 0) {
+        return `You still have ${remaining} credential${remaining === 1 ? '' : 's'} that need to be submitted.`;
+      }
+    }
 
     if (type === 'new_message' && metadata?.lastMessage) {
       const senderName = String(metadata?.senderName || 'User').trim() || 'User';
