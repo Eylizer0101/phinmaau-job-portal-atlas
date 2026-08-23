@@ -1614,13 +1614,11 @@ exports.updateEmployerVerificationStatus = async (req, res) => {
     await employer.save();
 
     if (overallStatus === 'rejected') {
-      sendVerificationRejectedEmail({
+      await sendVerificationRejectedEmail({
         to: employer.email,
         fullName: employer.employerProfile?.companyName || employer.fullName || employer.email,
         reasons: employer.employerProfile.verificationDocs.rejectionReasons || [],
         message: employer.employerProfile.verificationDocs.rejectionMessage || '',
-      }).catch((emailError) => {
-        console.error('Failed to send employer rejection email:', emailError);
       });
     }
 
@@ -2312,13 +2310,11 @@ exports.updateJobseekerVerificationStatus = async (req, res) => {
     await jobseeker.save();
 
     if (overallStatus === 'rejected') {
-      sendVerificationRejectedEmail({
+      await sendVerificationRejectedEmail({
         to: jobseeker.email,
         fullName: jobseeker.fullName || jobseeker.email,
         reasons: jobseeker.jobSeekerProfile.verificationDocs.rejectionReasons || [],
         message: jobseeker.jobSeekerProfile.verificationDocs.rejectionMessage || '',
-      }).catch((emailError) => {
-        console.error('Failed to send jobseeker rejection email:', emailError);
       });
     }
 

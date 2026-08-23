@@ -891,6 +891,16 @@ const JobseekerVerificationDetails = () => {
     fetchJobseekerDetails();
   }, [fetchJobseekerDetails]);
 
+  useEffect(() => {
+    if (!success) return undefined;
+
+    const successTimer = window.setTimeout(() => {
+      setSuccess("");
+    }, 3000);
+
+    return () => window.clearTimeout(successTimer);
+  }, [success]);
+
   const resetDeclineModal = () => {
     setShowDeclineModal(false);
     setDeclineMessage("");

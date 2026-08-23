@@ -544,7 +544,6 @@ const EmployerVerificationDetails = () => {
     try {
       setLoading(true);
       setError("");
-      setSuccess("");
 
       const res = await api.get(`/admin/employers/verification/${employerId}`);
       if (res.data?.success) {
@@ -569,6 +568,16 @@ const EmployerVerificationDetails = () => {
   useEffect(() => {
     fetchDetails();
   }, [fetchDetails]);
+
+  useEffect(() => {
+    if (!success) return undefined;
+
+    const successTimer = window.setTimeout(() => {
+      setSuccess("");
+    }, 3000);
+
+    return () => window.clearTimeout(successTimer);
+  }, [success]);
 
   const company = employer?.employerProfile || {};
   const companyName = company.companyName || "No Company Name";
