@@ -71,11 +71,23 @@ const findExistingUserByEmail = (email) => {
   }).collation({ locale: 'en', strength: 2 });
 };
 const isDuplicateKeyError = (error) => Number(error?.code) === 11000;
+const isApprovedJobseekerAccount = (user) => {
+  if (!user || user.role !== 'jobseeker') return false;
+  return (
+    user.isVerified === true ||
+    String(user.jobSeekerProfile?.verificationStatus || '').toLowerCase() === 'verified' ||
+    String(user.jobSeekerProfile?.verificationDocs?.overallStatus || '').toLowerCase() === 'verified' ||
+    (
+      String(user.status || '').toLowerCase() === 'active' &&
+      Boolean(String(user.username || '').trim())
+    )
+  );
+};
 const canUsePasswordRecovery = (user) => {
   if (!user || user.isActive !== true || String(user.status || '').toLowerCase() !== 'active') return false;
   if (user.role === 'admin') return true;
   if (user.role === 'jobseeker') {
-    return String(user.jobSeekerProfile?.verificationStatus || '').toLowerCase() === 'verified';
+    return isApprovedJobseekerAccount(user);
   }
   if (user.role === 'employer') {
     return String(user.employerProfile?.verificationDocs?.overallStatus || '').toLowerCase() === 'verified';
@@ -449,7 +461,7 @@ const getAlumniOverallStatus = (verificationDocs = {}, forceVerified = false) =>
   if (overallStatus === 'hold') return 'hold';
 
   const requiredStatuses = REQUIRED_ALUMNI_DOC_TYPES.map((type) =>
-    String(verificationDocs?.[type]?.status || 'not_submitted')
+    String(verificationDocs?.[type]?.status || 'not_submitted').toLowerCase()
   );
 
   const hasHoldRequired = requiredStatuses.some((status) => status === 'hold');
@@ -457,6 +469,12 @@ const getAlumniOverallStatus = (verificationDocs = {}, forceVerified = false) =>
 
   const hasRejectedRequired = requiredStatuses.some((status) => status === 'rejected');
   if (hasRejectedRequired) return 'rejected';
+
+  const allStatuses = ALL_ALUMNI_DOC_TYPES.map((type) =>
+    String(verificationDocs?.[type]?.status || 'not_submitted').toLowerCase()
+  );
+  if (allStatuses.some((status) => ['pending', 'submitted'].includes(status))) return 'pending';
+  if (allStatuses.some((status) => ['hold', 'rejected'].includes(status))) return 'hold';
 
   const allRequiredApproved = requiredStatuses.every((status) => status === 'approved');
   if (allRequiredApproved) return 'verified';
@@ -1189,7 +1207,7 @@ exports.login = async (req, res) => {
 
     if (user.role === 'jobseeker') {
       const verificationStatus = String(user.jobSeekerProfile?.verificationStatus || 'not_submitted').toLowerCase();
-      if (verificationStatus !== 'verified' || String(user.status || '').toLowerCase() !== 'active') {
+      if (!isApprovedJobseekerAccount(user) || String(user.status || '').toLowerCase() !== 'active') {
         return res.status(403).json({
           code: 'JOBSEEKER_PENDING_APPROVAL',
           message: verificationStatus === 'rejected'
@@ -1981,7 +1999,13 @@ exports.getCurrentUser = async (req, res) => {
         lastName: user.lastName,
         extensionName: user.extensionName,
         profileImage: user.profileImage,
+        isVerified:
+          user.isVerified === true ||
+          String(user.jobSeekerProfile?.verificationStatus || '').toLowerCase() === 'verified' ||
+          String(user.jobSeekerProfile?.verificationDocs?.overallStatus || '').toLowerCase() === 'verified' ||
+          (user.role === 'jobseeker' && String(user.status || '').toLowerCase() === 'active' && Boolean(user.username)),
         isActive: user.isActive,
+        status: user.status,
         lastLogin: user.lastLogin,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
@@ -2038,15 +2062,24 @@ exports.uploadAlumniVerificationDoc = async (req, res) => {
       String(currentDocs.resubmitRequest.docType || '') === docType &&
       !currentDocs.resubmitRequest.usedAt
     ) {
-      currentDocs.resubmitRequest.usedAt = null;
+      currentDocs.resubmitRequest.usedAt = now;
+      currentDocs.adminRemarks = '';
+      currentDocs.overallStatus = 'pending';
     }
 
     const alreadyVerified =
-      user.isVerified === true ||
-      String(currentProfile.verificationStatus || '').toLowerCase() === 'verified' ||
-      String(currentDocs.overallStatus || '').toLowerCase() === 'verified';
+      isApprovedJobseekerAccount(user);
 
-    const overallStatus = getAlumniOverallStatus(currentDocs, alreadyVerified);
+    if (alreadyVerified) {
+      REQUIRED_ALUMNI_DOC_TYPES.forEach((requiredType) => {
+        const requiredDocument = currentDocs[requiredType];
+        if (!requiredDocument?.url || currentDocs?.resubmitRequest?.docType === requiredType) return;
+        requiredDocument.status = 'approved';
+        requiredDocument.checked = true;
+      });
+    }
+
+    const overallStatus = getAlumniOverallStatus(currentDocs, false);
 
     currentDocs.overallStatus = overallStatus;
 
@@ -2064,6 +2097,15 @@ exports.uploadAlumniVerificationDoc = async (req, res) => {
       { $set: updateFields },
       { new: true }
     ).select('-password');
+
+    if (alreadyVerified) {
+      await createAdminResubmissionNotifications({
+        subjectUser: updatedUser,
+        accountType: 'jobseeker',
+        docType,
+        docLabel: ALUMNI_DOC_LABELS[docType],
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -3239,8 +3281,10 @@ exports.resubmitDocument = async (req, res) => {
 
       verificationDocs.overallStatus = 'pending';
       verificationDocs.adminRemarks = '';
-      verificationDocs.verifiedBy = null;
-      verificationDocs.verifiedAt = null;
+      if (user.isVerified !== true) {
+        verificationDocs.verifiedBy = null;
+        verificationDocs.verifiedAt = null;
+      }
       verificationDocs.resubmitRequest = {
         ...resubmitRequest,
         usedAt: new Date(),
@@ -3248,6 +3292,7 @@ exports.resubmitDocument = async (req, res) => {
 
       user.jobSeekerProfile.verificationDocs = verificationDocs;
       user.jobSeekerProfile.verificationStatus = 'pending';
+      if (user.status === 'active' && user.username) user.isVerified = true;
 
       await user.save();
 

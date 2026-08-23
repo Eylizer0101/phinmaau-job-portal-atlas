@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Job = require('../models/Job');
 const Application = require('../models/Application');
 const CommunityPost = require('../models/CommunityPost');
+const Notification = require('../models/Notification');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { v2: cloudinary } = require('cloudinary');
@@ -72,6 +73,7 @@ const generateUniqueUsername = async ({ role, firstName, lastName, companyName }
 };
 
 const JOBSEEKER_DOC_TYPES = ['cv', 'tor', 'diploma', 'sss', 'philhealth', 'pagibig', 'tin', 'validId'];
+const JOBSEEKER_REQUIRED_DOC_TYPES = ['cv', 'tor', 'diploma', 'validId'];
 
 const JOBSEEKER_DOC_LABELS = {
   cv: 'CV / Resume',
@@ -82,6 +84,85 @@ const JOBSEEKER_DOC_LABELS = {
   pagibig: 'Pag-IBIG ID',
   tin: 'TIN ID',
   validId: 'Valid ID',
+};
+const JOBSEEKER_NOTIFICATION_LABELS = {
+  cv: 'Resume',
+  tor: 'TOR',
+  diploma: 'Diploma',
+  sss: 'SSS',
+  philhealth: 'PhilHealth',
+  pagibig: 'Pag-IBIG',
+  tin: 'TIN',
+  validId: 'Valid ID',
+};
+
+const isApprovedJobseekerAccount = (user = {}) =>
+  user.isVerified === true ||
+  String(user.jobSeekerProfile?.verificationStatus || '').toLowerCase() === 'verified' ||
+  String(user.jobSeekerProfile?.verificationDocs?.overallStatus || '').toLowerCase() === 'verified' ||
+  (String(user.status || '').toLowerCase() === 'active' && Boolean(user.username));
+
+const getJobseekerCredentialReviewStatus = (docs = {}, accountVerified = false) => {
+  const getStatus = (type) => {
+    const storedStatus = String(docs?.[type]?.status || 'not_submitted').toLowerCase();
+    const legacyRequiredApproval =
+      accountVerified &&
+      JOBSEEKER_REQUIRED_DOC_TYPES.includes(type) &&
+      Boolean(docs?.[type]?.url) &&
+      docs?.resubmitRequest?.docType !== type;
+    return legacyRequiredApproval ? 'approved' : storedStatus;
+  };
+
+  const statuses = JOBSEEKER_DOC_TYPES.map(getStatus);
+  const requiredStatuses = JOBSEEKER_REQUIRED_DOC_TYPES.map(getStatus);
+  if (statuses.some((status) => ['pending', 'submitted'].includes(status))) return 'pending';
+  if (statuses.some((status) => ['hold', 'rejected'].includes(status))) return 'hold';
+  if (requiredStatuses.every((status) => status === 'approved')) return 'verified';
+  if (requiredStatuses.some((status) => status === 'approved')) return 'pending';
+  return 'not_submitted';
+};
+
+const createJobseekerCredentialNotification = async ({ user, docType, action, feedback = '' }) => {
+  try {
+    if (!user?._id) return;
+    const docs = user.jobSeekerProfile?.verificationDocs || {};
+    const docLabel = JOBSEEKER_NOTIFICATION_LABELS[docType] || JOBSEEKER_DOC_LABELS[docType] || docType;
+    const approvedCount = JOBSEEKER_DOC_TYPES.filter(
+      (type) => String(docs?.[type]?.status || '').toLowerCase() === 'approved'
+    ).length;
+    const allApproved = approvedCount === JOBSEEKER_DOC_TYPES.length;
+
+    let title = 'Credential Approved';
+    let message = `Your “${docLabel}” credential has been verified. Continue uploading your remaining credentials to strengthen your profile.`;
+
+    if (action === 'action_needed') {
+      title = 'Action Needed';
+      message = `Your “${docLabel}” credential wasn't approved during verification. Please check the administrator's feedback, make the necessary corrections, and upload a new copy for review.${feedback ? ` Admin note: ${feedback}` : ''}`;
+    } else if (allApproved) {
+      title = "You're All Set!";
+      message = 'All your credentials have been successfully verified. A fully completed profile can improve your visibility and increase your chances of getting hired.';
+    }
+
+    await Notification.create({
+      user: user._id,
+      type: 'verification',
+      title,
+      message,
+      relatedId: user._id,
+      relatedModel: 'User',
+      link: '/jobseeker/my-profile#credentials',
+      metadata: {
+        credentialType: docType,
+        credentialName: docLabel,
+        credentialStatus: action === 'action_needed' ? 'action_needed' : 'approved',
+        approvedCredentials: approvedCount,
+        remainingCredentials: Math.max(0, JOBSEEKER_DOC_TYPES.length - approvedCount),
+        adminFeedback: feedback || '',
+      },
+    });
+  } catch (notificationError) {
+    console.error('Failed to create jobseeker credential notification:', notificationError);
+  }
 };
 
 const EMPLOYER_DOC_TYPES = ['secRegistration', 'birRegistration', 'dtiRegistration', 'cityPermit', 'businessPermit'];
@@ -2069,12 +2150,22 @@ exports.getJobseekerVerificationById = async (req, res) => {
     const docTypes = ['cv', 'tor', 'diploma', 'sss', 'philhealth', 'pagibig', 'tin', 'validId'];
 
     docTypes.forEach((type) => {
-      docDetails[type] = verificationDocs[type] || {
+      const storedDocument = verificationDocs[type] || {
         url: '',
         status: 'not_submitted',
         uploadedAt: null,
         filename: '',
         fileSize: 0
+      };
+      const legacyRequiredApproval =
+        isApprovedJobseekerAccount(jobseeker) &&
+        JOBSEEKER_REQUIRED_DOC_TYPES.includes(type) &&
+        Boolean(storedDocument.url) &&
+        verificationDocs?.resubmitRequest?.docType !== type;
+      docDetails[type] = {
+        ...(storedDocument.toObject ? storedDocument.toObject() : storedDocument),
+        status: legacyRequiredApproval ? 'approved' : storedDocument.status,
+        checked: legacyRequiredApproval ? true : storedDocument.checked,
       };
     });
 
@@ -2101,6 +2192,7 @@ exports.getJobseekerVerificationById = async (req, res) => {
       success: true,
       jobseeker: {
         _id: jobseeker._id,
+        isVerified: isApprovedJobseekerAccount(jobseeker),
         username: jobseeker.username,
         email: jobseeker.email,
         firstName: jobseeker.firstName,
@@ -2223,11 +2315,20 @@ exports.updateJobseekerVerificationStatus = async (req, res) => {
     }
 
     if (overallStatus === 'verified') {
+      JOBSEEKER_REQUIRED_DOC_TYPES.forEach((docType) => {
+        const document = jobseeker.jobSeekerProfile.verificationDocs[docType];
+        if (!document?.url) return;
+        document.status = 'approved';
+        document.checked = true;
+        document.checkedAt = new Date();
+        document.checkedBy = adminId;
+      });
       jobseeker.jobSeekerProfile.verificationDocs.verifiedBy = adminId;
       jobseeker.jobSeekerProfile.verificationDocs.verifiedAt = new Date();
       jobseeker.jobSeekerProfile.verificationDocs.rejectionReasons = [];
       jobseeker.jobSeekerProfile.verificationDocs.rejectionMessage = '';
       jobseeker.jobSeekerProfile.verificationDocs.rejectedAt = null;
+      jobseeker.isVerified = true;
     } else {
       jobseeker.jobSeekerProfile.verificationDocs.verifiedBy = null;
       jobseeker.jobSeekerProfile.verificationDocs.verifiedAt = null;
@@ -2380,6 +2481,16 @@ exports.holdJobseekerVerification = async (req, res) => {
       jobseeker.jobSeekerProfile.verificationDocs = {};
     }
 
+    const targetDocument = jobseeker.jobSeekerProfile.verificationDocs[docType];
+    if (!targetDocument?.url) {
+      return res.status(400).json({ success: false, message: 'Only submitted credentials can be requested for resubmission.' });
+    }
+    if (!['pending', 'submitted', 'hold'].includes(String(targetDocument.status || '').toLowerCase())) {
+      return res.status(400).json({ success: false, message: 'Only pending credentials can be requested for resubmission.' });
+    }
+
+    const wasAccountVerified = isApprovedJobseekerAccount(jobseeker);
+
     const rawToken = crypto.randomBytes(32).toString('hex');
     const tokenHash = User.hashToken(rawToken);
     const now = new Date();
@@ -2387,8 +2498,10 @@ exports.holdJobseekerVerification = async (req, res) => {
 
     jobseeker.jobSeekerProfile.verificationDocs.overallStatus = 'hold';
     jobseeker.jobSeekerProfile.verificationDocs.adminRemarks = String(reasonMessage).trim();
-    jobseeker.jobSeekerProfile.verificationDocs.verifiedBy = null;
-    jobseeker.jobSeekerProfile.verificationDocs.verifiedAt = null;
+    if (!wasAccountVerified) {
+      jobseeker.jobSeekerProfile.verificationDocs.verifiedBy = null;
+      jobseeker.jobSeekerProfile.verificationDocs.verifiedAt = null;
+    }
     jobseeker.jobSeekerProfile.verificationDocs.rejectionReasons = [];
     jobseeker.jobSeekerProfile.verificationDocs.rejectionMessage = '';
     jobseeker.jobSeekerProfile.verificationDocs.rejectedAt = null;
@@ -2398,6 +2511,9 @@ exports.holdJobseekerVerification = async (req, res) => {
     }
 
     jobseeker.jobSeekerProfile.verificationDocs[docType].status = 'hold';
+    jobseeker.jobSeekerProfile.verificationDocs[docType].checked = false;
+    jobseeker.jobSeekerProfile.verificationDocs[docType].checkedAt = null;
+    jobseeker.jobSeekerProfile.verificationDocs[docType].checkedBy = null;
     jobseeker.jobSeekerProfile.verificationDocs.resubmitRequest = {
       tokenHash,
       docType,
@@ -2411,6 +2527,13 @@ exports.holdJobseekerVerification = async (req, res) => {
     jobseeker.jobSeekerProfile.verificationStatus = 'hold';
 
     await jobseeker.save();
+
+    await createJobseekerCredentialNotification({
+      user: jobseeker,
+      docType,
+      action: 'action_needed',
+      feedback: String(reasonMessage).trim(),
+    });
 
     const frontendUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://agapayy.onrender.com';
     const resubmitUrl = `${frontendUrl}/resubmit-document?token=${rawToken}`;
@@ -2505,15 +2628,38 @@ const markVerificationDocumentChecked = async (req, res, role) => {
       return res.status(400).json({ success: false, message: 'This document has not been submitted.' });
     }
 
+    const wasAccountVerified = role === 'jobseeker'
+      ? isApprovedJobseekerAccount(user)
+      : user.isVerified === true;
+    document.status = 'approved';
     document.checked = true;
     document.checkedAt = new Date();
     document.checkedBy = req.user?._id || req.userId || null;
+
+    if (role === 'jobseeker' && wasAccountVerified) {
+      JOBSEEKER_REQUIRED_DOC_TYPES.forEach((requiredType) => {
+        const requiredDocument = docs?.[requiredType];
+        if (!requiredDocument?.url || docs?.resubmitRequest?.docType === requiredType) return;
+        requiredDocument.status = 'approved';
+        requiredDocument.checked = true;
+      });
+      const nextStatus = getJobseekerCredentialReviewStatus(docs, true);
+      docs.overallStatus = nextStatus;
+      user.jobSeekerProfile.verificationStatus = nextStatus;
+      user.isVerified = true;
+    }
     await user.save();
+
+    if (role === 'jobseeker' && wasAccountVerified) {
+      await createJobseekerCredentialNotification({ user, docType, action: 'approved' });
+    }
 
     return res.status(200).json({
       success: true,
-      message: 'Document marked as checked.',
-      document: { checked: true, checkedAt: document.checkedAt, checkedBy: document.checkedBy },
+      message: role === 'jobseeker'
+        ? `${JOBSEEKER_DOC_LABELS[docType] || 'Credential'} approved successfully.`
+        : 'Document marked as checked.',
+      document: { status: document.status, checked: true, checkedAt: document.checkedAt, checkedBy: document.checkedBy },
     });
   } catch (error) {
     console.error('Error checking verification document:', error);
