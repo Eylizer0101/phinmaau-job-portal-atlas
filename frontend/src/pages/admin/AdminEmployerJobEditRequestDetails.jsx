@@ -36,6 +36,8 @@ const AdminEmployerJobEditRequestDetails = () => {
   const [notice, setNotice] = useState('');
   const [modalSearch, setModalSearch] = useState('');
   const [modalStatus, setModalStatus] = useState('all');
+  const [modalTime, setModalTime] = useState('all');
+  const [modalSort, setModalSort] = useState('newest');
 
   useEffect(() => {
     let active = true;
@@ -60,8 +62,19 @@ const AdminEmployerJobEditRequestDetails = () => {
   const matchesModal = useMemo(() => {
     const query = modalSearch.trim().toLowerCase();
     const statusMatches = modalStatus === 'all' || request?.status === modalStatus;
-    return statusMatches && (!query || sections.some((item) => item.toLowerCase().includes(query)) || String(request?.reason || '').toLowerCase().includes(query));
-  }, [modalSearch, modalStatus, request, sections]);
+    const created = request?.createdAt ? new Date(request.createdAt) : null;
+    const now = new Date();
+    let from = null;
+    if (modalTime === 'today') from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (modalTime === 'week') {
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const offset = today.getDay() === 0 ? 6 : today.getDay() - 1;
+      from = new Date(today.getFullYear(), today.getMonth(), today.getDate() - offset);
+    }
+    if (modalTime === 'month') from = new Date(now.getFullYear(), now.getMonth(), 1);
+    const timeMatches = !from || (created && !Number.isNaN(created.getTime()) && created >= from);
+    return statusMatches && timeMatches && (!query || sections.some((item) => item.toLowerCase().includes(query)) || String(request?.reason || '').toLowerCase().includes(query));
+  }, [modalSearch, modalStatus, modalTime, request, sections]);
 
   const approve = async () => {
     if (!request?._id || request.status !== 'pending' || approving) return;
@@ -103,7 +116,7 @@ const AdminEmployerJobEditRequestDetails = () => {
         <button type="button" onClick={() => setModalOpen(false)} className="absolute right-5 top-5 z-10 rounded-lg p-2 text-slate-600 hover:bg-slate-100" aria-label="Close"><X size={22} /></button>
         <div className="overflow-y-auto p-6 sm:p-8"><h2 className="flex items-center gap-2 text-2xl font-extrabold text-slate-950"><FileEdit className="text-blue-700" /> Edit Requests</h2><p className="mt-1 text-sm text-slate-500">Review requested changes to job posts.</p>
           <div className="mt-5 flex items-center gap-3"><img src={assetUrl(job.companyLogo, '/images/default-company-logo.png')} alt="" className="h-12 w-12 rounded-xl border object-contain p-1" /><div><p className="font-bold">{job.title}</p><p className="text-sm text-slate-500">{company}</p></div></div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_180px_180px]"><label className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} /><input value={modalSearch} onChange={(e) => setModalSearch(e.target.value)} placeholder="Search request, section..." className="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-3 text-sm" /></label><select value={modalStatus} onChange={(e) => setModalStatus(e.target.value)} className="h-11 rounded-xl border border-slate-200 px-3 text-sm"><option value="all">All Status</option><option value="pending">Pending</option><option value="approved">Reviewed</option></select><select className="h-11 rounded-xl border border-slate-200 px-3 text-sm"><option>Newest first</option><option>Oldest first</option></select></div>
+          <div className="mt-5 grid gap-3 md:grid-cols-[minmax(220px,1fr)_145px_145px_150px]"><label className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} /><input value={modalSearch} onChange={(e) => setModalSearch(e.target.value)} placeholder="Search request, section..." className="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-3 text-sm" /></label><select value={modalStatus} onChange={(e) => setModalStatus(e.target.value)} className="h-11 rounded-xl border border-slate-200 px-3 text-sm"><option value="all">All Status</option><option value="pending">Pending</option><option value="approved">Reviewed</option></select><select value={modalTime} onChange={(e) => setModalTime(e.target.value)} className="h-11 rounded-xl border border-slate-200 px-3 text-sm"><option value="all">All Time</option><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option></select><select value={modalSort} onChange={(e) => setModalSort(e.target.value)} className="h-11 rounded-xl border border-slate-200 px-3 text-sm"><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select></div>
           {matchesModal ? <article className="mt-6 rounded-2xl border border-blue-300 p-5"><div className="flex items-center justify-between"><h3 className="font-extrabold">Edit Request</h3><span className={`rounded-full border px-3 py-1 text-xs font-bold uppercase ${request.status === 'pending' ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-emerald-300 bg-emerald-50 text-emerald-700'}`}>{request.status}</span></div><h4 className="mt-5 text-sm font-bold">Sections to Edit</h4><div className="mt-2 flex flex-wrap gap-2">{sections.map((item) => <span key={item} className="rounded-lg border border-blue-300 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-800">{item}</span>)}</div><div className="mt-5 rounded-xl bg-slate-50 p-4"><p className="text-sm font-bold">Reason</p><p className="mt-2 text-sm leading-6 text-slate-600">{request.reason || 'No reason provided.'}</p></div><div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><p className="flex items-center gap-2 text-xs text-slate-500"><Clock3 size={14} />Request On: {formatDateTime(request.createdAt)}</p>{request.status === 'pending' && <button type="button" onClick={approve} disabled={approving} className="min-w-[170px] rounded-xl bg-[#1456ad] px-5 py-3 text-sm font-bold text-white hover:bg-[#10478f] disabled:opacity-60">{approving ? 'Approving...' : 'Approve & Unlock'}</button>}</div></article> : <div className="mt-6 rounded-xl border border-dashed border-slate-300 py-12 text-center text-sm text-slate-500">No request matches the selected filters.</div>}
         </div>
       </section>
