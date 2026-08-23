@@ -271,9 +271,9 @@ router.get(
 // -------------------------------
 // JOBSEEKER SETTINGS EMAIL / MOBILE VERIFICATION
 // -------------------------------
-router.post('/settings/request-email-verification', protect, authorize('jobseeker', 'employer'), authController.requestEmailChangeVerification);
-router.post('/settings/resend-email-verification', protect, authorize('jobseeker', 'employer'), authController.resendEmailVerificationCode);
-router.post('/settings/verify-email', protect, authorize('jobseeker', 'employer'), authController.verifyEmailChangeCode);
+router.post('/settings/request-email-verification', protect, authorize('jobseeker', 'employer', 'admin'), authController.requestEmailChangeVerification);
+router.post('/settings/resend-email-verification', protect, authorize('jobseeker', 'employer', 'admin'), authController.resendEmailVerificationCode);
+router.post('/settings/verify-email', protect, authorize('jobseeker', 'employer', 'admin'), authController.verifyEmailChangeCode);
 
 router.post('/settings/request-phone-verification', protect, authorize('jobseeker', 'employer'), authController.requestPhoneChangeVerification);
 router.post('/settings/resend-phone-verification', protect, authorize('jobseeker', 'employer'), authController.resendPhoneVerificationCode);

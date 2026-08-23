@@ -45,20 +45,11 @@ exports.updateAdminProfile = async (req, res) => {
     if (!admin) return res.status(404).json({ success: false, message: 'Admin account not found.' });
 
     const clean = (value, max) => String(value ?? '').trim().slice(0, max);
-    const email = clean(req.body.email, 160).toLowerCase();
-    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-      return res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
-    }
-
-    const duplicate = await User.findOne({ email, _id: { $ne: admin._id } }).select('_id');
-    if (duplicate) return res.status(409).json({ success: false, message: 'Email address is already in use.' });
-
     if (!admin.adminProfile) admin.adminProfile = {};
     admin.firstName = clean(req.body.firstName, 50);
     admin.middleName = clean(req.body.middleName, 50);
     admin.lastName = clean(req.body.lastName, 50);
     admin.extensionName = clean(req.body.extensionName, 20);
-    admin.email = email;
     admin.adminProfile.organizationName = clean(req.body.organizationName, 120);
     admin.adminProfile.positionRole = clean(req.body.positionRole, 80);
     admin.adminProfile.contactNumber = clean(req.body.contactNumber, 30);
