@@ -1990,8 +1990,13 @@ exports.getCurrentUser = async (req, res) => {
         lastName: user.lastName,
         extensionName: user.extensionName,
         profileImage: user.profileImage,
-        isVerified: user.isVerified === true,
+        isVerified:
+          user.isVerified === true ||
+          String(user.jobSeekerProfile?.verificationStatus || '').toLowerCase() === 'verified' ||
+          String(user.jobSeekerProfile?.verificationDocs?.overallStatus || '').toLowerCase() === 'verified' ||
+          (user.role === 'jobseeker' && String(user.status || '').toLowerCase() === 'active' && Boolean(user.username)),
         isActive: user.isActive,
+        status: user.status,
         lastLogin: user.lastLogin,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,

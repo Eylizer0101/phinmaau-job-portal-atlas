@@ -86,6 +86,12 @@ const JOBSEEKER_DOC_LABELS = {
   validId: 'Valid ID',
 };
 
+const isApprovedJobseekerAccount = (user = {}) =>
+  user.isVerified === true ||
+  String(user.jobSeekerProfile?.verificationStatus || '').toLowerCase() === 'verified' ||
+  String(user.jobSeekerProfile?.verificationDocs?.overallStatus || '').toLowerCase() === 'verified' ||
+  (String(user.status || '').toLowerCase() === 'active' && Boolean(user.username));
+
 const getJobseekerCredentialReviewStatus = (docs = {}, accountVerified = false) => {
   const normalizedStatus = (type) => {
     const status = String(docs?.[type]?.status || 'not_submitted').toLowerCase();
@@ -2139,7 +2145,7 @@ exports.getJobseekerVerificationById = async (req, res) => {
         fileSize: 0
       };
       const isLegacyApprovedRequiredCredential =
-        jobseeker.isVerified === true &&
+        isApprovedJobseekerAccount(jobseeker) &&
         JOBSEEKER_REQUIRED_DOC_TYPES.includes(type) &&
         Boolean(storedDocument.url) &&
         verificationDocs?.resubmitRequest?.docType !== type;
@@ -2174,7 +2180,7 @@ exports.getJobseekerVerificationById = async (req, res) => {
       success: true,
       jobseeker: {
         _id: jobseeker._id,
-        isVerified: jobseeker.isVerified === true,
+        isVerified: isApprovedJobseekerAccount(jobseeker),
         username: jobseeker.username,
         email: jobseeker.email,
         firstName: jobseeker.firstName,
@@ -2495,7 +2501,7 @@ exports.holdJobseekerVerification = async (req, res) => {
       });
     }
 
-    const wasAccountVerified = jobseeker.isVerified === true;
+    const wasAccountVerified = isApprovedJobseekerAccount(jobseeker);
 
     const rawToken = crypto.randomBytes(32).toString('hex');
     const tokenHash = User.hashToken(rawToken);
@@ -2636,7 +2642,9 @@ const markVerificationDocumentChecked = async (req, res, role) => {
       return res.status(400).json({ success: false, message: 'This document has not been submitted.' });
     }
 
-    const wasAccountVerified = user.isVerified === true;
+    const wasAccountVerified = role === 'jobseeker'
+      ? isApprovedJobseekerAccount(user)
+      : user.isVerified === true;
     document.status = 'approved';
     document.checked = true;
     document.checkedAt = new Date();

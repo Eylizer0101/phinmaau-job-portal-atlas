@@ -5164,8 +5164,13 @@ const MyProfile = () => {
         syncDrafts(nextData);
         setAddedMoreSections(nextData.addedResumeSections);
         setUserData(user);
+        const isApprovedJobseekerAccount =
+          user.isVerified === true ||
+          String(profile.verificationStatus || '').toLowerCase() === 'verified' ||
+          String(profile.verificationDocs?.overallStatus || '').toLowerCase() === 'verified' ||
+          (String(user.status || '').toLowerCase() === 'active' && Boolean(user.username));
         setVerificationDocs(
-          normalizeVerificationDocs(profile.verificationDocs || {}, user.isVerified === true)
+          normalizeVerificationDocs(profile.verificationDocs || {}, isApprovedJobseekerAccount)
         );
       }
     } catch (err) {
