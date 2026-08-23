@@ -1708,21 +1708,6 @@ const EmployerDashboard = () => {
 
                 <div className="mt-6 flex items-center justify-center gap-3">
                   <button
-                    ref={logoutPrimaryBtnRef}
-                    type="button"
-                    onClick={handleLogout}
-                    disabled={isLoggingOut}
-                    className={[
-                      'px-6 py-3 rounded-xl font-semibold',
-                      'bg-red-600 text-white hover:bg-red-700 transition-colors',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2',
-                      isLoggingOut ? 'opacity-70 cursor-not-allowed' : '',
-                    ].join(' ')}
-                  >
-                    {isLoggingOut ? 'Logging out…' : 'Sign out'}
-                  </button>
-
-                  <button
                     ref={logoutCancelBtnRef}
                     type="button"
                     onClick={closeLogoutModal}
@@ -1735,6 +1720,21 @@ const EmployerDashboard = () => {
                     ].join(' ')}
                   >
                     Cancel
+                  </button>
+
+                  <button
+                    ref={logoutPrimaryBtnRef}
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    className={[
+                      'px-6 py-3 rounded-xl font-semibold',
+                      'bg-red-600 text-white hover:bg-red-700 transition-colors',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2',
+                      isLoggingOut ? 'opacity-70 cursor-not-allowed' : '',
+                    ].join(' ')}
+                  >
+                    {isLoggingOut ? 'Logging out…' : 'Sign out'}
                   </button>
                 </div>
               </div>

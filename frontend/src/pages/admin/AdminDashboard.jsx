@@ -1589,20 +1589,20 @@ const AdminTopActions = () => {
               <div className="mt-6 flex items-center justify-center gap-3">
                 <button
                   type="button"
-                  onClick={handleSignOut}
-                  disabled={isSigningOut}
-                  className="inline-flex h-11 items-center justify-center rounded-xl bg-red-600 px-6 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  {isSigningOut ? "Signing out..." : "Sign Out"}
-                </button>
-
-                <button
-                  type="button"
                   onClick={closeSignOutModal}
                   disabled={isSigningOut}
                   className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  disabled={isSigningOut}
+                  className="inline-flex h-11 items-center justify-center rounded-xl bg-red-600 px-6 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {isSigningOut ? "Signing out..." : "Sign Out"}
                 </button>
               </div>
             </div>

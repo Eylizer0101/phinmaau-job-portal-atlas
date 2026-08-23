@@ -828,6 +828,22 @@ const JobSeekerLayout = ({ children }) => {
 
               <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
                 <button
+                  ref={logoutCancelBtnRef}
+                  type="button"
+                  onClick={closeLogoutModal}
+                  disabled={isLoggingOut}
+                  className={[
+                    'inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold',
+                    'bg-white text-gray-800 border border-gray-200 hover:bg-gray-50 transition-colors',
+                    'shadow-sm active:scale-[0.99] transition-transform',
+                    focusRing,
+                    isLoggingOut ? 'opacity-70 cursor-not-allowed' : '',
+                  ].join(' ')}
+                >
+                  Cancel
+                </button>
+
+                <button
                   ref={logoutPrimaryBtnRef}
                   type="button"
                   onClick={handleLogout}
@@ -847,22 +863,6 @@ const JobSeekerLayout = ({ children }) => {
                     />
                   )}
                   {isLoggingOut ? 'Logging out…' : 'Sign out'}
-                </button>
-
-                <button
-                  ref={logoutCancelBtnRef}
-                  type="button"
-                  onClick={closeLogoutModal}
-                  disabled={isLoggingOut}
-                  className={[
-                    'inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold',
-                    'bg-white text-gray-800 border border-gray-200 hover:bg-gray-50 transition-colors',
-                    'shadow-sm active:scale-[0.99] transition-transform',
-                    focusRing,
-                    isLoggingOut ? 'opacity-70 cursor-not-allowed' : '',
-                  ].join(' ')}
-                >
-                  Cancel
                 </button>
               </div>
             </div>
