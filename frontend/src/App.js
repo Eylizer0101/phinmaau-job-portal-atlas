@@ -89,6 +89,7 @@ import AdminArchiveDetails from './pages/admin/AdminArchiveDetails';
 import AdminSystemLogs from './pages/admin/AdminSystemLogs';
 import AdminNotificationsPage from './pages/admin/AdminNotificationsPage';
 import AdminEmployerJobEditRequests from './pages/admin/AdminEmployerJobEditRequests';
+import AdminEmployerJobEditRequestDetails from './pages/admin/AdminEmployerJobEditRequestDetails';
 import AdminDashboardJobs from './pages/admin/AdminDashboardJobs';
 import AdminDashboardJobSeekers from './pages/admin/AdminDashboardJobSeekers';
 import AdminDashboardEmployers from './pages/admin/AdminDashboardEmployers';
@@ -524,6 +525,16 @@ function App() {
             <RequireRole role="admin" redirectTo="/login">
               <AdminLayout>
                 <AdminEmployerJobEditRequests />
+              </AdminLayout>
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/admin/employer-job-edit-requests/:requestId"
+          element={
+            <RequireRole role="admin" redirectTo="/login">
+              <AdminLayout>
+                <AdminEmployerJobEditRequestDetails />
               </AdminLayout>
             </RequireRole>
           }

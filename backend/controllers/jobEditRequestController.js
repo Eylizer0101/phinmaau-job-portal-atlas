@@ -211,8 +211,8 @@ exports.getJobStatus = async (req, res) => {
 exports.getAdminRequests = async (req, res) => {
   try {
     const requests = await JobEditRequest.find({})
-      .populate('job', 'title companyName category createdAt publishedAt editUnlockedUntil')
-      .populate('employer', 'firstName lastName fullName employerProfile.companyName')
+      .populate('job', 'title companyName companyLogo category jobType workMode vacancies applicationDeadline location createdAt publishedAt editUnlockedUntil')
+      .populate('employer', 'firstName lastName fullName employerProfile.companyName employerProfile.companyLogo')
       .populate('reviewedBy', 'firstName lastName fullName')
       .sort({ createdAt: -1 });
 
@@ -223,6 +223,24 @@ exports.getAdminRequests = async (req, res) => {
   } catch (error) {
     console.error('Get admin edit requests error:', error);
     return res.status(500).json({ success: false, message: 'Unable to load job edit requests.' });
+  }
+};
+
+exports.getAdminRequestDetails = async (req, res) => {
+  try {
+    const request = await JobEditRequest.findById(req.params.requestId)
+      .populate('job')
+      .populate('employer', 'firstName lastName fullName email employerProfile')
+      .populate('reviewedBy', 'firstName lastName fullName');
+
+    if (!request) {
+      return res.status(404).json({ success: false, message: 'Edit request not found.' });
+    }
+
+    return res.json({ success: true, request: serializeRequest(request) });
+  } catch (error) {
+    console.error('Get admin edit request details error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to load edit request details.' });
   }
 };
 
