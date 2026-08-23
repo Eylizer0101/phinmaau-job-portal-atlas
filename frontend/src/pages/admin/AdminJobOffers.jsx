@@ -15,6 +15,7 @@ const Icon = ({ name, className = 'h-4 w-4' }) => {
     chevron: <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />,
     eye: <><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></>,
     user: <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 7.5a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 21a7.5 7.5 0 0115 0" />,
+    users: <><path strokeLinecap="round" strokeLinejoin="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path strokeLinecap="round" strokeLinejoin="round" d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" /></>,
     refresh: <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v6h6M20 20v-6h-6M5 15a7 7 0 0012 3l3-4M19 9A7 7 0 007 6L4 10" />,
     briefcase: <><path strokeLinecap="round" strokeLinejoin="round" d="M10 6h4a2 2 0 012 2v1h3a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2v-7a2 2 0 012-2h3V8a2 2 0 012-2z" /><path strokeLinecap="round" strokeLinejoin="round" d="M10 9h4" /></>,
     building: <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1" />,
@@ -708,6 +709,7 @@ const AdminJobOffers = () => {
                           </td>
                           <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">{formatDate(job.applicationDeadline)}</td>
                           <td className="whitespace-nowrap px-6 py-4 text-center">
+                            <div className="inline-flex items-center justify-center gap-2">
                             <button
                               type="button"
                               onClick={() => navigate(`/admin/jobs/${job._id}`, { state: { backPath: '/admin/job-offers', backLabel: 'Job Offers' } })}
@@ -717,6 +719,21 @@ const AdminJobOffers = () => {
                             >
                               <Icon name="eye" />
                             </button>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                navigate(`/admin/jobs/${job._id}/applicants`, {
+                                  state: { backPath: '/admin/job-offers', backLabel: 'Job Offers' },
+                                });
+                              }}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-gray-500 transition hover:bg-[#eef5fc] hover:text-[#2e66a6] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                              title="View applicants"
+                              aria-label={`View applicants for ${job.title || 'job offer'}`}
+                            >
+                              <Icon name="users" />
+                            </button>
+                            </div>
                           </td>
                         </tr>
                       );

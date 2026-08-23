@@ -53,6 +53,7 @@ const SvgIcon = ({ name, className = 'h-4 w-4' }) => {
     chevron: <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />,
     x: <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />,
     refresh: <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v6h6M20 20v-6h-6M5 15a7 7 0 0012 3l3-4M19 9A7 7 0 007 6L4 10" />,
+    eye: <><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></>,
   };
 
   return <svg {...common}>{icons[name] || null}</svg>;
@@ -99,6 +100,12 @@ const getApplicantName = (application) => {
 
 const getApplicantEmail = (application) =>
   application?.jobseeker?.email || application?.email || 'N/A';
+
+const getApplicantUserId = (application) => {
+  const jobseeker = application?.jobseeker;
+  if (typeof jobseeker === 'string') return jobseeker;
+  return jobseeker?._id || jobseeker?.id || application?.jobseekerId || '';
+};
 
 const getProfile = (application) =>
   application?.jobseeker?.jobSeekerProfile || {};
@@ -1248,6 +1255,7 @@ const AdminJobApplicants = () => {
                         <th className="px-5 py-4">Course</th>
                         <th className="px-5 py-4">Jobseeker Level</th>
                         <th className="px-5 py-4">Status</th>
+                        <th className="px-5 py-4 text-center">Actions</th>
                       </tr>
                     </thead>
 
@@ -1257,6 +1265,7 @@ const AdminJobApplicants = () => {
                           const statusMeta = getApplicantStatusMeta(
                             application.status
                           );
+                          const applicantUserId = getApplicantUserId(application);
 
                           return (
                             <tr
@@ -1292,13 +1301,33 @@ const AdminJobApplicants = () => {
                                   {statusMeta.label}
                                 </span>
                               </td>
+                              <td className="whitespace-nowrap px-5 py-4 text-center">
+                                <button
+                                  type="button"
+                                  disabled={!applicantUserId}
+                                  onClick={() => {
+                                    if (!applicantUserId) return;
+                                    navigate(`/admin/users/${applicantUserId}?tab=resume`, {
+                                      state: {
+                                        backPath: `/admin/jobs/${jobId}/applicants`,
+                                        backLabel: 'Applicant List',
+                                      },
+                                    });
+                                  }}
+                                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#dfe5ec] bg-white text-[#4b5563] transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] hover:text-[#2e66a6] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+                                  title="View applicant resume"
+                                  aria-label={`View ${getApplicantName(application)} resume`}
+                                >
+                                  <SvgIcon name="eye" className="h-4 w-4" />
+                                </button>
+                              </td>
                             </tr>
                           );
                         })
                       ) : (
                         <tr>
                           <td
-                            colSpan="6"
+                            colSpan="7"
                             className="px-5 py-14 text-center text-sm text-[#6b7280]"
                           >
                             {applicants.length

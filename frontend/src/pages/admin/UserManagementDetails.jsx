@@ -406,9 +406,11 @@ const UserManagementDetails = () => {
     return Boolean(location.state?.fromArchive) || params.get("archive") === "1";
   }, [location.search, location.state]);
   const archiveBackPath = location.state?.archiveBackPath || `/admin/archive/account/${userId}`;
+  const detailsBackPath = location.state?.backPath || "/admin/users";
+  const detailsBackLabel = location.state?.backLabel || "Back to Users";
 
   const handleBack = () => {
-    navigate(isArchiveView ? archiveBackPath : "/admin/users");
+    navigate(isArchiveView ? archiveBackPath : detailsBackPath);
   };
 
   const [user, setUser] = useState(null);
@@ -417,7 +419,10 @@ const UserManagementDetails = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState("resume");
+  const [activeTab, setActiveTab] = useState(() => {
+    const requestedTab = new URLSearchParams(location.search).get("tab");
+    return TABS.some((tab) => tab.key === requestedTab) ? requestedTab : "resume";
+  });
   const [activeEmployerTab, setActiveEmployerTab] = useState("about");
   const [applicationPage, setApplicationPage] = useState(1);
   const [brokenAvatar, setBrokenAvatar] = useState(false);
@@ -2201,7 +2206,7 @@ const UserManagementDetails = () => {
               className="inline-flex w-fit items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-black shadow-sm transition hover:border-[#2e66a6]/35 hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
             >
               <Icon name="arrowLeft" className="h-4 w-4" />
-              {isArchiveView ? "Back to Archive" : "Back to Users"}
+              {isArchiveView ? "Back to Archive" : detailsBackLabel}
             </button>
 
             {archiveBanner}
@@ -2362,7 +2367,7 @@ const UserManagementDetails = () => {
             className="inline-flex w-fit items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-black shadow-sm transition hover:border-[#2e66a6]/35 hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
           >
             <Icon name="arrowLeft" className="h-4 w-4" />
-            {isArchiveView ? "Back to Archive" : "Back to Users"}
+            {isArchiveView ? "Back to Archive" : detailsBackLabel}
           </button>
 
           {archiveBanner}
