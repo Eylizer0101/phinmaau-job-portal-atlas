@@ -4345,14 +4345,21 @@ const MyProfile = () => {
     return 'not_submitted';
   };
 
-  const normalizeVerificationDocs = (rawDocs) => {
+  const normalizeVerificationDocs = (rawDocs, accountVerified = false) => {
     const keys = ['cv', 'tor', 'diploma', 'validId', 'sss', 'philhealth', 'pagibig', 'tin'];
     const result = {};
     keys.forEach((k) => {
       const d = rawDocs?.[k] || {};
       const url = d.url || '';
+      const isApprovedRegistrationCredential =
+        accountVerified &&
+        ['cv', 'tor', 'diploma', 'validId'].includes(k) &&
+        Boolean(url) &&
+        rawDocs?.resubmitRequest?.docType !== k;
       result[k] = {
-        status: normalizeStatus(d.status, Boolean(url)),
+        status: isApprovedRegistrationCredential
+          ? 'approved'
+          : normalizeStatus(d.status, Boolean(url)),
         url,
         filename: d.filename || '',
         fileSize: Number(d.fileSize || 0),
@@ -5157,7 +5164,9 @@ const MyProfile = () => {
         syncDrafts(nextData);
         setAddedMoreSections(nextData.addedResumeSections);
         setUserData(user);
-        setVerificationDocs(normalizeVerificationDocs(profile.verificationDocs || {}));
+        setVerificationDocs(
+          normalizeVerificationDocs(profile.verificationDocs || {}, user.isVerified === true)
+        );
       }
     } catch (err) {
       console.error(err);

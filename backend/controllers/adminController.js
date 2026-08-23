@@ -86,13 +86,20 @@ const JOBSEEKER_DOC_LABELS = {
   validId: 'Valid ID',
 };
 
-const getJobseekerCredentialReviewStatus = (docs = {}) => {
-  const statuses = JOBSEEKER_DOC_TYPES.map((type) =>
-    String(docs?.[type]?.status || 'not_submitted').toLowerCase()
-  );
-  const requiredStatuses = JOBSEEKER_REQUIRED_DOC_TYPES.map((type) =>
-    String(docs?.[type]?.status || 'not_submitted').toLowerCase()
-  );
+const getJobseekerCredentialReviewStatus = (docs = {}, accountVerified = false) => {
+  const normalizedStatus = (type) => {
+    const status = String(docs?.[type]?.status || 'not_submitted').toLowerCase();
+    const isLegacyApprovedRequiredCredential =
+      accountVerified &&
+      JOBSEEKER_REQUIRED_DOC_TYPES.includes(type) &&
+      Boolean(docs?.[type]?.url) &&
+      docs?.resubmitRequest?.docType !== type;
+
+    return isLegacyApprovedRequiredCredential ? 'approved' : status;
+  };
+
+  const statuses = JOBSEEKER_DOC_TYPES.map(normalizedStatus);
+  const requiredStatuses = JOBSEEKER_REQUIRED_DOC_TYPES.map(normalizedStatus);
 
   if (statuses.some((status) => ['pending', 'submitted'].includes(status))) return 'pending';
   if (statuses.some((status) => ['hold', 'rejected'].includes(status))) return 'hold';
@@ -2124,12 +2131,23 @@ exports.getJobseekerVerificationById = async (req, res) => {
     const docTypes = ['cv', 'tor', 'diploma', 'sss', 'philhealth', 'pagibig', 'tin', 'validId'];
 
     docTypes.forEach((type) => {
-      docDetails[type] = verificationDocs[type] || {
+      const storedDocument = verificationDocs[type] || {
         url: '',
         status: 'not_submitted',
         uploadedAt: null,
         filename: '',
         fileSize: 0
+      };
+      const isLegacyApprovedRequiredCredential =
+        jobseeker.isVerified === true &&
+        JOBSEEKER_REQUIRED_DOC_TYPES.includes(type) &&
+        Boolean(storedDocument.url) &&
+        verificationDocs?.resubmitRequest?.docType !== type;
+
+      docDetails[type] = {
+        ...(storedDocument.toObject ? storedDocument.toObject() : storedDocument),
+        status: isLegacyApprovedRequiredCredential ? 'approved' : storedDocument.status,
+        checked: isLegacyApprovedRequiredCredential ? true : storedDocument.checked,
       };
     });
 
@@ -2625,7 +2643,7 @@ const markVerificationDocumentChecked = async (req, res, role) => {
     document.checkedBy = req.user?._id || req.userId || null;
 
     if (role === 'jobseeker' && wasAccountVerified) {
-      const nextStatus = getJobseekerCredentialReviewStatus(docs);
+      const nextStatus = getJobseekerCredentialReviewStatus(docs, true);
       docs.overallStatus = nextStatus;
       user.jobSeekerProfile.verificationStatus = nextStatus;
     }
