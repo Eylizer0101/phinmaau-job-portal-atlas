@@ -527,6 +527,7 @@ const EmployerVerificationDetails = () => {
   const [pendingCredentialAction, setPendingCredentialAction] = useState(null);
   const [showCredentialPassword, setShowCredentialPassword] = useState(false);
   const [checkingDoc, setCheckingDoc] = useState("");
+  const [verifyCredential, setVerifyCredential] = useState(null);
   const [holdDocTypes, setHoldDocTypes] = useState([]);
   const [holdReason, setHoldReason] = useState("");
 
@@ -981,7 +982,7 @@ const EmployerVerificationDetails = () => {
     <AdminLayout>
       <div className="mx-auto max-w-7xl px-1 py-8">
         <div className="mb-5">
-          <h1 className="text-2xl font-bold text-black sm:text-3xl">Employer Account Review</h1>
+          <h1 className="text-2xl font-bold text-black sm:text-3xl">Account Review</h1>
           <p className="mt-1 text-sm text-black/60">
             Review and verify employer account registrations and submitted company documents.
           </p>
@@ -1000,7 +1001,7 @@ const EmployerVerificationDetails = () => {
         )}
 
         <div className="rounded-xl border border-black/15 bg-white p-4 shadow-sm sm:p-5">
-          <div className="mb-5 flex flex-col gap-4 border-b border-black/10 pb-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="mb-5 flex flex-col gap-4 border-b border-black/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
             <Link
               to="/admin/employer-verification"
               className={cn(
@@ -1011,8 +1012,15 @@ const EmployerVerificationDetails = () => {
               <SvgIcon name="back" className="h-4 w-4" />
               Back to List
             </Link>
-
-
+            {canShowActionButtons ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <button type="button" onClick={() => openConfirm("verified")} disabled={!docsComplete || action !== null || !canTransition(overallStatus, "verified")} className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white shadow-sm hover:bg-[#255587] disabled:opacity-50", UI.ring)}><SvgIcon name="check" className="h-4 w-4" />Approve</button>
+                <button type="button" onClick={() => setShowRejectModal(true)} disabled={action !== null || !canTransition(overallStatus, "rejected")} className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-bold text-black shadow-sm hover:bg-black/5 disabled:opacity-50", UI.ring)}><SvgIcon name="x" className="h-4 w-4" />Decline</button>
+                <button type="button" onClick={() => setShowHoldModal(true)} disabled={action !== null || !canTransition(overallStatus, "hold")} className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-black px-4 text-sm font-bold text-white shadow-sm hover:bg-black/90 disabled:opacity-50", UI.ring)}><SvgIcon name="pause" className="h-4 w-4" />Hold</button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">{statusBadge(overallStatus)}{isRejected ? <button type="button" onClick={restoreEmployer} disabled={action !== null} className={cn(UI.btnBase, UI.btnMd, UI.btnSecondary, UI.ring)}>Restore</button> : null}</div>
+            )}
           </div>
 
           <section className="rounded-xl border border-black/15 bg-white p-4 sm:p-5">
@@ -1023,7 +1031,7 @@ const EmployerVerificationDetails = () => {
               </div>
 
               {canShowActionButtons ? (
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="hidden flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={() => openConfirm("verified")}
@@ -1053,7 +1061,7 @@ const EmployerVerificationDetails = () => {
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
+                <div className="hidden items-center gap-2">
                   {statusBadge(overallStatus)}
                   {isRejected ? <button type="button" onClick={restoreEmployer} disabled={action !== null} className={cn(UI.btnBase, UI.btnMd, UI.btnSecondary, UI.ring)}>Restore</button> : null}
                 </div>
@@ -1086,7 +1094,7 @@ const EmployerVerificationDetails = () => {
               </div>
 
               <div className="flex flex-col items-center justify-center text-center">
-                <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-2xl border border-black/15 bg-white shadow-sm">
+                <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-4 border-black/10 bg-[#f1f5f9] shadow-sm">
                   {logoUrl && !logoFailed ? (
                     <img
                       src={logoUrl}
@@ -1098,13 +1106,6 @@ const EmployerVerificationDetails = () => {
                     <SvgIcon name="building" className="h-14 w-14 text-[#94A3B8]" />
                   )}
                 </div>
-
-                <h3 className="mt-3 max-w-[200px] truncate text-base font-bold text-black" title={companyName}>
-                  {companyName}
-                </h3>
-                <p className="mt-1 max-w-[200px] text-xs text-black/60">
-                  {company.industry || "—"}
-                </p>
 
                 <span
                   className={cn(
@@ -1190,10 +1191,11 @@ const EmployerVerificationDetails = () => {
 
                         <button
                           type="button"
-                          onClick={() => checkDoc(docType.key)}
+                          onClick={() => setVerifyCredential({ key: docType.key, label: docType.label })}
                           disabled={action !== null || checkingDoc === docType.key || doc.checked}
                           className={cn(
-                            "flex h-8 items-center justify-center rounded border border-black/15 bg-white text-black/70 hover:bg-black/5 disabled:opacity-50",
+                            "flex h-8 items-center justify-center rounded border border-black/15 text-black/70 disabled:opacity-50",
+                            doc.checked ? "border-emerald-200 bg-emerald-50 text-emerald-600" : "bg-white hover:bg-black/5",
                             UI.ring
                           )}
                           aria-label={`Check ${docType.label}`}
@@ -1212,37 +1214,28 @@ const EmployerVerificationDetails = () => {
               })}
             </div>
 
-            <div
-              className={cn(
-                "mt-4 flex items-center gap-2 text-xs font-semibold",
-                docsComplete ? "text-[#2e66a6]" : "text-black/60"
-              )}
-            >
-              <SvgIcon name={docsComplete ? "check" : "doc"} className="h-4 w-4" />
-              {docsComplete
-                ? "All required documents have been submitted."
-                : missingDocsMessage}
-            </div>
           </section>
 
-          <section className="mt-4 rounded-xl border border-black/15 bg-white p-4 sm:p-5">
-            <label htmlFor="reviewNotes" className="text-xs font-semibold text-black/70">
-              Review Notes <span className="font-normal text-black/45">(Optional)</span>
-            </label>
-            <textarea
-              id="reviewNotes"
-              value={remarks}
-              onChange={(event) => setRemarks(event.target.value)}
-              placeholder="Add notes here..."
-              rows={3}
-              className={cn(
-                "mt-2 w-full resize-none rounded-lg border border-black/15 bg-white px-3 py-2 text-sm text-black placeholder-black/35",
-                UI.ring
-              )}
-            />
-          </section>
         </div>
       </div>
+
+      {verifyCredential && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="employer-verify-credential-title">
+            <div className="flex items-start justify-between px-5 pt-5">
+              <div>
+                <h3 id="employer-verify-credential-title" className="text-lg font-bold text-black">Approve {verifyCredential.label} Credential?</h3>
+                <p className="mt-1 text-sm text-[#2e66a6]">This will mark the {verifyCredential.label} credential as verified.</p>
+              </div>
+              <button type="button" onClick={() => setVerifyCredential(null)} disabled={Boolean(checkingDoc)} className="rounded p-1 text-black/60 hover:bg-black/5" aria-label="Close"><SvgIcon name="x" className="h-4 w-4" /></button>
+            </div>
+            <div className="mt-5 flex justify-end gap-2 border-t border-slate-100 bg-slate-50 px-5 py-4">
+              <button type="button" onClick={() => setVerifyCredential(null)} disabled={Boolean(checkingDoc)} className={cn("h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-black shadow-sm", UI.ring)}>Cancel</button>
+              <button type="button" disabled={Boolean(checkingDoc)} onClick={async () => { const target = verifyCredential; await checkDoc(target.key); setVerifyCredential(null); }} className={cn("inline-flex h-10 items-center justify-center rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white shadow-sm hover:bg-[#255587] disabled:opacity-50", UI.ring)}>{checkingDoc ? "Verifying..." : "Verify"}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showPasswordModal && (
         <div className="fixed inset-0 z-[60] overflow-y-auto">
