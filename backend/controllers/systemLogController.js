@@ -100,7 +100,13 @@ const buildQuery = (queryParams = {}) => {
     ];
   }
 
-  if (role !== 'all') query.actorRole = role;
+  // Activity Logs are intentionally limited to actual Jobseeker and Employer
+  // activity. Admin and internal system records are not part of this page.
+  if (role === 'jobseeker' || role === 'employer') {
+    query.actorRole = role;
+  } else {
+    query.actorRole = { $in: ['jobseeker', 'employer'] };
+  }
   if (action !== 'all') query.action = action;
   if (moduleName !== 'all') query.module = moduleName;
   if (status !== 'all') query.status = status;
@@ -222,7 +228,7 @@ exports.getSystemLogs = async (req, res) => {
         today: todayCount,
       },
       filterOptions: {
-        roles: ['admin', 'employer', 'jobseeker', 'system', 'unknown'],
+        roles: ['employer', 'jobseeker'],
         statuses: ['success', 'failed', 'warning'],
         actions: actions
           .filter((item) => item._id)

@@ -279,6 +279,11 @@ const resolveAuditDefinition = (method, pathValue) => {
     return rule('job.status_updated', 'Job status updated', 'Job Management', 'Job', 'Updated a job post status.');
   }
 
+  // Employer job edit request workflow
+  if (/^\/api\/job-edit-requests\/job\/[^/]+$/.test(path) && method === 'POST') {
+    return rule('job.edit_requested', 'Job edit requested', 'Job Management', 'Job edit request', 'Submitted a request to edit a job post.');
+  }
+
   // Application workflow
   if (/^\/api\/applications\/apply\/[^/]+$/.test(path) && method === 'POST') {
     return rule('application.submitted', 'Application submitted', 'Applications', 'Application', 'Submitted a job application.');
