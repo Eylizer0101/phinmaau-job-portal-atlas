@@ -449,7 +449,7 @@ const getAlumniOverallStatus = (verificationDocs = {}, forceVerified = false) =>
   if (overallStatus === 'hold') return 'hold';
 
   const requiredStatuses = REQUIRED_ALUMNI_DOC_TYPES.map((type) =>
-    String(verificationDocs?.[type]?.status || 'not_submitted')
+    String(verificationDocs?.[type]?.status || 'not_submitted').toLowerCase()
   );
 
   const hasHoldRequired = requiredStatuses.some((status) => status === 'hold');
@@ -457,6 +457,15 @@ const getAlumniOverallStatus = (verificationDocs = {}, forceVerified = false) =>
 
   const hasRejectedRequired = requiredStatuses.some((status) => status === 'rejected');
   if (hasRejectedRequired) return 'rejected';
+
+  const allStatuses = ALL_ALUMNI_DOC_TYPES.map((type) =>
+    String(verificationDocs?.[type]?.status || 'not_submitted').toLowerCase()
+  );
+  const hasAnyPending = allStatuses.some((status) => ['pending', 'submitted'].includes(status));
+  if (hasAnyPending) return 'pending';
+
+  const hasAnyHold = allStatuses.some((status) => ['hold', 'rejected'].includes(status));
+  if (hasAnyHold) return 'hold';
 
   const allRequiredApproved = requiredStatuses.every((status) => status === 'approved');
   if (allRequiredApproved) return 'verified';
@@ -2046,7 +2055,7 @@ exports.uploadAlumniVerificationDoc = async (req, res) => {
       String(currentProfile.verificationStatus || '').toLowerCase() === 'verified' ||
       String(currentDocs.overallStatus || '').toLowerCase() === 'verified';
 
-    const overallStatus = getAlumniOverallStatus(currentDocs, alreadyVerified);
+    const overallStatus = getAlumniOverallStatus(currentDocs, false);
 
     currentDocs.overallStatus = overallStatus;
 
@@ -2064,6 +2073,15 @@ exports.uploadAlumniVerificationDoc = async (req, res) => {
       { $set: updateFields },
       { new: true }
     ).select('-password');
+
+    if (alreadyVerified) {
+      await createAdminResubmissionNotifications({
+        subjectUser: updatedUser,
+        accountType: 'jobseeker',
+        docType,
+        docLabel: ALUMNI_DOC_LABELS[docType] || docType,
+      });
+    }
 
     res.status(200).json({
       success: true,

@@ -1519,6 +1519,8 @@ const CredentialItem = ({
   uploading,
   fileName,
   fileUrl,
+  status,
+  feedback,
   popoverOpen,
   onOpen,
   onClose,
@@ -1548,6 +1550,18 @@ const CredentialItem = ({
   const handleUploadClick = () => {
     inputRef.current?.click();
   };
+
+  const normalizedStatus = String(status || (uploaded ? 'pending' : 'not_submitted')).toLowerCase();
+  const isApproved = normalizedStatus === 'approved';
+  const isPending = normalizedStatus === 'pending' || normalizedStatus === 'submitted';
+  const needsAction = normalizedStatus === 'hold' || normalizedStatus === 'rejected';
+  const statusLabel = isApproved
+    ? 'Approved'
+    : needsAction
+      ? 'Action Needed'
+      : isPending
+        ? 'Pending'
+        : 'Not uploaded';
 
   const getCredentialPreviewUrl = () => {
     const apiBase = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
@@ -1582,7 +1596,9 @@ const CredentialItem = ({
       ref={wrapperRef}
       onMouseEnter={onOpen}
       className={`relative rounded-[10px] border px-4 py-3 flex items-center justify-between gap-4 transition-colors ${
-        uploaded
+        needsAction
+          ? 'border-red-200 bg-red-50/40'
+          : uploaded
           ? 'border-[#d8e2ee] bg-[#f7faff]'
           : 'border-[#e6edf5] bg-white hover:bg-[#f7faff]'
       }`}
@@ -1612,12 +1628,16 @@ const CredentialItem = ({
       <div className="flex items-center gap-3 shrink-0">
         <span
           className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-            uploaded
-              ? 'bg-[#eaf2fb] text-[#2e66a6]'
-              : 'bg-white text-black/50'
+            isApproved
+              ? 'bg-emerald-50 text-emerald-700'
+              : needsAction
+                ? 'bg-red-50 text-red-700'
+                : isPending
+                  ? 'bg-amber-50 text-amber-700'
+                  : 'bg-white text-black/50'
           }`}
         >
-          {uploaded ? 'Uploaded' : 'Not uploaded'}
+          {statusLabel}
         </span>
       </div>
 
@@ -1628,13 +1648,17 @@ const CredentialItem = ({
           onClick={(e) => e.stopPropagation()}
         >
           <div className="text-[12px] leading-5 text-black/65">
-            {uploaded
-              ? `Uploaded ${title}. You can securely preview and export this credential.`
-              : `Upload your ${title} for document compliance and profile processing.`}
+            {needsAction
+              ? (feedback || `Your ${title} needs to be corrected and uploaded again.`)
+              : isApproved
+                ? `Your ${title} credential has been approved.`
+                : isPending
+                  ? `Your ${title} credential is pending administrator review.`
+                  : `Upload your ${title} for document compliance and profile processing.`}
           </div>
 
           <div className="mt-3 flex items-center justify-center">
-            {!uploaded ? (
+            {!uploaded || needsAction ? (
               <button
                 type="button"
                 onClick={handleUploadClick}
@@ -1642,7 +1666,7 @@ const CredentialItem = ({
                 className="h-8 px-3 rounded-md border border-[#d8e2ee] bg-white text-[#2e66a6] text-xs font-semibold inline-flex items-center justify-center gap-2 hover:bg-[#f7faff] disabled:opacity-70"
               >
                 <FaDownload className="text-[10px]" />
-                {uploading ? 'Uploading...' : 'Upload'}
+                {uploading ? 'Uploading...' : needsAction ? 'Re-upload' : 'Upload'}
               </button>
             ) : (
               <>
@@ -4316,7 +4340,7 @@ const MyProfile = () => {
     if (s === 'verified') return 'approved';
     if (s === 'submitted') return 'pending';
     if (s === 'not submitted') return 'not_submitted';
-    if (['not_submitted', 'pending', 'approved', 'rejected', 'submitted'].includes(s)) return s;
+    if (['not_submitted', 'pending', 'approved', 'rejected', 'hold', 'submitted'].includes(s)) return s;
     if (!s && hasUrl) return 'pending';
     return 'not_submitted';
   };
@@ -4333,6 +4357,10 @@ const MyProfile = () => {
         filename: d.filename || '',
         fileSize: Number(d.fileSize || 0),
         uploadedAt: d.uploadedAt || null,
+        feedback:
+          rawDocs?.resubmitRequest?.docType === k
+            ? rawDocs?.resubmitRequest?.reasonMessage || rawDocs?.adminRemarks || ''
+            : '',
       };
     });
     return result;
@@ -4449,7 +4477,7 @@ const MyProfile = () => {
       key,
       label: credentialLabels[key],
       weight: credentialWeights[key],
-      completed: Boolean(String(verificationDocs?.[key]?.url || '').trim()),
+      completed: verificationDocs?.[key]?.status === 'approved',
     }));
 
     const basicInformationComplete = isBasicInformationComplete;
@@ -6213,9 +6241,11 @@ const MyProfile = () => {
             filename: file.name,
             fileSize: file.size,
             uploadedAt: new Date().toISOString(),
+            feedback: '',
           },
         }));
-        showSuccess('Document Uploaded', 'Your credential has been uploaded successfully.');
+        const submittedLabel = documentConfig.find((item) => item.type === docType)?.title || 'Credential';
+        showSuccess('Credential Submitted', `“${submittedLabel}” credential submitted successfully!`);
       }
     } catch (err) {
       console.error(err);
@@ -6859,6 +6889,8 @@ const MyProfile = () => {
                 uploading={Boolean(uploadingDocs[doc.type])}
                 fileName={docData.filename}
                 fileUrl={docData.url}
+                status={docData.status}
+                feedback={docData.feedback}
                 popoverOpen={activeCredentialPopover === doc.type}
                 onOpen={() => setActiveCredentialPopover(doc.type)}
                 onClose={() => setActiveCredentialPopover('')}
