@@ -39,16 +39,6 @@ const Icon = ({ name, className = "h-5 w-5" }) => {
     );
   }
 
-  if (name === "users") {
-    return (
-      <svg {...common}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-      </svg>
-    );
-  }
-
   if (name === "calendar") {
     return (
       <svg {...common}>
@@ -922,7 +912,6 @@ const AdminEmployerPostingHistory = () => {
                               </td>
 
                               <td className="px-2 py-5 text-left">
-                                <div className="flex items-center gap-2">
                                 <button
                                   type="button"
                                   onClick={(event) => {
@@ -944,24 +933,6 @@ const AdminEmployerPostingHistory = () => {
                                 >
                                   <Icon name="eye" className="h-5 w-5" />
                                 </button>
-                                <button
-                                  type="button"
-                                  onClick={(event) => {
-                                    event.stopPropagation();
-                                    navigate(`/admin/jobs/${job._id}/applicants`, {
-                                      state: {
-                                        backPath: `/admin/users/${userId}/posting-history`,
-                                        backLabel: "Back to Posting History",
-                                      },
-                                    });
-                                  }}
-                                  className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[#dfe5ec] bg-white text-black transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
-                                  title="View applicants"
-                                  aria-label={`View applicants for ${job?.title || job?.jobTitle || "job"}`}
-                                >
-                                  <Icon name="users" className="h-5 w-5" />
-                                </button>
-                                </div>
                               </td>
                             </tr>
                           );
