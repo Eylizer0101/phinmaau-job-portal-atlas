@@ -717,6 +717,72 @@ const Modal = ({ open, title, description, children, onClose, size = "md" }) => 
   );
 };
 
+const RestoreConfirmationModal = ({ open, name, loading, onCancel, onConfirm }) => {
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape" && !loading) onCancel();
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open, loading, onCancel]);
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 px-4 py-6">
+      <button
+        type="button"
+        className="absolute inset-0 cursor-default"
+        onClick={loading ? undefined : onCancel}
+        aria-label="Close restore confirmation"
+      />
+
+      <div
+        className="relative w-full max-w-[460px] rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl sm:p-7"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="restore-employer-title"
+      >
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={loading}
+          className={cn("absolute right-4 top-4 rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-800", focusRing)}
+          aria-label="Close"
+        >
+          <Icon name="x" className="h-5 w-5" />
+        </button>
+
+        <div className="flex items-start gap-4 pr-8">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#2e66a6]/10 text-[#2e66a6]">
+            <Icon name="refresh" className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 id="restore-employer-title" className="text-xl font-bold text-gray-900">
+              Restore {name}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-gray-600">
+              Are you sure you want to restore <strong className="font-semibold text-gray-900">{name}</strong>? This action will allow the Employer to proceed with the verification and review process again.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-7 flex justify-end gap-3">
+          <Button variant="secondary" onClick={onCancel} disabled={loading}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={onConfirm} loading={loading}>
+            Restore
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const EmployerVerification = () => {
   const navigate = useNavigate();
 
@@ -759,6 +825,7 @@ const EmployerVerification = () => {
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
   const [archiveMode, setArchiveMode] = useState(false);
   const [restoringId, setRestoringId] = useState("");
+  const [restoreTarget, setRestoreTarget] = useState(null);
 
   const clearMessages = useCallback(() => {
     setError("");
@@ -926,12 +993,12 @@ const EmployerVerification = () => {
   }, [pagination]);
 
   const restoreEmployer = async (item) => {
-    const companyName = item.companyName || item.employerProfile?.companyName || "this employer";
-    if (!window.confirm(`Restore ${companyName}? This will allow the employer to proceed with verification and review again.`)) return;
+    if (!item?._id) return;
     try {
       setRestoringId(item._id);
       const response = await api.patch(`/admin/employers/verification/${item._id}/restore`);
       setSuccess(response.data?.message || "Employer restored successfully.");
+      setRestoreTarget(null);
       await fetchEmployers({ silent: true });
     } catch (err) {
       setError(err.response?.data?.message || "Failed to restore employer.");
@@ -1198,7 +1265,7 @@ const EmployerVerification = () => {
                                 >
                                 
                                 </Button>
-                                {archiveMode ? <Button variant="secondary" size="sm" onClick={() => restoreEmployer(item)} disabled={restoringId === item._id}>Restore</Button> : null}
+                                {archiveMode ? <Button variant="secondary" size="sm" onClick={() => setRestoreTarget(item)} disabled={restoringId === item._id}>Restore</Button> : null}
                               </div>
                             </td>
                           </tr>
@@ -1256,7 +1323,7 @@ const EmployerVerification = () => {
                                 <Icon name="eye" className="h-4 w-4" />
                               </IconButton>
 
-                              {archiveMode ? <Button variant="secondary" size="sm" onClick={() => restoreEmployer(item)} disabled={restoringId === item._id}>Restore</Button> : null}
+                              {archiveMode ? <Button variant="secondary" size="sm" onClick={() => setRestoreTarget(item)} disabled={restoringId === item._id}>Restore</Button> : null}
 
                               {!archiveMode ? <IconButton
                                 label={`Delete ${companyName}`}
@@ -1360,6 +1427,17 @@ const EmployerVerification = () => {
         endDate={filters.dateTo}
         onCancel={() => setShowCustomDateModal(false)}
         onApply={applyCustomDateRange}
+      />
+
+      <RestoreConfirmationModal
+        open={!!restoreTarget}
+        name={restoreTarget?.companyName || restoreTarget?.employerProfile?.companyName || "this Employer"}
+        loading={!!restoreTarget && restoringId === restoreTarget._id}
+        onCancel={() => {
+          if (restoringId) return;
+          setRestoreTarget(null);
+        }}
+        onConfirm={() => restoreEmployer(restoreTarget)}
       />
     </AdminLayout>
   );
