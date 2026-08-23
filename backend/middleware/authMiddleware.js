@@ -40,10 +40,15 @@ const protect = async (req, res, next) => {
                 });
             }
 
-            if (
-                req.user.role === 'jobseeker' &&
-                String(req.user.jobSeekerProfile?.verificationStatus || '').toLowerCase() !== 'verified'
-            ) {
+            const jobseekerAccountApproved =
+                req.user.isVerified === true ||
+                String(req.user.jobSeekerProfile?.verificationStatus || '').toLowerCase() === 'verified' ||
+                (
+                    String(req.user.status || '').toLowerCase() === 'active' &&
+                    Boolean(String(req.user.username || '').trim())
+                );
+
+            if (req.user.role === 'jobseeker' && !jobseekerAccountApproved) {
                 return res.status(403).json({
                     code: 'JOBSEEKER_PENDING_APPROVAL',
                     message: 'Your account is not verified. Your verification is pending approval from admin.'

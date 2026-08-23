@@ -4345,19 +4345,14 @@ const MyProfile = () => {
     return 'not_submitted';
   };
 
-  const normalizeVerificationDocs = (rawDocs, accountVerified = false) => {
+  const normalizeVerificationDocs = (rawDocs) => {
     const keys = ['cv', 'tor', 'diploma', 'validId', 'sss', 'philhealth', 'pagibig', 'tin'];
     const result = {};
     keys.forEach((k) => {
       const d = rawDocs?.[k] || {};
       const url = d.url || '';
-      const approvedRegistrationCredential =
-        accountVerified &&
-        ['cv', 'tor', 'diploma', 'validId'].includes(k) &&
-        Boolean(url) &&
-        rawDocs?.resubmitRequest?.docType !== k;
       result[k] = {
-        status: approvedRegistrationCredential ? 'approved' : normalizeStatus(d.status, Boolean(url)),
+        status: normalizeStatus(d.status, Boolean(url)),
         url,
         filename: d.filename || '',
         fileSize: Number(d.fileSize || 0),
@@ -5162,12 +5157,7 @@ const MyProfile = () => {
         syncDrafts(nextData);
         setAddedMoreSections(nextData.addedResumeSections);
         setUserData(user);
-        const approvedAccount =
-          user.isVerified === true ||
-          String(profile.verificationStatus || '').toLowerCase() === 'verified' ||
-          String(profile.verificationDocs?.overallStatus || '').toLowerCase() === 'verified' ||
-          (String(user.status || '').toLowerCase() === 'active' && Boolean(user.username));
-        setVerificationDocs(normalizeVerificationDocs(profile.verificationDocs || {}, approvedAccount));
+        setVerificationDocs(normalizeVerificationDocs(profile.verificationDocs || {}));
       }
     } catch (err) {
       console.error(err);

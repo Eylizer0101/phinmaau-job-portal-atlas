@@ -2070,22 +2070,13 @@ exports.uploadAlumniVerificationDoc = async (req, res) => {
     const alreadyVerified =
       isApprovedJobseekerAccount(user);
 
-    if (alreadyVerified) {
-      REQUIRED_ALUMNI_DOC_TYPES.forEach((requiredType) => {
-        const requiredDocument = currentDocs[requiredType];
-        if (!requiredDocument?.url || currentDocs?.resubmitRequest?.docType === requiredType) return;
-        requiredDocument.status = 'approved';
-        requiredDocument.checked = true;
-      });
-    }
-
     const overallStatus = getAlumniOverallStatus(currentDocs, false);
 
     currentDocs.overallStatus = overallStatus;
 
     const updateFields = {
       'jobSeekerProfile.verificationDocs': currentDocs,
-      'jobSeekerProfile.verificationStatus': overallStatus,
+      'jobSeekerProfile.verificationStatus': alreadyVerified ? 'verified' : overallStatus,
     };
 
     if (alreadyVerified || overallStatus === 'verified') {
@@ -2143,7 +2134,7 @@ exports.deleteAlumniVerificationDoc = async (req, res) => {
       {
         $set: {
           'jobSeekerProfile.verificationDocs.overallStatus': overallStatus,
-          'jobSeekerProfile.verificationStatus': overallStatus,
+          'jobSeekerProfile.verificationStatus': isApprovedJobseekerAccount(updatedUser) ? 'verified' : overallStatus,
         },
       },
       { new: true }
@@ -3290,9 +3281,10 @@ exports.resubmitDocument = async (req, res) => {
         usedAt: new Date(),
       };
 
+      const accountWasVerified = isApprovedJobseekerAccount(user);
       user.jobSeekerProfile.verificationDocs = verificationDocs;
-      user.jobSeekerProfile.verificationStatus = 'pending';
-      if (user.status === 'active' && user.username) user.isVerified = true;
+      user.jobSeekerProfile.verificationStatus = accountWasVerified ? 'verified' : 'pending';
+      if (accountWasVerified) user.isVerified = true;
 
       await user.save();
 

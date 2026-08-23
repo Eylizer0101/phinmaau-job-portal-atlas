@@ -99,19 +99,11 @@ const JOBSEEKER_NOTIFICATION_LABELS = {
 const isApprovedJobseekerAccount = (user = {}) =>
   user.isVerified === true ||
   String(user.jobSeekerProfile?.verificationStatus || '').toLowerCase() === 'verified' ||
-  String(user.jobSeekerProfile?.verificationDocs?.overallStatus || '').toLowerCase() === 'verified' ||
-  (String(user.status || '').toLowerCase() === 'active' && Boolean(user.username));
+  String(user.jobSeekerProfile?.verificationDocs?.overallStatus || '').toLowerCase() === 'verified';
 
-const getJobseekerCredentialReviewStatus = (docs = {}, accountVerified = false) => {
-  const getStatus = (type) => {
-    const storedStatus = String(docs?.[type]?.status || 'not_submitted').toLowerCase();
-    const legacyRequiredApproval =
-      accountVerified &&
-      JOBSEEKER_REQUIRED_DOC_TYPES.includes(type) &&
-      Boolean(docs?.[type]?.url) &&
-      docs?.resubmitRequest?.docType !== type;
-    return legacyRequiredApproval ? 'approved' : storedStatus;
-  };
+const getJobseekerCredentialReviewStatus = (docs = {}) => {
+  const getStatus = (type) =>
+    String(docs?.[type]?.status || 'not_submitted').toLowerCase();
 
   const statuses = JOBSEEKER_DOC_TYPES.map(getStatus);
   const requiredStatuses = JOBSEEKER_REQUIRED_DOC_TYPES.map(getStatus);
@@ -2157,15 +2149,10 @@ exports.getJobseekerVerificationById = async (req, res) => {
         filename: '',
         fileSize: 0
       };
-      const legacyRequiredApproval =
-        isApprovedJobseekerAccount(jobseeker) &&
-        JOBSEEKER_REQUIRED_DOC_TYPES.includes(type) &&
-        Boolean(storedDocument.url) &&
-        verificationDocs?.resubmitRequest?.docType !== type;
       docDetails[type] = {
         ...(storedDocument.toObject ? storedDocument.toObject() : storedDocument),
-        status: legacyRequiredApproval ? 'approved' : storedDocument.status,
-        checked: legacyRequiredApproval ? true : storedDocument.checked,
+        status: storedDocument.status,
+        checked: storedDocument.checked,
       };
     });
 
@@ -2315,7 +2302,7 @@ exports.updateJobseekerVerificationStatus = async (req, res) => {
     }
 
     if (overallStatus === 'verified') {
-      JOBSEEKER_REQUIRED_DOC_TYPES.forEach((docType) => {
+      JOBSEEKER_DOC_TYPES.forEach((docType) => {
         const document = jobseeker.jobSeekerProfile.verificationDocs[docType];
         if (!document?.url) return;
         document.status = 'approved';
@@ -2524,7 +2511,7 @@ exports.holdJobseekerVerification = async (req, res) => {
       requestedBy: req.user?._id || null,
     };
 
-    jobseeker.jobSeekerProfile.verificationStatus = 'hold';
+    jobseeker.jobSeekerProfile.verificationStatus = wasAccountVerified ? 'verified' : 'hold';
 
     await jobseeker.save();
 
@@ -2637,15 +2624,9 @@ const markVerificationDocumentChecked = async (req, res, role) => {
     document.checkedBy = req.user?._id || req.userId || null;
 
     if (role === 'jobseeker' && wasAccountVerified) {
-      JOBSEEKER_REQUIRED_DOC_TYPES.forEach((requiredType) => {
-        const requiredDocument = docs?.[requiredType];
-        if (!requiredDocument?.url || docs?.resubmitRequest?.docType === requiredType) return;
-        requiredDocument.status = 'approved';
-        requiredDocument.checked = true;
-      });
-      const nextStatus = getJobseekerCredentialReviewStatus(docs, true);
+      const nextStatus = getJobseekerCredentialReviewStatus(docs);
       docs.overallStatus = nextStatus;
-      user.jobSeekerProfile.verificationStatus = nextStatus;
+      user.jobSeekerProfile.verificationStatus = 'verified';
       user.isVerified = true;
     }
     await user.save();

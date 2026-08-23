@@ -1107,7 +1107,13 @@ const JobseekerVerificationDetails = () => {
   const overallStatus = verificationSummary.overallStatus || "not_submitted";
   const isApproved = overallStatus === "verified";
   const isRejected = overallStatus === "rejected";
-  const isFollowUpReview = jobseeker.isVerified === true;
+  const followUpDocumentTypes = ["sss", "philhealth", "pagibig", "tin"];
+  const hasPendingFollowUpCredential = followUpDocumentTypes.some((docType) => {
+    const document = documentDetails[docType] || {};
+    const status = String(document.status || "").toLowerCase();
+    return Boolean(document.url) && ["pending", "submitted", "hold", "action_needed"].includes(status);
+  });
+  const isFollowUpReview = jobseeker.isVerified === true && hasPendingFollowUpCredential;
   const canShowActionButtons = !isApproved && !isRejected;
   const fullName =
     `${jobseeker.firstName || ""} ${jobseeker.middleName || ""} ${jobseeker.lastName || ""}`
