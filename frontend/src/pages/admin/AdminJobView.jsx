@@ -795,7 +795,11 @@ const AdminJobView = () => {
           setCompanyInfo({
             companyAddress: jobData.employerDetails.companyAddress || '',
             industry: jobData.employerDetails.industry || '',
-            companyWebsite: jobData.employerDetails.companyWebsite || '',
+            companyWebsite:
+              jobData.employerDetails.companyWebsite ||
+              jobData.employerDetails.companyWebsiteUrl ||
+              jobData.employerDetails.website ||
+              '',
           });
         } else {
           setCompanyInfo(null);
@@ -1164,7 +1168,7 @@ const AdminJobView = () => {
                     <SectionHeader icon="location" title="Work Location" />
                   </div>
                   <div className="mt-4 overflow-hidden">
-                    {getJobCoordinates(job) ? (
+                    {String(job.location || '').trim() || getJobCoordinates(job) ? (
                       <StaticLocationMap job={job} heightClass="h-[180px]" />
                     ) : job.locationImage ? (
                       <img

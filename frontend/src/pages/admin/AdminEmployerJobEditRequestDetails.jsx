@@ -261,6 +261,155 @@ const SvgIcon = ({ name, className = 'h-4 w-4' }) => {
   }
 };
 
+
+const getJobCoordinates = (jobData) => {
+  const rawLat = jobData?.locationLatitude;
+  const rawLng = jobData?.locationLongitude;
+
+  if (
+    rawLat === null ||
+    rawLat === undefined ||
+    rawLat === '' ||
+    rawLng === null ||
+    rawLng === undefined ||
+    rawLng === ''
+  ) {
+    return null;
+  }
+
+  const lat = Number(rawLat);
+  const lng = Number(rawLng);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (Math.abs(lat) < 0.0001 && Math.abs(lng) < 0.0001) return null;
+
+  return { lat, lng };
+};
+
+const isUsableCoordinates = (coords) => {
+  if (!coords) return false;
+  if (!Number.isFinite(coords.lat) || !Number.isFinite(coords.lng)) return false;
+  if (Math.abs(coords.lat) < 0.0001 && Math.abs(coords.lng) < 0.0001) return false;
+  return true;
+};
+
+const buildOpenStreetMapUrl = ({ coords, address }) => {
+  const cleanAddress = String(address || '').trim();
+
+  if (isUsableCoordinates(coords)) {
+    return `https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=17/${coords.lat}/${coords.lng}`;
+  }
+
+  if (cleanAddress) {
+    return `https://www.openstreetmap.org/search?query=${encodeURIComponent(cleanAddress)}`;
+  }
+
+  return 'https://www.openstreetmap.org';
+};
+
+const StaticLocationMap = ({ job, heightClass = 'h-[180px]' }) => {
+  const savedCoords = getJobCoordinates(job);
+  const address = String(job?.location || '').trim();
+  const [resolvedCoords, setResolvedCoords] = useState(
+    isUsableCoordinates(savedCoords) ? savedCoords : null
+  );
+  const [lookupDone, setLookupDone] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const runLookup = async () => {
+      if (isUsableCoordinates(savedCoords)) {
+        setResolvedCoords(savedCoords);
+        setLookupDone(true);
+        return;
+      }
+
+      if (!address) {
+        setResolvedCoords(null);
+        setLookupDone(true);
+        return;
+      }
+
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=ph&accept-language=en&q=${encodeURIComponent(address)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        const first = Array.isArray(data) ? data[0] : null;
+        const lat = Number(first?.lat);
+        const lng = Number(first?.lon);
+
+        if (!cancelled && Number.isFinite(lat) && Number.isFinite(lng)) {
+          setResolvedCoords({
+            lat: Number(lat.toFixed(6)),
+            lng: Number(lng.toFixed(6)),
+          });
+        } else if (!cancelled) {
+          setResolvedCoords(null);
+        }
+      } catch {
+        if (!cancelled) setResolvedCoords(null);
+      } finally {
+        if (!cancelled) setLookupDone(true);
+      }
+    };
+
+    runLookup();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [address, savedCoords?.lat, savedCoords?.lng]);
+
+  const openMapUrl = buildOpenStreetMapUrl({
+    coords: resolvedCoords || savedCoords,
+    address,
+  });
+
+  if (!isUsableCoordinates(resolvedCoords)) {
+    return (
+      <a
+        href={openMapUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${heightClass} relative flex w-full items-center justify-center bg-[#eef2f7] text-[#9ca3af] transition hover:bg-[#e7edf5]`}
+        title="Open work location in OpenStreetMap"
+      >
+        <div className="text-center px-4">
+          <SvgIcon name="location" className="mx-auto h-8 w-8" />
+          <p className="mt-2 text-xs text-[#6b7280]">
+            {lookupDone ? 'Click to open work location' : 'Loading work location map...'}
+          </p>
+        </div>
+      </a>
+    );
+  }
+
+  const bbox = `${resolvedCoords.lng - 0.01},${resolvedCoords.lat - 0.01},${resolvedCoords.lng + 0.01},${resolvedCoords.lat + 0.01}`;
+  const src = `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&layer=mapnik&marker=${resolvedCoords.lat},${resolvedCoords.lng}`;
+
+  return (
+    <a
+      href={openMapUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`${heightClass} relative block w-full overflow-hidden bg-[#eef2f7] group`}
+      title="Open work location in OpenStreetMap"
+    >
+      <iframe
+        title="Work location map"
+        src={src}
+        className="h-full w-full border-0 pointer-events-none"
+        loading="lazy"
+      />
+      <span className="absolute inset-0 bg-transparent transition group-hover:bg-black/5" aria-hidden="true" />
+      <span className="absolute bottom-2 right-2 rounded-full bg-white/95 px-3 py-1 text-[11px] font-semibold text-[#2e66a6] shadow-sm">
+        Open Map
+      </span>
+    </a>
+  );
+};
+
 const TopMetricCard = ({ title, value, icon, isPeso = false, href = '' }) => (
   <article className={`${UI.metricCard} min-w-0`}>
     <div className="flex h-full min-w-0 items-start gap-3">
@@ -356,7 +505,16 @@ const AdminEmployerJobEditRequestDetails = () => {
   if (loading) return <div className="flex min-h-[60vh] items-center justify-center"><RefreshCw className="animate-spin text-blue-700" /></div>;
   if (error || !request) return <div className="mx-auto mt-10 max-w-xl rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-red-700">{error || 'Edit request not found.'}</div>;
 
-  const website = request?.employer?.employerProfile?.website || '';
+  const employerProfile = request?.employer?.employerProfile || {};
+  const website = String(
+    employerProfile.companyWebsiteUrl ||
+      employerProfile.companyWebsite ||
+      employerProfile.website ||
+      employerProfile.websiteUrl ||
+      employerProfile.companyUrl ||
+      employerProfile.companyURL ||
+      ''
+  ).trim();
   const requiredSkills = Array.isArray(job.skillsRequired) ? job.skillsRequired.filter(Boolean) : [];
   const perks = Array.isArray(job.perksAndBenefits) ? job.perksAndBenefits.filter(Boolean) : [];
   const otherBenefit = String(job.otherBenefits || '').trim();
@@ -455,10 +613,19 @@ const AdminEmployerJobEditRequestDetails = () => {
               <SectionHeader icon="location" title="Work Location" />
             </div>
             <div className="mt-4 overflow-hidden">
-              {job.locationImage ? (
-                <img src={assetUrl(job.locationImage)} alt="Work location" className="h-[180px] w-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />
+              {String(job.location || '').trim() || getJobCoordinates(job) ? (
+                <StaticLocationMap job={job} heightClass="h-[180px]" />
+              ) : job.locationImage ? (
+                <img
+                  src={assetUrl(job.locationImage)}
+                  alt="Work location"
+                  className="h-[180px] w-full object-cover"
+                  onError={(event) => { event.currentTarget.style.display = 'none'; }}
+                />
               ) : (
-                <div className="flex h-[180px] items-center justify-center bg-[#eef2f7] text-[#9ca3af]"><SvgIcon name="location" className="h-8 w-8" /></div>
+                <div className="flex h-[180px] items-center justify-center bg-[#eef2f7] text-[#9ca3af]">
+                  <SvgIcon name="location" className="h-8 w-8" />
+                </div>
               )}
             </div>
             <div className="border-t border-[#e5e7eb] px-4 py-3 sm:px-5">

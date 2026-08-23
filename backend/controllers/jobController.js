@@ -604,7 +604,9 @@ exports.createJob = async (req, res) => {
       openToFreshGraduates,
       perksAndBenefits,
       otherBenefits,
-      willingToRelocate
+      willingToRelocate,
+      locationLatitude,
+      locationLongitude
     } = req.body;
 
     if (req.user.role !== 'employer') {
@@ -731,6 +733,14 @@ exports.createJob = async (req, res) => {
       location: manualLocation,
       locationProvince: provinceValue,
       locationCity: cityValue,
+      locationLatitude:
+        locationLatitude === undefined || locationLatitude === null || String(locationLatitude).trim() === ''
+          ? null
+          : Number(locationLatitude),
+      locationLongitude:
+        locationLongitude === undefined || locationLongitude === null || String(locationLongitude).trim() === ''
+          ? null
+          : Number(locationLongitude),
 
       openToFreshGraduates: parseBool(openToFreshGraduates),
       perksAndBenefits: perksArray,
@@ -1112,7 +1122,14 @@ exports.getJobById = async (req, res) => {
           coverPhoto: employer.employerProfile.coverPhoto || '',
           companyAddress: employer.employerProfile.companyAddress || '',
           industry: employer.employerProfile.industry || '',
-          companyWebsite: employer.employerProfile.companyWebsiteUrl || '',
+          companyWebsite:
+            employer.employerProfile.companyWebsiteUrl ||
+            employer.employerProfile.companyWebsite ||
+            employer.employerProfile.website ||
+            employer.employerProfile.websiteUrl ||
+            employer.employerProfile.companyUrl ||
+            employer.employerProfile.companyURL ||
+            '',
           country: employer.employerProfile.country || '',
           regionCity: employer.employerProfile.regionCity || ''
         };
