@@ -608,7 +608,9 @@ const JobSeekerLayout = ({ children }) => {
     if (type === 'job_match') return 'New Job Match!';
     if (type === 'new_message') return 'New Message';
     if (type === 'application_update') return 'Application Update';
-    if (type === 'verification') return 'Credentials';
+    if (type === 'verification') {
+      return String(notification?.title || 'Credentials').trim() || 'Credentials';
+    }
 
     return String(notification?.title || 'Notification').trim() || 'Notification';
   };
@@ -617,17 +619,7 @@ const JobSeekerLayout = ({ children }) => {
     const type = String(notification?.type || '').trim().toLowerCase();
     const metadata = notification?.metadata || {};
 
-    if (type === 'verification') {
-      const remaining = Number(
-        metadata?.remainingCredentials ??
-        metadata?.missingCredentialCount ??
-        metadata?.remainingCount
-      );
-
-      if (Number.isFinite(remaining) && remaining > 0) {
-        return `You still have ${remaining} credential${remaining === 1 ? '' : 's'} that need to be submitted.`;
-      }
-    }
+    if (type === 'verification') return String(notification?.message || '').trim();
 
     if (type === 'new_message' && metadata?.lastMessage) {
       const senderName = String(metadata?.senderName || 'User').trim() || 'User';
@@ -965,6 +957,7 @@ const JobSeekerLayout = ({ children }) => {
                   aria-expanded={isNotificationOpen}
                   aria-controls="notifications-menu"
                   onClick={() => {
+                    if (!isNotificationOpen) fetchNotifications();
                     setIsNotificationOpen((v) => !v);
                     setIsProfileOpen(false);
                   }}
@@ -1249,6 +1242,7 @@ const JobSeekerLayout = ({ children }) => {
                 aria-label="Notifications"
                 aria-expanded={isNotificationOpen}
                 onClick={() => {
+                  fetchNotifications();
                   setIsNotificationOpen(true);
                   setIsProfileOpen(false);
                   setIsMobileMenuOpen(false);
