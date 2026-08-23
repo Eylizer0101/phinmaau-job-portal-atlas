@@ -165,12 +165,6 @@ const createDefaultAdminAccount = async () => {
       changed = true;
     }
 
-    if (process.env.DEFAULT_ADMIN_RESET_PASSWORD === 'true') {
-      const salt = await bcrypt.genSalt(10);
-      existingUser.password = await bcrypt.hash(adminPassword, salt);
-      changed = true;
-    }
-
     if (changed) await existingUser.save();
     console.log(' Default admin account is ready.');
     return;

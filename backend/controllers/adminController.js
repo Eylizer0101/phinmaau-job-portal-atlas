@@ -9,6 +9,129 @@ const crypto = require('crypto');
 const { v2: cloudinary } = require('cloudinary');
 const { sendCredentialsEmail, sendResubmitDocumentEmail, sendVerificationRejectedEmail, sendVerificationRestoredEmail } = require('../config/mailer');
 
+const DEFAULT_ADMIN_LOGO = '/images/phinma-logo.png';
+
+const serializeAdminProfile = (admin) => ({
+  id: admin._id,
+  email: admin.email,
+  firstName: admin.firstName || '',
+  middleName: admin.middleName || '',
+  lastName: admin.lastName || '',
+  extensionName: admin.extensionName || '',
+  organizationName: admin.adminProfile?.organizationName || 'PHINMA Araullo University',
+  organizationLogo: admin.adminProfile?.organizationLogo || DEFAULT_ADMIN_LOGO,
+  positionRole: admin.adminProfile?.positionRole || 'System Administrator',
+  contactNumber: admin.adminProfile?.contactNumber || '',
+  departmentOffice: admin.adminProfile?.departmentOffice || '',
+});
+
+const getAdminWithPrivateProfileFields = (id) =>
+  User.findOne({ _id: id, role: 'admin' }).select('+adminProfile.organizationLogoPublicId');
+
+exports.getAdminProfile = async (req, res) => {
+  try {
+    const admin = await getAdminWithPrivateProfileFields(req.userId);
+    if (!admin) return res.status(404).json({ success: false, message: 'Admin account not found.' });
+    return res.json({ success: true, profile: serializeAdminProfile(admin) });
+  } catch (error) {
+    console.error('Get admin profile error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to load the admin profile.' });
+  }
+};
+
+exports.updateAdminProfile = async (req, res) => {
+  try {
+    const admin = await getAdminWithPrivateProfileFields(req.userId);
+    if (!admin) return res.status(404).json({ success: false, message: 'Admin account not found.' });
+
+    const clean = (value, max) => String(value ?? '').trim().slice(0, max);
+    const email = clean(req.body.email, 160).toLowerCase();
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
+    }
+
+    const duplicate = await User.findOne({ email, _id: { $ne: admin._id } }).select('_id');
+    if (duplicate) return res.status(409).json({ success: false, message: 'Email address is already in use.' });
+
+    if (!admin.adminProfile) admin.adminProfile = {};
+    admin.firstName = clean(req.body.firstName, 50);
+    admin.middleName = clean(req.body.middleName, 50);
+    admin.lastName = clean(req.body.lastName, 50);
+    admin.extensionName = clean(req.body.extensionName, 20);
+    admin.email = email;
+    admin.adminProfile.organizationName = clean(req.body.organizationName, 120);
+    admin.adminProfile.positionRole = clean(req.body.positionRole, 80);
+    admin.adminProfile.contactNumber = clean(req.body.contactNumber, 30);
+    admin.adminProfile.departmentOffice = clean(req.body.departmentOffice, 120);
+
+    if (req.file) {
+      const previousPublicId = admin.adminProfile.organizationLogoPublicId;
+      admin.adminProfile.organizationLogo = req.file.secure_url || req.file.path || req.file.url || '';
+      admin.adminProfile.organizationLogoPublicId = req.file.public_id || req.file.filename || '';
+      if (previousPublicId && previousPublicId !== admin.adminProfile.organizationLogoPublicId) {
+        cloudinary.uploader.destroy(previousPublicId).catch((deleteError) => {
+          console.error('Old admin logo cleanup error:', deleteError);
+        });
+      }
+    }
+
+    await admin.save();
+    return res.json({ success: true, message: 'Admin profile updated successfully.', profile: serializeAdminProfile(admin) });
+  } catch (error) {
+    console.error('Update admin profile error:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Unable to update the admin profile.' });
+  }
+};
+
+exports.removeAdminProfileLogo = async (req, res) => {
+  try {
+    const admin = await getAdminWithPrivateProfileFields(req.userId);
+    if (!admin) return res.status(404).json({ success: false, message: 'Admin account not found.' });
+    if (!admin.adminProfile) admin.adminProfile = {};
+    const publicId = admin.adminProfile?.organizationLogoPublicId;
+    if (publicId) await cloudinary.uploader.destroy(publicId);
+    admin.adminProfile.organizationLogo = '';
+    admin.adminProfile.organizationLogoPublicId = '';
+    await admin.save();
+    return res.json({ success: true, message: 'Organization logo removed.', profile: serializeAdminProfile(admin) });
+  } catch (error) {
+    console.error('Remove admin logo error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to remove the organization logo.' });
+  }
+};
+
+exports.updateAdminPassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword, confirmNewPassword } = req.body || {};
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      return res.status(400).json({ success: false, message: 'Complete all password fields.' });
+    }
+    if (newPassword !== confirmNewPassword) {
+      return res.status(400).json({ success: false, message: 'New passwords do not match.' });
+    }
+    const passwordValid = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(newPassword);
+    if (!passwordValid) {
+      return res.status(400).json({ success: false, message: 'The new password does not meet all password requirements.' });
+    }
+
+    const admin = await User.findOne({ _id: req.userId, role: 'admin' }).select('+password');
+    if (!admin) return res.status(404).json({ success: false, message: 'Admin account not found.' });
+    const matches = await bcrypt.compare(currentPassword, admin.password);
+    if (!matches) return res.status(400).json({ success: false, message: 'Current password is incorrect.' });
+    if (await bcrypt.compare(newPassword, admin.password)) {
+      return res.status(400).json({ success: false, message: 'New password must be different from the current password.' });
+    }
+
+    admin.password = await bcrypt.hash(newPassword, 12);
+    admin.mustChangePassword = false;
+    await admin.save();
+    return res.json({ success: true, message: 'Password updated successfully.' });
+  } catch (error) {
+    console.error('Update admin password error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to update the password.' });
+  }
+};
+
 // ==========================
 // ✅ HELPERS: username + password generator
 // ==========================

@@ -95,6 +95,7 @@ import AdminDashboardJobSeekers from './pages/admin/AdminDashboardJobSeekers';
 import AdminDashboardEmployers from './pages/admin/AdminDashboardEmployers';
 import AdminDashboardPendingSeekers from './pages/admin/AdminDashboardPendingSeekers';
 import AdminDashboardPendingEmployers from './pages/admin/AdminDashboardPendingEmployers';
+import AdminProfile from './pages/admin/AdminProfile';
 
 // ✅ JOBSEEKER VERIFICATION
 import JobseekerVerification from './pages/admin/JobseekerVerification';
@@ -514,6 +515,17 @@ function App() {
             <RequireRole role="admin" redirectTo="/login">
               <AdminLayout>
                 <AdminNotificationsPage />
+              </AdminLayout>
+            </RequireRole>
+          }
+        />
+
+        <Route
+          path="/admin/profile"
+          element={
+            <RequireRole role="admin" redirectTo="/login">
+              <AdminLayout>
+                <AdminProfile />
               </AdminLayout>
             </RequireRole>
           }

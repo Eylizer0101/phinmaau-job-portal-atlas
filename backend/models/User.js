@@ -356,6 +356,16 @@ const userSchema = new mongoose.Schema(
 
     profileImage: { type: String, default: '' },
 
+    // Profile information shown on the administrator profile page.
+    adminProfile: {
+      organizationName: { type: String, trim: true, maxlength: 120, default: 'PHINMA Araullo University' },
+      organizationLogo: { type: String, trim: true, default: '' },
+      organizationLogoPublicId: { type: String, trim: true, default: '', select: false },
+      positionRole: { type: String, trim: true, maxlength: 80, default: 'System Administrator' },
+      contactNumber: { type: String, trim: true, maxlength: 30, default: '' },
+      departmentOffice: { type: String, trim: true, maxlength: 120, default: '' },
+    },
+
     isActive: { type: Boolean, default: true },
     lastLogin: { type: Date, default: null },
 

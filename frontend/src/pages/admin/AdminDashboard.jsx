@@ -1538,6 +1538,18 @@ const AdminTopActions = () => {
             <div className="border-t border-slate-100 p-2">
               <button
                 type="button"
+                onClick={() => {
+                  setIsProfileOpen(false);
+                  navigate("/admin/profile");
+                }}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
+              >
+                <UserRound size={16} />
+                Admin Profile
+              </button>
+
+              <button
+                type="button"
                 onClick={openSignOutModal}
               className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-red-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-500/20"
               >

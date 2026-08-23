@@ -3,10 +3,17 @@ const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
 const authMiddleware = require('../middleware/authMiddleware');
+const uploadMiddleware = require('../middleware/uploadMiddleware');
 
 // Protect all admin routes
 router.use(authMiddleware.verifyToken);
 router.use(authMiddleware.isAdmin);
+
+// Admin profile routes
+router.get('/profile', adminController.getAdminProfile);
+router.put('/profile', uploadMiddleware.uploadProfileImage.single('organizationLogo'), adminController.updateAdminProfile);
+router.delete('/profile/logo', adminController.removeAdminProfileLogo);
+router.put('/profile/password', adminController.updateAdminPassword);
 
 // Dashboard analytics route
 router.get('/dashboard', adminController.getAdminDashboardAnalytics);
