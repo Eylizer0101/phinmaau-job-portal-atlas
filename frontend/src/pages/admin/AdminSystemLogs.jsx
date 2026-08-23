@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import AdminLayout from '../../layouts/AdminLayout';
 import api from '../../services/api';
 
@@ -314,7 +315,7 @@ const CustomDateRangeModal = ({ open, startDate, endDate, onCancel, onApply }) =
     onApply(draftStart, draftEnd);
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 px-4 py-6">
       <div className="w-full max-w-[920px] overflow-hidden rounded-xl bg-white shadow-2xl">
         <div className="grid gap-6 px-6 pb-5 pt-6 md:grid-cols-[1fr_auto_1fr] md:items-end">
@@ -356,7 +357,8 @@ const CustomDateRangeModal = ({ open, startDate, endDate, onCancel, onApply }) =
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
