@@ -13,6 +13,7 @@ const formatDate = (value) => {
     : '—';
 };
 const companyName = (item) => item?.job?.companyName || item?.employer?.employerProfile?.companyName || item?.employer?.fullName || 'Employer';
+const industryName = (item) => item?.job?.industry || item?.job?.category || item?.employer?.employerProfile?.industry || 'Company';
 const formatDateInput = (date) => {
   const value = new Date(date);
   if (Number.isNaN(value.getTime())) return '';
@@ -157,9 +158,11 @@ const AdminEmployerJobEditRequests = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [company, setCompany] = useState('all');
+  const [industry, setIndustry] = useState('all');
+  const [jobTitle, setJobTitle] = useState('all');
   const [status, setStatus] = useState('all');
   const [time, setTime] = useState('all');
-  const [sort, setSort] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [showCustomDate, setShowCustomDate] = useState(false);
@@ -174,6 +177,10 @@ const AdminEmployerJobEditRequests = () => {
     return () => { active = false; };
   }, []);
 
+  const companyOptions = useMemo(() => [...new Set(requests.map(companyName).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [requests]);
+  const industryOptions = useMemo(() => [...new Set(requests.map(industryName).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [requests]);
+  const jobTitleOptions = useMemo(() => [...new Set(requests.map((item) => item?.job?.title).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [requests]);
+
   const rows = useMemo(() => {
     const query = search.trim().toLowerCase();
     const range = time === 'custom'
@@ -183,18 +190,14 @@ const AdminEmployerJobEditRequests = () => {
       const itemStatus = item.status === 'pending' ? 'pending' : 'reviewed';
       const created = new Date(item.createdAt);
       return (!query || companyName(item).toLowerCase().includes(query) || String(item?.job?.title || '').toLowerCase().includes(query)) &&
+        (company === 'all' || companyName(item) === company) &&
+        (industry === 'all' || industryName(item) === industry) &&
+        (jobTitle === 'all' || item?.job?.title === jobTitle) &&
         (status === 'all' || status === itemStatus) &&
         (!range.from || (!Number.isNaN(created.getTime()) && created >= range.from)) &&
         (!range.to || (!Number.isNaN(created.getTime()) && created <= range.to));
-    }).sort((a, b) => {
-      if (sort === 'name_asc' || sort === 'name_desc') {
-        const compared = companyName(a).localeCompare(companyName(b));
-        return sort === 'name_desc' ? -compared : compared;
-      }
-      const compared = (new Date(a.createdAt).getTime() || 0) - (new Date(b.createdAt).getTime() || 0);
-      return sort === 'oldest' ? compared : -compared;
-    });
-  }, [requests, search, status, time, sort, dateFrom, dateTo]);
+    }).sort((a, b) => (new Date(b.createdAt).getTime() || 0) - (new Date(a.createdAt).getTime() || 0));
+  }, [requests, search, company, industry, jobTitle, status, time, dateFrom, dateTo]);
 
   const changeTime = (value) => {
     if (value === 'custom') { setShowCustomDate(true); return; }
@@ -203,11 +206,13 @@ const AdminEmployerJobEditRequests = () => {
 
   return <div className="mx-auto max-w-[1500px] space-y-6 py-8">
     <header> <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Edit Requests</h1><p className="mt-2 text-base text-slate-600">Review employer requests and grant temporary edit access to locked job postings.</p></header>
-    <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:grid-cols-[minmax(300px,1fr)_220px_240px_250px]">
+    <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-2 xl:grid-cols-[minmax(240px,1.35fr)_repeat(4,minmax(150px,1fr))_minmax(185px,1.05fr)]">
       <label className="relative block"><Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search company, job title..." className="h-14 w-full rounded-xl border border-slate-200 pl-12 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" /></label>
+      <select value={company} onChange={(e) => setCompany(e.target.value)} className="h-14 min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm"><option value="all">All Company</option>{companyOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select>
+      <select value={industry} onChange={(e) => setIndustry(e.target.value)} className="h-14 min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm"><option value="all">All Industry</option>{industryOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select>
+      <select value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} className="h-14 min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm"><option value="all">All Job Title</option>{jobTitleOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select>
       <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-14 rounded-xl border border-slate-200 bg-white px-4 text-sm"><option value="all">All Status</option><option value="pending">Pending</option><option value="reviewed">Reviewed</option></select>
       <div className="relative"><select value={time} onChange={(e) => changeTime(e.target.value)} className="h-14 w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 pr-11 text-sm"><option value="all">All Time</option><option value="today">Today</option><option value="yesterday">Yesterday</option><option value="week">This Week</option><option value="sevenDays">Last 7 Days</option><option value="month">This Month</option><option value="lastMonth">Last Month</option><option value="year">This Year</option><option value="lastYear">Last Year</option><option value="custom">Custom Range</option></select><CalendarDays className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} /></div>
-      <select value={sort} onChange={(e) => setSort(e.target.value)} className="h-14 rounded-xl border border-slate-200 bg-white px-4 text-sm"><option value="">Sort By</option><option value="newest">Most Recent Newest to Oldest</option><option value="oldest">Oldest First</option><option value="name_asc">A to Z</option><option value="name_desc">Z to A</option></select>
     </section>
     {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
