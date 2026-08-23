@@ -96,7 +96,20 @@ const Pagination = ({
             disabled={safePage === 1}
             className="inline-flex h-9 items-center gap-1 px-2 text-xs font-semibold text-slate-800 transition hover:text-[#173b78] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#173b78]/20 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <span aria-hidden="true">«</span>
+           <svg
+  className="w-[18px] h-[18px] shrink-0"
+  fill="none"
+  stroke="currentColor"
+  viewBox="0 0 24 24"
+  aria-hidden="true"
+>
+  <path
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2"
+    d="M15 19l-7-7 7-7"
+  />
+</svg>
             Previous
           </button>
 
@@ -136,7 +149,15 @@ const Pagination = ({
             className="inline-flex h-9 items-center gap-1 px-2 text-xs font-semibold text-slate-800 transition hover:text-[#173b78] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#173b78]/20 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Next
-            <span aria-hidden="true">»</span>
+           <svg
+               className="w-[18px] h-[18px] shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                          </svg>
           </button>
         </nav>
       </div>
