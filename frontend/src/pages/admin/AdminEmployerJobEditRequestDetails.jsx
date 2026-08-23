@@ -538,7 +538,15 @@ const AdminEmployerJobEditRequestDetails = () => {
 
       <section className={`${UI.card} mb-5 overflow-hidden`}>
         <div className="relative h-[120px] w-full overflow-hidden sm:h-[145px]">
-          <img src="/images/jobback.png" alt="Job details banner" className="h-full w-full object-cover" />
+          <img
+            src={assetUrl(employerProfile.coverPhoto, '/images/jobback.png')}
+            alt={`${company || 'Company'} cover`}
+            className="h-full w-full object-cover"
+            onError={(event) => {
+              event.currentTarget.onerror = null;
+              event.currentTarget.src = '/images/jobback.png';
+            }}
+          />
           <div className="absolute inset-0 bg-black/10" />
         </div>
 

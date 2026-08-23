@@ -5,6 +5,15 @@ import AdminLayout from '../../layouts/AdminLayout';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
+const API_ORIGIN = 'https://phinmaau-job-portal-atlas.onrender.com';
+
+const assetUrl = (value, fallback = '/images/jobback.png') => {
+  const source = String(value || '').trim();
+  if (!source) return fallback;
+  if (/^(https?:|data:|blob:)/i.test(source)) return source;
+  return `${API_ORIGIN}${source.startsWith('/') ? '' : '/'}${source}`;
+};
+
 
 const sanitizeRichTextHtml = (value = '') => {
   const raw = String(value || '').trim();
@@ -800,6 +809,7 @@ const AdminJobView = () => {
               jobData.employerDetails.companyWebsiteUrl ||
               jobData.employerDetails.website ||
               '',
+            coverPhoto: jobData.employerDetails.coverPhoto || '',
           });
         } else {
           setCompanyInfo(null);
@@ -933,8 +943,16 @@ const AdminJobView = () => {
           </div>
 
           <div className={`${UI.card} mb-5 overflow-hidden`}>
-            <div className="relative h-[85px] w-full overflow-hidden sm:h-[105px]">
-              <img src="/images/jobback.png" alt="Job details banner" className="h-full w-full object-cover" />
+            <div className="relative h-[120px] w-full overflow-hidden sm:h-[145px]">
+              <img
+                src={assetUrl(companyInfo?.coverPhoto, '/images/jobback.png')}
+                alt={`${job.companyName || 'Company'} cover`}
+                className="h-full w-full object-cover"
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = '/images/jobback.png';
+                }}
+              />
               <div className="absolute inset-0 bg-black/10" />
             </div>
 
