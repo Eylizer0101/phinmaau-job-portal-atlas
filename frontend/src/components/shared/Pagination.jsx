@@ -1,43 +1,24 @@
 import React, { useMemo } from 'react';
 
-const PAGE_SIZE_OPTIONS = [10, 50, 'all'];
+const PAGE_SIZE_OPTIONS = [10, 50, 100, 'all'];
 
 const buildPaginationItems = (currentPage, totalPages) => {
-  if (totalPages <= 3) {
+  if (totalPages <= 6) {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
   }
 
-  let windowStart;
-  let windowEnd;
+  // Keep three moving page numbers on the left and the final three pages on
+  // the right. The ellipsis is always a plain, non-clickable separator.
+  const lastGroupStart = totalPages - 2;
+  const maximumWindowStart = Math.max(1, lastGroupStart - 3);
+  const windowStart = Math.min(
+    Math.max(currentPage - 1, 1),
+    maximumWindowStart
+  );
+  const movingPages = [windowStart, windowStart + 1, windowStart + 2];
+  const lastPages = [lastGroupStart, lastGroupStart + 1, totalPages];
 
-  if (currentPage <= 2) {
-    windowStart = 1;
-    windowEnd = 3;
-  } else if (currentPage >= totalPages - 1) {
-    windowStart = totalPages - 2;
-    windowEnd = totalPages;
-  } else {
-    windowStart = currentPage - 1;
-    windowEnd = currentPage + 1;
-  }
-
-  const items = [];
-
-  if (windowStart > 1) {
-    items.push(1);
-    if (windowStart > 2) items.push('ellipsis-left');
-  }
-
-  for (let page = windowStart; page <= windowEnd; page += 1) {
-    items.push(page);
-  }
-
-  if (windowEnd < totalPages) {
-    if (windowEnd < totalPages - 1) items.push('ellipsis-right');
-    items.push(totalPages);
-  }
-
-  return items;
+  return [...movingPages, 'ellipsis', ...lastPages];
 };
 
 const Pagination = ({
@@ -57,6 +38,12 @@ const Pagination = ({
     () => buildPaginationItems(safePage, totalPages),
     [safePage, totalPages]
   );
+  const rangeStart = totalItems === 0 ? 0 : isAll ? 1 : ((safePage - 1) * numericPageSize) + 1;
+  const rangeEnd = totalItems === 0
+    ? 0
+    : isAll
+      ? totalItems
+      : Math.min(safePage * numericPageSize, totalItems);
 
   if (totalItems <= 10) return null;
 
@@ -76,20 +63,20 @@ const Pagination = ({
 
   return (
     <div
-      className={`mt-8 flex min-h-[78px] flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between ${className}`}
+      className={`sticky bottom-0 z-20 mt-0 flex min-h-[58px] flex-col gap-3 border-t border-gray-200 bg-white px-4 py-3 lg:flex-row lg:items-center lg:justify-between ${className}`}
       aria-label={ariaLabel}
     >
-      <div className="whitespace-nowrap rounded-lg bg-[#2e66a6]/10 px-3 py-2 text-sm font-bold text-[#2e66a6]">
-        Page {safePage} of {totalPages} · {totalItems} total
+      <div className="whitespace-nowrap text-xs font-medium text-slate-500">
+        Showing {rangeStart} to {rangeEnd} of {totalItems} results
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-          <span className="whitespace-nowrap">Display per page</span>
+          <span className="whitespace-nowrap text-xs text-slate-500">Display Per Page:</span>
           <select
             value={pageSize}
             onChange={handlePageSizeChange}
-            className="h-11 rounded-xl border border-gray-200 bg-white px-3 outline-none focus:border-[#2e66a6] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+            className="h-9 min-w-[74px] rounded-lg border border-gray-200 bg-white px-3 text-xs outline-none focus:border-[#173b78] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#173b78]/20"
           >
             {PAGE_SIZE_OPTIONS.map((option) => (
               <option key={option} value={option}>
@@ -100,28 +87,28 @@ const Pagination = ({
         </label>
 
         <nav
-          className="inline-flex min-h-11 items-center overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+          className="inline-flex min-h-9 items-center bg-white"
           aria-label={ariaLabel}
         >
           <button
             type="button"
             onClick={() => changePage(safePage - 1)}
             disabled={safePage === 1}
-            className="inline-flex h-11 items-center gap-2 border-r border-gray-200 px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6] disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex h-9 items-center gap-1 px-2 text-xs font-semibold text-slate-800 transition hover:text-[#173b78] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#173b78]/20 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <span aria-hidden="true">‹</span>
+            <span aria-hidden="true">«</span>
             Previous
           </button>
 
-          <div className="flex h-11 items-center px-2">
+          <div className="flex h-9 items-center gap-1 px-1">
             {paginationItems.map((item) =>
               typeof item === 'string' ? (
                 <span
                   key={item}
-                  className="inline-flex h-9 min-w-9 items-center justify-center px-2 text-sm font-semibold text-gray-400"
+                  className="inline-flex h-8 min-w-8 select-none items-center justify-center px-1 text-xs font-bold text-slate-500"
                   aria-hidden="true"
                 >
-                  …
+                  ...
                 </span>
               ) : (
                 <button
@@ -130,10 +117,10 @@ const Pagination = ({
                   onClick={() => changePage(item)}
                   aria-current={safePage === item ? 'page' : undefined}
                   aria-label={`Go to page ${item}`}
-                  className={`h-9 min-w-9 rounded-lg px-3 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-1 ${
+                  className={`h-8 min-w-8 rounded-lg px-2 text-xs font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#173b78]/30 focus-visible:ring-offset-1 ${
                     safePage === item
-                      ? 'bg-[#2e66a6] text-white shadow-sm'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-[#111b35] text-white shadow-sm'
+                      : 'text-slate-800 hover:bg-slate-100'
                   }`}
                 >
                   {item}
@@ -146,10 +133,10 @@ const Pagination = ({
             type="button"
             onClick={() => changePage(safePage + 1)}
             disabled={safePage === totalPages}
-            className="inline-flex h-11 items-center gap-2 border-l border-gray-200 px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6] disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex h-9 items-center gap-1 px-2 text-xs font-semibold text-slate-800 transition hover:text-[#173b78] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#173b78]/20 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Next
-            <span aria-hidden="true">›</span>
+            <span aria-hidden="true">»</span>
           </button>
         </nav>
       </div>
