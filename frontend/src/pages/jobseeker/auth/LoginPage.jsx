@@ -513,7 +513,7 @@ const LoginPage = () => {
       remountCaptcha();
       if (locked) return;
 
-      setAttemptBanner(`The email/username or password you entered is incorrect. Attempt ${nextAttempt} of ${MAX_ATTEMPTS}.`);
+      setAttemptBanner(`The username or password you entered is incorrect. Attempt ${nextAttempt} of ${MAX_ATTEMPTS}.`);
     } finally {
       setLoading(false);
     }
