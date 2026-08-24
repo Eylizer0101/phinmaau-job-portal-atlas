@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
+import Pagination from "../../components/shared/Pagination";
 
-const ITEMS_PER_PAGE = 10;
 const PRIMARY = "#212C61";
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
@@ -564,6 +564,7 @@ const AdminArchive = () => {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [showCustomDateModal, setShowCustomDateModal] = useState(false);
   const [filters, setFilters] = useState({
     search: "",
@@ -666,13 +667,14 @@ const AdminArchive = () => {
     setCurrentPage(1);
   }, [filters]);
 
-  const pageCount = Math.max(1, Math.ceil(archiveGroups.length / ITEMS_PER_PAGE));
+  const pageCount = pageSize === "all" ? 1 : Math.max(1, Math.ceil(archiveGroups.length / pageSize));
   const safePage = Math.min(currentPage, pageCount);
 
   const paginatedGroups = useMemo(() => {
-    const start = (safePage - 1) * ITEMS_PER_PAGE;
-    return archiveGroups.slice(start, start + ITEMS_PER_PAGE);
-  }, [archiveGroups, safePage]);
+    if (pageSize === "all") return archiveGroups;
+    const start = (safePage - 1) * pageSize;
+    return archiveGroups.slice(start, start + pageSize);
+  }, [archiveGroups, safePage, pageSize]);
 
   const isJobseekerView = filters.role === "jobseeker";
   const isEmployerView = filters.role === "employer";
@@ -941,37 +943,13 @@ const AdminArchive = () => {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50/40 px-5 py-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-            <span>
-              Showing {archiveGroups.length === 0 ? 0 : (safePage - 1) * ITEMS_PER_PAGE + 1} to{" "}
-              {Math.min(safePage * ITEMS_PER_PAGE, archiveGroups.length)} of {archiveGroups.length} results
-            </span>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                disabled={safePage <= 1}
-                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                className="h-9 rounded-lg border border-slate-200 bg-white px-3 font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Previous
-              </button>
-              <span
-                className="flex h-9 min-w-9 items-center justify-center rounded-lg px-3 font-bold text-white"
-                style={{ backgroundColor: PRIMARY }}
-              >
-                {safePage}
-              </span>
-              <button
-                type="button"
-                disabled={safePage >= pageCount}
-                onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))}
-                className="h-9 rounded-lg border border-slate-200 bg-white px-3 font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Next
-              </button>
-            </div>
-          </div>
+          <Pagination
+            currentPage={safePage}
+            totalItems={archiveGroups.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         </section>
       </main>
 

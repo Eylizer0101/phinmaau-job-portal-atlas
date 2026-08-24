@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, Eye, RefreshCw, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import Pagination from '../../components/shared/Pagination';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -166,6 +167,8 @@ const AdminEmployerJobEditRequests = () => {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [showCustomDate, setShowCustomDate] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     let active = true;
@@ -198,6 +201,16 @@ const AdminEmployerJobEditRequests = () => {
         (!range.to || (!Number.isNaN(created.getTime()) && created <= range.to));
     }).sort((a, b) => (new Date(b.createdAt).getTime() || 0) - (new Date(a.createdAt).getTime() || 0));
   }, [requests, search, company, industry, jobTitle, status, time, dateFrom, dateTo]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, company, industry, jobTitle, status, time, dateFrom, dateTo]);
+
+  const paginatedRows = useMemo(() => {
+    if (pageSize === 'all') return rows;
+    const start = (currentPage - 1) * pageSize;
+    return rows.slice(start, start + pageSize);
+  }, [rows, currentPage, pageSize]);
 
   const changeTime = (value) => {
     if (value === 'custom') { setShowCustomDate(true); return; }
@@ -233,11 +246,12 @@ const AdminEmployerJobEditRequests = () => {
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       {loading ? <div className="flex justify-center py-20"><RefreshCw className="animate-spin text-blue-700" /></div> : <div className="overflow-x-auto"><table className="w-full min-w-[1050px] text-left">
         <thead className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500"><tr><th className="px-6 py-5">Request Date</th><th className="px-6 py-5">Company</th><th className="px-6 py-5">Job Title</th><th className="px-6 py-5 text-center">Vacancy</th><th className="px-6 py-5 text-center">Applicant</th><th className="px-6 py-5">Status</th><th className="px-6 py-5">Valid Until</th><th className="px-6 py-5 text-center">Actions</th></tr></thead>
-        <tbody className="divide-y divide-slate-200">{rows.map((item) => { const job = item.job || {}; const reviewed = item.status !== 'pending'; return <tr key={item._id} className="hover:bg-slate-50/80">
+        <tbody className="divide-y divide-slate-200">{paginatedRows.map((item) => { const job = item.job || {}; const reviewed = item.status !== 'pending'; return <tr key={item._id} className="hover:bg-slate-50/80">
           <td className="px-6 py-5 text-sm text-slate-600">{formatDate(item.createdAt)}</td><td className="px-6 py-5"><div className="flex items-center gap-3">{job.companyLogo ? <img src={job.companyLogo} alt="" className="h-11 w-11 rounded-xl border object-cover" /> : <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-700 text-xs font-bold text-white">{companyName(item).slice(0, 2).toUpperCase()}</span>}<div><p className="font-bold text-slate-950">{companyName(item)}</p><p className="mt-1 text-xs text-slate-500">{job.category || 'Company'}</p></div></div></td><td className="px-6 py-5"><p className="font-bold text-slate-950">{job.title || 'Untitled Job'}</p><p className="mt-1 text-xs text-slate-500">{[job.jobType, job.workMode].filter(Boolean).join(' • ') || 'Job posting'}</p></td><td className="px-6 py-5 text-center font-semibold">{job.vacancies ?? 0}</td><td className="px-6 py-5 text-center font-semibold">{job.applicationCount ?? 0}</td>
           <td className="px-6 py-5"><span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase ${reviewed ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-amber-300 bg-amber-50 text-amber-700'}`}>{reviewed ? 'Reviewed' : 'Pending'}</span></td><td className="px-6 py-5 text-sm text-slate-600">{formatDate(job.applicationDeadline)}</td><td className="px-6 py-5 text-center"><button type="button" onClick={() => navigate(`/admin/employer-job-edit-requests/${item._id}`)} className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700" aria-label="View edit request"><Eye size={19} /></button></td>
         </tr>; })}{!rows.length && <tr><td colSpan="8" className="px-6 py-16 text-center text-sm text-slate-500">No edit requests match the selected filters.</td></tr>}</tbody>
       </table></div>}
+      {!loading && <Pagination currentPage={currentPage} totalItems={rows.length} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} />}
     </section>
     <CustomDateRangeModal open={showCustomDate} startDate={dateFrom} endDate={dateTo} onCancel={() => setShowCustomDate(false)} onApply={(from, to) => { setDateFrom(from); setDateTo(to); setTime('custom'); setShowCustomDate(false); }} />
   </div>;

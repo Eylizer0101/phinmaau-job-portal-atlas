@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import AdminLayout from '../../layouts/AdminLayout';
+import Pagination from '../../components/shared/Pagination';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
@@ -1126,7 +1127,7 @@ const UserManagement = () => {
 
       const params = {
         page: currentPage,
-        limit: pageSize,
+        limit: pageSize === 'all' ? 100000 : pageSize,
         role: roleFilter !== 'all' ? roleFilter : undefined,
         campus: roleFilter === 'jobseeker' && campusFilter !== 'all' ? campusFilter : undefined,
         course: roleFilter === 'jobseeker' && courseFilter !== 'all' ? courseFilter : undefined,
@@ -1493,14 +1494,6 @@ const UserManagement = () => {
 
   const inputBase = 'h-11 w-full rounded-xl border border-gray-200 bg-white pl-11 pr-10 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60 transition-colors duration-200';
   const selectBase = 'h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60 transition-colors duration-200';
-
-  const totalPages = Math.max(Math.ceil(totalUsers / pageSize), 1);
-  const pageLabel = useMemo(() => {
-    if (!totalUsers) return 'Showing 0 to 0 of 0 results';
-    const start = (currentPage - 1) * pageSize + 1;
-    const end = Math.min(currentPage * pageSize, totalUsers);
-    return `Showing ${start} to ${end} of ${totalUsers} results`;
-  }, [currentPage, pageSize, totalUsers]);
 
   return (
     <AdminLayout>
@@ -1981,51 +1974,13 @@ const UserManagement = () => {
                   })}
                 </div>
 
-                <div className="border-t border-gray-100 px-4 py-4 sm:px-5">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-gray-500">{pageLabel}</p>
-
-                    <div className="flex items-center gap-2 self-end sm:self-auto">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        leftIcon={<Icon name="chevronLeft" className="h-4 w-4" />}
-                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                        disabled={currentPage === 1 || loading}
-                      >
-                        Previous
-                      </Button>
-
-                      <div className="inline-flex items-center gap-1">
-                        {Array.from({ length: Math.min(3, totalPages) }, (_, i) => i + 1).map((pageNum) => (
-                          <button
-                            key={pageNum}
-                            onClick={() => setCurrentPage(pageNum)}
-                            className={cn(
-                              'inline-flex h-9 min-w-[36px] items-center justify-center rounded-lg border px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]',
-                              currentPage === pageNum
-                                ? 'border-[#2e66a6] bg-[#2e66a6] text-white'
-                                : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-                            )}
-                            aria-current={currentPage === pageNum ? 'page' : undefined}
-                          >
-                            {pageNum}
-                          </button>
-                        ))}
-                      </div>
-
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        rightIcon={<Icon name="chevronRight" className="h-4 w-4" />}
-                        onClick={() => setCurrentPage(prev => prev + 1)}
-                        disabled={currentPage >= totalPages || loading}
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={totalUsers}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                />
               </>
             )}
           </div>

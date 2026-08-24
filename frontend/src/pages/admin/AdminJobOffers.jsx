@@ -2,10 +2,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../layouts/AdminLayout';
 import api from '../../services/api';
+import Pagination from '../../components/shared/Pagination';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
-
-const ITEMS_PER_PAGE = 10;
 
 const Icon = ({ name, className = 'h-4 w-4' }) => {
   const common = { className, fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', strokeWidth: 2 };
@@ -510,7 +509,7 @@ const AdminJobOffers = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
   const [filters, setFilters] = useState({
     search: '',
@@ -529,7 +528,7 @@ const AdminJobOffers = () => {
       setError('');
       const params = {
         page,
-        limit: ITEMS_PER_PAGE,
+        limit: pageSize === 'all' ? 100000 : pageSize,
         search: filters.search,
         status: filters.status !== 'All Status' ? filters.status.toLowerCase() : '',
         company: filters.company !== 'All Company' ? filters.company : '',
@@ -544,14 +543,13 @@ const AdminJobOffers = () => {
       setStats(response.data?.stats || { totalJobs: 0, active: 0, closed: 0, expired: 0 });
       setOptions(response.data?.options || { companies: [], industries: [], jobTitles: [] });
       setTotal(response.data?.pagination?.total || 0);
-      setTotalPages(response.data?.pagination?.totalPages || 1);
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to load job offers.');
       setJobs([]);
     } finally {
       setLoading(false);
     }
-  }, [filters, page]);
+  }, [filters, page, pageSize]);
 
   useEffect(() => {
     fetchJobs();
@@ -726,43 +724,13 @@ const AdminJobOffers = () => {
               </table>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 px-6 py-4">
-              <p className="text-xs text-gray-500">Showing {jobs.length ? (page - 1) * ITEMS_PER_PAGE + 1 : 0} to {Math.min(page * ITEMS_PER_PAGE, total)} of {total} results</p>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Previous
-                </button>
-                {[...Array(Math.min(totalPages, 3))].map((_, i) => {
-                  const num = i + 1;
-                  return (
-                    <button
-                      key={num}
-                      type="button"
-                      onClick={() => setPage(num)}
-                      className={cn(
-                        'rounded-lg px-3 py-1.5 text-xs font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2',
-                        page === num ? 'bg-[#2e66a6] text-white' : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-                      )}
-                    >
-                      {num}
-                    </button>
-                  );
-                })}
-                <button
-                  type="button"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
+            <Pagination
+              currentPage={page}
+              totalItems={total}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+            />
           </section>
         </div>
       </div>

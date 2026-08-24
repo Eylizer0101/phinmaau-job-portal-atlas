@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../layouts/AdminLayout';
 import api from '../../services/api';
+import Pagination from '../../components/shared/Pagination';
 
 const STATUS_OPTIONS = ['Pending', 'For Interview', 'Hired', 'Declined'];
 const SORT_OPTIONS = [
@@ -10,8 +11,6 @@ const SORT_OPTIONS = [
   'Applicant A-Z',
   'Applicant Z-A',
 ];
-const ITEMS_PER_PAGE = 10;
-
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
 const Icon = ({ name, className = 'h-4 w-4' }) => {
@@ -632,6 +631,7 @@ const AdminApplications = () => {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const fetchApplications = useCallback(async () => {
     try {
@@ -761,15 +761,11 @@ const AdminApplications = () => {
     dateTo,
   ]);
 
-  const totalPages = Math.max(Math.ceil(filteredApplications.length / ITEMS_PER_PAGE), 1);
-
   const paginatedApplications = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredApplications.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredApplications, currentPage]);
-
-  const showingStart = filteredApplications.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
-  const showingEnd = Math.min(currentPage * ITEMS_PER_PAGE, filteredApplications.length);
+    if (pageSize === 'all') return filteredApplications;
+    const start = (currentPage - 1) * pageSize;
+    return filteredApplications.slice(start, start + pageSize);
+  }, [filteredApplications, currentPage, pageSize]);
 
   const clearFilters = () => {
     setSearch('');
@@ -1001,43 +997,13 @@ const AdminApplications = () => {
                 </table>
               </div>
 
-              <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-                <span>Showing {showingStart} to {showingEnd} of {filteredApplications.length} results</span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                    disabled={currentPage === 1}
-                    className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Previous
-                  </button>
-                  {Array.from({ length: Math.min(totalPages, 3) }, (_, index) => index + 1)
-                    .map((pageNum) => (
-                      <button
-                        key={pageNum}
-                        type="button"
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={cn(
-                          "rounded-md px-3 py-1.5 text-xs font-semibold",
-                          currentPage === pageNum
-                            ? "bg-[#2e66a6] text-white"
-                            : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                        )}
-                      >
-                        {pageNum}
-                      </button>
-                    ))}
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                    disabled={currentPage >= totalPages}
-                    className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
+              <Pagination
+                currentPage={currentPage}
+                totalItems={filteredApplications.length}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={setPageSize}
+              />
             </>
           )}
         </div>

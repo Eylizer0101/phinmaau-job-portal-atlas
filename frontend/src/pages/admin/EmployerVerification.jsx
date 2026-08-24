@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import AdminLayout from "../../layouts/AdminLayout";
+import Pagination from "../../components/shared/Pagination";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
@@ -853,7 +854,7 @@ const EmployerVerification = () => {
 
         const params = {
           page: filters.page,
-          limit: filters.limit,
+          limit: filters.limit === "all" ? 100000 : filters.limit,
           sort: filters.sort,
         };
 
@@ -984,13 +985,6 @@ const EmployerVerification = () => {
       setDeleteLoading(false);
     }
   };
-
-  const pageLabel = useMemo(() => {
-    if (!pagination.totalItems) return "Showing 0 to 0 of 0 results";
-    const start = (pagination.page - 1) * pagination.limit + 1;
-    const end = Math.min(pagination.page * pagination.limit, pagination.totalItems);
-    return `Showing ${start} to ${end} of ${pagination.totalItems} results`;
-  }, [pagination]);
 
   const restoreEmployer = async (item) => {
     if (!item?._id) return;
@@ -1340,54 +1334,13 @@ const EmployerVerification = () => {
                   })}
                 </div>
 
-                <div className="border-t border-gray-100 px-4 py-4 sm:px-5">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-gray-500">{pageLabel}</p>
-
-                    <div className="flex items-center gap-2 self-end sm:self-auto">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        leftIcon={<Icon name="chevronLeft" className="h-4 w-4" />}
-                        disabled={!pagination.hasPrevPage}
-                        onClick={() => onChangeFilter("page", pagination.page - 1)}
-                      >
-                        Previous
-                      </Button>
-
-                      <div className="inline-flex items-center gap-1">
-                        {Array.from({ length: pagination.totalPages }, (_, index) => index + 1)
-                          .slice(Math.max(0, pagination.page - 2), Math.min(pagination.totalPages, pagination.page + 1))
-                          .map((pageNum) => (
-                            <button
-                              key={pageNum}
-                              type="button"
-                              onClick={() => onChangeFilter("page", pageNum)}
-                              className={cn(
-                                "inline-flex h-9 min-w-[36px] items-center justify-center rounded-lg border px-3 text-sm font-semibold transition",
-                                pageNum === pagination.page
-                                  ? "border-[#1154cc] bg-[#1154cc] text-white"
-                                  : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50",
-                                focusRing
-                              )}
-                            >
-                              {pageNum}
-                            </button>
-                          ))}
-                      </div>
-
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        rightIcon={<Icon name="chevronRight" className="h-4 w-4" />}
-                        disabled={!pagination.hasNextPage}
-                        onClick={() => onChangeFilter("page", pagination.page + 1)}
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                <Pagination
+                  currentPage={filters.page}
+                  totalItems={pagination.totalItems}
+                  pageSize={filters.limit}
+                  onPageChange={(page) => onChangeFilter("page", page)}
+                  onPageSizeChange={(limit) => onChangeFilter("limit", limit)}
+                />
               </>
             )}
           </div>
