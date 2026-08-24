@@ -66,6 +66,8 @@ const RegisterPage = () => {
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
   const API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/register`;
+  const VERIFY_EMAIL_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/verify-registration-email`;
+  const RESEND_EMAIL_OTP_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/resend-registration-email-otp`;
 
   // ✅ 3 steps na lang (Step 4 removed; replaced with modal confirmations)
   const [currentStep, setCurrentStep] = useState(1);
@@ -79,6 +81,10 @@ const RegisterPage = () => {
   // ✅ NEW: Modal states
   const [showConfirmModal, setShowConfirmModal] = useState(false); // "READY TO GO?"
   const [showSuccessModal, setShowSuccessModal] = useState(false); // "Thank you for signing up!"
+  const [showEmailVerificationModal, setShowEmailVerificationModal] = useState(false);
+  const [emailOtp, setEmailOtp] = useState('');
+  const [emailOtpError, setEmailOtpError] = useState('');
+  const [emailOtpMessage, setEmailOtpMessage] = useState('');
 
   const [formData, setFormData] = useState({
     // Step 1: Basic Information
@@ -271,10 +277,12 @@ const RegisterPage = () => {
     if (!email) errors.email = 'Email is required';
     else if (!isValidGmailAddress(email)) errors.email = 'Gmail account required to continue.';
 
-    // ✅ Phone number: REQUIRED EXACT 11 digits
+    // ✅ Philippine mobile number: 11 digits and must start with 09
     const phone = String(formData.phoneNumber || '').trim();
     if (!phone) errors.phoneNumber = 'Phone number is required';
-    else if (!/^\d{11}$/.test(phone)) errors.phoneNumber = 'Phone number must be exactly 11 digits';
+    else if (!/^09\d{9}$/.test(phone)) {
+      errors.phoneNumber = 'Please enter a valid 11-digit Philippine mobile number starting with 09.';
+    }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -408,16 +416,59 @@ const RegisterPage = () => {
       if (formData.pagibigFile) fd.append('pagibig', formData.pagibigFile);
       if (formData.tinFile) fd.append('tin', formData.tinFile);
 
-      await axios.post(API_URL, fd, {
+      const response = await axios.post(API_URL, fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      // ✅ close confirm modal then show success modal
       setShowConfirmModal(false);
-      setShowSuccessModal(true);
+      if (response.data?.requiresEmailVerification) {
+        setEmailOtp('');
+        setEmailOtpError('');
+        setEmailOtpMessage('We sent a 6-digit verification code to your Gmail address.');
+        setShowEmailVerificationModal(true);
+      } else {
+        setShowSuccessModal(true);
+      }
     } catch (err) {
       setServerError(err.response?.data?.message || 'Registration failed. Please try again.');
       setShowConfirmModal(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyRegistrationEmail = async () => {
+    if (!/^\d{6}$/.test(emailOtp)) {
+      setEmailOtpError('Enter the 6-digit OTP sent to your email.');
+      return;
+    }
+    setLoading(true);
+    setEmailOtpError('');
+    try {
+      await axios.post(VERIFY_EMAIL_API_URL, {
+        email: String(formData.email).trim().toLowerCase(),
+        otp: emailOtp,
+      });
+      setShowEmailVerificationModal(false);
+      setShowSuccessModal(true);
+    } catch (err) {
+      setEmailOtpError(err.response?.data?.message || 'Unable to verify the code. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resendRegistrationEmailOtp = async () => {
+    setLoading(true);
+    setEmailOtpError('');
+    try {
+      const response = await axios.post(RESEND_EMAIL_OTP_API_URL, {
+        email: String(formData.email).trim().toLowerCase(),
+      });
+      setEmailOtp('');
+      setEmailOtpMessage(response.data?.message || 'A new verification code has been sent.');
+    } catch (err) {
+      setEmailOtpError(err.response?.data?.message || 'Unable to send a new code right now.');
     } finally {
       setLoading(false);
     }
@@ -1487,6 +1538,29 @@ If you don’t receive a confirmation email within 48 hours or have any question
       {/* ✅ Modals */}
       <ConfirmModal />
       <SuccessModal />
+      {showEmailVerificationModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-2xl bg-white p-7 shadow-2xl">
+            <h3 className="text-center text-2xl font-extrabold text-gray-900">Verify your email</h3>
+            <p className="mt-2 text-center text-sm text-gray-600">{emailOtpMessage}</p>
+            <input
+              value={emailOtp}
+              onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="000000"
+              className="mt-6 h-12 w-full rounded-xl border border-gray-300 text-center font-mono text-xl tracking-[0.35em] focus:border-[#2e66a6] focus:outline-none"
+            />
+            {emailOtpError && <p className="mt-2 text-center text-sm text-red-600" role="alert">{emailOtpError}</p>}
+            <button type="button" onClick={verifyRegistrationEmail} disabled={loading} className="mt-5 h-12 w-full rounded-xl bg-[#2e66a6] text-sm font-semibold text-white disabled:opacity-50">
+              {loading ? 'Verifying...' : 'Verify Email'}
+            </button>
+            <button type="button" onClick={resendRegistrationEmailOtp} disabled={loading} className="mt-3 w-full text-sm font-semibold text-[#2e66a6] disabled:opacity-50">
+              Resend code
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="w-full max-w-[1340px]">
         <div className="bg-white rounded-2xl shadow-xl ring-1 ring-black/5 overflow-hidden min-h-[90vh]">

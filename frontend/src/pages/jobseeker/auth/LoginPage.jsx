@@ -473,7 +473,7 @@ const LoginPage = () => {
 
       if (
         status === 403 &&
-        (code === 'JOBSEEKER_PENDING_APPROVAL' || code === 'ACCOUNT_UNAVAILABLE')
+        (code === 'JOBSEEKER_PENDING_APPROVAL' || code === 'ACCOUNT_UNAVAILABLE' || code === 'EMAIL_NOT_VERIFIED')
       ) {
         setError(message);
         resetCaptcha();
@@ -501,12 +501,19 @@ const LoginPage = () => {
         return;
       }
 
+      if (status === 429 && code === 'ACCOUNT_TEMPORARILY_LOCKED') {
+        setError(message);
+        resetCaptcha();
+        remountCaptcha();
+        return;
+      }
+
       const { nextAttempt, locked } = registerFailedAttempt();
       resetCaptcha();
       remountCaptcha();
       if (locked) return;
 
-      setAttemptBanner(`Incorrect password. Attempt ${nextAttempt} of ${MAX_ATTEMPTS}.`);
+      setAttemptBanner(`The email/username or password you entered is incorrect. Attempt ${nextAttempt} of ${MAX_ATTEMPTS}.`);
     } finally {
       setLoading(false);
     }

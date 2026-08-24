@@ -369,6 +369,12 @@ const userSchema = new mongoose.Schema(
     isActive: { type: Boolean, default: true },
     lastLogin: { type: Date, default: null },
 
+    // Server-side failed-login tracking. This cannot be bypassed by clearing browser storage.
+    loginSecurity: {
+      failedAttempts: { type: Number, default: 0, min: 0, select: false },
+      lockedUntil: { type: Date, default: null, select: false },
+    },
+
     // Automatically set when an employer has not logged in for the configured period.
     inactiveBySystem: { type: Boolean, default: false, index: true },
     inactiveAt: { type: Date, default: null },
@@ -398,8 +404,8 @@ const userSchema = new mongoose.Schema(
     communityGuidelinesAcceptedAt: { type: Date, default: null },
 
     emailVerification: {
-      tokenHash: { type: String, default: '' },
-      expiresAt: { type: Date, default: null },
+      tokenHash: { type: String, default: '', select: false },
+      expiresAt: { type: Date, default: null, select: false },
       verifiedAt: { type: Date, default: null },
     },
 

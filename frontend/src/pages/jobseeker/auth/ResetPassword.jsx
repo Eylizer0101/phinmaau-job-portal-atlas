@@ -128,8 +128,8 @@ const ResetPassword = () => {
 
     if (!formData.newPassword) {
       next.newPassword = 'New password is required.';
-    } else if (formData.newPassword.length < 6) {
-      next.newPassword = 'New password must be at least 6 characters.';
+    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(formData.newPassword)) {
+      next.newPassword = 'Use at least 8 characters with uppercase, lowercase, number, and special character.';
     }
 
     if (!formData.confirmPassword) {

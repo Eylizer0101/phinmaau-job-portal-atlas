@@ -64,6 +64,9 @@ router.post(
 
 router.post('/employer/login', loginLimiter, authController.loginEmployer);
 
+router.post('/verify-registration-email', passwordRecoveryLimiter, authController.verifyRegistrationEmail);
+router.post('/resend-registration-email-otp', passwordRecoveryLimiter, authController.resendRegistrationEmailOtp);
+
 // -------------------------------
 // FORGOT / RESET PASSWORD
 // -------------------------------

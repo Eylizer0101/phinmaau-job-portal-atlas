@@ -77,6 +77,8 @@ const EmployerRegisterPage = () => {
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
   const API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/employer/register`;
+  const VERIFY_EMAIL_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/verify-registration-email`;
+  const RESEND_EMAIL_OTP_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/resend-registration-email-otp`;
 
   // ✅ NEW ORDER:
   // 1 = Company Info
@@ -127,6 +129,10 @@ const EmployerRegisterPage = () => {
   // ✅ NEW: Popups
   const [showReadyModal, setShowReadyModal] = useState(false);
   const [showThanksModal, setShowThanksModal] = useState(false);
+  const [showEmailVerificationModal, setShowEmailVerificationModal] = useState(false);
+  const [emailOtp, setEmailOtp] = useState('');
+  const [emailOtpError, setEmailOtpError] = useState('');
+  const [emailOtpMessage, setEmailOtpMessage] = useState('');
 
   const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 
@@ -300,8 +306,9 @@ const EmployerRegisterPage = () => {
     if (check('mobileNumber')) {
       const v = formData.mobileNumber.trim();
       if (!v) next.mobileNumber = 'Phone / Mobile number is required.';
-      else if (!/^\d+$/.test(v)) next.mobileNumber = 'Phone / Mobile number must contain numbers only.';
-      else if (v.length !== 11) next.mobileNumber = 'Phone / Mobile number must be 11 digits only.';
+      else if (!/^09\d{9}$/.test(v)) {
+        next.mobileNumber = 'Please enter a valid 11-digit Philippine mobile number starting with 09.';
+      }
     }
 
     // Company info
@@ -544,15 +551,54 @@ const EmployerRegisterPage = () => {
       fd.append('cityPermit', docs.cityPermit);
       fd.append('businessPermit', docs.businessPermit);
 
-      await axios.post(API_URL, fd, {
+      const response = await axios.post(API_URL, fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
       setShowReadyModal(false);
-      setShowThanksModal(true);
+      if (response.data?.requiresEmailVerification) {
+        setEmailOtp('');
+        setEmailOtpError('');
+        setEmailOtpMessage('We sent a 6-digit verification code to your business email.');
+        setShowEmailVerificationModal(true);
+      } else {
+        setShowThanksModal(true);
+      }
     } catch (err) {
       setServerError(err.response?.data?.message || 'Registration failed. Please try again.');
       setShowReadyModal(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyRegistrationEmail = async () => {
+    if (!/^\d{6}$/.test(emailOtp)) {
+      setEmailOtpError('Enter the 6-digit OTP sent to your email.');
+      return;
+    }
+    setLoading(true);
+    setEmailOtpError('');
+    try {
+      await axios.post(VERIFY_EMAIL_API_URL, { email: normalizeEmail(formData.businessEmail), otp: emailOtp });
+      setShowEmailVerificationModal(false);
+      setShowThanksModal(true);
+    } catch (err) {
+      setEmailOtpError(err.response?.data?.message || 'Unable to verify the code. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resendRegistrationEmailOtp = async () => {
+    setLoading(true);
+    setEmailOtpError('');
+    try {
+      const response = await axios.post(RESEND_EMAIL_OTP_API_URL, { email: normalizeEmail(formData.businessEmail) });
+      setEmailOtp('');
+      setEmailOtpMessage(response.data?.message || 'A new verification code has been sent.');
+    } catch (err) {
+      setEmailOtpError(err.response?.data?.message || 'Unable to send a new code right now.');
     } finally {
       setLoading(false);
     }
@@ -1180,6 +1226,18 @@ const EmployerRegisterPage = () => {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-[#2e66a6]/10 flex items-center justify-center p-4">
       <ReadyToGoModal />
       <ThankYouModal />
+      {showEmailVerificationModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-2xl bg-white p-7 shadow-2xl">
+            <h3 className="text-center text-2xl font-extrabold text-gray-900">Verify your email</h3>
+            <p className="mt-2 text-center text-sm text-gray-600">{emailOtpMessage}</p>
+            <input value={emailOtp} onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" placeholder="000000" className="mt-6 h-12 w-full rounded-xl border border-gray-300 text-center font-mono text-xl tracking-[0.35em] focus:border-[#2e66a6] focus:outline-none" />
+            {emailOtpError && <p className="mt-2 text-center text-sm text-red-600" role="alert">{emailOtpError}</p>}
+            <button type="button" onClick={verifyRegistrationEmail} disabled={loading} className="mt-5 h-12 w-full rounded-xl bg-[#2e66a6] text-sm font-semibold text-white disabled:opacity-50">{loading ? 'Verifying...' : 'Verify Email'}</button>
+            <button type="button" onClick={resendRegistrationEmailOtp} disabled={loading} className="mt-3 w-full text-sm font-semibold text-[#2e66a6] disabled:opacity-50">Resend code</button>
+          </div>
+        </div>
+      )}
 
       <div className="w-full max-w-[1340px]">
         <div className="bg-white rounded-2xl shadow-xl ring-1 ring-black/5 overflow-hidden min-h-[90vh]">

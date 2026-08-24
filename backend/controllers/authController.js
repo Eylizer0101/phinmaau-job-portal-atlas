@@ -137,6 +137,35 @@ const generatePasswordResetToken = () => crypto.randomBytes(32).toString('hex');
 const hashToken = (token) => crypto.createHash('sha256').update(String(token)).digest('hex');
 const generateNumericOtp = () => String(crypto.randomInt(100000, 1000000));
 const SETTINGS_OTP_EXPIRES_MINUTES = 10;
+const MAX_LOGIN_ATTEMPTS = 3;
+const LOGIN_LOCK_MINUTES = 2;
+const INVALID_LOGIN_MESSAGE = 'The email/username or password you entered is incorrect.';
+
+const getLoginSecurity = (user) => ({
+  failedAttempts: Number(user?.loginSecurity?.failedAttempts || 0),
+  lockedUntil: user?.loginSecurity?.lockedUntil ? new Date(user.loginSecurity.lockedUntil) : null,
+});
+
+const isLoginLocked = (user) => {
+  const { lockedUntil } = getLoginSecurity(user);
+  return Boolean(lockedUntil && lockedUntil.getTime() > Date.now());
+};
+
+const recordFailedLogin = async (user) => {
+  const { failedAttempts } = getLoginSecurity(user);
+  const nextAttempts = failedAttempts + 1;
+  user.loginSecurity = {
+    failedAttempts: nextAttempts >= MAX_LOGIN_ATTEMPTS ? 0 : nextAttempts,
+    lockedUntil: nextAttempts >= MAX_LOGIN_ATTEMPTS
+      ? new Date(Date.now() + LOGIN_LOCK_MINUTES * 60 * 1000)
+      : null,
+  };
+  await user.save();
+};
+
+const clearFailedLogins = (user) => {
+  user.loginSecurity = { failedAttempts: 0, lockedUntil: null };
+};
 
 const normalizePhoneNumber = (phoneNumber) => {
   const raw = String(phoneNumber || '').trim();
@@ -794,6 +823,13 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'Please complete Basic Information fields' });
     }
 
+    const cleanPhoneNumber = String(phoneNumber || '').trim();
+    if (!/^09\d{9}$/.test(cleanPhoneNumber)) {
+      return res.status(400).json({
+        message: 'Please enter a valid 11-digit Philippine mobile number starting with 09.',
+      });
+    }
+
     const files = req.files || {};
     const requiredDocs = ['cv', 'diploma', 'validId', 'tor'];
     const missing = requiredDocs.filter((k) => !(files?.[k]?.[0]));
@@ -868,7 +904,7 @@ exports.register = async (req, res) => {
         softSkills: String(softSkills || '').trim(),
         whatHaveYouDone: String(whatHaveYouDone || '').trim(),
         howSoonCanYouStart: String(howSoonCanYouStart || '').trim(),
-        phoneNumber: String(phoneNumber || '').trim(),
+        phoneNumber: cleanPhoneNumber,
         salaryCurrency: 'PHP',
 
         verificationDocs,
@@ -876,9 +912,27 @@ exports.register = async (req, res) => {
       },
     };
 
+    const registrationOtp = generateNumericOtp();
+    userData.emailVerification = {
+      tokenHash: hashToken(registrationOtp),
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      verifiedAt: null,
+    };
     const user = new User(userData);
     await user.save();
-    await notificationController.createAdminUserRegistrationNotification(user, 'jobseeker');
+    try {
+      await sendSettingsEmailVerificationCode({
+        to: user.email,
+        fullName: [user.firstName, user.lastName].filter(Boolean).join(' '),
+        code: registrationOtp,
+        expiresInMinutes: 10,
+      });
+    } catch (mailError) {
+      await User.deleteOne({ _id: user._id }).catch(() => {});
+      return res.status(503).json({
+        message: 'Unable to send the email verification code. Please check the email address and try again.',
+      });
+    }
 
     const uploadedCredentialLabels = {
       cv: 'CV/Resume',
@@ -918,6 +972,7 @@ exports.register = async (req, res) => {
 
     res.status(201).json({
       message: 'Registration submitted successfully!',
+      requiresEmailVerification: true,
       user: {
         id: user._id,
         username: user.username,
@@ -1005,6 +1060,13 @@ exports.registerEmployer = async (req, res) => {
       return res.status(400).json({ message: 'Phone / Mobile number is required.' });
     }
 
+    const cleanMobileNumber = String(mobileNumber || '').trim();
+    if (!/^09\d{9}$/.test(cleanMobileNumber)) {
+      return res.status(400).json({
+        message: 'Please enter a valid 11-digit Philippine mobile number starting with 09.',
+      });
+    }
+
     const cleanIndustry = String(industry || '').trim().normalize('NFKC').replace(/\s+/g, ' ');
     if (!cleanIndustry) {
       return res.status(400).json({ message: 'Industry is required.' });
@@ -1074,7 +1136,7 @@ exports.registerEmployer = async (req, res) => {
         companyName: cleanCompanyName,
         companyWebsiteUrl: normalizedWebsiteUrl,
         businessEmail: emailLower,
-        mobileNumber: String(mobileNumber || '').trim(),
+        mobileNumber: cleanMobileNumber,
         regionCity: String(regionCity || '').trim(),
         industry: cleanIndustry,
         companyLogo: companyLogoUrl,
@@ -1090,13 +1152,25 @@ exports.registerEmployer = async (req, res) => {
       },
     };
 
+    const registrationOtp = generateNumericOtp();
+    userData.emailVerification = {
+      tokenHash: hashToken(registrationOtp),
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      verifiedAt: null,
+    };
     const user = new User(userData);
     await user.save();
     try {
-      await notificationController.createAdminUserRegistrationNotification(user, 'employer');
-    } catch (notificationError) {
-      console.error('Employer registration notification failed.', {
-        code: notificationError?.code || 'NOTIFICATION_CREATE_FAILED',
+      await sendSettingsEmailVerificationCode({
+        to: user.email,
+        fullName: [user.firstName, user.lastName].filter(Boolean).join(' '),
+        code: registrationOtp,
+        expiresInMinutes: 10,
+      });
+    } catch (mailError) {
+      await User.deleteOne({ _id: user._id }).catch(() => {});
+      return res.status(503).json({
+        message: 'Unable to send the email verification code. Please check the email address and try again.',
       });
     }
 
@@ -1140,6 +1214,7 @@ exports.registerEmployer = async (req, res) => {
     return res.status(201).json({
       message: 'Thank you for signing up! Your account is under review.',
       businessEmail: emailLower,
+      requiresEmailVerification: true,
     });
   } catch (error) {
     console.error('Employer registration error:', error);
@@ -1153,6 +1228,68 @@ exports.registerEmployer = async (req, res) => {
       message: 'Server error. Please try again later.',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
+  }
+};
+
+// ---------------------------
+// REGISTRATION EMAIL VERIFICATION
+// ---------------------------
+exports.verifyRegistrationEmail = async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body?.email);
+    const otp = String(req.body?.otp || '').trim();
+    if (!email || !/^\d{6}$/.test(otp)) {
+      return res.status(400).json({ message: 'Enter the valid 6-digit OTP sent to your email.' });
+    }
+
+    const user = await User.findOne({
+      email,
+      'emailVerification.tokenHash': hashToken(otp),
+      'emailVerification.expiresAt': { $gt: new Date() },
+      'emailVerification.verifiedAt': null,
+    });
+    if (!user) return res.status(400).json({ message: 'Invalid or expired OTP. Please request a new code.' });
+
+    user.emailVerification = { tokenHash: '', expiresAt: null, verifiedAt: new Date() };
+    await user.save();
+    await notificationController.createAdminUserRegistrationNotification(user, user.role);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Email verified successfully. Your registration is now awaiting admin approval.',
+    });
+  } catch (error) {
+    console.error('Registration email verification error:', error);
+    return res.status(500).json({ message: 'Unable to verify email right now. Please try again later.' });
+  }
+};
+
+exports.resendRegistrationEmailOtp = async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body?.email);
+    const genericMessage = 'If an unverified registration exists, a new verification code has been sent.';
+    if (!email || !isValidBusinessEmail(email)) return res.status(200).json({ message: genericMessage });
+
+    const user = await User.findOne({ email, 'emailVerification.verifiedAt': null });
+    if (!user) return res.status(200).json({ message: genericMessage });
+
+    const otp = generateNumericOtp();
+    user.emailVerification = {
+      tokenHash: hashToken(otp),
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      verifiedAt: null,
+    };
+    await user.save();
+    await sendSettingsEmailVerificationCode({
+      to: user.email,
+      fullName: [user.firstName, user.lastName].filter(Boolean).join(' '),
+      code: otp,
+      expiresInMinutes: 10,
+    });
+    return res.status(200).json({ message: genericMessage });
+  } catch (error) {
+    console.error('Resend registration email OTP error:', error);
+    return res.status(500).json({ message: 'Unable to send a new verification code right now.' });
   }
 };
 
@@ -1183,19 +1320,36 @@ exports.login = async (req, res) => {
 
     if (looksLikeEmail) {
       const emailLower = normalizeEmail(raw);
-      user = await User.findOne({ email: emailLower });
+      user = await User.findOne({ email: emailLower }).select('+loginSecurity.failedAttempts +loginSecurity.lockedUntil +emailVerification.tokenHash');
     } else {
       const usernameNorm = raw.toLowerCase();
-      user = await User.findOne({ username: usernameNorm });
+      user = await User.findOne({ username: usernameNorm }).select('+loginSecurity.failedAttempts +loginSecurity.lockedUntil +emailVerification.tokenHash');
     }
 
-    if (!user) return res.status(400).json({ message: 'Invalid username or password' });
+    if (!user) return res.status(400).json({ message: INVALID_LOGIN_MESSAGE });
+
+    if (isLoginLocked(user)) {
+      return res.status(429).json({
+        code: 'ACCOUNT_TEMPORARILY_LOCKED',
+        message: `Too many failed attempts. Please try again after ${LOGIN_LOCK_MINUTES} minutes.`,
+      });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid username or password' });
+    if (!isMatch) {
+      await recordFailedLogin(user);
+      return res.status(400).json({ message: INVALID_LOGIN_MESSAGE });
+    }
 
     if (role && user.role !== role) {
       return res.status(403).json({ message: `Invalid account type for this login page.` });
+    }
+
+    if (!user.emailVerification?.verifiedAt && user.emailVerification?.tokenHash) {
+      return res.status(403).json({
+        code: 'EMAIL_NOT_VERIFIED',
+        message: 'Please verify your email address before signing in.',
+      });
     }
 
     if (!user.isActive || ['inactive', 'suspended', 'deleted'].includes(String(user.status || '').toLowerCase())) {
@@ -1244,6 +1398,7 @@ exports.login = async (req, res) => {
     const isFirstLogin = user.role === 'jobseeker' && !user.lastLogin;
 
     user.lastLogin = Date.now();
+    clearFailedLogins(user);
     await user.save();
 
     const token = signToken({ userId: user._id, role: user.role });
@@ -1444,8 +1599,10 @@ exports.resetPassword = async (req, res) => {
       return res.status(400).json({ message: 'Enter the valid 6-digit OTP sent to your email.' });
     }
 
-    if (!newPassword || newPassword.trim().length < 6) {
-      return res.status(400).json({ message: 'New password must be at least 6 characters long.' });
+    if (!isStrongPassword(newPassword)) {
+      return res.status(400).json({
+        message: 'Use at least 8 characters with uppercase, lowercase, number, and special character.',
+      });
     }
 
     if (!confirmPassword) {
@@ -1479,6 +1636,7 @@ exports.resetPassword = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword.trim(), salt);
     user.mustChangePassword = false;
+    clearFailedLogins(user);
 
     user.passwordReset = {
       tokenHash: '',
