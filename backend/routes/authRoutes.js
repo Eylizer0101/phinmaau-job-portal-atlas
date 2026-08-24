@@ -43,6 +43,7 @@ const passwordRecoveryLimiter = createAuthLimiter({
 router.post(
   '/register',
   registrationLimiter,
+  authController.requireRegistrationVerification,
   upload.handleJobseekerRegisterUploads,
   authController.register
 );
@@ -58,12 +59,14 @@ router.post('/login', loginLimiter, authController.login);
 router.post(
   '/employer/register',
   registrationLimiter,
+  authController.requireRegistrationVerification,
   upload.handleEmployerRegisterUploads,
   authController.registerEmployer
 );
 
 router.post('/employer/login', loginLimiter, authController.loginEmployer);
 
+router.post('/request-registration-email-otp', passwordRecoveryLimiter, authController.requestRegistrationEmailOtp);
 router.post('/verify-registration-email', passwordRecoveryLimiter, authController.verifyRegistrationEmail);
 router.post('/resend-registration-email-otp', passwordRecoveryLimiter, authController.resendRegistrationEmailOtp);
 

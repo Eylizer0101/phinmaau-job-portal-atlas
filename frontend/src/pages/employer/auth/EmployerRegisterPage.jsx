@@ -77,6 +77,7 @@ const EmployerRegisterPage = () => {
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
   const API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/employer/register`;
+  const REQUEST_EMAIL_OTP_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/request-registration-email-otp`;
   const VERIFY_EMAIL_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/verify-registration-email`;
   const RESEND_EMAIL_OTP_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/resend-registration-email-otp`;
 
@@ -517,14 +518,7 @@ const EmployerRegisterPage = () => {
 
   const handleBackStep = () => setStep((s) => Math.max(1, s - 1));
 
-  const handleSubmit = async () => {
-    setServerError('');
-
-    const ok = validate(null);
-    if (!ok) return;
-
-    setLoading(true);
-    try {
+  const submitVerifiedRegistration = async (registrationVerificationToken) => {
       const fd = new FormData();
 
       fd.append('role', 'employer');
@@ -551,19 +545,32 @@ const EmployerRegisterPage = () => {
       fd.append('cityPermit', docs.cityPermit);
       fd.append('businessPermit', docs.businessPermit);
 
-      const response = await axios.post(API_URL, fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      await axios.post(API_URL, fd, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${registrationVerificationToken}`,
+        },
+      });
+  };
+
+  const handleSubmit = async () => {
+    setServerError('');
+
+    const ok = validate(null);
+    if (!ok) return;
+
+    setLoading(true);
+    try {
+      const response = await axios.post(REQUEST_EMAIL_OTP_API_URL, {
+        email: normalizeEmail(formData.businessEmail),
+        role: 'employer',
       });
 
       setShowReadyModal(false);
-      if (response.data?.requiresEmailVerification) {
-        setEmailOtp('');
-        setEmailOtpError('');
-        setEmailOtpMessage('We sent a 6-digit verification code to your business email.');
-        setShowEmailVerificationModal(true);
-      } else {
-        setShowThanksModal(true);
-      }
+      setEmailOtp('');
+      setEmailOtpError('');
+      setEmailOtpMessage(response.data?.message || 'We sent a 6-digit verification code to your business email.');
+      setShowEmailVerificationModal(true);
     } catch (err) {
       setServerError(err.response?.data?.message || 'Registration failed. Please try again.');
       setShowReadyModal(false);
@@ -580,7 +587,14 @@ const EmployerRegisterPage = () => {
     setLoading(true);
     setEmailOtpError('');
     try {
-      await axios.post(VERIFY_EMAIL_API_URL, { email: normalizeEmail(formData.businessEmail), otp: emailOtp });
+      const response = await axios.post(VERIFY_EMAIL_API_URL, {
+        email: normalizeEmail(formData.businessEmail),
+        role: 'employer',
+        otp: emailOtp,
+      });
+      const registrationVerificationToken = response.data?.registrationVerificationToken;
+      if (!registrationVerificationToken) throw new Error('Missing registration verification token.');
+      await submitVerifiedRegistration(registrationVerificationToken);
       setShowEmailVerificationModal(false);
       setShowThanksModal(true);
     } catch (err) {
@@ -594,7 +608,10 @@ const EmployerRegisterPage = () => {
     setLoading(true);
     setEmailOtpError('');
     try {
-      const response = await axios.post(RESEND_EMAIL_OTP_API_URL, { email: normalizeEmail(formData.businessEmail) });
+      const response = await axios.post(RESEND_EMAIL_OTP_API_URL, {
+        email: normalizeEmail(formData.businessEmail),
+        role: 'employer',
+      });
       setEmailOtp('');
       setEmailOtpMessage(response.data?.message || 'A new verification code has been sent.');
     } catch (err) {

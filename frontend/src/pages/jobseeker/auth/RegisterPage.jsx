@@ -66,6 +66,7 @@ const RegisterPage = () => {
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
   const API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/register`;
+  const REQUEST_EMAIL_OTP_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/request-registration-email-otp`;
   const VERIFY_EMAIL_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/verify-registration-email`;
   const RESEND_EMAIL_OTP_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/resend-registration-email-otp`;
 
@@ -361,30 +362,7 @@ const RegisterPage = () => {
     return Object.keys(errors).length === 0;
   };
 
-  // ✅ NEW: actual registration submit (called from modal)
-  const submitRegistration = async () => {
-    setServerError('');
-
-    const okAll = validateStep1() && validateStep2() && validateStep3();
-    if (!okAll) {
-      setShowConfirmModal(false);
-      if (!validateStep1()) {
-        setCurrentStep(1);
-        return;
-      }
-
-      if (!validateCareerMain()) {
-        setCurrentStep(2);
-        return;
-      }
-
-      setCurrentStep(3);
-      return;
-    }
-
-    setLoading(true);
-
-    try {
+  const submitVerifiedRegistration = async (registrationVerificationToken) => {
       const fd = new FormData();
 
       // Step 1: Career Profile
@@ -416,19 +394,48 @@ const RegisterPage = () => {
       if (formData.pagibigFile) fd.append('pagibig', formData.pagibigFile);
       if (formData.tinFile) fd.append('tin', formData.tinFile);
 
-      const response = await axios.post(API_URL, fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      await axios.post(API_URL, fd, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${registrationVerificationToken}`,
+        },
+      });
+  };
+
+  // ✅ Request OTP first. No User account or credential upload happens here.
+  const submitRegistration = async () => {
+    setServerError('');
+
+    const okAll = validateStep1() && validateStep2() && validateStep3();
+    if (!okAll) {
+      setShowConfirmModal(false);
+      if (!validateStep1()) {
+        setCurrentStep(1);
+        return;
+      }
+
+      if (!validateCareerMain()) {
+        setCurrentStep(2);
+        return;
+      }
+
+      setCurrentStep(3);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await axios.post(REQUEST_EMAIL_OTP_API_URL, {
+        email: String(formData.email).trim().toLowerCase(),
+        role: 'jobseeker',
       });
 
       setShowConfirmModal(false);
-      if (response.data?.requiresEmailVerification) {
-        setEmailOtp('');
-        setEmailOtpError('');
-        setEmailOtpMessage('We sent a 6-digit verification code to your Gmail address.');
-        setShowEmailVerificationModal(true);
-      } else {
-        setShowSuccessModal(true);
-      }
+      setEmailOtp('');
+      setEmailOtpError('');
+      setEmailOtpMessage(response.data?.message || 'We sent a 6-digit verification code to your Gmail address.');
+      setShowEmailVerificationModal(true);
     } catch (err) {
       setServerError(err.response?.data?.message || 'Registration failed. Please try again.');
       setShowConfirmModal(false);
@@ -445,10 +452,14 @@ const RegisterPage = () => {
     setLoading(true);
     setEmailOtpError('');
     try {
-      await axios.post(VERIFY_EMAIL_API_URL, {
+      const response = await axios.post(VERIFY_EMAIL_API_URL, {
         email: String(formData.email).trim().toLowerCase(),
+        role: 'jobseeker',
         otp: emailOtp,
       });
+      const registrationVerificationToken = response.data?.registrationVerificationToken;
+      if (!registrationVerificationToken) throw new Error('Missing registration verification token.');
+      await submitVerifiedRegistration(registrationVerificationToken);
       setShowEmailVerificationModal(false);
       setShowSuccessModal(true);
     } catch (err) {
@@ -464,6 +475,7 @@ const RegisterPage = () => {
     try {
       const response = await axios.post(RESEND_EMAIL_OTP_API_URL, {
         email: String(formData.email).trim().toLowerCase(),
+        role: 'jobseeker',
       });
       setEmailOtp('');
       setEmailOtpMessage(response.data?.message || 'A new verification code has been sent.');

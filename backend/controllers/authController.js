@@ -1,5 +1,6 @@
 // BACKEND/controllers/authController.js
 const User = require('../models/User');
+const PendingEmailVerification = require('../models/PendingEmailVerification');
 const Notification = require('../models/Notification');
 const notificationController = require('./notificationController');
 const bcrypt = require('bcryptjs');
@@ -140,6 +141,62 @@ const SETTINGS_OTP_EXPIRES_MINUTES = 10;
 const MAX_LOGIN_ATTEMPTS = 3;
 const LOGIN_LOCK_MINUTES = 2;
 const INVALID_LOGIN_MESSAGE = 'The email/username or password you entered is incorrect.';
+const REGISTRATION_OTP_EXPIRES_MINUTES = 10;
+const REGISTRATION_TOKEN_EXPIRES_MINUTES = 15;
+
+const getRegistrationRole = (value) => {
+  const role = String(value || '').trim().toLowerCase();
+  return ['jobseeker', 'employer'].includes(role) ? role : '';
+};
+
+const releasePendingVerificationClaim = (pendingId) => {
+  if (!pendingId) return Promise.resolve();
+  return PendingEmailVerification.updateOne(
+    { _id: pendingId },
+    { $set: { consumedAt: null } }
+  ).catch(() => {});
+};
+
+exports.requireRegistrationVerification = async (req, res, next) => {
+  try {
+    const authorization = String(req.get('authorization') || '').trim();
+    const token = authorization.toLowerCase().startsWith('bearer ')
+      ? authorization.slice(7).trim()
+      : '';
+
+    if (!token) {
+      return res.status(403).json({
+        code: 'EMAIL_VERIFICATION_REQUIRED',
+        message: 'Please verify your email before submitting the registration form.',
+      });
+    }
+
+    const pendingVerification = await PendingEmailVerification.findOne({
+      verificationTokenHash: hashToken(token),
+      verificationTokenExpiresAt: { $gt: new Date() },
+      verifiedAt: { $ne: null },
+      consumedAt: null,
+    });
+
+    if (!pendingVerification) {
+      return res.status(403).json({
+        code: 'EMAIL_VERIFICATION_EXPIRED',
+        message: 'Your email verification has expired. Please request a new OTP.',
+      });
+    }
+
+    req.registrationVerification = {
+      id: pendingVerification._id,
+      email: pendingVerification.email,
+      role: pendingVerification.role,
+      tokenHash: hashToken(token),
+    };
+    return next();
+  } catch (error) {
+    console.error('Registration verification middleware error:', error);
+    return res.status(500).json({ message: 'Unable to validate email verification right now.' });
+  }
+};
 
 const getLoginSecurity = (user) => ({
   failedAttempts: Number(user?.loginSecurity?.failedAttempts || 0),
@@ -759,6 +816,7 @@ const createAdminResubmissionNotifications = async ({ subjectUser, accountType, 
 // JOBSEEKER REGISTER (AGAPAY UPDATED)
 // ---------------------------
 exports.register = async (req, res) => {
+  let claimedPendingVerificationId = null;
   try {
     const {
       // Step 1
@@ -784,6 +842,15 @@ exports.register = async (req, res) => {
     if (!emailLower) return res.status(400).json({ message: 'Email is required' });
     if (!isGmailAddress(emailLower)) {
       return res.status(400).json({ message: 'Gmail account required to continue.' });
+    }
+    if (
+      req.registrationVerification?.email !== emailLower ||
+      req.registrationVerification?.role !== 'jobseeker'
+    ) {
+      return res.status(403).json({
+        code: 'EMAIL_VERIFICATION_MISMATCH',
+        message: 'The verified email does not match this registration.',
+      });
     }
 
     const cleanFirstName = String(firstName || '').trim();
@@ -845,6 +912,26 @@ exports.register = async (req, res) => {
       });
     }
 
+    const claimedVerification = await PendingEmailVerification.findOneAndUpdate(
+      {
+        _id: req.registrationVerification.id,
+        email: emailLower,
+        role: 'jobseeker',
+        verificationTokenHash: req.registrationVerification.tokenHash,
+        verificationTokenExpiresAt: { $gt: new Date() },
+        consumedAt: null,
+      },
+      { $set: { consumedAt: new Date() } },
+      { new: true }
+    );
+    if (!claimedVerification) {
+      return res.status(409).json({
+        code: 'EMAIL_VERIFICATION_ALREADY_USED',
+        message: 'This email verification has already been used or has expired.',
+      });
+    }
+    claimedPendingVerificationId = claimedVerification._id;
+
     const baseUsername = baseUsernameFromEmail(emailLower);
     const usernameUnique = await makeUniqueUsername(baseUsername);
 
@@ -888,6 +975,11 @@ exports.register = async (req, res) => {
       password: hashedPassword,
       role: 'jobseeker',
       status: 'pending',
+      emailVerification: {
+        tokenHash: '',
+        expiresAt: null,
+        verifiedAt: new Date(),
+      },
 
       firstName: cleanFirstName,
       middleName: cleanMiddleName,
@@ -912,25 +1004,15 @@ exports.register = async (req, res) => {
       },
     };
 
-    const registrationOtp = generateNumericOtp();
-    userData.emailVerification = {
-      tokenHash: hashToken(registrationOtp),
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
-      verifiedAt: null,
-    };
     const user = new User(userData);
     await user.save();
+    await PendingEmailVerification.deleteOne({ _id: claimedPendingVerificationId }).catch(() => {});
+    claimedPendingVerificationId = null;
     try {
-      await sendSettingsEmailVerificationCode({
-        to: user.email,
-        fullName: [user.firstName, user.lastName].filter(Boolean).join(' '),
-        code: registrationOtp,
-        expiresInMinutes: 10,
-      });
-    } catch (mailError) {
-      await User.deleteOne({ _id: user._id }).catch(() => {});
-      return res.status(503).json({
-        message: 'Unable to send the email verification code. Please check the email address and try again.',
+      await notificationController.createAdminUserRegistrationNotification(user, 'jobseeker');
+    } catch (notificationError) {
+      console.error('Jobseeker registration notification failed.', {
+        code: notificationError?.code || 'NOTIFICATION_CREATE_FAILED',
       });
     }
 
@@ -972,7 +1054,6 @@ exports.register = async (req, res) => {
 
     res.status(201).json({
       message: 'Registration submitted successfully!',
-      requiresEmailVerification: true,
       user: {
         id: user._id,
         username: user.username,
@@ -988,6 +1069,7 @@ exports.register = async (req, res) => {
       },
     });
   } catch (error) {
+    await releasePendingVerificationClaim(claimedPendingVerificationId);
     console.error('Registration error:', error);
     if (isDuplicateKeyError(error)) {
       return res.status(409).json({
@@ -1006,6 +1088,7 @@ exports.register = async (req, res) => {
 // EMPLOYER REGISTER
 // ---------------------------
 exports.registerEmployer = async (req, res) => {
+  let claimedPendingVerificationId = null;
   try {
     const {
       firstName,
@@ -1055,6 +1138,15 @@ exports.registerEmployer = async (req, res) => {
     if (!isValidBusinessEmail(emailLower)) {
       return res.status(400).json({ message: 'Invalid business email address.' });
     }
+    if (
+      req.registrationVerification?.email !== emailLower ||
+      req.registrationVerification?.role !== 'employer'
+    ) {
+      return res.status(403).json({
+        code: 'EMAIL_VERIFICATION_MISMATCH',
+        message: 'The verified email does not match this registration.',
+      });
+    }
 
     if (!mobileNumber || !String(mobileNumber).trim()) {
       return res.status(400).json({ message: 'Phone / Mobile number is required.' });
@@ -1092,6 +1184,26 @@ exports.registerEmployer = async (req, res) => {
         message: 'This email address is already registered. Please sign in or contact support instead.',
       });
     }
+
+    const claimedVerification = await PendingEmailVerification.findOneAndUpdate(
+      {
+        _id: req.registrationVerification.id,
+        email: emailLower,
+        role: 'employer',
+        verificationTokenHash: req.registrationVerification.tokenHash,
+        verificationTokenExpiresAt: { $gt: new Date() },
+        consumedAt: null,
+      },
+      { $set: { consumedAt: new Date() } },
+      { new: true }
+    );
+    if (!claimedVerification) {
+      return res.status(409).json({
+        code: 'EMAIL_VERIFICATION_ALREADY_USED',
+        message: 'This email verification has already been used or has expired.',
+      });
+    }
+    claimedPendingVerificationId = claimedVerification._id;
 
     const baseFromCompany = cleanCompanyName
       .toLowerCase()
@@ -1131,6 +1243,11 @@ exports.registerEmployer = async (req, res) => {
 
       status: 'pending',
       isVerified: true,
+      emailVerification: {
+        tokenHash: '',
+        expiresAt: null,
+        verifiedAt: new Date(),
+      },
 
       employerProfile: {
         companyName: cleanCompanyName,
@@ -1152,25 +1269,15 @@ exports.registerEmployer = async (req, res) => {
       },
     };
 
-    const registrationOtp = generateNumericOtp();
-    userData.emailVerification = {
-      tokenHash: hashToken(registrationOtp),
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
-      verifiedAt: null,
-    };
     const user = new User(userData);
     await user.save();
+    await PendingEmailVerification.deleteOne({ _id: claimedPendingVerificationId }).catch(() => {});
+    claimedPendingVerificationId = null;
     try {
-      await sendSettingsEmailVerificationCode({
-        to: user.email,
-        fullName: [user.firstName, user.lastName].filter(Boolean).join(' '),
-        code: registrationOtp,
-        expiresInMinutes: 10,
-      });
-    } catch (mailError) {
-      await User.deleteOne({ _id: user._id }).catch(() => {});
-      return res.status(503).json({
-        message: 'Unable to send the email verification code. Please check the email address and try again.',
+      await notificationController.createAdminUserRegistrationNotification(user, 'employer');
+    } catch (notificationError) {
+      console.error('Employer registration notification failed.', {
+        code: notificationError?.code || 'NOTIFICATION_CREATE_FAILED',
       });
     }
 
@@ -1214,9 +1321,9 @@ exports.registerEmployer = async (req, res) => {
     return res.status(201).json({
       message: 'Thank you for signing up! Your account is under review.',
       businessEmail: emailLower,
-      requiresEmailVerification: true,
     });
   } catch (error) {
+    await releasePendingVerificationClaim(claimedPendingVerificationId);
     console.error('Employer registration error:', error);
     if (isDuplicateKeyError(error)) {
       return res.status(409).json({
@@ -1234,29 +1341,113 @@ exports.registerEmployer = async (req, res) => {
 // ---------------------------
 // REGISTRATION EMAIL VERIFICATION
 // ---------------------------
+exports.requestRegistrationEmailOtp = async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body?.email);
+    const role = getRegistrationRole(req.body?.role);
+
+    if (!email || !role) {
+      return res.status(400).json({ message: 'A valid email and registration role are required.' });
+    }
+    if (role === 'jobseeker' && !isGmailAddress(email)) {
+      return res.status(400).json({ message: 'Gmail account required to continue.' });
+    }
+    if (role === 'employer' && !isValidBusinessEmail(email)) {
+      return res.status(400).json({ message: 'Please enter a valid business email address.' });
+    }
+
+    const existingUser = await findExistingUserByEmail(email);
+    if (existingUser) {
+      return res.status(409).json({
+        code: 'EMAIL_ALREADY_REGISTERED',
+        message: 'This email address is already registered. Please sign in or contact support instead.',
+      });
+    }
+
+    const otp = generateNumericOtp();
+    const now = new Date();
+    const otpExpiresAt = new Date(now.getTime() + REGISTRATION_OTP_EXPIRES_MINUTES * 60 * 1000);
+    const deleteAfterAt = new Date(now.getTime() + 30 * 60 * 1000);
+
+    const pendingVerification = await PendingEmailVerification.findOneAndUpdate(
+      { email, role },
+      {
+        $set: {
+          otpHash: hashToken(otp),
+          otpExpiresAt,
+          otpRequestedAt: now,
+          verifiedAt: null,
+          verificationTokenHash: '',
+          verificationTokenExpiresAt: null,
+          consumedAt: null,
+          deleteAfterAt,
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    try {
+      await sendSettingsEmailVerificationCode({
+        to: email,
+        fullName: role === 'employer' ? 'Employer' : 'Jobseeker',
+        code: otp,
+        expiresInMinutes: REGISTRATION_OTP_EXPIRES_MINUTES,
+      });
+    } catch (mailError) {
+      await PendingEmailVerification.deleteOne({ _id: pendingVerification._id }).catch(() => {});
+      return res.status(503).json({
+        message: 'Unable to send the email verification code. Please check the email address and try again.',
+      });
+    }
+
+    return res.status(200).json({
+      message: 'A 6-digit verification code has been sent to your email.',
+      expiresInSeconds: REGISTRATION_OTP_EXPIRES_MINUTES * 60,
+    });
+  } catch (error) {
+    console.error('Request registration email OTP error:', error);
+    return res.status(500).json({ message: 'Unable to send the verification code right now.' });
+  }
+};
+
 exports.verifyRegistrationEmail = async (req, res) => {
   try {
     const email = normalizeEmail(req.body?.email);
+    const role = getRegistrationRole(req.body?.role);
     const otp = String(req.body?.otp || '').trim();
-    if (!email || !/^\d{6}$/.test(otp)) {
+    if (!email || !role || !/^\d{6}$/.test(otp)) {
       return res.status(400).json({ message: 'Enter the valid 6-digit OTP sent to your email.' });
     }
 
-    const user = await User.findOne({
+    const pendingVerification = await PendingEmailVerification.findOne({
       email,
-      'emailVerification.tokenHash': hashToken(otp),
-      'emailVerification.expiresAt': { $gt: new Date() },
-      'emailVerification.verifiedAt': null,
-    });
-    if (!user) return res.status(400).json({ message: 'Invalid or expired OTP. Please request a new code.' });
+      role,
+      otpHash: hashToken(otp),
+      otpExpiresAt: { $gt: new Date() },
+      consumedAt: null,
+    }).select('+otpHash +otpExpiresAt +verificationTokenHash +verificationTokenExpiresAt +consumedAt');
+    if (!pendingVerification) {
+      return res.status(400).json({ message: 'Invalid or expired OTP. Please request a new code.' });
+    }
 
-    user.emailVerification = { tokenHash: '', expiresAt: null, verifiedAt: new Date() };
-    await user.save();
-    await notificationController.createAdminUserRegistrationNotification(user, user.role);
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verifiedAt = new Date();
+    pendingVerification.verifiedAt = verifiedAt;
+    pendingVerification.otpExpiresAt = verifiedAt;
+    pendingVerification.verificationTokenHash = hashToken(verificationToken);
+    pendingVerification.verificationTokenExpiresAt = new Date(
+      verifiedAt.getTime() + REGISTRATION_TOKEN_EXPIRES_MINUTES * 60 * 1000
+    );
+    pendingVerification.deleteAfterAt = new Date(
+      verifiedAt.getTime() + REGISTRATION_TOKEN_EXPIRES_MINUTES * 60 * 1000
+    );
+    await pendingVerification.save();
 
     return res.status(200).json({
       success: true,
-      message: 'Email verified successfully. Your registration is now awaiting admin approval.',
+      message: 'Email verified successfully. Your registration will now be submitted.',
+      registrationVerificationToken: verificationToken,
+      expiresInSeconds: REGISTRATION_TOKEN_EXPIRES_MINUTES * 60,
     });
   } catch (error) {
     console.error('Registration email verification error:', error);
@@ -1265,32 +1456,7 @@ exports.verifyRegistrationEmail = async (req, res) => {
 };
 
 exports.resendRegistrationEmailOtp = async (req, res) => {
-  try {
-    const email = normalizeEmail(req.body?.email);
-    const genericMessage = 'If an unverified registration exists, a new verification code has been sent.';
-    if (!email || !isValidBusinessEmail(email)) return res.status(200).json({ message: genericMessage });
-
-    const user = await User.findOne({ email, 'emailVerification.verifiedAt': null });
-    if (!user) return res.status(200).json({ message: genericMessage });
-
-    const otp = generateNumericOtp();
-    user.emailVerification = {
-      tokenHash: hashToken(otp),
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
-      verifiedAt: null,
-    };
-    await user.save();
-    await sendSettingsEmailVerificationCode({
-      to: user.email,
-      fullName: [user.firstName, user.lastName].filter(Boolean).join(' '),
-      code: otp,
-      expiresInMinutes: 10,
-    });
-    return res.status(200).json({ message: genericMessage });
-  } catch (error) {
-    console.error('Resend registration email OTP error:', error);
-    return res.status(500).json({ message: 'Unable to send a new verification code right now.' });
-  }
+  return exports.requestRegistrationEmailOtp(req, res);
 };
 
 // ---------------------------
