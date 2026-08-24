@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
+import Pagination from "../../components/shared/Pagination";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
@@ -58,7 +59,6 @@ const Icon = ({ name, className = "h-5 w-5" }) => {
   return null;
 };
 
-const PAGE_SIZE = 9;
 
 const formatDate = (value) => {
   if (!value) return "—";
@@ -536,6 +536,7 @@ const AdminEmployerPostingHistory = () => {
   const [dateTo, setDateTo] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     const fetchPostingHistory = async () => {
@@ -669,25 +670,12 @@ const AdminEmployerPostingHistory = () => {
     });
   }, [jobs, search, jobTitle, status, dateFrom, dateTo, sortBy, companyName]);
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredJobs.length / PAGE_SIZE)
-  );
+  const totalPages = pageSize === "all" ? 1 : Math.max(1, Math.ceil(filteredJobs.length / pageSize));
 
   const currentPage = Math.min(page, totalPages);
-  const paginatedJobs = filteredJobs.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
-
-  const startResult =
-    filteredJobs.length === 0
-      ? 0
-      : (currentPage - 1) * PAGE_SIZE + 1;
-  const endResult = Math.min(
-    currentPage * PAGE_SIZE,
-    filteredJobs.length
-  );
+  const paginatedJobs = pageSize === "all"
+    ? filteredJobs
+    : filteredJobs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   if (loading) {
     return (
@@ -951,44 +939,13 @@ const AdminEmployerPostingHistory = () => {
                   </table>
                 </div>
 
-                <div className="flex flex-col gap-4 border-t border-[#e5e7eb] bg-[#fbfcfe] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm text-black/55">
-                    Showing {startResult} to {endResult} of{" "}
-                    {filteredJobs.length} results
-                  </p>
-
-                  <div className="flex items-center justify-end gap-2">
-                    <button
-                      type="button"
-                      disabled={currentPage === 1}
-                      onClick={() =>
-                        setPage((previous) =>
-                          Math.max(1, previous - 1)
-                        )
-                      }
-                      className="h-10 rounded-xl border border-[#dfe5ec] bg-white px-4 text-sm font-semibold text-black transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-400"
-                    >
-                      Previous
-                    </button>
-
-                    <span className="inline-flex h-10 min-w-10 items-center justify-center rounded-xl bg-[#2e66a6] px-3 text-sm font-bold text-white">
-                      {currentPage}
-                    </span>
-
-                    <button
-                      type="button"
-                      disabled={currentPage === totalPages}
-                      onClick={() =>
-                        setPage((previous) =>
-                          Math.min(totalPages, previous + 1)
-                        )
-                      }
-                      className="h-10 rounded-xl border border-[#dfe5ec] bg-white px-4 text-sm font-semibold text-black transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-400"
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={filteredJobs.length}
+                  pageSize={pageSize}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                />
               </section>
             </>
           )}

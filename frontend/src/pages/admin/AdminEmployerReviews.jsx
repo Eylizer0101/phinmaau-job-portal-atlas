@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
+import Pagination from "../../components/shared/Pagination";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
@@ -92,6 +93,8 @@ const AdminEmployerReviews = () => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     let active = true;
@@ -136,6 +139,12 @@ const AdminEmployerReviews = () => {
     [user]
   );
 
+  const paginatedReviews = useMemo(() => {
+    if (pageSize === "all") return reviews;
+    const start = (currentPage - 1) * pageSize;
+    return reviews.slice(start, start + pageSize);
+  }, [currentPage, pageSize, reviews]);
+
   return (
     <AdminLayout>
       <div className="min-h-screen bg-[#f7f9fc] px-0 py-8">
@@ -172,7 +181,7 @@ const AdminEmployerReviews = () => {
               </div>
             ) : (
               <div className="mt-8 space-y-5">
-                {reviews.map((review, index) => (
+                {paginatedReviews.map((review, index) => (
                   <article
                     key={review?._id || index}
                     className="rounded-2xl border border-[#dfe7f0] bg-white px-5 py-5 shadow-[0_10px_28px_rgba(46,102,166,0.06)] sm:px-6 sm:py-6"
@@ -249,6 +258,13 @@ const AdminEmployerReviews = () => {
                     </div>
                   </article>
                 ))}
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={reviews.length}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                />
               </div>
             )}
           </section>

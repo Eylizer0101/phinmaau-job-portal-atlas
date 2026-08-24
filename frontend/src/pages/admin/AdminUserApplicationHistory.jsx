@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
+import Pagination from "../../components/shared/Pagination";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
@@ -377,6 +378,8 @@ const AdminUserApplicationHistory = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const fetchApplicationHistory = useCallback(async () => {
     try {
@@ -489,6 +492,16 @@ const AdminUserApplicationHistory = () => {
       return searchableText.includes(normalizedQuery);
     });
   }, [activeFilter, preparedApplications, searchQuery]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeFilter, searchQuery]);
+
+  const paginatedApplications = useMemo(() => {
+    if (pageSize === "all") return filteredApplications;
+    const start = (currentPage - 1) * pageSize;
+    return filteredApplications.slice(start, start + pageSize);
+  }, [currentPage, filteredApplications, pageSize]);
 
   if (loading) {
     return (
@@ -607,7 +620,7 @@ const AdminUserApplicationHistory = () => {
 
             {filteredApplications.length ? (
               <div className="mt-5 space-y-4">
-                {filteredApplications.map(
+                {paginatedApplications.map(
                   ({ application, presentation }) => {
                     const job = application.job || {};
                     const employerProfile =
@@ -763,6 +776,13 @@ const AdminUserApplicationHistory = () => {
                 </p>
               </div>
             )}
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredApplications.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+            />
           </section>
         </div>
       </div>

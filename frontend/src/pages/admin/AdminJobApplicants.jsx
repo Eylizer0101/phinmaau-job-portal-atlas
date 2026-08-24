@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import AdminLayout from '../../layouts/AdminLayout';
 import api from '../../services/api';
+import Pagination from '../../components/shared/Pagination';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
@@ -869,9 +870,7 @@ const AdminJobApplicants = () => {
   const [customDateFrom, setCustomDateFrom] = useState('');
   const [customDateTo, setCustomDateTo] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-
-  const ITEMS_PER_PAGE = 6;
-  const MAX_VISIBLE_PAGES = 6;
+  const [pageSize, setPageSize] = useState(10);
 
   const backPath = location.state?.backPath || `/admin/jobs/${jobId}`;
   const backLabel = location.state?.backLabel || 'Job Details';
@@ -1018,10 +1017,7 @@ const AdminJobApplicants = () => {
 
 
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredApplicants.length / ITEMS_PER_PAGE)
-  );
+  const totalPages = pageSize === 'all' ? 1 : Math.max(1, Math.ceil(filteredApplicants.length / pageSize));
 
   useEffect(() => {
     setCurrentPage(1);
@@ -1041,34 +1037,10 @@ const AdminJobApplicants = () => {
   }, [currentPage, totalPages]);
 
   const paginatedApplicants = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredApplicants.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [currentPage, filteredApplicants]);
-
-  const firstShown =
-    filteredApplicants.length === 0
-      ? 0
-      : (currentPage - 1) * ITEMS_PER_PAGE + 1;
-
-  const lastShown = Math.min(
-    currentPage * ITEMS_PER_PAGE,
-    filteredApplicants.length
-  );
-
-  const pageWindowStart =
-    Math.floor((currentPage - 1) / MAX_VISIBLE_PAGES) *
-      MAX_VISIBLE_PAGES +
-    1;
-
-  const visiblePageNumbers = Array.from(
-    {
-      length: Math.min(
-        MAX_VISIBLE_PAGES,
-        totalPages - pageWindowStart + 1
-      ),
-    },
-    (_, index) => pageWindowStart + index
-  );
+    if (pageSize === 'all') return filteredApplicants;
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredApplicants.slice(startIndex, startIndex + pageSize);
+  }, [currentPage, filteredApplicants, pageSize]);
 
   return (
     <AdminLayout>
@@ -1340,53 +1312,13 @@ const AdminJobApplicants = () => {
                   </table>
                 </div>
 
-                <div className="flex flex-col gap-3 border-t border-[#e5e7eb] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs text-[#6b7280]">
-                    Showing {firstShown} to {lastShown} of{' '}
-                    {filteredApplicants.length} results
-                  </p>
-
-                  <div className="flex items-center justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setCurrentPage((page) => Math.max(1, page - 1))
-                      }
-                      disabled={currentPage === 1}
-                      className={`h-9 rounded-lg border border-[#d7e6f5] bg-white px-4 text-xs font-semibold text-[#374151] transition hover:bg-[#eef5fc] disabled:cursor-not-allowed disabled:opacity-45 ${UI.ring}`}
-                    >
-                      Previous
-                    </button>
-
-                    {visiblePageNumbers.map((pageNumber) => (
-                      <button
-                        type="button"
-                        key={pageNumber}
-                        onClick={() => setCurrentPage(pageNumber)}
-                        className={`flex h-9 min-w-9 items-center justify-center rounded-lg border px-3 text-xs font-semibold transition ${
-                          currentPage === pageNumber
-                            ? 'border-[#2e66a6] bg-[#2e66a6] text-white'
-                            : 'border-[#d7e6f5] bg-white text-[#374151] hover:bg-[#eef5fc]'
-                        } ${UI.ring}`}
-                      >
-                        {pageNumber}
-                      </button>
-                    ))}
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setCurrentPage((page) =>
-                          Math.min(totalPages, page + 1)
-                        )
-                      }
-                      disabled={currentPage === totalPages}
-                      className={`h-9 rounded-lg border border-[#d7e6f5] bg-white px-4 text-xs font-semibold text-[#374151] transition hover:bg-[#eef5fc] disabled:cursor-not-allowed disabled:opacity-45 ${UI.ring}`}
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={filteredApplicants.length}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                />
               </>
             )}
           </div>

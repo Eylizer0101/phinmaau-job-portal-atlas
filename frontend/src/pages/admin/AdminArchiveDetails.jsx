@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
+import Pagination from "../../components/shared/Pagination";
 
-const ITEMS_PER_PAGE = 10;
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
 const formatDateInput = (date) => {
@@ -1093,6 +1093,7 @@ const AdminArchiveDetails = () => {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [communityModalRecord, setCommunityModalRecord] = useState(null);
   const [declinedModalRecord, setDeclinedModalRecord] = useState(null);
   const [selectedDeclinedApplicant, setSelectedDeclinedApplicant] = useState(null);
@@ -1248,12 +1249,13 @@ const AdminArchiveDetails = () => {
     );
   }, [filters, isEmployerAccount, isJobseekerAccount, records]);
 
-  const pageCount = Math.max(1, Math.ceil(visibleRecords.length / ITEMS_PER_PAGE));
+  const pageCount = pageSize === "all" ? 1 : Math.max(1, Math.ceil(visibleRecords.length / pageSize));
   const safePage = Math.min(currentPage, pageCount);
   const paginatedRecords = useMemo(() => {
-    const start = (safePage - 1) * ITEMS_PER_PAGE;
-    return visibleRecords.slice(start, start + ITEMS_PER_PAGE);
-  }, [safePage, visibleRecords]);
+    if (pageSize === "all") return visibleRecords;
+    const start = (safePage - 1) * pageSize;
+    return visibleRecords.slice(start, start + pageSize);
+  }, [pageSize, safePage, visibleRecords]);
 
   const handleViewDeclinedApplicant = async (applicant) => {
     const applicationId = applicant?.applicationId || applicant?._id;
@@ -1516,33 +1518,13 @@ const AdminArchiveDetails = () => {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50/40 px-5 py-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-            <span>
-              Showing {visibleRecords.length === 0 ? 0 : (safePage - 1) * ITEMS_PER_PAGE + 1} to{" "}
-              {Math.min(safePage * ITEMS_PER_PAGE, visibleRecords.length)} of {visibleRecords.length} results
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                disabled={safePage <= 1}
-                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                className="h-9 rounded-lg border border-slate-200 bg-white px-3 font-semibold text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Previous
-              </button>
-              <span className="flex h-9 min-w-9 items-center justify-center rounded-lg bg-[#212C61] px-3 font-bold text-white">
-                {safePage}
-              </span>
-              <button
-                type="button"
-                disabled={safePage >= pageCount}
-                onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))}
-                className="h-9 rounded-lg border border-slate-200 bg-white px-3 font-semibold text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Next
-              </button>
-            </div>
-          </div>
+          <Pagination
+            currentPage={safePage}
+            totalItems={visibleRecords.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         </section>
       </main>
 
