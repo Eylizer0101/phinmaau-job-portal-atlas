@@ -137,7 +137,7 @@ exports.createRequest = async (req, res) => {
           message: `${companyName} requested permission to edit “${job.title || 'Untitled Job'}”.`,
           relatedId: job._id,
           relatedModel: 'Job',
-          link: '/admin/employer-job-edit-requests',
+          link: `/admin/employer-job-edit-requests/${request._id}`,
           metadata: {
             requestId: request._id,
             jobId: job._id,

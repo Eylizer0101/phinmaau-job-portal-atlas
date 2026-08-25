@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Bell, Check, Circle, RefreshCw, Trash2, UserRound } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 
 const formatNotificationTime = (value) => {
@@ -21,12 +22,65 @@ const formatNotificationTime = (value) => {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
 
-const getNotificationLink = (notification) => {
-  if (notification?.link) return notification.link;
-  return "";
+const getNotificationId = (value) => {
+  const resolvedValue = value?._id || value;
+  return resolvedValue ? String(resolvedValue) : "";
+};
+
+const getAdminNotificationLink = (notification) => {
+  const metadata = notification?.metadata || {};
+  const type = String(notification?.type || "").toLowerCase();
+  const title = String(notification?.title || "").toLowerCase();
+  const storedLink = String(notification?.link || "").trim();
+  const relatedId = getNotificationId(notification?.relatedId);
+  const relatedModel = String(notification?.relatedModel || "").toLowerCase();
+  const accountType = String(metadata.accountType || metadata.userRole || "").toLowerCase();
+
+  const requestId = getNotificationId(metadata.requestId);
+  if (type === "job_edit_request" || title.includes("job edit request")) {
+    return requestId
+      ? `/admin/employer-job-edit-requests/${requestId}`
+      : storedLink || "/admin/employer-job-edit-requests";
+  }
+
+  const isVerificationNotification =
+    type.includes("verification") ||
+    title.includes("verification") ||
+    metadata.adminCategory === "new_registration";
+
+  if (isVerificationNotification) {
+    const employerId = getNotificationId(
+      metadata.employerId ||
+        (accountType === "employer" ? metadata.subjectUserId || metadata.userId || relatedId : "")
+    );
+    const jobseekerId = getNotificationId(
+      metadata.jobseekerId ||
+        (accountType === "jobseeker" ? metadata.subjectUserId || metadata.userId || relatedId : "")
+    );
+
+    if (employerId || storedLink.includes("/admin/employer-verification/")) {
+      return employerId ? `/admin/employer-verification/${employerId}` : storedLink;
+    }
+    if (jobseekerId || storedLink.includes("/admin/jobseeker-verification/")) {
+      return jobseekerId ? `/admin/jobseeker-verification/${jobseekerId}` : storedLink;
+    }
+  }
+
+  const applicationId = getNotificationId(metadata.applicationId);
+  if (applicationId || relatedModel === "application") {
+    return `/admin/applications/${applicationId || relatedId}`;
+  }
+
+  const jobId = getNotificationId(metadata.jobId);
+  if (metadata.adminCategory === "new_job_posted" || (relatedModel === "job" && type !== "job_edit_request")) {
+    return jobId || relatedId ? `/admin/jobs/${jobId || relatedId}` : storedLink;
+  }
+
+  return storedLink;
 };
 
 const AdminNotificationsPage = () => {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [activeFilter, setActiveFilter] = useState("all");
@@ -110,8 +164,8 @@ const AdminNotificationsPage = () => {
         setUnreadCount((count) => Math.max(count - 1, 0));
       }
 
-      const link = getNotificationLink(notification);
-      if (link) window.location.href = link;
+      const link = getAdminNotificationLink(notification);
+      if (link) navigate(link);
     } catch (error) {
       console.error("Error opening notification:", error);
     }
