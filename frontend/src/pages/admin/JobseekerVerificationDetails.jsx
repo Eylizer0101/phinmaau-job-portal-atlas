@@ -1587,7 +1587,7 @@ const JobseekerVerificationDetails = () => {
                     </div>
 
                     {hasFile ? (
-                      <div className="mt-3 grid grid-cols-3 gap-1.5">
+                      <div className="mt-3 grid grid-cols-2 gap-1.5">
                         <button
                           type="button"
                           onClick={() =>
@@ -1601,20 +1601,6 @@ const JobseekerVerificationDetails = () => {
                           title={`View ${docType.label}`}
                         >
                           <SvgIcon name="eye" className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleDownloadFile(docType.key, fileName)
-                          }
-                          className={cn(
-                            "flex h-8 items-center justify-center rounded border border-black/15 bg-white text-[#2e66a6] hover:bg-[#2e66a6]/10",
-                            UI.ring,
-                          )}
-                          aria-label={`Download ${docType.label}`}
-                          title={`Download ${docType.label}`}
-                        >
-                          <SvgIcon name="download" className="h-4 w-4" />
                         </button>
                         <button
                           type="button"
