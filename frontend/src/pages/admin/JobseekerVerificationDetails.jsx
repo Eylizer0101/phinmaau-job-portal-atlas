@@ -789,10 +789,6 @@ const JobseekerVerificationDetails = () => {
     }
 
     try {
-      previewWindow.document.title = "Loading credential...";
-      previewWindow.document.body.innerHTML =
-        '<p style="font-family: Arial, sans-serif; padding: 24px;">Loading credential...</p>';
-
       const { blob, fileName, contentType } = await fetchDocumentBlob(
         docType,
         "inline",
