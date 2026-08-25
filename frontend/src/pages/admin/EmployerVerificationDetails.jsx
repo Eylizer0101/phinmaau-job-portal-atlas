@@ -1,5 +1,5 @@
 // src/pages/admin/EmployerVerificationDetails.jsx
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import api from "../../services/api";
 import AdminLayout from "../../layouts/AdminLayout";
@@ -384,17 +384,94 @@ const DOC_TYPES = [
 ];
 
 const EMPLOYER_REJECTION_REASONS = [
-  "Unclear document",
-  "Expired business permit",
-  "Business name mismatch",
-  "Invalid registration number",
-  "Suspicious/fake document",
-  "Prohibited business type",
-  "Incomplete submission",
-  "Address mismatch",
-  "Missing required documents",
-  "Others",
+  "Blurry or unreadable document",
+  "Incomplete document",
+  "Incorrect document uploaded",
+  "Information does not match company profile",
+  "Expired credential",
+  "Missing required pages",
+  "Low-quality image",
+  "Other",
 ];
+
+const ReasonDropdown = ({ value, onChange, options, placeholder = "Add a clear reason..." }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!dropdownRef.current?.contains(event.target)) setIsOpen(false);
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setIsOpen(false);
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
+  return (
+    <div ref={dropdownRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen((open) => !open)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        className={cn(
+          "flex h-10 w-full items-center justify-between rounded-lg border bg-white px-3 text-left text-[13px] font-normal leading-5 shadow-sm transition",
+          "border-[#CBD5E1] text-[#475467] hover:border-[#94A3B8]",
+          "focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20",
+          isOpen && "border-[#2e66a6] ring-2 ring-[#2e66a6]/10"
+        )}
+      >
+        <span className={cn("truncate", !value && "text-[#98A2B3]")}>{value || placeholder}</span>
+        <svg
+          className={cn("ml-3 h-4 w-4 shrink-0 text-[#98A2B3] transition-transform", isOpen && "rotate-180")}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+
+      {isOpen ? (
+        <div
+          className="absolute left-0 right-0 top-full z-[80] mt-1 max-h-[220px] overflow-y-auto rounded-lg border border-[#D0D5DD] bg-white py-1 shadow-[0_12px_30px_rgba(15,23,42,0.18)]"
+          role="listbox"
+        >
+          {options.map((option) => (
+            <button
+              key={option}
+              type="button"
+              role="option"
+              aria-selected={value === option}
+              onClick={() => {
+                onChange(option);
+                setIsOpen(false);
+              }}
+              className={cn(
+                "block w-full px-3 py-2 text-left text-[13px] font-normal leading-5 transition",
+                value === option
+                  ? "bg-[#EEF4FB] text-[#245487]"
+                  : "text-[#344054] hover:bg-[#F2F4F7] hover:text-[#1D2939]"
+              )}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+};
 
 // ======================= HELPERS =======================
 const toPublicUrl = (path) => {
@@ -526,6 +603,7 @@ const EmployerVerificationDetails = () => {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [pendingCredentialAction, setPendingCredentialAction] = useState(null);
   const [holdDocTypes, setHoldDocTypes] = useState([]);
+  const [holdSelectedReason, setHoldSelectedReason] = useState("");
   const [holdReason, setHoldReason] = useState("");
 
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -595,6 +673,7 @@ const EmployerVerificationDetails = () => {
   const resetHoldModal = () => {
     setShowHoldModal(false);
     setHoldDocTypes([]);
+    setHoldSelectedReason("");
     setHoldReason("");
   };
 
@@ -602,12 +681,6 @@ const EmployerVerificationDetails = () => {
     setShowRejectModal(false);
     setRejectionReasons([]);
     setRejectionMessage("");
-  };
-
-  const toggleRejectReason = (reason) => {
-    setRejectionReasons((prev) =>
-      prev.includes(reason) ? prev.filter((item) => item !== reason) : [...prev, reason]
-    );
   };
 
   const toggleHoldDocType = (docKey) => {
@@ -659,7 +732,8 @@ const EmployerVerificationDetails = () => {
   };
 
   const handleRejectSubmit = async () => {
-    const finalRejectionMessage = rejectionMessage.trim() || DEFAULT_REJECTION_MESSAGE;
+    const finalRejectionMessage =
+      rejectionMessage.trim() || rejectionReasons[0] || DEFAULT_REJECTION_MESSAGE;
 
     try {
       setAction("reject");
@@ -693,10 +767,14 @@ const EmployerVerificationDetails = () => {
       return;
     }
 
-    if (!holdReason.trim()) {
-      setError("Please provide the reason/message for hold.");
+    if (!holdSelectedReason && !holdReason.trim()) {
+      setError("Please select a reason or write a message for the employer.");
       return;
     }
+
+    const finalHoldMessage = [holdSelectedReason, holdReason.trim()]
+      .filter(Boolean)
+      .join(" — ");
 
     try {
       setAction("hold");
@@ -706,7 +784,7 @@ const EmployerVerificationDetails = () => {
       const res = await api.put(`/admin/employers/verification/${employerId}/hold`, {
         docType: holdDocTypes[0],
         docTypes: holdDocTypes,
-        reasonMessage: holdReason.trim(),
+        reasonMessage: finalHoldMessage,
       });
 
       if (res.data?.success) {
@@ -1337,37 +1415,59 @@ const EmployerVerificationDetails = () => {
             <div className="fixed inset-0 bg-black/45 backdrop-blur-[1px]" onClick={() => !action && resetHoldModal()} aria-hidden="true" />
 
             <div
-              className="relative w-full max-w-2xl rounded-[24px] bg-[#F8FAFC] border border-[#D8E0EA] shadow-[0_18px_50px_rgba(15,23,42,0.18)] overflow-hidden"
+              className="relative w-full max-w-[480px] overflow-visible rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="hold-modal-title"
             >
-              <div className="max-h-[75vh] overflow-y-auto px-6 pt-6 pb-5 sm:px-7">
+              <button
+                type="button"
+                onClick={() => !action && resetHoldModal()}
+                disabled={!!action}
+                className="absolute right-4 top-4 z-10 rounded p-1 text-[#667085] hover:bg-black/5"
+                aria-label="Close resubmission modal"
+              >
+                <SvgIcon name="x" className="h-4 w-4" />
+              </button>
+
+              <div className="max-h-[82vh] overflow-y-auto px-5 pb-4 pt-5 sm:px-6">
                 <div className="max-w-2xl">
-                  <h3 id="hold-modal-title" className="text-[24px] sm:text-[28px] leading-tight font-bold tracking-[-0.02em] text-black">
-                    Request Credentials Resubmission
-                  </h3>
+                  <div className="flex items-start gap-3 pr-6">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EEF6FF] text-[#2e66a6]">
+                      <SvgIcon name="pause" className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 id="hold-modal-title" className="text-xl font-bold leading-tight tracking-[-0.02em] text-black">
+                        Request Resubmission
+                      </h3>
+                      <p className="mt-2 text-sm leading-5 text-[#667085]">
+                        Select the documents that need to be resubmitted and choose at least one reason or write a message for{" "}
+                        <span className="font-bold text-black">{companyName}</span>.
+                      </p>
+                    </div>
+                  </div>
 
-                  <p className="mt-2 text-[14px] sm:text-[15px] leading-6 text-[#475467]">
-                    Select all the document to be resubmitted and provide the message that will be sent to{" "}
-                    <span className="font-bold">{companyName}</span>
-                  </p>
-
-                  <div className="mt-8">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="mt-5">
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#475467]">Documents needed</p>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {DOC_TYPES.map((doc) => {
                         const checked = holdDocTypes.includes(doc.key);
 
                         return (
                           <label
                             key={doc.key}
-                            className="flex min-h-11 items-center gap-3 rounded-2xl border border-[#D8E0EA] bg-white/85 px-3 py-2 cursor-pointer select-none transition hover:border-[#2e66a6]/30 hover:bg-[#2e66a6]/[0.04]"
+                            className={cn(
+                              "flex min-h-9 cursor-pointer select-none items-center gap-3 rounded-lg border px-3 py-2 transition",
+                              checked
+                                ? "border-[#2e66a6]/50 bg-[#2e66a6]/[0.08]"
+                                : "border-[#D8E0EA] bg-white/85 hover:border-[#2e66a6]/30 hover:bg-[#2e66a6]/[0.04]"
+                            )}
                           >
                             <input
                               type="checkbox"
                               checked={checked}
                               onChange={() => toggleHoldDocType(doc.key)}
-                              className="h-5 w-5 rounded-md border border-[#94A3B8] text-[#2e66a6] focus:ring-[#2e66a6] focus:ring-2"
+                              className="h-4 w-4 rounded border border-[#94A3B8] text-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]"
                             />
                             <span className="text-sm sm:text-[15px] font-medium text-black/75">{doc.label}</span>
                           </label>
@@ -1376,18 +1476,29 @@ const EmployerVerificationDetails = () => {
                     </div>
                   </div>
 
-                  <div className="mt-8">
-                    <label className="block text-sm font-semibold text-[#111827] mb-3">Message to User</label>
+                  <div className="mt-4">
+                    <label className="mb-1 block text-xs font-medium text-[#475467]">
+                      Reason for Resubmission (Select at least one reason) <span className="text-[#667085]">(Optional)</span>
+                    </label>
+                    <ReasonDropdown
+                      value={holdSelectedReason}
+                      onChange={setHoldSelectedReason}
+                      options={EMPLOYER_REJECTION_REASONS}
+                    />
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="mb-1 block text-sm font-semibold text-black">Message to {companyName}</label>
                     <textarea
                       value={holdReason}
                       onChange={(e) => setHoldReason(e.target.value)}
                       rows={4}
-                      placeholder="Description"
-                      className="w-full resize-none rounded-2xl border border-[#CBD5E1] bg-white/90 px-4 py-3 text-sm leading-6 text-black placeholder:text-black/35 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/30"
+                      placeholder="Explain what needs to be corrected or re-uploaded."
+                      className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm leading-5 text-black placeholder:text-black/35 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
                     />
                   </div>
 
-                  {(!holdDocTypes.length || !holdReason.trim()) && (
+                  {(!holdDocTypes.length || (!holdSelectedReason && !holdReason.trim())) && (
                     <p className="mt-5 text-sm text-[#98A2B3]">
                       Please complete the required fields before sending the resubmit link.
                     </p>
@@ -1395,12 +1506,12 @@ const EmployerVerificationDetails = () => {
                 </div>
               </div>
 
-              <div className="border-t border-[#D8E0EA] bg-[#EEF2F6] px-6 py-4 sm:px-7">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="border-t border-[#D8E0EA] bg-[#F8FAFC] px-5 py-3 sm:px-6">
+                <div className="flex justify-end gap-2">
                   <Button
                     variant="secondary"
                     size="lg"
-                    className="w-full !h-11 rounded-[14px] text-sm border-[#CBD5E1]"
+                    className="!h-10 rounded-lg border-[#CBD5E1] px-5 text-sm"
                     onClick={resetHoldModal}
                     disabled={!!action}
                   >
@@ -1410,9 +1521,9 @@ const EmployerVerificationDetails = () => {
                   <Button
                     variant="primary"
                     size="lg"
-                    className="w-full !h-11 rounded-[14px] text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
+                    className="!h-10 rounded-lg px-5 text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
                     onClick={handleHoldSubmit}
-                    disabled={!holdDocTypes.length || !holdReason.trim() || !!action}
+                    disabled={!holdDocTypes.length || (!holdSelectedReason && !holdReason.trim()) || !!action}
                     loading={action === "hold"}
                   >
                     Send
@@ -1434,51 +1545,68 @@ const EmployerVerificationDetails = () => {
             />
 
             <div
-              className="relative w-full max-w-xl rounded-[24px] bg-[#F8FAFC] border border-[#D8E0EA] shadow-[0_18px_50px_rgba(15,23,42,0.18)] overflow-hidden"
+              className="relative w-full max-w-[430px] overflow-visible rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="decline-modal-title"
             >
-              <div className="px-6 pt-6 pb-5 sm:px-7">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#EEF4FB] text-[#2e66a6]">
-                    <SvgIcon name="warning" className="w-6 h-6 text-[#2e66a6]" />
+              <button
+                type="button"
+                onClick={() => !action && resetRejectModal()}
+                disabled={action === "reject"}
+                className="absolute right-4 top-4 z-10 rounded p-1 text-[#667085] hover:bg-black/5"
+                aria-label="Close decline modal"
+              >
+                <SvgIcon name="x" className="h-4 w-4" />
+              </button>
+
+              <div className="px-5 pb-4 pt-5 sm:px-6">
+                <div className="flex items-start gap-3 pr-6">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
+                    <SvgIcon name="warning" className="h-5 w-5" />
                   </div>
 
                   <div className="min-w-0">
-                    <h3 id="decline-modal-title" className="text-[24px] sm:text-[28px] leading-tight font-bold tracking-[-0.02em] text-black">
-                      Declined Verification
+                    <h3 id="decline-modal-title" className="text-xl font-bold leading-tight tracking-[-0.02em] text-black">
+                      Decline Verification
                     </h3>
-                    <p className="mt-2 text-[14px] sm:text-[15px] leading-6 text-[#475467]">
+                    <p className="mt-2 text-sm leading-5 text-[#667085]">
                       Are you sure you want to decline <span className="font-bold">{companyName}</span>? This action will notify{" "}
                       <span className="font-bold">{companyName}</span> that they do not meet the AU partner requirements.
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-6">
-                  <label className="block text-sm font-semibold text-black mb-2">
-                    Message to User
+                <div className="mt-5">
+                  <label className="mb-1 block text-xs font-medium leading-5 text-[#475467]">
+                    Reason for Declining <span className="font-semibold text-black">{companyName}</span>{" "}
+                    (Select at least one reason) <span className="text-[#667085]">(Optional)</span>
                   </label>
+                  <ReasonDropdown
+                    value={rejectionReasons[0] || ""}
+                    onChange={(reason) => setRejectionReasons([reason])}
+                    options={EMPLOYER_REJECTION_REASONS}
+                  />
+                </div>
+
+                <div className="mt-4">
+                  <label className="mb-1 block text-sm font-semibold text-black">Message to {companyName}</label>
                   <textarea
                     value={rejectionMessage}
                     onChange={(e) => setRejectionMessage(e.target.value)}
                     rows={4}
-                    placeholder="Description"
-                    className="w-full resize-none rounded-2xl border border-[#CBD5E1] bg-white/90 px-4 py-3 text-sm leading-6 text-black placeholder:text-black/35 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/30"
+                    placeholder="Add a clear reason why the company was not verified and what the employer needs to do next."
+                    className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm leading-5 text-black placeholder:text-black/45 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
                   />
-                  <p className="mt-3 text-[12px] text-[#98A2B3]">
-                    The candidate will receive this message in their notification portal. If left blank, a default rejection message will be used.
-                  </p>
                 </div>
               </div>
 
-              <div className="border-t border-[#E2E8F0] bg-[#F8FAFC] px-6 py-5 sm:px-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="border-t border-[#E2E8F0] bg-[#F8FAFC] px-5 py-3 sm:px-6">
+                <div className="flex justify-end gap-2">
                   <Button
                     variant="secondary"
                     size="lg"
-                    className="w-full !h-11 rounded-[14px] text-sm"
+                    className="!h-10 rounded-lg border-[#CBD5E1] px-5 text-sm"
                     onClick={resetRejectModal}
                     disabled={action === "reject"}
                   >
@@ -1488,12 +1616,12 @@ const EmployerVerificationDetails = () => {
                   <Button
                     variant="primary"
                     size="lg"
-                    className="w-full !h-11 rounded-[14px] text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
+                    className="!h-10 rounded-lg px-5 text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
                     onClick={handleRejectSubmit}
                     disabled={action === "reject"}
                     loading={action === "reject"}
                   >
-                    Confirm
+                    Decline
                   </Button>
                 </div>
               </div>
