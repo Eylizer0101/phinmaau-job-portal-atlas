@@ -340,6 +340,27 @@ const detectDocumentExtensionFromBuffer = (buffer) => {
   return '';
 };
 
+const DOCUMENT_MIME_TYPE_BY_EXTENSION = {
+  pdf: 'application/pdf',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  gif: 'image/gif',
+  webp: 'image/webp',
+};
+
+const resolveDocumentContentType = ({ upstreamContentType, doc, buffer }) => {
+  const detectedExtension = detectDocumentExtensionFromBuffer(buffer);
+  if (detectedExtension && DOCUMENT_MIME_TYPE_BY_EXTENSION[detectedExtension]) {
+    return DOCUMENT_MIME_TYPE_BY_EXTENSION[detectedExtension];
+  }
+
+  const storedMimeType = String(doc?.mimeType || '').split(';')[0].trim().toLowerCase();
+  if (storedMimeType && storedMimeType !== 'application/octet-stream') return storedMimeType;
+
+  const cleanUpstreamContentType = String(upstreamContentType || '').split(';')[0].trim().toLowerCase();
+  return cleanUpstreamContentType || 'application/octet-stream';
+};
+
 const ensureDocumentFileExtension = ({ fileName, contentType, doc, buffer }) => {
   const safeFileName = toSafeDownloadName(fileName);
 
@@ -544,18 +565,29 @@ const streamVerificationDocument = async (req, res, userRole) => {
 
     const arrayBuffer = await fileResponse.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    const contentType = fileResponse.headers.get('content-type') || doc.mimeType || 'application/octet-stream';
+    const contentType = resolveDocumentContentType({
+      upstreamContentType: fileResponse.headers.get('content-type'),
+      doc,
+      buffer,
+    });
     const fallbackName = `${docType}-${user._id}`;
     const filename = ensureDocumentFileExtension({
-      fileName: getFileNameFromDocumentUrl(doc.url, fallbackName),
+      fileName: String(doc.filename || '').trim() || getFileNameFromDocumentUrl(doc.url, fallbackName),
       contentType,
       doc,
       buffer,
     });
 
+    const asciiFilename = filename.replace(/[^\x20-\x7E]/g, '_').replace(/["\\]/g, '_');
+    const encodedFilename = encodeURIComponent(filename);
+
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Length', buffer.length);
-    res.setHeader('Content-Disposition', `${disposition}; filename="${filename}"`);
+    res.setHeader(
+      'Content-Disposition',
+      `${disposition}; filename="${asciiFilename}"; filename*=UTF-8''${encodedFilename}`
+    );
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Cache-Control', 'private, max-age=300');
 
     return res.send(buffer);

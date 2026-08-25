@@ -670,19 +670,42 @@ const JobseekerVerificationDetails = () => {
   const getDownloadFileName = (
     contentDisposition,
     fallbackName = "document",
+    contentType = "",
   ) => {
     const disposition = String(contentDisposition || "");
     const utfMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
     const normalMatch = disposition.match(/filename="?([^";]+)"?/i);
 
+    const extensionByContentType = {
+      "application/pdf": "pdf",
+      "image/png": "png",
+      "image/jpeg": "jpg",
+      "image/jpg": "jpg",
+      "image/gif": "gif",
+      "image/webp": "webp",
+    };
+
+    const ensureExtension = (fileName) => {
+      const cleanFileName = String(fileName || fallbackName).trim() || fallbackName;
+      if (/\.[a-z0-9]{1,10}$/i.test(cleanFileName)) return cleanFileName;
+
+      const cleanContentType = String(contentType || "")
+        .split(";")[0]
+        .trim()
+        .toLowerCase();
+      const extension = extensionByContentType[cleanContentType];
+
+      return extension ? `${cleanFileName}.${extension}` : cleanFileName;
+    };
+
     try {
-      if (utfMatch?.[1]) return decodeURIComponent(utfMatch[1]);
-      if (normalMatch?.[1]) return normalMatch[1];
+      if (utfMatch?.[1]) return ensureExtension(decodeURIComponent(utfMatch[1]));
+      if (normalMatch?.[1]) return ensureExtension(normalMatch[1]);
     } catch {
-      return fallbackName;
+      return ensureExtension(fallbackName);
     }
 
-    return fallbackName;
+    return ensureExtension(fallbackName);
   };
 
   const fetchDocumentBlob = async (
@@ -706,6 +729,7 @@ const JobseekerVerificationDetails = () => {
     const fileName = getDownloadFileName(
       response.headers?.["content-disposition"],
       docType,
+      contentType,
     );
     const blob = new Blob([response.data], { type: contentType });
 
@@ -749,7 +773,7 @@ const JobseekerVerificationDetails = () => {
     downloadLink.click();
     downloadLink.remove();
 
-    window.URL.revokeObjectURL(blobUrl);
+    window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
   };
 
   const confirmCredentialAccess = async () => {
