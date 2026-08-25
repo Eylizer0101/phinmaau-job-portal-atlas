@@ -63,6 +63,42 @@ const TextInput = ({ label, className = '', ...props }) => (
   </label>
 );
 
+const PasswordInput = ({ visible, onToggle, ...props }) => (
+  <div className="relative">
+    <input
+      {...props}
+      type={visible ? 'text' : 'password'}
+      className={cx(
+        'h-11 w-full rounded-xl border border-[#d8e2ee] bg-white px-4 pr-12 text-sm text-black outline-none transition placeholder:text-black/40 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20',
+        focusRing
+      )}
+    />
+    <button
+      type="button"
+      onClick={onToggle}
+      className={cx(
+        'absolute inset-y-0 right-0 inline-flex w-11 items-center justify-center rounded-r-xl text-black/50 transition hover:text-[#2e66a6]',
+        focusRing
+      )}
+      aria-label={visible ? 'Hide password' : 'Show password'}
+      title={visible ? 'Hide password' : 'Show password'}
+    >
+      {visible ? (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10.6 10.7a2 2 0 002.7 2.7" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9.9 4.3A10.8 10.8 0 0112 4c5.2 0 9 5 9 5a15 15 0 01-3.1 3.6M6.2 6.2C4.2 7.5 3 9 3 9s3.8 5 9 5c1 0 2-.2 2.9-.5" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 12s3.8-5 9-5 9 5 9 5-3.8 5-9 5-9-5-9-5z" />
+          <circle cx="12" cy="12" r="2.5" />
+        </svg>
+      )}
+    </button>
+  </div>
+);
+
 const SelectInput = ({ label, className = '', children, ...props }) => (
   <label className={cx('block', className)}>
     <span className="mb-2 block text-xs font-semibold text-black/65">{label}</span>
@@ -141,6 +177,7 @@ const Settings = () => {
   const [emailForm, setEmailForm] = useState({ currentEmail: '', currentPassword: '', newEmail: '', verificationCode: '', pendingEmail: '' });
   const [phoneForm, setPhoneForm] = useState({ mobileNumber: '', newMobileNumber: '', verificationCode: '', pendingPhoneNumber: '' });
   const [passwordForm, setPasswordForm] = useState({ oldPassword: '', newPassword: '', retypeNewPassword: '' });
+  const [passwordVisibility, setPasswordVisibility] = useState({ old: false, new: false, retype: false });
 
   const passwordRequirements = [
     { label: 'At least 8 characters', met: passwordForm.newPassword.length >= 8 },
@@ -441,6 +478,7 @@ const Settings = () => {
 
       refreshUserCache(data?.user);
       setPasswordForm({ oldPassword: '', newPassword: '', retypeNewPassword: '' });
+      setPasswordVisibility({ old: false, new: false, retype: false });
       showMessage('password', data?.message || 'Password changed successfully.');
     } catch (error) {
       showMessage('password', error.response?.data?.message || 'Unable to change password.', 'error');
@@ -655,24 +693,26 @@ const Settings = () => {
 
                   <div className="grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-[180px_1fr] sm:items-center">
                     <label className="text-sm text-black/70">Old Password:</label>
-                    <TextInput
-                      label=""
-                      type="password"
+                    <PasswordInput
+                      visible={passwordVisibility.old}
+                      onToggle={() => setPasswordVisibility((prev) => ({ ...prev, old: !prev.old }))}
                       value={passwordForm.oldPassword}
                       onChange={(e) => setPasswordForm((prev) => ({ ...prev, oldPassword: e.target.value }))}
+                      autoComplete="current-password"
                     />
 
                     <label className="text-sm text-black/70">New Password:</label>
                     <div>
-                      <TextInput
-                        label=""
-                        type="password"
+                      <PasswordInput
+                        visible={passwordVisibility.new}
+                        onToggle={() => setPasswordVisibility((prev) => ({ ...prev, new: !prev.new }))}
                         value={passwordForm.newPassword}
                         onChange={(e) => {
                           setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }));
                           if (messages.password) clearMessage('password');
                         }}
                         aria-describedby="new-password-requirements"
+                        autoComplete="new-password"
                       />
 
                       {passwordForm.newPassword ? (
@@ -719,11 +759,12 @@ const Settings = () => {
                     </div>
 
                     <label className="text-sm text-black/70">Retype New Password:</label>
-                    <TextInput
-                      label=""
-                      type="password"
+                    <PasswordInput
+                      visible={passwordVisibility.retype}
+                      onToggle={() => setPasswordVisibility((prev) => ({ ...prev, retype: !prev.retype }))}
                       value={passwordForm.retypeNewPassword}
                       onChange={(e) => setPasswordForm((prev) => ({ ...prev, retypeNewPassword: e.target.value }))}
+                      autoComplete="new-password"
                     />
                   </div>
                 </div>
