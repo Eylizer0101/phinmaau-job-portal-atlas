@@ -752,10 +752,95 @@ const JobseekerVerificationDetails = () => {
   };
 
   const performViewFile = async (docType, password) => {
-    const { blob } = await fetchDocumentBlob(docType, "inline", password);
-    const blobUrl = window.URL.createObjectURL(blob);
-    window.open(blobUrl, "_blank", "noopener,noreferrer");
-    window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
+    const previewWindow = window.open("", "_blank");
+
+    if (!previewWindow) {
+      throw new Error("Please allow pop-ups to view this credential.");
+    }
+
+    try {
+      previewWindow.document.title = "Loading credential...";
+      previewWindow.document.body.innerHTML =
+        '<p style="font-family: Arial, sans-serif; padding: 24px;">Loading credential...</p>';
+
+      const { blob, fileName } = await fetchDocumentBlob(
+        docType,
+        "inline",
+        password,
+      );
+      const blobUrl = window.URL.createObjectURL(blob);
+      const previewDocument = previewWindow.document;
+
+      previewDocument.title = fileName || docType;
+      previewDocument.body.innerHTML = "";
+      previewDocument.body.style.margin = "0";
+      previewDocument.body.style.background = "#f1f5f9";
+      previewDocument.body.style.fontFamily = "Arial, sans-serif";
+
+      const toolbar = previewDocument.createElement("div");
+      toolbar.style.display = "flex";
+      toolbar.style.alignItems = "center";
+      toolbar.style.justifyContent = "space-between";
+      toolbar.style.gap = "16px";
+      toolbar.style.padding = "12px 18px";
+      toolbar.style.background = "#ffffff";
+      toolbar.style.borderBottom = "1px solid #cbd5e1";
+
+      const title = previewDocument.createElement("strong");
+      title.textContent = fileName || docType;
+      title.style.overflow = "hidden";
+      title.style.textOverflow = "ellipsis";
+      title.style.whiteSpace = "nowrap";
+
+      const downloadButton = previewDocument.createElement("a");
+      downloadButton.href = blobUrl;
+      downloadButton.download = fileName || docType;
+      downloadButton.textContent = "Download";
+      downloadButton.style.flexShrink = "0";
+      downloadButton.style.padding = "9px 16px";
+      downloadButton.style.borderRadius = "8px";
+      downloadButton.style.background = "#2e66a6";
+      downloadButton.style.color = "#ffffff";
+      downloadButton.style.fontSize = "14px";
+      downloadButton.style.fontWeight = "700";
+      downloadButton.style.textDecoration = "none";
+
+      toolbar.appendChild(title);
+      toolbar.appendChild(downloadButton);
+      previewDocument.body.appendChild(toolbar);
+
+      const contentType = String(blob.type || "").toLowerCase();
+      if (contentType.startsWith("image/")) {
+        const image = previewDocument.createElement("img");
+        image.src = blobUrl;
+        image.alt = fileName || docType;
+        image.style.display = "block";
+        image.style.maxWidth = "calc(100% - 32px)";
+        image.style.maxHeight = "calc(100vh - 90px)";
+        image.style.margin = "16px auto";
+        image.style.objectFit = "contain";
+        previewDocument.body.appendChild(image);
+      } else {
+        const frame = previewDocument.createElement("iframe");
+        frame.src = blobUrl;
+        frame.title = fileName || docType;
+        frame.style.display = "block";
+        frame.style.width = "100%";
+        frame.style.height = "calc(100vh - 62px)";
+        frame.style.border = "0";
+        previewDocument.body.appendChild(frame);
+      }
+
+      previewWindow.addEventListener(
+        "beforeunload",
+        () => window.URL.revokeObjectURL(blobUrl),
+        { once: true },
+      );
+      window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 10 * 60 * 1000);
+    } catch (viewError) {
+      previewWindow.close();
+      throw viewError;
+    }
   };
 
   const performDownloadFile = async (docType, fallbackName, password) => {
@@ -818,7 +903,10 @@ const JobseekerVerificationDetails = () => {
           serverMessage = "";
         }
       } else {
-        serverMessage = credentialError.response?.data?.message || "";
+        serverMessage =
+          credentialError.response?.data?.message ||
+          credentialError.message ||
+          "";
       }
 
       if (credentialError.response?.status === 401) {
@@ -1499,7 +1587,7 @@ const JobseekerVerificationDetails = () => {
                     </div>
 
                     {hasFile ? (
-                      <div className="mt-3 grid grid-cols-2 gap-1.5">
+                      <div className="mt-3 grid grid-cols-3 gap-1.5">
                         <button
                           type="button"
                           onClick={() =>
@@ -1513,6 +1601,20 @@ const JobseekerVerificationDetails = () => {
                           title={`View ${docType.label}`}
                         >
                           <SvgIcon name="eye" className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleDownloadFile(docType.key, fileName)
+                          }
+                          className={cn(
+                            "flex h-8 items-center justify-center rounded border border-black/15 bg-white text-[#2e66a6] hover:bg-[#2e66a6]/10",
+                            UI.ring,
+                          )}
+                          aria-label={`Download ${docType.label}`}
+                          title={`Download ${docType.label}`}
+                        >
+                          <SvgIcon name="download" className="h-4 w-4" />
                         </button>
                         <button
                           type="button"
