@@ -4,15 +4,16 @@ import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
 
 const UI = {
-  page: "min-h-screen bg-[#f8fafc] px-0 py-8",
-  card: "w-full overflow-hidden rounded-[24px] border border-gray-200 bg-white shadow-sm",
-  sectionCard: "w-full rounded-[22px] border border-gray-200 bg-white shadow-sm",
-  metricCard: "rounded-[22px] border border-gray-200 bg-white px-5 py-5 shadow-sm",
-  label: "text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500",
-  value: "mt-1.5 text-sm font-bold leading-6 text-black",
+  page: "min-h-screen bg-[#f8fafc]",
+  card: "w-full rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]",
+  sectionCard: "w-full rounded-xl border border-[#e5e7eb] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]",
+  metricCard: "h-full min-h-[96px] rounded-xl border border-[#d9e2ec] bg-white px-4 py-4 shadow-[0_4px_14px_rgba(15,23,42,0.08)]",
+  label: "text-[11px] font-semibold uppercase tracking-[0.03em] text-[#6b7280]",
+  value: "mt-1.5 text-[15px] font-semibold leading-6 text-[#111827]",
+  title: "text-[15px] font-semibold text-[#111827]",
   chip: "inline-flex items-center gap-2 rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#2e66a6]",
-  skillChip: "rounded-xl border border-[#d7e6f5] bg-[#eef5fc] px-3 py-2 text-xs font-semibold text-[#2e66a6]",
-  ring: "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2",
+  skillChip: "rounded-xl border border-[#d7e6f5] bg-[#f8fafc] px-3 py-2 text-xs font-medium text-[#374151]",
+  ring: "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 focus-visible:ring-offset-white",
 };
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
@@ -166,16 +167,16 @@ const Icon = ({ name, className = "h-4 w-4", ...props }) => {
   const icons = {
     arrowLeft: <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />,
     building: <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M6 21V5a2 2 0 012-2h8a2 2 0 012 2v16M9 7h.01M9 11h.01M9 15h.01M12 7h.01M12 11h.01M12 15h.01M15 7h.01M15 11h.01M15 15h.01" />,
-    briefcase: <><path strokeLinecap="round" strokeLinejoin="round" d="M10 6V5a2 2 0 012-2h0a2 2 0 012 2v1m-9 0h10a2 2 0 012 2v10a2 2 0 01-2 2H7a2 2 0 01-2-2V8a2 2 0 012-2z" /><path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" /></>,
-    mapPin: <><path strokeLinecap="round" strokeLinejoin="round" d="M12 21s7-5.1 7-11a7 7 0 10-14 0c0 5.9 7 11 7 11z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 10.5h.01" /></>,
-    calendar: <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3M5 11h14M6 5h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2z" />,
+    briefcase: <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m-3 0h14a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M3 13h18" /></>,
+    mapPin: <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M12 21s7-4.438 7-11a7 7 0 10-14 0c0 6.562 7 11 7 11z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M12 10a2 2 0 100-4 2 2 0 000 4z" /></>,
+    calendar: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />,
     money: <><path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5A1.5 1.5 0 014.5 6h15A1.5 1.5 0 0121 7.5v9A1.5 1.5 0 0119.5 18h-15A1.5 1.5 0 013 16.5v-9z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 9.25v5.5M14.25 10.5c0-.69-1.007-1.25-2.25-1.25s-2.25.56-2.25 1.25 1.007 1.25 2.25 1.25 2.25.56 2.25 1.25-1.007 1.25-2.25 1.25-2.25-.56-2.25-1.25" /></>,
     clock: <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />,
-    graduation: <><path strokeLinecap="round" strokeLinejoin="round" d="M12 4L3 9l9 5 9-5-9-5z" /><path strokeLinecap="round" strokeLinejoin="round" d="M5 11v5c2 2 12 2 14 0v-5" /></>,
+    graduation: <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M12 14l9-5-9-5-9 5 9 5z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M6 12v5c0 1.657 2.686 3 6 3s6-1.343 6-3v-5" /></>,
     file: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />,
     tools: <path strokeLinecap="round" strokeLinejoin="round" d="M14.7 6.3a4 4 0 01-5.657 5.657l-5.04 5.04a2 2 0 102.829 2.828l5.04-5.04A4 4 0 0114.7 6.3zM19 7l-3 3" />,
     user: <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM5 21a7 7 0 0114 0" />,
-    users: <><path strokeLinecap="round" strokeLinejoin="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path strokeLinecap="round" strokeLinejoin="round" d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" /></>,
+    users: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M17 20h5v-1a4 4 0 00-4-4h-1M9 20H2v-1a4 4 0 014-4h1m7-4a4 4 0 10-8 0 4 4 0 008 0zm8 2a3 3 0 10-6 0 3 3 0 006 0z" />,
     external: <><path strokeLinecap="round" strokeLinejoin="round" d="M14 3h7v7" /><path strokeLinecap="round" strokeLinejoin="round" d="M10 14L21 3" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 14v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6" /></>,
   };
 
@@ -426,7 +427,7 @@ const CompanyLogo = ({ src, name }) => {
   const initial = String(name || "C").charAt(0).toUpperCase();
 
   return (
-    <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-[#eef5fc] text-xl font-bold text-[#2e66a6] shadow-sm">
+    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#d9dbe3] bg-white text-lg font-bold text-[#374151] sm:h-16 sm:w-16 sm:text-xl">
       {url ? <img src={url} alt={name || "Company"} className="h-full w-full object-cover" /> : initial}
     </div>
   );
@@ -434,20 +435,20 @@ const CompanyLogo = ({ src, name }) => {
 
 const SectionHeader = ({ icon, title, subtitle }) => (
   <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-    <div className="flex items-center gap-2 text-black">
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#eef5fc] text-[#2e66a6]">
+    <div className="flex items-center gap-2">
+      <span className="text-[#374151]">
         <Icon name={icon} className="h-4 w-4" />
       </span>
-      <h2 className="text-base font-bold tracking-[-0.01em]">{title}</h2>
+      <h2 className={UI.title}>{title}</h2>
     </div>
     {subtitle ? <p className="text-xs font-medium text-slate-500">{subtitle}</p> : null}
   </div>
 );
 
 const MetricCard = ({ icon, title, value }) => (
-  <div className={UI.metricCard}>
-    <div className="flex items-start gap-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#eef5fc] text-[#2e66a6]">
+  <div className={`${UI.metricCard} min-w-0`}>
+    <div className="flex h-full min-w-0 items-start gap-3">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#d9dbe3] bg-[#f9fafb] text-[#6b7280]">
         <Icon name={icon} className="h-4 w-4" />
       </div>
       <div className="min-w-0">
@@ -545,6 +546,13 @@ const AdminApplicationView = () => {
     "N/A";
 
   const companyWebsiteUrl = normalizeWebsiteUrl(companyWebsite);
+  const companyCoverPhoto = job.coverPhoto || job.companyCoverPhoto || employerProfile.coverPhoto || employerProfile.companyCoverPhoto || "";
+  const apiHost = (process.env.REACT_APP_API_URL || "https://phinmaau-job-portal-atlas.onrender.com/api").replace(/\/api\/?$/, "");
+  const companyCoverUrl = companyCoverPhoto
+    ? (/^https?:\/\//i.test(companyCoverPhoto)
+        ? companyCoverPhoto
+        : `${apiHost}${companyCoverPhoto.startsWith("/") ? companyCoverPhoto : `/${companyCoverPhoto}`}`)
+    : "/images/jobback.png";
 
   if (loading) return <LoadingState />;
 
@@ -585,8 +593,16 @@ const AdminApplicationView = () => {
           </div>
 
           <section className={`${UI.card} mb-5 overflow-hidden`}>
-            <div className="relative h-[85px] w-full overflow-hidden sm:h-[105px]">
-              <img src="/images/jobback.png" alt="Application details banner" className="h-full w-full object-cover" />
+            <div className="relative h-[120px] w-full overflow-hidden sm:h-[145px]">
+              <img
+                src={companyCoverUrl}
+                alt={`${companyName} cover`}
+                className="h-full w-full object-cover"
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = "/images/jobback.png";
+                }}
+              />
               <div className="absolute inset-0 bg-black/10" />
             </div>
 
@@ -705,9 +721,9 @@ const AdminApplicationView = () => {
             </section>
           </div>
 
-          <div className="mb-5 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.1fr)_340px]">
+          <div className="mb-5 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
             <section className={`${UI.sectionCard} p-5 sm:p-6`}>
-              <SectionHeader icon="briefcase" title="Required Skills" subtitle={`${requiredSkills.length} item${requiredSkills.length === 1 ? "" : "s"}`} />
+              <SectionHeader icon="tools" title="Required Skills" subtitle={`${requiredSkills.length} item${requiredSkills.length === 1 ? "" : "s"}`} />
               <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {requiredSkills.length ? (
                   requiredSkills.map((skill, index) => (
@@ -722,10 +738,13 @@ const AdminApplicationView = () => {
             </section>
 
             <section className={`${UI.sectionCard} overflow-hidden`}>
-              <div className="overflow-hidden rounded-t-[22px]">
-                <StaticLocationMap job={job} address={location} heightClass="h-[160px]" />
+              <div className="px-5 pt-5 sm:px-6 sm:pt-6">
+                <SectionHeader icon="mapPin" title="Work Location" />
               </div>
-              <div className="border-t border-[#e5e7eb] px-4 py-3">
+              <div className="mt-4 overflow-hidden">
+                <StaticLocationMap job={job} address={location} heightClass="h-[180px]" />
+              </div>
+              <div className="border-t border-[#e5e7eb] px-4 py-3 sm:px-5">
                 <div className="flex items-start gap-2 text-[#374151]">
                   <Icon name="mapPin" className="mt-0.5 h-4 w-4 shrink-0 text-[#2e66a6]" />
                   <p className="text-sm font-medium leading-6">{location}</p>
@@ -736,7 +755,7 @@ const AdminApplicationView = () => {
 
           <section className={`${UI.sectionCard} p-5 sm:p-6`}>
             <SectionHeader icon="briefcase" title="Perks and Benefits" subtitle={`${perksAndBenefits.length} item${perksAndBenefits.length === 1 ? "" : "s"}`} />
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {perksAndBenefits.length ? (
                 perksAndBenefits.map((benefit, index) => (
                   <div key={`${benefit}-${index}`} className={UI.skillChip}>
