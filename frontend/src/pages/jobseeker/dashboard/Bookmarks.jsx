@@ -399,6 +399,17 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 14l2 2 4-4" />
         </svg>
       );
+    case 'calendar':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.75}
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+          />
+        </svg>
+      );
     case 'exclamation':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2130,7 +2141,7 @@ const Bookmarks = () => {
     const status = normalizeApplicationStatus(applicationStatus || 'pending');
     const map = {
       pending: { cls: 'bg-amber-50 border-amber-200 text-amber-700', icon: 'clock', label: 'Pending' },
-      'for interview': { cls: 'bg-[#EAF2FB] border-[#BFD4EA] text-[#2e66a6]', icon: 'star', label: 'For Interview' },
+      'for interview': { cls: 'bg-[#EAF2FB] border-[#BFD4EA] text-[#2e66a6]', icon: 'calendar', label: 'For Interview' },
       hired: { cls: 'bg-green-50 border-green-200 text-green-700', icon: 'checkCircle', label: 'Hired' },
       declined: { cls: 'bg-red-50 border-red-200 text-red-700', icon: 'xCircle', label: 'Declined' },
       withdrawn: { cls: 'bg-gray-100 border-gray-300 text-gray-700', icon: 'minusCircle', label: 'Withdrawn' },
@@ -2144,8 +2155,8 @@ const Bookmarks = () => {
       <span
         className={`inline-flex max-w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold ${picked.cls}`}
       >
-        {picked.icon === 'star' ? (
-          <SvgIcon name="star" className="h-5 w-5 flex-shrink-0" />
+        {picked.icon === 'calendar' ? (
+          <SvgIcon name="calendar" className="h-5 w-5 flex-shrink-0" />
         ) : (
           <SvgIcon name={picked.icon} className="h-3.5 w-3.5 flex-shrink-0" />
         )}

@@ -504,7 +504,7 @@ const MyApplications = () => {
   const getStatusIconName = (status) => {
     switch (String(status || '').toLowerCase()) {
       case 'for interview':
-        return 'star';
+        return 'calendar';
       case 'hired':
         return 'checkCircle';
       case 'declined':
@@ -633,7 +633,7 @@ const MyApplications = () => {
   const topFilters = useMemo(
     () => [
       { key: 'pending', label: 'Pending', count: counts.pending, icon: 'clock' },
-      { key: 'for interview', label: 'For Interview', count: counts.forInterview, icon: 'star' },
+      { key: 'for interview', label: 'For Interview', count: counts.forInterview, icon: 'calendar' },
       { key: 'hired', label: 'Hired', count: counts.hired, icon: 'checkCircle' },
       { key: 'declined', label: 'Declined', count: counts.declined, icon: 'timesCircle' },
     ],
@@ -1031,7 +1031,7 @@ const MyApplications = () => {
                 <div className="border-t border-gray-200 bg-blue-50/60 px-5 py-4 md:border-r md:border-t-0">
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 text-[#2e66a6]">
-                      <SvgIcon name="star" className="h-5 w-5" />
+                      <SvgIcon name="calendar" className="h-5 w-5" />
                     </div>
                     <div>
                       <p className={`font-semibold ${UI.textPrimary}`}>For Interview</p>
@@ -1193,7 +1193,7 @@ const MyApplications = () => {
                               <span className={`inline-flex items-center gap-1.5 text-sm font-semibold ${statusBadge}`} aria-label={`Status: ${statusText}`}>
                                 <SvgIcon
                                   name={statusIconName}
-                                  className={`${statusIconName === 'star' ? 'h-[18px] w-[18px]' : 'h-4 w-4'} flex-shrink-0`}
+                                  className={`${statusIconName === 'calendar' ? 'h-[18px] w-[18px]' : 'h-4 w-4'} flex-shrink-0`}
                                 />
                                 {statusText}
                               </span>
