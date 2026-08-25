@@ -732,8 +732,38 @@ const JobseekerVerificationDetails = () => {
       contentType,
     );
     const blob = new Blob([response.data], { type: contentType });
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const startsWith = (...signature) =>
+      signature.every((value, index) => bytes[index] === value);
+    const cleanContentType = String(contentType).split(";")[0].trim().toLowerCase();
 
-    return { blob, fileName };
+    if (cleanContentType === "application/pdf") {
+      const header = new TextDecoder("ascii").decode(bytes.slice(0, 5));
+      const tail = new TextDecoder("latin1").decode(
+        bytes.slice(Math.max(0, bytes.length - 2048)),
+      );
+      if (header !== "%PDF-" || !tail.includes("%%EOF")) {
+        throw new Error(
+          "The stored PDF is invalid or corrupted. Please ask the user to resubmit a valid PDF file.",
+        );
+      }
+    } else if (
+      cleanContentType === "image/jpeg" &&
+      !startsWith(0xff, 0xd8, 0xff)
+    ) {
+      throw new Error(
+        "The stored image is invalid or corrupted. Please ask the user to resubmit a valid image.",
+      );
+    } else if (
+      cleanContentType === "image/png" &&
+      !startsWith(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)
+    ) {
+      throw new Error(
+        "The stored image is invalid or corrupted. Please ask the user to resubmit a valid image.",
+      );
+    }
+
+    return { blob, fileName, contentType };
   };
 
   const closePasswordModal = () => {
@@ -763,7 +793,7 @@ const JobseekerVerificationDetails = () => {
       previewWindow.document.body.innerHTML =
         '<p style="font-family: Arial, sans-serif; padding: 24px;">Loading credential...</p>';
 
-      const { blob, fileName } = await fetchDocumentBlob(
+      const { blob, fileName, contentType } = await fetchDocumentBlob(
         docType,
         "inline",
         password,
@@ -809,8 +839,8 @@ const JobseekerVerificationDetails = () => {
       toolbar.appendChild(downloadButton);
       previewDocument.body.appendChild(toolbar);
 
-      const contentType = String(blob.type || "").toLowerCase();
-      if (contentType.startsWith("image/")) {
+      const previewContentType = String(blob.type || contentType || "").toLowerCase();
+      if (previewContentType.startsWith("image/")) {
         const image = previewDocument.createElement("img");
         image.src = blobUrl;
         image.alt = fileName || docType;
@@ -821,14 +851,15 @@ const JobseekerVerificationDetails = () => {
         image.style.objectFit = "contain";
         previewDocument.body.appendChild(image);
       } else {
-        const frame = previewDocument.createElement("iframe");
-        frame.src = blobUrl;
-        frame.title = fileName || docType;
-        frame.style.display = "block";
-        frame.style.width = "100%";
-        frame.style.height = "calc(100vh - 62px)";
-        frame.style.border = "0";
-        previewDocument.body.appendChild(frame);
+        const embeddedDocument = previewDocument.createElement("embed");
+        embeddedDocument.src = blobUrl;
+        embeddedDocument.type = previewContentType || "application/pdf";
+        embeddedDocument.title = fileName || docType;
+        embeddedDocument.style.display = "block";
+        embeddedDocument.style.width = "100%";
+        embeddedDocument.style.height = "calc(100vh - 62px)";
+        embeddedDocument.style.border = "0";
+        previewDocument.body.appendChild(embeddedDocument);
       }
 
       previewWindow.addEventListener(

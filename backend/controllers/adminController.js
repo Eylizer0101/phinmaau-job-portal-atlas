@@ -340,6 +340,20 @@ const detectDocumentExtensionFromBuffer = (buffer) => {
   return '';
 };
 
+const hasValidPdfStructure = (buffer) => {
+  if (!Buffer.isBuffer(buffer) || buffer.length < 20) return false;
+  if (buffer.subarray(0, 5).toString('ascii') !== '%PDF-') return false;
+
+  const tail = buffer.subarray(Math.max(0, buffer.length - 2048)).toString('latin1');
+  return tail.includes('%%EOF');
+};
+
+const isValidVerificationDocumentBuffer = (buffer) => {
+  const extension = detectDocumentExtensionFromBuffer(buffer);
+  if (extension === 'pdf') return hasValidPdfStructure(buffer);
+  return ['png', 'jpg', 'gif', 'webp'].includes(extension);
+};
+
 const DOCUMENT_MIME_TYPE_BY_EXTENSION = {
   pdf: 'application/pdf',
   png: 'image/png',
@@ -400,7 +414,7 @@ const getCloudinaryAssetParts = (doc = {}) => {
     const resourceTypeFromUrl = parts[uploadIndex - 1] || '';
     const resourceType = ['image', 'raw', 'video'].includes(resourceTypeFromUrl)
       ? resourceTypeFromUrl
-      : String(doc?.resource_type || 'image').trim() || 'image';
+      : String(doc?.resourceType || doc?.resource_type || 'image').trim() || 'image';
 
     const versionIndex = parts.findIndex((part, index) => index > uploadIndex && /^v\d+$/.test(part));
     const publicParts = parts.slice(versionIndex >= 0 ? versionIndex + 1 : uploadIndex + 1);
@@ -411,13 +425,15 @@ const getCloudinaryAssetParts = (doc = {}) => {
 
     const lastSegment = publicPathWithFormat.split('/').pop() || '';
     const extensionMatch = lastSegment.match(/\.([a-zA-Z0-9]+)$/);
-    const format = String(doc?.format || (extensionMatch ? extensionMatch[1] : '') || '').toLowerCase();
-    const publicIdFromUrl = format
+    const format = resourceType === 'raw'
+      ? ''
+      : String(doc?.format || (extensionMatch ? extensionMatch[1] : '') || '').toLowerCase();
+    const publicIdFromUrl = format && resourceType !== 'raw'
       ? publicPathWithFormat.slice(0, -(format.length + 1))
       : publicPathWithFormat;
 
-    const storedPublicId = String(doc?.public_id || doc?.filename || '').trim();
-    const publicId = storedPublicId && !storedPublicId.includes('.') ? storedPublicId : publicIdFromUrl;
+    const storedPublicId = String(doc?.publicId || doc?.public_id || '').trim();
+    const publicId = storedPublicId || publicIdFromUrl;
 
     return {
       originalUrl,
@@ -443,7 +459,7 @@ const buildCloudinaryDeliveryUrls = (doc = {}, disposition = 'inline') => {
   const asset = getCloudinaryAssetParts(doc);
   if (!asset) return [originalUrl];
 
-  const urls = [];
+  const urls = [originalUrl];
   const attachment = disposition === 'attachment';
   const expiresAt = Math.floor(Date.now() / 1000) + 10 * 60;
 
@@ -489,7 +505,6 @@ const buildCloudinaryDeliveryUrls = (doc = {}, disposition = 'inline') => {
     }
   });
 
-  addUniqueUrl(urls, originalUrl);
   return urls;
 };
 
@@ -533,7 +548,8 @@ const streamVerificationDocument = async (req, res, userRole) => {
     const disposition = String(req.query.disposition || 'inline').toLowerCase() === 'attachment' ? 'attachment' : 'inline';
     const deliveryUrls = buildCloudinaryDeliveryUrls(doc, disposition);
 
-    let fileResponse = null;
+    let fileBuffer = null;
+    let upstreamContentType = '';
     let lastStatus = 500;
 
     for (const deliveryUrl of deliveryUrls) {
@@ -545,8 +561,17 @@ const streamVerificationDocument = async (req, res, userRole) => {
         });
 
         if (response.ok) {
-          fileResponse = response;
-          break;
+          const candidateBuffer = Buffer.from(await response.arrayBuffer());
+
+          if (isValidVerificationDocumentBuffer(candidateBuffer)) {
+            fileBuffer = candidateBuffer;
+            upstreamContentType = response.headers.get('content-type') || '';
+            break;
+          }
+
+          lastStatus = 422;
+          console.error('Document delivery returned invalid file content:', deliveryUrl);
+          continue;
         }
 
         lastStatus = response.status;
@@ -556,17 +581,18 @@ const streamVerificationDocument = async (req, res, userRole) => {
       }
     }
 
-    if (!fileResponse) {
+    if (!fileBuffer) {
       return res.status(lastStatus || 500).json({
         success: false,
-        message: 'Unable to access document file. Please check Cloudinary PDF/raw delivery settings or re-upload the document.',
+        message: lastStatus === 422
+          ? 'The stored credential is invalid or corrupted. Please ask the user to resubmit a valid PDF, JPG, JPEG, or PNG file.'
+          : 'Unable to access document file. Please check Cloudinary PDF/raw delivery settings or re-upload the document.',
       });
     }
 
-    const arrayBuffer = await fileResponse.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const buffer = fileBuffer;
     const contentType = resolveDocumentContentType({
-      upstreamContentType: fileResponse.headers.get('content-type'),
+      upstreamContentType,
       doc,
       buffer,
     });

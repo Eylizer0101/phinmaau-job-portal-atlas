@@ -3655,6 +3655,9 @@ exports.resubmitDocument = async (req, res) => {
         filename: req.file.originalname,
         fileSize: req.file.size,
         mimeType: req.file.mimetype,
+        publicId: req.file.public_id || req.file.filename || '',
+        resourceType: req.file.resource_type || 'raw',
+        format: req.file.format || '',
       };
 
       verificationDocs.overallStatus = 'pending';
@@ -3714,6 +3717,9 @@ exports.resubmitDocument = async (req, res) => {
         filename: req.file.originalname,
         fileSize: req.file.size,
         mimeType: req.file.mimetype,
+        publicId: req.file.public_id || req.file.filename || '',
+        resourceType: req.file.resource_type || 'raw',
+        format: req.file.format || '',
       };
 
       verificationDocs.overallStatus = 'pending';

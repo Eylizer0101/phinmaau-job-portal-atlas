@@ -75,6 +75,14 @@ const detectCredentialSignature = (buffer) => {
   return '';
 };
 
+const hasValidPdfStructure = (buffer) => {
+  if (!Buffer.isBuffer(buffer) || buffer.length < 20) return false;
+  if (buffer.subarray(0, 5).toString('ascii') !== '%PDF-') return false;
+
+  const tail = buffer.subarray(Math.max(0, buffer.length - 2048)).toString('latin1');
+  return tail.includes('%%EOF');
+};
+
 const validateJobseekerCredentialBuffer = (file) => {
   if (file.fieldname === 'profileImage') return null;
 
@@ -82,7 +90,7 @@ const validateJobseekerCredentialBuffer = (file) => {
   const mimeType = String(file.mimetype || '').toLowerCase();
   const extension = path.extname(String(file.originalname || '')).toLowerCase();
   const signatureMatches = (
-    (signature === 'pdf' && mimeType === 'application/pdf' && extension === '.pdf')
+    (signature === 'pdf' && hasValidPdfStructure(file.buffer) && mimeType === 'application/pdf' && extension === '.pdf')
     || (signature === 'jpeg' && ['image/jpeg', 'image/jpg'].includes(mimeType) && ['.jpg', '.jpeg'].includes(extension))
     || (signature === 'png' && mimeType === 'image/png' && extension === '.png')
   );
@@ -153,10 +161,16 @@ const uploadBufferToCloudinary = ({ file, folder, publicId, resourceType = 'auto
       return reject(new Error('Cloudinary is not fully configured.'));
     }
 
+    const originalExtension = path.extname(String(file.originalname || '')).toLowerCase();
+    const uploadPublicId =
+      resourceType === 'raw' && originalExtension && !String(publicId).toLowerCase().endsWith(originalExtension)
+        ? `${publicId}${originalExtension}`
+        : publicId;
+
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder: `${CLOUDINARY_ROOT_FOLDER}/${folder}`,
-        public_id: publicId,
+        public_id: uploadPublicId,
         resource_type: resourceType,
       },
       (error, result) => {
@@ -362,6 +376,8 @@ const alumniVerificationStorage = createCloudinaryStorage({
 
 const alumniResubmitStorage = createCloudinaryStorage({
   resourceType: 'raw',
+  bufferValidator: validateJobseekerCredentialBuffer,
+  sanitizeFileName: true,
   folderResolver: (req) => {
     const docType = String(req.body?.docType || '').trim();
     const config = getResubmitDocConfig(docType);

@@ -14,6 +14,50 @@ const docTypeLabels = {
   tin: "TIN ID",
 };
 
+const MAX_CREDENTIAL_SIZE = 5 * 1024 * 1024;
+const ALLOWED_CREDENTIAL_TYPES = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+]);
+
+const validateCredentialFile = async (file) => {
+  if (!file) return "Please choose a file to upload.";
+  if (file.size > MAX_CREDENTIAL_SIZE) {
+    return "File must not exceed 5MB.";
+  }
+
+  const extension = `.${String(file.name || "").split(".").pop()?.toLowerCase() || ""}`;
+  const allowedExtension = [".pdf", ".jpg", ".jpeg", ".png"].includes(extension);
+  if (!ALLOWED_CREDENTIAL_TYPES.has(String(file.type || "").toLowerCase()) || !allowedExtension) {
+    return "Invalid file. Upload PDF, JPG, JPEG, or PNG only, up to 5MB.";
+  }
+
+  const buffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  const startsWith = (...signature) => signature.every((value, index) => bytes[index] === value);
+
+  if (extension === ".pdf") {
+    const header = new TextDecoder("ascii").decode(bytes.slice(0, 5));
+    const tail = new TextDecoder("latin1").decode(bytes.slice(Math.max(0, bytes.length - 2048)));
+    if (header !== "%PDF-" || !tail.includes("%%EOF")) {
+      return "The selected PDF is invalid or corrupted. Please choose a valid PDF file.";
+    }
+  } else if ([".jpg", ".jpeg"].includes(extension)) {
+    if (!startsWith(0xff, 0xd8, 0xff)) {
+      return "The selected image is invalid or corrupted. Please choose a valid JPG or JPEG file.";
+    }
+  } else if (
+    extension === ".png" &&
+    !startsWith(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)
+  ) {
+    return "The selected image is invalid or corrupted. Please choose a valid PNG file.";
+  }
+
+  return "";
+};
+
 const ResubmitDocumentPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -78,18 +122,27 @@ const ResubmitDocumentPage = () => {
     fileInputRef.current?.click();
   };
 
-  const handleFileSelected = (file) => {
+  const handleFileSelected = async (file) => {
     if (!file) return;
+
+    const validationMessage = await validateCredentialFile(file);
+    if (validationMessage) {
+      setSelectedFile(null);
+      setError(validationMessage);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     setSelectedFile(file);
     setError("");
   };
 
-  const onInputChange = (e) => {
+  const onInputChange = async (e) => {
     const file = e.target.files?.[0];
-    handleFileSelected(file);
+    await handleFileSelected(file);
   };
 
-  const onDrop = (e) => {
+  const onDrop = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
@@ -97,7 +150,7 @@ const ResubmitDocumentPage = () => {
     if (submitting || !tokenValid) return;
 
     const file = e.dataTransfer.files?.[0];
-    handleFileSelected(file);
+    await handleFileSelected(file);
   };
 
   const handleSubmit = async () => {
@@ -226,6 +279,7 @@ const ResubmitDocumentPage = () => {
                 className="hidden"
                 onChange={onInputChange}
                 disabled={submitting}
+                accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
               />
 
               <div className="flex justify-center">
