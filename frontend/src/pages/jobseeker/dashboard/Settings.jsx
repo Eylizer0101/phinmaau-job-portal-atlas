@@ -54,8 +54,9 @@ const PasswordInput = ({ value, onChange, placeholder, show, onToggle, autoCompl
   </div>
 );
 
-const TextInput = ({ value, onChange, placeholder, type = 'text' }) => (
+const TextInput = ({ value, onChange, placeholder, type = 'text', ...props }) => (
   <input
+    {...props}
     type={type}
     value={value}
     onChange={onChange}
@@ -73,6 +74,27 @@ const SaveButton = ({ loading, children = 'Save' }) => (
     {loading ? 'Saving...' : children}
   </button>
 );
+
+const InlineMessage = ({ message }) => {
+  if (!message?.text) return null;
+
+  const isError = message.type === 'error';
+
+  return (
+    <div
+      className={`mb-4 rounded-2xl border p-4 text-sm shadow-sm ${
+        isError
+          ? 'border-red-200 bg-[#fff7f7] text-red-700'
+          : 'border-[#d8e2ee] bg-[#f7faff] text-[#2e66a6]'
+      }`}
+      role={isError ? 'alert' : 'status'}
+      aria-live={isError ? 'assertive' : 'polite'}
+    >
+      <div className="font-semibold">{isError ? 'Error' : 'Success'}</div>
+      <div>{message.text}</div>
+    </div>
+  );
+};
 
 function buildFullName(user) {
   if (!user) return 'User';
@@ -93,7 +115,7 @@ const Settings = () => {
   const [newEmail, setNewEmail] = useState('');
   const [emailCode, setEmailCode] = useState('');
 
-  const [newMobile, setNewMobile] = useState('+63');
+  const [newMobile, setNewMobile] = useState('');
   const [mobileCode, setMobileCode] = useState('');
 
   const [currentPassword, setCurrentPassword] = useState('');
@@ -110,6 +132,25 @@ const Settings = () => {
   const [savingMobileChange, setSavingMobileChange] = useState(false);
   const [verifyingMobile, setVerifyingMobile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [mobileChangeMessage, setMobileChangeMessage] = useState({ type: '', text: '' });
+  const [mobileVerifyMessage, setMobileVerifyMessage] = useState({ type: '', text: '' });
+  const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
+
+  const passwordRequirements = [
+    { label: 'At least 8 characters', met: newPassword.length >= 8 },
+    { label: 'At least one uppercase letter', met: /[A-Z]/.test(newPassword) },
+    { label: 'At least one lowercase letter', met: /[a-z]/.test(newPassword) },
+    { label: 'At least one number', met: /\d/.test(newPassword) },
+    { label: 'At least one special character', met: /[^A-Za-z0-9]/.test(newPassword) },
+  ];
+
+  const metPasswordRequirements = passwordRequirements.filter((requirement) => requirement.met).length;
+  const passwordStrength =
+    metPasswordRequirements === passwordRequirements.length
+      ? { label: 'Strong password', color: 'text-green-700', bar: 'bg-green-600', width: 'w-full' }
+      : metPasswordRequirements >= 3
+        ? { label: 'Good password, but still incomplete', color: 'text-amber-700', bar: 'bg-amber-500', width: 'w-2/3' }
+        : { label: 'Weak password', color: 'text-red-700', bar: 'bg-red-500', width: 'w-1/3' };
 
   const clearAlerts = () => {
     setError('');
@@ -122,7 +163,6 @@ const Settings = () => {
       const res = await api.get('/auth/me');
       const user = res.data?.user || res.data?.data?.user || null;
       setMe(user);
-      if (user?.jobSeekerProfile?.phoneNumber) setNewMobile(user.jobSeekerProfile.phoneNumber);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load settings.');
     } finally {
@@ -209,20 +249,24 @@ const Settings = () => {
 
   const handleRequestMobileChange = async (e) => {
     e.preventDefault();
-    clearAlerts();
+    setMobileChangeMessage({ type: '', text: '' });
 
-    if (!newMobile || newMobile === '+63') {
-      setError('Please enter your new mobile number.');
+    const cleanMobileNumber = newMobile.trim();
+    if (!/^09\d{9}$/.test(cleanMobileNumber)) {
+      setMobileChangeMessage({
+        type: 'error',
+        text: 'Please enter a valid 11-digit Philippine mobile number starting with 09.',
+      });
       return;
     }
 
     try {
       setSavingMobileChange(true);
-      const res = await api.post('/auth/settings/request-phone-verification', { phoneNumber: newMobile });
-      setSuccess(res.data?.message || 'Verification code sent to your mobile number.');
+      const res = await api.post('/auth/settings/request-phone-verification', { phoneNumber: cleanMobileNumber });
+      setMobileChangeMessage({ type: 'success', text: res.data?.message || 'Verification code sent to your mobile number.' });
       await fetchMe();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send mobile verification code.');
+      setMobileChangeMessage({ type: 'error', text: err.response?.data?.message || 'Failed to send mobile verification code.' });
     } finally {
       setSavingMobileChange(false);
     }
@@ -230,18 +274,19 @@ const Settings = () => {
 
   const handleVerifyMobile = async (e) => {
     e.preventDefault();
-    clearAlerts();
+    setMobileVerifyMessage({ type: '', text: '' });
 
     if (!mobileCode) {
-      setError('Please enter your mobile verification code.');
+      setMobileVerifyMessage({ type: 'error', text: 'Please enter your mobile verification code.' });
       return;
     }
 
     try {
       setVerifyingMobile(true);
       const res = await api.post('/auth/settings/verify-phone', { code: mobileCode });
-      setSuccess(res.data?.message || 'Mobile number verified successfully.');
+      setMobileVerifyMessage({ type: 'success', text: res.data?.message || 'Mobile number verified successfully.' });
       setMobileCode('');
+      setNewMobile('');
       if (res.data?.user) {
         setMe(res.data.user);
         localStorage.setItem('user', JSON.stringify(res.data.user));
@@ -249,39 +294,47 @@ const Settings = () => {
         await fetchMe();
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to verify mobile number.');
+      setMobileVerifyMessage({ type: 'error', text: err.response?.data?.message || 'Failed to verify mobile number.' });
     } finally {
       setVerifyingMobile(false);
     }
   };
 
   const handleResendMobile = async () => {
-    clearAlerts();
+    setMobileVerifyMessage({ type: '', text: '' });
     try {
       const res = await api.post('/auth/settings/resend-phone-verification');
-      setSuccess(res.data?.message || 'Mobile verification code sent.');
+      setMobileVerifyMessage({ type: 'success', text: res.data?.message || 'Mobile verification code sent.' });
       await fetchMe();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to resend mobile verification code.');
+      setMobileVerifyMessage({ type: 'error', text: err.response?.data?.message || 'Failed to resend mobile verification code.' });
     }
   };
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
-    clearAlerts();
+    setPasswordMessage({ type: '', text: '' });
 
     if (!currentPassword || !newPassword || !confirmPassword) {
-      setError('Please complete all password fields.');
+      setPasswordMessage({ type: 'error', text: 'Please complete all password fields.' });
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError('New password and retype password do not match.');
+      setPasswordMessage({ type: 'error', text: 'New password and retype password do not match.' });
       return;
     }
 
-    if (newPassword.length < 6) {
-      setError('New password must be at least 6 characters long.');
+    if (!passwordRequirements.every((requirement) => requirement.met)) {
+      setPasswordMessage({
+        type: 'error',
+        text: 'New password must be at least 8 characters and include uppercase, lowercase, number, and special character.',
+      });
+      return;
+    }
+
+    if (newPassword === currentPassword) {
+      setPasswordMessage({ type: 'error', text: 'New password must be different from your current password.' });
       return;
     }
 
@@ -291,12 +344,15 @@ const Settings = () => {
         currentPassword,
         newPassword,
       });
-      setSuccess(res.data?.message || 'Password changed successfully.');
+      setPasswordMessage({ type: 'success', text: res.data?.message || 'Password changed successfully.' });
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to change password.');
+      setPasswordMessage({ type: 'error', text: err.response?.data?.message || 'Failed to change password.' });
     } finally {
       setSavingPassword(false);
     }
@@ -398,6 +454,7 @@ const Settings = () => {
 
         <Panel title="Change Mobile Number">
           <form onSubmit={handleRequestMobileChange}>
+            <InlineMessage message={mobileChangeMessage} />
             <div className="space-y-4 text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-black/70">Mobile Number:</span>
@@ -414,8 +471,13 @@ const Settings = () => {
                 <div className="relative">
                   <TextInput
                     value={newMobile}
-                    onChange={(e) => setNewMobile(e.target.value)}
-                    placeholder="+63"
+                    onChange={(e) => {
+                      setNewMobile(e.target.value);
+                      if (mobileChangeMessage.text) setMobileChangeMessage({ type: '', text: '' });
+                    }}
+                    placeholder="e.g. 09000000000"
+                    inputMode="numeric"
+                    maxLength={11}
                   />
                   <FaInfoCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-[#2e66a6]" />
                 </div>
@@ -430,6 +492,7 @@ const Settings = () => {
 
         <Panel title="Verify Mobile Number" blue>
           <form onSubmit={handleVerifyMobile}>
+            <InlineMessage message={mobileVerifyMessage} />
             <div className="space-y-4 text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-black/70">Mobile Number:</span>
@@ -460,6 +523,7 @@ const Settings = () => {
 
         <Panel title="Password">
           <form onSubmit={handleChangePassword}>
+            <InlineMessage message={passwordMessage} />
             <div className="space-y-4 text-sm">
               <p className="text-xs text-black/50">To change your password, please complete the following fields.</p>
 
@@ -478,16 +542,51 @@ const Settings = () => {
                 <div>
                   <PasswordInput
                     value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
+                    onChange={(e) => {
+                      setNewPassword(e.target.value);
+                      if (passwordMessage.text) setPasswordMessage({ type: '', text: '' });
+                    }}
                     placeholder="Enter new password here"
                     show={showNewPassword}
                     onToggle={() => setShowNewPassword((v) => !v)}
                     autoComplete="new-password"
                   />
-                  <div className="mt-2 h-1.5 bg-[#2e66a6] rounded-full w-full" />
-                  <p className="text-[11px] text-black/50 mt-2 max-w-lg">
-                    Enter passwords are handled securely. Use uppercase/lowercase letters, numbers/special characters, and avoid common words.
-                  </p>
+
+                  {newPassword ? (
+                    <div className="mt-3 rounded-xl border border-[#d8e2ee] bg-[#f7faff] p-4" aria-live="polite">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <span className="text-xs font-semibold text-black/65">Password strength</span>
+                        <span className={`text-xs font-bold ${passwordStrength.color}`}>{passwordStrength.label}</span>
+                      </div>
+
+                      <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-[#d8e2ee]">
+                        <div className={`h-full rounded-full transition-all duration-300 ${passwordStrength.bar} ${passwordStrength.width}`} />
+                      </div>
+
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {passwordRequirements.map((requirement) => (
+                          <div
+                            key={requirement.label}
+                            className={`flex items-center gap-2 text-xs ${
+                              requirement.met ? 'font-semibold text-green-700' : 'text-black/55'
+                            }`}
+                          >
+                            <span
+                              className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold ${
+                                requirement.met
+                                  ? 'border-green-600 bg-green-600 text-white'
+                                  : 'border-[#b9c7d8] bg-white text-transparent'
+                              }`}
+                              aria-hidden="true"
+                            >
+                              ✓
+                            </span>
+                            <span>{requirement.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
 
                 <label className="text-black/70">Retype New Password:</label>
