@@ -1773,15 +1773,6 @@ const UserManagementDetails = () => {
                   key={job._id}
                   className="group flex min-h-[320px] flex-col rounded-2xl border border-[#e5e7eb] bg-white p-7 shadow-sm transition hover:shadow-md"
                 >
-                  {job?.isUrgent && (
-                    <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full bg-[#171717] pr-4 text-sm font-bold leading-none text-white shadow-sm">
-                      <span className="flex h-9 w-12 items-center justify-center overflow-visible">
-                        <img src="/images/fire.png" alt="" className="h-14 w-14 max-w-none object-contain" />
-                      </span>
-                      Urgently Needed
-                    </div>
-                  )}
-
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-start gap-4">
                       <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border border-gray-200 bg-white">
@@ -1832,7 +1823,19 @@ const UserManagementDetails = () => {
                     <JobStatusBadge status="open" />
                   </div>
 
-                  <div className="mt-4 rounded-xl bg-gray-100 p-4">
+                  <div
+                    className={`relative mt-4 overflow-hidden rounded-xl bg-[#F3F4F6] p-4 ${
+                      job?.isUrgent ? "pr-[108px]" : ""
+                    }`}
+                  >
+                    {job?.isUrgent ? (
+                      <img
+                        src="/images/urgentneed.png"
+                        alt="Urgent Hiring"
+                        draggable="false"
+                        className="pointer-events-none absolute -right-5 bottom-1 h-auto w-[112px] max-w-[38%] select-none object-contain"
+                      />
+                    ) : null}
                     <div className="flex min-w-0 items-center gap-2 text-sm text-gray-700">
                       <Icon name="mapPin" className="h-4 w-4 shrink-0 text-gray-600" />
                       <span className="truncate">{job?.location || "Location not specified"}</span>
