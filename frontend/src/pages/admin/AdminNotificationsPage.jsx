@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Bell, Check, ChevronLeft, ChevronRight, Circle, RefreshCw, Trash2, UserRound } from "lucide-react";
+import { Bell, Check, Circle, RefreshCw, Trash2, UserRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
+import Pagination from "../../components/shared/Pagination";
 
 const formatNotificationTime = (value) => {
   if (!value) return "Just now";
@@ -26,8 +27,6 @@ const getNotificationId = (value) => {
   const resolvedValue = value?._id || value;
   return resolvedValue ? String(resolvedValue) : "";
 };
-
-const NOTIFICATIONS_PER_PAGE = 10;
 
 const getAdminNotificationLink = (notification) => {
   const metadata = notification?.metadata || {};
@@ -87,6 +86,7 @@ const AdminNotificationsPage = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [activeFilter, setActiveFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -116,18 +116,14 @@ const AdminNotificationsPage = () => {
     return notifications;
   }, [activeFilter, notifications]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredNotifications.length / NOTIFICATIONS_PER_PAGE));
+  const numericPageSize = pageSize === "all" ? Math.max(filteredNotifications.length, 1) : Number(pageSize);
+  const totalPages = pageSize === "all" ? 1 : Math.max(1, Math.ceil(filteredNotifications.length / numericPageSize));
 
   const paginatedNotifications = useMemo(() => {
-    const startIndex = (currentPage - 1) * NOTIFICATIONS_PER_PAGE;
-    return filteredNotifications.slice(startIndex, startIndex + NOTIFICATIONS_PER_PAGE);
-  }, [currentPage, filteredNotifications]);
-
-  const visiblePageNumbers = useMemo(() => {
-    const startPage = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
-    const endPage = Math.min(totalPages, startPage + 4);
-    return Array.from({ length: endPage - startPage + 1 }, (_, index) => startPage + index);
-  }, [currentPage, totalPages]);
+    if (pageSize === "all") return filteredNotifications;
+    const startIndex = (currentPage - 1) * numericPageSize;
+    return filteredNotifications.slice(startIndex, startIndex + numericPageSize);
+  }, [currentPage, filteredNotifications, numericPageSize, pageSize]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -339,53 +335,15 @@ const AdminNotificationsPage = () => {
             </div>
           )}
 
-          {!loading && filteredNotifications.length > 0 && totalPages > 1 ? (
-            <div className="flex flex-col gap-3 border-t border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-slate-500">
-                Showing {(currentPage - 1) * NOTIFICATIONS_PER_PAGE + 1}–{Math.min(currentPage * NOTIFICATIONS_PER_PAGE, filteredNotifications.length)} of {filteredNotifications.length}
-              </p>
-
-              <nav className="flex items-center gap-1" aria-label="Notifications pagination">
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 transition hover:border-[#2e66a6] hover:text-[#2e66a6] disabled:cursor-not-allowed disabled:opacity-40"
-                  aria-label="Previous page"
-                >
-                  <ChevronLeft size={16} />
-                  <span className="hidden sm:inline">Previous</span>
-                </button>
-
-                {visiblePageNumbers.map((pageNumber) => (
-                  <button
-                    type="button"
-                    key={pageNumber}
-                    onClick={() => setCurrentPage(pageNumber)}
-                    className={`h-9 min-w-9 rounded-lg px-3 text-sm font-semibold transition ${
-                      currentPage === pageNumber
-                        ? "bg-[#2e66a6] text-white shadow-sm"
-                        : "border border-slate-200 bg-white text-slate-600 hover:border-[#2e66a6] hover:text-[#2e66a6]"
-                    }`}
-                    aria-label={`Go to page ${pageNumber}`}
-                    aria-current={currentPage === pageNumber ? "page" : undefined}
-                  >
-                    {pageNumber}
-                  </button>
-                ))}
-
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 transition hover:border-[#2e66a6] hover:text-[#2e66a6] disabled:cursor-not-allowed disabled:opacity-40"
-                  aria-label="Next page"
-                >
-                  <span className="hidden sm:inline">Next</span>
-                  <ChevronRight size={16} />
-                </button>
-              </nav>
-            </div>
+          {!loading ? (
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredNotifications.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              ariaLabel="Admin notifications pagination"
+            />
           ) : null}
         </div>
       </div>
