@@ -236,12 +236,19 @@ const Settings = () => {
   };
 
   const handlePositionSave = async () => {
+    const position = positionForm.position.trim();
+
+    if (!position) {
+      showMessage('position', 'Position is required.', 'error');
+      return;
+    }
+
     try {
       setSaving((prev) => ({ ...prev, position: true }));
       clearMessage('position');
 
       const formData = new FormData();
-      formData.append('position', positionForm.position.trim());
+      formData.append('position', position);
 
       const { data } = await axios.put(`${API_BASE}/auth/update-company-profile`, formData, {
         headers: { ...authHeaders, 'Content-Type': 'multipart/form-data' },
@@ -310,8 +317,8 @@ const Settings = () => {
 
   const handlePhoneRequest = async () => {
     const targetNumber = phoneForm.newMobileNumber.trim() || phoneForm.mobileNumber.trim();
-    if (!targetNumber) {
-      showMessage('phone', 'Mobile number is required.', 'error');
+    if (!/^09\d{9}$/.test(targetNumber)) {
+      showMessage('phone', 'Please enter a valid 11-digit Philippine mobile number starting with 09.', 'error');
       return;
     }
 
@@ -382,6 +389,27 @@ const Settings = () => {
 
     if (passwordForm.newPassword !== passwordForm.retypeNewPassword) {
       showMessage('password', 'New password and retype new password do not match.', 'error');
+      return;
+    }
+
+    const isStrongPassword =
+      passwordForm.newPassword.length >= 8 &&
+      /[A-Z]/.test(passwordForm.newPassword) &&
+      /[a-z]/.test(passwordForm.newPassword) &&
+      /\d/.test(passwordForm.newPassword) &&
+      /[^A-Za-z0-9]/.test(passwordForm.newPassword);
+
+    if (!isStrongPassword) {
+      showMessage(
+        'password',
+        'New password must be at least 8 characters and include uppercase, lowercase, number, and special character.',
+        'error'
+      );
+      return;
+    }
+
+    if (passwordForm.newPassword === passwordForm.oldPassword) {
+      showMessage('password', 'New password must be different from your current password.', 'error');
       return;
     }
 

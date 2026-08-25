@@ -1,674 +1,515 @@
-// src/pages/employer/dashboard/Settings.jsx
-import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import EmployerLayout from '../../../layouts/EmployerLayout';
-
-const API_BASE = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
-
-const suffixOptions = ['', 'Jr.', 'Sr.', 'I', 'II', 'III', 'IV', 'V'];
-
-const initialMessages = {
-  name: '',
-  position: '',
-  email: '',
-  phone: '',
-  password: '',
-  general: '',
-};
-
-const cx = (...classes) => classes.filter(Boolean).join(' ');
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import api from '../../../services/api.js';
+import { FaEye, FaEyeSlash, FaInfoCircle } from 'react-icons/fa';
 
 const focusRing =
   'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 focus-visible:ring-offset-white';
 
-const Section = ({ title, description, actionText, actionType = 'button', onAction, loading, children }) => (
-  <section className="overflow-hidden rounded-2xl border border-[#e6edf5] bg-white shadow-[0_12px_30px_rgba(46,102,166,0.06)]">
-    <div className="flex flex-col gap-3 border-b border-[#e6edf5] bg-[#f7faff] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h2 className="text-sm font-bold text-black">{title}</h2>
-        {description ? <p className="mt-1 text-xs text-black/55">{description}</p> : null}
-      </div>
-
-      {actionText ? (
-        <button
-          type={actionType}
-          onClick={onAction}
-          disabled={loading}
-          className={cx(
-            'inline-flex h-11 items-center justify-center rounded-xl bg-[#2e66a6] px-6 text-sm font-bold text-white shadow-[0_10px_22px_rgba(46,102,166,0.18)] transition hover:bg-[#25578f] active:bg-[#1f4b7c] disabled:cursor-not-allowed disabled:opacity-60',
-            focusRing
-          )}
-        >
-          {loading ? 'Saving...' : actionText}
-        </button>
-      ) : null}
-    </div>
-
-    <div className="px-5 py-5 sm:px-6 sm:py-6">{children}</div>
-  </section>
-);
-
-const TextInput = ({ label, className = '', ...props }) => (
-  <label className={cx('block', className)}>
-    <span className="mb-2 block text-xs font-semibold text-black/65">{label}</span>
-    <input
-      {...props}
-      className={cx(
-        'h-11 w-full rounded-xl border border-[#d8e2ee] bg-white px-4 text-sm text-black outline-none transition placeholder:text-black/40 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20 disabled:cursor-not-allowed disabled:bg-[#f7faff] disabled:text-black/45',
-        focusRing,
-        props.readOnly ? 'cursor-default bg-[#f7faff] text-black/70' : ''
-      )}
-    />
-  </label>
-);
-
-const SelectInput = ({ label, className = '', children, ...props }) => (
-  <label className={cx('block', className)}>
-    <span className="mb-2 block text-xs font-semibold text-black/65">{label}</span>
-    <select
-      {...props}
-      className={cx(
-        'h-11 w-full rounded-xl border border-[#d8e2ee] bg-white px-4 text-sm text-black outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20 disabled:cursor-not-allowed disabled:bg-[#f7faff] disabled:text-black/45',
-        focusRing
-      )}
-    >
-      {children}
-    </select>
-  </label>
-);
-
-const Message = ({ type = 'success', children }) => {
-  if (!children) return null;
-
-  const isError = type === 'error';
-
-  return (
+const Panel = ({ title, blue = false, children }) => (
+  <div className="bg-white border border-[#e6edf5] rounded-2xl shadow-[0_12px_30px_rgba(46,102,166,0.06)] overflow-hidden">
     <div
-      className={cx(
-        'mb-5 rounded-2xl border px-4 py-3 text-sm shadow-sm',
-        isError
-          ? 'border-red-200 bg-[#fff7f7] text-red-700'
-          : 'border-[#d8e2ee] bg-[#f7faff] text-[#2e66a6]'
-      )}
-      role={isError ? 'alert' : 'status'}
-      aria-live={isError ? 'assertive' : 'polite'}
+      className={`px-5 py-3 text-sm font-bold border-b ${
+        blue
+          ? 'bg-[#2e66a6] text-white border-[#2e66a6]'
+          : 'bg-[#f7faff] text-black border-[#e6edf5]'
+      }`}
     >
-      <div className="font-semibold">{isError ? 'Error' : 'Success'}</div>
-      <div>{children}</div>
+      {title}
     </div>
-  );
-};
+    <div className="px-5 py-5 sm:px-6 sm:py-6">{children}</div>
+  </div>
+);
 
-const InlineActionButton = ({ children, className = '', ...props }) => (
-  <button
-    type="button"
-    className={cx(
-      'inline-flex w-fit items-center text-xs font-semibold text-[#2e66a6] underline underline-offset-4 transition hover:text-[#25578f]',
-      focusRing,
-      className
-    )}
-    {...props}
+const StatusBadge = ({ verified }) => (
+  <span
+    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${
+      verified
+        ? 'bg-[#eaf2fb] text-[#2e66a6] border-[#d8e2ee]'
+        : 'bg-[#f7faff] text-black/55 border-[#e6edf5]'
+    }`}
   >
-    {children}
+    <span className={`w-2 h-2 rounded-full ${verified ? 'bg-[#2e66a6]' : 'bg-black/35'}`} />
+    {verified ? 'verified' : 'unverified'}
+  </span>
+);
+
+const PasswordInput = ({ value, onChange, placeholder, show, onToggle, autoComplete }) => (
+  <div className="relative">
+    <input
+      type={show ? 'text' : 'password'}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      autoComplete={autoComplete}
+      className={`w-full h-11 px-4 pr-11 rounded-xl border border-[#d8e2ee] bg-white text-sm text-black placeholder:text-black/40 transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20 ${focusRing}`}
+    />
+    <button
+      type="button"
+      onClick={onToggle}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-black/40 hover:text-[#2e66a6] transition"
+      aria-label={show ? 'Hide password' : 'Show password'}
+    >
+      {show ? <FaEyeSlash /> : <FaEye />}
+    </button>
+  </div>
+);
+
+const TextInput = ({ value, onChange, placeholder, type = 'text' }) => (
+  <input
+    type={type}
+    value={value}
+    onChange={onChange}
+    placeholder={placeholder}
+    className={`w-full h-11 px-4 rounded-xl border border-[#d8e2ee] bg-white text-sm text-black placeholder:text-black/40 transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20 ${focusRing}`}
+  />
+);
+
+const SaveButton = ({ loading, children = 'Save' }) => (
+  <button
+    type="submit"
+    disabled={loading}
+    className={`px-7 h-11 rounded-xl bg-[#2e66a6] hover:bg-[#25578f] active:bg-[#1f4b7c] text-white text-sm font-bold shadow-[0_10px_22px_rgba(46,102,166,0.18)] transition disabled:opacity-60 ${focusRing}`}
+  >
+    {loading ? 'Saving...' : children}
   </button>
 );
 
-const SecondaryButton = ({ children, className = '', ...props }) => (
-  <button
-    type="button"
-    className={cx(
-      'inline-flex h-11 items-center justify-center rounded-xl border border-[#d8e2ee] bg-white px-5 text-sm font-bold text-black/70 transition hover:border-[#2e66a6] hover:text-[#2e66a6] disabled:cursor-not-allowed disabled:opacity-60',
-      focusRing,
-      className
-    )}
-    {...props}
-  >
-    {children}
-  </button>
-);
+function buildFullName(user) {
+  if (!user) return 'User';
+  const parts = [user.firstName, user.middleName, user.lastName, user.extensionName]
+    .map((p) => String(p || '').trim())
+    .filter(Boolean);
+  if (parts.length) return parts.join(' ');
+  return user.email || user.username || 'User';
+}
 
 const Settings = () => {
-  const navigate = useNavigate();
+  const [me, setMe] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  const [loadingPage, setLoadingPage] = useState(true);
-  const [saving, setSaving] = useState({ name: false, position: false, email: false, phone: false, password: false });
-  const [messages, setMessages] = useState(initialMessages);
-  const [messageType, setMessageType] = useState(initialMessages);
+  const [emailPassword, setEmailPassword] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [emailCode, setEmailCode] = useState('');
 
-  const [nameForm, setNameForm] = useState({ firstName: '', middleName: '', lastName: '', extensionName: '' });
-  const [positionForm, setPositionForm] = useState({ position: '' });
-  const [emailForm, setEmailForm] = useState({ currentEmail: '', currentPassword: '', newEmail: '', verificationCode: '', pendingEmail: '' });
-  const [phoneForm, setPhoneForm] = useState({ mobileNumber: '', newMobileNumber: '', verificationCode: '', pendingPhoneNumber: '' });
-  const [passwordForm, setPasswordForm] = useState({ oldPassword: '', newPassword: '', retypeNewPassword: '' });
+  const [newMobile, setNewMobile] = useState('+63');
+  const [mobileCode, setMobileCode] = useState('');
 
-  const authHeaders = useMemo(() => {
-    const token = localStorage.getItem('token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }, []);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
-  const showMessage = (key, text, type = 'success') => {
-    setMessages((prev) => ({ ...prev, [key]: text }));
-    setMessageType((prev) => ({ ...prev, [key]: type }));
+  const [showEmailPassword, setShowEmailPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [savingEmailChange, setSavingEmailChange] = useState(false);
+  const [verifyingEmail, setVerifyingEmail] = useState(false);
+  const [savingMobileChange, setSavingMobileChange] = useState(false);
+  const [verifyingMobile, setVerifyingMobile] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  const clearAlerts = () => {
+    setError('');
+    setSuccess('');
   };
 
-  const clearMessage = (key) => {
-    setMessages((prev) => ({ ...prev, [key]: '' }));
-    setMessageType((prev) => ({ ...prev, [key]: '' }));
-  };
-
-  const refreshUserCache = (user) => {
-    if (!user) return;
-    const stored = JSON.parse(localStorage.getItem('user') || '{}');
-    localStorage.setItem('user', JSON.stringify({ ...stored, ...user }));
-  };
-
-  const fetchUserData = async () => {
+  const fetchMe = useCallback(async () => {
     try {
-      setLoadingPage(true);
-      clearMessage('general');
-
-      const { data } = await axios.get(`${API_BASE}/auth/me`, { headers: authHeaders });
-      const user = data?.user || {};
-      const employerProfile = user.employerProfile || {};
-
-      setNameForm({
-        firstName: user.firstName || '',
-        middleName: user.middleName || '',
-        lastName: user.lastName || '',
-        extensionName: user.extensionName || '',
-      });
-
-      setPositionForm({ position: employerProfile.position || '' });
-
-      setEmailForm((prev) => ({
-        ...prev,
-        currentEmail: user.email || employerProfile.businessEmail || '',
-        pendingEmail: user.settingsVerification?.pendingEmail || '',
-      }));
-
-      setPhoneForm((prev) => ({
-        ...prev,
-        mobileNumber: employerProfile.mobileNumber || '',
-        pendingPhoneNumber: user.settingsVerification?.pendingPhoneNumber || '',
-      }));
-    } catch (error) {
-      showMessage('general', error.response?.data?.message || 'Unable to load settings data.', 'error');
+      setLoadingUser(true);
+      const res = await api.get('/auth/me');
+      const user = res.data?.user || res.data?.data?.user || null;
+      setMe(user);
+      if (user?.jobSeekerProfile?.phoneNumber) setNewMobile(user.jobSeekerProfile.phoneNumber);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load settings.');
     } finally {
-      setLoadingPage(false);
+      setLoadingUser(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchUserData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    fetchMe();
+  }, [fetchMe]);
 
-  const handleNameSave = async () => {
-    const firstName = nameForm.firstName.trim();
-    const lastName = nameForm.lastName.trim();
+  const verification = me?.settingsVerification || {};
+  const displayEmail = me?.email || '—';
+  const displayMobile = me?.jobSeekerProfile?.phoneNumber || '—';
+  const emailVerified = Boolean(verification.emailVerified);
+  const phoneVerified = Boolean(verification.phoneVerified);
+  const pendingEmail = verification.pendingEmail || '';
+  const pendingPhone = verification.pendingPhoneNumber || '';
 
-    if (!firstName || !lastName) {
-      showMessage('name', 'First name and last name are required.', 'error');
+  const fullName = useMemo(() => buildFullName(me), [me]);
+
+  const handleRequestEmailChange = async (e) => {
+    e.preventDefault();
+    clearAlerts();
+
+    if (!emailPassword || !newEmail) {
+      setError('Please enter your current password and new email address.');
       return;
     }
 
     try {
-      setSaving((prev) => ({ ...prev, name: true }));
-      clearMessage('name');
-
-      const payload = {
-        firstName,
-        middleName: nameForm.middleName.trim(),
-        lastName,
-        extensionName: nameForm.extensionName.trim(),
-      };
-
-      const { data } = await axios.put(`${API_BASE}/auth/update-profile`, payload, { headers: authHeaders });
-      refreshUserCache(data?.user || payload);
-      setNameForm(payload);
-      showMessage('name', 'Name updated successfully.');
-    } catch (error) {
-      showMessage('name', error.response?.data?.message || 'Unable to update name.', 'error');
-    } finally {
-      setSaving((prev) => ({ ...prev, name: false }));
-    }
-  };
-
-  const handlePositionSave = async () => {
-    const position = positionForm.position.trim();
-
-    if (!position) {
-      showMessage('position', 'Position is required.', 'error');
-      return;
-    }
-
-    try {
-      setSaving((prev) => ({ ...prev, position: true }));
-      clearMessage('position');
-
-      const formData = new FormData();
-      formData.append('position', position);
-
-      const { data } = await axios.put(`${API_BASE}/auth/update-company-profile`, formData, {
-        headers: { ...authHeaders, 'Content-Type': 'multipart/form-data' },
+      setSavingEmailChange(true);
+      const res = await api.post('/auth/settings/request-email-verification', {
+        currentPassword: emailPassword,
+        newEmail,
       });
-
-      refreshUserCache(data?.user);
-      showMessage('position', 'Position updated successfully.');
-    } catch (error) {
-      showMessage('position', error.response?.data?.message || 'Unable to update position.', 'error');
+      setSuccess(res.data?.message || 'Verification code sent to your new email address.');
+      setEmailPassword('');
+      await fetchMe();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to send email verification code.');
     } finally {
-      setSaving((prev) => ({ ...prev, position: false }));
+      setSavingEmailChange(false);
     }
   };
 
-  const handleEmailRequest = async () => {
-    if (!emailForm.currentPassword.trim() || !emailForm.newEmail.trim()) {
-      showMessage('email', 'Current password and new email address are required.', 'error');
+  const handleVerifyEmail = async (e) => {
+    e.preventDefault();
+    clearAlerts();
+
+    if (!emailCode) {
+      setError('Please enter your email verification code.');
       return;
     }
 
     try {
-      setSaving((prev) => ({ ...prev, email: true }));
-      clearMessage('email');
-
-      const { data } = await axios.post(
-        `${API_BASE}/auth/settings/request-email-verification`,
-        { currentPassword: emailForm.currentPassword, newEmail: emailForm.newEmail },
-        { headers: authHeaders }
-      );
-
-      setEmailForm((prev) => ({ ...prev, pendingEmail: data?.pendingEmail || prev.newEmail }));
-      showMessage('email', data?.message || 'Verification code sent to your new email address.');
-    } catch (error) {
-      showMessage('email', error.response?.data?.message || 'Unable to send email verification code.', 'error');
+      setVerifyingEmail(true);
+      const res = await api.post('/auth/settings/verify-email', { code: emailCode });
+      setSuccess(res.data?.message || 'Email verified successfully.');
+      setEmailCode('');
+      if (res.data?.user) {
+        setMe(res.data.user);
+        localStorage.setItem('user', JSON.stringify(res.data.user));
+      } else {
+        await fetchMe();
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to verify email.');
     } finally {
-      setSaving((prev) => ({ ...prev, email: false }));
+      setVerifyingEmail(false);
     }
   };
 
-  const handleEmailVerify = async () => {
-    if (!emailForm.verificationCode.trim()) {
-      showMessage('email', 'Email verification code is required.', 'error');
+  const handleResendEmail = async () => {
+    clearAlerts();
+    try {
+      const res = await api.post('/auth/settings/resend-email-verification');
+      setSuccess(res.data?.message || 'Verification code sent.');
+      await fetchMe();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to resend email verification code.');
+    }
+  };
+
+  const handleRequestMobileChange = async (e) => {
+    e.preventDefault();
+    clearAlerts();
+
+    if (!newMobile || newMobile === '+63') {
+      setError('Please enter your new mobile number.');
       return;
     }
 
     try {
-      setSaving((prev) => ({ ...prev, email: true }));
-      clearMessage('email');
-
-      const { data } = await axios.post(
-        `${API_BASE}/auth/settings/verify-email`,
-        { code: emailForm.verificationCode },
-        { headers: authHeaders }
-      );
-
-      const nextEmail = data?.user?.email || emailForm.pendingEmail || emailForm.newEmail;
-      setEmailForm({ currentEmail: nextEmail, currentPassword: '', newEmail: '', verificationCode: '', pendingEmail: '' });
-      refreshUserCache(data?.user);
-      showMessage('email', data?.message || 'Email verified successfully.');
-    } catch (error) {
-      showMessage('email', error.response?.data?.message || 'Unable to verify email code.', 'error');
+      setSavingMobileChange(true);
+      const res = await api.post('/auth/settings/request-phone-verification', { phoneNumber: newMobile });
+      setSuccess(res.data?.message || 'Verification code sent to your mobile number.');
+      await fetchMe();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to send mobile verification code.');
     } finally {
-      setSaving((prev) => ({ ...prev, email: false }));
+      setSavingMobileChange(false);
     }
   };
 
-  const handlePhoneRequest = async () => {
-    const targetNumber = phoneForm.newMobileNumber.trim() || phoneForm.mobileNumber.trim();
-    if (!/^09\d{9}$/.test(targetNumber)) {
-      showMessage('phone', 'Please enter a valid 11-digit Philippine mobile number starting with 09.', 'error');
+  const handleVerifyMobile = async (e) => {
+    e.preventDefault();
+    clearAlerts();
+
+    if (!mobileCode) {
+      setError('Please enter your mobile verification code.');
       return;
     }
 
     try {
-      setSaving((prev) => ({ ...prev, phone: true }));
-      clearMessage('phone');
-
-      const { data } = await axios.post(
-        `${API_BASE}/auth/settings/request-phone-verification`,
-        { phoneNumber: targetNumber },
-        { headers: authHeaders }
-      );
-
-      setPhoneForm((prev) => ({ ...prev, pendingPhoneNumber: data?.pendingPhoneNumber || targetNumber }));
-      showMessage('phone', data?.message || 'Verification code sent to your mobile number.');
-    } catch (error) {
-      showMessage('phone', error.response?.data?.message || 'Unable to send mobile verification code.', 'error');
+      setVerifyingMobile(true);
+      const res = await api.post('/auth/settings/verify-phone', { code: mobileCode });
+      setSuccess(res.data?.message || 'Mobile number verified successfully.');
+      setMobileCode('');
+      if (res.data?.user) {
+        setMe(res.data.user);
+        localStorage.setItem('user', JSON.stringify(res.data.user));
+      } else {
+        await fetchMe();
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to verify mobile number.');
     } finally {
-      setSaving((prev) => ({ ...prev, phone: false }));
+      setVerifyingMobile(false);
     }
   };
 
-  const handlePhoneVerify = async () => {
-    if (!phoneForm.verificationCode.trim()) {
-      showMessage('phone', 'Mobile verification code is required.', 'error');
+  const handleResendMobile = async () => {
+    clearAlerts();
+    try {
+      const res = await api.post('/auth/settings/resend-phone-verification');
+      setSuccess(res.data?.message || 'Mobile verification code sent.');
+      await fetchMe();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to resend mobile verification code.');
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    clearAlerts();
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setError('Please complete all password fields.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('New password and retype password do not match.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError('New password must be at least 6 characters long.');
       return;
     }
 
     try {
-      setSaving((prev) => ({ ...prev, phone: true }));
-      clearMessage('phone');
-
-      const { data } = await axios.post(
-        `${API_BASE}/auth/settings/verify-phone`,
-        { code: phoneForm.verificationCode },
-        { headers: authHeaders }
-      );
-
-      const nextMobile = data?.user?.employerProfile?.mobileNumber || phoneForm.pendingPhoneNumber || phoneForm.newMobileNumber;
-      setPhoneForm({ mobileNumber: nextMobile, newMobileNumber: '', verificationCode: '', pendingPhoneNumber: '' });
-      refreshUserCache(data?.user);
-      showMessage('phone', data?.message || 'Mobile number verified successfully.');
-    } catch (error) {
-      showMessage('phone', error.response?.data?.message || 'Unable to verify mobile code.', 'error');
+      setSavingPassword(true);
+      const res = await api.put('/auth/change-password', {
+        currentPassword,
+        newPassword,
+      });
+      setSuccess(res.data?.message || 'Password changed successfully.');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to change password.');
     } finally {
-      setSaving((prev) => ({ ...prev, phone: false }));
-    }
-  };
-
-  const handlePhoneResend = async () => {
-    try {
-      setSaving((prev) => ({ ...prev, phone: true }));
-      clearMessage('phone');
-      const { data } = await axios.post(`${API_BASE}/auth/settings/resend-phone-verification`, {}, { headers: authHeaders });
-      showMessage('phone', data?.message || 'Mobile verification code sent.');
-    } catch (error) {
-      showMessage('phone', error.response?.data?.message || 'Unable to resend mobile verification code.', 'error');
-    } finally {
-      setSaving((prev) => ({ ...prev, phone: false }));
-    }
-  };
-
-  const handlePasswordSubmit = async () => {
-    if (!passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.retypeNewPassword) {
-      showMessage('password', 'Please complete all password fields.', 'error');
-      return;
-    }
-
-    if (passwordForm.newPassword !== passwordForm.retypeNewPassword) {
-      showMessage('password', 'New password and retype new password do not match.', 'error');
-      return;
-    }
-
-    const isStrongPassword =
-      passwordForm.newPassword.length >= 8 &&
-      /[A-Z]/.test(passwordForm.newPassword) &&
-      /[a-z]/.test(passwordForm.newPassword) &&
-      /\d/.test(passwordForm.newPassword) &&
-      /[^A-Za-z0-9]/.test(passwordForm.newPassword);
-
-    if (!isStrongPassword) {
-      showMessage(
-        'password',
-        'New password must be at least 8 characters and include uppercase, lowercase, number, and special character.',
-        'error'
-      );
-      return;
-    }
-
-    if (passwordForm.newPassword === passwordForm.oldPassword) {
-      showMessage('password', 'New password must be different from your current password.', 'error');
-      return;
-    }
-
-    try {
-      setSaving((prev) => ({ ...prev, password: true }));
-      clearMessage('password');
-
-      const { data } = await axios.put(
-        `${API_BASE}/auth/change-password`,
-        { currentPassword: passwordForm.oldPassword, newPassword: passwordForm.newPassword },
-        { headers: authHeaders }
-      );
-
-      refreshUserCache(data?.user);
-      setPasswordForm({ oldPassword: '', newPassword: '', retypeNewPassword: '' });
-      showMessage('password', data?.message || 'Password changed successfully.');
-    } catch (error) {
-      showMessage('password', error.response?.data?.message || 'Unable to change password.', 'error');
-    } finally {
-      setSaving((prev) => ({ ...prev, password: false }));
+      setSavingPassword(false);
     }
   };
 
   return (
-    <EmployerLayout>
-      <div className="min-h-screen  px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className={cx(
-              'mb-5 inline-flex h-11 items-center justify-center rounded-xl border border-[#d8e2ee] bg-white px-5 text-sm font-semibold text-black/70 transition hover:border-[#2e66a6] hover:text-[#2e66a6]',
-              focusRing
-            )}
-          >
-            ← Back
-          </button>
-
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold tracking-tight text-black sm:text-4xl">Settings</h1>
-            <p className="mt-2 text-sm text-black/60 sm:text-base">
-              Manage your account settings, contact details, and security.
-            </p>
-          </div>
-
-          {loadingPage ? (
-            <div className="rounded-2xl border border-[#e6edf5] bg-[#f7faff] p-5 text-sm text-black/60 shadow-sm">
-              Loading settings...
-            </div>
-          ) : (
-            <div className="space-y-5">
-              <Message type={messageType.general}>{messages.general}</Message>
-
-              <Section
-                title="Change Name"
-                description="Keep your employer account identity accurate."
-                actionText="Save"
-                onAction={handleNameSave}
-                loading={saving.name}
-              >
-                <Message type={messageType.name}>{messages.name}</Message>
-                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                  <TextInput
-                    label="First Name"
-                    placeholder="e.g. Juan"
-                    value={nameForm.firstName}
-                    onChange={(e) => setNameForm((prev) => ({ ...prev, firstName: e.target.value }))}
-                  />
-                  <TextInput
-                    label="Last Name"
-                    placeholder="e.g. De La Cruz"
-                    value={nameForm.lastName}
-                    onChange={(e) => setNameForm((prev) => ({ ...prev, lastName: e.target.value }))}
-                  />
-                  <TextInput
-                    label="Middle Name (Optional)"
-                    placeholder="e.g. Santos"
-                    value={nameForm.middleName}
-                    onChange={(e) => setNameForm((prev) => ({ ...prev, middleName: e.target.value }))}
-                  />
-                  <SelectInput
-                    label="Suffix (Optional)"
-                    value={nameForm.extensionName}
-                    onChange={(e) => setNameForm((prev) => ({ ...prev, extensionName: e.target.value }))}
-                  >
-                    {suffixOptions.map((suffix) => (
-                      <option key={suffix || 'none'} value={suffix}>
-                        {suffix || 'None'}
-                      </option>
-                    ))}
-                  </SelectInput>
-                </div>
-              </Section>
-
-              <Section
-                title="Position"
-                description="Update your role or job title inside the company."
-                actionText="Save"
-                onAction={handlePositionSave}
-                loading={saving.position}
-              >
-                <Message type={messageType.position}>{messages.position}</Message>
-                <div className="max-w-xl">
-                  <TextInput
-                    label="Role"
-                    placeholder="e.g. HR Manager"
-                    value={positionForm.position}
-                    onChange={(e) => setPositionForm({ position: e.target.value })}
-                  />
-                </div>
-              </Section>
-
-              <Section
-                title="Email"
-                description="Change your login email with password confirmation and verification."
-                actionText="Save"
-                onAction={handleEmailRequest}
-                loading={saving.email}
-              >
-                <Message type={messageType.email}>{messages.email}</Message>
-                <div className="space-y-5 text-sm">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-black/70">Current Email Address:</span>
-                    <span className="font-medium text-black">{emailForm.currentEmail || 'No email found'}</span>
-                  </div>
-
-                  <p className="text-xs text-black/50">To change your email, please complete the following fields.</p>
-
-                  <div className="grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-[180px_1fr] sm:items-center">
-                    <label className="text-sm text-black/70">Current Password:</label>
-                    <TextInput
-                      label=""
-                      type="password"
-                      value={emailForm.currentPassword}
-                      onChange={(e) => setEmailForm((prev) => ({ ...prev, currentPassword: e.target.value }))}
-                    />
-
-                    <label className="text-sm text-black/70">New Email Address:</label>
-                    <TextInput
-                      label=""
-                      type="email"
-                      value={emailForm.newEmail}
-                      onChange={(e) => setEmailForm((prev) => ({ ...prev, newEmail: e.target.value }))}
-                    />
-                  </div>
-
-                  {emailForm.pendingEmail ? (
-                    <div className="rounded-2xl border border-[#d8e2ee] bg-[#f7faff] p-4">
-                      <TextInput
-                        label={`Verification Code sent to ${emailForm.pendingEmail}`}
-                        value={emailForm.verificationCode}
-                        onChange={(e) => setEmailForm((prev) => ({ ...prev, verificationCode: e.target.value }))}
-                      />
-                      <div className="mt-4 flex justify-end">
-                        <button
-                          type="button"
-                          onClick={handleEmailVerify}
-                          disabled={saving.email}
-                          className={cx(
-                            'inline-flex h-11 items-center justify-center rounded-xl bg-[#2e66a6] px-5 text-sm font-bold text-white transition hover:bg-[#25578f] disabled:opacity-60',
-                            focusRing
-                          )}
-                        >
-                          Verify Email Code
-                        </button>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              </Section>
-
-              <Section
-                title="Mobile Number"
-                description="Verify the contact number used for notifications and recruitment updates."
-                actionText="Verify"
-                onAction={handlePhoneRequest}
-                loading={saving.phone}
-              >
-                <Message type={messageType.phone}>{messages.phone}</Message>
-                <div className="space-y-5 text-sm">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-black/70">Current Mobile Number:</span>
-                    <strong className="font-medium text-black">{phoneForm.mobileNumber || 'No mobile number'}</strong>
-                    <InlineActionButton onClick={() => setPhoneForm((prev) => ({ ...prev, newMobileNumber: prev.mobileNumber }))}>
-                      change
-                    </InlineActionButton>
-                  </div>
-
-                  <div className="max-w-xl">
-                    <TextInput
-                      label="New Mobile Number"
-                      placeholder="e.g. 09000000000"
-                      value={phoneForm.newMobileNumber}
-                      onChange={(e) => setPhoneForm((prev) => ({ ...prev, newMobileNumber: e.target.value }))}
-                    />
-                  </div>
-
-                  <p className="text-xs font-semibold text-black/65">
-                    Enter the code we sent to you via SMS to verify your mobile number.
-                  </p>
-
-                  <div className="max-w-xl">
-                    <TextInput
-                      label="Verification Code"
-                      value={phoneForm.verificationCode}
-                      onChange={(e) => setPhoneForm((prev) => ({ ...prev, verificationCode: e.target.value }))}
-                    />
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-3">
-                    <InlineActionButton onClick={handlePhoneVerify}>Verify code</InlineActionButton>
-                    <InlineActionButton onClick={handlePhoneResend}>Didn't get code? Send code again</InlineActionButton>
-                  </div>
-                </div>
-              </Section>
-
-              <Section
-                title="Password"
-                description="Protect your account by updating your password regularly."
-                actionText="Submit"
-                onAction={handlePasswordSubmit}
-                loading={saving.password}
-              >
-                <Message type={messageType.password}>{messages.password}</Message>
-                <div className="space-y-5 text-sm">
-                  <p className="text-xs text-black/50">To change your password, please complete the following fields.</p>
-
-                  <div className="grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-[180px_1fr] sm:items-center">
-                    <label className="text-sm text-black/70">Old Password:</label>
-                    <TextInput
-                      label=""
-                      type="password"
-                      value={passwordForm.oldPassword}
-                      onChange={(e) => setPasswordForm((prev) => ({ ...prev, oldPassword: e.target.value }))}
-                    />
-
-                    <label className="text-sm text-black/70">New Password:</label>
-                    <TextInput
-                      label=""
-                      type="password"
-                      value={passwordForm.newPassword}
-                      onChange={(e) => setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))}
-                    />
-
-                    <label className="text-sm text-black/70">Retype New Password:</label>
-                    <TextInput
-                      label=""
-                      type="password"
-                      value={passwordForm.retypeNewPassword}
-                      onChange={(e) => setPasswordForm((prev) => ({ ...prev, retypeNewPassword: e.target.value }))}
-                    />
-                  </div>
-                </div>
-              </Section>
-            </div>
-          )}
-        </div>
+    <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-8"><div className="max-w-6xl mx-auto">
+      <div className="mb-4">
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-black">Settings</h1>
+        <p className="text-sm sm:text-base text-black/60 mt-2">Manage your email, mobile number, and password.</p>
       </div>
-    </EmployerLayout>
+
+      {loadingUser ? (
+        <div className="bg-[#f7faff] border border-[#e6edf5] rounded-2xl p-5 text-sm text-black/60 shadow-sm">Loading settings...</div>
+      ) : null}
+
+      {error ? (
+        <div className="mb-4 bg-[#fff7f7] border border-red-200 rounded-2xl p-4 text-sm text-red-700 shadow-sm">
+          <div className="font-semibold">Error</div>
+          <div>{error}</div>
+        </div>
+      ) : null}
+
+      {success ? (
+        <div className="mb-4 bg-[#f7faff] border border-[#d8e2ee] rounded-2xl p-4 text-sm text-[#2e66a6] shadow-sm">
+          <div className="font-semibold">Success</div>
+          <div>{success}</div>
+        </div>
+      ) : null}
+
+      <div className="space-y-5">
+        <Panel title="Change Email">
+          <form onSubmit={handleRequestEmailChange}>
+            <div className="space-y-4 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-black/70">Current Email Address:</span>
+                <span className="font-medium text-black">{displayEmail}</span>
+                <StatusBadge verified={emailVerified} />
+              </div>
+              <p className="text-xs text-black/50">To change your email, please complete the following fields.</p>
+              {pendingEmail ? <p className="text-xs text-[#2e66a6]">Pending new email verification: {pendingEmail}</p> : null}
+
+              <div className="grid grid-cols-1 sm:grid-cols-[170px_1fr] max-w-xl items-start sm:items-center gap-2 sm:gap-3">
+                <label className="text-black/70">Current Password:</label>
+                <PasswordInput
+                  value={emailPassword}
+                  onChange={(e) => setEmailPassword(e.target.value)}
+                  placeholder="Enter password here"
+                  show={showEmailPassword}
+                  onToggle={() => setShowEmailPassword((v) => !v)}
+                  autoComplete="current-password"
+                />
+
+                <label className="text-black/70">New Email Address:</label>
+                <TextInput
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder="Enter new email here"
+                  type="email"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <SaveButton loading={savingEmailChange} />
+            </div>
+          </form>
+        </Panel>
+
+        <Panel title="Verify Email" blue>
+          <form onSubmit={handleVerifyEmail}>
+            <div className="space-y-4 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-black/70">Current Email Address:</span>
+                <span className="font-medium text-black">{pendingEmail || displayEmail}</span>
+                <StatusBadge verified={emailVerified && !pendingEmail} />
+              </div>
+              <p className="text-xs text-black/50">To verify your email, please enter the code we sent through your email.</p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-[170px_1fr] max-w-xl items-start sm:items-center gap-2 sm:gap-3">
+                <label className="text-black/70">Verification Code:</label>
+                <TextInput
+                  value={emailCode}
+                  onChange={(e) => setEmailCode(e.target.value)}
+                  placeholder="Enter code here"
+                />
+              </div>
+
+              <button type="button" onClick={handleResendEmail} className="inline-flex w-fit text-xs font-semibold text-[#2e66a6] underline underline-offset-4 hover:text-[#25578f] transition">
+                Can't find our email? Resend verification email
+              </button>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <SaveButton loading={verifyingEmail} />
+            </div>
+          </form>
+        </Panel>
+
+        <Panel title="Change Mobile Number">
+          <form onSubmit={handleRequestMobileChange}>
+            <div className="space-y-4 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-black/70">Mobile Number:</span>
+                <span className="font-medium text-black">{displayMobile}</span>
+                <StatusBadge verified={phoneVerified} />
+              </div>
+              <p className="text-xs text-black/50">
+                Your mobile number will be used to send important updates on your applications, and allow recruiters to contact you and invite you to interviews.
+              </p>
+              {pendingPhone ? <p className="text-xs text-[#2e66a6]">Pending new mobile verification: {pendingPhone}</p> : null}
+
+              <div className="grid grid-cols-1 sm:grid-cols-[170px_1fr] max-w-xl items-start sm:items-center gap-2 sm:gap-3">
+                <label className="text-black/70">Mobile Number:</label>
+                <div className="relative">
+                  <TextInput
+                    value={newMobile}
+                    onChange={(e) => setNewMobile(e.target.value)}
+                    placeholder="+63"
+                  />
+                  <FaInfoCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-[#2e66a6]" />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <SaveButton loading={savingMobileChange} />
+            </div>
+          </form>
+        </Panel>
+
+        <Panel title="Verify Mobile Number" blue>
+          <form onSubmit={handleVerifyMobile}>
+            <div className="space-y-4 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-black/70">Mobile Number:</span>
+                <span className="font-medium text-black">{pendingPhone || displayMobile}</span>
+                <StatusBadge verified={phoneVerified && !pendingPhone} />
+              </div>
+              <p className="text-xs text-black/50">Enter the code we sent to you via SMS to verify your mobile number.</p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-[170px_1fr] max-w-xl items-start sm:items-center gap-2 sm:gap-3">
+                <label className="text-black/70">Verification Code:</label>
+                <TextInput
+                  value={mobileCode}
+                  onChange={(e) => setMobileCode(e.target.value)}
+                  placeholder="Enter code here"
+                />
+              </div>
+
+              <button type="button" onClick={handleResendMobile} className="inline-flex w-fit text-xs font-semibold text-[#2e66a6] underline underline-offset-4 hover:text-[#25578f] transition">
+                Send verification code
+              </button>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <SaveButton loading={verifyingMobile} />
+            </div>
+          </form>
+        </Panel>
+
+        <Panel title="Password">
+          <form onSubmit={handleChangePassword}>
+            <div className="space-y-4 text-sm">
+              <p className="text-xs text-black/50">To change your password, please complete the following fields.</p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] max-w-2xl items-start sm:items-center gap-2 sm:gap-3">
+                <label className="text-black/70">Current Password:</label>
+                <PasswordInput
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password here"
+                  show={showCurrentPassword}
+                  onToggle={() => setShowCurrentPassword((v) => !v)}
+                  autoComplete="current-password"
+                />
+
+                <label className="text-black/70">New Password:</label>
+                <div>
+                  <PasswordInput
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password here"
+                    show={showNewPassword}
+                    onToggle={() => setShowNewPassword((v) => !v)}
+                    autoComplete="new-password"
+                  />
+                  <div className="mt-2 h-1.5 bg-[#2e66a6] rounded-full w-full" />
+                  <p className="text-[11px] text-black/50 mt-2 max-w-lg">
+                    Enter passwords are handled securely. Use uppercase/lowercase letters, numbers/special characters, and avoid common words.
+                  </p>
+                </div>
+
+                <label className="text-black/70">Retype New Password:</label>
+                <PasswordInput
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Retype new password here"
+                  show={showConfirmPassword}
+                  onToggle={() => setShowConfirmPassword((v) => !v)}
+                  autoComplete="new-password"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <SaveButton loading={savingPassword} />
+            </div>
+          </form>
+        </Panel>
+      </div>
+    </div>
+    </div>
   );
 };
 
