@@ -90,7 +90,6 @@ const InlineMessage = ({ message }) => {
       role={isError ? 'alert' : 'status'}
       aria-live={isError ? 'assertive' : 'polite'}
     >
-      <div className="font-semibold">{isError ? 'Error' : 'Success'}</div>
       <div>{message.text}</div>
     </div>
   );
@@ -109,7 +108,6 @@ const Settings = () => {
   const [me, setMe] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   const [emailPassword, setEmailPassword] = useState('');
   const [newEmail, setNewEmail] = useState('');
@@ -132,6 +130,8 @@ const Settings = () => {
   const [savingMobileChange, setSavingMobileChange] = useState(false);
   const [verifyingMobile, setVerifyingMobile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [emailChangeMessage, setEmailChangeMessage] = useState({ type: '', text: '' });
+  const [emailVerifyMessage, setEmailVerifyMessage] = useState({ type: '', text: '' });
   const [mobileChangeMessage, setMobileChangeMessage] = useState({ type: '', text: '' });
   const [mobileVerifyMessage, setMobileVerifyMessage] = useState({ type: '', text: '' });
   const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
@@ -151,11 +151,6 @@ const Settings = () => {
       : metPasswordRequirements >= 3
         ? { label: 'Good password, but still incomplete', color: 'text-amber-700', bar: 'bg-amber-500', width: 'w-2/3' }
         : { label: 'Weak password', color: 'text-red-700', bar: 'bg-red-500', width: 'w-1/3' };
-
-  const clearAlerts = () => {
-    setError('');
-    setSuccess('');
-  };
 
   const fetchMe = useCallback(async () => {
     try {
@@ -186,10 +181,10 @@ const Settings = () => {
 
   const handleRequestEmailChange = async (e) => {
     e.preventDefault();
-    clearAlerts();
+    setEmailChangeMessage({ type: '', text: '' });
 
     if (!emailPassword || !newEmail) {
-      setError('Please enter your current password and new email address.');
+      setEmailChangeMessage({ type: 'error', text: 'Please enter your current password and new email address.' });
       return;
     }
 
@@ -199,11 +194,11 @@ const Settings = () => {
         currentPassword: emailPassword,
         newEmail,
       });
-      setSuccess(res.data?.message || 'Verification code sent to your new email address.');
+      setEmailChangeMessage({ type: 'success', text: res.data?.message || 'Verification code sent to your new email address.' });
       setEmailPassword('');
       await fetchMe();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send email verification code.');
+      setEmailChangeMessage({ type: 'error', text: err.response?.data?.message || 'Failed to send email verification code.' });
     } finally {
       setSavingEmailChange(false);
     }
@@ -211,17 +206,17 @@ const Settings = () => {
 
   const handleVerifyEmail = async (e) => {
     e.preventDefault();
-    clearAlerts();
+    setEmailVerifyMessage({ type: '', text: '' });
 
     if (!emailCode) {
-      setError('Please enter your email verification code.');
+      setEmailVerifyMessage({ type: 'error', text: 'Please enter your email verification code.' });
       return;
     }
 
     try {
       setVerifyingEmail(true);
       const res = await api.post('/auth/settings/verify-email', { code: emailCode });
-      setSuccess(res.data?.message || 'Email verified successfully.');
+      setEmailVerifyMessage({ type: 'success', text: res.data?.message || 'Email verified successfully.' });
       setEmailCode('');
       if (res.data?.user) {
         setMe(res.data.user);
@@ -230,20 +225,20 @@ const Settings = () => {
         await fetchMe();
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to verify email.');
+      setEmailVerifyMessage({ type: 'error', text: err.response?.data?.message || 'Failed to verify email.' });
     } finally {
       setVerifyingEmail(false);
     }
   };
 
   const handleResendEmail = async () => {
-    clearAlerts();
+    setEmailVerifyMessage({ type: '', text: '' });
     try {
       const res = await api.post('/auth/settings/resend-email-verification');
-      setSuccess(res.data?.message || 'Verification code sent.');
+      setEmailVerifyMessage({ type: 'success', text: res.data?.message || 'Verification code sent.' });
       await fetchMe();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to resend email verification code.');
+      setEmailVerifyMessage({ type: 'error', text: err.response?.data?.message || 'Failed to resend email verification code.' });
     }
   };
 
@@ -371,21 +366,14 @@ const Settings = () => {
 
       {error ? (
         <div className="mb-4 bg-[#fff7f7] border border-red-200 rounded-2xl p-4 text-sm text-red-700 shadow-sm">
-          <div className="font-semibold">Error</div>
           <div>{error}</div>
-        </div>
-      ) : null}
-
-      {success ? (
-        <div className="mb-4 bg-[#f7faff] border border-[#d8e2ee] rounded-2xl p-4 text-sm text-[#2e66a6] shadow-sm">
-          <div className="font-semibold">Success</div>
-          <div>{success}</div>
         </div>
       ) : null}
 
       <div className="space-y-5">
         <Panel title="Change Email">
           <form onSubmit={handleRequestEmailChange}>
+            <InlineMessage message={emailChangeMessage} />
             <div className="space-y-4 text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-black/70">Current Email Address:</span>
@@ -399,7 +387,10 @@ const Settings = () => {
                 <label className="text-black/70">Current Password:</label>
                 <PasswordInput
                   value={emailPassword}
-                  onChange={(e) => setEmailPassword(e.target.value)}
+                  onChange={(e) => {
+                    setEmailPassword(e.target.value);
+                    if (emailChangeMessage.text) setEmailChangeMessage({ type: '', text: '' });
+                  }}
                   placeholder="Enter password here"
                   show={showEmailPassword}
                   onToggle={() => setShowEmailPassword((v) => !v)}
@@ -409,7 +400,10 @@ const Settings = () => {
                 <label className="text-black/70">New Email Address:</label>
                 <TextInput
                   value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
+                  onChange={(e) => {
+                    setNewEmail(e.target.value);
+                    if (emailChangeMessage.text) setEmailChangeMessage({ type: '', text: '' });
+                  }}
                   placeholder="Enter new email here"
                   type="email"
                 />
@@ -424,6 +418,7 @@ const Settings = () => {
 
         <Panel title="Verify Email" blue>
           <form onSubmit={handleVerifyEmail}>
+            <InlineMessage message={emailVerifyMessage} />
             <div className="space-y-4 text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-black/70">Current Email Address:</span>
@@ -436,7 +431,10 @@ const Settings = () => {
                 <label className="text-black/70">Verification Code:</label>
                 <TextInput
                   value={emailCode}
-                  onChange={(e) => setEmailCode(e.target.value)}
+                  onChange={(e) => {
+                    setEmailCode(e.target.value);
+                    if (emailVerifyMessage.text) setEmailVerifyMessage({ type: '', text: '' });
+                  }}
                   placeholder="Enter code here"
                 />
               </div>
