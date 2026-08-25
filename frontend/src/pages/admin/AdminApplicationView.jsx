@@ -445,11 +445,11 @@ const SectionHeader = ({ icon, title, subtitle }) => (
   </div>
 );
 
-const MetricCard = ({ icon, title, value }) => (
+const MetricCard = ({ icon, title, value, isPeso = false }) => (
   <div className={`${UI.metricCard} min-w-0`}>
     <div className="flex h-full min-w-0 items-start gap-3">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#d9dbe3] bg-[#f9fafb] text-[#6b7280]">
-        <Icon name={icon} className="h-4 w-4" />
+        {isPeso ? <span className="text-sm font-bold">₱</span> : <Icon name={icon} className="h-4 w-4" />}
       </div>
       <div className="min-w-0">
         <p className={UI.label}>{title}</p>
@@ -673,7 +673,7 @@ const AdminApplicationView = () => {
           </section>
 
           <div className="mb-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <MetricCard icon="money" title="Salary" value={formatSalary(job.salaryMin, job.salaryMax)} />
+            <MetricCard icon="money" title="Salary" value={formatSalary(job.salaryMin, job.salaryMax)} isPeso />
             <MetricCard icon="clock" title="Experience" value={job.experienceLevel || "No experience required"} />
             <MetricCard icon="graduation" title="Educational Requirements" value={job.educationLevel || job.educationalRequirements || "Not specified"} />
             <MetricCard
@@ -723,7 +723,7 @@ const AdminApplicationView = () => {
 
           <div className="mb-5 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
             <section className={`${UI.sectionCard} p-5 sm:p-6`}>
-              <SectionHeader icon="tools" title="Required Skills" subtitle={`${requiredSkills.length} item${requiredSkills.length === 1 ? "" : "s"}`} />
+              <SectionHeader icon="tools" title="Required Skills" subtitle={`${requiredSkills.length} `} />
               <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {requiredSkills.length ? (
                   requiredSkills.map((skill, index) => (
@@ -754,7 +754,7 @@ const AdminApplicationView = () => {
           </div>
 
           <section className={`${UI.sectionCard} p-5 sm:p-6`}>
-            <SectionHeader icon="briefcase" title="Perks and Benefits" subtitle={`${perksAndBenefits.length} item${perksAndBenefits.length === 1 ? "" : "s"}`} />
+            <SectionHeader icon="briefcase" title="Perks and Benefits" subtitle={`${perksAndBenefits.length} `} />
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {perksAndBenefits.length ? (
                 perksAndBenefits.map((benefit, index) => (
