@@ -972,7 +972,7 @@ const EmployerVerificationDetails = () => {
         )}
 
         <div className="rounded-xl border border-black/15 bg-white p-4 shadow-sm sm:p-5">
-          <div className="mb-5 flex flex-col gap-4 border-b border-black/10 pb-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="mb-5 flex flex-col gap-4 border-b border-black/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
             <Link
               to="/admin/employer-verification"
               className={cn(
@@ -983,8 +983,39 @@ const EmployerVerificationDetails = () => {
               <SvgIcon name="back" className="h-4 w-4" />
               Back to List
             </Link>
-
-
+            {canShowActionButtons ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => openConfirm("verified")}
+                  disabled={!docsComplete || action !== null || !canTransition(overallStatus, "verified")}
+                  className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white hover:bg-[#255587] disabled:cursor-not-allowed disabled:opacity-50", UI.ring)}
+                >
+                  <SvgIcon name="check" className="h-4 w-4" />
+                  Approve
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowRejectModal(true)}
+                  disabled={action !== null || !canTransition(overallStatus, "rejected")}
+                  className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#2e66a6] bg-white px-4 text-sm font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:cursor-not-allowed disabled:opacity-50", UI.ring)}
+                >
+                  <SvgIcon name="x" className="h-4 w-4" />
+                  Decline
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowHoldModal(true)}
+                  disabled={action !== null || !canTransition(overallStatus, "hold")}
+                  className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-black px-4 text-sm font-bold text-white hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-50", UI.ring)}
+                >
+                  <SvgIcon name="pause" className="h-4 w-4" />
+                  Hold
+                </button>
+              </div>
+            ) : (
+              statusBadge(overallStatus)
+            )}
           </div>
 
           <section className="rounded-xl border border-black/15 bg-white p-4 sm:p-5">
@@ -994,39 +1025,6 @@ const EmployerVerificationDetails = () => {
                 <h2 className="text-base font-bold">Employer Information</h2>
               </div>
 
-              {canShowActionButtons ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => openConfirm("verified")}
-                    disabled={!docsComplete || action !== null || !canTransition(overallStatus, "verified")}
-                    className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white hover:bg-[#255587] disabled:cursor-not-allowed disabled:opacity-50", UI.ring)}
-                  >
-                    <SvgIcon name="check" className="h-4 w-4" />
-                    Approve
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowRejectModal(true)}
-                    disabled={action !== null || !canTransition(overallStatus, "rejected")}
-                    className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#2e66a6] bg-white px-4 text-sm font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:cursor-not-allowed disabled:opacity-50", UI.ring)}
-                  >
-                    <SvgIcon name="x" className="h-4 w-4" />
-                    Decline
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowHoldModal(true)}
-                    disabled={action !== null || !canTransition(overallStatus, "hold")}
-                    className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-black px-4 text-sm font-bold text-white hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-50", UI.ring)}
-                  >
-                    <SvgIcon name="pause" className="h-4 w-4" />
-                    Hold
-                  </button>
-                </div>
-              ) : (
-                statusBadge(overallStatus)
-              )}
             </div>
 
             <div className="grid gap-5 lg:grid-cols-[1fr_1fr_220px]">
