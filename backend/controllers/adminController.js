@@ -2539,12 +2539,17 @@ exports.updateJobseekerVerificationStatus = async (req, res) => {
       jobseeker.username = finalUsername;
       jobseeker.status = 'active';
 
+      const temporaryPassword = generateTempPassword();
+      jobseeker.password = await bcrypt.hash(temporaryPassword, 12);
+      jobseeker.mustChangePassword = true;
+
       await jobseeker.save();
 
       sendCredentialsEmail({
         to: jobseeker.email,
         fullName: jobseeker.fullName || jobseeker.email,
         username: finalUsername,
+        temporaryPassword,
         role: 'Jobseeker',
       }).catch((emailError) => {
         console.error('Failed to send jobseeker credentials email:', emailError);

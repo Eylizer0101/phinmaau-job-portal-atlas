@@ -82,11 +82,12 @@ const sendMail = async ({ to, subject, html }) => {
   });
 };
 
-const sendCredentialsEmail = async ({ to, fullName, username, role }) => {
+const sendCredentialsEmail = async ({ to, fullName, username, temporaryPassword, role }) => {
   if (!to) throw new Error("Recipient email missing");
 
   const safeName = escapeHtml(fullName || 'User');
   const safeUsername = escapeHtml(username);
+  const safeTemporaryPassword = temporaryPassword ? escapeHtml(temporaryPassword) : '';
   const safeRole = escapeHtml(role || 'User');
 
   const appUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'https://agapayy.onrender.com';
@@ -109,7 +110,9 @@ const sendCredentialsEmail = async ({ to, fullName, username, role }) => {
 
           <p style="font-size:14px; color:#374151; line-height:1.6;">
             Your ${safeRole} account has been approved.  
-            You may now log in using the account information below and the password you created during registration:
+            ${safeTemporaryPassword
+              ? 'You may now log in using the credentials below:'
+              : 'You may now log in using the account information below and the password you created during registration:'}
           </p>
 
           <div style="margin-top:20px; padding:15px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:6px;">
@@ -117,10 +120,19 @@ const sendCredentialsEmail = async ({ to, fullName, username, role }) => {
               <strong>Username:</strong><br/>
               <span style="font-family:monospace; font-size:15px;">${safeUsername}</span>
             </p>
+
+            ${safeTemporaryPassword ? `
+              <p style="margin:0; font-size:14px;">
+                <strong>Temporary Password:</strong><br/>
+                <span style="font-family:monospace; font-size:15px;">${safeTemporaryPassword}</span>
+              </p>
+            ` : ''}
           </div>
 
           <p style="margin-top:20px; font-size:13px; color:#6b7280;">
-            For your security, AGAPAY will never send or ask for your password by email.
+            ${safeTemporaryPassword
+              ? 'For security purposes, please change your password after logging in.'
+              : 'For your security, AGAPAY will never send or ask for your password by email.'}
           </p>
 
           <div style="margin-top:25px;">
