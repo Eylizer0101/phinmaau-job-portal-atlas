@@ -95,6 +95,18 @@ const InlineMessage = ({ message }) => {
   );
 };
 
+const useAutoDismissError = (message, setMessage) => {
+  useEffect(() => {
+    if (message?.type !== 'error' || !message?.text) return undefined;
+
+    const timer = setTimeout(() => {
+      setMessage({ type: '', text: '' });
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [message, setMessage]);
+};
+
 function buildFullName(user) {
   if (!user) return 'User';
   const parts = [user.firstName, user.middleName, user.lastName, user.extensionName]
@@ -135,6 +147,19 @@ const Settings = () => {
   const [mobileChangeMessage, setMobileChangeMessage] = useState({ type: '', text: '' });
   const [mobileVerifyMessage, setMobileVerifyMessage] = useState({ type: '', text: '' });
   const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
+
+  useAutoDismissError(emailChangeMessage, setEmailChangeMessage);
+  useAutoDismissError(emailVerifyMessage, setEmailVerifyMessage);
+  useAutoDismissError(mobileChangeMessage, setMobileChangeMessage);
+  useAutoDismissError(mobileVerifyMessage, setMobileVerifyMessage);
+  useAutoDismissError(passwordMessage, setPasswordMessage);
+
+  useEffect(() => {
+    if (!error) return undefined;
+
+    const timer = setTimeout(() => setError(''), 5000);
+    return () => clearTimeout(timer);
+  }, [error]);
 
   const passwordRequirements = [
     { label: 'At least 8 characters', met: newPassword.length >= 8 },

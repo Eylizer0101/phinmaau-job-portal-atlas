@@ -1,5 +1,5 @@
 // src/pages/employer/dashboard/Settings.jsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
@@ -130,7 +130,7 @@ const Message = ({ type = 'success', children }) => {
       role={isError ? 'alert' : 'status'}
       aria-live={isError ? 'assertive' : 'polite'}
     >
-      <div className="font-semibold">{isError ? 'Error' : 'Success'}</div>
+      {!isError ? <div className="font-semibold">Success</div> : null}
       <div>{children}</div>
     </div>
   );
@@ -178,6 +178,7 @@ const Settings = () => {
   const [phoneForm, setPhoneForm] = useState({ mobileNumber: '', newMobileNumber: '', verificationCode: '', pendingPhoneNumber: '' });
   const [passwordForm, setPasswordForm] = useState({ oldPassword: '', newPassword: '', retypeNewPassword: '' });
   const [passwordVisibility, setPasswordVisibility] = useState({ old: false, new: false, retype: false });
+  const messageTimersRef = useRef({});
 
   const passwordRequirements = [
     { label: 'At least 8 characters', met: passwordForm.newPassword.length >= 8 },
@@ -201,14 +202,40 @@ const Settings = () => {
   }, []);
 
   const showMessage = (key, text, type = 'success') => {
+    if (messageTimersRef.current[key]) {
+      clearTimeout(messageTimersRef.current[key]);
+      delete messageTimersRef.current[key];
+    }
+
     setMessages((prev) => ({ ...prev, [key]: text }));
     setMessageType((prev) => ({ ...prev, [key]: type }));
+
+    if (type === 'error') {
+      messageTimersRef.current[key] = setTimeout(() => {
+        setMessages((prev) => ({ ...prev, [key]: '' }));
+        setMessageType((prev) => ({ ...prev, [key]: '' }));
+        delete messageTimersRef.current[key];
+      }, 5000);
+    }
   };
 
   const clearMessage = (key) => {
+    if (messageTimersRef.current[key]) {
+      clearTimeout(messageTimersRef.current[key]);
+      delete messageTimersRef.current[key];
+    }
+
     setMessages((prev) => ({ ...prev, [key]: '' }));
     setMessageType((prev) => ({ ...prev, [key]: '' }));
   };
+
+  useEffect(() => {
+    const timers = messageTimersRef.current;
+
+    return () => {
+      Object.values(timers).forEach((timer) => clearTimeout(timer));
+    };
+  }, []);
 
   const refreshUserCache = (user) => {
     if (!user) return;
