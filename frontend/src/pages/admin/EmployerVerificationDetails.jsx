@@ -1085,9 +1085,7 @@ const EmployerVerificationDetails = () => {
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <SvgIcon name="doc" className="h-5 w-5 text-[#2e66a6]" />
               <h2 className="text-base font-bold text-[#2e66a6]">Company Requirements</h2>
-              <span className="text-xs font-semibold text-[#2e66a6]">
-                ({DOC_TYPES.length} Required)
-              </span>
+             
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
