@@ -2719,6 +2719,13 @@ exports.updateCompanyProfile = async (req, res) => {
 
     const updateData = req.body || {};
 
+    if (
+      Object.prototype.hasOwnProperty.call(updateData, 'position') &&
+      !String(updateData.position || '').trim()
+    ) {
+      return res.status(400).json({ success: false, message: 'Position is required.' });
+    }
+
     const currentUser = await User.findById(userId);
     if (!currentUser) {
       return res.status(404).json({ success: false, message: 'User not found' });
@@ -2874,13 +2881,23 @@ exports.changePassword = async (req, res) => {
 
     if (!currentPassword || !newPassword) return res.status(400).json({ success: false, message: 'Please provide current and new password' });
 
-    if (newPassword.length < 6) return res.status(400).json({ success: false, message: 'New password must be at least 6 characters long' });
+    if (!isStrongPassword(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 8 characters and include uppercase, lowercase, number, and special character.'
+      });
+    }
 
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) return res.status(400).json({ success: false, message: 'Current password is incorrect' });
+
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      return res.status(400).json({ success: false, message: 'New password must be different from your current password.' });
+    }
 
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
@@ -3315,9 +3332,23 @@ exports.verifyEmailChangeCode = async (req, res) => {
 exports.requestPhoneChangeVerification = async (req, res) => {
   try {
     const { phoneNumber } = req.body;
-    const cleanPhone = normalizePhoneNumber(phoneNumber);
+    const localPhoneNumber = String(phoneNumber || '').trim();
 
-    if (!cleanPhone) return res.status(400).json({ success: false, message: 'Mobile number is required.' });
+    if (!/^09\d{9}$/.test(localPhoneNumber)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please enter a valid 11-digit Philippine mobile number starting with 09.'
+      });
+    }
+
+    const cleanPhone = normalizePhoneNumber(localPhoneNumber);
+
+    if (!cleanPhone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please enter a valid 11-digit Philippine mobile number starting with 09.'
+      });
+    }
 
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
