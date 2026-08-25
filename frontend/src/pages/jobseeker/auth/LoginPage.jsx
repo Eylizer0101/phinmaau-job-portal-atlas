@@ -58,14 +58,14 @@ const LoginPage = () => {
   const normalizeUsername = (u) => String(u || '').trim().toLowerCase();
   const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 
-  const getLockKey = (username) => `login_lock_${normalizeUsername(username) || 'unknown'}`;
-  const getAttemptsKey = (username) => `login_attempts_${normalizeUsername(username) || 'unknown'}`;
+  const LOGIN_LOCK_KEY = 'login_lock_current_browser';
+  const LOGIN_ATTEMPTS_KEY = 'login_attempts_current_browser';
 
   const lockUntilRef = useRef(null);
 
-  const readLockFromStorage = (username) => {
+  const readLockFromStorage = () => {
     try {
-      const lockRaw = localStorage.getItem(getLockKey(username));
+      const lockRaw = localStorage.getItem(LOGIN_LOCK_KEY);
       if (!lockRaw) return null;
       const parsed = JSON.parse(lockRaw);
       if (!parsed?.until) return null;
@@ -75,21 +75,21 @@ const LoginPage = () => {
     }
   };
 
-  const writeLockToStorage = (username, untilEpochMs) => {
+  const writeLockToStorage = (untilEpochMs) => {
     try {
-      localStorage.setItem(getLockKey(username), JSON.stringify({ until: untilEpochMs }));
+      localStorage.setItem(LOGIN_LOCK_KEY, JSON.stringify({ until: untilEpochMs }));
     } catch {}
   };
 
-  const clearLockInStorage = (username) => {
+  const clearLockInStorage = () => {
     try {
-      localStorage.removeItem(getLockKey(username));
+      localStorage.removeItem(LOGIN_LOCK_KEY);
     } catch {}
   };
 
-  const readAttemptsFromStorage = (username) => {
+  const readAttemptsFromStorage = () => {
     try {
-      const raw = localStorage.getItem(getAttemptsKey(username));
+      const raw = localStorage.getItem(LOGIN_ATTEMPTS_KEY);
       const n = Number(raw);
       return Number.isFinite(n) && n >= 0 ? n : 0;
     } catch {
@@ -97,15 +97,15 @@ const LoginPage = () => {
     }
   };
 
-  const writeAttemptsToStorage = (username, n) => {
+  const writeAttemptsToStorage = (n) => {
     try {
-      localStorage.setItem(getAttemptsKey(username), String(n));
+      localStorage.setItem(LOGIN_ATTEMPTS_KEY, String(n));
     } catch {}
   };
 
-  const clearAttemptsInStorage = (username) => {
+  const clearAttemptsInStorage = () => {
     try {
-      localStorage.removeItem(getAttemptsKey(username));
+      localStorage.removeItem(LOGIN_ATTEMPTS_KEY);
     } catch {}
   };
 
@@ -145,13 +145,12 @@ const LoginPage = () => {
   }, [location?.state, location.pathname, navigate]);
 
   useEffect(() => {
-    const username = normalizeUsername(formData.username);
-    const storedAttempts = readAttemptsFromStorage(username);
+    const storedAttempts = readAttemptsFromStorage();
 
     setAttemptCount(storedAttempts);
     attemptCountRef.current = storedAttempts;
 
-    const lock = readLockFromStorage(username);
+    const lock = readLockFromStorage();
     if (lock?.until) {
       lockUntilRef.current = lock.until;
       const diffSeconds = Math.ceil((lock.until - Date.now()) / 1000);
@@ -163,8 +162,8 @@ const LoginPage = () => {
         setIsLocked(false);
         setTimeRemaining(0);
         lockUntilRef.current = null;
-        clearLockInStorage(username);
-        clearAttemptsInStorage(username);
+        clearLockInStorage();
+        clearAttemptsInStorage();
         setAttemptCount(0);
         attemptCountRef.current = 0;
       }
@@ -174,7 +173,7 @@ const LoginPage = () => {
       lockUntilRef.current = null;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.username]);
+  }, []);
 
   useEffect(() => {
     if (!isLocked && !showForgotPasswordModal) return;
@@ -209,8 +208,6 @@ const LoginPage = () => {
   useEffect(() => {
     if (!isLocked) return;
 
-    const username = normalizeUsername(formData.username);
-
     const tick = () => {
       const until = lockUntilRef.current;
       if (!until) {
@@ -228,8 +225,8 @@ const LoginPage = () => {
         setTimeRemaining(0);
         setAttemptBanner('');
         lockUntilRef.current = null;
-        clearLockInStorage(username);
-        clearAttemptsInStorage(username);
+        clearLockInStorage();
+        clearAttemptsInStorage();
         return;
       }
 
@@ -239,9 +236,9 @@ const LoginPage = () => {
     tick();
     const t = setInterval(tick, 1000);
     return () => clearInterval(t);
-  }, [isLocked, formData.username]);
+  }, [isLocked]);
 
-  const lockNow = (username) => {
+  const lockNow = () => {
     const until = Date.now() + LOCK_SECONDS * 1000;
     lockUntilRef.current = until;
 
@@ -249,19 +246,17 @@ const LoginPage = () => {
     setTimeRemaining(LOCK_SECONDS);
     setError('');
     setAttemptBanner('');
-    writeLockToStorage(username, until);
+    writeLockToStorage(until);
   };
 
   const registerFailedAttempt = () => {
-    const username = normalizeUsername(formData.username);
-
     const next = attemptCountRef.current + 1;
     attemptCountRef.current = next;
     setAttemptCount(next);
-    writeAttemptsToStorage(username, next);
+    writeAttemptsToStorage(next);
 
     if (next >= MAX_ATTEMPTS) {
-      lockNow(username);
+      lockNow();
       return { nextAttempt: next, locked: true };
     }
 
@@ -309,15 +304,14 @@ const LoginPage = () => {
   };
 
   const resetAttemptsAndLock = () => {
-    const username = normalizeUsername(formData.username);
     setAttemptCount(0);
     attemptCountRef.current = 0;
     setAttemptBanner('');
     setIsLocked(false);
     setTimeRemaining(0);
     lockUntilRef.current = null;
-    clearLockInStorage(username);
-    clearAttemptsInStorage(username);
+    clearLockInStorage();
+    clearAttemptsInStorage();
   };
 
   const openForgotPasswordModal = () => {

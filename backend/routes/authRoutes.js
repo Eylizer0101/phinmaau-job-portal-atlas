@@ -6,7 +6,7 @@ const authController = require('../controllers/authController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
-const createAuthLimiter = ({ windowMs, limit, message, skipSuccessfulRequests = false }) =>
+const createAuthLimiter = ({ windowMs, limit, message, code, skipSuccessfulRequests = false }) =>
   rateLimit({
     windowMs,
     limit,
@@ -14,7 +14,7 @@ const createAuthLimiter = ({ windowMs, limit, message, skipSuccessfulRequests = 
     legacyHeaders: false,
     skipSuccessfulRequests,
     handler: (req, res) => {
-      res.status(429).json({ message });
+      res.status(429).json({ ...(code ? { code } : {}), message });
     },
   });
 
@@ -25,10 +25,11 @@ const registrationLimiter = createAuthLimiter({
 });
 
 const loginLimiter = createAuthLimiter({
-  windowMs: 15 * 60 * 1000,
-  limit: 10,
+  windowMs: 2 * 60 * 1000,
+  limit: 3,
   skipSuccessfulRequests: true,
-  message: 'Too many login attempts. Please try again after 15 minutes.',
+  code: 'ACCOUNT_TEMPORARILY_LOCKED',
+  message: 'Too many failed attempts. Please try again after 2 minutes.',
 });
 
 const passwordRecoveryLimiter = createAuthLimiter({
