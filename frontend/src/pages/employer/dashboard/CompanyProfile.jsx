@@ -2775,7 +2775,15 @@ const CompanyProfile = () => {
                                 <img src={previewLogo || logoFallback} alt="" className="h-14 w-14 shrink-0 rounded-xl border border-[#e5e7eb] object-cover" />
                                 <div className="min-w-0"><h3 className="truncate text-lg font-bold text-gray-800">{job.title || 'Job Title'}</h3><div className="mt-1 flex items-center gap-2"><span className="truncate text-sm font-medium text-gray-600">{companyData.companyName}</span><img src="/images/checkmo.png" alt="Verified" className="h-5 w-5 shrink-0 object-contain" /></div></div>
                               </div>
-                              <div className="mt-4 rounded-xl bg-[#F3F4F6] p-4 text-sm text-gray-700">
+                              <div className={`relative mt-4 overflow-hidden rounded-xl bg-[#F3F4F6] p-4 text-sm text-gray-700 ${job?.isUrgent ? 'pr-[108px]' : ''}`}>
+                                {job?.isUrgent ? (
+                                  <img
+                                    src="/images/urgentneed.png"
+                                    alt="Urgent Hiring"
+                                    draggable="false"
+                                    className="pointer-events-none absolute -right-5 bottom-1 h-auto w-[112px] max-w-[38%] select-none object-contain"
+                                  />
+                                ) : null}
                                 <div className="flex min-w-0 items-center gap-2">
                                   <JobCardIcon name="location" className="h-4 w-4 shrink-0 text-gray-600" />
                                   <span className="min-w-0 flex-1 truncate">{job.location || 'Location not specified'}</span>

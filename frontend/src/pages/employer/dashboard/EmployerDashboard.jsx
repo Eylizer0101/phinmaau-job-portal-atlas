@@ -2264,13 +2264,13 @@ const EmployerDashboard = () => {
                           </div>
                         </div>
 
-                        <div className={`relative mt-4 rounded-xl p-4 bg-gray-100 ${job?.isUrgent ? 'pr-24' : ''}`}>
+                        <div className={`relative mt-4 overflow-hidden rounded-xl bg-[#F3F4F6] p-4 ${job?.isUrgent ? 'pr-[108px]' : ''}`}>
                           {job?.isUrgent ? (
-                           <img
+                            <img
                               src="/images/urgentneed.png"
                               alt="Urgent Hiring"
                               draggable="false"
-                             className="pointer-events-none absolute -right-5 bottom-1 w-[112px] max-w-[38%] h-auto object-contain select-none"
+                              className="pointer-events-none absolute -right-5 bottom-1 h-auto w-[112px] max-w-[38%] select-none object-contain"
                             />
                           ) : null}
 
