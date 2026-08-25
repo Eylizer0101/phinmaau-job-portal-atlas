@@ -452,7 +452,7 @@ const Settings = () => {
   return (
     <EmployerLayout>
       <div className="mx-auto max-w-7xl px-1 py-8">
-      
+        <div className="mx-auto max-w-7xl px-1 py-8">
           <button
             type="button"
             onClick={() => navigate(-1)}
@@ -731,7 +731,7 @@ const Settings = () => {
             </div>
           )}
         </div>
-      
+      </div>
     </EmployerLayout>
   );
 };
