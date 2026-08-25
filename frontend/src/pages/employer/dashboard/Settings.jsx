@@ -142,6 +142,22 @@ const Settings = () => {
   const [phoneForm, setPhoneForm] = useState({ mobileNumber: '', newMobileNumber: '', verificationCode: '', pendingPhoneNumber: '' });
   const [passwordForm, setPasswordForm] = useState({ oldPassword: '', newPassword: '', retypeNewPassword: '' });
 
+  const passwordRequirements = [
+    { label: 'At least 8 characters', met: passwordForm.newPassword.length >= 8 },
+    { label: 'At least one uppercase letter', met: /[A-Z]/.test(passwordForm.newPassword) },
+    { label: 'At least one lowercase letter', met: /[a-z]/.test(passwordForm.newPassword) },
+    { label: 'At least one number', met: /\d/.test(passwordForm.newPassword) },
+    { label: 'At least one special character', met: /[^A-Za-z0-9]/.test(passwordForm.newPassword) },
+  ];
+
+  const metPasswordRequirements = passwordRequirements.filter((requirement) => requirement.met).length;
+  const passwordStrength =
+    metPasswordRequirements === passwordRequirements.length
+      ? { label: 'Strong password', color: 'text-green-700', bar: 'bg-green-600', width: 'w-full' }
+      : metPasswordRequirements >= 3
+        ? { label: 'Good password, but still incomplete', color: 'text-amber-700', bar: 'bg-amber-500', width: 'w-2/3' }
+        : { label: 'Weak password', color: 'text-red-700', bar: 'bg-red-500', width: 'w-1/3' };
+
   const authHeaders = useMemo(() => {
     const token = localStorage.getItem('token');
     return token ? { Authorization: `Bearer ${token}` } : {};
@@ -647,12 +663,60 @@ const Settings = () => {
                     />
 
                     <label className="text-sm text-black/70">New Password:</label>
-                    <TextInput
-                      label=""
-                      type="password"
-                      value={passwordForm.newPassword}
-                      onChange={(e) => setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))}
-                    />
+                    <div>
+                      <TextInput
+                        label=""
+                        type="password"
+                        value={passwordForm.newPassword}
+                        onChange={(e) => {
+                          setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }));
+                          if (messages.password) clearMessage('password');
+                        }}
+                        aria-describedby="new-password-requirements"
+                      />
+
+                      {passwordForm.newPassword ? (
+                        <div
+                          id="new-password-requirements"
+                          className="mt-3 rounded-xl border border-[#d8e2ee] bg-[#f7faff] p-4"
+                          aria-live="polite"
+                        >
+                          <div className="mb-3 flex items-center justify-between gap-3">
+                            <span className="text-xs font-semibold text-black/65">Password strength</span>
+                            <span className={cx('text-xs font-bold', passwordStrength.color)}>{passwordStrength.label}</span>
+                          </div>
+
+                          <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-[#d8e2ee]">
+                            <div className={cx('h-full rounded-full transition-all duration-300', passwordStrength.bar, passwordStrength.width)} />
+                          </div>
+
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            {passwordRequirements.map((requirement) => (
+                              <div
+                                key={requirement.label}
+                                className={cx(
+                                  'flex items-center gap-2 text-xs',
+                                  requirement.met ? 'font-semibold text-green-700' : 'text-black/55'
+                                )}
+                              >
+                                <span
+                                  className={cx(
+                                    'inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold',
+                                    requirement.met
+                                      ? 'border-green-600 bg-green-600 text-white'
+                                      : 'border-[#b9c7d8] bg-white text-transparent'
+                                  )}
+                                  aria-hidden="true"
+                                >
+                                  ✓
+                                </span>
+                                <span>{requirement.label}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
 
                     <label className="text-sm text-black/70">Retype New Password:</label>
                     <TextInput
