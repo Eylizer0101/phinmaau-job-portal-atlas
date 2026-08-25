@@ -495,11 +495,13 @@ const Settings = () => {
                   <TextInput
                     value={newMobile}
                     onChange={(e) => {
-                      setNewMobile(e.target.value);
+                      const numbersOnly = e.target.value.replace(/\D/g, '').slice(0, 11);
+                      setNewMobile(numbersOnly);
                       if (mobileChangeMessage.text) setMobileChangeMessage({ type: '', text: '' });
                     }}
                     placeholder="e.g. 09000000000"
                     inputMode="numeric"
+                    pattern="[0-9]*"
                     maxLength={11}
                   />
                   <FaInfoCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-[#2e66a6]" />

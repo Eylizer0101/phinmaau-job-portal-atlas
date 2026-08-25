@@ -674,7 +674,18 @@ const Settings = () => {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-black/70">Current Mobile Number:</span>
                     <strong className="font-medium text-black">{phoneForm.mobileNumber || 'No mobile number'}</strong>
-                    <InlineActionButton onClick={() => setPhoneForm((prev) => ({ ...prev, newMobileNumber: prev.mobileNumber }))}>
+                    <InlineActionButton
+                      onClick={() =>
+                        setPhoneForm((prev) => {
+                          const currentMobile = String(prev.mobileNumber || '');
+                          const localMobile = currentMobile.startsWith('+63')
+                            ? `0${currentMobile.slice(3)}`
+                            : currentMobile.replace(/\D/g, '').slice(0, 11);
+
+                          return { ...prev, newMobileNumber: localMobile };
+                        })
+                      }
+                    >
                       change
                     </InlineActionButton>
                   </div>
@@ -684,7 +695,13 @@ const Settings = () => {
                       label="New Mobile Number"
                       placeholder="e.g. 09000000000"
                       value={phoneForm.newMobileNumber}
-                      onChange={(e) => setPhoneForm((prev) => ({ ...prev, newMobileNumber: e.target.value }))}
+                      onChange={(e) => {
+                        const numbersOnly = e.target.value.replace(/\D/g, '').slice(0, 11);
+                        setPhoneForm((prev) => ({ ...prev, newMobileNumber: numbersOnly }));
+                      }}
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={11}
                     />
                   </div>
 
