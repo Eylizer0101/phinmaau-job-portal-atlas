@@ -1426,15 +1426,22 @@ const AdminTopActions = () => {
           type="button"
           onClick={(event) => {
             event.stopPropagation();
-            setIsNotificationOpen((prev) => !prev);
+            const next = !isNotificationOpen;
+            setIsNotificationOpen(next);
             setIsProfileOpen(false);
+            if (next) fetchNotifications();
           }}
           className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-700 transition hover:bg-slate-100"
           aria-label="Open notifications"
         >
           <Bell size={18} />
           {unreadCount > 0 ? (
-            <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-[#2e66a6] ring-2 ring-white" />
+            <span
+              className="absolute -right-2 -top-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-red-600 px-1 text-[10px] font-bold leading-none text-white shadow-sm"
+              aria-label={`${unreadCount} unread notifications`}
+            >
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
           ) : null}
         </button>
 
