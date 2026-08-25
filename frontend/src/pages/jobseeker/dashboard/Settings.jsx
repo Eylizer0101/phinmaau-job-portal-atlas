@@ -163,7 +163,7 @@ const Settings = () => {
 
   const passwordRequirements = [
     { label: 'At least 8 characters', met: newPassword.length >= 8 },
-    { label: 'At least one uppercase letter', met: /[A-Z]/.test(newPassword) },
+    { label: 'Starts with an uppercase letter', met: /^[A-Z]/.test(newPassword) },
     { label: 'At least one lowercase letter', met: /[a-z]/.test(newPassword) },
     { label: 'At least one number', met: /\d/.test(newPassword) },
     { label: 'At least one special character', met: /[^A-Za-z0-9]/.test(newPassword) },
@@ -348,7 +348,7 @@ const Settings = () => {
     if (!passwordRequirements.every((requirement) => requirement.met)) {
       setPasswordMessage({
         type: 'error',
-        text: 'New password must be at least 8 characters and include uppercase, lowercase, number, and special character.',
+        text: 'New password must start with an uppercase letter and contain at least 8 characters, lowercase, number, and special character.',
       });
       return;
     }

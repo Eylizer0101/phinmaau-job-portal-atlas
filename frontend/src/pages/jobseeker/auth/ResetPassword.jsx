@@ -15,7 +15,7 @@ const getPasswordStrength = (password) => {
   if (password.length >= 6) score += 1;
   if (password.length >= 8) score += 1;
   if (password.length >= 12) score += 1;
-  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1;
+  if (/[a-z]/.test(password) && /^[A-Z]/.test(password)) score += 1;
   if (/\d/.test(password)) score += 1;
   if (/[^A-Za-z0-9]/.test(password)) score += 1;
 
@@ -128,8 +128,8 @@ const ResetPassword = () => {
 
     if (!formData.newPassword) {
       next.newPassword = 'New password is required.';
-    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(formData.newPassword)) {
-      next.newPassword = 'Use at least 8 characters with uppercase, lowercase, number, and special character.';
+    } else if (!/^[A-Z](?=.*[a-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{7,}$/.test(formData.newPassword)) {
+      next.newPassword = 'Password must start with an uppercase letter and contain at least 8 characters, lowercase, number, and special character.';
     }
 
     if (!formData.confirmPassword) {

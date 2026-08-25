@@ -45,7 +45,7 @@ const AdminProfile = () => {
 
   const requirements = useMemo(() => [
     { label: "At least 8 characters", valid: passwords.newPassword.length >= 8 },
-    { label: "One uppercase letter", valid: /[A-Z]/.test(passwords.newPassword) },
+    { label: "Starts with an uppercase letter", valid: /^[A-Z]/.test(passwords.newPassword) },
     { label: "One lowercase letter", valid: /[a-z]/.test(passwords.newPassword) },
     { label: "At least one number", valid: /\d/.test(passwords.newPassword) },
     { label: "One special character", valid: /[^A-Za-z0-9]/.test(passwords.newPassword) },

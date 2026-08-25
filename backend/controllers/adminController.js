@@ -100,9 +100,9 @@ exports.updateAdminPassword = async (req, res) => {
     if (newPassword !== confirmNewPassword) {
       return res.status(400).json({ success: false, message: 'New passwords do not match.' });
     }
-    const passwordValid = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(newPassword);
+    const passwordValid = /^[A-Z](?=.*[a-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{7,}$/.test(newPassword);
     if (!passwordValid) {
-      return res.status(400).json({ success: false, message: 'The new password does not meet all password requirements.' });
+      return res.status(400).json({ success: false, message: 'The new password must start with an uppercase letter and meet all password requirements.' });
     }
 
     const admin = await User.findOne({ _id: req.userId, role: 'admin' }).select('+password');

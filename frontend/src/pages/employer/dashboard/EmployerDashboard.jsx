@@ -176,7 +176,7 @@ const EmployerDashboard = () => {
     const password = String(passwordForm.newPassword || '');
     return {
       minLength: password.length >= 8,
-      uppercase: /[A-Z]/.test(password),
+      uppercase: /^[A-Z]/.test(password),
       lowercase: /[a-z]/.test(password),
       number: /\d/.test(password),
       special: /[^A-Za-z0-9]/.test(password),
@@ -796,7 +796,7 @@ const EmployerDashboard = () => {
     } else {
       const failedRules = [];
       if (!passwordRuleChecks.minLength) failedRules.push('at least 8 characters');
-      if (!passwordRuleChecks.uppercase) failedRules.push('one uppercase letter');
+      if (!passwordRuleChecks.uppercase) failedRules.push('an uppercase letter at the beginning');
       if (!passwordRuleChecks.lowercase) failedRules.push('one lowercase letter');
       if (!passwordRuleChecks.number) failedRules.push('one number');
       if (!passwordRuleChecks.special) failedRules.push('one special character');
@@ -1357,7 +1357,7 @@ const EmployerDashboard = () => {
 
                 <div className="mt-4 space-y-3 text-sm">
                   {passwordRequirementRow('At least 8 characters', passwordRuleChecks.minLength)}
-                  {passwordRequirementRow('One uppercase letter', passwordRuleChecks.uppercase)}
+                  {passwordRequirementRow('Starts with an uppercase letter', passwordRuleChecks.uppercase)}
                   {passwordRequirementRow('One lowercase letter', passwordRuleChecks.lowercase)}
                   {passwordRequirementRow('One number', passwordRuleChecks.number)}
                   {passwordRequirementRow('One special character', passwordRuleChecks.special)}

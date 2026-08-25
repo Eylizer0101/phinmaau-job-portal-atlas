@@ -468,7 +468,7 @@ const isStrongPassword = (value) => {
   const password = String(value || '');
   return (
     password.length >= 8 &&
-    /[A-Z]/.test(password) &&
+    /^[A-Z]/.test(password) &&
     /[a-z]/.test(password) &&
     /\d/.test(password) &&
     /[^A-Za-z0-9]/.test(password)
@@ -1767,7 +1767,7 @@ exports.resetPassword = async (req, res) => {
 
     if (!isStrongPassword(newPassword)) {
       return res.status(400).json({
-        message: 'Use at least 8 characters with uppercase, lowercase, number, and special character.',
+        message: 'Password must start with an uppercase letter and contain at least 8 characters, lowercase, number, and special character.',
       });
     }
 
@@ -2884,7 +2884,7 @@ exports.changePassword = async (req, res) => {
     if (!isStrongPassword(newPassword)) {
       return res.status(400).json({
         success: false,
-        message: 'New password must be at least 8 characters and include uppercase, lowercase, number, and special character.'
+        message: 'New password must start with an uppercase letter and contain at least 8 characters, lowercase, number, and special character.'
       });
     }
 
@@ -2953,7 +2953,7 @@ exports.changeTemporaryPassword = async (req, res) => {
     if (!isStrongPassword(newPassword)) {
       return res.status(400).json({
         success: false,
-        message: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.',
+        message: 'Password must start with an uppercase letter and contain at least 8 characters, lowercase, number, and special character.',
       });
     }
 
