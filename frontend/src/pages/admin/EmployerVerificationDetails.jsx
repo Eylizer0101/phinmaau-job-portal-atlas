@@ -1031,7 +1031,7 @@ const EmployerVerificationDetails = () => {
               <div className="space-y-2">
                 {employerInfoLeft.map(([label, value]) => (
                   <div key={label} className="grid grid-cols-[120px_1fr] gap-3 text-sm">
-                    <span className="text-black/60">{label}</span>
+                    <span className="text-black/60">{label}:</span>
                     <span className="font-semibold text-black break-words">{value || "—"}</span>
                   </div>
                 ))}
@@ -1039,14 +1039,8 @@ const EmployerVerificationDetails = () => {
 
               <div className="space-y-2 border-black/15 lg:border-l lg:pl-6">
                 {employerInfoRight.map(([label, value]) => (
-                  <div
-                    key={label}
-                    className={cn(
-                      "grid grid-cols-[130px_1fr] gap-3 text-sm",
-                      label === "Date Registered" && "mt-3 border-t border-black/15 pt-3"
-                    )}
-                  >
-                    <span className="text-black/60">{label}</span>
+                  <div key={label} className="grid grid-cols-[130px_1fr] gap-3 text-sm">
+                    <span className="text-black/60">{label}:</span>
                     <span className="font-semibold text-black break-words">{value || "—"}</span>
                   </div>
                 ))}
