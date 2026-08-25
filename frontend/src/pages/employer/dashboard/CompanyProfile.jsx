@@ -2803,7 +2803,7 @@ const CompanyProfile = () => {
                                 </svg>
                                 <span className="min-w-0 flex-1 truncate">{formatJobDeadline(job.applicationDeadline)}</span>
                               </div>
-                              <div className="mt-4 flex flex-wrap gap-2">{[job.experienceLevel, job.workMode, job.openToFreshGraduates ? 'Open fresh grad' : ''].filter(Boolean).map((tag) => <span key={tag} className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-[#2e66a6]">{tag}</span>)}</div>
+                              <div className="mb-5 mt-4 flex flex-wrap gap-2">{[job.experienceLevel, job.workMode, job.openToFreshGraduates ? 'Open fresh grad' : ''].filter(Boolean).map((tag) => <span key={tag} className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-[#2e66a6]">{tag}</span>)}</div>
                               <div className="mt-auto border-t border-gray-300/80 pt-4"><button type="button" onClick={() => navigate(`/employer/manage-jobs/${job._id}/view`)} className="h-10 w-full rounded-xl bg-[#1e4ba0] px-5 text-sm font-semibold text-white hover:bg-[#1b4290]">View Job</button></div>
                             </article>
                           ))}
