@@ -65,10 +65,11 @@ const API_ORIGIN = String(
   process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api'
 ).replace(/\/api\/?$/, '');
 
-const getDisplayName = (user = {}) => {
-  const fullName = String(user.fullName || '').trim();
+const getDisplayName = (user) => {
+  const safeUser = user && typeof user === 'object' ? user : {};
+  const fullName = String(safeUser.fullName || '').trim();
   if (fullName) return fullName;
-  return [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' ').trim() || 'Community Member';
+  return [safeUser.firstName, safeUser.middleName, safeUser.lastName].filter(Boolean).join(' ').trim() || 'Community Member';
 };
 
 const getInitials = (name) => {
@@ -143,7 +144,10 @@ const formatArchivedDate = (date) => {
   return `${datePart} • ${timePart}`;
 };
 
-const getUserId = (user = {}) => String(user._id || user.id || '');
+const getUserId = (user) => {
+  const safeUser = user && typeof user === 'object' ? user : {};
+  return String(safeUser._id || safeUser.id || '');
+};
 
 const Avatar = ({ user, size = 'h-11 w-11' }) => {
   const name = getDisplayName(user);
