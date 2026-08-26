@@ -889,6 +889,7 @@ const EmployerDashboard = () => {
 
       setMustChangePassword(false);
       setPasswordModalOpen(false);
+      window.dispatchEvent(new Event('employer-password-change-complete'));
       setPasswordForm({
         currentPassword: '',
         newPassword: '',

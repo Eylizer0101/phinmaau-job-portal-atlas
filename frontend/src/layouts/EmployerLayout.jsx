@@ -27,6 +27,24 @@ const EmployerLayout = ({ children }) => {
   const [isVerifyModalVisible, setIsVerifyModalVisible] = useState(false); // for smooth animation
   const [hasCheckedVerification, setHasCheckedVerification] = useState(false);
 
+  // ✅ FORCE PASSWORD GATE
+  // Read this synchronously from localStorage so the sidebar is already locked
+  // on the very first render when the employer is required to change password.
+  const [isPasswordGateLocked, setIsPasswordGateLocked] = useState(() => {
+    try {
+      const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+      if (!storedUser || storedUser.role !== "employer") return false;
+
+      return Boolean(
+        storedUser.mustChangePassword ??
+          storedUser.isTempPassword ??
+          storedUser.firstLogin
+      );
+    } catch {
+      return true;
+    }
+  });
+
   // ✅ ROLE GUARD (prevents jobseeker/admin token from entering employer layout)
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -65,6 +83,28 @@ const EmployerLayout = ({ children }) => {
       const res = await api.get("/auth/me");
       const user = res.data?.user;
 
+      const mustChangePassword = Boolean(
+        user?.mustChangePassword ??
+          user?.isTempPassword ??
+          user?.firstLogin
+      );
+      setIsPasswordGateLocked(mustChangePassword);
+
+      // Keep the stored user flag in sync without changing any unrelated fields.
+      if (user) {
+        try {
+          const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+          localStorage.setItem(
+            "user",
+            JSON.stringify({
+              ...storedUser,
+              ...user,
+              mustChangePassword,
+            })
+          );
+        } catch {}
+      }
+
       // ✅ BACKEND overallStatus values:
       // unverified | pending | verified | rejected
       const v =
@@ -95,6 +135,38 @@ const EmployerLayout = ({ children }) => {
   useEffect(() => {
     checkVerificationStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ✅ Keep the navigation lock synchronized when the temporary password is changed.
+  useEffect(() => {
+    const syncPasswordGateFromStorage = () => {
+      try {
+        const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+        const locked = Boolean(
+          storedUser?.role === "employer" &&
+            (storedUser?.mustChangePassword ??
+              storedUser?.isTempPassword ??
+              storedUser?.firstLogin)
+        );
+        setIsPasswordGateLocked(locked);
+      } catch {
+        setIsPasswordGateLocked(true);
+      }
+    };
+
+    window.addEventListener(
+      "employer-password-change-complete",
+      syncPasswordGateFromStorage
+    );
+    window.addEventListener("storage", syncPasswordGateFromStorage);
+
+    return () => {
+      window.removeEventListener(
+        "employer-password-change-complete",
+        syncPasswordGateFromStorage
+      );
+      window.removeEventListener("storage", syncPasswordGateFromStorage);
+    };
   }, []);
 
   // ✅ Also check when coming from login page
@@ -510,17 +582,29 @@ const EmployerLayout = ({ children }) => {
       <li>
         <NavLink
           to={item.path}
-          onClick={onItemClick}
+          onClick={(e) => {
+            if (isPasswordGateLocked) {
+              e.preventDefault();
+              e.stopPropagation();
+              return;
+            }
+            onItemClick?.(e);
+          }}
           className={[
             "group relative flex items-center gap-3 rounded-xl py-2.5 text-sm font-medium select-none",
             isNested ? "pl-9 pr-3" : "px-3",
             "transition-colors duration-150 ease-out",
             focusRing,
+            isPasswordGateLocked
+              ? "cursor-not-allowed pointer-events-none opacity-55"
+              : "",
             isActive
               ? "bg-slate-100 text-slate-900"
               : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
           ].join(" ")}
           aria-current={isActive ? "page" : undefined}
+          aria-disabled={isPasswordGateLocked ? "true" : undefined}
+          tabIndex={isPasswordGateLocked ? -1 : undefined}
           end={isDashboard}
         >
           <svg
@@ -560,21 +644,28 @@ const EmployerLayout = ({ children }) => {
       <li>
         <button
           type="button"
-          onClick={() =>
+          onClick={() => {
+            if (isPasswordGateLocked) return;
+
             setOpenDropdowns((prev) => ({
               ...prev,
               [section.name]: !prev[section.name],
-            }))
-          }
+            }));
+          }}
+          disabled={isPasswordGateLocked}
           className={[
             "group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium select-none",
             "transition-colors duration-150 ease-out",
             focusRing,
+            isPasswordGateLocked
+              ? "cursor-not-allowed opacity-55"
+              : "",
             hasActiveChild
               ? "text-slate-900"
               : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
           ].join(" ")}
           aria-expanded={isOpen}
+          aria-disabled={isPasswordGateLocked ? "true" : undefined}
         >
           <svg
             className={[
@@ -915,10 +1006,14 @@ const EmployerLayout = ({ children }) => {
             <button
               ref={openBtnRef}
               type="button"
-              onClick={() => setIsMobileNavOpen(true)}
+              onClick={() => {
+                if (!isPasswordGateLocked) setIsMobileNavOpen(true);
+              }}
+              disabled={isPasswordGateLocked}
               className={[
                 "rounded-lg p-2 text-gray-800 hover:bg-gray-100",
                 focusRing,
+                isPasswordGateLocked ? "cursor-not-allowed opacity-55" : "",
               ].join(" ")}
               aria-label="Open navigation"
               aria-expanded={isMobileNavOpen}
