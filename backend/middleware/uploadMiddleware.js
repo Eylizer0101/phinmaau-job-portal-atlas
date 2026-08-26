@@ -303,11 +303,17 @@ const createStreamingCloudinaryStorage = ({ folderResolver, publicIdResolver }) 
       const resourceType = file.mimetype.startsWith('video/') ? 'video'
         : file.mimetype.startsWith('image/') ? 'image'
         : 'raw';
+      const originalExtension = path.extname(String(file.originalname || '')).toLowerCase();
+      const uploadPublicId = resourceType === 'raw'
+        && originalExtension
+        && !String(publicId).toLowerCase().endsWith(originalExtension)
+        ? `${publicId}${originalExtension}`
+        : publicId;
 
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder: `${CLOUDINARY_ROOT_FOLDER}/${folder}`,
-          public_id: publicId,
+          public_id: uploadPublicId,
           resource_type: resourceType,
         },
         (error, result) => {

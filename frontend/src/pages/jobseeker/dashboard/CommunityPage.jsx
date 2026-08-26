@@ -111,6 +111,25 @@ const getLinkDetails = (value) => {
   }
 };
 
+const downloadCommunityDocument = async (documentItem) => {
+  const documentUrl = resolveMediaUrl(documentItem?.url);
+  const fileName = String(documentItem?.name || 'community-document').trim();
+  if (!documentUrl) throw new Error('Document URL is unavailable.');
+
+  const response = await fetch(documentUrl);
+  if (!response.ok) throw new Error('Unable to download this document.');
+
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = objectUrl;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+};
+
 const formatTime = (date) => {
   const value = new Date(date);
   if (Number.isNaN(value.getTime())) return '';
@@ -1680,18 +1699,23 @@ const CommunityPage = () => {
                       {(post.documents || []).length > 0 && (
                         <div className="mt-3 space-y-2">
                           {post.documents.map((documentItem, documentIndex) => (
-                            <a
+                            <button
                               key={`${documentItem.url}-${documentIndex}`}
-                              href={resolveMediaUrl(documentItem.url)}
-                              target="_blank"
-                              rel="noreferrer"
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  await downloadCommunityDocument(documentItem);
+                                } catch (error) {
+                                  showUiAlert(error.message || 'Unable to download this document.');
+                                }
+                              }}
                               className="flex items-center gap-3 rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-3 text-sm font-semibold text-[#2e66a6] hover:border-[#2e66a6]"
                             >
                               <FontAwesomeIcon icon={faFileArrowUp} />
                               <span className="min-w-0 truncate">
                                 {documentItem.name || `Document ${documentIndex + 1}`}
                               </span>
-                            </a>
+                            </button>
                           ))}
                         </div>
                       )}
