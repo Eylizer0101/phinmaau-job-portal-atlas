@@ -1829,12 +1829,17 @@ exports.updateEmployerVerificationStatus = async (req, res) => {
       employer.username = newUsername;
       employer.status = 'active';
 
+      const temporaryPassword = generateTempPassword();
+      employer.password = await bcrypt.hash(temporaryPassword, 12);
+      employer.mustChangePassword = true;
+
       await employer.save();
 
       sendCredentialsEmail({
         to: employer.email,
         fullName: employer.fullName || employer.email,
         username: newUsername,
+        temporaryPassword,
         role: 'Employer',
       }).catch((emailError) => {
         console.error('Failed to send employer credentials email:', emailError);
