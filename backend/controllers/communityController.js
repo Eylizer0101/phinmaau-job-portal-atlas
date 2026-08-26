@@ -33,6 +33,35 @@ const normalizeTopics = (value) => {
   )];
 };
 
+const getUploadedFiles = (req, fieldName) => (
+  Array.isArray(req.files?.[fieldName]) ? req.files[fieldName] : []
+);
+
+const getUploadedUrl = (file) => String(
+  file?.secure_url || file?.url || file?.path || file?.location || ''
+).trim();
+
+const parseJsonArray = (value) => {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const buildUploadedDocuments = (req) => getUploadedFiles(req, 'documents')
+  .map((file) => ({
+    name: String(file.originalname || file.filename || 'Document'),
+    url: getUploadedUrl(file),
+    mimeType: String(file.mimetype || ''),
+    size: Number(file.size || file.bytes || 0),
+  }))
+  .filter((item) => item.url);
+
 const countSkills = (value) => {
   if (Array.isArray(value)) return value.filter(Boolean).length;
   return String(value || '')
@@ -150,27 +179,22 @@ exports.createPost = async (req, res) => {
     const allowed = ['insight', 'skill', 'question', 'resource'];
     const category = allowed.includes(req.body.category) ? req.body.category : 'insight';
 
-    const uploadedImageUrl = [
-      req.file?.secure_url,
-      req.file?.url,
-      req.file?.path,
-      req.file?.location,
-    ].find((value) => typeof value === 'string' && value.trim());
-
-    const imageUrl = String(uploadedImageUrl || req.body.imageUrl || '').trim();
-
-    if (req.file && !imageUrl) {
-      return res.status(500).json({
-        success: false,
-        message: 'Image upload finished, but no image URL was generated.',
-      });
-    }
+    const imageUrls = getUploadedFiles(req, 'images').map(getUploadedUrl).filter(Boolean);
+    const videoFile = getUploadedFiles(req, 'video')[0];
+    const videoUrl = getUploadedUrl(videoFile);
+    const documents = buildUploadedDocuments(req);
+    const requestedDuration = Number(req.body.videoDuration || videoFile?.duration || 0);
+    const videoDuration = Number.isFinite(requestedDuration) ? requestedDuration : 0;
 
     const post = await CommunityPost.create({
       author: req.user._id,
       content,
       category,
-      imageUrl,
+      imageUrl: imageUrls[0] || '',
+      imageUrls,
+      videoUrl,
+      videoDuration,
+      documents,
       linkUrl: String(req.body.linkUrl || '').trim(),
       topics,
     });
@@ -185,7 +209,8 @@ exports.createPost = async (req, res) => {
 
 exports.updatePost = async (req, res) => {
   try {
-    const post = await CommunityPost.findById(req.params.postId).select('author category imageUrl');
+    const post = await CommunityPost.findById(req.params.postId)
+      .select('author category imageUrl imageUrls videoUrl videoDuration documents');
     if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
 
     if (String(post.author) !== String(req.user._id)) {
@@ -205,23 +230,41 @@ exports.updatePost = async (req, res) => {
       ? requestedCategory
       : (allowedCategories.includes(post.category) ? post.category : 'insight');
 
-    const uploadedImageUrl = [
-      req.file?.secure_url,
-      req.file?.url,
-      req.file?.path,
-      req.file?.location,
-    ].find((value) => typeof value === 'string' && value.trim());
+    const retainedImageUrls = parseJsonArray(req.body.retainedImageUrls)
+      .map((url) => String(url || '').trim())
+      .filter(Boolean);
+    const uploadedImageUrls = getUploadedFiles(req, 'images').map(getUploadedUrl).filter(Boolean);
+    const imageUrls = [...retainedImageUrls, ...uploadedImageUrls].slice(0, 10);
+
+    const retainedDocuments = parseJsonArray(req.body.retainedDocuments)
+      .filter((item) => item && typeof item === 'object' && String(item.url || '').trim())
+      .map((item) => ({
+        name: String(item.name || 'Document'),
+        url: String(item.url).trim(),
+        mimeType: String(item.mimeType || ''),
+        size: Number(item.size || 0),
+      }));
+    const documents = [...retainedDocuments, ...buildUploadedDocuments(req)].slice(0, 5);
+
+    const uploadedVideo = getUploadedFiles(req, 'video')[0];
+    const keepExistingVideo = String(req.body.retainVideo || '') === 'true';
+    const videoUrl = getUploadedUrl(uploadedVideo) || (keepExistingVideo ? post.videoUrl : '');
+    const requestedDuration = Number(req.body.videoDuration || uploadedVideo?.duration || 0);
+    const videoDuration = videoUrl && Number.isFinite(requestedDuration)
+      ? requestedDuration
+      : (videoUrl ? Number(post.videoDuration || 0) : 0);
 
     const updateData = {
       content,
       category,
       linkUrl: String(req.body.linkUrl || '').trim(),
       topics,
+      imageUrl: imageUrls[0] || '',
+      imageUrls,
+      videoUrl,
+      videoDuration,
+      documents,
     };
-
-    if (uploadedImageUrl) {
-      updateData.imageUrl = String(uploadedImageUrl).trim();
-    }
 
     // Direct update para hindi ma-revalidate ang buong lumang post,
     // kabilang ang old comments o legacy fields na hindi naman ine-edit.

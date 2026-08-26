@@ -198,6 +198,7 @@ const CommunityPage = () => {
   const [videoPreview, setVideoPreview] = useState('');
   const [videoDuration, setVideoDuration] = useState(0);
   const [selectedDocuments, setSelectedDocuments] = useState([]);
+  const [existingDocuments, setExistingDocuments] = useState([]);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [showTopicInput, setShowTopicInput] = useState(false);
 
@@ -385,6 +386,7 @@ const CommunityPage = () => {
     setVideoPreview('');
     setVideoDuration(0);
     setSelectedDocuments([]);
+    setExistingDocuments([]);
     setShowLinkInput(false);
     setShowTopicInput(false);
     setEditingPost(null);
@@ -459,6 +461,7 @@ const CommunityPage = () => {
     setVideoDuration(Number(post.videoDuration || 0));
     setSelectedVideo(null);
     setSelectedDocuments([]);
+    setExistingDocuments(Array.isArray(post.documents) ? post.documents : []);
     setShowLinkInput(Boolean(post.linkUrl));
     setShowTopicInput(true);
     setShowCreate(true);
@@ -640,6 +643,15 @@ const CommunityPage = () => {
       payload.append('linkUrl', normalizeUrl(form.linkUrl));
       payload.append('topics', form.topics);
       payload.append('videoDuration', String(videoDuration || 0));
+
+      if (editingPost) {
+        const retainedImageUrls = photoPreviews
+          .filter((preview) => preview.existing)
+          .map((preview) => preview.url);
+        payload.append('retainedImageUrls', JSON.stringify(retainedImageUrls));
+        payload.append('retainVideo', String(Boolean(videoPreview && !selectedVideo)));
+        payload.append('retainedDocuments', JSON.stringify(existingDocuments));
+      }
 
       selectedPhotos.forEach((photo) => {
         payload.append('images', photo, photo.name);
@@ -1798,8 +1810,33 @@ const CommunityPage = () => {
                 </div>
               )}
 
-              {selectedDocuments.length > 0 && (
+              {(existingDocuments.length > 0 || selectedDocuments.length > 0) && (
                 <div className="mt-4 space-y-2">
+                  {existingDocuments.map((documentItem, index) => (
+                    <div
+                      key={`${documentItem.url}-${index}`}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-3"
+                    >
+                      <a
+                        href={resolveMediaUrl(documentItem.url)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="min-w-0 truncate text-sm font-medium text-[#2e66a6] hover:underline"
+                      >
+                        {documentItem.name || 'Existing document'}
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => setExistingDocuments((prev) => (
+                          prev.filter((_, itemIndex) => itemIndex !== index)
+                        ))}
+                        className="h-8 w-8 shrink-0 rounded-full hover:bg-red-50 hover:text-red-600"
+                        aria-label={`Remove ${documentItem.name || 'document'}`}
+                      >
+                        <FontAwesomeIcon icon={faXmark} />
+                      </button>
+                    </div>
+                  ))}
                   {selectedDocuments.map((documentFile, index) => (
                     <div
                       key={`${documentFile.name}-${index}`}
