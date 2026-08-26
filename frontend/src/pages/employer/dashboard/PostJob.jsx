@@ -1273,6 +1273,17 @@ const PostJob = () => {
   const customBenefits = useMemo(() => String(formData.otherBenefits || '')
     .split(',').map((benefit) => benefit.trim()).filter(Boolean), [formData.otherBenefits]);
 
+  const previewBenefits = useMemo(() => {
+    const benefits = [
+      ...(Array.isArray(formData.perksAndBenefits) ? formData.perksAndBenefits : []),
+      ...customBenefits,
+    ];
+
+    return benefits.filter((benefit, index, list) => (
+      list.findIndex((item) => item.toLowerCase() === benefit.toLowerCase()) === index
+    ));
+  }, [formData.perksAndBenefits, customBenefits]);
+
   const addCustomBenefit = useCallback((rawBenefit) => {
     const benefit = normalizeSingleLine(rawBenefit).replace(/^,+|,+$/g, '');
     if (!benefit || benefit.length > 80) return;
@@ -2881,18 +2892,13 @@ const PostJob = () => {
                     <p className="text-sm font-semibold text-black">Perks and Benefits</p>
                   </div>
                   <div className="px-5 py-5 sm:px-6">
-                    {formData.perksAndBenefits?.length || formData.otherBenefits ? (
-                      <div className="space-y-4">
-                        {formData.perksAndBenefits?.length ? (
-                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                            {formData.perksAndBenefits.map((benefit) => (
-                              <div key={benefit} className="rounded-xl border border-[#d8e2ee] bg-white px-4 py-3 text-sm text-black/75">
-                                {benefit}
-                              </div>
-                            ))}
+                    {previewBenefits.length ? (
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        {previewBenefits.map((benefit) => (
+                          <div key={benefit} className="rounded-xl border border-[#d8e2ee] bg-white px-4 py-3 text-sm text-black/75">
+                            {benefit}
                           </div>
-                        ) : null}
-                        {formData.otherBenefits ? <p className="text-sm leading-relaxed text-black/70">{formData.otherBenefits}</p> : null}
+                        ))}
                       </div>
                     ) : (
                       <p className="text-sm text-black/70">No perks or benefits specified</p>
