@@ -298,6 +298,8 @@ const resumeStyles = `
 
     .resume-inner {
       padding: 16mm 16mm 12mm !important;
+      min-height: auto !important;
+      display: block !important;
     }
   }
 
@@ -413,7 +415,8 @@ const resumeStyles = `
     color: #222222;
     font-size: 9.2px;
     line-height: 1.35;
-    font-style: italic;
+    font-family: inherit;
+    font-style: normal;
   }
 
   .resume-initials,
@@ -910,7 +913,7 @@ const alignDeclarationToLastPageBottom = (paper) => {
   const bottomInset = paperRect.width * (12 / 210);
   const currentBottom = declarationRect.bottom - paperRect.top;
   const lastPage = Math.max(1, Math.ceil((currentBottom + bottomInset) / pageHeight));
-  const targetBottom = (lastPage * pageHeight) - bottomInset;
+  const targetBottom = (lastPage * pageHeight) - bottomInset - 2;
   const extraSpace = Math.max(0, targetBottom - currentBottom);
 
   declaration.style.marginTop = `${11 + extraSpace}px`;

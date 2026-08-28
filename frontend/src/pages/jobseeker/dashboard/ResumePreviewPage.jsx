@@ -436,6 +436,8 @@ const ResumePreviewPage = () => {
 
           .resume-inner {
             padding: 16mm 16mm 12mm !important;
+            min-height: auto !important;
+            display: block !important;
           }
         }
 
@@ -558,7 +560,8 @@ const ResumePreviewPage = () => {
           color: #222222;
           font-size: 9.2px;
           line-height: 1.35;
-          font-style: italic;
+          font-family: inherit;
+          font-style: normal;
         }
 
         .resume-initials,

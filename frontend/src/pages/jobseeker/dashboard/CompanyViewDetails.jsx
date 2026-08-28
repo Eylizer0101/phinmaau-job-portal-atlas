@@ -120,6 +120,13 @@ const SvgIcon = ({ name, className = "w-4 h-4" }) => {
           />
         </svg>
       );
+    case "globe":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M3 12h18M12 3c3.5 4 3.5 14 0 18m0-18c-3.5 4-3.5 14 0 18M4.5 7.5h15M4.5 16.5h15" />
+          <circle cx="12" cy="12" r="9" strokeWidth="1.8" />
+        </svg>
+      );
     case "external":
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1633,7 +1640,7 @@ const CompanyViewDetails = () => {
                       className="inline-flex items-center gap-2 text-[15px] text-[#0F5BDC] hover:underline break-all"
                     >
                       <span className="text-black/50">
-                        <SvgIcon name="link" className="w-4 h-4" />
+                        <SvgIcon name="globe" className="w-4 h-4" />
                       </span>
                       <span>{company.companyWebsite}</span>
                       <SvgIcon name="external" className="w-4 h-4" />

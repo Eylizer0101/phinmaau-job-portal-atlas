@@ -35,7 +35,6 @@ import {
   FaEye,
   FaPen,
   FaFileAlt,
-  FaShieldAlt,
   FaUniversity,
   FaUser,
   FaBriefcase,
@@ -1517,7 +1516,6 @@ const CredentialItem = ({
   icon,
   onUpload,
   uploading,
-  fileName,
   fileUrl,
   status,
   feedback,
@@ -1621,7 +1619,6 @@ const CredentialItem = ({
         </div>
         <div className="min-w-0">
           <div className={`text-[16px] sm:text-[18px] font-medium truncate ${uploaded ? 'text-black' : 'text-black/50'}`}>{title}</div>
-          {fileName ? <div className="text-xs text-black/50 truncate">{fileName}</div> : null}
         </div>
       </div>
 
@@ -6621,7 +6618,7 @@ const MyProfile = () => {
   ];
 
   const documentConfig = [
-    { type: 'validId', title: 'Valid ID', icon: <FaShieldAlt className="text-sm" /> },
+    { type: 'validId', title: 'Valid ID', icon: <FaFileAlt className="text-sm" /> },
     { type: 'sss', title: 'SSS', icon: <FaFileAlt className="text-sm" /> },
     { type: 'cv', title: 'Resume', icon: <FaFileAlt className="text-sm" /> },
     { type: 'philhealth', title: 'PhilHealth', icon: <FaFileAlt className="text-sm" /> },
@@ -6897,7 +6894,6 @@ const MyProfile = () => {
                 icon={doc.icon}
                 onUpload={(file) => handleVerificationUpload(doc.type, file)}
                 uploading={Boolean(uploadingDocs[doc.type])}
-                fileName={docData.filename}
                 fileUrl={docData.url}
                 status={docData.status}
                 feedback={docData.feedback}
