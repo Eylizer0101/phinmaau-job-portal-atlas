@@ -50,6 +50,17 @@ const REACTIVATABLE_STATUSES = ['withdrawn', 'cancelled'];
 
 const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
   switch (name) {
+    case 'search':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.8}
+            d="m21 21-4.35-4.35m1.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"
+          />
+        </svg>
+      );
     case 'file':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
