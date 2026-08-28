@@ -225,6 +225,13 @@ const UI = {
 
 const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
   switch (name) {
+    case 'search':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="7" strokeWidth={1.75} />
+          <path strokeLinecap="round" strokeWidth={1.75} d="m20 20-4-4" />
+        </svg>
+      );
     case 'arrowLeft':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -783,7 +790,8 @@ const formatSalary = (min, max, hideSalary = false) => {
   if (!hasMin && !hasMax) return 'Salary not specified';
 
   const fmt = (n) => `₱${Number(n).toLocaleString('en-PH')}`;
-  if (hasMin && hasMax) return `${fmt(min)} – ${fmt(max)}`;
+  const fmtWithoutCurrency = (n) => Number(n).toLocaleString('en-PH');
+  if (hasMin && hasMax) return `${fmt(min)} – ${fmtWithoutCurrency(max)}`;
   if (hasMin) return `From ${fmt(min)}`;
   return `Up to ${fmt(max)}`;
 };
@@ -1513,7 +1521,7 @@ const CompanyJobMiniCard = ({ job, onViewDetails, onApply, onSave, saving, isSav
           <span className="w-4 h-4 text-gray-600 flex shrink-0 items-center justify-center font-extrabold text-[14px] leading-none">
             ₱
           </span>
-          <span className="min-w-0 flex-1 truncate">{formatSalary(job.salaryMin, job.salaryMax)}</span>
+          <span className="min-w-0 flex-1 truncate">{formatSalary(job.salaryMin, job.salaryMax).replace(/^₱/, '')}</span>
         </div>
 
         <div className="mt-2 flex items-center gap-2 text-sm text-gray-700 min-w-0">
@@ -2808,8 +2816,9 @@ const Bookmarks = () => {
                           <button
                             type="button"
                             onClick={() => navigate('/jobseeker/job-search')}
-                            className={`${UI.btnBase} ${UI.btnMd} ${UI.btnPrimary} ${UI.ring}`}
+                            className={`${UI.btnBase} ${UI.btnMd} ${UI.btnPrimary} ${UI.ring} inline-flex items-center justify-center gap-2`}
                           >
+                            <SvgIcon name="search" className="h-4 w-4 shrink-0" />
                             Browse Jobs
                           </button>
                         </div>
@@ -3172,9 +3181,10 @@ const Bookmarks = () => {
                         <div className="mt-6">
                           <button
                             type="button"
-                            onClick={() => navigate('/jobseeker/companies')}
-                            className={`${UI.btnBase} ${UI.btnMd} ${UI.btnPrimary} ${UI.ring}`}
+                            onClick={() => navigate('/jobseeker/job-search')}
+                            className={`${UI.btnBase} ${UI.btnMd} ${UI.btnPrimary} ${UI.ring} inline-flex items-center justify-center gap-2`}
                           >
+                            <SvgIcon name="search" className="h-4 w-4 shrink-0" />
                             Browse Companies
                           </button>
                         </div>
