@@ -19,7 +19,7 @@ import EmployerLayout from '../../../layouts/EmployerLayout';
 
 const UI = {
   pageBg: 'bg-gray-50',
-  container: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8',
+  container: 'mx-auto max-w-7xl px-1 py-8',
   shell: 'bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden',
 
   textPrimary: 'text-gray-900',
