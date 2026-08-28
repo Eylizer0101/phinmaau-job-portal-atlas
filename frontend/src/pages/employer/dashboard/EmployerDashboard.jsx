@@ -2,6 +2,15 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faBell,
+  faBriefcase,
+  faCalendarAlt,
+  faClock,
+  faEnvelope,
+  faFileAlt,
+} from '@fortawesome/free-solid-svg-icons';
 
 import EmployerLayout from '../../../layouts/EmployerLayout';
 
@@ -1625,12 +1634,22 @@ const EmployerDashboard = () => {
     }))
     .filter((group) => group.items.length > 0);
 
-  const getNotifIconName = (n) => {
-    const t = String(n?.type || '').toLowerCase();
-    if (t.includes('message')) return 'chat';
-    if (t.includes('application')) return 'users';
-    if (t.includes('expir')) return 'clock';
-    return 'bell';
+  const getNotifIcon = (notification) => {
+    switch (String(notification?.type || '').trim().toLowerCase()) {
+      case 'new_application':
+      case 'application_update':
+        return faFileAlt;
+      case 'new_message':
+        return faEnvelope;
+      case 'job_expiring':
+        return faClock;
+      case 'interview':
+        return faCalendarAlt;
+      case 'job_match':
+        return faBriefcase;
+      default:
+        return faBell;
+    }
   };
 
   const getNotifIconStyle = (n) => {
@@ -1876,7 +1895,7 @@ const EmployerDashboard = () => {
 
                             {group.items.map((n) => {
                               const isUnread = n?.isRead === false;
-                              const iconName = getNotifIconName(n);
+                              const notificationIcon = getNotifIcon(n);
                               const iconStyle = getNotifIconStyle(n);
 
                               return (
@@ -1899,7 +1918,7 @@ const EmployerDashboard = () => {
                                     ].join(' ')}
                                     aria-hidden="true"
                                   >
-                                    <OutlineIcon name={iconName} className="w-[18px] h-[18px]" />
+                                    <FontAwesomeIcon icon={notificationIcon} className="h-4 w-4" />
                                   </div>
 
                                   <div className="min-w-0 flex-1">
