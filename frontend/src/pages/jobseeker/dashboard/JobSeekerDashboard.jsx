@@ -693,13 +693,17 @@ const JobSeekerDashboard = () => {
   }, []);
 
   useEffect(() => {
-    if (!passwordModalOpen) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    if (passwordModalOpen) {
+      const previousOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
 
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
+      return () => {
+        document.body.style.overflow = previousOverflow || '';
+      };
+    }
+
+    document.body.style.overflow = '';
+    return undefined;
   }, [passwordModalOpen]);
 
   useEffect(() => {
