@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faBell,
@@ -11,17 +11,18 @@ import {
   faCheckCircle,
   faClock,
   faTimesCircle,
+  faCircle
 } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
-
+import Pagination from '../../../components/shared/Pagination';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 
 const UI = {
   pageBg: 'bg-gray-50',
-  container: 'mx-auto max-w-7xl px-1 py-8',
+  container: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8',
   shell: 'bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden',
 
-  textPrimary: 'text-black',
+  textPrimary: 'text-gray-900',
   textSecondary: 'text-gray-600',
   textMuted: 'text-gray-500',
 
@@ -37,20 +38,20 @@ const UI = {
   btnMd: 'h-10 px-4 text-sm',
   btnIcon: 'h-10 w-10',
 
-  btnPrimary: 'bg-[#2e66a6] text-white hover:bg-[#25558a]',
-  btnSecondary: 'bg-white text-black border border-gray-200 hover:bg-gray-50',
-  btnSoft: 'bg-[#2e66a6]/10 text-[#2e66a6] hover:bg-[#2e66a6]/15 border border-[#2e66a6]/20',
+  btnPrimary: 'bg-[#2e66a6] text-white hover:bg-[#1f4a7a]',
+  btnSecondary: 'bg-white text-gray-800 border border-gray-200 hover:bg-gray-50',
+  btnSoft: 'bg-blue-50 text-[#2e66a6] hover:bg-blue-100 border border-blue-100',
   btnGhost: 'bg-transparent text-gray-700 hover:bg-gray-100',
   btnDangerGhost: 'bg-transparent text-red-600 hover:bg-red-50',
 
   badge: 'inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold border',
-  badgeUnread: 'bg-[#2e66a6]/10 text-[#2e66a6] border-[#2e66a6]/20',
+  badgeUnread: 'bg-blue-50 text-[#1f4a7a] border-blue-200',
 };
 
 const EmployerNotificationsPage = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState('all'); // all, unread, read
   const [unreadCount, setUnreadCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -126,7 +127,6 @@ const EmployerNotificationsPage = () => {
     if (!notification.isRead) {
       await handleMarkAsRead(notification._id);
     }
-
     if (notification.link) {
       navigate(notification.link);
       return;
@@ -149,37 +149,37 @@ const EmployerNotificationsPage = () => {
     }
   };
 
-
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'new_application':
         return faFileAlt;
-      case 'new_message':
-        return faEnvelope;
       case 'job_expiring':
         return faClock;
-      case 'interview':
-        return faCalendarAlt;
       case 'job_match':
         return faBriefcase;
+      case 'application_update':
+        return faFileAlt;
+      case 'new_message':
+        return faEnvelope;
+      case 'interview':
+        return faCalendarAlt;
       default:
         return faBell;
     }
   };
 
-  const getNotificationTone = (type, isUnread) => {
-    if (!isUnread) return 'text-gray-600 bg-white border-gray-200';
-
+  const getNotificationTone = (type) => {
     switch (type) {
-      case 'new_application':
+      case 'job_match':
+        return 'text-blue-700 bg-blue-50 border-blue-100';
       case 'application_update':
-        return 'text-[#2e66a6] bg-white border-[#2e66a6]/30';
+        return 'text-[#2e66a6] bg-blue-50 border-blue-100';
       case 'new_message':
-        return 'text-[#2e66a6] bg-white border-[#2e66a6]/30';
-      case 'job_expiring':
-        return 'text-[#2e66a6] bg-white border-[#2e66a6]/30';
+        return 'text-violet-700 bg-violet-50 border-violet-100';
+      case 'interview':
+        return 'text-amber-700 bg-amber-50 border-amber-100';
       default:
-        return 'text-[#2e66a6] bg-white border-[#2e66a6]/30';
+        return 'text-gray-700 bg-gray-50 border-gray-200';
     }
   };
 
@@ -197,10 +197,10 @@ const EmployerNotificationsPage = () => {
 
   const getStatusBadge = (status) => {
     const s = (status || '').toLowerCase();
-    if (s === 'hired') return 'bg-white text-[#2e66a6] border-[#2e66a6]/30';
-    if (s === 'for interview') return 'bg-white text-[#2e66a6] border-[#2e66a6]/30';
+    if (s === 'hired') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    if (s === 'for interview') return 'bg-blue-50 text-[#1f4a7a] border-blue-200';
     if (s === 'declined') return 'bg-red-50 text-red-700 border-red-200';
-    return 'bg-white text-black border-gray-200';
+    return 'bg-amber-50 text-amber-800 border-amber-200';
   };
 
   const getStatusLabel = (status) => {
@@ -212,6 +212,33 @@ const EmployerNotificationsPage = () => {
     if (s === 'withdrawn') return 'Withdrawn';
     if (s === 'cancelled') return 'Cancelled';
     return status || 'Unknown';
+  };
+
+  const getNotificationDisplayTitle = (notification = {}) => {
+    const type = String(notification?.type || '').trim().toLowerCase();
+
+    if (type === 'job_match') return 'New Job Match!';
+    if (type === 'new_message') return 'New Message';
+    if (type === 'application_update') return 'Application Update';
+    if (type === 'verification') {
+      return String(notification?.title || 'Credentials').trim() || 'Credentials';
+    }
+
+    return String(notification?.title || 'Notification').trim() || 'Notification';
+  };
+
+  const getNotificationDisplayMessage = (notification = {}) => {
+    const type = String(notification?.type || '').trim().toLowerCase();
+    const metadata = notification?.metadata || {};
+
+    if (type === 'verification') return String(notification?.message || '').trim();
+
+    if (type === 'new_message' && metadata?.lastMessage) {
+      const senderName = String(metadata?.senderName || 'User').trim() || 'User';
+      return `New message from ${senderName}: ${String(metadata.lastMessage).trim()}`;
+    }
+
+    return String(notification?.message || '').trim();
   };
 
   const formatTime = (dateString) => {
@@ -256,29 +283,17 @@ const EmployerNotificationsPage = () => {
     });
   }, [notifications, filter, searchQuery]);
 
-  const numericPageSize =
-    pageSize === 'all' ? Math.max(filteredNotifications.length, 1) : Number(pageSize);
-  const totalPages =
-    pageSize === 'all'
-      ? 1
-      : Math.max(1, Math.ceil(filteredNotifications.length / numericPageSize));
+  const numericPageSize = pageSize === 'all' ? Math.max(filteredNotifications.length, 1) : Number(pageSize);
+  const totalPages = pageSize === 'all'
+    ? 1
+    : Math.max(1, Math.ceil(filteredNotifications.length / numericPageSize));
   const safePage = Math.min(currentPage, totalPages);
-  const paginatedNotifications =
-    pageSize === 'all'
-      ? filteredNotifications
-      : filteredNotifications.slice(
-          (safePage - 1) * numericPageSize,
-          safePage * numericPageSize
-        );
-
-  const pageNumbers = useMemo(() => {
-    const startPage = Math.max(1, Math.min(safePage - 2, totalPages - 4));
-    const endPage = Math.min(totalPages, startPage + 4);
-    return Array.from(
-      { length: endPage - startPage + 1 },
-      (_, index) => startPage + index
-    );
-  }, [safePage, totalPages]);
+  const paginatedNotifications = pageSize === 'all'
+    ? filteredNotifications
+    : filteredNotifications.slice(
+        (safePage - 1) * numericPageSize,
+        safePage * numericPageSize
+      );
 
   useEffect(() => {
     setCurrentPage(1);
@@ -293,86 +308,25 @@ const EmployerNotificationsPage = () => {
   return (
     <EmployerLayout>
       <div className={UI.pageBg}>
-        <div className={UI.container}>
-          <div className={`${UI.shell} p-5 sm:p-6 mb-6`}>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-start gap-4 min-w-0">
-                <div className="h-12 w-12 rounded-2xl bg-[#2e66a6] flex items-center justify-center flex-shrink-0">
-                  <FontAwesomeIcon icon={faBell} className="w-6 h-6 text-white" />
-                </div>
 
-                <div className="min-w-0">
-                  <h1 className={`${UI.h1} ${UI.textPrimary}`}>Notifications</h1>
-                  <p className={`text-sm ${UI.textSecondary} mt-1`}>
-                    Stay updated with applications, messages, interviews, and job alerts.
-                  </p>
-                </div>
+      <div className={UI.container}>
+        {/* Header (match Messages page style) */}
+        <div className={`${UI.shell} p-5 sm:p-6 mb-6`}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-4 min-w-0">
+              <div className="h-12 w-12 rounded-2xl bg-[#2e66a6] flex items-center justify-center flex-shrink-0">
+                <FontAwesomeIcon icon={faBell} className="w-6 h-6 text-white" />
               </div>
 
-              <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">
-                {unreadCount > 0 && <span className={`${UI.badge} ${UI.badgeUnread}`}>{unreadCount} unread</span>}
-
-                <button
-                  onClick={handleMarkAllAsRead}
-                  disabled={unreadCount === 0}
-                  className={`${UI.btnBase} ${UI.btnMd} ${unreadCount === 0 ? UI.btnSecondary : UI.btnSoft} ${UI.ring}`}
-                  type="button"
-                >
-                  <FontAwesomeIcon icon={faCheck} className="w-4 h-4" />
-                  Mark all as read
-                </button>
+              <div className="min-w-0">
+                <h1 className={`${UI.h1} ${UI.textPrimary}`}>Notifications</h1>
+                <p className={`text-sm ${UI.textSecondary} mt-1`}>
+                  Stay updated with applications, messages, interviews, and job alerts
+                </p>
               </div>
             </div>
-          </div>
 
-          <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="inline-flex items-center rounded-2xl bg-white border border-gray-200 p-1 shadow-sm">
-              <button
-                type="button"
-                onClick={() => setFilter('all')}
-                className={[
-                  UI.btnBase,
-                  'h-9 px-4 text-sm rounded-xl',
-                  filter === 'all' ? 'bg-[#2e66a6] text-white' : 'bg-transparent text-gray-700 hover:bg-gray-100',
-                  UI.ring,
-                ].join(' ')}
-              >
-                All
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFilter('unread')}
-                className={[
-                  UI.btnBase,
-                  'h-9 px-4 text-sm rounded-xl',
-                  filter === 'unread' ? 'bg-[#2e66a6] text-white' : 'bg-transparent text-gray-700 hover:bg-gray-100',
-                  UI.ring,
-                ].join(' ')}
-              >
-                Unread
-                {unreadInlineCount > 0 && (
-                  <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs bg-red-600 text-white border border-white/30">
-                    {unreadInlineCount}
-                  </span>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFilter('read')}
-                className={[
-                  UI.btnBase,
-                  'h-9 px-4 text-sm rounded-xl',
-                  filter === 'read' ? 'bg-[#2e66a6] text-white' : 'bg-transparent text-gray-700 hover:bg-gray-100',
-                  UI.ring,
-                ].join(' ')}
-              >
-                Read
-              </button>
-            </div>
-
-            <div className="relative w-full lg:max-w-md">
+            <div className="relative w-full sm:max-w-md">
               <svg
                 className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
                 fill="none"
@@ -392,159 +346,267 @@ const EmployerNotificationsPage = () => {
               />
             </div>
           </div>
+        </div>
 
-          <div className={UI.shell}>
-            {loading ? (
-              <div className="p-12 text-center">
-                <div className="h-12 w-12 rounded-full border-2 border-gray-200 border-t-[#2e66a6] animate-spin mx-auto" />
-                <p className={`mt-4 ${UI.textMuted}`}>Loading notifications...</p>
-              </div>
-            ) : paginatedNotifications.length === 0 ? (
-              <div className="p-12 text-center">
-                <div className="w-16 h-16 mx-auto bg-white border border-gray-200 rounded-full flex items-center justify-center mb-4">
-                  <FontAwesomeIcon icon={faBell} className="w-8 h-8 text-[#2e66a6]" />
-                </div>
-                <h3 className={`text-lg font-semibold ${UI.textPrimary} mb-2`}>No notifications</h3>
-                <p className={UI.textMuted}>
-                  {filter === 'all'
-                    ? "You're all caught up! New notifications will appear here."
-                    : filter === 'unread'
-                    ? "You don't have any unread notifications."
-                    : "You don't have any read notifications."}
-                </p>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-100">
-                {paginatedNotifications.map((notification) => {
-                  const isUnread = !notification.isRead;
-                  const status = notification?.metadata?.newStatus || notification?.metadata?.status || '';
+        {/* Filters + Mark all as read */}
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="inline-flex items-center rounded-2xl bg-white border border-gray-200 p-1 shadow-sm">
+            <button
+              type="button"
+              onClick={() => setFilter('all')}
+              className={[
+                UI.btnBase,
+                'h-9 px-4 text-sm rounded-xl',
+                filter === 'all' ? 'bg-[#2e66a6] text-white' : 'bg-transparent text-gray-700 hover:bg-gray-100',
+                UI.ring,
+              ].join(' ')}
+            >
+              All
+            </button>
 
-                  return (
-                    <div
-                      key={notification._id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => handleNotificationClick(notification)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') handleNotificationClick(notification);
-                      }}
-                      className={[
-                        'p-4 sm:p-5 cursor-pointer transition',
-                        isUnread ? 'bg-[#2e66a6]/[0.04]' : 'bg-white',
-                        'hover:bg-gray-50',
-                      ].join(' ')}
-                    >
-                      <div className="flex items-start gap-4">
-                        <div
-                          className={`flex-shrink-0 w-10 h-10 rounded-lg border flex items-center justify-center transition-all duration-300 hover:scale-105 ${getNotificationTone(notification.type, isUnread)}`}
-                        >
-                          <FontAwesomeIcon icon={getNotificationIcon(notification.type)} className="w-4 h-4" />
-                        </div>
+            <button
+              type="button"
+              onClick={() => setFilter('unread')}
+              className={[
+                UI.btnBase,
+                'h-9 px-4 text-sm rounded-xl',
+                filter === 'unread' ? 'bg-[#2e66a6] text-white' : 'bg-transparent text-gray-700 hover:bg-gray-100',
+                UI.ring,
+              ].join(' ')}
+            >
+              Unread
+              {unreadInlineCount > 0 && (
+                <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs bg-white/20 border border-white/30">
+                  {unreadInlineCount}
+                </span>
+              )}
+            </button>
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <h3 className="font-semibold text-black truncate">
-                                  {notification.title || 'Notification'}
-                                </h3>
-                                {isUnread && (
-                                  <span className="inline-flex w-2.5 h-2.5 bg-[#2e66a6] rounded-full flex-shrink-0" />
-                                )}
-                              </div>
-
-                              <p className="mt-1 text-sm text-gray-700 leading-6">
-                                {notification.message}
-                              </p>
-
-                              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                                <span>{formatTime(notification.createdAt)}</span>
-
-                                {status ? (
-                                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full border font-semibold ${getStatusBadge(status)}`}>
-                                    <FontAwesomeIcon icon={getStatusIcon(status)} className="w-3 h-3" />
-                                    {getStatusLabel(status)}
-                                  </span>
-                                ) : null}
-
-                                {notification?.metadata?.jobTitle ? (
-                                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full border bg-white text-[#2e66a6] border-[#2e66a6]/20 font-semibold">
-                                    <FontAwesomeIcon icon={faBriefcase} className="w-3 h-3" />
-                                    {notification.metadata.jobTitle}
-                                  </span>
-                                ) : null}
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                              {!notification.isRead && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleMarkAsRead(notification._id)}
-                                  className={`${UI.btnBase} ${UI.btnSm} ${UI.btnSoft} ${UI.ring}`}
-                                  title="Mark as read"
-                                >
-                                  <FontAwesomeIcon icon={faCheck} className="w-3 h-3" />
-                                  Read
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={() => setFilter('read')}
+              className={[
+                UI.btnBase,
+                'h-9 px-4 text-sm rounded-xl',
+                filter === 'read' ? 'bg-[#2e66a6] text-white' : 'bg-transparent text-gray-700 hover:bg-gray-100',
+                UI.ring,
+              ].join(' ')}
+            >
+              Read
+            </button>
           </div>
 
-          {filteredNotifications.length > 0 && (
-            <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-              <p className="text-sm text-gray-500">
-                Page {safePage} of {totalPages} · {filteredNotifications.length} total
-              </p>
+          <button
+            onClick={handleMarkAllAsRead}
+            disabled={unreadCount === 0}
+            className={`${UI.btnBase} ${UI.btnMd} ${unreadCount === 0 ? UI.btnSecondary : UI.btnSoft} ${UI.ring}`}
+            type="button"
+          >
+            <FontAwesomeIcon icon={faCheck} className="w-4 h-4" />
+            Mark all as read
+          </button>
+        </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-                <nav className="inline-flex min-h-11 items-center overflow-hidden rounded-xl border border-gray-200 bg-white" aria-label="Notification pagination">
-                  <button type="button" onClick={() => setCurrentPage(1)} disabled={safePage === 1} className="h-11 border-r border-gray-200 px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">First</button>
-                  <button type="button" onClick={() => setCurrentPage((pageNumber) => Math.max(1, pageNumber - 1))} disabled={safePage === 1} className="inline-flex h-11 items-center gap-1 border-r border-gray-200 px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"><span aria-hidden="true">‹</span> Previous</button>
-
-                  <div className="flex h-11 items-center px-1">
-                    {pageNumbers.map((pageNumber) => (
-                      <button
-                        key={pageNumber}
-                        type="button"
-                        onClick={() => setCurrentPage(pageNumber)}
-                        aria-current={safePage === pageNumber ? 'page' : undefined}
-                        className={`h-9 min-w-9 rounded-lg px-3 text-sm font-semibold transition ${safePage === pageNumber ? 'bg-[#2e66a6] text-white' : 'text-gray-700 hover:bg-gray-100'}`}
-                      >
-                        {pageNumber}
-                      </button>
-                    ))}
-                  </div>
-
-                  <button type="button" onClick={() => setCurrentPage((pageNumber) => Math.min(totalPages, pageNumber + 1))} disabled={safePage === totalPages} className="inline-flex h-11 items-center gap-1 border-l border-gray-200 px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">Next <span aria-hidden="true">›</span></button>
-                  <button type="button" onClick={() => setCurrentPage(totalPages)} disabled={safePage === totalPages} className="h-11 border-l border-gray-200 px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40">Last</button>
-                </nav>
-
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <span className="whitespace-nowrap">Display per page</span>
-                  <select
-                    value={pageSize}
-                    onChange={(event) => setPageSize(event.target.value === 'all' ? 'all' : Number(event.target.value))}
-                    className="h-11 rounded-xl border border-gray-200 bg-white px-3 outline-none focus:border-[#2e66a6]"
-                  >
-                    <option value={10}>10</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                    <option value="all">All</option>
-                  </select>
-                </label>
+        {/* List */}
+        <div className={UI.shell}>
+          {loading ? (
+            <div className="p-12 text-center">
+              <div className="h-12 w-12 rounded-full border-2 border-gray-200 border-t-[#2e66a6] animate-spin mx-auto" />
+              <p className={`mt-4 ${UI.textMuted}`}>Loading notifications...</p>
+            </div>
+          ) : paginatedNotifications.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <FontAwesomeIcon icon={faBell} className="w-8 h-8 text-gray-300" />
               </div>
+              <h3 className={`text-lg font-semibold ${UI.textPrimary} mb-2`}>No notifications</h3>
+              <p className={UI.textMuted}>
+                {filter === 'all'
+                  ? "You're all caught up! New notifications will appear here."
+                  : filter === 'unread'
+                  ? "You don't have any unread notifications."
+                  : "You don't have any read notifications."}
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {paginatedNotifications.map((notification) => (
+                <div
+                  key={notification._id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleNotificationClick(notification)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') handleNotificationClick(notification);
+                  }}
+                  className={[
+                    'p-4 sm:p-5 cursor-pointer transition',
+                    !notification.isRead ? 'bg-blue-50/40' : 'bg-white',
+                    'hover:bg-gray-50',
+                  ].join(' ')}
+                >
+                  <div className="flex items-start gap-4">
+                    <div
+                      className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-105 ${
+                        !notification.isRead
+                          ? 'bg-blue-100 text-[#2e66a6] hover:bg-blue-200'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {(() => {
+                        switch (notification.type) {
+                          case 'job_match':
+                            return (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={1.5}
+                                  d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                />
+                              </svg>
+                            );
+                          case 'application_update':
+                            return (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={1.5}
+                                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                              </svg>
+                            );
+                          case 'new_message':
+                            return (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={1.5}
+                                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                                />
+                              </svg>
+                            );
+                          case 'interview':
+                            return (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={1.5}
+                                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                />
+                              </svg>
+                            );
+                          default:
+                            return (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={1.5}
+                                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                                />
+                              </svg>
+                            );
+                        }
+                      })()}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p
+                            className={`font-semibold ${UI.textPrimary} break-words`}
+                            title={getNotificationDisplayTitle(notification)}
+                          >
+                            {getNotificationDisplayTitle(notification)}
+                          </p>
+                          <p className={`text-sm ${UI.textSecondary} mt-1 break-words leading-6`}>
+                            {getNotificationDisplayMessage(notification)}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <span className={`text-xs ${UI.textMuted}`}>{formatTime(notification.createdAt)}</span>
+
+                          {!notification.isRead && (
+                            <span className="inline-flex items-center" aria-label="Unread">
+                              <FontAwesomeIcon icon={faCircle} className="w-2 h-2 text-[#2e66a6]" />
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Status badge */}
+                      {notification.type === 'application_update' && notification.metadata?.newStatus && (
+                        <div className="mt-3">
+                          <span className={[UI.badge, getStatusBadge(notification.metadata.newStatus)].join(' ')}>
+                            <FontAwesomeIcon icon={getStatusIcon(notification.metadata.newStatus)} className="w-3 h-3" />
+                            {getStatusLabel(notification.metadata.newStatus)}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Metadata */}
+                      {notification.metadata && (
+                        <div className={`mt-3 text-sm ${UI.textMuted} space-y-1`}>
+                          {notification.metadata.companyName && <p>Company: {notification.metadata.companyName}</p>}
+                          {notification.metadata.jobTitle && <p>Job: {notification.metadata.jobTitle}</p>}
+                          {notification.metadata.interviewDate && (
+                            <p className="flex items-center gap-2">
+                              <FontAwesomeIcon icon={faCalendarAlt} className="w-3.5 h-3.5" />
+                              <span>Interview: {new Date(notification.metadata.interviewDate).toLocaleDateString()}</span>
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="mt-4 flex items-center gap-3 flex-wrap">
+                        {notification.link && (
+                          <Link
+                            to={notification.link}
+                            className="text-[#2e66a6] hover:text-[#1f4a7a] font-semibold text-sm"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            View Details →
+                          </Link>
+                        )}
+
+                        {!notification.isRead && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMarkAsRead(notification._id);
+                            }}
+                            className={`${UI.btnBase} ${UI.btnSm} ${UI.btnSecondary} ${UI.ring}`}
+                          >
+                            <FontAwesomeIcon icon={faCheck} className="w-4 h-4" />
+                            Mark as read
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
+
+        <Pagination
+          currentPage={safePage}
+          totalItems={filteredNotifications.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          ariaLabel="Notification pagination"
+          className="mt-6"
+        />
+      </div>
       </div>
     </EmployerLayout>
   );
