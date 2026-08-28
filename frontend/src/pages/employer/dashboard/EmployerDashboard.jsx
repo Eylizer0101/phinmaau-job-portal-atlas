@@ -1704,7 +1704,7 @@ const EmployerDashboard = () => {
                   id="logout-desc"
                   className="mt-2 text-sm sm:text-base text-gray-600 text-center"
                 >
-                  You’ll be signed out of your account. You can sign in again anytime.
+                  You’re about to sign out of your account. You can sign in again anytime.
                 </p>
 
                 <div className="mt-6 flex items-center justify-center gap-3">

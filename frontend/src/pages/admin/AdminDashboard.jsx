@@ -1659,7 +1659,7 @@ const AdminTopActions = () => {
               </h2>
 
               <p id="admin-signout-description" className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-600">
-                You will be signed out of your admin account. You can sign in again anytime.
+                You’re about to sign out of your account. You can sign in again anytime.
               </p>
 
               <div className="mt-6 flex items-center justify-center gap-3">
