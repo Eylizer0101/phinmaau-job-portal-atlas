@@ -167,8 +167,7 @@ exports.getNotifications = async (req, res) => {
             user: userId,
             isArchived: false
         })
-        .sort({ createdAt: -1 })
-        .limit(50);
+        .sort({ createdAt: -1 });
 
         const unreadCount = await Notification.countDocuments({
             user: userId,

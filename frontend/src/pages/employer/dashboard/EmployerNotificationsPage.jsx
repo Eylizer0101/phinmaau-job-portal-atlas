@@ -288,10 +288,7 @@ const EmployerNotificationsPage = () => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
 
-  const unreadInlineCount = useMemo(
-    () => notifications.filter((n) => !n.isRead).length,
-    [notifications]
-  );
+  const unreadInlineCount = unreadCount;
 
   return (
     <EmployerLayout>

@@ -448,7 +448,7 @@ const EmployerDashboard = () => {
       const list = res?.data?.notifications || [];
       const unread = res?.data?.unreadCount ?? 0;
 
-      setNotifications(list);
+      setNotifications(list.slice(0, 10));
       setNotifUnreadCount(unread);
     } catch (e) {
       console.error('Error fetching notifications:', e);
@@ -1621,7 +1621,7 @@ const EmployerDashboard = () => {
   const groupedNotifications = ['Today', 'Yesterday', 'Last Week']
     .map((label) => ({
       label,
-      items: notifications.filter((notification) => getNotificationGroup(notification.createdAt) === label),
+      items: notifications.slice(0, 10).filter((notification) => getNotificationGroup(notification.createdAt) === label),
     }))
     .filter((group) => group.items.length > 0);
 

@@ -1550,6 +1550,10 @@ const ManageJobs = () => {
                             <p className="mt-1 font-medium text-gray-800">{formatDate(job.applicationDeadline)}</p>
                           </div>
                           <div className="rounded-xl bg-gray-50 p-3">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Vacancy</p>
+                            <p className="mt-1 font-medium text-gray-800">{job.vacancies ?? '—'}</p>
+                          </div>
+                          <div className="rounded-xl bg-gray-50 p-3">
                             <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Applicant</p>
                             <p className="mt-1 font-medium text-gray-800">{getApplicantValue(job)}</p>
                           </div>
@@ -1600,7 +1604,7 @@ const ManageJobs = () => {
                               {busyThisRow && ['open', 'close'].includes(action.type) ? (
                                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#2e66a6]" />
                               ) : (
-                                <Icon name={derivedStatus === 'open' ? 'closeJob' : 'openJob'} className="h-4 w-4" />
+                                <Icon name={derivedStatus === 'open' ? 'openJob' : 'closeJob'} className="h-4 w-4" />
                               )}
                             </button>
                           )}
@@ -1643,11 +1647,12 @@ const ManageJobs = () => {
                 <div className="">
                   <table className="min-w-full divide-y divide-gray-200">
                     <colgroup>
-                      <col className="w-[13%]" />
-                      <col className="w-[26%]" />
-                      <col className="w-[10%]" />
                       <col className="w-[12%]" />
-                      <col className="w-[15%]" />
+                      <col className="w-[22%]" />
+                      <col className="w-[8%]" />
+                      <col className="w-[9%]" />
+                      <col className="w-[11%]" />
+                      <col className="w-[14%]" />
                       <col className="w-[24%]" />
                     </colgroup>
 
@@ -1658,6 +1663,9 @@ const ManageJobs = () => {
                         </th>
                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Job Title
+                        </th>
+                        <th scope="col" className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
+                          Vacancy
                         </th>
                         <th scope="col" className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Applicant
@@ -1762,6 +1770,10 @@ const ManageJobs = () => {
                             </td>
 
                             <td className="px-6 py-4 text-center align-middle text-sm font-medium text-gray-800">
+                              {job.vacancies ?? '—'}
+                            </td>
+
+                            <td className="px-6 py-4 text-center align-middle text-sm font-medium text-gray-800">
                               {getApplicantValue(job)}
                             </td>
 
@@ -1833,7 +1845,7 @@ const ManageJobs = () => {
                                     {busyThisRow && ['open', 'close'].includes(action.type) ? (
                                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#2e66a6]" />
                                     ) : (
-                                      <Icon name={derivedStatus === 'open' ? 'closeJob' : 'openJob'} className="h-4 w-4" />
+                                      <Icon name={derivedStatus === 'open' ? 'openJob' : 'closeJob'} className="h-4 w-4" />
                                     )}
                                   </button>
                                 )}
@@ -1961,7 +1973,7 @@ const ManageJobs = () => {
               }
             }}
           >
-            <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
               <div className="border-b border-gray-200 px-5 py-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3">
