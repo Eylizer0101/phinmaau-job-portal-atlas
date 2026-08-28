@@ -635,8 +635,8 @@ const LoginPage = () => {
           }
         }}
       >
-        <div className="w-full max-w-[410px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
-          <div className="relative border-b border-gray-200 px-5 pb-5 pt-6 sm:px-6">
+        <div className="w-full max-w-[360px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+          <div className="relative border-b border-gray-200 px-5 pb-4 pt-5">
             <button
               type="button"
               onClick={closeForgotPasswordModal}
@@ -653,16 +653,16 @@ const LoginPage = () => {
              <img
   src="/images/agpay.png"
   alt="AGAPAY"
-  className="mx-auto h-24 w-auto max-w-[280px] object-contain"
+  className="mx-auto h-16 w-auto max-w-[220px] object-contain"
 />
-              <h3 id="forgot-password-title" className="mt-4 text-xl font-extrabold tracking-tight text-gray-950">
+              <h3 id="forgot-password-title" className="mt-3 text-xl font-extrabold tracking-tight text-gray-950">
                 Forgot Password
               </h3>
              
             </div>
           </div>
 
-          <form onSubmit={handleForgotPasswordSubmit} className="space-y-4 px-5 py-5 sm:px-6" noValidate>
+          <form onSubmit={handleForgotPasswordSubmit} className="space-y-3.5 px-5 py-4" noValidate>
             <div className="space-y-1.5">
               <label htmlFor="forgot-password-email" className="block text-xs font-bold text-gray-900">
                 Enter Registered Email Address
@@ -745,12 +745,12 @@ const LoginPage = () => {
               ) : null}
             </div>
 
-            <div className="flex items-center justify-center gap-3 pt-1">
+            <div className="flex items-center justify-center gap-2.5 pt-0.5">
               <button
                 type="button"
                 onClick={closeForgotPasswordModal}
                 disabled={forgotPasswordLoading}
-                className="inline-flex h-10 min-w-[96px] items-center justify-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50 focus:outline-none focus:ring-4 focus:ring-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-10 min-w-[90px] items-center justify-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50 focus:outline-none focus:ring-4 focus:ring-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -758,7 +758,7 @@ const LoginPage = () => {
               <button
                 type="submit"
                 disabled={forgotPasswordLoading}
-                className="inline-flex h-10 min-w-[112px] items-center justify-center rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white transition hover:bg-[#245387] focus:outline-none focus:ring-4 focus:ring-[#2e66a6]/15 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-10 min-w-[106px] items-center justify-center rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white transition hover:bg-[#245387] focus:outline-none focus:ring-4 focus:ring-[#2e66a6]/15 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {forgotPasswordLoading ? 'Sending OTP...' : 'SEND OTP'}
               </button>

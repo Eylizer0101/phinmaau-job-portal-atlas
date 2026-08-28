@@ -11,24 +11,17 @@ const createMathChallenge = () => {
 const getPasswordStrength = (password) => {
   if (!password) return null;
 
-  let score = 0;
-  if (password.length >= 6) score += 1;
-  if (password.length >= 8) score += 1;
-  if (password.length >= 12) score += 1;
-  if (/[a-z]/.test(password) && /^[A-Z]/.test(password)) score += 1;
-  if (/\d/.test(password)) score += 1;
-  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+  const score = [
+    password.length >= 8,
+    /[A-Z]/.test(password),
+    /[a-z]/.test(password),
+    /\d/.test(password),
+    /[^A-Za-z0-9]/.test(password),
+  ].filter(Boolean).length;
 
-  const levels = [
-    { label: 'Very Weak', textClass: 'text-red-600', barClass: 'bg-red-500', width: 'w-1/6' },
-    { label: 'Weak', textClass: 'text-red-600', barClass: 'bg-red-500', width: 'w-2/6' },
-    { label: 'Fair', textClass: 'text-orange-600', barClass: 'bg-orange-500', width: 'w-3/6' },
-    { label: 'Good', textClass: 'text-amber-600', barClass: 'bg-amber-500', width: 'w-4/6' },
-    { label: 'Strong', textClass: 'text-green-600', barClass: 'bg-green-500', width: 'w-5/6' },
-    { label: 'Very Strong', textClass: 'text-green-700', barClass: 'bg-green-600', width: 'w-full' },
-  ];
-
-  return levels[Math.max(0, Math.min(score - 1, levels.length - 1))];
+  if (score <= 2) return { label: 'Weak', textClass: 'text-red-600' };
+  if (score <= 4) return { label: 'Medium', textClass: 'text-orange-600' };
+  return { label: 'Strong', textClass: 'text-green-600' };
 };
 
 const ResetPassword = () => {
@@ -128,8 +121,8 @@ const ResetPassword = () => {
 
     if (!formData.newPassword) {
       next.newPassword = 'New password is required.';
-    } else if (!/^[A-Z](?=.*[a-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{7,}$/.test(formData.newPassword)) {
-      next.newPassword = 'Password must start with an uppercase letter and contain at least 8 characters, lowercase, number, and special character.';
+    } else if (!/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(formData.newPassword)) {
+      next.newPassword = 'Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character.';
     }
 
     if (!formData.confirmPassword) {
@@ -253,6 +246,13 @@ const ResetPassword = () => {
 
   const isExpired = secondsRemaining <= 0;
   const passwordStrength = getPasswordStrength(formData.newPassword);
+  const passwordRequirements = [
+    { label: 'At least 8 characters', met: formData.newPassword.length >= 8 },
+    { label: 'One uppercase letter', met: /[A-Z]/.test(formData.newPassword) },
+    { label: 'One lowercase letter', met: /[a-z]/.test(formData.newPassword) },
+    { label: 'At least one number', met: /\d/.test(formData.newPassword) },
+    { label: 'One special character', met: /[^A-Za-z0-9]/.test(formData.newPassword) },
+  ];
 
   return (
     <div className="min-h-screen bg-[#f4f7fb] px-4 py-8 sm:py-12">
@@ -275,6 +275,27 @@ const ResetPassword = () => {
           <p className="mx-auto mt-2 max-w-[360px] text-sm leading-5 text-gray-600">
             Enter the OTP sent to your email and choose a new password.
           </p>
+
+          <div className="mt-5 rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 text-left">
+            <h2 className="text-sm font-bold text-gray-900">Password Requirements</h2>
+            <ul className="mt-3 space-y-2">
+              {passwordRequirements.map((requirement) => (
+                <li key={requirement.label} className="flex items-center gap-2 text-xs text-gray-700">
+                  <span
+                    className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-white transition-colors ${
+                      requirement.met ? 'bg-[#2e66a6]' : 'bg-gray-300'
+                    }`}
+                    aria-hidden="true"
+                  >
+                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="m5 12 4 4L19 6" />
+                    </svg>
+                  </span>
+                  <span className={requirement.met ? 'font-medium text-gray-900' : ''}>{requirement.label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 px-6 py-5" noValidate aria-busy={loading}>
@@ -344,16 +365,9 @@ const ResetPassword = () => {
             </div>
             {fieldErrors.newPassword ? <p className="text-xs text-red-600">{fieldErrors.newPassword}</p> : null}
             {passwordStrength ? (
-              <div className="space-y-1.5" aria-live="polite">
-                <div className="h-1.5 overflow-hidden rounded-full bg-gray-200">
-                  <div
-                    className={`h-full rounded-full transition-all duration-200 ${passwordStrength.width} ${passwordStrength.barClass}`}
-                  />
-                </div>
-                <p className={`text-xs font-semibold ${passwordStrength.textClass}`}>
-                  {passwordStrength.label}
-                </p>
-              </div>
+              <p className={`text-xs font-semibold ${passwordStrength.textClass}`} aria-live="polite">
+                {passwordStrength.label}
+              </p>
             ) : null}
           </div>
 
