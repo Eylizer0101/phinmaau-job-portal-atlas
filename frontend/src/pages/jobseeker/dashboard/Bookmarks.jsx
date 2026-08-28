@@ -314,6 +314,17 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           />
         </svg>
       );
+    case 'starOutline':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.8}
+            d="m12 3.5 2.63 5.33 5.88.85-4.25 4.15 1 5.85L12 16.91l-5.26 2.77 1-5.85-4.25-4.15 5.88-.85L12 3.5Z"
+          />
+        </svg>
+      );
     case 'bookmark':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3510,7 +3521,7 @@ const Bookmarks = () => {
                           <div className="mt-6 space-y-5">
                             {selectedCompanyReviews.length === 0 ? (
                               <EmptyCompanyTabState
-                                icon="star"
+                                icon="starOutline"
                                 title="No reviews yet."
                                 description="Be the first to share your hiring process experience with this company."
                               />
