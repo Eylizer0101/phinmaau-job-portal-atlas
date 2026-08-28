@@ -93,6 +93,11 @@ const SvgIcon = ({ name, className = "w-5 h-5" }) => {
         />
       </svg>
     ),
+    eyeOff: (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 3l18 18M10.58 10.58a2 2 0 002.83 2.83M9.88 4.24A10.8 10.8 0 0112 4c5.5 0 9.5 4.5 10.5 8a13.7 13.7 0 01-2.08 3.87M6.61 6.61C3.9 8.32 2.25 10.67 1.5 12c1 3.5 5 8 10.5 8 1.5 0 2.88-.33 4.12-.9" />
+      </svg>
+    ),
     check: (
       <svg
         className={className}
@@ -769,6 +774,7 @@ const JobseekerVerificationDetails = () => {
   const closePasswordModal = () => {
     if (passwordLoading) return;
     setShowPasswordModal(false);
+    setShowCredentialPassword(false);
     setCredentialPassword("");
     setPasswordError("");
     setPendingCredentialAction(null);
@@ -777,6 +783,7 @@ const JobseekerVerificationDetails = () => {
   const requestCredentialAccess = (action, docType, label = "credential") => {
     setPendingCredentialAction({ action, docType, label });
     setCredentialPassword("");
+    setShowCredentialPassword(false);
     setPasswordError("");
     setShowPasswordModal(true);
   };
@@ -1820,7 +1827,7 @@ const JobseekerVerificationDetails = () => {
                           : "Show password"
                       }
                     >
-                      <SvgIcon name="eye" className="h-5 w-5" />
+                      <SvgIcon name={showCredentialPassword ? "eyeOff" : "eye"} className="h-5 w-5" />
                     </button>
                   </div>
 

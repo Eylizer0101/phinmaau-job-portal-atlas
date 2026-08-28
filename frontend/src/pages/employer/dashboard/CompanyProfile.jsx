@@ -381,6 +381,12 @@ const EyeIcon = ({ className = 'w-5 h-5' }) => (
   </svg>
 );
 
+const EyeOffIcon = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18M10.58 10.58a2 2 0 002.83 2.83M9.88 4.24A10.8 10.8 0 0112 4c5.5 0 9.5 4.5 10.5 8a13.7 13.7 0 01-2.08 3.87M6.61 6.61C3.9 8.32 2.25 10.67 1.5 12c1 3.5 5 8 10.5 8 1.5 0 2.88-.33 4.12-.9" />
+  </svg>
+);
+
 const DownloadIcon = ({ className = 'w-5 h-5' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor">
     <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M12 3v12m0 0l-4-4m4 4l4-4M5 20h14" />
@@ -2933,7 +2939,7 @@ const CompanyProfile = () => {
                       aria-label={showCredentialPassword ? 'Hide password' : 'Show password'}
                       title={showCredentialPassword ? 'Hide password' : 'Show password'}
                     >
-                      <EyeIcon className="h-5 w-5" />
+                      {showCredentialPassword ? <EyeOffIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
                     </button>
                   </div>
                 </div>

@@ -33,6 +33,7 @@ import {
   FaMapMarkerAlt,
   FaDownload,
   FaEye,
+  FaEyeSlash,
   FaPen,
   FaFileAlt,
   FaUniversity,
@@ -912,7 +913,7 @@ const ResumePasswordModal = ({
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
                 title={showPassword ? 'Hide password' : 'Show password'}
               >
-                <FaEye className={`text-base ${showPassword ? 'text-[#2e66a6]' : ''}`} />
+                {showPassword ? <FaEyeSlash className="text-base text-[#2e66a6]" /> : <FaEye className="text-base" />}
               </button>
             </div>
           </div>

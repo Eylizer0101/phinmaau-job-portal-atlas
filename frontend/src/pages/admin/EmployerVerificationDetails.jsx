@@ -72,6 +72,11 @@ const SvgIcon = ({ name, className = "w-5 h-5" }) => {
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
     ),
+    eyeOff: (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 3l18 18M10.58 10.58a2 2 0 002.83 2.83M9.88 4.24A10.8 10.8 0 0112 4c5.5 0 9.5 4.5 10.5 8a13.7 13.7 0 01-2.08 3.87M6.61 6.61C3.9 8.32 2.25 10.67 1.5 12c1 3.5 5 8 10.5 8 1.5 0 2.88-.33 4.12-.9" />
+      </svg>
+    ),
     check: (
       <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -602,6 +607,7 @@ const EmployerVerificationDetails = () => {
   const [passwordError, setPasswordError] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [pendingCredentialAction, setPendingCredentialAction] = useState(null);
+  const [showCredentialPassword, setShowCredentialPassword] = useState(false);
   const [holdDocTypes, setHoldDocTypes] = useState([]);
   const [holdSelectedReason, setHoldSelectedReason] = useState("");
   const [holdReason, setHoldReason] = useState("");
@@ -836,6 +842,7 @@ const EmployerVerificationDetails = () => {
     if (passwordLoading) return;
 
     setShowPasswordModal(false);
+    setShowCredentialPassword(false);
     setCredentialPassword("");
     setPasswordError("");
     setPendingCredentialAction(null);
@@ -848,6 +855,7 @@ const EmployerVerificationDetails = () => {
       label,
     });
     setCredentialPassword("");
+    setShowCredentialPassword(false);
     setPasswordError("");
     setShowPasswordModal(true);
   };
@@ -1331,29 +1339,41 @@ const EmployerVerificationDetails = () => {
                     Password
                   </label>
 
-                  <input
-                    id="employerCredentialPassword"
-                    type="password"
-                    value={credentialPassword}
-                    onChange={(event) => {
-                      setCredentialPassword(event.target.value);
-                      setPasswordError("");
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        confirmCredentialAccess();
-                      }
-                    }}
-                    autoFocus
-                    disabled={passwordLoading}
-                    className={cn(
-                      "mt-2 h-11 w-full rounded-xl border bg-white px-4 text-sm text-black placeholder-black/35",
-                      passwordError ? "border-black" : "border-black/20",
-                      UI.ring
-                    )}
-                    placeholder="Enter your password"
-                  />
+                  <div className="relative">
+                    <input
+                      id="employerCredentialPassword"
+                      type={showCredentialPassword ? "text" : "password"}
+                      value={credentialPassword}
+                      onChange={(event) => {
+                        setCredentialPassword(event.target.value);
+                        setPasswordError("");
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          confirmCredentialAccess();
+                        }
+                      }}
+                      autoFocus
+                      disabled={passwordLoading}
+                      className={cn(
+                        "mt-2 h-11 w-full rounded-xl border bg-white px-4 pr-12 text-sm text-black placeholder-black/35",
+                        passwordError ? "border-black" : "border-black/20",
+                        UI.ring
+                      )}
+                      placeholder="Enter your password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCredentialPassword((value) => !value)}
+                      disabled={passwordLoading}
+                      className="absolute right-3 top-1/2 mt-1 -translate-y-1/2 text-black/55 disabled:opacity-50"
+                      aria-label={showCredentialPassword ? "Hide password" : "Show password"}
+                      title={showCredentialPassword ? "Hide password" : "Show password"}
+                    >
+                      <SvgIcon name={showCredentialPassword ? "eyeOff" : "eye"} className="h-5 w-5" />
+                    </button>
+                  </div>
 
                   {passwordError ? (
                     <p
