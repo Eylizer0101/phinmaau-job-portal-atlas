@@ -2613,7 +2613,7 @@ const Bookmarks = () => {
               role="status"
               aria-live="polite"
             >
-              <div className="inline-flex items-center gap-3 rounded-2xl border border-blue-200 bg-blue-100 px-7 py-4 text-base font-semibold text-blue-700 shadow-xl">
+              <div className="inline-flex items-center gap-3 rounded-2xl border border-green-200 bg-green-100 px-7 py-4 text-base font-semibold text-green-700 shadow-xl">
                 <svg
                   className="w-5 h-5"
                   fill="none"

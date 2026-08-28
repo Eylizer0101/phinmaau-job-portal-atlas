@@ -1641,7 +1641,7 @@ const JobSeekerDashboard = () => {
           role="status"
           aria-live="polite"
         >
-          <div className="flex items-center gap-3 rounded-2xl border border-[#B8D7FF] bg-[#E1EEFF] px-7 py-4 text-base font-semibold text-[#1D5ED6] shadow-xl">
+          <div className="flex items-center gap-3 rounded-2xl border border-green-200 bg-green-100 px-7 py-4 text-base font-semibold text-green-700 shadow-xl">
             <svg
               className="h-5 w-5 shrink-0"
               viewBox="0 0 24 24"

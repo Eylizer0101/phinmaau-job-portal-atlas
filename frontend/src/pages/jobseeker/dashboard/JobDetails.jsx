@@ -1137,7 +1137,7 @@ const JobDetails = () => {
         const response = await api.delete(`/jobs/saved/${job._id}`);
         if (response.data?.success) {
           setIsSaved(false);
-          setToastWithAutoClear('success', 'Job removed from bookmarks.');
+          setToastWithAutoClear('success', 'Job removed successfully!');
         } else {
           setToastWithAutoClear('error', response.data?.message || 'Failed to remove saved job.');
         }
@@ -1145,7 +1145,7 @@ const JobDetails = () => {
         const response = await api.post(`/jobs/saved/${job._id}`);
         if (response.data?.success) {
           setIsSaved(true);
-          setToastWithAutoClear('success', 'Job Saved Successfully!');
+          setToastWithAutoClear('success', 'Job saved successfully!');
         } else {
           setToastWithAutoClear('error', response.data?.message || 'Failed to save job.');
         }
@@ -1315,16 +1315,16 @@ const JobDetails = () => {
                 aria-live="polite"
               >
                 <div
-                  className={`inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold shadow-lg border ${
+                  className={`inline-flex items-center gap-3 rounded-2xl border px-7 py-4 text-base font-semibold shadow-xl ${
                     toast.type === 'error'
                       ? 'border-red-200 bg-red-100 text-red-700'
                       : 'border-green-200 bg-green-100 text-green-700'
                   }`}
                 >
                   {toast.type === 'error' ? (
-                    <SvgIcon name="exclamation" className="w-4 h-4" />
+                    <SvgIcon name="exclamation" className="w-5 h-5" />
                   ) : (
-                    <SvgIcon name="checkCircle" className="w-4 h-4" />
+                    <SvgIcon name="checkCircle" className="w-5 h-5" />
                   )}
                   <span>{toast.message}</span>
                 </div>
