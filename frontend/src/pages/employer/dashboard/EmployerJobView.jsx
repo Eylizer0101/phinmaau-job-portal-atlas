@@ -632,9 +632,15 @@ const EmployerJobView = () => {
   const [jobApplications, setJobApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showSuccessIndicator, setShowSuccessIndicator] = useState(
-    Boolean(location.state?.jobPostSuccess || location.state?.jobEditSuccess)
-  );
+  const [successIndicator] = useState(() => ({
+    visible: Boolean(location.state?.jobPostSuccess || location.state?.jobEditSuccess),
+    message: location.state?.jobPostSuccess
+      ? 'Job published successfully.'
+      : location.state?.jobEditSuccess
+        ? 'Job updated successfully.'
+        : '',
+  }));
+  const [showSuccessIndicator, setShowSuccessIndicator] = useState(successIndicator.visible);
 
   const formatSalary = useCallback((min, max, hideSalary = false) => {
     if (hideSalary) return 'Salary Undisclosed';
@@ -761,19 +767,25 @@ const EmployerJobView = () => {
   }, [fetchJobDetails, fetchJobApplications]);
 
   useEffect(() => {
-    if (!(location.state?.jobPostSuccess || location.state?.jobEditSuccess)) {
-      setShowSuccessIndicator(false);
-      return undefined;
-    }
+    if (!successIndicator.visible) return undefined;
 
     setShowSuccessIndicator(true);
+
+    const nextState = { ...(location.state || {}) };
+    delete nextState.jobPostSuccess;
+    delete nextState.jobEditSuccess;
+
+    navigate(location.pathname, {
+      replace: true,
+      state: nextState,
+    });
 
     const timeoutId = window.setTimeout(() => {
       setShowSuccessIndicator(false);
     }, 5000);
 
     return () => window.clearTimeout(timeoutId);
-  }, [location.state?.jobPostSuccess, location.state?.jobEditSuccess]);
+  }, [navigate, location.pathname, successIndicator.visible]);
 
   const requiredSkills = useMemo(() => {
     if (Array.isArray(job?.skillsRequired)) return job.skillsRequired.filter(Boolean);
@@ -892,12 +904,12 @@ const EmployerJobView = () => {
           </div>
 
           {showSuccessIndicator && (
-            <div className="pointer-events-none fixed left-1/2 top-[20%] z-[100] -translate-x-1/2 -translate-y-1/2 lg:left-[calc(50%+145px)]">
+            <div className="pointer-events-none fixed left-1/2 top-[43%] z-[100] -translate-x-1/2 -translate-y-1/2 lg:left-[calc(50%+145px)]">
               <div
                 role="status"
                 className="w-fit rounded-xl border border-green-200 bg-green-50 px-5 py-3 text-center text-sm font-semibold text-green-800 shadow-sm"
               >
-                {location.state?.jobPostSuccess ? 'Job published successfully.' : 'Job updated successfully.'}
+                {successIndicator.message}
               </div>
             </div>
           )}
