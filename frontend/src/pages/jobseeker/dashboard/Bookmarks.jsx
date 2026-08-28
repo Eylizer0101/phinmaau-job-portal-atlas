@@ -2949,7 +2949,7 @@ const Bookmarks = () => {
                               disabled={mainActionLoading || isFullyFilled || (!isJobActive(selectedJob) && !hasApplied)}
                               className={`${UI.btnBase} ${UI.btnLg} ${
                                 isFullyFilled
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 disabled:!pointer-events-auto disabled:cursor-not-allowed'
+                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 disabled:!pointer-events-auto disabled:cursor-not-allowed'
                                   : mainActionLoading || (!isJobActive(selectedJob) && !hasApplied)
                                   ? 'bg-black/5 text-black/50 border border-black/10'
                                   : UI.btnPrimary
