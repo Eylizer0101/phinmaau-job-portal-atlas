@@ -35,7 +35,7 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
     case 'publish':
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 16V4m0 0L7 9m5-5 5 5M5 20h14" /></svg>;
     case 'openJob':
-      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 11V8a4 4 0 018 0m-9 3h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg>;
+      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M17 11V8a5 5 0 00-9.7-1.7M7 11h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg>;
     case 'closeJob':
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M7 11V8a5 5 0 0110 0v3m-10 0h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg>;
     case 'more':
