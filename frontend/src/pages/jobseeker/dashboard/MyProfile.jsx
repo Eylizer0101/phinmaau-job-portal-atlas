@@ -6654,7 +6654,7 @@ const MyProfile = () => {
                   {[formData.email, formData.phoneNumber].filter(Boolean).join(' • ')}
                 </div>
               ) : null}
-              <div className="mt-2 font-serif italic text-[16px] leading-7 text-gray-500">
+              <div className="mt-2 font-serif text-[16px] leading-7 text-gray-500">
                 {[
                   formData.campus,
                   formData.course,
