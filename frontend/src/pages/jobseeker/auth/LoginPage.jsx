@@ -658,9 +658,7 @@ const LoginPage = () => {
               <h3 id="forgot-password-title" className="mt-4 text-xl font-extrabold tracking-tight text-gray-950">
                 Forgot Password
               </h3>
-              <p id="forgot-password-description" className="mx-auto mt-2 max-w-[330px] text-sm leading-5 text-gray-600">
-                Enter the email address linked to your account and we&apos;ll send you a one-time password (OTP).
-              </p>
+             
             </div>
           </div>
 
