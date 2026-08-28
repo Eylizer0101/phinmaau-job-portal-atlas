@@ -10,7 +10,7 @@ const API_ORIGIN = String(
 const resolveCompanyLogoUrl = (logo) => {
   const value = String(logo || "").trim();
 
-  if (!value) return "/images/agapay.png";
+  if (!value) return "/images/companyicon.png";
   if (/^(https?:|data:|blob:)/i.test(value)) return value;
   if (value.startsWith("/uploads")) return `${API_ORIGIN}${value}`;
 
@@ -280,7 +280,7 @@ const MainLandingPage = () => {
                           decoding="async"
                           onError={(event) => {
                             event.currentTarget.onerror = null;
-                            event.currentTarget.src = "/images/agapay.png";
+                            event.currentTarget.src = "/images/companyicon.png";
                           }}
                         />
                       </div>
