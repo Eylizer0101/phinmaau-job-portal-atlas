@@ -7263,7 +7263,7 @@ const MyProfile = () => {
                   onClick={handleApplyFlowContinue}
                   className="h-12 w-full flex-1 rounded-xl bg-[#2e66a6] text-sm font-bold text-white shadow-[0_12px_26px_rgba(46,102,166,0.20)] transition hover:bg-[#25578f] active:bg-[#1f4b7c] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                 >
-                  Submit Profile
+                  Continue to Apply
                 </button>
               </div>
             </div>
