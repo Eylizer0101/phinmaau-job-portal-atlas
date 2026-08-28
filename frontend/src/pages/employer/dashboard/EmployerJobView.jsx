@@ -632,6 +632,9 @@ const EmployerJobView = () => {
   const [jobApplications, setJobApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showSuccessIndicator, setShowSuccessIndicator] = useState(
+    Boolean(location.state?.jobPostSuccess || location.state?.jobEditSuccess)
+  );
 
   const formatSalary = useCallback((min, max, hideSalary = false) => {
     if (hideSalary) return 'Salary Undisclosed';
@@ -757,6 +760,21 @@ const EmployerJobView = () => {
     fetchJobApplications();
   }, [fetchJobDetails, fetchJobApplications]);
 
+  useEffect(() => {
+    if (!(location.state?.jobPostSuccess || location.state?.jobEditSuccess)) {
+      setShowSuccessIndicator(false);
+      return undefined;
+    }
+
+    setShowSuccessIndicator(true);
+
+    const timeoutId = window.setTimeout(() => {
+      setShowSuccessIndicator(false);
+    }, 3000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [location.state?.jobPostSuccess, location.state?.jobEditSuccess]);
+
   const requiredSkills = useMemo(() => {
     if (Array.isArray(job?.skillsRequired)) return job.skillsRequired.filter(Boolean);
     return [];
@@ -862,11 +880,6 @@ const EmployerJobView = () => {
     <EmployerLayout>
       <div className={UI.page}>
         <div className={UI.container}>
-          {(location.state?.jobPostSuccess || location.state?.jobEditSuccess) && (
-            <div role="status" className="mb-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-800">
-              {location.state?.jobPostSuccess ? 'Job published successfully.' : 'Job updated successfully.'}
-            </div>
-          )}
           <div className="mb-5">
             <button
               onClick={handleBack}
@@ -877,6 +890,17 @@ const EmployerJobView = () => {
               {backLabel}
             </button>
           </div>
+
+          {showSuccessIndicator && (
+            <div className="mb-5 flex justify-center">
+              <div
+                role="status"
+                className="w-fit rounded-xl border border-green-200 bg-green-50 px-5 py-3 text-center text-sm font-semibold text-green-800 shadow-sm"
+              >
+                {location.state?.jobPostSuccess ? 'Job published successfully.' : 'Job updated successfully.'}
+              </div>
+            </div>
+          )}
 
           <div className={`${UI.card} mb-5 overflow-hidden`}>
             <div className="relative h-[190px] w-full overflow-hidden sm:h-[220px] lg:h-[250px]">
