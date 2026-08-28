@@ -770,7 +770,7 @@ const EmployerJobView = () => {
 
     const timeoutId = window.setTimeout(() => {
       setShowSuccessIndicator(false);
-    }, 3000);
+    }, 5000);
 
     return () => window.clearTimeout(timeoutId);
   }, [location.state?.jobPostSuccess, location.state?.jobEditSuccess]);
@@ -892,7 +892,7 @@ const EmployerJobView = () => {
           </div>
 
           {showSuccessIndicator && (
-            <div className="pointer-events-none fixed left-1/2 top-1/2 z-[100] -translate-x-1/2 -translate-y-1/2 lg:left-[calc(50%+145px)]">
+            <div className="pointer-events-none fixed left-1/2 top-[43%] z-[100] -translate-x-1/2 -translate-y-1/2 lg:left-[calc(50%+145px)]">
               <div
                 role="status"
                 className="w-fit rounded-xl border border-green-200 bg-green-50 px-5 py-3 text-center text-sm font-semibold text-green-800 shadow-sm"
