@@ -19,6 +19,12 @@ const {
   checkSavedJob
 } = require('../controllers/jobController');
 
+const optionalProtect = (req, res, next) => {
+  const authorization = String(req.headers.authorization || '');
+  if (!authorization.startsWith('Bearer ')) return next();
+  return protect(req, res, next);
+};
+
 // Public routes
 router.get('/', getAllJobs);
 
@@ -34,8 +40,9 @@ router.get('/saved/check/:jobId', protect, authorize('jobseeker'), checkSavedJob
 router.post('/saved/:jobId', protect, authorize('jobseeker'), saveJob);
 router.delete('/saved/:jobId', protect, authorize('jobseeker'), removeSavedJob);
 
-// Job by id (public + used by employer edit)
-router.get('/:id', getJobById);
+// Public users only receive open jobs. Authenticated owners/admins can still
+// inspect unavailable jobs from their management pages.
+router.get('/:id', optionalProtect, getJobById);
 
 // Protected routes
 router.post('/', protect, authorize('employer'), uploadJobLocationImage.single('locationImage'), createJob);

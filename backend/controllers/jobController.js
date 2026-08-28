@@ -1111,6 +1111,19 @@ exports.getJobById = async (req, res) => {
       return res.status(404).json({ message: 'Job not found' });
     }
 
+    const requesterId = String(req.user?._id || req.user?.id || '');
+    const requesterRole = String(req.user?.role || '').trim().toLowerCase();
+    const isOwner = requesterRole === 'employer' && requesterId === String(job.employer || '');
+    const canViewUnavailableJob = isOwner || requesterRole === 'admin';
+
+    if (!isPublicJobOpen(job) && !canViewUnavailableJob) {
+      return res.status(404).json({
+        success: false,
+        code: 'JOB_UNAVAILABLE',
+        message: 'This job is no longer available.'
+      });
+    }
+
     console.log('Job found:', job.title);
 
     let employerDetails = null;
@@ -1709,10 +1722,11 @@ exports.saveJob = async (req, res) => {
     }
 
     const job = await Job.findById(req.params.jobId);
-    if (!job || !job.isPublished || !job.isActive || job.isArchived) {
+    if (!job || !isPublicJobOpen(job)) {
       return res.status(404).json({
         success: false,
-        message: 'Job not found or unavailable'
+        code: 'JOB_UNAVAILABLE',
+        message: 'This job is no longer available.'
       });
     }
 

@@ -54,7 +54,7 @@ const getDeadlineExpiryTime = (value) => {
 
 export const isOpenJobListing = (job, now = new Date()) => {
   if (!job) return false;
-  if (isFalseValue(job.isPublished) || isFalseValue(job.isActive)) return false;
+  if (!isTrueValue(job.isPublished) || !isTrueValue(job.isActive)) return false;
   if (isTrueValue(job.isArchived) || isTrueValue(job.isDeleted) || isTrueValue(job.deleted)) return false;
   if (isFalseValue(job.isAvailable)) return false;
 

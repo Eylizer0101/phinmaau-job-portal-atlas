@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import MainNavbar from '../../components/shared/MainNavbar';
 import api from '../../services/api';
+import { isOpenJobListing } from '../../utils/jobVisibility';
 
 /**
  * UPDATED:
@@ -944,6 +945,12 @@ const JobOfferDetails = () => {
       if (response.data?.success) {
         const jobData = response.data.job;
 
+        if (!isOpenJobListing(jobData)) {
+          setJob(null);
+          setError('This job is no longer available.');
+          return;
+        }
+
         const normalizedLoc = normalizeLocation(jobData);
         const patchedJob = {
           ...jobData,
@@ -965,7 +972,7 @@ const JobOfferDetails = () => {
         setError('Job not found');
       }
     } catch (err) {
-      if (err.response?.status === 404) setError('Job not found or has been removed');
+      if (err.response?.status === 404) setError(err.response?.data?.message || 'This job is no longer available.');
       else if (err.response?.status === 500) setError('Server error. Please try again later.');
       else if (err.request) setError('Cannot connect to server. Please check your connection.');
       else setError('Error loading job details. Please try again.');
@@ -987,7 +994,7 @@ const JobOfferDetails = () => {
         if (response.data?.success && response.data?.jobs) jobsData = response.data.jobs;
         else if (Array.isArray(response.data)) jobsData = response.data;
 
-        setSimilarJobs((jobsData || []).filter((j) => j._id !== id).slice(0, 3));
+        setSimilarJobs((jobsData || []).filter((j) => j._id !== id && isOpenJobListing(j)).slice(0, 3));
       } catch {
         // non-blocking
       }
