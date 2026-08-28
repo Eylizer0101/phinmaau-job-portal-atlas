@@ -422,9 +422,6 @@ const buildEmployerDocMeta = (req, file, folder) => {
     filename: file.originalname,
     fileSize: file.size,
     mimeType: file.mimetype,
-    publicId: file.public_id || file.filename || '',
-    resourceType: file.resource_type || '',
-    format: file.format || '',
   };
 };
 
@@ -617,22 +614,9 @@ const parseCloudinaryDeliveryUrl = (rawUrl = '') => {
     const filePart = lastSlashIndex >= 0 ? publicIdWithExtension.slice(lastSlashIndex + 1) : publicIdWithExtension;
     const dotIndex = filePart.lastIndexOf('.');
     const format = dotIndex > 0 ? filePart.slice(dotIndex + 1) : '';
-    // A Cloudinary raw asset keeps its extension as part of the public ID.
-    // Removing it (for example, changing "permit.pdf" to "permit") makes
-    // signed raw download URLs point to a different, non-existent asset.
-    const isRawAsset = String(resourceType).toLowerCase() === 'raw';
-    const publicId = isRawAsset
-      ? publicIdWithExtension
-      : (format ? publicIdWithExtension.slice(0, -(format.length + 1)) : publicIdWithExtension);
+    const publicId = format ? publicIdWithExtension.slice(0, -(format.length + 1)) : publicIdWithExtension;
 
-    return {
-      resourceType,
-      deliveryType,
-      publicId,
-      publicIdWithExtension,
-      format: isRawAsset ? '' : format,
-      originalUrl: rawUrl,
-    };
+    return { resourceType, deliveryType, publicId, format, originalUrl: rawUrl };
   } catch {
     return null;
   }
@@ -688,14 +672,7 @@ const fetchUrlBuffer = (rawUrl, redirectCount = 0) => new Promise((resolve, reje
   });
 });
 
-const buildCredentialDownloadCandidates = ({
-  rawUrl,
-  fileName,
-  disposition,
-  publicId: storedPublicId = '',
-  resourceType: storedResourceType = '',
-  format: storedFormat = '',
-}) => {
+const buildCredentialDownloadCandidates = ({ rawUrl, fileName, disposition }) => {
   const candidates = [];
   const cloudinaryInfo = parseCloudinaryDeliveryUrl(rawUrl);
   const attachmentFlag = disposition === 'attachment'
@@ -703,12 +680,7 @@ const buildCredentialDownloadCandidates = ({
     : undefined;
 
   if (cloudinaryInfo && process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
-    const resourceType = storedResourceType || cloudinaryInfo.resourceType;
-    const deliveryType = cloudinaryInfo.deliveryType || 'upload';
-    const publicId = storedPublicId || cloudinaryInfo.publicId;
-    const format = String(resourceType).toLowerCase() === 'raw'
-      ? ''
-      : (storedFormat || cloudinaryInfo.format);
+    const { publicId, format, resourceType, deliveryType } = cloudinaryInfo;
 
     try {
       if (typeof cloudinary.utils.private_download_url === 'function' && format) {
@@ -728,8 +700,6 @@ const buildCredentialDownloadCandidates = ({
         type: deliveryType,
         secure: true,
         sign_url: true,
-        // Do not pass a separate format for raw files. Their extension is
-        // already included in publicId and must remain there.
         format: format || undefined,
         flags: attachmentFlag || undefined,
       }));
@@ -2863,9 +2833,6 @@ exports.uploadEmployerVerificationDoc = async (req, res) => {
       filename: req.file.originalname,
       fileSize: req.file.size,
       mimeType: req.file.mimetype,
-      publicId: req.file.public_id || req.file.filename || '',
-      resourceType: req.file.resource_type || '',
-      format: req.file.format || '',
     };
 
     const statuses = allowed.map((type) => String(currentDocs[type]?.status || 'not_submitted'));
@@ -3106,9 +3073,6 @@ exports.secureAccessEmployerVerificationDoc = async (req, res) => {
       rawUrl: sourceUrl,
       fileName,
       disposition,
-      publicId: doc.publicId,
-      resourceType: doc.resourceType,
-      format: doc.format,
     });
 
     let downloaded = null;
@@ -3182,14 +3146,7 @@ exports.downloadEmployerVerificationDoc = async (req, res) => {
     const fallbackFileName = `${EMPLOYER_DOC_LABELS[docType] || docType}.pdf`;
     const fileName = sanitizeDownloadFileName(doc.filename || fallbackFileName, fallbackFileName);
     const sourceUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : makePublicUrl(req, rawUrl);
-    const candidates = buildCredentialDownloadCandidates({
-      rawUrl: sourceUrl,
-      fileName,
-      disposition,
-      publicId: doc.publicId,
-      resourceType: doc.resourceType,
-      format: doc.format,
-    });
+    const candidates = buildCredentialDownloadCandidates({ rawUrl: sourceUrl, fileName, disposition });
 
     let downloaded = null;
     let lastError = null;
