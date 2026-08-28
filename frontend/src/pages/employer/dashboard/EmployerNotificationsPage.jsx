@@ -310,6 +310,24 @@ const EmployerNotificationsPage = () => {
       <div className={UI.pageBg}>
 
       <div className={UI.container}>
+        <button
+          type="button"
+          onClick={() => navigate('/employer/dashboard')}
+          className={`mb-4 inline-flex h-10 items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 hover:text-[#2e66a6] ${UI.ring}`}
+          aria-label="Back to Employer Dashboard"
+        >
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back
+        </button>
+
         {/* Header (match Messages page style) */}
         <div className={`${UI.shell} p-5 sm:p-6 mb-6`}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
