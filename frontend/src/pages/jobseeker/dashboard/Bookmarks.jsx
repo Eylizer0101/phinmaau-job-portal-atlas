@@ -1201,7 +1201,7 @@ const normalizeCompanyFromAny = (company) => {
     companyAddress: company.companyAddress || company.location || '',
     companyLogo: company.companyLogo || '',
     companyWebsite: company.companyWebsite || company.website || '',
-    about: company.about || company.companyDescription || 'No company description provided.',
+    about: company.about || company.companyDescription || '',
     rating: accurateRatingSummary.rating,
     reviewCount: accurateRatingSummary.reviewCount,
     ratingBreakdown: company.ratingBreakdown || {},
@@ -3324,7 +3324,17 @@ const Bookmarks = () => {
                       {activeCompanyTab === 'about' && (
                         <div className={`${UI.card} ${UI.pad}`}>
                           <h2 className="text-[24px] font-bold text-black">About {selectedCompany.companyName || 'Company'}</h2>
-                          <div className="mt-6 text-[17px] leading-8 text-black/80 whitespace-pre-line">{selectedCompany.about}</div>
+                          {String(selectedCompany.about || '').trim() ? (
+                            <div className="mt-6 text-[17px] leading-8 text-black/80 whitespace-pre-line">
+                              {selectedCompany.about}
+                            </div>
+                          ) : (
+                            <EmptyCompanyTabState
+                              icon="file"
+                              title="No description added yet."
+                              description="This company has not added a company description yet."
+                            />
+                          )}
                         </div>
                       )}
 

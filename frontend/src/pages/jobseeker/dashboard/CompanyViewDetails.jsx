@@ -239,6 +239,13 @@ const SvgIcon = ({ name, className = "w-4 h-4" }) => {
           <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M21 15l-5-5L5 20" />
         </svg>
       );
+    case "file":
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" />
+          <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M14 3v5h5M9 13h6M9 17h6" />
+        </svg>
+      );
     case "paperPlane":
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1769,17 +1776,17 @@ const CompanyViewDetails = () => {
               About {company.companyName || "Company"}
             </h2>
 
-            <div className="mt-6 text-[17px] leading-8 text-black/80 whitespace-pre-line">
-              {company.about ||
-                company.companyDescription ||
-                `NovaTech Solutions is a leading company committed to building high-quality services, supporting growth, and creating meaningful opportunities for professionals.
-
-The organization focuses on delivering reliable solutions, strengthening long-term partnerships, and maintaining a collaborative environment where employees can continue to learn and grow.
-
-With a strong commitment to innovation, service quality, and people development, ${company.companyName || "this company"} continues to expand its impact across different industries while staying focused on operational excellence and scalability.
-
-The company also values transparency, teamwork, and continuous improvement, creating a workplace that encourages productivity, responsibility, and long-term success.`}
-            </div>
+            {String(company.about || company.companyDescription || "").trim() ? (
+              <div className="mt-6 text-[17px] leading-8 text-black/80 whitespace-pre-line">
+                {company.about || company.companyDescription}
+              </div>
+            ) : (
+              <EmptyTabState
+                icon="file"
+                title="No description added yet."
+                description="This company has not added a company description yet."
+              />
+            )}
           </div>
         )}
 
