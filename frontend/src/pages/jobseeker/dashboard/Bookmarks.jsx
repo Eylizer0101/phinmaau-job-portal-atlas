@@ -510,6 +510,12 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           <circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none" />
         </svg>
       );
+    case 'youtube':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M21.58 7.19a2.9 2.9 0 00-2.04-2.05C17.74 4.65 12 4.65 12 4.65s-5.74 0-7.54.49A2.9 2.9 0 002.42 7.2C1.94 9 1.94 12 1.94 12s0 3 .48 4.81a2.9 2.9 0 002.04 2.05c1.8.49 7.54.49 7.54.49s5.74 0 7.54-.49a2.9 2.9 0 002.04-2.05C22.02 15 22.02 12 22.02 12s0-3-.44-4.81zM9.95 15.13V8.87L15.18 12l-5.23 3.13z" />
+        </svg>
+      );
     case 'linkedin':
       return (
         <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -1204,6 +1210,7 @@ const normalizeCompanyFromAny = (company) => {
     createdAt: company.createdAt || '',
     facebookUrl: company.facebookUrl || company.employerProfile?.facebookUrl || '',
     instagramUrl: company.instagramUrl || company.employerProfile?.instagramUrl || '',
+    youtubeUrl: company.youtubeUrl || company.employerProfile?.youtubeUrl || '',
     linkedinUrl: company.linkedinUrl || company.employerProfile?.linkedinUrl || '',
     xUrl: company.xUrl || company.employerProfile?.xUrl || '',
     coverPhoto: company.coverPhoto || company.employerProfile?.coverPhoto || '',
@@ -2578,6 +2585,7 @@ const Bookmarks = () => {
     const items = [
       { key: 'facebook', label: 'Facebook', url: selectedCompany.facebookUrl, icon: 'facebook' },
       { key: 'instagram', label: 'Instagram', url: selectedCompany.instagramUrl, icon: 'instagram' },
+      { key: 'youtube', label: 'YouTube', url: selectedCompany.youtubeUrl, icon: 'youtube' },
       { key: 'linkedin', label: 'LinkedIn', url: selectedCompany.linkedinUrl, icon: 'linkedin' },
       { key: 'x', label: 'X / Twitter', url: selectedCompany.xUrl, icon: 'twitter' },
     ];

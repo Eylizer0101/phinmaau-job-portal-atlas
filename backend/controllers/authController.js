@@ -2755,6 +2755,7 @@ exports.updateCompanyProfile = async (req, res) => {
       companyDescription: pickText(updateData.companyDescription, currentProfile.companyDescription),
       facebookUrl: pickText(updateData.facebookUrl, currentProfile.facebookUrl),
       instagramUrl: pickText(updateData.instagramUrl, currentProfile.instagramUrl),
+      youtubeUrl: pickText(updateData.youtubeUrl, currentProfile.youtubeUrl),
       linkedinUrl: pickText(updateData.linkedinUrl, currentProfile.linkedinUrl),
       xUrl: pickText(updateData.xUrl, currentProfile.xUrl),
 

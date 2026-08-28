@@ -38,6 +38,7 @@ const Icon = ({ name, className = "h-4 w-4", ...props }) => {
     starOutline: <path strokeLinecap="round" strokeLinejoin="round" d="M12 3.5l2.65 5.37 5.93.86-4.29 4.18 1.01 5.9L12 17.02 6.7 19.81l1.01-5.9-4.29-4.18 5.93-.86L12 3.5z" />,
     facebook: <path fill="currentColor" stroke="none" d="M13.5 21v-7h2.4l.4-3h-2.8V9.1c0-.9.3-1.5 1.6-1.5H16V4.9c-.2 0-.9-.1-1.8-.1-1.8 0-3.1 1.1-3.1 3.2V11H9v3h2.3v7h2.2z" />,
     instagram: <><rect x="3.5" y="3.5" width="17" height="17" rx="4.5" /><circle cx="12" cy="12" r="3.75" /><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none" /></>,
+    youtube: <path fill="currentColor" stroke="none" d="M21.58 7.19a2.9 2.9 0 00-2.04-2.05C17.74 4.65 12 4.65 12 4.65s-5.74 0-7.54.49A2.9 2.9 0 002.42 7.2C1.94 9 1.94 12 1.94 12s0 3 .48 4.81a2.9 2.9 0 002.04 2.05c1.8.49 7.54.49 7.54.49s5.74 0 7.54-.49a2.9 2.9 0 002.04-2.05C22.02 15 22.02 12 22.02 12s0-3-.44-4.81zM9.95 15.13V8.87L15.18 12l-5.23 3.13z" />,
     linkedin: <path fill="currentColor" stroke="none" d="M6.94 8.5a1.44 1.44 0 110-2.88 1.44 1.44 0 010 2.88zM5.7 18.5h2.47v-8H5.7v8zm4.03-8h2.37v1.1h.03c.33-.63 1.14-1.3 2.35-1.3 2.52 0 2.99 1.66 2.99 3.81v4.39H15v-3.89c0-.93-.02-2.12-1.29-2.12-1.3 0-1.49 1.01-1.49 2.06v3.95H9.73v-8z" />,
     twitter: <path fill="currentColor" stroke="none" d="M18.9 5H16.5l-3.1 3.5L10.9 5H5l5.3 6.8L5.2 19h2.4l3.8-4.3 3.3 4.3H20l-5.5-7L18.9 5z" />,
   };
@@ -1559,6 +1560,7 @@ const UserManagementDetails = () => {
     const socialLinks = [
       { key: "facebookUrl", label: "Facebook", icon: "facebook", url: employerProfile.facebookUrl },
       { key: "instagramUrl", label: "Instagram", icon: "instagram", url: employerProfile.instagramUrl },
+      { key: "youtubeUrl", label: "YouTube", icon: "youtube", url: employerProfile.youtubeUrl },
       { key: "linkedinUrl", label: "LinkedIn", icon: "linkedin", url: employerProfile.linkedinUrl },
       { key: "xUrl", label: "X / Twitter", icon: "twitter", url: employerProfile.xUrl },
     ].filter((item) => String(item.url || "").trim());
