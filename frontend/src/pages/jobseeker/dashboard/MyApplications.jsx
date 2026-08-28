@@ -1138,6 +1138,34 @@ const MyApplications = () => {
                   </div>
                 </>
               ) : null}
+
+              {statusFilter !== 'declined' && mainTab === 'inactive' ? (
+                <p className={`mt-2 max-w-lg mx-auto ${UI.body} ${UI.textSecondary}`}>
+                  You have no withdrawn or cancelled applications right now.
+                </p>
+              ) : null}
+
+              {statusFilter !== 'declined' && mainTab === 'active' ? (
+                <>
+                  <p className={`mt-2 max-w-lg mx-auto ${UI.body} ${UI.textSecondary}`}>
+                    You haven&apos;t applied for any jobs yet.
+                  </p>
+                  <p className={`mt-1 max-w-lg mx-auto ${UI.body} ${UI.textSecondary}`}>
+                    Browse available job opportunities and submit an application to get started.
+                  </p>
+
+                  <div className="mt-6 flex justify-center">
+                    <button
+                      onClick={() => navigate('/jobseeker/job-search')}
+                      className={`${UI.btnBase} ${UI.btnLg} ${UI.btnPrimary} ${UI.ring}`}
+                      type="button"
+                    >
+                      <SvgIcon name="search" className="h-4 w-4" />
+                      Find Jobs
+                    </button>
+                  </div>
+                </>
+              ) : null}
             </div>
           ) : (
             <div className="space-y-6">

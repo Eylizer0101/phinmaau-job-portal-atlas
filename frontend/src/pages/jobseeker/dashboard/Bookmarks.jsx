@@ -1686,7 +1686,7 @@ const EmptyCompanyTabState = ({ icon = 'file', title, description }) => (
       </div>
 
       <h3 className="mt-5 text-[15px] font-bold text-black/70">{title}</h3>
-      <p className="mt-2 text-[14px] leading-6 text-black/35">{description}</p>
+      <p className="mt-2 text-[14px] leading-6 text-black/60">{description}</p>
     </div>
   </div>
 );
@@ -3258,8 +3258,15 @@ const Bookmarks = () => {
                             <div className="flex flex-col items-stretch xl:items-end gap-3">
                               <button
                                 type="button"
-                                onClick={handleOpenCompanyReviewModal}
-                                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnPrimary} ${UI.ring} w-full xl:w-[210px]`}
+                                onClick={selectedCompanyJobs.length > 0 ? handleOpenCompanyReviewModal : undefined}
+                                disabled={selectedCompanyJobs.length === 0}
+                                aria-disabled={selectedCompanyJobs.length === 0}
+                                title={selectedCompanyJobs.length === 0 ? 'Reviews are available when the company has an open position.' : 'Write a Review'}
+                                className={`${UI.btnBase} ${UI.btnMd} ${UI.ring} w-full xl:w-[210px] ${
+                                  selectedCompanyJobs.length > 0
+                                    ? UI.btnPrimary
+                                    : 'cursor-not-allowed border border-gray-200 bg-gray-100 text-gray-400'
+                                }`}
                               >
                                 <SvgIcon name="edit" className="w-4 h-4" />
                                 Write a Review
@@ -3347,8 +3354,8 @@ const Bookmarks = () => {
                           ) : (
                             <EmptyCompanyTabState
                               icon="file"
-                              title="No description added yet."
-                              description="This company has not added a company description yet."
+                              title="No company story yet."
+                              description="This company hasn’t added an About section yet."
                             />
                           )}
                         </div>
@@ -3380,8 +3387,8 @@ const Bookmarks = () => {
                           {selectedCompanyJobs.length === 0 ? (
                             <EmptyCompanyTabState
                               icon="briefcase"
-                              title="No jobs available yet."
-                              description="This company has not posted any open positions yet. Please check back later."
+                              title="No open positions available."
+                              description="New opportunities from this company will appear here when available."
                             />
                           ) : (
                             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
@@ -3426,8 +3433,8 @@ const Bookmarks = () => {
                           {selectedCompanySocialLinks.length === 0 ? (
                             <EmptyCompanyTabState
                               icon="link"
-                              title="No social accounts linked yet."
-                              description="This company has not added any social media links yet."
+                              title="No social media accounts linked yet."
+                              description="This company has not linked any social media accounts yet."
                             />
                           ) : (
                             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -3458,8 +3465,8 @@ const Bookmarks = () => {
                           {selectedCompanyGallery.length === 0 ? (
                             <EmptyCompanyTabState
                               icon="image"
-                              title="No photos added yet."
-                              description="This company has not uploaded any company photos yet."
+                              title="No company photos available yet."
+                              description="Photos from this company will appear here once added."
                             />
                           ) : (
                             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -3480,7 +3487,7 @@ const Bookmarks = () => {
                           <div className="flex items-start justify-between gap-4 flex-wrap">
                             <div>
                               <h2 className="text-[24px] font-bold text-black">
-                                Application process at {selectedCompany.companyName || 'Company'}
+                                Application Process at {selectedCompany.companyName || 'Company'}
                               </h2>
                               <p className="mt-1 text-black/65 text-[16px]">
                                 {selectedCompanyReviewCount} review{selectedCompanyReviewCount === 1 ? '' : 's'}
@@ -3503,7 +3510,7 @@ const Bookmarks = () => {
                           <div className="mt-6 space-y-5">
                             {selectedCompanyReviews.length === 0 ? (
                               <EmptyCompanyTabState
-                                icon="edit"
+                                icon="star"
                                 title="No reviews yet."
                                 description="Be the first to share your hiring process experience with this company."
                               />

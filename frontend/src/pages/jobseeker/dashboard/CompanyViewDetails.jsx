@@ -541,7 +541,7 @@ const EmptyTabState = ({ icon = "image", title, description }) => {
       </div>
       <p className="text-[16px] font-bold text-black/70">{title}</p>
       {description ? (
-        <p className="mt-2 text-[14px] text-black/40">{description}</p>
+        <p className="mt-2 text-[14px] text-black/60">{description}</p>
       ) : null}
     </div>
   );
@@ -1688,8 +1688,15 @@ const CompanyViewDetails = () => {
               <div className="flex flex-col items-stretch gap-3 rounded-2xl border border-[#e6edf5] bg-[#f7faff] p-4">
                 <button
                   type="button"
-                  onClick={handleWriteReview}
-                  className={`${UI.btnBase} ${UI.btnMd} ${UI.btnPrimary} ${UI.ring} w-full`}
+                  onClick={companyJobs.length > 0 ? handleWriteReview : undefined}
+                  disabled={companyJobs.length === 0}
+                  aria-disabled={companyJobs.length === 0}
+                  title={companyJobs.length === 0 ? "Reviews are available when the company has an open position." : "Write a Review"}
+                  className={`${UI.btnBase} ${UI.btnMd} ${UI.ring} w-full ${
+                    companyJobs.length > 0
+                      ? UI.btnPrimary
+                      : "cursor-not-allowed border border-gray-200 bg-gray-100 text-gray-400"
+                  }`}
                 >
                   <SvgIcon name="edit" className="w-4 h-4" />
                   Write a Review
@@ -1793,8 +1800,8 @@ const CompanyViewDetails = () => {
             ) : (
               <EmptyTabState
                 icon="file"
-                title="No description added yet."
-                description="This company has not added a company description yet."
+                title="No company story yet."
+                description="This company hasn’t added an About section yet."
               />
             )}
           </div>
@@ -1836,7 +1843,7 @@ const CompanyViewDetails = () => {
               <EmptyTabState
                 icon="briefcase"
                 title="No open positions available."
-                description="New openings from this company will appear here once available."
+                description="New opportunities from this company will appear here when available."
               />
             ) : (
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -2072,8 +2079,9 @@ const CompanyViewDetails = () => {
 
             {socialLinks.length === 0 ? (
               <EmptyTabState
-                icon="paperPlane"
-                title="This company has not linked any social media accounts yet."
+                icon="link"
+                title="No social media accounts linked yet."
+                description="This company has not linked any social media accounts yet."
               />
             ) : (
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2106,7 +2114,8 @@ const CompanyViewDetails = () => {
             {galleryItems.length === 0 ? (
               <EmptyTabState
                 icon="image"
-                title="This company has not added any photos yet."
+                title="No company photos available yet."
+                description="Photos from this company will appear here once added."
               />
             ) : (
               <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -2128,7 +2137,7 @@ const CompanyViewDetails = () => {
             <div className="grid grid-cols-1 gap-5 xl:grid-cols-[430px_440px] xl:items-start xl:justify-start">
               <div>
                 <h2 className="text-[24px] font-bold text-black">
-                  Application process at {company.companyName || "Company"}
+                  Application Process at {company.companyName || "Company"}
                 </h2>
                 <p className="mt-1 text-black/65 text-[16px]">
                   {reviewCount} review{reviewCount === 1 ? "" : "s"}
