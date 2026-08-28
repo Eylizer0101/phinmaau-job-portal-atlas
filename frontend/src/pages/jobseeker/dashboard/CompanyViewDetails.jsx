@@ -5,6 +5,8 @@ import api from "../../../services/api";
 import ApplyJobModal from "../../../components/jobseeker/ApplyJobModal";
 import { filterOpenJobListings } from "../../../utils/jobVisibility";
 
+const DEFAULT_COMPANY_LOGO = "/images/companyicon.png";
+
 const calculateAccurateReviewSummary = ({
   reviews = [],
   ratingBreakdown = {},
@@ -551,8 +553,12 @@ const CompanyLogo = ({ src, name }) => {
 
   if (!src || failed) {
     return (
-      <div className="w-[58px] h-[58px] sm:w-[72px] sm:h-[72px] rounded-2xl border border-[#d8e2ee] bg-[#f7faff] flex items-center justify-center shrink-0">
-        <span className="text-xl sm:text-2xl font-bold text-black/60">{initial}</span>
+      <div className="w-[58px] h-[58px] sm:w-[72px] sm:h-[72px] rounded-2xl border border-[#d8e2ee] overflow-hidden bg-white shrink-0">
+        <img
+          src={DEFAULT_COMPANY_LOGO}
+          alt="Default company logo"
+          className="w-full h-full object-cover"
+        />
       </div>
     );
   }
@@ -575,8 +581,12 @@ const JobCardLogo = ({ src, name }) => {
 
   if (!src || failed) {
     return (
-      <div className="w-12 h-12 rounded-[14px] border border-gray-200 bg-gray-100 flex items-center justify-center shrink-0">
-        <span className="text-base font-bold text-gray-600">{initial}</span>
+      <div className="w-12 h-12 rounded-[14px] border border-gray-200 overflow-hidden bg-white shrink-0">
+        <img
+          src={DEFAULT_COMPANY_LOGO}
+          alt="Default company logo"
+          className="w-full h-full object-cover"
+        />
       </div>
     );
   }

@@ -6,6 +6,8 @@ import AboutUsModal from "../../components/shared/AboutUsModal";
 import api from "../../services/api";
 import { getProvinceFromLocation } from "../../constants/phLocations";
 
+const DEFAULT_COMPANY_LOGO = "/images/companyicon.png";
+
 const MainFooter = () => {
   const [showAboutUsModal, setShowAboutUsModal] = useState(false);
 
@@ -249,9 +251,9 @@ const Companies = () => {
   }, []);
 
   const resolveLogoUrl = (logo) => {
-    if (!logo) return "";
+    if (!logo) return DEFAULT_COMPANY_LOGO;
     const v = String(logo).trim();
-    if (!v) return "";
+    if (!v) return DEFAULT_COMPANY_LOGO;
     if (/^https?:\/\//i.test(v)) return v;
     if (v.startsWith("/uploads")) return `${apiOrigin}${v}`;
     return `${apiOrigin}/${v.replace(/^\/+/, "")}`;
@@ -949,11 +951,16 @@ const Companies = () => {
                                 alt={c.companyName || "Company logo"}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
-                                  e.currentTarget.style.display = "none";
+                                  e.currentTarget.onerror = null;
+                                  e.currentTarget.src = DEFAULT_COMPANY_LOGO;
                                 }}
                               />
                             ) : (
-                              <div className="w-full h-full bg-[#212C61]/10" />
+                              <img
+                                src={DEFAULT_COMPANY_LOGO}
+                                alt="Default company logo"
+                                className="w-full h-full object-cover"
+                              />
                             )}
                           </div>
 

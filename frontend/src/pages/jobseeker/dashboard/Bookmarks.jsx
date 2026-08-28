@@ -7,6 +7,8 @@ import api from '../../../services/api';
 import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
 import { filterOpenJobListings } from '../../../utils/jobVisibility';
 
+const DEFAULT_COMPANY_LOGO = '/images/companyicon.png';
+
 
 
 const sanitizeRichTextHtml = (value = '') => {
@@ -579,8 +581,12 @@ const CompanyLogo = ({ src, name, size = 'md' }) => {
 
   if (!src || imgError) {
     return (
-      <div className={`${sizeCls} border border-black/10 bg-[#FFFFFF] flex items-center justify-center flex-shrink-0`}>
-        <span className="font-bold text-sm text-[#000000]/70">{initial}</span>
+      <div className={`${sizeCls} overflow-hidden border border-black/10 bg-[#FFFFFF] flex-shrink-0`}>
+        <img
+          src={DEFAULT_COMPANY_LOGO}
+          alt="Default company logo"
+          className="w-full h-full object-cover"
+        />
       </div>
     );
   }

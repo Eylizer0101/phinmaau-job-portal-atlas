@@ -15,6 +15,7 @@ import {
 
 const TOP_CARD_HEIGHT = '';
 const PROFILE_REMINDER_ICON = '/images/clock.png';
+const DEFAULT_COMPANY_LOGO = '/images/companyicon.png';
 
 const ApplicationStatusIcon = ({ name, className = 'h-4 w-4' }) => {
   if (name === 'forInterview') {
@@ -181,9 +182,9 @@ const JobSeekerDashboard = () => {
   }, []);
 
   const resolveLogoUrl = (logo) => {
-    if (!logo) return '';
+    if (!logo) return DEFAULT_COMPANY_LOGO;
     const v = String(logo).trim();
-    if (!v) return '';
+    if (!v) return DEFAULT_COMPANY_LOGO;
     if (/^https?:\/\//i.test(v)) return v;
     if (v.startsWith('/uploads')) return `${apiOrigin}${v}`;
     return `${apiOrigin}/${v.replace(/^\/+/, '')}`;
@@ -463,7 +464,7 @@ const JobSeekerDashboard = () => {
       return `${apiOrigin}/uploads/logos/${logo}`;
     }
 
-    return null;
+    return DEFAULT_COMPANY_LOGO;
   };
 
   const getCompanyInitials = (companyName) => {
@@ -1787,12 +1788,8 @@ const JobSeekerDashboard = () => {
                                   alt={companyName}
                                   className="h-full w-full rounded-xl object-cover transition-transform duration-500 group-hover:scale-105"
                                   onError={(e) => {
-                                    e.target.style.display = 'none';
-                                    const fallbackDiv = document.createElement('div');
-                                    fallbackDiv.className =
-                                      'w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200';
-                                    fallbackDiv.innerHTML = `<span class="font-bold text-lg text-black">${companyInitials}</span>`;
-                                    e.target.parentElement.appendChild(fallbackDiv);
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = DEFAULT_COMPANY_LOGO;
                                   }}
                                 />
                               ) : (
@@ -2064,7 +2061,8 @@ const JobSeekerDashboard = () => {
                               alt={job.companyName || 'Company logo'}
                               className="h-full w-full rounded-xl object-cover"
                               onError={(event) => {
-                                event.currentTarget.style.display = 'none';
+                                event.currentTarget.onerror = null;
+                                event.currentTarget.src = DEFAULT_COMPANY_LOGO;
                               }}
                             />
                           ) : (
@@ -2306,11 +2304,16 @@ const JobSeekerDashboard = () => {
                               alt={c.companyName || 'Company logo'}
                               className="w-full h-full object-cover"
                               onError={(e) => {
-                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = DEFAULT_COMPANY_LOGO;
                               }}
                             />
                           ) : (
-                            <div className="w-full h-full bg-gray-200" />
+                            <img
+                              src={DEFAULT_COMPANY_LOGO}
+                              alt="Default company logo"
+                              className="w-full h-full object-cover"
+                            />
                           )}
                         </div>
 
