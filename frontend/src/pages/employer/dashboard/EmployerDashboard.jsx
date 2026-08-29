@@ -388,6 +388,14 @@ const EmployerDashboard = () => {
   const isCompanyProfileComplete = (user) => {
     const p = user?.employerProfile || {};
 
+    const galleryImages = Array.isArray(p.galleryImages) ? p.galleryImages : [];
+    const hasSavedGalleryPhoto = galleryImages.some((item) => {
+      const url = String(typeof item === 'string' ? item : item?.url || '').trim();
+      return Boolean(url) && !/^(blob:|data:)/i.test(url);
+    });
+    const hasSocialMedia = [p.facebookUrl, p.instagramUrl, p.youtubeUrl, p.xUrl]
+      .some((value) => /^https?:\/\/\S+$/i.test(String(value || '').trim()));
+
     const requiredFields = [
       p.companyName,
       p.businessEmail || user?.email,
@@ -397,9 +405,19 @@ const EmployerDashboard = () => {
       p.companyAddress,
       p.companyDescription,
       p.companyLogo,
+      p.coverPhoto,
+      p.companyWebsiteUrl,
     ];
 
-    return requiredFields.every((value) => String(value || '').trim());
+    const locationParts = String(p.regionCity || '')
+      .split(' - ')
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    return requiredFields.every((value) => String(value || '').trim())
+      && locationParts.length >= 3
+      && hasSavedGalleryPhoto
+      && hasSocialMedia;
   };
 
   const applyUserData = (user) => {

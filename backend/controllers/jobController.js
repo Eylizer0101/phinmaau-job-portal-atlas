@@ -541,6 +541,8 @@ const getMissingCompanyProfileFields = (employer) => {
     const url = String(typeof item === 'string' ? item : item?.url || '').trim();
     return Boolean(url) && !/^(blob:|data:)/i.test(url);
   });
+  const hasSocialMedia = [profile.facebookUrl, profile.instagramUrl, profile.youtubeUrl, profile.xUrl]
+    .some((value) => /^https?:\/\/\S+$/i.test(String(value || '').trim()));
 
   return [
     !String(profile.companyName || '').trim() ? 'Company Name' : null,
@@ -550,6 +552,8 @@ const getMissingCompanyProfileFields = (employer) => {
     !String(profile.industry || '').trim() ? 'Industry' : null,
     !String(profile.companyAddress || '').trim() ? 'Complete Office Address' : null,
     !String(profile.companyDescription || '').trim() ? 'About the Company' : null,
+    !String(profile.companyWebsiteUrl || '').trim() ? 'Company Website' : null,
+    !hasSocialMedia ? 'Social Media' : null,
     !String(profile.companyLogo || '').trim() ? 'Company Logo' : null,
     !String(profile.coverPhoto || '').trim() ? 'Cover Photo' : null,
     !hasSavedGalleryPhoto ? 'Gallery' : null,

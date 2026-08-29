@@ -1080,6 +1080,8 @@ const PostJob = () => {
       const url = String(typeof item === 'string' ? item : item?.url || '').trim();
       return Boolean(url) && !/^(blob:|data:)/i.test(url);
     });
+    const hasSocialMedia = [p.facebookUrl, p.instagramUrl, p.youtubeUrl, p.xUrl]
+      .some((value) => /^https?:\/\/\S+$/i.test(String(value || '').trim()));
 
     return [
       !String(p.companyName || '').trim() ? 'Company Name' : null,
@@ -1089,6 +1091,8 @@ const PostJob = () => {
       !String(p.industry || '').trim() ? 'Industry' : null,
       !String(p.companyAddress || '').trim() ? 'Complete Office Address' : null,
       !String(p.companyDescription || '').trim() ? 'About the Company' : null,
+      !String(p.companyWebsiteUrl || '').trim() ? 'Company Website' : null,
+      !hasSocialMedia ? 'Social Media' : null,
       !String(p.companyLogo || '').trim() ? 'Company Logo' : null,
       !String(p.coverPhoto || '').trim() ? 'Cover Photo' : null,
       !hasSavedGalleryPhoto ? 'Gallery' : null,

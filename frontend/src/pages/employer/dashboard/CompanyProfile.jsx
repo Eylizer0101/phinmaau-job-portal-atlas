@@ -501,6 +501,14 @@ const CoverPhotoIcon = ({ className = 'w-5 h-5' }) => (
   </svg>
 );
 
+const SocialBrandIcon = ({ name, className = 'h-4 w-4' }) => {
+  const common = { className, viewBox: '0 0 24 24', fill: 'currentColor', 'aria-hidden': true };
+  if (name === 'facebook') return <svg {...common}><path d="M13.5 22v-8h2.8l.4-3.2h-3.2V8.7c0-.9.3-1.6 1.7-1.6H17V4.2c-.3 0-1.4-.2-2.6-.2-2.6 0-4.4 1.6-4.4 4.5v2.3H7V14h3v8h3.5z" /></svg>;
+  if (name === 'instagram') return <svg {...common}><path d="M7.2 2h9.6A5.2 5.2 0 0122 7.2v9.6a5.2 5.2 0 01-5.2 5.2H7.2A5.2 5.2 0 012 16.8V7.2A5.2 5.2 0 017.2 2zm-.2 2A3 3 0 004 7v10a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H7zm10.5 1.5a1.25 1.25 0 110 2.5 1.25 1.25 0 010-2.5zM12 7a5 5 0 110 10 5 5 0 010-10zm0 2a3 3 0 100 6 3 3 0 000-6z" /></svg>;
+  if (name === 'youtube') return <svg {...common}><path d="M21.6 7.2a2.7 2.7 0 00-1.9-1.9C18 4.8 12 4.8 12 4.8s-6 0-7.7.5a2.7 2.7 0 00-1.9 1.9A28 28 0 002 12a28 28 0 00.4 4.8 2.7 2.7 0 001.9 1.9c1.7.5 7.7.5 7.7.5s6 0 7.7-.5a2.7 2.7 0 001.9-1.9A28 28 0 0022 12a28 28 0 00-.4-4.8zM10 15.2V8.8l5.5 3.2-5.5 3.2z" /></svg>;
+  return <svg {...common}><path d="M18.9 2H22l-6.8 7.8L23.2 22H17l-4.9-6.4L6.5 22H3.4l7.2-8.3L.8 2h6.4l4.4 5.8L18.9 2zm-1.1 17.8h1.7L6.3 4.1H4.5l13.3 15.7z" /></svg>;
+};
+
 
 const GalleryCropEditor = ({ source, fileName, onCancel, onApply }) => {
   const frameRef = useRef(null);
@@ -1138,6 +1146,8 @@ const CompanyProfile = () => {
   const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'about');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [previewLogo, setPreviewLogo] = useState(null);
   const [logoFile, setLogoFile] = useState(null);
@@ -1274,8 +1284,12 @@ const CompanyProfile = () => {
 
   const isDirty = useMemo(() => {
     if (logoFile || coverFile || galleryFiles.length > 0) return true;
-    return !isEqualShallow(companyData, initialData);
-  }, [companyData, initialData, logoFile, coverFile, galleryFiles]);
+    const initialLocation = parseRegionLocation(initialData.regionCity, initialData.companyAddress);
+    const locationChanged = selectedRegion !== initialLocation.region
+      || selectedProvince !== initialLocation.province
+      || selectedCity !== initialLocation.city;
+    return locationChanged || !isEqualShallow(companyData, initialData);
+  }, [companyData, initialData, logoFile, coverFile, galleryFiles, selectedCity, selectedProvince, selectedRegion]);
 
   const clearMessages = useCallback(() => {
     setError('');
@@ -1285,6 +1299,12 @@ const CompanyProfile = () => {
   const clearFieldErrors = useCallback(() => {
     setFieldErrors({});
   }, []);
+
+  useEffect(() => {
+    if (!showSaveSuccess) return undefined;
+    const timer = window.setTimeout(() => setShowSaveSuccess(false), 2200);
+    return () => window.clearTimeout(timer);
+  }, [showSaveSuccess]);
 
   const revokeLocalPreviewUrls = useCallback(() => {
     setGalleryPreviews((prev) => {
@@ -2066,16 +2086,23 @@ const CompanyProfile = () => {
     companyData.regionCity,
   ]);
 
-  const handleCancel = useCallback(async () => {
-    if (isDirty && !window.confirm('Discard unsaved changes?')) return;
-
+  const discardProfileChanges = useCallback(async () => {
+    setShowDiscardConfirm(false);
     clearMessages();
     clearFieldErrors();
     setIndustryDropdownOpen(false);
     setIsEditOpen(false);
     resetLocalUploads();
     await fetchCompanyProfile();
-  }, [clearFieldErrors, clearMessages, fetchCompanyProfile, isDirty, resetLocalUploads]);
+  }, [clearFieldErrors, clearMessages, fetchCompanyProfile, resetLocalUploads]);
+
+  const handleCancel = useCallback(() => {
+    if (isDirty) {
+      setShowDiscardConfirm(true);
+      return;
+    }
+    discardProfileChanges();
+  }, [discardProfileChanges, isDirty]);
 
   const validateClient = useCallback(() => {
     const next = {};
@@ -2086,6 +2113,10 @@ const CompanyProfile = () => {
     const companyAddress = String(companyData.companyAddress || '').trim();
     const industry = String(companyData.industry || '').trim();
     const companyDescription = String(companyData.companyDescription || '').trim();
+    const companyWebsiteUrl = String(companyData.companyWebsiteUrl || '').trim();
+    const socialMediaUrls = [companyData.facebookUrl, companyData.instagramUrl, companyData.youtubeUrl, companyData.xUrl]
+      .map((value) => String(value || '').trim());
+    const isWebUrl = (value) => /^https?:\/\/\S+$/i.test(value);
 
     if (!previewLogo) next.companyLogo = 'Company logo is required.';
 
@@ -2119,6 +2150,13 @@ const CompanyProfile = () => {
       next.industry = `Industry must not exceed ${MAX_INDUSTRY_LENGTH} characters.`;
     }
 
+    if (!companyWebsiteUrl) next.companyWebsiteUrl = 'Company website is required.';
+    else if (!isWebUrl(companyWebsiteUrl)) next.companyWebsiteUrl = 'Enter a valid website URL beginning with http:// or https://.';
+
+    if (!socialMediaUrls.some(isWebUrl)) {
+      next.socialMedia = 'Add at least one valid Social Media link beginning with http:// or https://.';
+    }
+
     if (!companyDescription) {
       next.companyDescription = 'Company description is required.';
     } else if (companyDescription.length < MIN_COMPANY_DESCRIPTION_LENGTH) {
@@ -2142,9 +2180,14 @@ const CompanyProfile = () => {
     companyData.companyAddress,
     companyData.companyDescription,
     companyData.companyName,
+    companyData.companyWebsiteUrl,
     companyData.coverPhoto,
     companyData.industry,
     companyData.mobileNumber,
+    companyData.facebookUrl,
+    companyData.instagramUrl,
+    companyData.youtubeUrl,
+    companyData.xUrl,
     galleryDisplayItems.length,
     previewCover,
     previewLogo,
@@ -2157,8 +2200,8 @@ const CompanyProfile = () => {
     const all = validateClient().errors;
     const stepKeys = {
       1: ['companyLogo', 'companyName', 'region', 'province', 'city', 'companyAddress', 'businessEmail', 'mobileNumber'],
-      2: ['industry', 'companyDescription'],
-      3: ['coverPhoto'],
+      2: ['industry', 'companyWebsiteUrl', 'companyDescription'],
+      3: ['coverPhoto', 'socialMedia'],
       4: ['galleryImages'],
     };
 
@@ -2250,10 +2293,10 @@ const CompanyProfile = () => {
         });
 
         if (response.data?.success) {
-          setSuccess('Company profile updated successfully.');
           setIsEditOpen(false);
           resetLocalUploads();
           await fetchCompanyProfile();
+          setShowSaveSuccess(true);
         }
       } catch (err) {
         console.error('Update failed:', err);
@@ -3009,7 +3052,7 @@ const CompanyProfile = () => {
 
                   <h2 className="mt-5 text-[34px] font-bold leading-tight text-[#061a35]">Edit Company Profile</h2>
                   <p className="mt-1 text-[14px] text-[#66758b]">
-                    Fill in the details to set up your company page — step {editStep} of 4.
+                    Make your company stand out, update your details and show job seekers who you are.
                   </p>
                 </div>
 
@@ -3167,7 +3210,7 @@ const CompanyProfile = () => {
                               disabled={saving}
                               className={cx('w-full rounded-[10px] border bg-white px-4 py-3 text-[14px] outline-none', fieldErrors.region ? 'border-red-400' : 'border-[#cbd5e1] focus:border-[#1769c2]')}
                             >
-                              <option value="">Select region</option>
+                              <option value="" disabled>Select region</option>
                               {PH_REGIONS.map((region) => <option key={region} value={region}>{region}</option>)}
                             </select>
                           </FormField>
@@ -3184,7 +3227,7 @@ const CompanyProfile = () => {
                               disabled={saving || !selectedRegion}
                               className={cx('w-full rounded-[10px] border bg-white px-4 py-3 text-[14px] outline-none', fieldErrors.province ? 'border-red-400' : 'border-[#cbd5e1] focus:border-[#1769c2]')}
                             >
-                              <option value="">{selectedRegion ? 'Select province' : 'Select region first'}</option>
+                              <option value="" disabled>{selectedRegion ? 'Select province' : 'Select region first'}</option>
                               {provinceOptions.map((province) => <option key={province} value={province}>{province}</option>)}
                             </select>
                           </FormField>
@@ -3200,7 +3243,7 @@ const CompanyProfile = () => {
                               disabled={saving || !selectedProvince}
                               className={cx('w-full rounded-[10px] border bg-white px-4 py-3 text-[14px] outline-none', fieldErrors.city ? 'border-red-400' : 'border-[#cbd5e1] focus:border-[#1769c2]')}
                             >
-                              <option value="">{selectedProvince ? 'Select city' : 'Select province first'}</option>
+                              <option value="" disabled>{selectedProvince ? 'Select city' : 'Select province first'}</option>
                               {cityOptions.map((city) => <option key={city} value={city}>{city}</option>)}
                             </select>
                           </FormField>
@@ -3315,7 +3358,7 @@ const CompanyProfile = () => {
                           </div>
                         </FormField>
 
-                        <FormField label="Company Website (Optional)" error={fieldErrors.companyWebsiteUrl}>
+                        <FormField label="Company Website" required error={fieldErrors.companyWebsiteUrl}>
                           <input
                             type="text"
                             name="companyWebsiteUrl"
@@ -3323,7 +3366,7 @@ const CompanyProfile = () => {
                             onChange={handleInputChange}
                             placeholder="https://www.yourcompany.com"
                             disabled={saving}
-                            className="w-full rounded-[10px] border border-[#cbd5e1] px-4 py-3 text-[14px] outline-none focus:border-[#1769c2]"
+                            className={cx('w-full rounded-[10px] border px-4 py-3 text-[14px] outline-none', fieldErrors.companyWebsiteUrl ? 'border-red-400' : 'border-[#cbd5e1] focus:border-[#1769c2]')}
                           />
                         </FormField>
 
@@ -3337,7 +3380,7 @@ const CompanyProfile = () => {
                             maxLength={MAX_COMPANY_DESCRIPTION_LENGTH}
                             placeholder="Tell job seekers who you are, what you do, and what makes your company a great place to work."
                             disabled={saving}
-                            className={cx('w-full resize-y rounded-[10px] border px-4 py-3 text-[14px] outline-none', fieldErrors.companyDescription ? 'border-red-400' : 'border-[#cbd5e1] focus:border-[#1769c2]')}
+                            className={cx('h-[210px] w-full resize-none overflow-y-auto rounded-[10px] border px-4 py-3 text-[14px] outline-none', fieldErrors.companyDescription ? 'border-red-400' : 'border-[#cbd5e1] focus:border-[#1769c2]')}
                           />
                           <div className="mt-1 flex items-center justify-between gap-3 text-[11px] text-[#66758b]">
                             <span>Write in short paragraphs — mention your services, culture, and growth opportunities.</span>
@@ -3642,25 +3685,26 @@ const CompanyProfile = () => {
                             <LinkIcon className="h-5 w-5" />
                           </div>
                           <div>
-                            <h3 className="text-[21px] font-bold text-[#081b35]">Social Media (Optional)</h3>
+                            <h3 className="text-[21px] font-bold text-[#081b35]">Social Media</h3>
                             <p className="text-[13px] text-[#66758b]">Connect your official company accounts.</p>
                           </div>
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                          <FormField label="Facebook">
+                          <FormField label={<span className="inline-flex items-center gap-2"><SocialBrandIcon name="facebook" className="h-4 w-4 text-[#1877f2]" />Facebook</span>}>
                             <input type="text" name="facebookUrl" value={companyData.facebookUrl} onChange={handleInputChange} placeholder="https://www.facebook.com/yourcompany" disabled={saving} className="w-full rounded-[10px] border border-[#cbd5e1] px-4 py-3 text-[14px] outline-none focus:border-[#1769c2]" />
                           </FormField>
-                          <FormField label="Instagram">
+                          <FormField label={<span className="inline-flex items-center gap-2"><SocialBrandIcon name="instagram" className="h-4 w-4 text-[#e1306c]" />Instagram</span>}>
                             <input type="text" name="instagramUrl" value={companyData.instagramUrl} onChange={handleInputChange} placeholder="https://www.instagram.com/yourcompany" disabled={saving} className="w-full rounded-[10px] border border-[#cbd5e1] px-4 py-3 text-[14px] outline-none focus:border-[#1769c2]" />
                           </FormField>
-                          <FormField label="YouTube">
+                          <FormField label={<span className="inline-flex items-center gap-2"><SocialBrandIcon name="youtube" className="h-4 w-4 text-[#ff0000]" />YouTube</span>}>
                             <input type="text" name="youtubeUrl" value={companyData.youtubeUrl} onChange={handleInputChange} placeholder="https://www.youtube.com/@yourcompany" disabled={saving} className="w-full rounded-[10px] border border-[#cbd5e1] px-4 py-3 text-[14px] outline-none focus:border-[#1769c2]" />
                           </FormField>
-                          <FormField label="X / Twitter">
+                          <FormField label={<span className="inline-flex items-center gap-2"><SocialBrandIcon name="x" className="h-4 w-4 text-black" />X / Twitter</span>}>
                             <input type="text" name="xUrl" value={companyData.xUrl} onChange={handleInputChange} placeholder="https://x.com/yourcompany" disabled={saving} className="w-full rounded-[10px] border border-[#cbd5e1] px-4 py-3 text-[14px] outline-none focus:border-[#1769c2]" />
                           </FormField>
                         </div>
+                        {fieldErrors.socialMedia ? <p className="mt-3 text-[12px] font-medium text-red-600">{fieldErrors.socialMedia}</p> : null}
                       </div>
                     </div>
                   ) : null}
@@ -3825,8 +3869,8 @@ const CompanyProfile = () => {
                                     aria-label="Crop gallery photo"
                                     title="Crop / Reposition"
                                   >
-                                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                                      <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M7 3v14a4 4 0 004 4h10M3 7h14a4 4 0 014 4v10" />
+                                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                                      <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M6 2v14a2 2 0 002 2h14M2 6h14a2 2 0 012 2v14" />
                                     </svg>
                                   </button>
                                   <button
@@ -3867,8 +3911,8 @@ const CompanyProfile = () => {
                                     aria-label="Crop gallery photo"
                                     title="Crop / Reposition"
                                   >
-                                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                                      <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M7 3v14a4 4 0 004 4h10M3 7h14a4 4 0 014 4v10" />
+                                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                                      <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M6 2v14a2 2 0 002 2h14M2 6h14a2 2 0 012 2v14" />
                                     </svg>
                                   </button>
                                   <button
@@ -4036,6 +4080,38 @@ const CompanyProfile = () => {
             </div>
           </div>
         )}
+
+        {showDiscardConfirm ? (
+          <div className="fixed inset-0 z-[10050] flex items-center justify-center bg-black/45 px-4" role="dialog" aria-modal="true" aria-labelledby="discard-profile-title">
+            <div className="w-full max-w-[470px] rounded-[18px] border border-[#d5dde8] bg-white p-6 shadow-2xl">
+              <div className="flex items-start gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+                  <WarningIcon className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 id="discard-profile-title" className="text-[20px] font-bold text-[#081b35]">Discard Profile Changes?</h3>
+                  <p className="mt-2 text-[14px] leading-6 text-[#66758b]">Your changes haven&apos;t been saved. If you leave now, your updates will be discarded and your company profile will remain unchanged.</p>
+                </div>
+              </div>
+              <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <button type="button" onClick={() => setShowDiscardConfirm(false)} className="h-11 rounded-[10px] border border-[#d5dde8] bg-white px-5 text-[13px] font-semibold text-[#172033] hover:bg-[#f8fafc]">Keep Editing</button>
+                <button type="button" onClick={discardProfileChanges} className="h-11 rounded-[10px] bg-[#1769c2] px-5 text-[13px] font-semibold text-white hover:bg-[#105aa8]">Discard Changes</button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {showSaveSuccess ? (
+          <div className="fixed inset-0 z-[10060] flex items-center justify-center bg-black/25 px-4" role="dialog" aria-modal="true" aria-live="polite">
+            <div className="w-full max-w-sm rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-2xl">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#e8f1ff]">
+                <CheckCircleIcon className="h-10 w-10 text-[#2e66a6]" />
+              </div>
+              <div className="text-xl font-bold text-gray-900">Changes Saved!</div>
+              <div className="mt-2 text-sm text-gray-500">Your company profile has been updated successfully.</div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </EmployerLayout>
   );
