@@ -2590,22 +2590,22 @@ const CompanyProfile = () => {
                 <div className="mt-6 border-b border-[#d1d5db] px-4">
                   <div className="flex flex-wrap items-center gap-8">
                     <TabButton active={activeTab === 'about'} onClick={() => setActiveTab('about')}>
-                      <span className="inline-flex items-center gap-2"><AboutEmptyIcon className="h-4 w-4" />About</span>
+                      <span className="inline-flex items-center gap-2">About</span>
                     </TabButton>
                     <TabButton active={activeTab === 'jobs'} onClick={() => setActiveTab('jobs')}>
-                      <span className="inline-flex items-center gap-2"><BriefcaseIcon className="h-4 w-4" />Jobs <span className="text-xs text-[#6b7280]">({companyJobs.length})</span></span>
+                      <span className="inline-flex items-center gap-2">Jobs <span className="text-xs text-[#6b7280]">({companyJobs.length})</span></span>
                     </TabButton>
                     <TabButton active={activeTab === 'credentials'} onClick={() => setActiveTab('credentials')}>
                       Credentials
                     </TabButton>
                     <TabButton active={activeTab === 'social'} onClick={() => setActiveTab('social')}>
-                      <span className="inline-flex items-center gap-2"><LinkIcon className="h-4 w-4" />Social Media</span>
+                      <span className="inline-flex items-center gap-2">Social Media</span>
                     </TabButton>
                     <TabButton active={activeTab === 'gallery'} onClick={() => setActiveTab('gallery')}>
-                      <span className="inline-flex items-center gap-2"><ImageIcon className="h-4 w-4" />Gallery</span>
+                      <span className="inline-flex items-center gap-2">Gallery</span>
                     </TabButton>
                     <TabButton active={activeTab === 'reviews'} onClick={() => setActiveTab('reviews')}>
-                      <span className="inline-flex items-center gap-2"><StarIcon className="h-4 w-4" />Reviews <span className="text-xs text-[#6b7280]">({companyReviews.length})</span></span>
+                      <span className="inline-flex items-center gap-2">Reviews <span className="text-xs text-[#6b7280]">({companyReviews.length})</span></span>
                     </TabButton>
                   </div>
                 </div>
