@@ -69,14 +69,19 @@ const EmployerAllJobs = () => {
           <button type="button" onClick={() => navigate('/employer/company-profile', { state: { activeTab: 'jobs' } })} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm
            hover:bg-gray-50">
             <svg
-               className="w-[18px] h-[18px] shrink-0"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                          </svg>Back
+  className="w-[18px] h-[18px] shrink-0"
+  fill="none"
+  stroke="currentColor"
+  viewBox="0 0 24 24"
+  aria-hidden="true"
+>
+  <path
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2"
+    d="M15 19l-7-7 7-7"
+  />
+</svg>Back
           </button>
 
           <section className="rounded-[18px] border border-[#d1d5db] bg-white p-5 shadow-[0_2px_6px_rgba(15,23,42,0.05)] sm:p-7">

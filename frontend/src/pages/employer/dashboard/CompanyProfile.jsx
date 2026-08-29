@@ -2492,7 +2492,20 @@ const CompanyProfile = () => {
             onClick={() => navigate('/employer/dashboard')}
             className="mb-5 inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
           >
-            <span className="text-lg leading-none">←</span>
+            <svg
+  className="w-[18px] h-[18px] shrink-0"
+  fill="none"
+  stroke="currentColor"
+  viewBox="0 0 24 24"
+  aria-hidden="true"
+>
+  <path
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2"
+    d="M15 19l-7-7 7-7"
+  />
+</svg>
             Back
           </button>
 
