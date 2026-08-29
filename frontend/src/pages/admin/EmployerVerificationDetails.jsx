@@ -502,7 +502,15 @@ const niceDateTime = (date) => {
   if (!date) return "—";
   const d = new Date(date);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString("en-PH", { timeZone: "Asia/Manila" });
+  return d.toLocaleString("en-US", {
+    timeZone: "Asia/Manila",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
 };
 
 const getFileName = (url) => {
@@ -1367,7 +1375,7 @@ const EmployerVerificationDetails = () => {
             <div className="flex items-start justify-between px-5 pt-5">
               <div>
                 <h3 id="approve-employer-credential-title" className="text-lg font-bold text-black">
-                  Approve {verifyCredential.label} Credential?
+                  Approve <strong>{verifyCredential.label}</strong> Credential?
                 </h3>
                 <p className="mt-1 text-sm text-[#2e66a6]">
                   This will confirm that the <strong>{verifyCredential.label}</strong> credential has been reviewed and verified.
