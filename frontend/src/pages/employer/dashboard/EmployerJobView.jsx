@@ -711,7 +711,11 @@ const EmployerJobView = () => {
       setLoading(true);
       setError('');
 
-      const response = await axios.get(`https://phinmaau-job-portal-atlas.onrender.com/api/jobs/${jobId}`);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(
+        `https://phinmaau-job-portal-atlas.onrender.com/api/jobs/${jobId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
       if (response.data.success) {
         const jobData = response.data.job;
