@@ -964,8 +964,8 @@ const JobSeekerLayout = ({ children }) => {
                 >
                   <FontAwesomeIcon icon={faBell} className="w-5 h-5" />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                      {unreadCount > 9 ? '9+' : unreadCount}
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-5 h-5 px-1 flex items-center justify-center leading-none">
+                      {unreadCount}
                     </span>
                   )}
                 </button>
@@ -1250,8 +1250,8 @@ const JobSeekerLayout = ({ children }) => {
               >
                 <FontAwesomeIcon icon={faBell} className="h-5 w-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                    {unreadCount > 9 ? '9+' : unreadCount}
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-5 h-5 px-1 flex items-center justify-center leading-none">
+                    {unreadCount}
                   </span>
                 )}
               </button>
