@@ -4,6 +4,32 @@ import EmployerLayout from '../../../layouts/EmployerLayout';
 import Pagination from '../../../components/shared/Pagination';
 import api from '../../../services/api';
 
+const JobCardIcon = ({ name, className = 'w-4 h-4' }) => {
+  if (name === 'location') {
+    return (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    );
+  }
+
+  if (name === 'contract') {
+    return (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m3 0H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2z" />
+      </svg>
+    );
+  }
+
+  return null;
+};
+
+const normalizeBoolean = (value) => {
+  if (typeof value === 'boolean') return value;
+  return ['true', '1', 'yes', 'on'].includes(String(value || '').trim().toLowerCase());
+};
+
 const formatSalary = (job) => {
   if (job?.hideSalary) return 'Salary not disclosed';
   const min = Number(job?.salaryMin || 0);
@@ -108,13 +134,30 @@ const EmployerAllJobs = () => {
                       </div>
                       <div className="min-w-0"><h2 className="truncate text-lg font-bold text-gray-800">{job.title || 'Job Title'}</h2><p className="mt-1 truncate text-sm font-medium text-gray-600">{company.companyName}</p></div>
                     </div>
-                    <div className="mt-4 space-y-2 rounded-xl bg-[#F3F4F6] p-4 text-sm text-gray-700">
-                      <p className="truncate">⌖ &nbsp;{job.location || 'Location not specified'}</p>
-                      <p className="truncate">₱ &nbsp;{formatSalary(job)}</p>
-                      <p className="truncate">▣ &nbsp;{job.jobType || 'Type not specified'}</p>
+                    <div className={`relative mt-4 overflow-hidden rounded-xl bg-[#F3F4F6] p-4 text-sm text-gray-700 ${normalizeBoolean(job?.isUrgent) ? 'pr-[108px]' : ''}`}>
+                      {normalizeBoolean(job?.isUrgent) ? (
+                        <img
+                          src="/images/urgentneed.png"
+                          alt="Urgent Hiring"
+                          draggable="false"
+                          className="pointer-events-none absolute -right-5 bottom-1 h-auto w-[112px] max-w-[38%] select-none object-contain"
+                        />
+                      ) : null}
+                      <div className="flex min-w-0 items-center gap-2">
+                        <JobCardIcon name="location" className="h-4 w-4 shrink-0 text-gray-600" />
+                        <span className="min-w-0 flex-1 truncate">{job.location || 'Location not specified'}</span>
+                      </div>
+                      <div className="mt-2 flex min-w-0 items-center gap-2">
+                        <span className="flex h-4 w-4 shrink-0 items-center justify-center text-[14px] font-extrabold leading-none text-gray-600">₱</span>
+                        <span className="min-w-0 flex-1 truncate">{formatSalary(job)}</span>
+                      </div>
+                      <div className="mt-2 flex min-w-0 items-center gap-2">
+                        <JobCardIcon name="contract" className="h-4 w-4 shrink-0 text-gray-600" />
+                        <span className="min-w-0 flex-1 truncate">{job.jobType || 'Type not specified'}</span>
+                      </div>
                     </div>
-                    <div className="mt-4 flex flex-wrap gap-2">{[job.experienceLevel, job.workMode, job.openToFreshGraduates ? 'Open fresh grad' : ''].filter(Boolean).map((tag) => <span key={tag} className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-[#2e66a6]">{tag}</span>)}</div>
-                    <div className="mt-auto border-t border-gray-200 pt-4"><button type="button" onClick={() => navigate(`/employer/manage-jobs/${job._id}/view`)} className="h-10 w-full rounded-xl bg-[#1e4ba0] px-5 text-sm font-semibold text-white hover:bg-[#1b4290]">View Job</button></div>
+                    <div className="mb-5 mt-4 flex flex-wrap gap-2">{[job.experienceLevel, job.workMode, job.openToFreshGraduates ? 'Open fresh grad' : ''].filter(Boolean).map((tag) => <span key={tag} className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-[#2e66a6]">{tag}</span>)}</div>
+                    <div className="mt-auto border-t border-gray-200 pt-5"><button type="button" onClick={() => navigate(`/employer/manage-jobs/${job._id}/view`)} className="h-10 w-full rounded-xl bg-[#1e4ba0] px-5 text-sm font-semibold text-white hover:bg-[#1b4290]">View Job</button></div>
                   </article>
                 ))}
               </div>
