@@ -144,6 +144,61 @@ const AutoFitApplicationHeaderName = ({ children, maxFontSize = 30, minFontSize 
   );
 };
 
+const AutoFitResumeHeaderName = ({ children, profileImageRef, maxFontSize = 28, minFontSize = 14 }) => {
+  const textRef = useRef(null);
+  const [fontSize, setFontSize] = useState(maxFontSize);
+
+  useEffect(() => {
+    const fitText = () => {
+      const text = textRef.current;
+      const profileImage = profileImageRef?.current;
+      if (!text) return;
+
+      let nextSize = maxFontSize;
+      text.style.fontSize = `${nextSize}px`;
+
+      if (profileImage && window.getComputedStyle(profileImage).position === 'absolute') {
+        const safeGap = 12;
+        let textBounds = text.getBoundingClientRect();
+        const imageBounds = profileImage.getBoundingClientRect();
+
+        while (nextSize > minFontSize && textBounds.right + safeGap > imageBounds.left) {
+          nextSize -= 0.5;
+          text.style.fontSize = `${nextSize}px`;
+          textBounds = text.getBoundingClientRect();
+        }
+      }
+
+      setFontSize(nextSize);
+    };
+
+    const frameId = window.requestAnimationFrame(fitText);
+    const resizeObserver =
+      typeof window.ResizeObserver === 'function'
+        ? new window.ResizeObserver(fitText)
+        : null;
+
+    if (profileImageRef?.current) resizeObserver?.observe(profileImageRef.current);
+    window.addEventListener('resize', fitText);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', fitText);
+    };
+  }, [children, maxFontSize, minFontSize, profileImageRef]);
+
+  return (
+    <h2
+      ref={textRef}
+      className="whitespace-nowrap font-bold uppercase leading-tight tracking-[0.02em]"
+      style={{ fontSize: `${fontSize}px` }}
+    >
+      {children}
+    </h2>
+  );
+};
+
 const formatDate = (value, options = {}) => {
   if (!value) return '';
   const date = new Date(value);
@@ -2142,6 +2197,7 @@ const ApplicationDetails = () => {
   const [messageOpen, setMessageOpen] = useState(false);
   const [confirmationAction, setConfirmationAction] = useState('');
   const [avatarBroken, setAvatarBroken] = useState(false);
+  const resumeProfileImageRef = useRef(null);
 
   const fetchDetails = useCallback(async () => {
     try { setLoading(true); setError(''); const res = await axios.get(`${API_HOST}/api/applications/${applicationId}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }); setApplication(res.data?.application || null); }
@@ -2379,9 +2435,9 @@ const ApplicationDetails = () => {
 
               <article className="mx-auto w-full bg-white font-serif text-[10px] leading-[1.22] text-black">
                 <header className="relative flex min-h-[110px] flex-col items-center justify-center pb-4 text-center">
-                  <h2 className="text-[28px] font-bold uppercase leading-tight tracking-[0.02em]">
+                  <AutoFitResumeHeaderName profileImageRef={resumeProfileImageRef}>
                     {name}
-                  </h2>
+                  </AutoFitResumeHeaderName>
 
                   {resumeAddress ? (
                     <p className="mt-2 break-words text-[10px] leading-relaxed">
@@ -2407,6 +2463,7 @@ const ApplicationDetails = () => {
 
                   {image && !avatarBroken ? (
                     <img
+                      ref={resumeProfileImageRef}
                       src={image}
                       alt={name}
                       onError={() => setAvatarBroken(true)}
