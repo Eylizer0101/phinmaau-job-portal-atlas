@@ -507,18 +507,20 @@ const formatDate = (dateString, includeTime = true) => {
   if (Number.isNaN(d.getTime())) return "—";
 
   const options = {
-    year: "numeric",
+    timeZone: "Asia/Manila",
     month: "short",
     day: "numeric",
-    timeZone: "Asia/Manila",
+    year: "numeric",
   };
 
   if (includeTime) {
-    options.hour = "2-digit";
+    options.hour = "numeric";
     options.minute = "2-digit";
+    options.hour12 = true;
+    return d.toLocaleString("en-US", options);
   }
 
-  return d.toLocaleDateString("en-PH", options);
+  return d.toLocaleDateString("en-US", options);
 };
 
 const formatFileSize = (bytes) => {
@@ -1354,8 +1356,8 @@ const JobseekerVerificationDetails = () => {
           </Alert>
         )}
 
-        <div className="rounded-xl border border-black/15 bg-white p-4 shadow-sm sm:p-5">
-          <div className="mb-5 flex flex-col gap-4 border-b border-black/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="rounded-2xl border border-[#D9E2EC] bg-white p-5 shadow-[0_2px_6px_rgba(15,23,42,0.08)] sm:p-6">
+          <div className="mb-5 flex flex-col gap-4 border-b border-[#D9E2EC] pb-4 sm:flex-row sm:items-center sm:justify-between">
             <Link
               to="/admin/jobseeker-verification"
               className={cn(
@@ -1429,8 +1431,8 @@ const JobseekerVerificationDetails = () => {
             )}
           </div>
 
-          <section className="rounded-xl border border-black/15 bg-white p-4 sm:p-5">
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <section className="rounded-2xl border border-[#D9E2EC] bg-white p-5 sm:p-6">
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2 text-[#2e66a6]">
                 <SvgIcon name="user" className="h-5 w-5" />
                 <h2 className="text-base font-bold">Job Seeker Information</h2>
@@ -1499,14 +1501,14 @@ const JobseekerVerificationDetails = () => {
               )}
             </div>
 
-            <div className="grid gap-5 lg:grid-cols-[1fr_1fr_220px]">
-              <div className="space-y-2">
+            <div className="grid gap-6 lg:grid-cols-[1fr_1fr_190px] lg:items-center">
+              <div className="space-y-3">
                 {infoRowsLeft.map(([label, value]) => (
                   <div
                     key={label}
-                    className="grid grid-cols-[120px_1fr] gap-3 text-sm"
+                    className="grid grid-cols-[145px_1fr] gap-4 text-sm"
                   >
-                    <span className="text-black/60">{label}:</span>
+                    <span className="text-[#5B6472]">{label}:</span>
                     <span className="font-semibold text-black">
                       {value || "—"}
                     </span>
@@ -1514,13 +1516,13 @@ const JobseekerVerificationDetails = () => {
                 ))}
               </div>
 
-              <div className="space-y-2 border-black/15 lg:border-l lg:pl-6">
+              <div className="space-y-3 border-[#D9E2EC] lg:border-l lg:pl-7">
                 {infoRowsRight.map(([label, value]) => (
                   <div
                     key={label}
-                    className="grid grid-cols-[150px_1fr] gap-3 text-sm"
+                    className="grid grid-cols-[150px_1fr] gap-4 text-sm"
                   >
-                    <span className="text-black/65">{label}:</span>
+                    <span className="text-[#5B6472]">{label}:</span>
                     <span className="font-semibold text-black">
                       {value || "—"}
                     </span>
@@ -1533,20 +1535,20 @@ const JobseekerVerificationDetails = () => {
                   <img
                     src={buildFileUrl(jobseeker.profileImage)}
                     alt={`${fullName} registration`}
-                    className="h-36 w-36 rounded-full border-4 border-black/10 object-cover shadow-sm"
+                    className="h-28 w-28 rounded-full bg-[#F1F5F9] object-cover"
                   />
                 ) : (
-                  <div className="flex h-36 w-36 items-center justify-center rounded-full border-4 border-black/10 bg-white text-[#94A3B8] shadow-sm">
-                    <SvgIcon name="user" className="h-16 w-16" />
+                  <div className="flex h-28 w-28 items-center justify-center rounded-full bg-[#F1F5F9] text-[#667085]">
+                    <SvgIcon name="user" className="h-14 w-14" />
                   </div>
                 )}
 
                 <span
                   className={cn(
-                    "mt-3 rounded-full border px-3 py-1 text-xs font-semibold",
+                    "mt-3 rounded-full px-3 py-1 text-xs font-semibold",
                     jobseeker.profileImage
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                      : "border-black/15 bg-white text-black/60",
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "border border-[#D9E2EC] bg-white text-black/60",
                   )}
                 >
                   {jobseeker.profileImage
@@ -1557,13 +1559,13 @@ const JobseekerVerificationDetails = () => {
             </div>
           </section>
 
-          <section className="mt-4 rounded-xl border border-black/15 bg-white p-4 sm:p-5">
-            <div className="mb-4 flex flex-wrap items-center gap-2">
+          <section className="mt-5 rounded-2xl border border-[#D9E2EC] bg-white p-5 sm:p-6">
+            <div className="mb-5 flex flex-wrap items-center gap-2">
               <SvgIcon name="document" className="h-5 w-5 text-[#2e66a6]" />
               <h2 className="text-base font-bold text-[#2e66a6]">
                 Credentials
               </h2>
-              <span className="text-xs font-semibold text-[#2e66a6]">
+              <span className="text-sm text-[#5B6472]">
                 ({submittedCount}/{totalDocs} Submitted)
               </span>
             </div>
@@ -1577,13 +1579,6 @@ const JobseekerVerificationDetails = () => {
                 ).toLowerCase();
                 const credentialApproved = credentialStatus === "approved" || doc.checked;
                 const credentialNeedsAction = ["hold", "rejected", "action_needed"].includes(credentialStatus);
-                const credentialStatusLabel = credentialApproved
-                  ? "Approved"
-                  : credentialNeedsAction
-                    ? "Action Needed"
-                    : ["pending", "submitted"].includes(credentialStatus)
-                      ? "Pending"
-                      : "Not submitted";
                 const fileName =
                   doc.filename || getFileNameFromUrl(doc.url, docType.label);
                 const fileSize = formatFileSize(doc.fileSize);
@@ -1591,33 +1586,18 @@ const JobseekerVerificationDetails = () => {
                 return (
                   <article
                     key={docType.key}
-                    className="flex min-h-[160px] flex-col rounded-lg border border-black/15 bg-white p-3"
+                    className="flex min-h-[165px] flex-col rounded-xl border border-[#D9E2EC] bg-white p-3"
                   >
                     <div className="flex items-start gap-2">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2e66a6]/10 text-xs font-bold text-[#2e66a6]">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#F1F5F9] text-[11px] font-semibold text-[#526273]">
                         {index + 1}
                       </span>
-                      <h3 className="min-w-0 text-xs font-bold leading-5 text-black/75">
+                      <h3 className="min-w-0 text-xs font-bold leading-5 text-black">
                         {docType.label}
                       </h3>
                     </div>
 
-                    <span
-                      className={cn(
-                        "mt-2 inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                        credentialApproved
-                          ? "bg-emerald-50 text-emerald-700"
-                          : credentialNeedsAction
-                            ? "bg-red-50 text-red-700"
-                            : hasFile
-                              ? "bg-amber-50 text-amber-700"
-                              : "bg-black/5 text-black/50",
-                      )}
-                    >
-                      {credentialStatusLabel}
-                    </span>
-
-                    <div className="mt-3 flex flex-1 items-start gap-2">
+                    <div className="mt-3 min-h-[54px] flex flex-1 items-start gap-2">
                       <div
                         className={cn(
                           "flex h-10 w-9 shrink-0 items-center justify-center rounded",
@@ -1631,13 +1611,13 @@ const JobseekerVerificationDetails = () => {
 
                       <div className="min-w-0">
                         <p
-                          className="truncate text-[11px] font-semibold text-black/75"
+                          className="truncate text-[11px] font-semibold text-black"
                           title={fileName}
                         >
                           {hasFile ? fileName : "No file"}
                         </p>
                         {fileSize ? (
-                          <p className="mt-1 text-[10px] text-black/45">
+                          <p className="mt-1 text-[10px] text-[#7A8492]">
                             ({fileSize})
                           </p>
                         ) : null}
@@ -1645,14 +1625,14 @@ const JobseekerVerificationDetails = () => {
                     </div>
 
                     {hasFile ? (
-                      <div className="mt-3 grid grid-cols-2 gap-1.5">
+                      <div className="mt-3 grid grid-cols-2 gap-2 border-t border-[#E1E7EF] pt-3">
                         <button
                           type="button"
                           onClick={() =>
                             handleViewFile(docType.key, docType.label)
                           }
                           className={cn(
-                            "flex h-8 items-center justify-center rounded border border-black/15 bg-white text-[#2e66a6] hover:bg-[#2e66a6]/10",
+                            "flex h-9 items-center justify-center rounded-lg border border-[#D9E2EC] bg-[#F8FAFC] text-[#667085] shadow-sm hover:bg-[#F1F5F9]",
                             UI.ring,
                           )}
                           aria-label={`View ${docType.label}`}
@@ -1669,10 +1649,10 @@ const JobseekerVerificationDetails = () => {
                             !["pending", "submitted"].includes(credentialStatus)
                           }
                           className={cn(
-                            "flex h-8 items-center justify-center rounded border border-black/15 text-black/70",
+                            "flex h-9 items-center justify-center rounded-lg border border-[#D9E2EC] text-[#667085] shadow-sm",
                             credentialApproved
                               ? "border-emerald-200 bg-emerald-50 text-emerald-600"
-                              : "bg-white hover:bg-black/5",
+                              : "bg-[#F8FAFC] hover:bg-[#F1F5F9]",
                             UI.ring,
                           )}
                           aria-label={`Check ${docType.label}`}
@@ -1686,7 +1666,7 @@ const JobseekerVerificationDetails = () => {
                         </button>
                       </div>
                     ) : (
-                      <div className="mt-3 flex h-8 items-center justify-center rounded border border-black/15 bg-white text-[11px] font-semibold text-black/45">
+                      <div className="mt-3 flex h-9 items-center justify-center rounded-lg border border-[#D9E2EC] bg-white text-[11px] font-medium text-[#667085]">
                         Not submitted
                       </div>
                     )}
