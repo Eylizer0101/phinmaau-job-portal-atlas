@@ -310,15 +310,25 @@ const Modal = ({ open, companyName, onClose, onConfirm, loading, disabled }) => 
         />
 
         <div
-          className="relative w-full max-w-[440px] rounded-[22px] bg-[#F8FAFC] border border-[#D8E0EA] shadow-[0_18px_50px_rgba(15,23,42,0.18)] overflow-hidden"
+          className="relative w-full max-w-[505px] overflow-hidden rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.22)]"
           role="dialog"
           aria-modal="true"
           aria-labelledby="confirm-approval-title"
           aria-describedby="confirm-approval-description"
         >
-          <div className="px-6 pt-6 pb-5 sm:px-7">
+          <button
+            type="button"
+            onClick={() => !loading && onClose()}
+            disabled={loading}
+            className="absolute right-4 top-4 z-10 rounded p-1 text-[#667085] hover:bg-black/5 disabled:opacity-50"
+            aria-label="Close approval modal"
+          >
+            <SvgIcon name="x" className="h-4 w-4" />
+          </button>
+
+          <div className="px-7 pb-7 pt-9 sm:px-10">
             <div className="mx-auto text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2e66a6]/10 text-[#2e66a6]">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EEF6FF] text-[#2e66a6]">
                 <SvgIcon name="check" className="w-6 h-6" />
               </div>
 
@@ -326,30 +336,26 @@ const Modal = ({ open, companyName, onClose, onConfirm, loading, disabled }) => 
                 id="confirm-approval-title"
                 className="mt-4 text-[24px] sm:text-[28px] leading-tight font-bold tracking-[-0.02em] text-black"
               >
-                Confirm Approval
+                Verified {companyName}?
               </h3>
 
               <div
                 id="confirm-approval-description"
-                className="mt-3 space-y-3 text-[15px] leading-7 text-[#475467]"
+                className="mx-auto mt-3 max-w-[420px] space-y-3 text-[15px] leading-7 text-[#667085]"
               >
                 <p>
-                  Are you sure you want to approve <span className="font-bold">{companyName}</span>? Please ensure that
-                  you have thoroughly reviewed all submitted documents and verified their eligibility.
-                  <span className="inline-flex align-middle ml-2 text-black/80">
-                    <SvgIcon name="info" className="w-4 h-4" />
-                  </span>
+                  Are you sure you want to verified this Employer? This will confirm that <span className="font-bold text-black">{companyName}</span> has been reviewed and verified all PHINMA AU requirements.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="border-t border-[#D8E0EA] bg-[#EEF2F6] px-5 py-4 sm:px-6">
+          <div className="border-t border-[#D8E0EA] bg-[#F8FAFC] px-7 py-5 sm:px-10">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Button
                 variant="secondary"
                 size="lg"
-                className="w-full !h-11 rounded-[14px] text-sm"
+                className="w-full !h-11 rounded-lg border-[#D6DEE8] bg-white text-base font-semibold"
                 onClick={onClose}
                 disabled={loading}
               >
@@ -359,12 +365,12 @@ const Modal = ({ open, companyName, onClose, onConfirm, loading, disabled }) => 
               <Button
                 variant="primary"
                 size="lg"
-                className="w-full !h-11 rounded-[14px] text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
+                className="w-full !h-11 rounded-lg text-base font-semibold !bg-[#2e66a6] hover:!bg-[#255587]"
                 onClick={onConfirm}
                 loading={loading}
                 disabled={disabled || loading}
               >
-                Confirm
+                Verified
               </Button>
             </div>
           </div>
@@ -435,7 +441,7 @@ const ReasonDropdown = ({ value, onChange, options, placeholder = "Add a clear r
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-lg border bg-white px-3 text-left text-[13px] font-normal leading-5 shadow-sm transition",
+          "flex h-11 w-full items-center justify-between rounded-lg border bg-white px-3 text-left text-[15px] font-normal leading-5 shadow-sm transition",
           "border-[#CBD5E1] text-[#475467] hover:border-[#94A3B8]",
           "focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20",
           isOpen && "border-[#2e66a6] ring-2 ring-[#2e66a6]/10"
@@ -455,7 +461,7 @@ const ReasonDropdown = ({ value, onChange, options, placeholder = "Add a clear r
 
       {isOpen ? (
         <div
-          className="absolute left-0 right-0 top-full z-[80] mt-1 max-h-[220px] overflow-y-auto rounded-lg border border-[#D0D5DD] bg-white py-1 shadow-[0_12px_30px_rgba(15,23,42,0.18)]"
+          className="absolute left-0 right-0 top-full z-[80] mt-1 max-h-[330px] overflow-y-auto rounded-lg border border-[#D0D5DD] bg-white p-1 shadow-[0_12px_30px_rgba(15,23,42,0.18)]"
           role="listbox"
         >
           {options.map((option) => (
@@ -469,7 +475,7 @@ const ReasonDropdown = ({ value, onChange, options, placeholder = "Add a clear r
                 setIsOpen(false);
               }}
               className={cn(
-                "block w-full px-3 py-2 text-left text-[13px] font-normal leading-5 transition",
+                "block w-full rounded-md px-3 py-2 text-left text-[15px] font-normal leading-5 transition",
                 value === option
                   ? "bg-[#EEF4FB] text-[#245487]"
                   : "text-[#344054] hover:bg-[#F2F4F7] hover:text-[#1D2939]"
@@ -1427,7 +1433,7 @@ const EmployerVerificationDetails = () => {
                   {pendingCredentialAction?.label || "this credential"}.
                 </p>
 
-                <div className="mt-5">
+                <div className="mt-6">
                   <label
                     htmlFor="employerCredentialPassword"
                     className="block text-sm font-semibold text-black"
@@ -1531,7 +1537,7 @@ const EmployerVerificationDetails = () => {
             <div className="fixed inset-0 bg-black/45 backdrop-blur-[1px]" onClick={() => !action && resetHoldModal()} aria-hidden="true" />
 
             <div
-              className="relative w-full max-w-[480px] overflow-visible rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
+              className="relative w-full max-w-[650px] overflow-visible rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="hold-modal-title"
@@ -1546,17 +1552,17 @@ const EmployerVerificationDetails = () => {
                 <SvgIcon name="x" className="h-4 w-4" />
               </button>
 
-              <div className="max-h-[82vh] overflow-y-auto px-5 pb-4 pt-5 sm:px-6">
+              <div className="max-h-[86vh] overflow-y-auto px-7 pb-5 pt-7 sm:px-9">
                 <div className="max-w-2xl">
                   <div className="flex items-start gap-3 pr-6">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EEF6FF] text-[#2e66a6]">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#EEF6FF] text-[#2e66a6]">
                       <SvgIcon name="pause" className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
-                      <h3 id="hold-modal-title" className="text-xl font-bold leading-tight tracking-[-0.02em] text-black">
+                      <h3 id="hold-modal-title" className="text-2xl font-bold leading-tight tracking-[-0.02em] text-black">
                         Request Resubmission
                       </h3>
-                      <p className="mt-2 text-sm leading-5 text-[#667085]">
+                      <p className="mt-2 text-[15px] leading-6 text-[#667085]">
                         Select the documents that need to be resubmitted and choose at least one reason or write a message for{" "}
                         <span className="font-bold text-black">{companyName}</span>.
                       </p>
@@ -1564,7 +1570,7 @@ const EmployerVerificationDetails = () => {
                   </div>
 
                   <div className="mt-5">
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#475467]">Documents needed</p>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.04em] text-[#475467]">Documents needed</p>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {DOC_TYPES.map((doc) => {
                         const checked = holdDocTypes.includes(doc.key);
@@ -1573,7 +1579,7 @@ const EmployerVerificationDetails = () => {
                           <label
                             key={doc.key}
                             className={cn(
-                              "flex min-h-9 cursor-pointer select-none items-center gap-3 rounded-lg border px-3 py-2 transition",
+                              "flex min-h-12 cursor-pointer select-none items-center gap-3 rounded-xl border px-4 py-3 transition",
                               checked
                                 ? "border-[#2e66a6]/50 bg-[#2e66a6]/[0.08]"
                                 : "border-[#D8E0EA] bg-white/85 hover:border-[#2e66a6]/30 hover:bg-[#2e66a6]/[0.04]"
@@ -1583,9 +1589,9 @@ const EmployerVerificationDetails = () => {
                               type="checkbox"
                               checked={checked}
                               onChange={() => toggleHoldDocType(doc.key)}
-                              className="h-4 w-4 rounded border border-[#94A3B8] text-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]"
+                              className="h-5 w-5 rounded-md border border-[#94A3B8] text-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]"
                             />
-                            <span className="text-sm sm:text-[15px] font-medium text-black/75">{doc.label}</span>
+                            <span className="text-[15px] font-medium text-black">{doc.label}</span>
                           </label>
                         );
                       })}
@@ -1593,7 +1599,7 @@ const EmployerVerificationDetails = () => {
                   </div>
 
                   <div className="mt-4">
-                    <label className="mb-1 block text-xs font-medium text-[#475467]">
+                    <label className="mb-1 block text-[15px] font-medium text-[#475467]">
                       Reason for Resubmission (Select at least one reason) <span className="text-[#667085]">(Optional)</span>
                     </label>
                     <ReasonDropdown
@@ -1608,26 +1614,21 @@ const EmployerVerificationDetails = () => {
                     <textarea
                       value={holdReason}
                       onChange={(e) => setHoldReason(e.target.value)}
-                      rows={4}
+                      rows={5}
                       placeholder="Explain what needs to be corrected or re-uploaded."
-                      className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm leading-5 text-black placeholder:text-black/35 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
+                      className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-3 text-[15px] leading-6 text-black placeholder:text-[#667085] focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
                     />
                   </div>
 
-                  {(!holdDocTypes.length || (!holdSelectedReason && !holdReason.trim())) && (
-                    <p className="mt-5 text-sm text-[#98A2B3]">
-                      Please complete the required fields before sending the resubmit link.
-                    </p>
-                  )}
                 </div>
               </div>
 
-              <div className="border-t border-[#D8E0EA] bg-[#F8FAFC] px-5 py-3 sm:px-6">
+              <div className="bg-[#F8FAFC] px-7 pb-6 pt-2 sm:px-9">
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="secondary"
                     size="lg"
-                    className="!h-10 rounded-lg border-[#CBD5E1] px-5 text-sm"
+                    className="!h-11 rounded-lg border-[#CBD5E1] px-6 text-sm"
                     onClick={resetHoldModal}
                     disabled={!!action}
                   >
@@ -1637,7 +1638,7 @@ const EmployerVerificationDetails = () => {
                   <Button
                     variant="primary"
                     size="lg"
-                    className="!h-10 rounded-lg px-5 text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
+                    className="!h-11 rounded-lg px-6 text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
                     onClick={handleHoldSubmit}
                     disabled={!holdDocTypes.length || (!holdSelectedReason && !holdReason.trim()) || !!action}
                     loading={action === "hold"}
@@ -1661,7 +1662,7 @@ const EmployerVerificationDetails = () => {
             />
 
             <div
-              className="relative w-full max-w-[430px] overflow-visible rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
+              className="relative w-full max-w-[575px] overflow-visible rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="decline-modal-title"
@@ -1676,25 +1677,24 @@ const EmployerVerificationDetails = () => {
                 <SvgIcon name="x" className="h-4 w-4" />
               </button>
 
-              <div className="px-5 pb-4 pt-5 sm:px-6">
+              <div className="px-7 pb-5 pt-7 sm:px-9">
                 <div className="flex items-start gap-3 pr-6">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
                     <SvgIcon name="warning" className="h-5 w-5" />
                   </div>
 
                   <div className="min-w-0">
-                    <h3 id="decline-modal-title" className="text-xl font-bold leading-tight tracking-[-0.02em] text-black">
+                    <h3 id="decline-modal-title" className="text-2xl font-bold leading-tight tracking-[-0.02em] text-black">
                       Decline Verification
                     </h3>
-                    <p className="mt-2 text-sm leading-5 text-[#667085]">
-                      Are you sure you want to decline <span className="font-bold">{companyName}</span>? This action will notify{" "}
-                      <span className="font-bold">{companyName}</span> that they do not meet the AU partner requirements.
+                    <p className="mt-2 text-[15px] leading-6 text-[#667085]">
+                      Are you sure you want to decline <span className="font-bold">{companyName}</span>? The Employer will be notified that they do not meet the PHINMA AU requirements.
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-5">
-                  <label className="mb-1 block text-xs font-medium leading-5 text-[#475467]">
+                  <label className="mb-1 block text-[15px] font-medium leading-5 text-[#475467]">
                     Reason for Declining <span className="font-semibold text-black">{companyName}</span>{" "}
                     (Select at least one reason) <span className="text-[#667085]">(Optional)</span>
                   </label>
@@ -1710,19 +1710,19 @@ const EmployerVerificationDetails = () => {
                   <textarea
                     value={rejectionMessage}
                     onChange={(e) => setRejectionMessage(e.target.value)}
-                    rows={4}
-                    placeholder="Add a clear reason why the company was not verified and what the employer needs to do next."
-                    className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm leading-5 text-black placeholder:text-black/45 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
+                    rows={5}
+                    placeholder="Add a clear reason why the credential was not verified and what the Employer needs to do next."
+                    className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-3 text-[15px] leading-6 text-black placeholder:text-[#667085] focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
                   />
                 </div>
               </div>
 
-              <div className="border-t border-[#E2E8F0] bg-[#F8FAFC] px-5 py-3 sm:px-6">
+              <div className="bg-[#F8FAFC] px-7 pb-6 pt-2 sm:px-9">
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="secondary"
                     size="lg"
-                    className="!h-10 rounded-lg border-[#CBD5E1] px-5 text-sm"
+                    className="!h-11 rounded-lg border-[#CBD5E1] px-5 text-sm"
                     onClick={resetRejectModal}
                     disabled={action === "reject"}
                   >
@@ -1732,7 +1732,7 @@ const EmployerVerificationDetails = () => {
                   <Button
                     variant="primary"
                     size="lg"
-                    className="!h-10 rounded-lg px-5 text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
+                    className="!h-11 rounded-lg px-5 text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
                     onClick={handleRejectSubmit}
                     disabled={action === "reject"}
                     loading={action === "reject"}
