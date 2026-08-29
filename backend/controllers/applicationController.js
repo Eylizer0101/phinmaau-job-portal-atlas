@@ -2470,14 +2470,14 @@ exports.updateApplicationStatus = async (req, res) => {
       const normalizedDeclineComment = String(declineComment || '').trim();
       const normalizedDeclinedFrom = String(declinedFrom || '').trim();
 
-      if (!normalizedDeclineReason) {
+      if (!normalizedDeclineReason && !normalizedDeclineComment) {
         return res.status(400).json({
           success: false,
-          message: 'Decline reason is required when declining an application'
+          message: 'A decline reason or comment is required when declining an application'
         });
       }
 
-      if (!VALID_DECLINE_REASONS.includes(normalizedDeclineReason)) {
+      if (normalizedDeclineReason && !VALID_DECLINE_REASONS.includes(normalizedDeclineReason)) {
         return res.status(400).json({
           success: false,
           message: 'Invalid decline reason selected'

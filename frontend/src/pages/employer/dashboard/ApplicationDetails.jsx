@@ -1108,6 +1108,7 @@ const DeclineReasonModal = ({ open, applicantName, reasons, selectedReason, comm
   if (!open) return null;
 
   const commentLength = String(comment || '').length;
+  const canSubmit = Boolean(String(selectedReason || '').trim() || String(comment || '').trim()) && !submitting;
 
   return (
     <div
@@ -1147,7 +1148,7 @@ const DeclineReasonModal = ({ open, applicantName, reasons, selectedReason, comm
               <button
                 key={reason}
                 type="button"
-                onClick={() => onReasonChange(reason)}
+                onClick={() => onReasonChange(selectedReason === reason ? '' : reason)}
                 disabled={submitting}
                 className={cn(
                   'min-h-[56px] rounded-lg border px-4 py-3 text-[13px] font-medium leading-[18px] transition disabled:cursor-not-allowed disabled:opacity-60',
@@ -1193,7 +1194,7 @@ const DeclineReasonModal = ({ open, applicantName, reasons, selectedReason, comm
 
           <button
             type="button"
-            disabled={!selectedReason || submitting}
+            disabled={!canSubmit}
             onClick={onConfirm}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#c8191f] px-5 text-sm font-semibold text-white transition hover:bg-[#aa151a] disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -1228,9 +1229,6 @@ const StatusConfirmationModal = ({
 
   const isInterview = action === 'for interview';
   const title = isInterview ? 'Move applicant to For Interview?' : 'Mark applicant as hired?';
-  const description = isInterview
-    ? `Are you sure you want to move ${applicantName} to the For Interview stage?`
-    : `Are you sure you want to mark ${applicantName} as hired?`;
   const confirmLabel = isInterview ? 'Move to For Interview' : 'Confirm Hired';
   const iconName = isInterview ? 'calendar' : 'check';
 
@@ -1255,7 +1253,11 @@ const StatusConfirmationModal = ({
                 {title}
               </h2>
               <p className="mt-2 text-sm leading-6 text-gray-500">
-                {description}
+                {isInterview ? (
+                  <>Are you sure you want to move <strong className="font-bold text-gray-900">{applicantName}</strong> to the For Interview stage?</>
+                ) : (
+                  <>Are you sure you want to mark <strong className="font-bold text-gray-900">{applicantName}</strong> as hired?</>
+                )}
               </p>
             </div>
           </div>
@@ -1715,7 +1717,7 @@ const MessagePopup = ({ open, onClose, applicant, application }) => {
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/45 p-3 sm:p-5">
-      <div className="relative flex h-[84vh] min-h-[600px] w-full max-w-6xl overflow-hidden rounded-[24px] border border-[#e6edf5] bg-white shadow-2xl">
+      <div className="relative flex h-[84vh] min-h-[600px] w-full max-w-4xl overflow-hidden rounded-[24px] border border-[#e6edf5] bg-white shadow-2xl">
         <button
           type="button"
           onClick={onClose}
@@ -1725,7 +1727,7 @@ const MessagePopup = ({ open, onClose, applicant, application }) => {
           <SvgIcon name="x" className="h-5 w-5" />
         </button>
 
-        <aside className="flex w-[350px] min-w-[310px] flex-col border-r border-[#e6edf5] bg-white">
+        <aside className="hidden">
           <div className="border-b border-[#e6edf5] p-4">
             <div>
               <h2 className="text-base font-semibold text-gray-900">Messages</h2>
@@ -1887,9 +1889,9 @@ const MessagePopup = ({ open, onClose, applicant, application }) => {
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-bold text-gray-900">{selectedName}</p>
                   <p className="truncate text-sm text-gray-600">
-                    {selectedJobTitle !== 'Job Seeker'
-                      ? `Applied for: ${selectedJobTitle}`
-                      : selectedJobTitle}
+                    {selectedJobTitle !== 'Job Seeker' ? (
+                      <>Applied for: <strong className="font-bold text-gray-900">{selectedJobTitle}</strong></>
+                    ) : selectedJobTitle}
                   </p>
                 </div>
 
@@ -2334,13 +2336,13 @@ const ApplicationDetails = () => {
       ['Double Degree', profile.studyField],
       ['Salary', salary],
       ['Nationality', profile.nationality],
-      ['Height', profile.height],
     ],
     [
+      ['Height', profile.height],
       ['Weight', profile.weight],
       ['Gender', profile.gender],
       ['Civil Status', profile.civilStatus],
-      ['Birthday', profile.birthday],
+      ['Birthday', formatDate(profile.birthday, { month: 'long', day: 'numeric', year: 'numeric' })],
     ],
   ];
   const hasPersonalInformation = hasMeaningfulResumeRows(personalInformationColumns);
@@ -2400,7 +2402,7 @@ const ApplicationDetails = () => {
                   {application.job?._id || application.job ? (
                     <Link
                       to={`/employer/manage-jobs/${application.job?._id || application.job}/view`}
-                      className="font-semibold text-[#174b91] transition hover:text-[#2e66a6] hover:underline focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
+                      className="font-semibold text-[#174b91] underline underline-offset-2 transition hover:text-[#2e66a6] focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
                     >
                       {application.job?.title || 'Job Position'}
                     </Link>
@@ -2418,21 +2420,23 @@ const ApplicationDetails = () => {
             </div>
             <JobSeekerLevelBadgeCard currentRank={jobSeekerLevel.currentRank} />
           </div>
-          <div className="flex border-t border-[#d8e2ee] px-5 sm:px-7"><button onClick={() => setActiveTab('resume')} className={cn('relative flex h-14 items-center gap-2 px-3 text-sm font-semibold', activeTab === 'resume' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="resume" className="h-4 w-4" /> Resume<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'resume' ? 'bg-[#174b91]' : '')} /></button><button onClick={() => setActiveTab('activity')} className={cn('relative flex h-14 items-center gap-2 px-5 text-sm font-semibold', activeTab === 'activity' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="activity" className="h-4 w-4" /> Activity<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'activity' ? 'bg-[#174b91]' : '')} /></button></div>
+          <div className="flex items-center justify-between border-t border-[#d8e2ee] px-5 sm:px-7">
+            <div className="flex items-center">
+              <button onClick={() => setActiveTab('resume')} className={cn('relative flex h-14 items-center gap-2 px-3 text-sm font-semibold', activeTab === 'resume' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="resume" className="h-4 w-4" /> Resume<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'resume' ? 'bg-[#174b91]' : '')} /></button>
+              <button onClick={() => setActiveTab('activity')} className={cn('relative flex h-14 items-center gap-2 px-5 text-sm font-semibold', activeTab === 'activity' ? 'text-[#174b91]' : 'text-gray-500')}><SvgIcon name="activity" className="h-4 w-4" /> Activity<span className={cn('absolute bottom-0 left-0 right-0 h-[3px]', activeTab === 'activity' ? 'bg-[#174b91]' : '')} /></button>
+            </div>
+            <button
+              type="button"
+              onClick={openFullResumePreview}
+              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 hover:text-[#174b91] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
+            >
+              <SvgIcon name="eye" className="h-4 w-4" />
+              Full Resume
+            </button>
+          </div>
 
           {activeTab === 'resume' ? (
             <div className="border-t border-[#d8e2ee] bg-white px-5 pb-6 pt-3 sm:px-7 lg:px-8">
-              <div className="flex justify-end pb-2">
-                <button
-                  type="button"
-                  onClick={openFullResumePreview}
-                  className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 hover:text-[#174b91] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
-                >
-                  <SvgIcon name="eye" className="h-4 w-4" />
-                  Full Resume
-                </button>
-              </div>
-
               <article className="mx-auto w-full bg-white font-serif text-[10px] leading-[1.22] text-black">
                 <header className="relative flex min-h-[110px] flex-col items-center justify-center pb-4 text-center">
                   <AutoFitResumeHeaderName profileImageRef={resumeProfileImageRef}>
@@ -2564,7 +2568,7 @@ const ApplicationDetails = () => {
                 ) : null}
 
                 {meaningfulProfileSections.length || meaningfulReferences.length ? (
-                  <div className="relative max-h-[170px] overflow-hidden">
+                  <div>
                     {meaningfulProfileSections.map(([sectionTitle, items]) => (
                       <section key={sectionTitle} className="pt-2">
                         <h3 className="border-b border-black text-[11px] font-bold uppercase">{sectionTitle}</h3>
@@ -2612,7 +2616,6 @@ const ApplicationDetails = () => {
                       </section>
                     ) : null}
 
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white via-white/90 to-transparent" />
                   </div>
                 ) : null}
 
@@ -2622,7 +2625,7 @@ const ApplicationDetails = () => {
         </main>
 
         <aside className="space-y-5">
-          <div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5"><h2 className="text-lg font-bold">Employer Actions</h2>{isAlreadyEmployed ? <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">This applicant is already employed through another job application.</p> : null}<div className="mt-5 space-y-3">{!isAlreadyEmployed && currentStatus === 'pending' ? <button onClick={() => setConfirmationAction('for interview')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="calendar" /> Move to For Interview</button> : null}{!isAlreadyEmployed && currentStatus === 'for interview' ? <button onClick={() => setConfirmationAction('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="check" /> Hired</button> : null}{!isAlreadyEmployed ? <button onClick={() => setMessageOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91]"><SvgIcon name="message" /> Send Message</button> : null}{(isAlreadyEmployed || ['pending', 'for interview'].includes(currentStatus)) ? <button onClick={() => setDeclineOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400 px-4 py-3 text-sm font-semibold text-red-600"><SvgIcon name="x" /> Decline Application</button> : null}</div></div>
+          <div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5"><h2 className="text-lg font-bold">Employer Actions</h2>{isAlreadyEmployed ? <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">This applicant is already employed through another job application.</p> : null}<div className="mt-5 space-y-3">{!isAlreadyEmployed && currentStatus === 'pending' ? <button onClick={() => setConfirmationAction('for interview')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="calendar" /> Move to For Interview</button> : null}{!isAlreadyEmployed && currentStatus === 'for interview' ? <button onClick={() => setConfirmationAction('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#159447] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#117a3a] disabled:opacity-50"><SvgIcon name="check" /> Hired</button> : null}{!isAlreadyEmployed ? <button onClick={() => setMessageOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91]"><SvgIcon name="message" /> Send Message</button> : null}{(isAlreadyEmployed || ['pending', 'for interview'].includes(currentStatus)) ? <button onClick={() => setDeclineOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400 px-4 py-3 text-sm font-semibold text-red-600"><SvgIcon name="x" /> Decline Application</button> : null}</div></div>
           <div className="rounded-[20px] border border-[#d8e2ee] bg-white p-5 sm:p-6">
             <h2 className="text-[18px] font-bold text-gray-900">Application Summary</h2>
 

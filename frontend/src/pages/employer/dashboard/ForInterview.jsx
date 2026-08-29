@@ -712,7 +712,7 @@ const DeclineReasonModal = ({
 
   if (!open) return null;
 
-  const canSubmit = !!selectedReason && !isSubmitting;
+  const canSubmit = Boolean(String(selectedReason || '').trim() || String(comment || '').trim()) && !isSubmitting;
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center px-4 py-6">
@@ -765,7 +765,7 @@ const DeclineReasonModal = ({
                 <button
                   key={reason}
                   type="button"
-                  onClick={() => onReasonChange(reason)}
+                  onClick={() => onReasonChange(isSelected ? '' : reason)}
                   disabled={isSubmitting}
                   className={cn(
                     'min-h-[84px] rounded-2xl border px-4 py-4 text-center text-sm font-medium leading-7 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60',
@@ -795,11 +795,6 @@ const DeclineReasonModal = ({
             className="w-full rounded-2xl border border-gray-200 px-4 py-4 text-sm text-gray-900 placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60"
           />
 
-          {!selectedReason && (
-            <div className="mt-3 text-sm font-medium text-red-600">
-              Please select a decline reason before continuing.
-            </div>
-          )}
         </div>
 
         <div className="flex items-center justify-end gap-3 px-6 pb-6 sm:px-8">
@@ -1650,8 +1645,8 @@ const ForInterview = () => {
     const selectedReason = declineReason.trim();
     const comment = declineComment.trim();
 
-    if (!selectedReason) {
-      setError('Please select a decline reason before declining the application.');
+    if (!selectedReason && !comment) {
+      setError('Please select a decline reason or enter a comment before declining the application.');
       return;
     }
 
@@ -1914,7 +1909,7 @@ const selectBase =
         <div className="mb-6">
           <h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">For Interview</h1>
           <p className="mt-1 text-sm text-gray-600">
-            Applicants selected for interview
+            Applicants selected to move forward to the interview stage.
           </p>
         </div>
 
