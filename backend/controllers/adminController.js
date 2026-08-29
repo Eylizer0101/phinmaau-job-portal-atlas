@@ -301,6 +301,54 @@ const EMPLOYER_DOC_LABELS = {
   businessPermit: 'Business Permit',
 };
 
+const areAllEmployerCredentialsApproved = (docs = {}) =>
+  EMPLOYER_DOC_TYPES.every((docType) => {
+    const document = docs?.[docType];
+    return Boolean(
+      document?.url &&
+      (document?.checked === true || String(document?.status || '').toLowerCase() === 'approved')
+    );
+  });
+
+const automaticallyApproveEmployerAccount = async (employer) => {
+  const docs = employer?.employerProfile?.verificationDocs;
+  if (!docs || docs.overallStatus === 'verified' || !areAllEmployerCredentialsApproved(docs)) {
+    return { approved: false };
+  }
+
+  const newUsername = employer.username || await generateUniqueUsername({
+    role: 'employer',
+    companyName: employer?.employerProfile?.companyName || employer?.firstName || 'employer',
+    firstName: employer.firstName,
+    lastName: employer.lastName,
+  });
+  const temporaryPassword = generateTempPassword();
+
+  docs.overallStatus = 'verified';
+  docs.remarks = '';
+  docs.rejectionReasons = [];
+  docs.rejectionMessage = '';
+  docs.rejectedAt = null;
+  employer.username = newUsername;
+  employer.status = 'active';
+  employer.password = await bcrypt.hash(temporaryPassword, 12);
+  employer.mustChangePassword = true;
+
+  await employer.save();
+
+  sendCredentialsEmail({
+    to: employer.email,
+    fullName: employer.fullName || employer.email,
+    username: newUsername,
+    temporaryPassword,
+    role: 'Employer',
+  }).catch((emailError) => {
+    console.error('Failed to send automatic employer approval email:', emailError);
+  });
+
+  return { approved: true, username: newUsername };
+};
+
 // ==========================
 // ✅ HELPERS: secure document delivery for Cloudinary credentials
 // ==========================
@@ -2830,6 +2878,20 @@ const markVerificationDocumentChecked = async (req, res, role) => {
       return res.status(400).json({ success: false, message: 'This document has not been submitted.' });
     }
 
+    if (document.checked === true || String(document.status || '').toLowerCase() === 'approved') {
+      return res.status(200).json({
+        success: true,
+        message: `${role === 'employer' ? EMPLOYER_DOC_LABELS[docType] : JOBSEEKER_DOC_LABELS[docType] || 'Credential'} is already approved.`,
+        document: {
+          status: 'approved',
+          checked: true,
+          checkedAt: document.checkedAt || null,
+          checkedBy: document.checkedBy || null,
+        },
+        accountAutoApproved: false,
+      });
+    }
+
     const wasAccountVerified = role === 'jobseeker'
       ? isApprovedJobseekerAccount(user)
       : user.isVerified === true;
@@ -2844,7 +2906,15 @@ const markVerificationDocumentChecked = async (req, res, role) => {
       user.jobSeekerProfile.verificationStatus = 'verified';
       user.isVerified = true;
     }
-    await user.save();
+
+    let accountAutoApproved = false;
+    if (role === 'employer' && areAllEmployerCredentialsApproved(docs)) {
+      const automaticApproval = await automaticallyApproveEmployerAccount(user);
+      accountAutoApproved = automaticApproval.approved;
+      if (!automaticApproval.approved) await user.save();
+    } else {
+      await user.save();
+    }
 
     if (role === 'jobseeker' && wasAccountVerified) {
       await createJobseekerCredentialNotification({ user, docType, action: 'approved' });
@@ -2852,10 +2922,14 @@ const markVerificationDocumentChecked = async (req, res, role) => {
 
     return res.status(200).json({
       success: true,
-      message: role === 'jobseeker'
-        ? `${JOBSEEKER_DOC_LABELS[docType] || 'Credential'} approved successfully.`
-        : 'Document marked as checked.',
+      message: accountAutoApproved
+        ? 'All company credentials have been approved. The Employer account has been approved automatically.'
+        : role === 'jobseeker'
+          ? `${JOBSEEKER_DOC_LABELS[docType] || 'Credential'} approved successfully.`
+          : `${EMPLOYER_DOC_LABELS[docType] || 'Company requirement'} approved successfully.`,
       document: { status: document.status, checked: true, checkedAt: document.checkedAt, checkedBy: document.checkedBy },
+      accountAutoApproved,
+      overallStatus: docs.overallStatus,
     });
   } catch (error) {
     console.error('Error checking verification document:', error);

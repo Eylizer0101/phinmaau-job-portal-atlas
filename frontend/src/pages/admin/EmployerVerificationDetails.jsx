@@ -1002,7 +1002,11 @@ const EmployerVerificationDetails = () => {
         {},
         { headers: { "x-admin-password": approvalPassword } }
       );
-      setSuccess(response.data?.message || "Company requirement approved successfully.");
+      setSuccess(
+        response.data?.accountAutoApproved
+          ? "All company credentials have been approved. The Employer account has been approved automatically."
+          : response.data?.message || "Company requirement approved successfully."
+      );
       setVerifyCredential(null);
       setApprovalPassword("");
       await fetchDetails();
@@ -1279,6 +1283,7 @@ const EmployerVerificationDetails = () => {
               {DOC_TYPES.map((docType, index) => {
                 const doc = docs?.[docType.key] || {};
                 const hasFile = Boolean(doc.url);
+                const credentialApproved = doc.checked === true || String(doc.status || "").toLowerCase() === "approved";
                 const fileName = doc.filename || getFileName(doc.url || "") || docType.label;
                 const fileSize = doc.fileSize
                   ? doc.fileSize < 1024 * 1024
@@ -1299,6 +1304,19 @@ const EmployerVerificationDetails = () => {
                         {docType.label}
                       </h3>
                     </div>
+
+                    <span
+                      className={cn(
+                        "mt-2 inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                        credentialApproved
+                          ? "bg-emerald-50 text-emerald-700"
+                          : hasFile
+                            ? "bg-amber-50 text-amber-700"
+                            : "bg-slate-100 text-slate-500"
+                      )}
+                    >
+                      {credentialApproved ? "Approved" : hasFile ? "Pending" : "Not submitted"}
+                    </span>
 
                     <div className="mt-3 min-h-[46px] flex-1">
                       <p className="truncate text-[11px] font-semibold text-black" title={fileName}>
@@ -1327,10 +1345,12 @@ const EmployerVerificationDetails = () => {
                           <button
                             type="button"
                             onClick={() => requestCredentialAccess("approveCredential", docType.key, docType.label)}
-                            disabled={action !== null || doc.checked || doc.status === "approved"}
+                            disabled={action !== null || credentialApproved}
                             className={cn(
-                              "flex h-9 items-center justify-center rounded-lg border border-[#D9E2EC] bg-[#F8FAFC] text-[#667085] shadow-sm hover:bg-[#F1F5F9] disabled:opacity-50",
-                              (doc.checked || doc.status === "approved") && "border-emerald-200 bg-emerald-50 text-emerald-600",
+                              "flex h-9 items-center justify-center rounded-lg border border-[#D9E2EC] bg-[#F8FAFC] text-[#667085] shadow-sm hover:bg-[#F1F5F9] disabled:cursor-not-allowed",
+                              credentialApproved
+                                ? "border-emerald-300 bg-emerald-50 text-emerald-600 disabled:opacity-100"
+                                : "disabled:opacity-50",
                               UI.ring
                             )}
                             aria-label={`Approve ${docType.label}`}
