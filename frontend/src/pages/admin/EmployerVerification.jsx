@@ -27,6 +27,12 @@ const Icon = ({ name, className = "h-5 w-5", ...props }) => {
         <path strokeLinecap="round" strokeLinejoin="round" d="M20 9A8 8 0 006.3 5.3L4 10M4 15a8 8 0 0013.7 3.7L20 14" />
       </>
     ),
+    restore: (
+      <>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h6V4" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.93 19.07A9 9 0 1012 3a9 9 0 00-7.07 3.43L3 10" />
+      </>
+    ),
     eye: (
       <>
         <path
@@ -1122,7 +1128,7 @@ const EmployerVerification = () => {
                 </select>
               </div>
 
-              <div>
+              {!archiveMode ? <div>
                 <select
                   value={filters.status}
                   onChange={(e) => onChangeFilter("status", e.target.value)}
@@ -1136,7 +1142,7 @@ const EmployerVerification = () => {
                     </option>
                   ))}
                 </select>
-              </div>
+              </div> : null}
 
               <div>
                 <DateFilterDropdown
@@ -1178,11 +1184,12 @@ const EmployerVerification = () => {
                   <table className="w-full table-fixed">
                     <thead className="bg-slate-50 border-b border-gray-100">
                       <tr>
-                        <th className="w-[14%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{archiveMode ? "Date Declined" : "Date Registered"}</th>
+                        <th className="w-[13%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Registered</th>
                         <th className="w-[24%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Name</th>
                         <th className="w-[20%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Company</th>
                         <th className="w-[18%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Industry</th>
-                        <th className="w-[14%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Status</th>
+                        <th className="w-[12%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Status</th>
+                        {archiveMode ? <th className="w-[13%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Declined</th> : null}
                         <th className="w-[10%] px-4 py-4 text-right text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Actions</th>
                       </tr>
                     </thead>
@@ -1217,7 +1224,7 @@ const EmployerVerification = () => {
                             className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
                           >
                             <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-700">
-                              {formatDate(archiveMode ? item.rejectedAt : item.createdAt)}
+                              {formatDate(item.createdAt)}
                             </td>
 
                             <td className="px-4 py-4">
@@ -1248,6 +1255,11 @@ const EmployerVerification = () => {
                             </td>
 
                             <td className="px-4 py-4">{statusBadge(status)}</td>
+                            {archiveMode ? (
+                              <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-700">
+                                {formatDate(item.rejectedAt)}
+                              </td>
+                            ) : null}
                             <td className="px-4 py-4">
                               <div className="flex items-center justify-end gap-2">
                                 <Button
@@ -1259,7 +1271,17 @@ const EmployerVerification = () => {
                                 >
                                 
                                 </Button>
-                                {archiveMode ? <Button variant="secondary" size="sm" onClick={() => setRestoreTarget(item)} disabled={restoringId === item._id}>Restore</Button> : null}
+                                {archiveMode ? (
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    leftIcon={<Icon name="restore" className="h-4 w-4" />}
+                                    onClick={() => setRestoreTarget(item)}
+                                    disabled={restoringId === item._id}
+                                    title="Restore"
+                                    aria-label={`Restore ${companyName}`}
+                                  />
+                                ) : null}
                               </div>
                             </td>
                           </tr>
@@ -1310,6 +1332,11 @@ const EmployerVerification = () => {
                                 <span className="ml-1 block truncate whitespace-nowrap" title={cityProvince}>{cityProvince}</span>
                               </div>
                               <div className="col-span-2">{statusBadge(status)}</div>
+                              {archiveMode ? (
+                                <div className="col-span-2">
+                                  <span className="font-semibold text-gray-800">Declined:</span> {formatDate(item.rejectedAt)}
+                                </div>
+                              ) : null}
                             </div>
 
                             <div className="mt-4 flex justify-end gap-2">
@@ -1317,7 +1344,17 @@ const EmployerVerification = () => {
                                 <Icon name="eye" className="h-4 w-4" />
                               </IconButton>
 
-                              {archiveMode ? <Button variant="secondary" size="sm" onClick={() => setRestoreTarget(item)} disabled={restoringId === item._id}>Restore</Button> : null}
+                              {archiveMode ? (
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  leftIcon={<Icon name="restore" className="h-4 w-4" />}
+                                  onClick={() => setRestoreTarget(item)}
+                                  disabled={restoringId === item._id}
+                                  title="Restore"
+                                  aria-label={`Restore ${companyName}`}
+                                />
+                              ) : null}
 
                               {!archiveMode ? <IconButton
                                 label={`Delete ${companyName}`}

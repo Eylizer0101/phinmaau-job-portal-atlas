@@ -82,6 +82,12 @@ const SvgIcon = ({ name, className = "w-5 h-5" }) => {
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
+    restore: (
+      <>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h6V4" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.93 19.07A9 9 0 1012 3a9 9 0 00-7.07 3.43L3 10" />
+      </>
+    ),
     x: (
       <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 9l-6 6m0-6l6 6" />
@@ -608,6 +614,9 @@ const EmployerVerificationDetails = () => {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [pendingCredentialAction, setPendingCredentialAction] = useState(null);
   const [showCredentialPassword, setShowCredentialPassword] = useState(false);
+  const [approvalPassword, setApprovalPassword] = useState("");
+  const [verifyCredential, setVerifyCredential] = useState(null);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [holdDocTypes, setHoldDocTypes] = useState([]);
   const [holdSelectedReason, setHoldSelectedReason] = useState("");
   const [holdReason, setHoldReason] = useState("");
@@ -656,6 +665,9 @@ const EmployerVerificationDetails = () => {
   const logoUrl = toPublicUrl(company.companyLogo);
 
   const docs = employer?.employerProfile?.verificationDocs || {};
+  const firstSubmittedDocument = DOC_TYPES.find(
+    (docType) => Boolean(docs?.[docType.key]?.url),
+  );
   const overallStatus = docs?.overallStatus || "unverified";
   const isVerified = normalizeStatus(overallStatus) === "verified";
   const isRejected = normalizeStatus(overallStatus) === "rejected";
@@ -722,10 +734,12 @@ const EmployerVerificationDetails = () => {
       const res = await api.put(`/admin/employers/verification/${employerId}/status`, {
         overallStatus: normalizeStatus(newStatus),
         remarks: (remarks || "").trim(),
+        ...(normalizeStatus(newStatus) === "verified" ? { adminPassword: approvalPassword } : {}),
       });
 
       if (res.data?.success) {
         setSuccess(res.data.message || "Updated successfully.");
+        setApprovalPassword("");
         await fetchDetails();
       } else {
         setError("Failed to update verification.");
@@ -899,12 +913,27 @@ const EmployerVerificationDetails = () => {
           pendingCredentialAction.docType,
           credentialPassword
         );
-      } else {
+      } else if (pendingCredentialAction.action === "download") {
         await performDownloadDocument(
           pendingCredentialAction.docType,
           pendingCredentialAction.label,
           credentialPassword
         );
+      } else {
+        await fetchDocumentBlob(
+          pendingCredentialAction.docType,
+          "inline",
+          credentialPassword
+        );
+        setApprovalPassword(credentialPassword);
+        if (pendingCredentialAction.action === "approveAccount") {
+          openConfirm("verified");
+        } else if (pendingCredentialAction.action === "approveCredential") {
+          setVerifyCredential({
+            key: pendingCredentialAction.docType,
+            label: pendingCredentialAction.label,
+          });
+        }
       }
 
       setShowPasswordModal(false);
@@ -948,6 +977,41 @@ const EmployerVerificationDetails = () => {
 
   const downloadDoc = (docType, fallbackName = "document") => {
     requestCredentialAccess("download", docType, fallbackName);
+  };
+
+  const approveDocument = async (docType) => {
+    try {
+      setAction(`approve-${docType}`);
+      setError("");
+      const response = await api.patch(
+        `/admin/employers/verification/${employerId}/docs/${docType}/check`,
+        {},
+        { headers: { "x-admin-password": approvalPassword } }
+      );
+      setSuccess(response.data?.message || "Company requirement approved successfully.");
+      setVerifyCredential(null);
+      setApprovalPassword("");
+      await fetchDetails();
+    } catch (approveError) {
+      setError(approveError.response?.data?.message || "Unable to approve this company requirement.");
+    } finally {
+      setAction(null);
+    }
+  };
+
+  const restoreEmployer = async () => {
+    try {
+      setAction("restore");
+      setError("");
+      const response = await api.patch(`/admin/employers/verification/${employerId}/restore`);
+      setSuccess(response.data?.message || "Employer restored successfully.");
+      setShowRestoreModal(false);
+      await fetchDetails();
+    } catch (restoreError) {
+      setError(restoreError.response?.data?.message || "Unable to restore employer.");
+    } finally {
+      setAction(null);
+    }
   };
 
   const openConfirm = (nextStatus) => {
@@ -1073,7 +1137,7 @@ const EmployerVerificationDetails = () => {
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => openConfirm("verified")}
+                  onClick={() => firstSubmittedDocument && requestCredentialAccess("approveAccount", firstSubmittedDocument.key, "approve this Employer")}
                   disabled={!docsComplete || action !== null || !canTransition(overallStatus, "verified")}
                   className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white hover:bg-[#255587] disabled:cursor-not-allowed disabled:opacity-50", UI.ring)}
                 >
@@ -1100,7 +1164,14 @@ const EmployerVerificationDetails = () => {
                 </button>
               </div>
             ) : (
-              statusBadge(overallStatus)
+              <div className="flex items-center gap-2">
+                {statusBadge(overallStatus)}
+                {isRejected ? (
+                  <button type="button" onClick={() => setShowRestoreModal(true)} disabled={action !== null} className={cn("inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[#2e66a6] text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:opacity-50", UI.ring)} aria-label={`Restore ${companyName}`} title="Restore">
+                    <SvgIcon name="restore" className="h-4 w-4" />
+                  </button>
+                ) : null}
+              </div>
             )}
           </div>
 
@@ -1218,7 +1289,7 @@ const EmployerVerificationDetails = () => {
                     </div>
 
                     {hasFile ? (
-                      <div className="mt-3 grid grid-cols-2 gap-1.5">
+                      <div className="mt-3 grid grid-cols-3 gap-1.5">
                         <button
                           type="button"
                           onClick={() => openDoc(docType.key, docType.label)}
@@ -1245,6 +1316,21 @@ const EmployerVerificationDetails = () => {
                           title={`Download ${docType.label}`}
                         >
                           <SvgIcon name="download" className="h-4 w-4" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => requestCredentialAccess("approveCredential", docType.key, docType.label)}
+                          disabled={action !== null || doc.checked || doc.status === "approved"}
+                          className={cn(
+                            "flex h-8 items-center justify-center rounded border border-black/15 bg-white text-black/70 hover:bg-black/5 disabled:opacity-50",
+                            (doc.checked || doc.status === "approved") && "border-emerald-200 bg-emerald-50 text-emerald-600",
+                            UI.ring
+                          )}
+                          aria-label={`Approve ${docType.label}`}
+                          title={`Approve ${docType.label}`}
+                        >
+                          <SvgIcon name="check" className="h-4 w-4" />
                         </button>
                       </div>
                     ) : (
@@ -1289,6 +1375,50 @@ const EmployerVerificationDetails = () => {
         </div>
       </div>
 
+      {showRestoreModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="restore-employer-title">
+            <div className="px-6 pt-6">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#2e66a6]/10 text-[#2e66a6]"><SvgIcon name="restore" className="h-6 w-6" /></div>
+              <h3 id="restore-employer-title" className="mt-4 text-center text-xl font-bold text-black">Restore {companyName}</h3>
+              <p className="mt-2 text-center text-sm leading-6 text-black/65">Are you sure you want to restore <strong>{companyName}</strong>? This action will allow the Employer to proceed with verification and review process again.</p>
+            </div>
+            <div className="mt-6 grid grid-cols-2 gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4">
+              <button type="button" onClick={() => setShowRestoreModal(false)} disabled={action !== null} className={cn("h-10 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-black", UI.ring)}>Cancel</button>
+              <button type="button" onClick={restoreEmployer} disabled={action !== null} className={cn("h-10 rounded-lg bg-[#2e66a6] text-sm font-bold text-white disabled:opacity-50", UI.ring)}>{action === "restore" ? "Restoring..." : "Restore"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {verifyCredential && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="approve-employer-credential-title">
+            <div className="flex items-start justify-between px-5 pt-5">
+              <div>
+                <h3 id="approve-employer-credential-title" className="text-lg font-bold text-black">
+                  Approve {verifyCredential.label} Credential?
+                </h3>
+                <p className="mt-1 text-sm text-[#2e66a6]">
+                  This will confirm that the <strong>{verifyCredential.label}</strong> credential has been reviewed and verified.
+                </p>
+              </div>
+              <button type="button" onClick={() => setVerifyCredential(null)} disabled={Boolean(action)} className="rounded p-1 text-black/60 hover:bg-black/5" aria-label="Close">
+                <SvgIcon name="x" className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="mt-5 flex justify-end gap-2 border-t border-slate-100 bg-slate-50 px-5 py-4">
+              <button type="button" onClick={() => setVerifyCredential(null)} disabled={Boolean(action)} className={cn("h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-black shadow-sm", UI.ring)}>
+                Cancel
+              </button>
+              <button type="button" onClick={() => approveDocument(verifyCredential.key)} disabled={Boolean(action)} className={cn("inline-flex h-10 items-center justify-center rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white shadow-sm hover:bg-[#255587] disabled:opacity-50", UI.ring)}>
+                {action ? "Approving..." : "Approve"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showPasswordModal && (
         <div className="fixed inset-0 z-[60] overflow-y-auto">
           <div className="flex min-h-screen items-center justify-center p-4">
@@ -1327,7 +1457,9 @@ const EmployerVerificationDetails = () => {
                   Enter your admin password to{" "}
                   {pendingCredentialAction?.action === "download"
                     ? "download"
-                    : "view"}{" "}
+                    : pendingCredentialAction?.action === "view"
+                      ? "view"
+                      : "approve"}{" "}
                   {pendingCredentialAction?.label || "this credential"}.
                 </p>
 

@@ -113,6 +113,12 @@ const SvgIcon = ({ name, className = "w-5 h-5" }) => {
         />
       </svg>
     ),
+    restore: (
+      <>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h6V4" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.93 19.07A9 9 0 1012 3a9 9 0 00-7.07 3.43L3 10" />
+      </>
+    ),
     x: (
       <svg
         className={className}
@@ -648,6 +654,8 @@ const JobseekerVerificationDetails = () => {
   const [showCredentialPassword, setShowCredentialPassword] = useState(false);
   const [checkingDoc, setCheckingDoc] = useState("");
   const [verifyCredential, setVerifyCredential] = useState(null);
+  const [approvalPassword, setApprovalPassword] = useState("");
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
 
   const API_BASE = api?.defaults?.baseURL || "";
   const DEFAULT_DECLINE_MESSAGE =
@@ -912,12 +920,28 @@ const JobseekerVerificationDetails = () => {
           pendingCredentialAction.docType,
           credentialPassword,
         );
-      } else {
+      } else if (pendingCredentialAction.action === "download") {
         await performDownloadFile(
           pendingCredentialAction.docType,
           pendingCredentialAction.label,
           credentialPassword,
         );
+      } else {
+        await fetchDocumentBlob(
+          pendingCredentialAction.docType,
+          "inline",
+          credentialPassword,
+        );
+
+        setApprovalPassword(credentialPassword);
+        if (pendingCredentialAction.action === "approveAccount") {
+          setShowApproveModal(true);
+        } else if (pendingCredentialAction.action === "approveCredential") {
+          setVerifyCredential({
+            key: pendingCredentialAction.docType,
+            label: pendingCredentialAction.label,
+          });
+        }
       }
 
       setShowPasswordModal(false);
@@ -972,6 +996,8 @@ const JobseekerVerificationDetails = () => {
       setError("");
       const response = await api.patch(
         `/admin/jobseekers/verification/${id}/docs/${docType}/check`,
+        {},
+        { headers: { "x-admin-password": approvalPassword } },
       );
       setSuccess(response.data?.message || "Document marked as checked.");
       await fetchJobseekerDetails();
@@ -985,19 +1011,13 @@ const JobseekerVerificationDetails = () => {
   };
 
   const restoreJobseeker = async () => {
-    const name = jobseeker?.fullName || "this jobseeker";
-    if (
-      !window.confirm(
-        `Restore ${name}? This action will allow the jobseeker to proceed with verification and review again.`,
-      )
-    )
-      return;
     try {
       setActionLoading(true);
       const response = await api.patch(
         `/admin/jobseekers/verification/${id}/restore`,
       );
       setSuccess(response.data?.message || "Jobseeker restored successfully.");
+      setShowRestoreModal(false);
       await fetchJobseekerDetails();
     } catch (restoreError) {
       setError(
@@ -1077,6 +1097,7 @@ const JobseekerVerificationDetails = () => {
       const res = await api.put(`/admin/jobseekers/verification/${id}/status`, {
         overallStatus: newStatus,
         adminRemarks: remarks,
+        ...(newStatus === "verified" ? { adminPassword: approvalPassword } : {}),
         ...extraPayload,
       });
 
@@ -1091,6 +1112,7 @@ const JobseekerVerificationDetails = () => {
         setSuccess(`Jobseeker ${successLabel} successfully.`);
         await fetchJobseekerDetails();
         setShowApproveModal(false);
+        setApprovalPassword("");
         resetDeclineModal();
       } else {
         setError("Failed to update status.");
@@ -1249,6 +1271,9 @@ const JobseekerVerificationDetails = () => {
   const profile = jobseeker.jobSeekerProfile || {};
   const verificationSummary = jobseeker.verificationSummary || {};
   const documentDetails = jobseeker.documentDetails || {};
+  const firstSubmittedDocument = documentTypes.find(
+    (docType) => Boolean(documentDetails[docType.key]?.url),
+  );
 
   const overallStatus = verificationSummary.overallStatus || "not_submitted";
   const isApproved = overallStatus === "verified";
@@ -1348,7 +1373,7 @@ const JobseekerVerificationDetails = () => {
                   <>
                 <button
                   type="button"
-                  onClick={() => setShowApproveModal(true)}
+                  onClick={() => firstSubmittedDocument && requestCredentialAccess("approveAccount", firstSubmittedDocument.key, "approve this Job Seeker")}
                   disabled={actionLoading}
                   className={cn(
                     "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white shadow-sm hover:bg-[#255587] disabled:opacity-50",
@@ -1391,7 +1416,7 @@ const JobseekerVerificationDetails = () => {
                 {isRejected ? (
                   <button
                     type="button"
-                    onClick={restoreJobseeker}
+                    onClick={() => setShowRestoreModal(true)}
                     disabled={actionLoading}
                     className={cn(
                       "inline-flex h-10 items-center justify-center rounded-lg border border-[#2e66a6] px-4 text-sm font-bold text-[#2e66a6]",
@@ -1418,7 +1443,7 @@ const JobseekerVerificationDetails = () => {
                     <>
                   <button
                     type="button"
-                    onClick={() => setShowApproveModal(true)}
+                    onClick={() => firstSubmittedDocument && requestCredentialAccess("approveAccount", firstSubmittedDocument.key, "approve this Job Seeker")}
                     disabled={actionLoading}
                     className={cn(
                       "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white hover:bg-[#255587] disabled:opacity-50",
@@ -1461,7 +1486,7 @@ const JobseekerVerificationDetails = () => {
                   {isRejected ? (
                     <button
                       type="button"
-                      onClick={restoreJobseeker}
+                      onClick={() => setShowRestoreModal(true)}
                       disabled={actionLoading}
                       className={cn(
                         "inline-flex h-10 items-center justify-center rounded-lg border border-[#2e66a6] px-4 text-sm font-bold text-[#2e66a6]",
@@ -1490,7 +1515,7 @@ const JobseekerVerificationDetails = () => {
                 ))}
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 border-black/15 lg:border-l lg:pl-6">
                 {infoRowsRight.map(([label, value]) => (
                   <div
                     key={label}
@@ -1638,12 +1663,7 @@ const JobseekerVerificationDetails = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() =>
-                            setVerifyCredential({
-                              key: docType.key,
-                              label: docType.label,
-                            })
-                          }
+                          onClick={() => requestCredentialAccess("approveCredential", docType.key, docType.label)}
                           disabled={
                             checkingDoc === docType.key ||
                             credentialApproved ||
@@ -1679,6 +1699,22 @@ const JobseekerVerificationDetails = () => {
         </div>
       </div>
 
+      {showRestoreModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="restore-jobseeker-title">
+            <div className="px-6 pt-6">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#2e66a6]/10 text-[#2e66a6]"><SvgIcon name="restore" className="h-6 w-6" /></div>
+              <h3 id="restore-jobseeker-title" className="mt-4 text-center text-xl font-bold text-black">Restore {jobseeker?.fullName || "Job Seeker"}</h3>
+              <p className="mt-2 text-center text-sm leading-6 text-black/65">Are you sure you want to restore <strong>{jobseeker?.fullName || "this Job Seeker"}</strong>? This action will allow the Job Seeker to proceed with verification and review process again.</p>
+            </div>
+            <div className="mt-6 grid grid-cols-2 gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4">
+              <button type="button" onClick={() => setShowRestoreModal(false)} disabled={actionLoading} className={cn("h-10 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-black", UI.ring)}>Cancel</button>
+              <button type="button" onClick={restoreJobseeker} disabled={actionLoading} className={cn("h-10 rounded-lg bg-[#2e66a6] text-sm font-bold text-white disabled:opacity-50", UI.ring)}>{actionLoading ? "Restoring..." : "Restore"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {verifyCredential && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4">
           <div
@@ -1696,8 +1732,7 @@ const JobseekerVerificationDetails = () => {
                   Approve {verifyCredential.label} Credential?
                 </h3>
                 <p className="mt-1 text-sm text-[#2e66a6]">
-                  This will mark the {verifyCredential.label} credential as
-                  verified.
+                  This will confirm that the <strong>{verifyCredential.label}</strong> credential has been reviewed and verified.
                 </p>
               </div>
               <button
@@ -1735,7 +1770,7 @@ const JobseekerVerificationDetails = () => {
                   UI.ring,
                 )}
               >
-                {checkingDoc ? "Verifying..." : "Verify"}
+                {checkingDoc ? "Approving..." : "Approve"}
               </button>
             </div>
           </div>
@@ -1780,7 +1815,9 @@ const JobseekerVerificationDetails = () => {
                   Enter your admin password to{" "}
                   {pendingCredentialAction?.action === "download"
                     ? "download"
-                    : "view"}{" "}
+                    : pendingCredentialAction?.action === "view"
+                      ? "view"
+                      : "approve"}{" "}
                   {pendingCredentialAction?.label || "this credential"}.
                 </p>
 

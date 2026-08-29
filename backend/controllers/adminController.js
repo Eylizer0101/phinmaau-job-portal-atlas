@@ -11,6 +11,26 @@ const { sendCredentialsEmail, sendResubmitDocumentEmail, sendVerificationRejecte
 
 const DEFAULT_ADMIN_LOGO = '/images/phinma-logo.png';
 
+const isValidAdminPassword = async (req, rawPassword) => {
+  const password = String(rawPassword || '');
+  if (!password) return false;
+
+  const adminId = req.user?._id || req.userId;
+  const admin = await User.findById(adminId).select('+password role email');
+  if (!admin || admin.role !== 'admin') return false;
+
+  if (admin.password && await bcrypt.compare(password, admin.password)) return true;
+
+  const defaultAdminEmail = String(process.env.DEFAULT_ADMIN_EMAIL || '').trim().toLowerCase();
+  const defaultAdminPassword = String(process.env.DEFAULT_ADMIN_PASSWORD || '');
+  return Boolean(
+    defaultAdminEmail &&
+    defaultAdminPassword &&
+    String(admin.email || '').trim().toLowerCase() === defaultAdminEmail &&
+    password === defaultAdminPassword
+  );
+};
+
 const serializeAdminProfile = (admin) => ({
   id: admin._id,
   email: admin.email,
@@ -1751,7 +1771,11 @@ exports.getEmployerVerificationById = async (req, res) => {
 // UPDATE employer verification status
 exports.updateEmployerVerificationStatus = async (req, res) => {
   try {
-    const { overallStatus, remarks, rejectionReasons, rejectionMessage } = req.body;
+    const { overallStatus, remarks, rejectionReasons, rejectionMessage, adminPassword } = req.body;
+
+    if (overallStatus === 'verified' && !(await isValidAdminPassword(req, adminPassword))) {
+      return res.status(401).json({ success: false, message: 'Incorrect admin password.' });
+    }
 
     const valid = ['unverified', 'pending', 'hold', 'verified', 'rejected'];
     if (!valid.includes(overallStatus)) {
@@ -2430,7 +2454,11 @@ exports.getJobseekerVerificationById = async (req, res) => {
 // UPDATE jobseeker verification status
 exports.updateJobseekerVerificationStatus = async (req, res) => {
   try {
-    const { overallStatus, adminRemarks, rejectionReasons, rejectionMessage } = req.body;
+    const { overallStatus, adminRemarks, rejectionReasons, rejectionMessage, adminPassword } = req.body;
+
+    if (overallStatus === 'verified' && !(await isValidAdminPassword(req, adminPassword))) {
+      return res.status(401).json({ success: false, message: 'Incorrect admin password.' });
+    }
     const DEFAULT_JOBSEEKER_REJECTION_MESSAGE = 'Your verification request was rejected. Please contact support.';
 
     let adminId = null;
@@ -2778,6 +2806,11 @@ exports.getJobseekerVerificationDocUrls = async (req, res) => {
 
 const markVerificationDocumentChecked = async (req, res, role) => {
   try {
+    const adminPassword = String(req.headers['x-admin-password'] || '');
+    if (!(await isValidAdminPassword(req, adminPassword))) {
+      return res.status(401).json({ success: false, message: 'Incorrect admin password.' });
+    }
+
     const allowedTypes = role === 'employer' ? EMPLOYER_DOC_TYPES : JOBSEEKER_DOC_TYPES;
     const docType = String(req.params.docType || '');
     if (!allowedTypes.includes(docType)) {
