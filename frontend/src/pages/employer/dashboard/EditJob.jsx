@@ -2946,7 +2946,7 @@ const EditJob = () => {
                   </div>
                 </div>
                 <div className="border-t border-gray-200 bg-white px-6 py-4">
-                  <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
              
 
               <div className="flex flex-wrap items-center gap-2">
