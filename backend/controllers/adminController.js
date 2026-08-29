@@ -1822,11 +1822,7 @@ exports.updateEmployerVerificationStatus = async (req, res) => {
     const { overallStatus, remarks, rejectionReasons, rejectionMessage, adminPassword } = req.body;
 
     if (overallStatus === 'verified' && !(await isValidAdminPassword(req, adminPassword))) {
-      return res.status(422).json({
-        success: false,
-        code: 'ADMIN_PASSWORD_INVALID',
-        message: 'Incorrect admin password.',
-      });
+      return res.status(401).json({ success: false, message: 'Incorrect admin password.' });
     }
 
     const valid = ['unverified', 'pending', 'hold', 'verified', 'rejected'];
@@ -2509,11 +2505,7 @@ exports.updateJobseekerVerificationStatus = async (req, res) => {
     const { overallStatus, adminRemarks, rejectionReasons, rejectionMessage, adminPassword } = req.body;
 
     if (overallStatus === 'verified' && !(await isValidAdminPassword(req, adminPassword))) {
-      return res.status(422).json({
-        success: false,
-        code: 'ADMIN_PASSWORD_INVALID',
-        message: 'Incorrect admin password.',
-      });
+      return res.status(401).json({ success: false, message: 'Incorrect admin password.' });
     }
     const DEFAULT_JOBSEEKER_REJECTION_MESSAGE = 'Your verification request was rejected. Please contact support.';
 
@@ -2862,13 +2854,11 @@ exports.getJobseekerVerificationDocUrls = async (req, res) => {
 
 const markVerificationDocumentChecked = async (req, res, role) => {
   try {
-    const adminPassword = String(req.headers['x-admin-password'] || '');
-    if (!(await isValidAdminPassword(req, adminPassword))) {
-      return res.status(422).json({
-        success: false,
-        code: 'ADMIN_PASSWORD_INVALID',
-        message: 'Incorrect admin password.',
-      });
+    if (role === 'jobseeker') {
+      const adminPassword = String(req.headers['x-admin-password'] || '');
+      if (!(await isValidAdminPassword(req, adminPassword))) {
+        return res.status(401).json({ success: false, message: 'Incorrect admin password.' });
+      }
     }
 
     const allowedTypes = role === 'employer' ? EMPLOYER_DOC_TYPES : JOBSEEKER_DOC_TYPES;
@@ -3048,9 +3038,8 @@ exports.requireAdminPasswordForCredential = async (req, res, next) => {
     }
 
     if (!isPasswordValid) {
-      return res.status(422).json({
+      return res.status(401).json({
         success: false,
-        code: 'ADMIN_PASSWORD_INVALID',
         message: 'Incorrect password.',
       });
     }

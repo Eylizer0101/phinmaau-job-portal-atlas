@@ -999,8 +999,7 @@ const EmployerVerificationDetails = () => {
       setError("");
       const response = await api.patch(
         `/admin/employers/verification/${employerId}/docs/${docType}/check`,
-        {},
-        { headers: { "x-admin-password": approvalPassword } }
+        {}
       );
       setSuccess(
         response.data?.accountAutoApproved
@@ -1011,20 +1010,7 @@ const EmployerVerificationDetails = () => {
       setApprovalPassword("");
       await fetchDetails();
     } catch (approveError) {
-      const responseCode = approveError.response?.data?.code;
-      const responseMessage = approveError.response?.data?.message || "";
-      const isPasswordError =
-        responseCode === "ADMIN_PASSWORD_INVALID" ||
-        /^incorrect (admin )?password\.?$/i.test(responseMessage.trim());
-
-      if (isPasswordError) {
-        const credentialLabel = verifyCredential?.label || "credential";
-        setVerifyCredential(null);
-        requestCredentialAccess("approveCredential", docType, credentialLabel);
-        setPasswordError(responseMessage || "Incorrect password. Please try again.");
-      } else {
-        setError(responseMessage || "Unable to approve this company requirement.");
-      }
+      setError(approveError.response?.data?.message || "Unable to approve this company requirement.");
     } finally {
       setAction(null);
     }
