@@ -1121,8 +1121,8 @@ const EmployerVerificationDetails = () => {
           </Alert>
         )}
 
-        <div className="rounded-xl border border-black/15 bg-white p-4 shadow-sm sm:p-5">
-          <div className="mb-5 flex flex-col gap-4 border-b border-black/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="rounded-2xl border border-[#D9E2EC] bg-white p-5 shadow-[0_2px_6px_rgba(15,23,42,0.08)] sm:p-6">
+          <div className="mb-5 flex flex-col gap-4 border-b border-[#D9E2EC] pb-4 sm:flex-row sm:items-center sm:justify-between">
             <Link
               to="/admin/employer-verification"
               className={cn(
@@ -1133,31 +1133,43 @@ const EmployerVerificationDetails = () => {
               <SvgIcon name="back" className="h-4 w-4" />
               Back to List
             </Link>
+
             {canShowActionButtons ? (
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => firstSubmittedDocument && requestCredentialAccess("approveAccount", firstSubmittedDocument.key, "approve this Employer")}
                   disabled={!docsComplete || action !== null || !canTransition(overallStatus, "verified")}
-                  className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white hover:bg-[#255587] disabled:cursor-not-allowed disabled:opacity-50", UI.ring)}
+                  className={cn(
+                    "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white shadow-sm hover:bg-[#255587] disabled:cursor-not-allowed disabled:opacity-50",
+                    UI.ring
+                  )}
                 >
                   <SvgIcon name="check" className="h-4 w-4" />
                   Approve
                 </button>
+
                 <button
                   type="button"
                   onClick={() => setShowRejectModal(true)}
                   disabled={action !== null || !canTransition(overallStatus, "rejected")}
-                  className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#2e66a6] bg-white px-4 text-sm font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:cursor-not-allowed disabled:opacity-50", UI.ring)}
+                  className={cn(
+                    "inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#D6DEE8] bg-white px-4 text-sm font-bold text-black shadow-sm hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50",
+                    UI.ring
+                  )}
                 >
                   <SvgIcon name="x" className="h-4 w-4" />
                   Decline
                 </button>
+
                 <button
                   type="button"
                   onClick={() => setShowHoldModal(true)}
                   disabled={action !== null || !canTransition(overallStatus, "hold")}
-                  className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-black px-4 text-sm font-bold text-white hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-50", UI.ring)}
+                  className={cn(
+                    "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-black px-4 text-sm font-bold text-white shadow-sm hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-50",
+                    UI.ring
+                  )}
                 >
                   <SvgIcon name="pause" className="h-4 w-4" />
                   Hold
@@ -1167,7 +1179,17 @@ const EmployerVerificationDetails = () => {
               <div className="flex items-center gap-2">
                 {statusBadge(overallStatus)}
                 {isRejected ? (
-                  <button type="button" onClick={() => setShowRestoreModal(true)} disabled={action !== null} className={cn("inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[#2e66a6] text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:opacity-50", UI.ring)} aria-label={`Restore ${companyName}`} title="Restore">
+                  <button
+                    type="button"
+                    onClick={() => setShowRestoreModal(true)}
+                    disabled={action !== null}
+                    className={cn(
+                      "inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[#2e66a6] text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:opacity-50",
+                      UI.ring
+                    )}
+                    aria-label={`Restore ${companyName}`}
+                    title="Restore"
+                  >
                     <SvgIcon name="restore" className="h-4 w-4" />
                   </button>
                 ) : null}
@@ -1175,61 +1197,53 @@ const EmployerVerificationDetails = () => {
             )}
           </div>
 
-          <section className="rounded-xl border border-black/15 bg-white p-4 sm:p-5">
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2 text-[#2e66a6]">
-                <SvgIcon name="building" className="h-5 w-5" />
-                <h2 className="text-base font-bold">Employer Information</h2>
-              </div>
-
+          <section className="rounded-2xl border border-[#D9E2EC] bg-white p-5 sm:p-6">
+            <div className="mb-6 flex items-center gap-2 text-[#2e66a6]">
+              <SvgIcon name="building" className="h-5 w-5" />
+              <h2 className="text-base font-bold">Employer Information</h2>
             </div>
 
-            <div className="grid gap-5 lg:grid-cols-[1fr_1fr_220px]">
-              <div className="space-y-2">
-                {employerInfoLeft.map(([label, value]) => (
-                  <div key={label} className="grid grid-cols-[120px_1fr] gap-3 text-sm">
-                    <span className="text-black/60">{label}:</span>
-                    <span className="font-semibold text-black break-words">{value || "—"}</span>
-                  </div>
-                ))}
+            <div className="grid gap-6 lg:grid-cols-[1fr_1fr_190px] lg:items-center">
+              <div className="space-y-3">
+                {employerInfoLeft
+                  .filter(([label]) => label !== "Registration ID")
+                  .map(([label, value]) => (
+                    <div key={label} className="grid grid-cols-[145px_1fr] gap-4 text-sm">
+                      <span className="text-[#5B6472]">{label}:</span>
+                      <span className="break-words font-semibold text-black">{value || "—"}</span>
+                    </div>
+                  ))}
               </div>
 
-              <div className="space-y-2 border-black/15 lg:border-l lg:pl-6">
+              <div className="space-y-3 border-[#D9E2EC] lg:border-l lg:pl-7">
                 {employerInfoRight.map(([label, value]) => (
-                  <div key={label} className="grid grid-cols-[130px_1fr] gap-3 text-sm">
-                    <span className="text-black/60">{label}:</span>
-                    <span className="font-semibold text-black break-words">{value || "—"}</span>
+                  <div key={label} className="grid grid-cols-[150px_1fr] gap-4 text-sm">
+                    <span className="text-[#5B6472]">{label}:</span>
+                    <span className="break-words font-semibold text-black">{value || "—"}</span>
                   </div>
                 ))}
               </div>
 
               <div className="flex flex-col items-center justify-center text-center">
-                <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-2xl border border-black/15 bg-white shadow-sm">
+                <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-[#F1F5F9]">
                   {logoUrl && !logoFailed ? (
                     <img
                       src={logoUrl}
                       alt={`${companyName} logo`}
-                      className="h-full w-full object-contain"
+                      className="h-full w-full object-contain p-2"
                       onError={() => setLogoFailed(true)}
                     />
                   ) : (
-                    <SvgIcon name="building" className="h-14 w-14 text-[#94A3B8]" />
+                    <SvgIcon name="building" className="h-14 w-14 text-[#667085]" />
                   )}
                 </div>
 
-                <h3 className="mt-3 max-w-[200px] truncate text-base font-bold text-black" title={companyName}>
-                  {companyName}
-                </h3>
-                <p className="mt-1 max-w-[200px] text-xs text-black/60">
-                  {company.industry || "—"}
-                </p>
-
                 <span
                   className={cn(
-                    "mt-3 rounded-full border px-3 py-1 text-xs font-semibold",
+                    "mt-3 rounded-full px-3 py-1 text-xs font-semibold",
                     logoUrl
-                      ? "border-[#2e66a6]/25 bg-[#2e66a6]/10 text-[#2e66a6]"
-                      : "border-black/15 bg-white text-black/60"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "border border-[#D9E2EC] bg-white text-black/60"
                   )}
                 >
                   {logoUrl ? "Company Logo Submitted" : "No Company Logo"}
@@ -1238,11 +1252,13 @@ const EmployerVerificationDetails = () => {
             </div>
           </section>
 
-          <section className="mt-4 rounded-xl border border-black/15 bg-white p-4 sm:p-5">
-            <div className="mb-4 flex flex-wrap items-center gap-2">
+          <section className="mt-5 rounded-2xl border border-[#D9E2EC] bg-white p-5 sm:p-6">
+            <div className="mb-5 flex flex-wrap items-center gap-2">
               <SvgIcon name="doc" className="h-5 w-5 text-[#2e66a6]" />
               <h2 className="text-base font-bold text-[#2e66a6]">Company Requirements</h2>
-             
+              {docsComplete ? (
+                <span className="text-sm text-[#5B6472]">(All required documents have been submitted.)</span>
+              ) : null}
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -1259,118 +1275,66 @@ const EmployerVerificationDetails = () => {
                 return (
                   <article
                     key={docType.key}
-                    className="flex min-h-[160px] flex-col rounded-lg border border-black/15 bg-white p-3"
+                    className="flex min-h-[168px] flex-col rounded-xl border border-[#D9E2EC] bg-white p-3"
                   >
                     <div className="flex items-start gap-2">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2e66a6]/10 text-xs font-bold text-[#2e66a6]">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#F1F5F9] text-[11px] font-semibold text-[#526273]">
                         {index + 1}
                       </span>
-                      <h3 className="min-w-0 text-xs font-bold leading-5 text-black/75">
+                      <h3 className="min-w-0 text-xs font-bold leading-5 text-black">
                         {docType.label}
                       </h3>
                     </div>
 
-                    <div className="mt-3 flex flex-1 items-start gap-2">
-                      <div
-                        className={cn(
-                          "flex h-10 w-9 shrink-0 items-center justify-center rounded",
-                          hasFile ? "bg-red-50 text-red-600" : "bg-black/5 text-black/45"
-                        )}
-                      >
-                        <SvgIcon name="doc" className="h-5 w-5" />
-                      </div>
-
-                      <div className="min-w-0">
-                        <p className="truncate text-[11px] font-semibold text-black/75" title={fileName}>
-                          {hasFile ? fileName : "No file"}
-                        </p>
-                        {fileSize ? <p className="mt-1 text-[10px] text-black/45">({fileSize})</p> : null}
-                      </div>
+                    <div className="mt-3 min-h-[46px] flex-1">
+                      <p className="truncate text-[11px] font-semibold text-black" title={fileName}>
+                        {hasFile ? fileName : "No file"}
+                      </p>
+                      {fileSize ? <p className="mt-1 text-[10px] text-[#7A8492]">({fileSize})</p> : null}
                     </div>
 
-                    {hasFile ? (
-                      <div className="mt-3 grid grid-cols-3 gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => openDoc(docType.key, docType.label)}
-                          disabled={action !== null}
-                          className={cn(
-                            "flex h-8 items-center justify-center rounded border border-black/15 bg-white text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:opacity-50",
-                            UI.ring
-                          )}
-                          aria-label={`View ${docType.label}`}
-                          title={`View ${docType.label}`}
-                        >
-                          <SvgIcon name="eye" className="h-4 w-4" />
-                        </button>
+                    <div className="border-t border-[#E1E7EF] pt-3">
+                      {hasFile ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openDoc(docType.key, docType.label)}
+                            disabled={action !== null}
+                            className={cn(
+                              "flex h-9 items-center justify-center rounded-lg border border-[#D9E2EC] bg-[#F8FAFC] text-[#667085] shadow-sm hover:bg-[#F1F5F9] disabled:opacity-50",
+                              UI.ring
+                            )}
+                            aria-label={`View ${docType.label}`}
+                            title={`View ${docType.label}`}
+                          >
+                            <SvgIcon name="eye" className="h-4 w-4" />
+                          </button>
 
-                        <button
-                          type="button"
-                          onClick={() => downloadDoc(docType.key, docType.label)}
-                          disabled={action !== null}
-                          className={cn(
-                            "flex h-8 items-center justify-center rounded border border-black/15 bg-white text-black/70 hover:bg-black/5 disabled:opacity-50",
-                            UI.ring
-                          )}
-                          aria-label={`Download ${docType.label}`}
-                          title={`Download ${docType.label}`}
-                        >
-                          <SvgIcon name="download" className="h-4 w-4" />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => requestCredentialAccess("approveCredential", docType.key, docType.label)}
-                          disabled={action !== null || doc.checked || doc.status === "approved"}
-                          className={cn(
-                            "flex h-8 items-center justify-center rounded border border-black/15 bg-white text-black/70 hover:bg-black/5 disabled:opacity-50",
-                            (doc.checked || doc.status === "approved") && "border-emerald-200 bg-emerald-50 text-emerald-600",
-                            UI.ring
-                          )}
-                          aria-label={`Approve ${docType.label}`}
-                          title={`Approve ${docType.label}`}
-                        >
-                          <SvgIcon name="check" className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="mt-3 flex h-8 items-center justify-center rounded border border-black/15 bg-white text-[11px] font-semibold text-black/45">
-                        Not submitted
-                      </div>
-                    )}
+                          <button
+                            type="button"
+                            onClick={() => requestCredentialAccess("approveCredential", docType.key, docType.label)}
+                            disabled={action !== null || doc.checked || doc.status === "approved"}
+                            className={cn(
+                              "flex h-9 items-center justify-center rounded-lg border border-[#D9E2EC] bg-[#F8FAFC] text-[#667085] shadow-sm hover:bg-[#F1F5F9] disabled:opacity-50",
+                              (doc.checked || doc.status === "approved") && "border-emerald-200 bg-emerald-50 text-emerald-600",
+                              UI.ring
+                            )}
+                            aria-label={`Approve ${docType.label}`}
+                            title={`Approve ${docType.label}`}
+                          >
+                            <SvgIcon name="check" className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex h-9 items-center justify-center rounded-lg border border-[#D9E2EC] bg-[#F8FAFC] text-[11px] font-semibold text-black/45">
+                          Not submitted
+                        </div>
+                      )}
+                    </div>
                   </article>
                 );
               })}
             </div>
-
-            <div
-              className={cn(
-                "mt-4 flex items-center gap-2 text-xs font-semibold",
-                docsComplete ? "text-[#2e66a6]" : "text-black/60"
-              )}
-            >
-              <SvgIcon name={docsComplete ? "check" : "doc"} className="h-4 w-4" />
-              {docsComplete
-                ? "All required documents have been submitted."
-                : missingDocsMessage}
-            </div>
-          </section>
-
-          <section className="mt-4 rounded-xl border border-black/15 bg-white p-4 sm:p-5">
-            <label htmlFor="reviewNotes" className="text-xs font-semibold text-black/70">
-              Review Notes <span className="font-normal text-black/45">(Optional)</span>
-            </label>
-            <textarea
-              id="reviewNotes"
-              value={remarks}
-              onChange={(event) => setRemarks(event.target.value)}
-              placeholder="Add notes here..."
-              rows={3}
-              className={cn(
-                "mt-2 w-full resize-none rounded-lg border border-black/15 bg-white px-3 py-2 text-sm text-black placeholder-black/35",
-                UI.ring
-              )}
-            />
           </section>
         </div>
       </div>
