@@ -1101,27 +1101,6 @@ const PostJob = () => {
 
   const isCompanyProfileComplete = missingCompanyProfileFields.length === 0;
 
-  const companyProfileReminderMessage = useMemo(() => {
-    const missingTextFields = missingCompanyProfileFields.filter((field) => field !== 'Gallery');
-    const isGalleryMissing = missingCompanyProfileFields.includes('Gallery');
-    const joinFields = (fields) => {
-      if (fields.length <= 1) return fields[0] || '';
-      if (fields.length === 2) return `${fields[0]} and ${fields[1]}`;
-      return `${fields.slice(0, -1).join(', ')}, and ${fields[fields.length - 1]}`;
-    };
-
-    if (!missingTextFields.length && isGalleryMissing) {
-      return 'Add at least one Gallery photo before posting a job.';
-    }
-
-    const fieldsText = joinFields(missingTextFields);
-    const galleryText = isGalleryMissing
-      ? `${missingTextFields.length ? ', and ' : ''}add at least one Gallery photo`
-      : '';
-
-    return `Complete your ${fieldsText}${galleryText} before posting a job.`;
-  }, [missingCompanyProfileFields]);
-
   const companyLocationFromProfile =
     String(storedUser?.employerProfile?.companyAddress || '').trim() || 'Company location';
 
@@ -1970,14 +1949,14 @@ const PostJob = () => {
                 <div className="flex items-center justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-blue-900">
-                      You're Almost There!
+                      Ready to Post a Job?
                     </p>
                     <p className="mt-1 text-sm leading-5 text-blue-800">
-                      {companyProfileReminderMessage}
+                      Complete your company profile and submit all required information to start posting jobs.
                     </p>
                     <button
                       type="button"
-                      onClick={() => navigate('/employer/company-profile')}
+                      onClick={() => navigate('/employer/company-profile', { state: { openEdit: true } })}
                       className="mt-3 inline-flex items-center gap-2 rounded-xl bg-[#075fc8] px-4 py-2 text-sm font-semibold text-white hover:bg-[#064da3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                     >
                       Go to Company Profile

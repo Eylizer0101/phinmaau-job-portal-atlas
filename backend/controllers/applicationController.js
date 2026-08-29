@@ -132,6 +132,57 @@ const attachEmploymentStatus = async (applications = []) => {
   });
 };
 
+const protectApplicantSalaryForEmployer = (application) => {
+  const plain = application?.toObject ? application.toObject() : application;
+  if (!plain || typeof plain !== 'object') return plain;
+
+  const currentProfile = plain.jobseeker?.jobSeekerProfile || {};
+  const snapshotProfile = plain.resumeSnapshot?.profile || {};
+  const privacy = String(
+    currentProfile.salaryPrivacy || snapshotProfile.salaryPrivacy || 'only_me'
+  ).trim().toLowerCase();
+
+  if (privacy !== 'only_me') {
+    return {
+      ...plain,
+      resumeSnapshot: plain.resumeSnapshot?.profile
+        ? {
+            ...plain.resumeSnapshot,
+            profile: {
+              ...snapshotProfile,
+              salaryPrivacy: 'limited',
+              salaryHidden: false,
+            },
+          }
+        : plain.resumeSnapshot,
+    };
+  }
+
+  const hideSalary = (profile = {}) => ({
+    ...profile,
+    minimumSalary: '',
+    maximumSalary: '',
+    salaryPrivacy: 'only_me',
+    salaryHidden: true,
+  });
+
+  return {
+    ...plain,
+    jobseeker: plain.jobseeker && typeof plain.jobseeker === 'object'
+      ? {
+          ...plain.jobseeker,
+          jobSeekerProfile: hideSalary(currentProfile),
+        }
+      : plain.jobseeker,
+    resumeSnapshot: plain.resumeSnapshot?.profile
+      ? {
+          ...plain.resumeSnapshot,
+          profile: hideSalary(snapshotProfile),
+        }
+      : plain.resumeSnapshot,
+  };
+};
+
 
 const buildConversationId = (userA, userB) => {
   return [userA.toString(), userB.toString()].sort().join('_');
@@ -1320,7 +1371,7 @@ exports.getEmployerApplications = async (req, res) => {
       success: true,
       count: applications.length,
       stats,
-      applications: await attachEmploymentStatus(applications)
+      applications: (await attachEmploymentStatus(applications)).map(protectApplicantSalaryForEmployer)
     });
 
   } catch (error) {
@@ -2161,7 +2212,7 @@ exports.getJobApplications = async (req, res) => {
         description: job.description,
         requirements: job.requirements,
       },
-      applications: await attachEmploymentStatus(applications)
+      applications: (await attachEmploymentStatus(applications)).map(protectApplicantSalaryForEmployer)
     });
 
   } catch (error) {
@@ -2670,14 +2721,19 @@ exports.downloadApplicationResume = async (req, res) => {
       });
     }
 
-    const snapshot = application.resumeSnapshot;
+    const salaryProtectedApplication = req.user.role === 'employer'
+      ? protectApplicantSalaryForEmployer(application)
+      : application;
+    const snapshot = salaryProtectedApplication.resumeSnapshot;
     const resumeOwner = snapshot?.profile
       ? {
-          ...(application.jobseeker?.toObject ? application.jobseeker.toObject() : application.jobseeker || {}),
+          ...(salaryProtectedApplication.jobseeker?.toObject
+            ? salaryProtectedApplication.jobseeker.toObject()
+            : salaryProtectedApplication.jobseeker || {}),
           ...(snapshot.user || {}),
           jobSeekerProfile: snapshot.profile,
         }
-      : (application.jobseeker || {});
+      : (salaryProtectedApplication.jobseeker || {});
 
     const { lines, fullName } = buildProfileResumeLines(resumeOwner);
     const pdfBuffer = createPdfBufferFromLines(lines);
@@ -2768,10 +2824,13 @@ exports.getApplicationDetails = async (req, res) => {
     }
 
     const [applicationWithEmploymentStatus] = await attachEmploymentStatus([application]);
+    const protectedApplication = req.user.role === 'employer'
+      ? protectApplicantSalaryForEmployer(applicationWithEmploymentStatus)
+      : applicationWithEmploymentStatus;
 
     res.status(200).json({
       success: true,
-      application: applicationWithEmploymentStatus
+      application: protectedApplication
     });
 
   } catch (error) {

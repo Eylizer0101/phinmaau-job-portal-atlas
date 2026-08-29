@@ -1142,6 +1142,7 @@ const CompanyProfile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const hasOpenedEditFromNavigationRef = useRef(false);
   const [editStep, setEditStep] = useState(1);
   const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'about');
   const [error, setError] = useState('');
@@ -2085,6 +2086,20 @@ const CompanyProfile = () => {
     companyData.companyAddress,
     companyData.regionCity,
   ]);
+
+  useEffect(() => {
+    if (
+      loading ||
+      isEditOpen ||
+      location.state?.openEdit !== true ||
+      hasOpenedEditFromNavigationRef.current
+    ) {
+      return;
+    }
+
+    hasOpenedEditFromNavigationRef.current = true;
+    openEditModal();
+  }, [isEditOpen, loading, location.state, openEditModal]);
 
   const discardProfileChanges = useCallback(async () => {
     setShowDiscardConfirm(false);

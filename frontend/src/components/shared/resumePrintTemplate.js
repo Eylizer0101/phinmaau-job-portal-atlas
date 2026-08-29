@@ -1,6 +1,7 @@
 // src/components/shared/resumePrintTemplate.js
 import {
   filterMeaningfulResumeItems,
+  getResumeSalaryDisplay,
   isMeaningfulResumeValue,
   normalizeAddedResumeSections,
 } from './resumeDisplayUtils';
@@ -669,7 +670,7 @@ const resumeStyles = `
   }
 `;
 
-export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences = [], autoDownload = false } = {}) => {
+export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences = [], autoDownload = false, viewerMode = 'jobseeker' } = {}) => {
   const profileImage = userData?.profileImage || formData?.profileImage || '';
   const fullName = buildName(formData) || 'Your Name';
   const initials = buildInitials(fullName);
@@ -710,7 +711,7 @@ export const buildResumeHtml = ({ userData = {}, formData = {}, workExperiences 
       { label: 'Preferred Language', value: formData.preferredLanguage },
       { label: 'Educational Attainment', value: formData.educationalAttainment },
       { label: 'Double Degree', value: formData.studyField },
-      { label: 'Salary', value: [formData.minimumSalary, formData.maximumSalary].filter(isMeaningfulResumeValue).join(' - ') },
+      { label: 'Salary', value: getResumeSalaryDisplay(formData, viewerMode) },
       { label: 'Nationality', value: formData.nationality },
     ],
     [
@@ -1065,6 +1066,8 @@ export const normalizeUserToResumeData = ({ userData = {}, profile = {}, workExp
     aboutMe: profile.aboutMe || '',
     minimumSalary: profile.minimumSalary || '',
     maximumSalary: profile.maximumSalary || '',
+    salaryPrivacy: profile.salaryPrivacy || 'only_me',
+    salaryHidden: profile.salaryHidden === true,
     address: profile.address || '',
     birthday: profile.birthday || '',
     gender: profile.gender || '',

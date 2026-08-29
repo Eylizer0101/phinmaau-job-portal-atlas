@@ -56,6 +56,19 @@ export const hasMeaningfulResumeRows = (columns) =>
     )
   );
 
+export const getResumeSalaryDisplay = (profile = {}, viewerMode = 'jobseeker') => {
+  const privacy = String(profile?.salaryPrivacy || 'only_me').trim().toLowerCase();
+  const isEmployerViewer = viewerMode === 'employer';
+
+  if (isEmployerViewer && (profile?.salaryHidden === true || privacy === 'only_me')) {
+    return "Salary hidden due to user's privacy settings.";
+  }
+
+  return [profile?.minimumSalary, profile?.maximumSalary]
+    .filter(isMeaningfulResumeValue)
+    .join(' - ');
+};
+
 export const OPTIONAL_RESUME_SECTION_KEYS = [
   'seminars',
   'awards',

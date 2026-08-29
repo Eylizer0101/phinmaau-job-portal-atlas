@@ -8,6 +8,7 @@ import EmployerLayout from '../../../layouts/EmployerLayout';
 import { normalizeUserToResumeData } from '../../../components/shared/resumePrintTemplate';
 import {
   filterMeaningfulResumeItems,
+  getResumeSalaryDisplay,
   hasMeaningfulResumeObject,
   hasMeaningfulResumeRows,
   isMeaningfulResumeValue,
@@ -2293,7 +2294,7 @@ const ApplicationDetails = () => {
     work,
     education,
   });
-  const salary = [profile.minimumSalary, profile.maximumSalary].filter(isMeaningfulResumeValue).join(' - ');
+  const salary = getResumeSalaryDisplay(profile, 'employer');
   const resumeAddress = String(profile.address || '').trim();
   const resumeEmail = String(user.email || '').trim();
   const resumePhoneNumber = String(
