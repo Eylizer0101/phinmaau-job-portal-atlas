@@ -1202,13 +1202,13 @@ const EmployerVerificationDetails = () => {
                     onClick={() => setShowRestoreModal(true)}
                     disabled={action !== null}
                     className={cn(
-                      "inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[#2e66a6] text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:opacity-50",
+                      "inline-flex h-10 items-center justify-center rounded-lg border border-[#2e66a6] px-4 text-sm font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:opacity-50",
                       UI.ring
                     )}
                     aria-label={`Restore ${companyName}`}
                     title="Restore"
                   >
-                    <SvgIcon name="restore" className="h-4 w-4" />
+                    Restore
                   </button>
                 ) : null}
               </div>

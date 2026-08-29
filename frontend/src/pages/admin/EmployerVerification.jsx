@@ -1069,7 +1069,7 @@ const EmployerVerification = () => {
                 hasActiveFilters ? "xl:grid-cols-6" : "xl:grid-cols-5"
               )}
             >
-              <div>
+              <div className={archiveMode ? "xl:col-span-2" : ""}>
                 <div className="relative">
                   <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                     <Icon name="search" className="h-5 w-5" />
