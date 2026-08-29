@@ -2261,7 +2261,7 @@ const CompanyProfile = () => {
 
       const v = validateClient();
       if (!v.ok) {
-        setError('Please fix the highlighted fields.');
+        setError('Please Complete all the required fields.');
         return;
       }
 

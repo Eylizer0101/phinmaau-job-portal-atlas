@@ -10,9 +10,12 @@ import {
   faClock,
   faEnvelope,
   faFileAlt,
+  faTimes,
 } from '@fortawesome/free-solid-svg-icons';
 
 import EmployerLayout from '../../../layouts/EmployerLayout';
+
+const PROFILE_REMINDER_ICON = '/images/clock.png';
 
 const EmployerDashboard = () => {
   const navigate = useNavigate();
@@ -1802,29 +1805,47 @@ const EmployerDashboard = () => {
 
           <div className="flex min-w-0 flex-1 items-center justify-end gap-4 shrink-0">
             {!userData.profileComplete && showProfileReminder && (
-              <div className="mt-8 flex min-w-0 max-w-[560px] flex-1 items-center gap-3 rounded-xl border border-[#d8e3f0] bg-white px-4 py-2 shadow-sm">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eef5ff] text-[#2e66a6]">
-                  <FontAwesomeIcon icon={faBell} className="h-3.5 w-3.5" />
+              <div className="mt-8 w-full max-w-[640px]">
+                <div className="relative flex items-center justify-between gap-4 rounded-[28px] border border-[#D9E3F2] bg-white px-5 py-4 shadow-sm">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+                      <img
+                        src={PROFILE_REMINDER_ICON}
+                        alt="Reminder"
+                        className="h-8 w-8 object-contain"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="text-[14px] leading-5 text-black">
+                        <span className="font-semibold">Reminder:</span>{' '}
+                        A complete company profile is required before you can post a job.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => navigate('/employer/company-profile', { state: { openEdit: true } })}
+                      className="inline-flex h-10 items-center justify-center rounded-[10px] bg-[#2e66a6] px-4 text-[12px] font-bold uppercase tracking-[0.03em] text-white transition hover:bg-[#245387]"
+                    >
+                      Go to Profile
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowProfileReminder(false)}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-500 transition hover:bg-white hover:text-black"
+                      aria-label="Dismiss company profile reminder"
+                    >
+                      <FontAwesomeIcon icon={faTimes} className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-                <p className="min-w-0 flex-1 text-[12px] leading-5 text-gray-600">
-                  <span className="font-semibold text-gray-900">Reminder:</span>{' '}
-                  A complete company profile is required before you can post a job.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => navigate('/employer/company-profile', { state: { openEdit: true } })}
-                  className="shrink-0 rounded-lg bg-[#2e66a6] px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-white transition hover:bg-[#24558c] focus:outline-none focus:ring-2 focus:ring-[#2e66a6] focus:ring-offset-2"
-                >
-                  Go to Profile
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowProfileReminder(false)}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-lg leading-none text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
-                  aria-label="Dismiss company profile reminder"
-                >
-                  ×
-                </button>
               </div>
             )}
 
