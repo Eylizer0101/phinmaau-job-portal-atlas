@@ -539,7 +539,7 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
     case 'trash':
       return (
         <svg {...common}>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 7h12m-9 0V5h6v2m-8 0 1 13h8l1-13M10 11v5m4-5v5" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16" />
         </svg>
       );
     case 'send':
@@ -1012,18 +1012,9 @@ const HiringStageModal = ({
     if (added) {
       setCustomStage('');
       setSelectedStage(value);
+      const applied = await onSelect(value);
+      if (applied) onClose();
     }
-  };
-
-  const finishHiringStage = async () => {
-    if (!selectedStage) {
-      onClose();
-      return;
-    }
-
-    setLocalError('');
-    const saved = await onSelect(selectedStage);
-    if (saved) onClose();
   };
 
   return (
@@ -1074,7 +1065,7 @@ const HiringStageModal = ({
               </button>
             </div>
             <p className="mt-2 text-xs text-gray-500">
-              The stage you add is applied to this applicant after you click Done.
+              The stage you add is applied to this applicant after you press Enter.
             </p>
             {localError ? <p className="mt-2 text-xs font-medium text-red-600">{localError}</p> : null}
           </div>
@@ -1108,7 +1099,11 @@ const HiringStageModal = ({
                   <button
                     type="button"
                     disabled={busy}
-                    onClick={() => setSelectedStage(stage)}
+                    onClick={async () => {
+                      setSelectedStage(stage);
+                      const applied = await onSelect(stage);
+                      if (applied) onClose();
+                    }}
                     className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6] disabled:cursor-not-allowed disabled:opacity-60"
                     aria-pressed={selected}
                   >
@@ -1145,22 +1140,11 @@ const HiringStageModal = ({
                     aria-label={`Delete ${stage}`}
                     title={`Delete ${stage}`}
                   >
-                    <Icon name="trash" className="h-5 w-5" />
+                    <Icon name="trash" className="h-4 w-4" />
                   </button>
                 </div>
               );
             })}
-          </div>
-
-          <div className="mt-4 flex justify-end">
-            <button
-              type="button"
-              onClick={finishHiringStage}
-              disabled={busy}
-              className="h-11 rounded-xl border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-            >
-              Done
-            </button>
           </div>
 
         </div>
@@ -1831,7 +1815,7 @@ const ForInterview = () => {
       }
 
       applyHiringStageResponse(addResponseData, stage);
-      setSuccess('Hiring stage added. Click Done to apply it.');
+      setSuccess('Hiring stage added.');
       return true;
     } catch (stageError) {
       setError(stageError?.response?.data?.message || stageError?.message || 'Failed to add custom hiring stage.');

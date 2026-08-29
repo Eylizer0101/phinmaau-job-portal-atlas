@@ -2947,18 +2947,7 @@ const EditJob = () => {
                 </div>
                 <div className="border-t border-gray-200 bg-white px-6 py-4">
                   <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs text-gray-600">
-                {activeStep < JOB_FORM_STEPS.length ? null : requiredOk ? (
-                  <span className="font-semibold text-[#2e66a6]">
-                    All required fields complete. You can {isDraft ? 'publish' : 'save changes'}.
-                  </span>
-                ) : (
-                  <span>Complete required fields to publish/save.</span>
-                )}
-                {isDraft && !canPublish && (
-                  <span className="ml-2 font-semibold text-amber-700">Verification required to publish.</span>
-                )}
-              </p>
+             
 
               <div className="flex flex-wrap items-center gap-2">
                 <button
@@ -3496,13 +3485,14 @@ const EditJob = () => {
                
 
                 <div className="p-6">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-2xl font-bold text-amber-700">
-                    !
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 text-2xl font-bold text-amber-700">
+                      !
+                    </div>
+                    <h2 id="cancel-edit-job-title" className="text-xl font-bold text-gray-900">
+                      Leave Job Posting?
+                    </h2>
                   </div>
-
-                  <h2 id="cancel-edit-job-title" className="text-xl font-bold text-gray-900">
-                    Leave Job Posting?
-                  </h2>
 
                   <p className="mt-2 text-sm leading-6 text-gray-600">
                     {isDraft

@@ -66,6 +66,7 @@ import EmployerSettings from './pages/employer/dashboard/Settings';
 import EmployerNotificationsPage from './pages/employer/dashboard/EmployerNotificationsPage';
 import ForInterview from './pages/employer/dashboard/ForInterview';
 import HiredApplicants from './pages/employer/dashboard/HiredApplicants';
+import DeclinedApplicants from './pages/employer/dashboard/DeclinedApplicants';
 import ArchivedDeclinedApplicants from './pages/employer/dashboard/ArchivedDeclinedApplicants';
 
 // Layouts
@@ -418,7 +419,7 @@ function App() {
           path="/employer/declined"
           element={
             <RequireRole role="employer" redirectTo="/login">
-              <Navigate to="/employer/hired?status=declined" replace />
+              <DeclinedApplicants />
             </RequireRole>
           }
         />

@@ -2354,6 +2354,10 @@ const EmployerDashboard = () => {
                           ))}
                         </div>
 
+                        <div className="mt-auto pt-4 text-xs font-semibold text-gray-600">
+                          Application Deadline: {formatDate(job?.applicationDeadline)}
+                        </div>
+
                         <div className="mt-4 w-full h-px bg-gray-300/80" />
                       </Link>
                     );

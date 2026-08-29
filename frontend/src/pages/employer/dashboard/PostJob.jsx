@@ -2539,19 +2539,7 @@ const PostJob = () => {
                 </div>
                 <div className="border-t border-gray-200 bg-white px-6 py-4">
                   <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs text-gray-600">
-                  {activeStep < JOB_FORM_STEPS.length ? null : requiredOk ? (
-                    <span className="font-semibold text-[#2e66a6]">Ready to publish.</span>
-                  ) : (
-                    <span>Complete required fields to publish.</span>
-                  )}
-                  {!isCompanyProfileComplete && (
-                    <span className="ml-2 font-semibold text-blue-700">Complete company profile required to publish.</span>
-                  )}
-                  {isCompanyProfileComplete && !isEmployerVerified && (
-                    <span className="ml-2 font-semibold text-amber-700">Verification required to publish.</span>
-                  )}
-                </p>
+                
 
                 <div className="flex items-center gap-2">
                   <button
@@ -3061,12 +3049,14 @@ const PostJob = () => {
           >
          
             <div className="p-6">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-2xl text-amber-700">
-                !
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 text-2xl text-amber-700">
+                  !
+                </div>
+                <h2 id="cancel-post-title" className="text-xl font-bold text-gray-900">
+                  Leave Job Posting?
+                </h2>
               </div>
-              <h2 id="cancel-post-title" className="text-xl font-bold text-gray-900">
-                Leave Job Posting?
-              </h2>
               <p className="mt-2 text-sm leading-6 text-gray-600">
                 Your current job post will be saved as a draft before you leave. You can continue editing it later from Manage Jobs.
               </p>

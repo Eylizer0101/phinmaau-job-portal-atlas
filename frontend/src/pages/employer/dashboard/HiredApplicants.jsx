@@ -458,10 +458,7 @@ const HiredApplicants = () => {
   const API_BASE = (process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
 
   const [applications, setApplications] = useState([]);
-  const [statusFilter, setStatusFilter] = useState(() => {
-    const requested = new URLSearchParams(window.location.search).get('status');
-    return ['all', 'hired', 'declined'].includes(requested) ? requested : 'hired';
-  });
+  const [statusFilter] = useState('hired');
   const [archivedDeclinedCount, setArchivedDeclinedCount] = useState(0);
   const [archivingId, setArchivingId] = useState(null);
   const [jobs, setJobs] = useState([]);
@@ -600,34 +597,24 @@ const HiredApplicants = () => {
       const params = {};
       if (selectedJob !== 'all') params.jobId = selectedJob;
 
-      const request = (status) => axios.get(
-        `https://phinmaau-job-portal-atlas.onrender.com/api/applications/employer/${status}`,
+      const response = await axios.get(
+        'https://phinmaau-job-portal-atlas.onrender.com/api/applications/employer/hired',
         { headers: getAuthHeaders(), params }
       );
-      const responses = statusFilter === 'all'
-        ? await Promise.all([request('hired'), request('declined')])
-        : [await request(statusFilter)];
-
-      const combined = responses.flatMap((response) => {
-        const recordStatus = response.config.url.endsWith('/declined') ? 'declined' : 'hired';
-        if (recordStatus === 'declined') {
-          setArchivedDeclinedCount(response.data?.archivedCount || 0);
-        }
-        return (response.data?.applications || []).map((application) => ({
+      const combined = (response.data?.applications || []).map((application) => ({
           ...application,
-          _recordStatus: recordStatus,
+          _recordStatus: 'hired',
         }));
-      });
       setApplications(combined);
     } catch (err) {
       console.error(err);
       if (err.response?.status === 401) return handleAuthError();
-      setError('Failed to load hired and declined applicants.');
+      setError('Failed to load hired applicants.');
       setApplications([]);
     } finally {
       setLoading(false);
     }
-  }, [handleAuthError, selectedJob, statusFilter]);
+  }, [handleAuthError, selectedJob]);
 
   useEffect(() => {
     fetchJobs();
@@ -782,7 +769,6 @@ const HiredApplicants = () => {
     setCustomDateFrom('');
     setCustomDateTo('');
     setSortBy('recent');
-    setStatusFilter('hired');
   };
 
   const jobOptions = useMemo(() => {
@@ -799,25 +785,12 @@ const HiredApplicants = () => {
   const sortOptions = [
     { value: 'recent', label: 'Newest First' },
     { value: 'oldest_first', label: 'Oldest First' },
-    ...(statusFilter !== 'declined' ? [
-      { value: 'recently_hired', label: 'Recently Hired' },
-      { value: 'least_recently_hired', label: 'Least Recently Hired' },
-    ] : []),
-    ...(statusFilter !== 'hired' ? [
-      { value: 'recently_declined', label: 'Recently Declined' },
-      { value: 'least_recently_declined', label: 'Least Recently Declined' },
-    ] : []),
+    { value: 'recently_hired', label: 'Recently Hired' },
+    { value: 'least_recently_hired', label: 'Least Recently Hired' },
   ];
 
   const hasActiveFilters =
-    query.trim() || selectedJob !== 'all' || dateFilter !== 'all' || sortBy !== 'recent' || statusFilter !== 'hired';
-
-  const handleStatusFilterChange = (value) => {
-    setStatusFilter(value);
-    setSortBy(value === 'declined' ? 'recently_declined' : 'recent');
-    setCurrentPage(1);
-    navigate(`/employer/hired${value === 'hired' ? '' : `?status=${value}`}`, { replace: true });
-  };
+    query.trim() || selectedJob !== 'all' || dateFilter !== 'all' || sortBy !== 'recent';
 
   const handleArchiveDeclined = async (applicationId) => {
     if (archivingId) return;
@@ -894,10 +867,10 @@ const selectBase =
         <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">
-              {statusFilter === 'declined' ? 'Declined Applicants' : statusFilter === 'all' ? 'Hired & Declined Applicants' : 'Hired Applicants'}
+              Hired Applicants
             </h1>
             <p className="mt-1 text-sm text-gray-600">
-              {statusFilter === 'declined' ? 'Applicants reviewed but not selected for a position' : 'Applicants successfully hired and officially joined company'}
+              Applicants successfully hired and officially joined company
             </p>
           </div>
           {statusFilter === 'declined' && (
@@ -965,7 +938,7 @@ const selectBase =
                 </div>
               </div>
 
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-3">
                 <label className="sr-only" htmlFor="jobFilter">
                   Filter by job
                 </label>
@@ -981,21 +954,6 @@ const selectBase =
                       {o.label}
                     </option>
                   ))}
-                </select>
-              </div>
-
-              <div className="lg:col-span-2">
-                <label className="sr-only" htmlFor="statusFilter">Filter by status</label>
-                <select
-                  id="statusFilter"
-                  value={statusFilter}
-                  onChange={(event) => handleStatusFilterChange(event.target.value)}
-                  className={selectBase}
-                  disabled={loading}
-                >
-                  <option value="all">All Status</option>
-                  <option value="hired">Hired</option>
-                  <option value="declined">Declined</option>
                 </select>
               </div>
 
@@ -1018,7 +976,7 @@ const selectBase =
                 />
               </div>
 
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-3">
                 <DropdownFilter
                   id="sortFilter"
                   label="Sort By"
@@ -1057,7 +1015,7 @@ const selectBase =
             </div>
           ) : filteredApplications.length === 0 ? (
             <div className="py-14 text-center">
-              <h3 className="text-lg font-semibold text-gray-900">No {statusFilter === 'declined' ? 'declined' : statusFilter === 'all' ? 'hired or declined' : 'hired'} applicants found</h3>
+              <h3 className="text-lg font-semibold text-gray-900">No hired applicants found</h3>
               <p className="mt-2 text-sm text-gray-600">Try changing filters or search.</p>
             </div>
           ) : (
