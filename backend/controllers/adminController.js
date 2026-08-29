@@ -291,6 +291,53 @@ const createJobseekerCredentialNotification = async ({ user, docType, action, fe
   }
 };
 
+const automaticallyApproveJobseekerAccount = async (jobseeker, adminId = null) => {
+  const docs = jobseeker?.jobSeekerProfile?.verificationDocs;
+  if (
+    !docs ||
+    isApprovedJobseekerAccount(jobseeker) ||
+    getJobseekerCredentialReviewStatus(docs) !== 'verified'
+  ) {
+    return { approved: false };
+  }
+
+  const newUsername = jobseeker.username || await generateUniqueUsername({
+    role: 'jobseeker',
+    firstName: jobseeker.firstName,
+    lastName: jobseeker.lastName,
+    companyName: '',
+  });
+  const temporaryPassword = generateTempPassword();
+
+  docs.overallStatus = 'verified';
+  docs.verifiedBy = adminId;
+  docs.verifiedAt = new Date();
+  docs.adminRemarks = '';
+  docs.rejectionReasons = [];
+  docs.rejectionMessage = '';
+  docs.rejectedAt = null;
+  jobseeker.jobSeekerProfile.verificationStatus = 'verified';
+  jobseeker.isVerified = true;
+  jobseeker.status = 'active';
+  jobseeker.username = newUsername;
+  jobseeker.password = await bcrypt.hash(temporaryPassword, 12);
+  jobseeker.mustChangePassword = true;
+
+  await jobseeker.save();
+
+  sendCredentialsEmail({
+    to: jobseeker.email,
+    fullName: jobseeker.fullName || jobseeker.email,
+    username: newUsername,
+    temporaryPassword,
+    role: 'Jobseeker',
+  }).catch((emailError) => {
+    console.error('Failed to send automatically approved jobseeker credentials email:', emailError);
+  });
+
+  return { approved: true, username: newUsername };
+};
+
 const EMPLOYER_DOC_TYPES = ['secRegistration', 'birRegistration', 'dtiRegistration', 'cityPermit', 'businessPermit'];
 
 const EMPLOYER_DOC_LABELS = {
@@ -2854,13 +2901,6 @@ exports.getJobseekerVerificationDocUrls = async (req, res) => {
 
 const markVerificationDocumentChecked = async (req, res, role) => {
   try {
-    if (role === 'jobseeker') {
-      const adminPassword = String(req.headers['x-admin-password'] || '');
-      if (!(await isValidAdminPassword(req, adminPassword))) {
-        return res.status(401).json({ success: false, message: 'Incorrect admin password.' });
-      }
-    }
-
     const allowedTypes = role === 'employer' ? EMPLOYER_DOC_TYPES : JOBSEEKER_DOC_TYPES;
     const docType = String(req.params.docType || '');
     if (!allowedTypes.includes(docType)) {
@@ -2902,15 +2942,25 @@ const markVerificationDocumentChecked = async (req, res, role) => {
     document.checkedAt = new Date();
     document.checkedBy = req.user?._id || req.userId || null;
 
-    if (role === 'jobseeker' && wasAccountVerified) {
-      const nextStatus = getJobseekerCredentialReviewStatus(docs);
-      docs.overallStatus = nextStatus;
-      user.jobSeekerProfile.verificationStatus = 'verified';
-      user.isVerified = true;
-    }
-
     let accountAutoApproved = false;
-    if (role === 'employer' && areAllEmployerCredentialsApproved(docs)) {
+    if (role === 'jobseeker') {
+      if (wasAccountVerified) {
+        docs.overallStatus = 'verified';
+        user.jobSeekerProfile.verificationStatus = 'verified';
+        user.isVerified = true;
+        await user.save();
+      } else {
+        const automaticApproval = await automaticallyApproveJobseekerAccount(
+          user,
+          req.user?._id || req.userId || null
+        );
+        accountAutoApproved = automaticApproval.approved;
+        if (!automaticApproval.approved) {
+          docs.overallStatus = getJobseekerCredentialReviewStatus(docs);
+          await user.save();
+        }
+      }
+    } else if (areAllEmployerCredentialsApproved(docs)) {
       const automaticApproval = await automaticallyApproveEmployerAccount(user);
       accountAutoApproved = automaticApproval.approved;
       if (!automaticApproval.approved) await user.save();
@@ -2918,14 +2968,16 @@ const markVerificationDocumentChecked = async (req, res, role) => {
       await user.save();
     }
 
-    if (role === 'jobseeker' && wasAccountVerified) {
+    if (role === 'jobseeker') {
       await createJobseekerCredentialNotification({ user, docType, action: 'approved' });
     }
 
     return res.status(200).json({
       success: true,
       message: accountAutoApproved
-        ? 'All company credentials have been approved. The Employer account has been approved automatically.'
+        ? role === 'jobseeker'
+          ? 'All required credentials have been approved. The Job Seeker account has been verified automatically.'
+          : 'All company credentials have been approved. The Employer account has been approved automatically.'
         : role === 'jobseeker'
           ? `${JOBSEEKER_DOC_LABELS[docType] || 'Credential'} approved successfully.`
           : `${EMPLOYER_DOC_LABELS[docType] || 'Company requirement'} approved successfully.`,

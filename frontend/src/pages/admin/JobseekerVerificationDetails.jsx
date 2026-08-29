@@ -997,7 +997,6 @@ const JobseekerVerificationDetails = () => {
       const response = await api.patch(
         `/admin/jobseekers/verification/${id}/docs/${docType}/check`,
         {},
-        { headers: { "x-admin-password": approvalPassword } },
       );
       setSuccess(response.data?.message || "Document marked as checked.");
       await fetchJobseekerDetails();
