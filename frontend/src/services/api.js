@@ -34,9 +34,14 @@ api.interceptors.response.use(
       'JOBSEEKER_PENDING_APPROVAL',
       'PENDING_ADMIN_APPROVAL',
     ];
+    const responseCode = error.response?.data?.code;
+    const responseMessage = String(error.response?.data?.message || '');
+    const isAdminPasswordError =
+      responseCode === 'ADMIN_PASSWORD_INVALID' ||
+      /^incorrect (admin )?password\.?$/i.test(responseMessage.trim());
 
     if (
-      error.response?.status === 401 ||
+      (error.response?.status === 401 && !isAdminPasswordError) ||
       (error.response?.status === 403 && authBlockCodes.includes(error.response?.data?.code))
     ) {
       localStorage.removeItem('token');
