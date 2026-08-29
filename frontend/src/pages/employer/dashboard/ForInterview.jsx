@@ -1065,7 +1065,7 @@ const HiringStageModal = ({
               </button>
             </div>
             <p className="mt-2 text-xs text-gray-500">
-              The stage you add is applied to this applicant after you press Enter.
+             The stage you add is applied to this applicant right away.
             </p>
             {localError ? <p className="mt-2 text-xs font-medium text-red-600">{localError}</p> : null}
           </div>
