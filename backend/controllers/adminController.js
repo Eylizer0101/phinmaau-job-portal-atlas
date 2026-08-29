@@ -2945,8 +2945,9 @@ const markVerificationDocumentChecked = async (req, res, role) => {
     let accountAutoApproved = false;
     if (role === 'jobseeker') {
       if (wasAccountVerified) {
-        docs.overallStatus = 'verified';
-        user.jobSeekerProfile.verificationStatus = 'verified';
+        const credentialReviewStatus = getJobseekerCredentialReviewStatus(docs);
+        docs.overallStatus = credentialReviewStatus;
+        user.jobSeekerProfile.verificationStatus = credentialReviewStatus;
         user.isVerified = true;
         await user.save();
       } else {
