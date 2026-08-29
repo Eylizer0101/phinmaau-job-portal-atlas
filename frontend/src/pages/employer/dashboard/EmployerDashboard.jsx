@@ -711,6 +711,18 @@ const EmployerDashboard = () => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
+  const formatApplicationDeadline = (deadline) => {
+    if (!deadline) return 'Application deadline not specified';
+
+    const date = new Date(deadline);
+    if (Number.isNaN(date.getTime())) return 'Application deadline not specified';
+
+    return `Deadline of application: ${date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+    })}`;
+  };
+
   const formatInterviewTime = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -2346,16 +2358,30 @@ const EmployerDashboard = () => {
                           </div>
                         </div>
 
+                        <div className="mt-3 flex items-center gap-2 text-[13px] font-medium text-black/65">
+                          <svg
+                            className="w-4 h-4 text-black/55 flex-shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M8 7V3m8 4V3m-9 8h10m-11 9h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v11a2 2 0 002 2z"
+                            />
+                          </svg>
+                          <span className="truncate">{formatApplicationDeadline(job?.applicationDeadline)}</span>
+                        </div>
+
                         <div className="mt-4 flex flex-wrap items-center gap-2 min-h-[28px]">
                           {recentJobBadges.map((badge) => (
                             <span key={badge} className={badgeClass}>
                               {badge}
                             </span>
                           ))}
-                        </div>
-
-                        <div className="mt-auto pt-4 text-xs font-semibold text-gray-600">
-                          Application Deadline: {formatDate(job?.applicationDeadline)}
                         </div>
 
                         <div className="mt-4 w-full h-px bg-gray-300/80" />
