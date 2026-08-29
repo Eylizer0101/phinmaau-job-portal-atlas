@@ -442,11 +442,10 @@ const DateFilterDropdown = ({ value, dateFrom, dateTo, onChange }) => {
 
 const formatDateTime = (value) => {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return { date: 'Date unavailable', time: '' };
-  return {
-    date: date.toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric', year: 'numeric' }),
-    time: date.toLocaleTimeString('en-PH', { timeZone: 'Asia/Manila', hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true }),
-  };
+  if (Number.isNaN(date.getTime())) return 'Date unavailable';
+  const datePart = date.toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric', year: 'numeric' });
+  const timePart = date.toLocaleTimeString('en-PH', { timeZone: 'Asia/Manila', hour: 'numeric', minute: '2-digit', hour12: true });
+  return `${datePart} ${timePart}`;
 };
 const getInitials = (name = '') => String(name).trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'U';
 const getActionCode = (action = '') => ACTION_CODES[action] || (String(action).split('.').pop() || 'ACTIVITY').replace(/[^a-z0-9]+/gi, '_').toUpperCase();
@@ -528,7 +527,7 @@ const AdminSystemLogs = () => {
             const created = formatDateTime(log.createdAt);
             const employer = String(log.actorRole).toLowerCase() === 'employer';
             return <div key={log.id} className="grid grid-cols-[1fr_1.5fr_0.8fr_1.2fr] items-center gap-5 px-5 py-4 hover:bg-slate-50/70">
-              <div><p className="text-sm font-bold text-slate-800">{created.date}</p><p className="mt-0.5 text-[11px] text-slate-500">{created.time}</p></div>
+              <div><p className="text-sm font-bold text-slate-800">{created}</p></div>
               <div className="flex min-w-0 items-center gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#212C61]/10 text-[11px] font-bold text-[#212C61]">{getInitials(log.actorName)}</span><div className="min-w-0"><p className="truncate text-sm font-bold text-slate-900">{log.actorName || 'Unknown user'}</p><p className="truncate text-[11px] text-slate-500">{log.actorEmail || 'No email recorded'}</p></div></div>
               <span className={`w-fit rounded-full border px-3 py-1 text-[11px] font-bold capitalize ${employer ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-blue-200 bg-blue-50 text-blue-700'}`}>{log.actorRole}</span>
               <div className="min-w-0"><p className="truncate text-sm font-bold tracking-wide text-slate-900">{getActionCode(log.action)}</p><p className="truncate text-[11px] font-medium text-[#212C61]/70">{log.module || 'Activity'}</p></div>

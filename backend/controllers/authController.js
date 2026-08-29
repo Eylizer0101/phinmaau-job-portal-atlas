@@ -2471,9 +2471,11 @@ exports.uploadAlumniVerificationDoc = async (req, res) => {
 exports.deleteAlumniVerificationDoc = async (req, res) => {
   try {
     const userId = req.user._id;
-    const docType = req.params.docType;
+    const docType = String(req.params.docType || '').trim();
+    const allowed = ['cv', 'tor', 'diploma', 'sss', 'philhealth', 'pagibig', 'tin', 'validId'];
 
     if (req.user.role !== 'jobseeker') return res.status(403).json({ success: false, message: 'Only job seekers can delete verification documents' });
+    if (!allowed.includes(docType)) return res.status(400).json({ success: false, message: 'Invalid document type.' });
 
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });

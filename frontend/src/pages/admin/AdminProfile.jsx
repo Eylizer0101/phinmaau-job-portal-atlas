@@ -31,6 +31,8 @@ const AdminProfile = () => {
   const [saving, setSaving] = useState(false);
   const [removingLogo, setRemovingLogo] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDiscardModal, setShowDiscardModal] = useState(false);
+  const [showProfileSaved, setShowProfileSaved] = useState(false);
   const [notice, setNotice] = useState({ type: "", message: "" });
   const [passwords, setPasswords] = useState({ currentPassword: "", newPassword: "", confirmNewPassword: "" });
   const [visible, setVisible] = useState({ currentPassword: false, newPassword: false, confirmNewPassword: false });
@@ -86,6 +88,16 @@ const AdminProfile = () => {
 
   useEffect(() => { loadProfile(); }, []);
   useEffect(() => () => { if (logoPreview) URL.revokeObjectURL(logoPreview); }, [logoPreview]);
+  useEffect(() => {
+    if (!showProfileSaved) return undefined;
+    const timer = window.setTimeout(() => setShowProfileSaved(false), 2500);
+    return () => window.clearTimeout(timer);
+  }, [showProfileSaved]);
+
+  const hasUnsavedProfileChanges = useMemo(() => {
+    const fields = ["organizationName", "firstName", "middleName", "lastName", "extensionName", "positionRole", "email", "contactNumber", "departmentOffice"];
+    return Boolean(logoFile) || fields.some((key) => String(draft[key] || "") !== String(profile[key] || ""));
+  }, [draft, profile, logoFile]);
 
   const openEditModal = () => {
     setDraft(profile);
@@ -95,11 +107,22 @@ const AdminProfile = () => {
     setShowEditModal(true);
   };
 
-  const closeEditModal = () => {
+  const discardAndCloseEditModal = () => {
     if (saving) return;
     setShowEditModal(false);
+    setShowDiscardModal(false);
+    setDraft(profile);
     setLogoFile(null);
     setLogoPreview("");
+  };
+
+  const closeEditModal = () => {
+    if (saving) return;
+    if (hasUnsavedProfileChanges) {
+      setShowDiscardModal(true);
+      return;
+    }
+    discardAndCloseEditModal();
   };
 
   const chooseLogo = (event) => {
@@ -128,7 +151,7 @@ const AdminProfile = () => {
       setDraft(next);
       updateStoredAdmin(next);
       setShowEditModal(false);
-      setNotice({ type: "success", message: response.data?.message || "Admin profile updated successfully." });
+      setShowProfileSaved(true);
     } catch (error) {
       setNotice({ type: "error", message: error.response?.data?.message || "Unable to update the admin profile." });
     } finally {
@@ -285,9 +308,9 @@ const AdminProfile = () => {
 
         <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm sm:p-9">
           <div className="flex items-center gap-3 border-b border-slate-200 pb-5"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-[#173b78]"><LockKeyhole size={20} /></span><h2 className="text-xl font-extrabold text-[#173b78]">Change Password</h2></div>
-          <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50/70 p-5"><p className="font-bold text-[#173b78]">Password Requirements</p><div className="mt-3 space-y-2">{requirements.map((item) => <p key={item.label} className={`flex items-center gap-2 text-sm font-medium transition-colors ${item.valid ? "text-emerald-700" : "text-slate-500"}`}>{item.valid ? <CheckCircle2 size={18} className="shrink-0 fill-emerald-600 text-white" aria-label="Requirement met" /> : <Circle size={18} className="shrink-0 text-slate-400" aria-label="Requirement not met" />}{item.label}</p>)}</div></div>
           <form onSubmit={updatePassword} className="mt-5 space-y-4">
-            {[['currentPassword', 'Current Password'], ['newPassword', 'New Password'], ['confirmNewPassword', 'Confirm New Password']].map(([name, label]) => <label key={name} className="block text-sm font-semibold text-slate-800">{label}:<span className="relative mt-2 block"><input required type={visible[name] ? "text" : "password"} value={passwords[name]} onChange={(event) => setPasswords((previous) => ({ ...previous, [name]: event.target.value }))} className="h-11 w-full rounded-lg border border-slate-300 px-3 pr-11 font-normal outline-none transition focus:border-[#173b78] focus:ring-2 focus:ring-blue-100" /><button type="button" onClick={() => setVisible((previous) => ({ ...previous, [name]: !previous[name] }))} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" aria-label={`Show or hide ${label}`}>{visible[name] ? <EyeOff size={18} /> : <Eye size={18} />}</button></span></label>)}
+            {[['currentPassword', 'Current Password', 'Enter your current password'], ['newPassword', 'New Password', 'Enter your new password'], ['confirmNewPassword', 'Confirm New Password', 'Confirm your new password']].map(([name, label, placeholder]) => <label key={name} className="block text-sm font-semibold text-slate-800">{label}:<span className="relative mt-2 block"><input required placeholder={placeholder} type={visible[name] ? "text" : "password"} value={passwords[name]} onChange={(event) => setPasswords((previous) => ({ ...previous, [name]: event.target.value }))} className="h-11 w-full rounded-lg border border-slate-300 px-3 pr-11 font-normal outline-none transition focus:border-[#173b78] focus:ring-2 focus:ring-blue-100" /><button type="button" onClick={() => setVisible((previous) => ({ ...previous, [name]: !previous[name] }))} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" aria-label={`Show or hide ${label}`}>{visible[name] ? <EyeOff size={18} /> : <Eye size={18} />}</button></span></label>)}
+            <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-5"><p className="font-bold text-[#173b78]">Password Requirements</p><div className="mt-3 space-y-2">{requirements.map((item) => <p key={item.label} className={`flex items-center gap-2 text-sm font-medium transition-colors ${item.valid ? "text-emerald-700" : "text-slate-500"}`}>{item.valid ? <CheckCircle2 size={18} className="shrink-0 fill-emerald-600 text-white" aria-label="Requirement met" /> : <Circle size={18} className="shrink-0 text-slate-400" aria-label="Requirement not met" />}{item.label}</p>)}</div></div>
             <button disabled={updatingPassword} className="flex h-11 w-full items-center 
             justify-center gap-2 rounded-lg bg-[#173b78] text-sm font-bold text-white transition
              hover:bg-[#102d5e] disabled:opacity-60"><LockKeyhole size={16} />{updatingPassword ? "Updating..." : 
@@ -295,6 +318,10 @@ const AdminProfile = () => {
           </form>
         </section>
       </div>
+
+      {showProfileSaved && <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/25 p-4" role="dialog" aria-modal="true" aria-live="polite"><div className="w-full max-w-sm rounded-2xl border border-slate-100 bg-white p-6 text-center shadow-2xl"><span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-50"><CheckCircle2 size={38} className="fill-[#2e66a6] text-white" /></span><h2 className="mt-4 text-xl font-extrabold text-slate-900">Changes Saved!</h2><p className="mt-2 text-sm text-slate-500">Your profile has been updated successfully.</p></div></div>}
+
+      {showDiscardModal && <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true"><div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"><h2 className="text-xl font-extrabold text-slate-900">Discard Profile Changes?</h2><p className="mt-2 text-sm leading-6 text-slate-600">Your changes haven’t been saved. If you leave now, your updates will be discarded and your profile will remain unchanged.</p><div className="mt-6 flex justify-end gap-3"><button type="button" onClick={() => setShowDiscardModal(false)} className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Keep Editing</button><button type="button" onClick={discardAndCloseEditModal} className="rounded-lg bg-[#173b78] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#102d5e]">Discard Changes</button></div></div></div>}
 
       {showEditModal && <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/60 p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) closeEditModal(); }}><form onSubmit={saveProfile} className="my-6 w-full max-w-2xl rounded-2xl bg-white shadow-2xl"><div className="flex items-start justify-between px-6 pb-3 pt-6"><div><h2 className="text-xl font-extrabold text-slate-900">Edit Profile</h2><p className="mt-1 text-sm text-slate-500">Update your organization branding and personal information.</p></div><button type="button" onClick={closeEditModal} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><X size={20} /></button></div><div className="max-h-[72vh] overflow-y-auto px-6 pb-6">
         <div className="mb-5 flex flex-wrap items-center gap-4 rounded-xl border border-blue-100 bg-blue-50/60 p-4"><img src={logoPreview || draft.organizationLogo || DEFAULT_LOGO} alt="Logo preview" className="h-20 w-20 rounded-lg bg-white object-contain" /><input ref={fileInputRef} type="file" accept="image/*" onChange={chooseLogo} className="hidden" /><button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"><Upload size={16} /> Change logo</button><button type="button" onClick={removeLogo} disabled={removingLogo} className="flex items-center gap-2 px-2 py-2 text-sm font-semibold text-slate-500 disabled:opacity-60"><X size={16} />{removingLogo ? "Removing..." : "Remove"}</button></div>

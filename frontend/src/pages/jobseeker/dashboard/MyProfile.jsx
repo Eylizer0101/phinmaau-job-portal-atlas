@@ -1524,6 +1524,8 @@ const CredentialItem = ({
   onOpen,
   onClose,
   onProtectedAction,
+  onRemove,
+  onReplace,
 }) => {
   const inputRef = useRef(null);
   const wrapperRef = useRef(null);
@@ -1547,6 +1549,10 @@ const CredentialItem = ({
   }, [popoverOpen, onClose]);
 
   const handleUploadClick = () => {
+    if (uploaded) {
+      onReplace?.(() => inputRef.current?.click());
+      return;
+    }
     inputRef.current?.click();
   };
 
@@ -1655,8 +1661,8 @@ const CredentialItem = ({
                   : `Upload your ${title} for document compliance and profile processing.`}
           </div>
 
-          <div className="mt-3 flex items-center justify-center">
-            {!uploaded || needsAction ? (
+          <div className="mt-3 flex items-center justify-center gap-2">
+            {!uploaded ? (
               <button
                 type="button"
                 onClick={handleUploadClick}
@@ -1664,11 +1670,28 @@ const CredentialItem = ({
                 className="h-8 px-3 rounded-md border border-[#d8e2ee] bg-white text-[#2e66a6] text-xs font-semibold inline-flex items-center justify-center gap-2 hover:bg-[#f7faff] disabled:opacity-70"
               >
                 <FaDownload className="text-[10px]" />
-                {uploading ? 'Uploading...' : needsAction ? 'Re-upload' : 'Upload'}
+                {uploading ? 'Uploading...' : 'Upload'}
               </button>
             ) : (
               <>
-                {fileUrl ? (
+                <button
+                  type="button"
+                  onClick={handleUploadClick}
+                  disabled={uploading}
+                  className="h-8 px-3 rounded-md border border-[#d8e2ee] bg-white text-[#2e66a6] text-xs font-semibold inline-flex items-center justify-center gap-2 hover:bg-[#f7faff] disabled:opacity-70"
+                >
+                  <FaDownload className="text-[10px]" />
+                  {uploading ? 'Uploading...' : 'Re-upload'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onRemove?.()}
+                  disabled={uploading}
+                  className="h-8 px-3 rounded-md border border-red-200 bg-white text-red-600 text-xs font-semibold inline-flex items-center justify-center gap-2 hover:bg-red-50 disabled:opacity-70"
+                >
+                  <FaTrash className="text-[10px]" /> Remove
+                </button>
+                {fileUrl && !needsAction ? (
                   <button
                     type="button"
                     onClick={(e) => {
@@ -1677,10 +1700,10 @@ const CredentialItem = ({
                       onClose?.();
                       onProtectedAction?.('credential-export', title, handleExportFile);
                     }}
-                    className="h-8 min-w-[138px] px-4 rounded-md border border-[#d8e2ee] bg-white text-[#2e66a6] text-xs font-semibold inline-flex items-center justify-center gap-2 hover:bg-[#f7faff]"
+                    className="h-8 px-3 rounded-md border border-[#d8e2ee] bg-white text-[#2e66a6] text-xs font-semibold inline-flex items-center justify-center gap-2 hover:bg-[#f7faff]"
                   >
                     <FaDownload className="text-[10px]" />
-                    {`Export ${title}`}
+                    Export
                   </button>
                 ) : null}
               </>
@@ -4195,6 +4218,11 @@ const MyProfile = () => {
     });
   };
 
+  const openCredentialConfirmation = ({ title, message, confirmText, cancelText, tone = 'primary', onConfirm }) => {
+    setActiveCredentialPopover('');
+    setConfirmState({ open: true, title, message, confirmText, cancelText, tone, onConfirmAction: onConfirm });
+  };
+
   const [userData, setUserData] = useState(null);
   const [profileImageUploading, setProfileImageUploading] = useState(false);
   const profileImageInputRef = useRef(null);
@@ -6266,6 +6294,55 @@ const MyProfile = () => {
     }
   };
 
+  const handleCredentialRemove = (docType, title) => {
+    openCredentialConfirmation({
+      title: 'Remove Credential?',
+      message: `Are you sure you want to remove your “${title}” credential? You can upload the credential again anytime.`,
+      confirmText: 'Yes, Remove Credential',
+      cancelText: 'Keep Credential',
+      tone: 'danger',
+      onConfirm: async () => {
+        try {
+          setUploadingDocs((prev) => ({ ...prev, [docType]: true }));
+          setDocErrors((prev) => ({ ...prev, [docType]: '' }));
+          const token = localStorage.getItem('token');
+          const response = await axios.delete(`${API_BASE}/auth/delete-alumni-verification/${docType}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (response.data?.success) {
+            setVerificationDocs((prev) => ({
+              ...prev,
+              [docType]: { status: 'not_submitted', url: '', filename: '', fileSize: 0, uploadedAt: null },
+            }));
+            closeConfirmModal();
+            showSuccess('Credential Removed', `Your “${title}” credential has been removed successfully.`);
+          }
+        } catch (err) {
+          closeConfirmModal();
+          setDocErrors((prev) => ({
+            ...prev,
+            [docType]: err.response?.data?.message || 'Failed to remove credential.',
+          }));
+        } finally {
+          setUploadingDocs((prev) => ({ ...prev, [docType]: false }));
+        }
+      },
+    });
+  };
+
+  const handleCredentialReplace = (title, openFilePicker) => {
+    openCredentialConfirmation({
+      title: 'Replace Credential?',
+      message: `Are you sure you want to replace your current “${title}” credential? Your new file will replace the existing credential.`,
+      confirmText: 'Yes, Replace Credential',
+      cancelText: 'Keep Current',
+      onConfirm: () => {
+        closeConfirmModal();
+        window.setTimeout(() => openFilePicker?.(), 0);
+      },
+    });
+  };
+
   const addSkill = (type, value) => {
     const clean = String(value || '').trim();
     if (!clean) return;
@@ -6902,6 +6979,8 @@ const MyProfile = () => {
                 onOpen={() => setActiveCredentialPopover(doc.type)}
                 onClose={() => setActiveCredentialPopover('')}
                 onProtectedAction={requestCredentialPassword}
+                onRemove={() => handleCredentialRemove(doc.type, doc.title)}
+                onReplace={(openFilePicker) => handleCredentialReplace(doc.title, openFilePicker)}
               />
             );
           })}
