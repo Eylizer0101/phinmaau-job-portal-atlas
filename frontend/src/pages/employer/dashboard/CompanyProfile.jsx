@@ -442,17 +442,22 @@ const ImageIcon = ({ className = 'w-14 h-14' }) => (
   </svg>
 );
 
-const PaperPlaneIcon = ({ className = 'w-14 h-14' }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-    <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M21 3L10 14" />
-    <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M21 3L14.5 21l-4.5-7-7-4.5L21 3z" />
-  </svg>
-);
-
 const AboutEmptyIcon = ({ className = 'w-14 h-14' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor">
     <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" />
     <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M14 3v5h5M9 13h6M9 17h6" />
+  </svg>
+);
+
+const BriefcaseIcon = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+    <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m3 0H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2zM3 12h18" />
+  </svg>
+);
+
+const StarIcon = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+    <path strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" d="M12 3.5l2.63 5.33 5.88.85-4.25 4.15 1 5.85L12 16.91l-5.26 2.77 1-5.85-4.25-4.15 5.88-.85L12 3.5z" />
   </svg>
 );
 
@@ -1197,8 +1202,6 @@ const CompanyProfile = () => {
   const [showCredentialPassword, setShowCredentialPassword] = useState(false);
   const [companyJobs, setCompanyJobs] = useState([]);
   const [companyReviews, setCompanyReviews] = useState([]);
-  const [showAllCompanyJobs, setShowAllCompanyJobs] = useState(false);
-  const [showAllCompanyReviews, setShowAllCompanyReviews] = useState(false);
   const [companyActivityLoading, setCompanyActivityLoading] = useState(false);
 
   const [docUploading, setDocUploading] = useState({
@@ -2587,22 +2590,22 @@ const CompanyProfile = () => {
                 <div className="mt-6 border-b border-[#d1d5db] px-4">
                   <div className="flex flex-wrap items-center gap-8">
                     <TabButton active={activeTab === 'about'} onClick={() => setActiveTab('about')}>
-                      About
+                      <span className="inline-flex items-center gap-2"><AboutEmptyIcon className="h-4 w-4" />About</span>
                     </TabButton>
                     <TabButton active={activeTab === 'jobs'} onClick={() => setActiveTab('jobs')}>
-                      Jobs <span className="ml-1 text-xs text-[#6b7280]">({companyJobs.length})</span>
+                      <span className="inline-flex items-center gap-2"><BriefcaseIcon className="h-4 w-4" />Jobs <span className="text-xs text-[#6b7280]">({companyJobs.length})</span></span>
                     </TabButton>
                     <TabButton active={activeTab === 'credentials'} onClick={() => setActiveTab('credentials')}>
                       Credentials
                     </TabButton>
                     <TabButton active={activeTab === 'social'} onClick={() => setActiveTab('social')}>
-                      Social Media
+                      <span className="inline-flex items-center gap-2"><LinkIcon className="h-4 w-4" />Social Media</span>
                     </TabButton>
                     <TabButton active={activeTab === 'gallery'} onClick={() => setActiveTab('gallery')}>
-                      Gallery
+                      <span className="inline-flex items-center gap-2"><ImageIcon className="h-4 w-4" />Gallery</span>
                     </TabButton>
                     <TabButton active={activeTab === 'reviews'} onClick={() => setActiveTab('reviews')}>
-                      Reviews <span className="ml-1 text-xs text-[#6b7280]">({companyReviews.length})</span>
+                      <span className="inline-flex items-center gap-2"><StarIcon className="h-4 w-4" />Reviews <span className="text-xs text-[#6b7280]">({companyReviews.length})</span></span>
                     </TabButton>
                   </div>
                 </div>
@@ -2681,7 +2684,7 @@ const CompanyProfile = () => {
                         </div>
                       ) : (
                         <EmptyState
-                          icon={PaperPlaneIcon}
+                          icon={LinkIcon}
                           title="No social accounts linked yet."
                           subtitle={'Click "Edit Profile" to connect your accounts.'}
                         />
@@ -2733,31 +2736,13 @@ const CompanyProfile = () => {
 
                   {activeTab === 'jobs' && (
                     <div className="rounded-[18px] border border-[#d1d5db] bg-white p-7 shadow-[0_2px_6px_rgba(15,23,42,0.05)]">
-                      {showAllCompanyJobs ? (
-                        <button type="button" onClick={() => setShowAllCompanyJobs(false)} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-[#d1d5db] bg-white px-4 py-2 text-[14px] font-semibold text-[#2e66a6] hover:bg-[#f5f8fc]">
-                          <svg
-  className="w-[18px] h-[18px] shrink-0"
-  fill="none"
-  stroke="currentColor"
-  viewBox="0 0 24 24"
-  aria-hidden="true"
->
-  <path
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth="2"
-    d="M15 19l-7-7 7-7"
-  />
-</svg> Back 
-                        </button>
-                      ) : null}
                       <div className="flex flex-wrap items-start justify-between gap-4">
                         <div>
-                          <h2 className="text-[24px] font-bold text-black">Jobs at {companyData.companyName || 'Company'}</h2>
-                          <p className="mt-1 text-[16px] text-black/65">{companyJobs.length} Open position{companyJobs.length === 1 ? '' : 's'}</p>
+                          <h2 className="text-[24px] font-bold text-black">Your Job Post at {companyData.companyName || 'Company'}</h2>
+                          <p className="mt-1 text-[16px] text-black/65">{companyJobs.length} Active Position{companyJobs.length === 1 ? '' : 's'}</p>
                         </div>
-                        {companyJobs.length && !showAllCompanyJobs ? (
-                          <button type="button" onClick={() => setShowAllCompanyJobs(true)} className="inline-flex items-center gap-2 
+                        {companyJobs.length ? (
+                          <button type="button" onClick={() => navigate('/employer/company-profile/jobs')} className="inline-flex items-center gap-2 
                           text-[15px] font-medium text-[#2e66a6] 
                           hover:text-[#25578f]">View all jobs  <svg
                             className="w-[18px] h-[18px] shrink-0"
@@ -2775,7 +2760,7 @@ const CompanyProfile = () => {
                         <div className="flex justify-center py-12"><SpinnerIcon className="h-6 w-6 text-[#2e66a6]" /></div>
                       ) : companyJobs.length ? (
                         <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                          {(showAllCompanyJobs ? companyJobs : companyJobs.slice(0, 6)).map((job) => (
+                          {companyJobs.slice(0, 6).map((job) => (
                             <article key={job._id} className="flex min-h-[350px] flex-col rounded-[22px] border border-[#E5E7EB] bg-white p-5 shadow-[0_6px_18px_rgba(0,0,0,0.045)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)]">
                               <div className="flex items-start gap-4">
                                 <img src={previewLogo || logoFallback} alt="" className="h-14 w-14 shrink-0 rounded-xl border border-[#e5e7eb] object-cover" />
@@ -2815,34 +2800,16 @@ const CompanyProfile = () => {
                           ))}
                         </div>
                       ) : (
-                        <EmptyState icon={AboutEmptyIcon} title="No job posts yet." subtitle="Your company's job posts will appear here." />
+                        <EmptyState icon={BriefcaseIcon} title="No job posts yet." subtitle="Your company's job posts will appear here." />
                       )}
                     </div>
                   )}
 
                   {activeTab === 'reviews' && (
                     <div className="rounded-[18px] border border-[#d1d5db] bg-white p-7 shadow-[0_2px_6px_rgba(15,23,42,0.05)]">
-                      {showAllCompanyReviews ? (
-                        <button type="button" onClick={() => setShowAllCompanyReviews(false)} className="mb-5 inline-flex items-center gap-2 rounded-xl border border-[#d1d5db] bg-white px-4 py-2 text-[14px] font-semibold text-[#2e66a6] hover:bg-[#f5f8fc]">
-                          <svg
-  className="w-[18px] h-[18px] shrink-0"
-  fill="none"
-  stroke="currentColor"
-  viewBox="0 0 24 24"
-  aria-hidden="true"
->
-  <path
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth="2"
-    d="M15 19l-7-7 7-7"
-  />
-</svg> Back 
-                        </button>
-                      ) : null}
                       <div className="flex flex-wrap items-start justify-between gap-4">
-                        <div><h2 className="text-[24px] font-bold text-black">Application process at {companyData.companyName || 'Company'}</h2><p className="mt-1 text-[16px] text-black/65">{companyReviews.length} review{companyReviews.length === 1 ? '' : 's'}</p></div>
-                        {companyReviews.length && !showAllCompanyReviews ? <button type="button" onClick={() => setShowAllCompanyReviews(true)} 
+                        <div><h2 className="text-[24px] font-bold text-black">Applications Process at {companyData.companyName || 'Company'}</h2><p className="mt-1 text-[16px] text-black/65">{companyReviews.length} Total Application{companyReviews.length === 1 ? '' : 's'}</p></div>
+                        {companyReviews.length ? <button type="button" onClick={() => navigate('/employer/company-profile/reviews')} 
                         className="inline-flex items-center gap-2 text-[15px] font-medium text-[#2e66a6] 
                         hover:text-[#25578f]">See all reviews<svg
                             className="w-[18px] h-[18px] shrink-0"
@@ -2857,7 +2824,7 @@ const CompanyProfile = () => {
 
                       {companyReviews.length ? (
                         <div className="mt-6 space-y-5">
-                          {(showAllCompanyReviews ? companyReviews : companyReviews.slice(0, 6)).map((review, index) => (
+                          {companyReviews.slice(0, 6).map((review, index) => (
                             <article key={review._id || index} className="rounded-2xl border border-[#dfe7f0] bg-white px-5 py-5 shadow-[0_10px_28px_rgba(46,102,166,0.06)] sm:px-6 sm:py-6">
                               <div className="flex flex-wrap items-start justify-between gap-3">
                                 <div><h3 className="text-[17px] font-bold text-black">{review.reviewerName || 'Anonymous User'}</h3><p className="mt-1 text-sm text-black/55">{review.roleAppliedFor || 'Role not provided'}{formatReviewAge(review.createdAt) ? ` · ${formatReviewAge(review.createdAt)}` : ''}</p></div>
@@ -2869,7 +2836,7 @@ const CompanyProfile = () => {
                           ))}
                         </div>
                       ) : (
-                        <EmptyState icon={AboutEmptyIcon} title="No reviews yet." subtitle="Job seeker reviews will appear here." />
+                        <EmptyState icon={StarIcon} title="No reviews yet." subtitle="Job seeker reviews will appear here." />
                       )}
                     </div>
                   )}

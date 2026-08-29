@@ -61,6 +61,8 @@ import Applicants from './pages/employer/dashboard/Applicants';
 import JobApplicants from './pages/employer/dashboard/JobApplicants';
 import ApplicationDetails from './pages/employer/dashboard/ApplicationDetails';
 import CompanyProfile from './pages/employer/dashboard/CompanyProfile';
+import EmployerAllJobs from './pages/employer/dashboard/EmployerAllJobs';
+import EmployerAllReviews from './pages/employer/dashboard/EmployerAllReviews';
 import EmployerMessages from './pages/employer/dashboard/EmployerMessages';
 import EmployerSettings from './pages/employer/dashboard/Settings';
 import EmployerNotificationsPage from './pages/employer/dashboard/EmployerNotificationsPage';
@@ -452,6 +454,22 @@ function App() {
           element={
             <RequireRole role="employer" redirectTo="/login">
               <CompanyProfile />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/employer/company-profile/jobs"
+          element={
+            <RequireRole role="employer" redirectTo="/login">
+              <EmployerAllJobs />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/employer/company-profile/reviews"
+          element={
+            <RequireRole role="employer" redirectTo="/login">
+              <EmployerAllReviews />
             </RequireRole>
           }
         />
