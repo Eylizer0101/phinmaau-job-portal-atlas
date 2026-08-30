@@ -956,7 +956,7 @@ const AdminJobView = () => {
           </div>
 
           <div className={`${UI.card} mb-5 overflow-hidden`}>
-            <div className="relative h-[120px] w-full overflow-hidden sm:h-[145px]">
+            <div className="relative h-[170px] w-full overflow-hidden sm:h-[190px]">
               <img
                 src={assetUrl(companyInfo?.coverPhoto, '/images/jobback.png')}
                 alt={`${job.companyName || 'Company'} cover`}
