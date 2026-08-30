@@ -1342,7 +1342,18 @@ const UserManagementDetails = () => {
           <p className="mt-1 text-xs text-gray-500">Track where this user has applied and their progress.</p>
         </div>
         <div className="text-right">
-          <button type="button" onClick={() => navigate(`/admin/users/${userId}/application-history`)} className="text-xs font-semibold text-[#0057d9] hover:underline">View full tracking history →</button>
+          <button type="button" onClick={() => navigate(`/admin/users/${userId}/application-history`)} className="text-xs 
+          font-semibold text-[#0057d9] 
+          hover:underline">View full tracking history <svg
+               className="w-[18px] h-[18px] shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                          </svg>
+</button>
           <p className="mt-1 text-[11px] text-gray-500">{applications.length} Total Applications</p>
         </div>
       </div>
