@@ -623,7 +623,7 @@ const AdminApplicationView = () => {
         <div className={UI.page}>
           <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate("/admin/applications")}
               className={cn("mb-5 inline-flex items-center gap-2 rounded-lg border border-[#d7e6f5] bg-white px-4 py-2 text-sm font-semibold text-[#111827] shadow-sm transition hover:bg-[#eef5fc] hover:text-[#2e66a6]", UI.ring)}
               type="button"
             >
@@ -645,7 +645,7 @@ const AdminApplicationView = () => {
         <div className="mx-auto max-w-7xl px-1 py-8">
           <div className="mb-5">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate("/admin/applications")}
               className={cn("inline-flex items-center gap-2 rounded-lg border border-[#d7e6f5] bg-white px-4 py-2 text-sm font-semibold text-[#111827] shadow-sm transition hover:bg-[#eef5fc] hover:text-[#2e66a6]", UI.ring)}
               type="button"
             >
