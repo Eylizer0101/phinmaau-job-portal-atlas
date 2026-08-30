@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import AdminLayout from '../../layouts/AdminLayout';
+import { BuildingIcon } from '../../components/shared/JobseekerIcons';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
@@ -809,6 +810,7 @@ const AdminJobView = () => {
 
         if (jobData.employerDetails) {
           setCompanyInfo({
+            companyName: jobData.employerDetails.companyName || '',
             companyAddress: jobData.employerDetails.companyAddress || '',
             industry: jobData.employerDetails.industry || '',
             companyWebsite:
@@ -972,6 +974,13 @@ const AdminJobView = () => {
                     <h1 className="text-[28px] font-bold leading-tight text-[#111827] sm:text-[32px]" title={job.title}>
                       {job.title}
                     </h1>
+
+                    <div className="mt-2 flex items-center gap-2 text-[#4b5563]">
+                      <BuildingIcon className="h-4 w-4" />
+                      <span className="text-sm font-medium">
+                        {String(job.companyName || companyInfo?.companyName || '').trim() || 'Company not specified'}
+                      </span>
+                    </div>
 
                     <div className="mt-2 flex items-center gap-2 text-[#6b7280]">
                       <SvgIcon name="location" className="h-4 w-4" />
@@ -1174,7 +1183,7 @@ const AdminJobView = () => {
 
               <section className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
                 <div className={`${UI.sectionCard} p-5 sm:p-6`}>
-                  <SectionHeader icon="tools" title="Required Skills" />
+                  <h3 className={UI.title}>Required Skills</h3>
                   {requiredSkills.length > 0 ? (
                     <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                       {requiredSkills.map((skill, idx) => (
