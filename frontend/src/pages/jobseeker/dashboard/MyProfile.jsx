@@ -6282,7 +6282,7 @@ const MyProfile = () => {
           },
         }));
         const submittedLabel = documentConfig.find((item) => item.type === docType)?.title || 'Credential';
-        showSuccess('Credential Submitted', `“${submittedLabel}” credential submitted successfully!`);
+        showSuccess('Credential Submitted', `The“${submittedLabel}”credential has been submitted successfully!`);
       }
     } catch (err) {
       console.error(err);
