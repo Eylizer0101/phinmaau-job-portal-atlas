@@ -555,6 +555,17 @@ const AdminApplicationView = () => {
         : `${apiHost}${companyCoverPhoto.startsWith("/") ? companyCoverPhoto : `/${companyCoverPhoto}`}`)
     : "/images/jobback.png";
 
+  const handleViewSubmittedResume = async () => {
+    try {
+      const response = await api.get(`/applications/${applicationId}/resume/download`, { responseType: "blob" });
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data], { type: response.headers?.["content-type"] || "application/pdf" }));
+      window.open(blobUrl, "_blank", "noopener,noreferrer");
+      window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to open the submitted resume.");
+    }
+  };
+
   if (loading) return <LoadingState />;
 
   if (error || !application) {
@@ -697,6 +708,16 @@ const AdminApplicationView = () => {
               }
             />
           </div>
+
+          <section className={`${UI.sectionCard} mb-5 flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6`}>
+            <div>
+              <h2 className="text-base font-semibold text-[#111827]">Submitted Resume</h2>
+              <p className="mt-1 text-sm text-[#6b7280]">This is the exact resume snapshot submitted for {job.title || job.jobTitle || "this application"} at {companyName}.</p>
+            </div>
+            <button type="button" onClick={handleViewSubmittedResume} className={cn("inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-5 text-sm font-semibold text-white transition hover:bg-[#255487]", UI.ring)}>
+              <Icon name="file" className="h-4 w-4" /> View Submitted Resume
+            </button>
+          </section>
 
           <div className="mb-5">
             <section className={`${UI.sectionCard} p-5 sm:p-6`}>

@@ -2,6 +2,7 @@
 const User = require('../models/User');
 const Job = require('../models/Job');
 const Application = require('../models/Application');
+const SystemLog = require('../models/SystemLog');
 const CommunityPost = require('../models/CommunityPost');
 const Notification = require('../models/Notification');
 const bcrypt = require('bcryptjs');
@@ -1324,11 +1325,19 @@ exports.getUserById = async (req, res) => {
     const applications =
       user.role === 'jobseeker'
         ? await Application.find({ jobseeker: user._id })
-            .populate('job', 'title jobTitle companyName location address workMode jobType')
-            .populate('employer', 'firstName lastName email employerProfile.companyName employerProfile.regionCity')
+            .populate('job', 'title jobTitle companyName companyLogo location address workMode jobType industry salaryMin salaryMax hideSalary employmentType createdAt')
+            .populate('employer', 'firstName lastName email employerProfile.companyName employerProfile.regionCity employerProfile.industry employerProfile.companyLogo')
             .sort({ appliedAt: -1, createdAt: -1 })
             .lean()
         : [];
+
+    const activityLogs = user.role === 'jobseeker'
+      ? await SystemLog.find({ actor: user._id, status: { $ne: 'failed' } })
+          .select('action actionLabel module targetName description metadata createdAt')
+          .sort({ createdAt: -1 })
+          .limit(500)
+          .lean()
+      : [];
 
     const applicationCount = applications.length;
     const jobPosts =
@@ -1368,6 +1377,7 @@ exports.getUserById = async (req, res) => {
         ...user.toObject(),
         applicationCount,
         jobPostCount,
+        activityLogs,
       },
       applications,
       jobPosts: jobPostsWithCounts,

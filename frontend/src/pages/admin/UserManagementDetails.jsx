@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
 import { normalizeUserToResumeData } from "../../components/shared/resumePrintTemplate";
+import Pagination from "../../components/shared/Pagination";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
@@ -427,6 +428,9 @@ const UserManagementDetails = () => {
   const [activeEmployerTab, setActiveEmployerTab] = useState("about");
   const [applicationPage, setApplicationPage] = useState(1);
   const [brokenAvatar, setBrokenAvatar] = useState(false);
+  const [showAllActivity, setShowAllActivity] = useState(false);
+  const [activityPage, setActivityPage] = useState(1);
+  const [activityPageSize, setActivityPageSize] = useState(10);
 
   const apiHost = useMemo(() => {
     const apiUrl = process.env.REACT_APP_API_URL || "https://phinmaau-job-portal-atlas.onrender.com/api";
@@ -538,7 +542,10 @@ const UserManagementDetails = () => {
       else setLoading(true);
       setError("");
 
-      const response = await api.get(`/admin/users/${userId}`);
+      const response = await api.get(`/admin/users/${userId}`, {
+        params: { fresh: Date.now() },
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (response.data?.success) {
         setUser(response.data.user || null);
         setApplications(response.data.applications || []);
@@ -558,6 +565,10 @@ const UserManagementDetails = () => {
   useEffect(() => {
     if (userId) fetchUserDetails();
   }, [userId, fetchUserDetails]);
+
+  useEffect(() => {
+    if (userId && activeTab === "resume") fetchUserDetails({ silent: true });
+  }, [activeTab, fetchUserDetails, userId]);
 
   useEffect(() => {
     setBrokenAvatar(false);
@@ -758,6 +769,16 @@ const UserManagementDetails = () => {
   const activityItems = useMemo(() => {
     const items = [];
 
+    (user?.activityLogs || []).forEach((log, index) => {
+      items.push({
+        key: log._id || log.id || `system-log-${index}`,
+        type: log.action || "activity",
+        title: log.actionLabel || "Activity recorded",
+        description: log.description || log.targetName || log.module || "User activity",
+        occurredAt: log.createdAt,
+      });
+    });
+
     const cvDocument = profile?.verificationDocs?.cv || {};
     if (cvDocument.uploadedAt) {
       items.push({
@@ -858,7 +879,13 @@ const UserManagementDetails = () => {
           new Date(second.occurredAt).getTime() -
           new Date(first.occurredAt).getTime()
       );
-  }, [applications, profile, user?.updatedAt]);
+  }, [applications, profile, user?.activityLogs, user?.updatedAt]);
+
+  const visibleActivityItems = showAllActivity
+    ? activityPageSize === "all"
+      ? activityItems
+      : activityItems.slice((activityPage - 1) * activityPageSize, activityPage * activityPageSize)
+    : activityItems.slice(0, 10);
 
   const getApplicationPresentation = (application = {}) => {
     const normalizedStatus = String(application.status || "pending").toLowerCase();
@@ -1005,17 +1032,17 @@ const UserManagementDetails = () => {
 
   const ResumePreview = () => {
     const avatarUrl = getFileUrl(user?.profileImage);
-    const resumeFileName =
-      docs?.cv?.filename ||
-      `${fullName.toLowerCase().replace(/[^a-z0-9]+/g, "_") || "jobseeker"}_resume.pdf`;
+    const initials = fullName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join("") || "JS";
 
     return (
       <section className="overflow-hidden rounded-[20px] border border-[#d8e2ee] bg-white shadow-sm">
         <div className="flex flex-col gap-3 border-b border-[#d8e2ee] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-          <div className="flex min-w-0 items-center gap-2 text-sm font-semibold text-gray-700 sm:text-base">
-            <Icon name="document" className="h-4 w-4 shrink-0 text-[#2e66a6]" />
-            <span className="truncate">{resumeFileName}</span>
-          </div>
+          <div />
 
           <button
             type="button"
@@ -1023,7 +1050,7 @@ const UserManagementDetails = () => {
             className="inline-flex w-fit items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[#174b91] transition hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 sm:text-[15px]"
           >
             <Icon name="eye" className="h-4 w-4" />
-            Open full view
+            Full Resume
           </button>
         </div>
 
@@ -1035,21 +1062,17 @@ const UserManagementDetails = () => {
               </h2>
 
               <p className="mt-2 break-words text-[11px] leading-relaxed sm:text-[12px]">
-                {[profile.address, user?.email, profile.phoneNumber]
+                {[user?.email, profile.phoneNumber || user?.phoneNumber || user?.contactNumber]
                   .filter(Boolean)
                   .join(" | ") || "Contact information not provided"}
               </p>
 
-              <p className="mt-1 text-[11px] italic sm:text-[12px]">
+              <p className="mt-1 break-words text-[11px] leading-relaxed text-[#56616f] sm:text-[12px]">
                 {[
                   profile.campus,
                   profile.course,
-                  profile.yearGraduated
-                    ? `Class of ${profile.yearGraduated}`
-                    : "",
-                ]
-                  .filter(Boolean)
-                  .join(", ")}
+                  profile.yearGraduated ? `Class of ${profile.yearGraduated}` : "",
+                ].filter(Boolean).join(", ")}
               </p>
 
               {avatarUrl && !brokenAvatar ? (
@@ -1059,7 +1082,11 @@ const UserManagementDetails = () => {
                   onError={() => setBrokenAvatar(true)}
                   className="mt-4 h-[88px] w-[88px] object-cover sm:absolute sm:right-2 sm:top-0 sm:mt-0 sm:h-[96px] sm:w-[96px]"
                 />
-              ) : null}
+              ) : (
+                <div className="mt-4 flex h-[88px] w-[88px] items-center justify-center bg-[#1f2430] text-[28px] font-bold text-white sm:absolute sm:right-2 sm:top-0 sm:mt-0 sm:h-[96px] sm:w-[96px]">
+                  {initials}
+                </div>
+              )}
             </header>
 
             {String(profile.aboutMe || "").trim() ? (
@@ -1284,15 +1311,20 @@ const UserManagementDetails = () => {
   };
 
   const ActivityTimeline = () => (
-    <section className="rounded-[20px] border border-[#d8e2ee] bg-white p-5 shadow-sm sm:p-7">
-      <h2 className="text-lg font-bold text-black">Recent Activity</h2>
+    <section className="flex min-h-[620px] flex-col rounded-[20px] border border-[#d8e2ee] bg-white p-5 shadow-sm sm:p-7">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div><h2 className="text-lg font-bold text-black">{showAllActivity ? "All Activity" : "Recent Activity"}</h2>{showAllActivity ? <p className="mt-1 text-xs text-gray-500">Complete activity log for this user.</p> : null}</div>
+        <button type="button" onClick={() => { setShowAllActivity((value) => !value); setActivityPage(1); }} className="text-xs font-semibold text-[#174b91] hover:underline">
+          {showAllActivity ? "← Back to Recent Activity" : "View All Activity →"}
+        </button>
+      </div>
 
       {activityItems.length ? (
-        <div className="mt-5 max-w-4xl space-y-6">
-          {activityItems.map((item) => (
+        <div className={cn("mt-5 flex-1", showAllActivity ? "divide-y divide-[#e5edf5]" : "max-w-4xl space-y-5")}>
+          {visibleActivityItems.map((item) => (
             <article
               key={item.key}
-              className="relative border-l border-[#d8e2ee] pb-1 pl-5 last:border-l-transparent"
+              className={cn("relative pl-5", showAllActivity ? "py-4" : "border-l border-[#d8e2ee] pb-1 last:border-l-transparent")}
             >
               <span className="absolute -left-[5px] top-1 h-2.5 w-2.5 rounded-full bg-[#3875ff]" />
 
@@ -1313,6 +1345,7 @@ const UserManagementDetails = () => {
           No recent activity is available for this jobseeker.
         </div>
       )}
+      {showAllActivity && activityItems.length ? <Pagination currentPage={activityPage} totalItems={activityItems.length} pageSize={activityPageSize} onPageChange={setActivityPage} onPageSizeChange={(value) => { setActivityPageSize(value); setActivityPage(1); }} /> : null}
     </section>
   );
 
@@ -1325,10 +1358,7 @@ const UserManagementDetails = () => {
             Track where this user has applied and their progress.
           </p>
         </div>
-
-        <span className="rounded-full bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#2e66a6]">
-          {applications.length} total
-        </span>
+        <div className="text-right"><button type="button" onClick={() => navigate(`/admin/users/${userId}/application-history`)} className="text-xs font-semibold text-[#174b91] hover:underline">View full tracking history →</button><p className="mt-1 text-[11px] text-gray-500">{applications.length} Total Applications</p></div>
       </div>
 
       {applications.length ? (
@@ -1346,6 +1376,11 @@ const UserManagementDetails = () => {
               job.address ||
               employerProfile.regionCity ||
               "Location not specified";
+            const timeline = (Array.isArray(application.activityHistory) ? application.activityHistory : [])
+              .map((item, index) => ({ key: item._id || `${application._id}-${index}`, title: item.title || item.description || "Application updated", date: item.occurredAt || item.createdAt || application.updatedAt }))
+              .filter((item) => item.date)
+              .sort((first, second) => new Date(second.date).getTime() - new Date(first.date).getTime())
+              .slice(0, 4);
 
             return (
               <article
@@ -1403,6 +1438,11 @@ const UserManagementDetails = () => {
                     )}
                     style={{ width: `${presentation.progress}%` }}
                   />
+                </div>
+
+                <div className="mt-3 rounded-lg border border-[#e5edf5] bg-[#fbfdff] px-3 py-3">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#2e66a6]">Progress Timeline</p>
+                  <div className="mt-2 space-y-1.5">{(timeline.length ? timeline : [{ key: `${application._id}-submitted`, title: "Application submitted", date: application.appliedAt || application.createdAt }]).map((item) => <div key={item.key} className="flex items-center justify-between gap-4 text-[10px]"><span className="text-gray-600">{item.title}</span><span className="shrink-0 text-gray-400">{formatDate(item.date)}</span></div>)}</div>
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
@@ -1474,18 +1514,6 @@ const UserManagementDetails = () => {
             </div>
           ) : null}
 
-          <div className="border-t border-[#d8e2ee] pt-4">
-            <button
-              type="button"
-              onClick={() =>
-                navigate(`/admin/users/${userId}/application-history`)
-              }
-              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-[#174b91] transition hover:border-[#2e66a6]/35 hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-            >
-              View full tracking history
-              <span aria-hidden="true">→</span>
-            </button>
-          </div>
         </div>
       ) : (
         <div className="mt-5 rounded-xl border border-dashed border-[#d8e2ee] bg-[#f8fafc] px-5 py-12 text-center text-sm text-gray-500">

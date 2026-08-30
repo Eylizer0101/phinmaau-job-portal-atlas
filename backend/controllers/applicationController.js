@@ -2714,7 +2714,7 @@ exports.downloadApplicationResume = async (req, res) => {
           message: 'Not authorized to download this CV'
         });
       }
-    } else {
+    } else if (req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Not authorized to download this CV'

@@ -88,6 +88,24 @@ const formatDate = (value) => {
   });
 };
 
+const formatDateTime = (value) => {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString("en-PH", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+};
+
+const formatSalary = (job = {}) => {
+  if (job.hideSalary) return "Salary hidden";
+  const minimum = Number(job.salaryMin);
+  const maximum = Number(job.salaryMax);
+  const money = (value) => `₱${value.toLocaleString("en-PH")}`;
+  if (Number.isFinite(minimum) && Number.isFinite(maximum)) return `${money(minimum)}–${money(maximum)}`;
+  if (Number.isFinite(minimum)) return `From ${money(minimum)}`;
+  if (Number.isFinite(maximum)) return `Up to ${money(maximum)}`;
+  return "Salary not specified";
+};
+
 const formatRelativeTime = (value) => {
   if (!value) return "Updated recently";
 
@@ -154,7 +172,7 @@ const getApplicationPresentation = (application = {}) => {
 
   if (normalizedStatus === "declined" || normalizedStatus === "vacancy full") {
     return {
-      label: "Not Selected",
+      label: "Declined",
       progress: 100,
       description:
         application.declineReason ||
@@ -163,6 +181,16 @@ const getApplicationPresentation = (application = {}) => {
           : "Application was not selected"),
       badgeClass: "border-rose-200 bg-rose-50 text-rose-700",
       barClass: "bg-rose-400",
+    };
+  }
+
+  if (normalizedStatus === "withdrawn" || normalizedStatus === "cancelled") {
+    return {
+      label: "Withdrawn",
+      progress: 30,
+      description: "Application withdrawn by the applicant",
+      badgeClass: "border-slate-200 bg-slate-50 text-slate-700",
+      barClass: "bg-slate-400",
     };
   }
 
@@ -192,7 +220,7 @@ const getApplicationPresentation = (application = {}) => {
 
   if (application.reviewedAt || application.viewedAt || application.isViewedByEmployer) {
     return {
-      label: "Resume Under Review",
+      label: "Pending",
       progress: 35,
       description: "Employer opened and reviewed the applicant's resume",
       badgeClass: "border-amber-200 bg-amber-50 text-amber-700",
@@ -201,7 +229,7 @@ const getApplicationPresentation = (application = {}) => {
   }
 
   return {
-    label: "Submitted",
+    label: "Pending",
     progress: 15,
     description: "Application received by the employer",
     badgeClass: "border-slate-200 bg-slate-50 text-slate-700",
@@ -346,7 +374,7 @@ const buildProgressTimeline = (application = {}, presentation) => {
     addFallback("Hired", application.updatedAt, ["hired"]);
   }
 
-  if (presentation.label === "Not Selected") {
+  if (presentation.label === "Declined") {
     const reason = [
       application.declineReason,
       application.declineComment,
@@ -374,8 +402,12 @@ const AdminUserApplicationHistory = () => {
 
   const [user, setUser] = useState(null);
   const [applications, setApplications] = useState([]);
-  const [activeFilter, setActiveFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [companyFilter, setCompanyFilter] = useState("all");
+  const [industryFilter, setIndustryFilter] = useState("all");
+  const [jobTitleFilter, setJobTitleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [timeFilter, setTimeFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -386,7 +418,10 @@ const AdminUserApplicationHistory = () => {
       setLoading(true);
       setError("");
 
-      const response = await api.get(`/admin/users/${userId}`);
+      const response = await api.get(`/admin/users/${userId}`, {
+        params: { fresh: Date.now() },
+        headers: { "Cache-Control": "no-cache" },
+      });
 
       if (!response.data?.success) {
         setError("Unable to load the application history.");
@@ -436,41 +471,37 @@ const AdminUserApplicationHistory = () => {
     [applications]
   );
 
-  const filterCounts = useMemo(() => {
-    const counts = {
-      all: preparedApplications.length,
-      Submitted: 0,
-      "Resume Under Review": 0,
-      "For Interview": 0,
-      Offered: 0,
-      Hired: 0,
-      "Not Selected": 0,
+  const filterOptions = useMemo(() => {
+    const unique = (values) => [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    return {
+      companies: unique(applications.map((item) => item.job?.companyName || item.employer?.employerProfile?.companyName)),
+      industries: unique(applications.map((item) => item.job?.industry || item.employer?.employerProfile?.industry)),
+      jobTitles: unique(applications.map((item) => item.job?.title || item.job?.jobTitle)),
     };
-
-    preparedApplications.forEach(({ presentation }) => {
-      if (Object.prototype.hasOwnProperty.call(counts, presentation.label)) {
-        counts[presentation.label] += 1;
-      }
-    });
-
-    return counts;
-  }, [preparedApplications]);
+  }, [applications]);
 
   const filteredApplications = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
     return preparedApplications.filter(({ application, presentation }) => {
-      if (
-        activeFilter !== "all" &&
-        presentation.label !== activeFilter
-      ) {
-        return false;
-      }
-
-      if (!normalizedQuery) return true;
-
       const job = application.job || {};
       const employerProfile = application.employer?.employerProfile || {};
+      const companyName = job.companyName || employerProfile.companyName || "";
+      const industry = job.industry || employerProfile.industry || "";
+      const jobTitle = job.title || job.jobTitle || "";
+      const normalizedStatus = String(application.status || "pending").toLowerCase();
+      const appliedDate = new Date(application.appliedAt || application.createdAt || 0);
+      const ageDays = (Date.now() - appliedDate.getTime()) / 86400000;
+
+      if (companyFilter !== "all" && companyName !== companyFilter) return false;
+      if (industryFilter !== "all" && industry !== industryFilter) return false;
+      if (jobTitleFilter !== "all" && jobTitle !== jobTitleFilter) return false;
+      if (statusFilter !== "all" && normalizedStatus !== statusFilter) return false;
+      if (timeFilter === "week" && ageDays > 7) return false;
+      if (timeFilter === "month" && ageDays > 30) return false;
+      if (timeFilter === "older" && ageDays <= 30) return false;
+      if (!normalizedQuery) return true;
+
       const searchableText = [
         job.title,
         job.jobTitle,
@@ -491,11 +522,11 @@ const AdminUserApplicationHistory = () => {
 
       return searchableText.includes(normalizedQuery);
     });
-  }, [activeFilter, preparedApplications, searchQuery]);
+  }, [companyFilter, industryFilter, jobTitleFilter, preparedApplications, searchQuery, statusFilter, timeFilter]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeFilter, searchQuery]);
+  }, [companyFilter, industryFilter, jobTitleFilter, searchQuery, statusFilter, timeFilter]);
 
   const paginatedApplications = useMemo(() => {
     if (pageSize === "all") return filteredApplications;
@@ -554,53 +585,19 @@ const AdminUserApplicationHistory = () => {
             Back to User Details
           </button>
 
-          <section className="rounded-[20px] border border-[#d8e2ee] bg-white p-5 shadow-sm sm:p-7">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#2e66a6]">
-                {fullName}
-              </p>
-              <h1 className="mt-1 text-2xl font-bold text-black sm:text-3xl">
+          <section className="flex min-h-[760px] flex-col rounded-[20px] border border-[#d8e2ee] bg-white p-5 shadow-sm sm:p-7">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div><h1 className="text-2xl font-bold text-black sm:text-3xl">
                 Full Application History
               </h1>
               <p className="mt-2 text-sm text-gray-500">
                 Every company this jobseeker has applied to, with stage-by-stage progress.
-              </p>
+              </p></div>
+              <span className="text-sm font-medium text-gray-500">{applications.length} Applications</span>
             </div>
 
-            <div className="mt-6 flex flex-col gap-3 rounded-xl border border-[#d8e2ee] bg-[#fbfdff] p-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex gap-2 overflow-x-auto pb-1 lg:pb-0">
-                {FILTERS.map((filter) => {
-                  const isActive = activeFilter === filter.key;
-
-                  return (
-                    <button
-                      key={filter.key}
-                      type="button"
-                      onClick={() => setActiveFilter(filter.key)}
-                      className={cn(
-                        "inline-flex h-9 shrink-0 items-center gap-2 rounded-full border px-3 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2",
-                        isActive
-                          ? "border-[#163c70] bg-[#163c70] text-white"
-                          : "border-[#d8e2ee] bg-white text-gray-600 hover:border-[#2e66a6]/40 hover:text-[#174b91]"
-                      )}
-                    >
-                      {filter.label}
-                      <span
-                        className={cn(
-                          "rounded-full px-1.5 py-0.5 text-[10px]",
-                          isActive
-                            ? "bg-white/15 text-white"
-                            : "bg-[#eef5fc] text-[#2e66a6]"
-                        )}
-                      >
-                        {filterCounts[filter.key] || 0}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <label className="relative block w-full lg:max-w-[330px]">
+            <div className="mt-6 rounded-xl border border-[#d8e2ee] bg-[#fbfdff] p-3">
+              <label className="relative block w-full">
                 <span className="sr-only">
                   Search application history
                 </span>
@@ -613,13 +610,23 @@ const AdminUserApplicationHistory = () => {
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="Search company, role, location..."
-                  className="h-10 w-full rounded-lg border border-[#d8e2ee] bg-white pl-9 pr-3 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                  className="h-10 w-full rounded-lg border border-[#d8e2ee] bg-white pl-9 pr-3 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15 lg:max-w-none"
                 />
               </label>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                {[
+                  [companyFilter, setCompanyFilter, "All Company", filterOptions.companies],
+                  [industryFilter, setIndustryFilter, "All Industry", filterOptions.industries],
+                  [jobTitleFilter, setJobTitleFilter, "All Job Title", filterOptions.jobTitles],
+                ].map(([value, setter, label, options]) => <select key={label} value={value} onChange={(event) => setter(event.target.value)} className="h-10 rounded-lg border border-[#d8e2ee] bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"><option value="all">{label}</option>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select>)}
+                <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="h-10 rounded-lg border border-[#d8e2ee] bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"><option value="all">All Status</option><option value="pending">Pending</option><option value="for interview">For Interview</option><option value="hired">Hired</option><option value="declined">Declined</option><option value="withdrawn">Withdrawn</option></select>
+                <select value={timeFilter} onChange={(event) => setTimeFilter(event.target.value)} className="h-10 rounded-lg border border-[#d8e2ee] bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"><option value="all">All Time</option><option value="week">Past Week</option><option value="month">Past Month</option><option value="older">Older</option></select>
+              </div>
+              <p className="mt-2 text-xs text-gray-500">Showing {filteredApplications.length} of {applications.length} applications</p>
             </div>
 
             {filteredApplications.length ? (
-              <div className="mt-5 space-y-4">
+              <div className="mt-5 flex-1 space-y-4">
                 {paginatedApplications.map(
                   ({ application, presentation }) => {
                     const job = application.job || {};
@@ -661,15 +668,23 @@ const AdminUserApplicationHistory = () => {
                               </p>
 
                               <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                                <span className="inline-flex items-center gap-1.5"><Icon name="briefcase" className="h-3.5 w-3.5" />{job.jobType || job.employmentType || "Type not specified"}</span>
+                                <span aria-hidden="true">•</span>
+                                <span>{job.workMode || "Work setup not specified"}</span>
+                                <span aria-hidden="true">•</span>
+                                <span>{job.industry || employerProfile.industry || "Industry not specified"}</span>
+                                <span aria-hidden="true">•</span>
                                 <span className="inline-flex items-center gap-1.5">
                                   <Icon name="mapPin" className="h-3.5 w-3.5" />
                                   {locationText}
                                 </span>
                                 <span aria-hidden="true">•</span>
+                                <span>{formatSalary(job)}</span>
+                                <span aria-hidden="true">•</span>
                                 <span className="inline-flex items-center gap-1.5">
                                   <Icon name="calendar" className="h-3.5 w-3.5" />
                                   Applied{" "}
-                                  {formatDate(
+                                  {formatDateTime(
                                     application.appliedAt ||
                                       application.createdAt
                                   )}
@@ -767,7 +782,7 @@ const AdminUserApplicationHistory = () => {
                 )}
               </div>
             ) : (
-              <div className="mt-5 rounded-xl border border-dashed border-[#d8e2ee] bg-[#f8fafc] px-5 py-14 text-center">
+              <div className="mt-5 flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-[#d8e2ee] bg-[#f8fafc] px-5 py-14 text-center">
                 <p className="text-sm font-semibold text-gray-700">
                   No matching applications found.
                 </p>
