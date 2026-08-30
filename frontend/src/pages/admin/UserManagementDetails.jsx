@@ -703,26 +703,38 @@ const UserManagementDetails = () => {
     ])
     .filter(([, items]) => items.length > 0);
 
-  const personalInformationRows = [
-    ["Preferred Work Mode", profile.preferredWorkMode],
-    ["Employment Type", profile.employmentType],
-    ["Willing to Relocate", profile.willingToRelocate],
-    ["How Soon Can Start", profile.howSoonCanYouStart],
-    ["Experience", profile.experience || profile.whatHaveYouDone],
-    ["Preferred Language", profile.preferredLanguage],
-    ["Educational Attainment", profile.educationalAttainment],
-    ["Field of Study", profile.studyField || profile.course],
+  const personalInformationColumns = [
     [
-      "Salary",
-      [profile.minimumSalary, profile.maximumSalary].filter(Boolean).join(" - "),
+      ["Preferred Work Mode", profile.preferredWorkMode],
+      ["Employment Type", profile.employmentType],
+      ["Willing to Relocate", profile.willingToRelocate],
+      ["How Soon Can Start", profile.howSoonCanYouStart],
+      ["Experience", profile.experience || profile.whatHaveYouDone],
     ],
-    ["Nationality", profile.nationality],
-    ["Height", profile.height],
-    ["Weight", profile.weight],
-    ["Gender", profile.gender],
-    ["Civil Status", profile.civilStatus],
-    ["Birthday", profile.birthday],
-  ].filter(([, value]) => String(value || "").trim());
+    [
+      ["Preferred Language", profile.preferredLanguage],
+      ["Educational Attainment", profile.educationalAttainment],
+      ["Field of Study", profile.studyField || profile.course],
+      [
+        "Salary",
+        [profile.minimumSalary, profile.maximumSalary]
+          .filter(Boolean)
+          .join(" - "),
+      ],
+      ["Nationality", profile.nationality],
+    ],
+    [
+      ["Height", profile.height],
+      ["Weight", profile.weight],
+      ["Gender", profile.gender],
+      ["Civil Status", profile.civilStatus],
+      ["Birthday", profile.birthday],
+    ],
+  ].map((column) =>
+    column.filter(([, value]) => String(value || "").trim())
+  );
+
+  const personalInformationRows = personalInformationColumns.flat();
 
   const jobSeekerLevel = calculateJobSeekerLevel({
     skills: resumeSkills,
@@ -1079,9 +1091,13 @@ const UserManagementDetails = () => {
                   Personal Information
                 </h3>
                 <div className="grid grid-cols-1 gap-x-7 gap-y-1.5 pt-1.5 sm:grid-cols-3">
-                  {personalInformationRows.map(([label, value]) => (
-                    <div key={label}>
-                      <b>{label}:</b> {value}
+                  {personalInformationColumns.map((column, columnIndex) => (
+                    <div key={`personal-column-${columnIndex}`} className="space-y-1.5">
+                      {column.map(([label, value]) => (
+                        <div key={label}>
+                          <b>{label}:</b> {value}
+                        </div>
+                      ))}
                     </div>
                   ))}
                 </div>
