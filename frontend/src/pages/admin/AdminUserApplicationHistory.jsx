@@ -4,6 +4,7 @@ import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
 import Pagination from "../../components/shared/Pagination";
 import ApplicationHistoryCard from "../../components/admin/ApplicationHistoryCard";
+import ApplicationDateFilter, { isApplicationDateInRange } from "../../components/admin/ApplicationDateFilter";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
@@ -409,6 +410,8 @@ const AdminUserApplicationHistory = () => {
   const [jobTitleFilter, setJobTitleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [timeFilter, setTimeFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -490,16 +493,13 @@ const AdminUserApplicationHistory = () => {
       const industry = job.industry || employerProfile.industry || "";
       const jobTitle = job.title || job.jobTitle || "";
       const normalizedStatus = String(application.status || "pending").toLowerCase();
-      const appliedDate = new Date(application.appliedAt || application.createdAt || 0);
-      const ageDays = (Date.now() - appliedDate.getTime()) / 86400000;
+      const appliedDate = application.appliedAt || application.createdAt;
 
       if (companyFilter !== "all" && companyName !== companyFilter) return false;
       if (industryFilter !== "all" && industry !== industryFilter) return false;
       if (jobTitleFilter !== "all" && jobTitle !== jobTitleFilter) return false;
       if (statusFilter !== "all" && normalizedStatus !== statusFilter) return false;
-      if (timeFilter === "week" && ageDays > 7) return false;
-      if (timeFilter === "month" && ageDays > 30) return false;
-      if (timeFilter === "older" && ageDays <= 30) return false;
+      if (timeFilter !== "all" && !isApplicationDateInRange(appliedDate, dateFrom, dateTo)) return false;
       if (!normalizedQuery) return true;
 
       const searchableText = [
@@ -522,11 +522,11 @@ const AdminUserApplicationHistory = () => {
 
       return searchableText.includes(normalizedQuery);
     });
-  }, [companyFilter, industryFilter, jobTitleFilter, preparedApplications, searchQuery, statusFilter, timeFilter]);
+  }, [companyFilter, dateFrom, dateTo, industryFilter, jobTitleFilter, preparedApplications, searchQuery, statusFilter, timeFilter]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [companyFilter, industryFilter, jobTitleFilter, searchQuery, statusFilter, timeFilter]);
+  }, [companyFilter, dateFrom, dateTo, industryFilter, jobTitleFilter, searchQuery, statusFilter, timeFilter]);
 
   const paginatedApplications = useMemo(() => {
     if (pageSize === "all") return filteredApplications;
@@ -620,7 +620,16 @@ const AdminUserApplicationHistory = () => {
                   [jobTitleFilter, setJobTitleFilter, "All Job Title", filterOptions.jobTitles],
                 ].map(([value, setter, label, options]) => <select key={label} value={value} onChange={(event) => setter(event.target.value)} className="h-10 rounded-lg border border-[#d8e2ee] bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"><option value="all">{label}</option>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select>)}
                 <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="h-10 rounded-lg border border-[#d8e2ee] bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"><option value="all">All Status</option><option value="pending">Pending</option><option value="for interview">For Interview</option><option value="hired">Hired</option><option value="declined">Declined</option><option value="withdrawn">Withdrawn</option></select>
-                <select value={timeFilter} onChange={(event) => setTimeFilter(event.target.value)} className="h-10 rounded-lg border border-[#d8e2ee] bg-white px-3 text-sm outline-none focus:border-[#2e66a6]"><option value="all">All Time</option><option value="week">Past Week</option><option value="month">Past Month</option><option value="older">Older</option></select>
+                <ApplicationDateFilter
+                  value={timeFilter}
+                  dateFrom={dateFrom}
+                  dateTo={dateTo}
+                  onChange={({ value, dateFrom: nextFrom, dateTo: nextTo }) => {
+                    setTimeFilter(value);
+                    setDateFrom(nextFrom);
+                    setDateTo(nextTo);
+                  }}
+                />
               </div>
               <p className="mt-2 text-xs text-gray-500">Showing {filteredApplications.length} of {applications.length} applications</p>
             </div>
