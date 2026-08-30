@@ -7,7 +7,6 @@ const Icon = ({ name, className = "h-4 w-4" }) => {
     briefcase: <><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 12h18" /></>,
     building: <><path d="M4 21V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v16M2 21h20M8 7h2m-2 4h2m-2 4h2m4-8h1m-1 4h1m-1 4h1" /></>,
     monitor: <><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8m-4-4v4" /></>,
-    peso: <><rect x="4" y="4" width="16" height="16" rx="4" /><text x="12" y="16" fill="currentColor" stroke="none" fontSize="11" fontWeight="700" textAnchor="middle">₱</text></>,
     mapPin: <><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></>,
     calendar: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M8 3v4m8-4v4M3 10h18" /></>,
     eye: <><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" /><circle cx="12" cy="12" r="3" /></>,
@@ -69,8 +68,8 @@ export const getApplicationPresentation = (application = {}) => {
     const progress = stage.toLowerCase().includes("final") ? 85 : application?.interviewSchedule?.scheduledAt ? 75 : 70;
     return { label: "For Interview", progress, description: stage || (application?.interviewSchedule?.scheduledAt ? "Interview scheduled" : "Interview stage"), color: "blue", statusIcon: "clock" };
   }
-  if (application.reviewedAt || application.viewedAt || application.isViewedByEmployer) return { label: "Pending", progress: 40, description: "Resume under review", color: "blue", statusIcon: "clock" };
-  return { label: "Pending", progress: 25, description: "Application received", color: "blue", statusIcon: "clock" };
+  if (application.reviewedAt || application.viewedAt || application.isViewedByEmployer) return { label: "Pending", progress: 40, description: "Resume under review", color: "blue", statusTextClass: "text-amber-600", statusIcon: "clock" };
+  return { label: "Pending", progress: 25, description: "Application received", color: "blue", statusTextClass: "text-amber-600", statusIcon: "clock" };
 };
 
 const timelineTitle = (activity = {}) => {
@@ -131,7 +130,7 @@ const ApplicationHistoryCard = ({ application, onView }) => {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <h3 className="text-sm font-bold text-black sm:text-base">{title}</h3>
-            <span className={cn("inline-flex items-center gap-1 text-xs font-medium", colors.text)}><Icon name={presentation.statusIcon} className="h-3.5 w-3.5" />{presentation.label}</span>
+            <span className={cn("inline-flex items-center gap-1 text-xs font-medium", presentation.statusTextClass || colors.text)}><Icon name={presentation.statusIcon} className="h-3.5 w-3.5" />{presentation.label}</span>
           </div>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#48617d]">
             <span className="inline-flex items-center gap-1"><Icon name="building" className="h-3.5 w-3.5 text-[#8ca2bb]" />{company}</span>
@@ -146,7 +145,7 @@ const ApplicationHistoryCard = ({ application, onView }) => {
       <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[#243b55]">
         <span className="inline-flex items-center gap-1 rounded-full border border-[#d8e2ee] px-3 py-1.5"><Icon name="briefcase" className="h-3.5 w-3.5" />{job.jobType || job.employmentType || "Type not specified"}</span>
         <span className="inline-flex items-center gap-1 rounded-full border border-[#d8e2ee] px-3 py-1.5"><Icon name="monitor" className="h-3.5 w-3.5" />{job.workMode || "Setup not specified"}</span>
-        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1.5 text-blue-700"><Icon name="peso" className="h-3.5 w-3.5" />{formatSalary(job)}</span>
+        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1.5 text-blue-700"><span className="text-sm font-bold leading-none" aria-hidden="true">₱</span>{formatSalary(job)}</span>
         <span className="inline-flex items-center gap-1 rounded-full border border-[#d8e2ee] px-3 py-1.5"><Icon name="calendar" className="h-3.5 w-3.5" />Applied on {formatDateTime(application.appliedAt || application.createdAt)}</span>
       </div>
 
