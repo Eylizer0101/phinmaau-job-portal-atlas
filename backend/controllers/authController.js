@@ -1961,6 +1961,7 @@ exports.updateProfile = async (req, res) => {
       }
     }
 
+    updateData.lastProfileUpdateAt = new Date();
     const updatedUser = await User.findByIdAndUpdate(userId, { $set: updateData }, { new: true, runValidators: true }).select('-password');
 
     res.status(200).json({ success: true, message: 'Profile updated successfully', user: updatedUser });
@@ -2274,7 +2275,7 @@ exports.uploadResume = async (req, res) => {
 
     const updatedUser = await User.findByIdAndUpdate(
       req.user._id,
-      { $set: { 'jobSeekerProfile.resumeUrl': fullResumeUrl } },
+      { $set: { 'jobSeekerProfile.resumeUrl': fullResumeUrl, lastProfileUpdateAt: new Date() } },
       { new: true }
     ).select('-password');
 
@@ -2295,7 +2296,11 @@ exports.uploadProfileImage = async (req, res) => {
     const imageUrl = `/uploads/profile-images/${req.file.filename}`;
     const fullImageUrl = getUploadedFileUrl(req, req.file, imageUrl);
 
-    const updatedUser = await User.findByIdAndUpdate(req.user._id, { $set: { profileImage: fullImageUrl } }, { new: true }).select('-password');
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: { profileImage: fullImageUrl, lastProfileUpdateAt: new Date() } },
+      { new: true }
+    ).select('-password');
 
     res.status(200).json({ success: true, message: 'Profile image uploaded successfully', profileImage: fullImageUrl, user: updatedUser });
   } catch (error) {
@@ -2785,7 +2790,7 @@ exports.updateCompanyProfile = async (req, res) => {
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { $set: { employerProfile: employerProfileUpdate } },
+      { $set: { employerProfile: employerProfileUpdate, lastProfileUpdateAt: new Date() } },
       { new: true, runValidators: true }
     ).select('-password');
 
@@ -3502,6 +3507,7 @@ exports.updateUserProfile = async (req, res) => {
     delete updateData.role;
     delete updateData.username;
     delete updateData.mustChangePassword;
+    updateData.lastProfileUpdateAt = new Date();
 
     if (Object.prototype.hasOwnProperty.call(updateData, 'extensionName')) {
       updateData.extensionName = normalizeExtensionName(updateData.extensionName);

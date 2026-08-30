@@ -723,7 +723,7 @@ const AdminJobView = () => {
     const hasMax = typeof max === 'number';
     if (!hasMin && !hasMax) return 'Salary not specified';
 
-    const fmt = (n) => `₱${Number(n).toLocaleString('en-PH')}`;
+    const fmt = (n) => Number(n).toLocaleString('en-PH');
     if (hasMin && hasMax) return `${fmt(min)} – ${fmt(max)}`;
     if (hasMin) return `From ${fmt(min)}`;
     return `Up to ${fmt(max)}`;

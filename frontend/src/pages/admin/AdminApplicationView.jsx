@@ -189,7 +189,7 @@ const formatSalary = (min, max) => {
   const hasMin = typeof min === "number";
   const hasMax = typeof max === "number";
   if (!hasMin && !hasMax) return "Salary not specified";
-  const fmt = (n) => `₱${Number(n).toLocaleString("en-PH")}`;
+  const fmt = (n) => Number(n).toLocaleString("en-PH");
   if (hasMin && hasMax) return `${fmt(min)} - ${fmt(max)}`;
   if (hasMin) return `From ${fmt(min)}`;
   return `Up to ${fmt(max)}`;
@@ -550,7 +550,13 @@ const AdminApplicationView = () => {
     "N/A";
 
   const companyWebsiteUrl = normalizeWebsiteUrl(companyWebsite);
-  const companyCoverPhoto = job.coverPhoto || job.companyCoverPhoto || employerProfile.coverPhoto || employerProfile.companyCoverPhoto || "";
+  const companyCoverPhoto =
+    job.employerDetails?.coverPhoto ||
+    job.coverPhoto ||
+    job.companyCoverPhoto ||
+    employerProfile.coverPhoto ||
+    employerProfile.companyCoverPhoto ||
+    "";
   const apiHost = (process.env.REACT_APP_API_URL || "https://phinmaau-job-portal-atlas.onrender.com/api").replace(/\/api\/?$/, "");
   const companyCoverUrl = companyCoverPhoto
     ? (/^https?:\/\//i.test(companyCoverPhoto)

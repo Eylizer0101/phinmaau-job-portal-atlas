@@ -374,6 +374,8 @@ const userSchema = new mongoose.Schema(
 
     isActive: { type: Boolean, default: true },
     lastLogin: { type: Date, default: null },
+    // Intentionally changed profile/resume content; unlike generic updatedAt.
+    lastProfileUpdateAt: { type: Date, default: null },
 
     // Server-side failed-login tracking. This cannot be bypassed by clearing browser storage.
     loginSecurity: {

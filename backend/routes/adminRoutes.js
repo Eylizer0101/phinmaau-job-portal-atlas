@@ -30,7 +30,11 @@ router.delete('/archive/:type/:id', adminController.permanentlyDeleteAdminArchiv
 // User management routes
 router.get('/users', adminController.getAllUsers);
 router.get('/users/:id', adminController.getUserById);
-router.get('/users/:id/documents/:docType', adminController.downloadUserVerificationDocument);
+router.get(
+  '/users/:id/documents/:docType',
+  adminController.requireAdminPasswordForCredential,
+  adminController.downloadUserVerificationDocument
+);
 router.put('/users/:id/status', adminController.updateUserStatus);
 router.put('/users/:id/quick-action', adminController.quickAction);
 router.delete('/users/:id', adminController.deleteUser);

@@ -449,9 +449,12 @@ const AdminEmployerJobEditRequestDetails = () => {
   const [approving, setApproving] = useState(false);
   const [notice, setNotice] = useState('');
   const [modalSearch, setModalSearch] = useState('');
-  const [modalStatus, setModalStatus] = useState('all');
+  const [modalStatus, setModalStatus] = useState('pending');
   const [modalTime, setModalTime] = useState('all');
-  const [modalSort, setModalSort] = useState('newest');
+  const [modalSort, setModalSort] = useState('');
+  const [showModalCustomDate, setShowModalCustomDate] = useState(false);
+  const [modalDateFrom, setModalDateFrom] = useState('');
+  const [modalDateTo, setModalDateTo] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -473,22 +476,65 @@ const AdminEmployerJobEditRequestDetails = () => {
   const job = request?.job || {};
   const company = job.companyName || request?.employer?.employerProfile?.companyName || 'Employer';
   const sections = Array.isArray(request?.requestedSections) ? request.requestedSections : [];
+  const requestDateLabel = String(request?.status || '').toLowerCase() === 'pending'
+    ? 'Request On'
+    : 'Last edit request';
   const matchesModal = useMemo(() => {
     const query = modalSearch.trim().toLowerCase();
     const statusMatches = modalStatus === 'all' || request?.status === modalStatus;
     const created = request?.createdAt ? new Date(request.createdAt) : null;
     const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     let from = null;
-    if (modalTime === 'today') from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let to = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+    if (modalTime === 'today') from = today;
+    if (modalTime === 'yesterday') {
+      from = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+      to = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1, 23, 59, 59, 999);
+    }
     if (modalTime === 'week') {
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const offset = today.getDay() === 0 ? 6 : today.getDay() - 1;
       from = new Date(today.getFullYear(), today.getMonth(), today.getDate() - offset);
     }
+    if (modalTime === 'sevenDays') from = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6);
     if (modalTime === 'month') from = new Date(now.getFullYear(), now.getMonth(), 1);
-    const timeMatches = !from || (created && !Number.isNaN(created.getTime()) && created >= from);
+    if (modalTime === 'lastMonth') {
+      from = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      to = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59, 999);
+    }
+    if (modalTime === 'year') from = new Date(today.getFullYear(), 0, 1);
+    if (modalTime === 'lastYear') {
+      from = new Date(today.getFullYear() - 1, 0, 1);
+      to = new Date(today.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
+    }
+    if (modalTime === 'custom') {
+      from = modalDateFrom ? new Date(`${modalDateFrom}T00:00:00`) : null;
+      to = modalDateTo ? new Date(`${modalDateTo}T23:59:59.999`) : null;
+    }
+    if (modalTime === 'all') to = null;
+    const timeMatches = (!from || (created && !Number.isNaN(created.getTime()) && created >= from)) && (!to || (created && !Number.isNaN(created.getTime()) && created <= to));
     return statusMatches && timeMatches && (!query || sections.some((item) => item.toLowerCase().includes(query)) || String(request?.reason || '').toLowerCase().includes(query));
-  }, [modalSearch, modalStatus, modalTime, request, sections]);
+  }, [modalSearch, modalStatus, modalTime, modalDateFrom, modalDateTo, request, sections]);
+
+  const openReviewModal = () => {
+    setModalSearch('');
+    setModalStatus('pending');
+    setModalTime('all');
+    setModalSort('');
+    setModalDateFrom('');
+    setModalDateTo('');
+    setModalOpen(true);
+  };
+
+  const changeModalTime = (value) => {
+    if (value === 'custom') {
+      setShowModalCustomDate(true);
+      return;
+    }
+    setModalTime(value);
+    setModalDateFrom('');
+    setModalDateTo('');
+  };
 
   const approve = async () => {
     if (!request?._id || request.status !== 'pending' || approving) return;
@@ -576,7 +622,7 @@ const AdminEmployerJobEditRequestDetails = () => {
               </div>
             </div>
 
-            <div className="flex w-full flex-col items-start lg:w-auto lg:self-center lg:items-end"><button type="button" onClick={() => setModalOpen(true)} className="group flex w-full max-w-[285px] items-center gap-3 rounded-xl bg-[#1456ad] px-4 py-3 text-left text-white shadow-md transition hover:bg-[#10478f] sm:w-[285px]"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15"><UnlockKeyhole size={18} /></span><span className="min-w-0 flex-1"><strong className="block text-sm">Review Request</strong><small className="block truncate text-[10px] text-blue-100">See what’s been requested.</small></span><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-white transition group-hover:translate-x-0.5"><ChevronRight size={18} /></span></button><p className="mt-2 flex items-center justify-end gap-1 text-xs text-slate-500"><CalendarClock size={14} />Request On: {formatDateTime(request.createdAt)}</p></div>
+            <div className="flex w-full flex-col items-center lg:w-[285px] lg:self-center"><button type="button" onClick={openReviewModal} className="group flex w-full max-w-[285px] items-center gap-3 rounded-xl bg-[#1456ad] px-4 py-3 text-left text-white shadow-md transition hover:bg-[#10478f]"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15"><UnlockKeyhole size={18} /></span><span className="min-w-0 flex-1"><strong className="block text-sm">Review Request</strong><small className="block truncate text-[10px] text-blue-100">See what’s been requested.</small></span><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-white transition group-hover:translate-x-0.5"><ChevronRight size={18} /></span></button><p className="mt-2 flex w-full max-w-[285px] items-center justify-center gap-1 text-center text-xs text-slate-500"><CalendarClock size={14} />{requestDateLabel}: {formatDateTime(request.createdAt)}</p></div>
           </div>
         </div>
       </section>
@@ -730,13 +776,19 @@ const AdminEmployerJobEditRequestDetails = () => {
 
                   <select
                     value={modalTime}
-                    onChange={(e) => setModalTime(e.target.value)}
+                    onChange={(e) => changeModalTime(e.target.value)}
                     className="h-11 rounded-lg border border-[#cbdcf0] bg-white px-3 text-sm text-[#111827] outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
                   >
                     <option value="all">All Time</option>
                     <option value="today">Today</option>
+                    <option value="yesterday">Yesterday</option>
                     <option value="week">This Week</option>
+                    <option value="sevenDays">Last 7 Days</option>
                     <option value="month">This Month</option>
+                    <option value="lastMonth">Last Month</option>
+                    <option value="year">This Year</option>
+                    <option value="lastYear">Last Year</option>
+                    <option value="custom">Custom Range</option>
                   </select>
 
                   <select
@@ -744,6 +796,7 @@ const AdminEmployerJobEditRequestDetails = () => {
                     onChange={(e) => setModalSort(e.target.value)}
                     className="h-11 rounded-lg border border-[#cbdcf0] bg-white px-3 text-sm text-[#111827] outline-none transition focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/10"
                   >
+                    <option value="" disabled>Sort By</option>
                     <option value="newest">Newest first</option>
                     <option value="oldest">Oldest first</option>
                   </select>
@@ -803,7 +856,7 @@ const AdminEmployerJobEditRequestDetails = () => {
                     <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <p className="flex items-center gap-1.5 text-xs text-[#55708f]">
                         <Clock3 size={15} />
-                        Request On: {formatDateTime(request.createdAt)}
+                        {requestDateLabel}: {formatDateTime(request.createdAt)}
                       </p>
 
                       {request.status === 'pending' && (
@@ -825,6 +878,27 @@ const AdminEmployerJobEditRequestDetails = () => {
                   </div>
                 )}
               </div>
+            </div>
+          </section>
+        </div>
+      )}
+      {showModalCustomDate && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-label="Select custom date range">
+          <section className="w-full max-w-[720px] overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="grid gap-5 px-6 py-7 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
+              <label className="block">
+                <span className="mb-2 block text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500">Start Date</span>
+                <span className="flex h-14 items-center gap-3 rounded-xl bg-slate-100 px-4 text-[#2e66a6]"><CalendarClock size={20} /><input type="date" value={modalDateFrom} onChange={(event) => setModalDateFrom(event.target.value)} className="min-w-0 flex-1 bg-transparent text-base font-extrabold outline-none" /></span>
+              </label>
+              <span className="hidden pb-3 text-2xl text-slate-500 sm:block">→</span>
+              <label className="block">
+                <span className="mb-2 block text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500">End Date</span>
+                <span className="flex h-14 items-center gap-3 rounded-xl bg-slate-100 px-4 text-[#2e66a6]"><CalendarClock size={20} /><input type="date" value={modalDateTo} min={modalDateFrom || undefined} onChange={(event) => setModalDateTo(event.target.value)} className="min-w-0 flex-1 bg-transparent text-base font-extrabold outline-none" /></span>
+              </label>
+            </div>
+            <div className="flex items-center justify-end gap-5 border-t border-slate-100 px-6 py-5">
+              <button type="button" onClick={() => setShowModalCustomDate(false)} className="font-bold text-slate-600 hover:text-slate-900">Cancel</button>
+              <button type="button" disabled={!modalDateFrom || !modalDateTo || modalDateFrom > modalDateTo} onClick={() => { setModalTime('custom'); setShowModalCustomDate(false); }} className="h-12 rounded-xl bg-[#2e66a6] px-8 font-extrabold text-white shadow-lg transition hover:bg-[#255487] disabled:cursor-not-allowed disabled:opacity-60">Apply Range</button>
             </div>
           </section>
         </div>

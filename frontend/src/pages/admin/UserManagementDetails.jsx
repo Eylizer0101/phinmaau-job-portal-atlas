@@ -84,6 +84,14 @@ const EMPLOYER_DOC_LABELS = {
   businessPermit: "Business Permit",
 };
 
+const EMPLOYER_DOC_DESCRIPTIONS = {
+  secRegistration: "Securities and Exchange Commission",
+  birRegistration: "Bureau of Internal Revenue",
+  dtiRegistration: "Department of Trade and Industry",
+  cityPermit: "Local Government Unit",
+  businessPermit: "Mayor's / Business Permit",
+};
+
 const DOC_LABELS = {
   cv: "CV / Resume",
   validId: "Valid ID",
@@ -399,6 +407,14 @@ const UserManagementDetails = () => {
   const [showAllActivity, setShowAllActivity] = useState(false);
   const [activityPage, setActivityPage] = useState(1);
   const [activityPageSize, setActivityPageSize] = useState(10);
+  const [credentialAccess, setCredentialAccess] = useState({
+    isOpen: false,
+    docType: "",
+    password: "",
+    verifying: false,
+    error: "",
+  });
+  const [showCredentialPassword, setShowCredentialPassword] = useState(false);
 
   const apiHost = useMemo(() => {
     const apiUrl = process.env.REACT_APP_API_URL || "https://phinmaau-job-portal-atlas.onrender.com/api";
@@ -427,9 +443,10 @@ const UserManagementDetails = () => {
     return fallbackName;
   };
 
-  const fetchCredentialBlob = async (docType, disposition = "inline") => {
+  const fetchCredentialBlob = async (docType, password, disposition = "inline") => {
     const response = await api.get(`/admin/users/${userId}/documents/${docType}`, {
       params: { disposition },
+      headers: { "x-admin-password": password },
       responseType: "blob",
     });
 
@@ -440,21 +457,53 @@ const UserManagementDetails = () => {
     return { blob, fileName };
   };
 
-  const handleViewCredential = async (docType) => {
+  const handleViewCredential = (docType) => {
+    setShowCredentialPassword(false);
+    setCredentialAccess({ isOpen: true, docType, password: "", verifying: false, error: "" });
+  };
+
+  const closeCredentialAccess = () => {
+    if (credentialAccess.verifying) return;
+    setShowCredentialPassword(false);
+    setCredentialAccess({ isOpen: false, docType: "", password: "", verifying: false, error: "" });
+  };
+
+  const submitCredentialAccess = async (event) => {
+    event.preventDefault();
+    const password = String(credentialAccess.password || "").trim();
+    if (!password) {
+      setCredentialAccess((current) => ({ ...current, error: "Please enter your password." }));
+      return;
+    }
+
+    setCredentialAccess((current) => ({ ...current, verifying: true, error: "" }));
     try {
-      const { blob } = await fetchCredentialBlob(docType, "inline");
+      const { blob } = await fetchCredentialBlob(credentialAccess.docType, password, "inline");
       const blobUrl = window.URL.createObjectURL(blob);
       window.open(blobUrl, "_blank", "noopener,noreferrer");
       window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
+      setShowCredentialPassword(false);
+      setCredentialAccess({ isOpen: false, docType: "", password: "", verifying: false, error: "" });
     } catch (err) {
       console.error("Error viewing credential:", err);
-      alert(err.response?.data?.message || "Unable to open this credential. Please try again.");
+      let message = "Unable to open this credential. Please try again.";
+      if (err.response?.data instanceof Blob) {
+        try {
+          const payload = JSON.parse(await err.response.data.text());
+          message = payload?.message || message;
+        } catch {}
+      } else {
+        message = err.response?.data?.message || message;
+      }
+      setCredentialAccess((current) => ({ ...current, verifying: false, error: message }));
     }
   };
 
   const handleDownloadCredential = async (docType, fallbackName = "document") => {
     try {
-      const { blob, fileName } = await fetchCredentialBlob(docType, "attachment");
+      const password = window.prompt("Enter your admin password to download this credential:");
+      if (!password) return;
+      const { blob, fileName } = await fetchCredentialBlob(docType, password, "attachment");
       const blobUrl = window.URL.createObjectURL(blob);
       const downloadLink = document.createElement("a");
 
@@ -1001,7 +1050,7 @@ const UserManagementDetails = () => {
           <div className="inline-flex items-center gap-2 whitespace-nowrap text-sm font-semibold text-gray-500 sm:text-[15px]">
             <Icon name="clock" className="h-4 w-4 shrink-0" />
             <span>
-              Last profile update: {formatDate(user?.updatedAt, true)}
+              {user?.lastProfileUpdateAt ? "Last profile update" : "Registered On"}: {formatDate(user?.lastProfileUpdateAt || user?.createdAt, true)}
             </span>
           </div>
         </div>
@@ -1652,6 +1701,46 @@ const UserManagementDetails = () => {
       </div>
     );
 
+    const EmployerCredentials = () => {
+      const credentialItems = Object.entries(EMPLOYER_DOC_LABELS).map(([key, label]) => ({
+        key,
+        label,
+        description: EMPLOYER_DOC_DESCRIPTIONS[key],
+        verification: employerDocs[key] || {},
+      }));
+
+      return (
+        <section className="rounded-[18px] border border-[#d1d5db] bg-white p-5 shadow-[0_2px_6px_rgba(15,23,42,0.05)] sm:p-7">
+          <h2 className="text-[30px] font-semibold text-black">Business Credentials</h2>
+          <p className="mt-1 text-[13px] text-[#6b7280]">Submitted during account creation</p>
+
+          <div className="mt-5 space-y-3">
+            {credentialItems.map((item) => {
+              const hasFile = Boolean(item.verification?.url || item.verification?.fileUrl);
+              return (
+                <div key={item.key} className="flex min-h-[90px] items-center gap-4 rounded-[14px] border border-[#d1d5db] bg-[#f3f4f6] px-5 py-4">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#d1d5db] bg-white text-[#6b7280]">
+                    <Icon name="document" className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-black">{item.label}</p>
+                    <p className="mt-1 text-xs text-[#6b7280]">{item.description}</p>
+                  </div>
+                  {hasFile ? (
+                    <button type="button" onClick={() => handleViewCredential(item.key)} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#d1d5db] bg-white text-[#2e66a6] transition hover:bg-[#f8fbff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]" title={`View ${item.label}`} aria-label={`View ${item.label}`}>
+                      <Icon name="eye" className="h-4 w-4" />
+                    </button>
+                  ) : (
+                    <span className="text-xs font-medium text-[#6b7280]">Not submitted</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      );
+    };
+
     const JobStatusBadge = ({ status }) => {
       const styles = {
         open: "border-[#2e66a6]/20 bg-[#2e66a6]/10 text-[#2e66a6]",
@@ -1965,6 +2054,7 @@ const UserManagementDetails = () => {
         </section>
       ),
       jobs: <EmployerJobs />,
+      credentials: <EmployerCredentials />,
       social: (
         <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-7">
           <div>
@@ -2258,11 +2348,11 @@ const UserManagementDetails = () => {
                     </button>
 
                     {!isArchiveView ? (
-                      <div className="w-full whitespace-nowrap rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-2.5 text-center text-xs text-black/60 shadow-sm">
+                      <div className="w-full whitespace-nowrap px-1 text-center text-xs text-black/60">
                         <span className="font-semibold text-black">
-                          Last profile update:
+                          {user.lastProfileUpdateAt ? "Last profile update:" : "Registered On:"}
                         </span>{" "}
-                        {formatDate(user.updatedAt, true)}
+                        {formatDate(user.lastProfileUpdateAt || user.createdAt, true)}
                       </div>
                     ) : null}
                   </div>
@@ -2276,6 +2366,7 @@ const UserManagementDetails = () => {
                   {[
                     { key: "about", label: "About" },
                     { key: "jobs", label: "Jobs" },
+                    { key: "credentials", label: "Credentials" },
                     { key: "social", label: "Social Media" },
                     { key: "gallery", label: "Gallery" },
                     { key: "reviews", label: "Reviews" },
@@ -2301,6 +2392,39 @@ const UserManagementDetails = () => {
             <div className="pb-4">
               {activeEmployerTab === "postingHistory" ? <EmployerPostingHistory /> : employerActiveContent}
             </div>
+
+            {credentialAccess.isOpen ? (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="admin-credential-password-title">
+                <div className="w-full max-w-md overflow-hidden rounded-[22px] border border-gray-100 bg-white shadow-2xl">
+                  <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5">
+                    <div>
+                      <h3 id="admin-credential-password-title" className="text-xl font-bold text-gray-900">Enter Password</h3>
+                      <p className="mt-1 text-sm leading-5 text-gray-500">Enter your admin password before viewing this credential.</p>
+                    </div>
+                    <button type="button" onClick={closeCredentialAccess} disabled={credentialAccess.verifying} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-xl text-gray-500 hover:bg-gray-50 disabled:opacity-60" aria-label="Close password modal">×</button>
+                  </div>
+
+                  <form onSubmit={submitCredentialAccess} className="space-y-4 px-6 py-6">
+                    <div>
+                      <label className="mb-1.5 block text-sm font-semibold text-gray-700">Password</label>
+                      <div className="relative">
+                        <input type={showCredentialPassword ? "text" : "password"} value={credentialAccess.password} onChange={(event) => setCredentialAccess((current) => ({ ...current, password: event.target.value, error: "" }))} placeholder="Enter your password" autoFocus disabled={credentialAccess.verifying} className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 pr-12 text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20 disabled:bg-gray-50" />
+                        <button type="button" onClick={() => setShowCredentialPassword((visible) => !visible)} disabled={credentialAccess.verifying} className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-gray-500 hover:text-[#2e66a6] disabled:opacity-60" aria-label={showCredentialPassword ? "Hide password" : "Show password"}>
+                          <Icon name="eye" className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {credentialAccess.error ? <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{credentialAccess.error}</div> : null}
+
+                    <div className="flex justify-end gap-3 pt-1">
+                      <button type="button" onClick={closeCredentialAccess} disabled={credentialAccess.verifying} className="h-11 rounded-xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60">Cancel</button>
+                      <button type="submit" disabled={credentialAccess.verifying} className="h-11 rounded-xl bg-[#2e66a6] px-5 text-sm font-semibold text-white hover:bg-[#285c96] disabled:opacity-60">{credentialAccess.verifying ? "Confirming..." : "Confirm"}</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </AdminLayout>

@@ -162,7 +162,7 @@ const AdminEmployerJobEditRequests = () => {
   const [company, setCompany] = useState('all');
   const [industry, setIndustry] = useState('all');
   const [jobTitle, setJobTitle] = useState('all');
-  const [status, setStatus] = useState('all');
+  const [status, setStatus] = useState('pending');
   const [time, setTime] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -217,14 +217,14 @@ const AdminEmployerJobEditRequests = () => {
     setTime(value); setDateFrom(''); setDateTo('');
   };
 
-  const hasActiveFilters = Boolean(search.trim()) || company !== 'all' || industry !== 'all' || jobTitle !== 'all' || status !== 'all' || time !== 'all' || Boolean(dateFrom) || Boolean(dateTo);
+  const hasActiveFilters = Boolean(search.trim()) || company !== 'all' || industry !== 'all' || jobTitle !== 'all' || status !== 'pending' || time !== 'all' || Boolean(dateFrom) || Boolean(dateTo);
 
   const clearFilters = () => {
     setSearch('');
     setCompany('all');
     setIndustry('all');
     setJobTitle('all');
-    setStatus('all');
+    setStatus('pending');
     setTime('all');
     setDateFrom('');
     setDateTo('');
@@ -246,9 +246,9 @@ const AdminEmployerJobEditRequests = () => {
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       {loading ? <div className="flex justify-center py-20"><RefreshCw className="animate-spin text-blue-700" /></div> : <div className="overflow-x-auto"><table className="w-full min-w-[1050px] text-left">
         <thead className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500"><tr><th className="px-6 py-5">Request Date</th><th className="px-6 py-5">Company</th><th className="px-6 py-5">Job Title</th><th className="px-6 py-5 text-center">Vacancy</th><th className="px-6 py-5 text-center">Applicant</th><th className="px-6 py-5">Status</th><th className="px-6 py-5">Valid Until</th><th className="px-6 py-5 text-center">Actions</th></tr></thead>
-        <tbody className="divide-y divide-slate-200">{paginatedRows.map((item) => { const job = item.job || {}; const reviewed = item.status !== 'pending'; return <tr key={item._id} className="hover:bg-slate-50/80">
+        <tbody className="divide-y divide-slate-200">{paginatedRows.map((item) => { const job = item.job || {}; const reviewed = item.status !== 'pending'; const detailsPath = `/admin/employer-job-edit-requests/${item._id}`; return <tr key={item._id} role="link" tabIndex={0} onClick={() => navigate(detailsPath)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); navigate(detailsPath); } }} className="cursor-pointer transition hover:bg-slate-50/80 focus:bg-blue-50/70 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
           <td className="px-6 py-5 text-sm text-slate-600">{formatDate(item.createdAt)}</td><td className="px-6 py-5"><div className="flex items-center gap-3">{job.companyLogo ? <img src={job.companyLogo} alt="" className="h-11 w-11 rounded-xl border object-cover" /> : <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-700 text-xs font-bold text-white">{companyName(item).slice(0, 2).toUpperCase()}</span>}<div><p className="font-bold text-slate-950">{companyName(item)}</p><p className="mt-1 text-xs text-slate-500">{job.category || 'Company'}</p></div></div></td><td className="px-6 py-5"><p className="font-bold text-slate-950">{job.title || 'Untitled Job'}</p><p className="mt-1 text-xs text-slate-500">{[job.jobType, job.workMode].filter(Boolean).join(' • ') || 'Job posting'}</p></td><td className="px-6 py-5 text-center font-semibold">{job.vacancies ?? 0}</td><td className="px-6 py-5 text-center font-semibold">{job.applicationCount ?? 0}</td>
-          <td className="px-6 py-5"><span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase ${reviewed ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-amber-300 bg-amber-50 text-amber-700'}`}>{reviewed ? 'Reviewed' : 'Pending'}</span></td><td className="px-6 py-5 text-sm text-slate-600">{formatDate(job.applicationDeadline)}</td><td className="px-6 py-5 text-center"><button type="button" onClick={() => navigate(`/admin/employer-job-edit-requests/${item._id}`)} className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700" aria-label="View edit request"><Eye size={19} /></button></td>
+          <td className="px-6 py-5"><span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase ${reviewed ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-amber-300 bg-amber-50 text-amber-700'}`}>{reviewed ? 'Reviewed' : 'Pending'}</span></td><td className="px-6 py-5 text-sm text-slate-600">{formatDate(job.applicationDeadline)}</td><td className="px-6 py-5 text-center"><button type="button" onClick={(event) => { event.stopPropagation(); navigate(detailsPath); }} className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700" aria-label="View edit request"><Eye size={19} /></button></td>
         </tr>; })}{!rows.length && <tr><td colSpan="8" className="px-6 py-16 text-center text-sm text-slate-500">No edit requests match the selected filters.</td></tr>}</tbody>
       </table></div>}
       {!loading && <Pagination currentPage={currentPage} totalItems={rows.length} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize} />}
