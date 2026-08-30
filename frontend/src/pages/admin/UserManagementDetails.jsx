@@ -1023,7 +1023,7 @@ const UserManagementDetails = () => {
 
         <div className="px-5 py-7 sm:px-8 lg:px-10">
           <article className="mx-auto w-full bg-white font-serif text-[12px] leading-[1.45] text-black sm:text-[13px]">
-            <header className="relative flex min-h-[120px] flex-col items-center justify-center border-b border-[#d8e2ee] pb-6 pr-0 text-center sm:pr-[132px]">
+            <header className="relative flex min-h-[120px] flex-col items-center justify-center pb-6 pr-0 text-center sm:pr-[132px]">
               <h2 className="text-[28px] font-bold uppercase leading-tight tracking-[0.02em] sm:text-[31px]">
                 {fullName}
               </h2>
