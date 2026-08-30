@@ -565,18 +565,41 @@ const AdminApplicationView = () => {
   const handleViewSubmittedResume = () => {
     if (!hasSubmittedResumeSnapshot) return;
 
-    const snapshotFormData =
+    const snapshotUser =
+      submittedResumeSnapshot.userData ||
+      submittedResumeSnapshot.user ||
+      {};
+    const snapshotProfile =
       submittedResumeSnapshot.formData ||
       submittedResumeSnapshot.resumeData ||
-      submittedResumeSnapshot;
+      submittedResumeSnapshot.profile ||
+      {};
+    const snapshotFormData = {
+      ...snapshotProfile,
+      firstName: snapshotProfile.firstName || snapshotUser.firstName || jobseeker.firstName || "",
+      middleName: snapshotProfile.middleName || snapshotUser.middleName || jobseeker.middleName || "",
+      lastName: snapshotProfile.lastName || snapshotUser.lastName || jobseeker.lastName || "",
+      extensionName: snapshotProfile.extensionName || snapshotUser.extensionName || jobseeker.extensionName || "",
+      email: snapshotProfile.email || snapshotUser.email || jobseeker.email || "",
+      profileImage: snapshotProfile.profileImage || snapshotUser.profileImage || jobseeker.profileImage || "",
+      phoneNumber:
+        snapshotProfile.phoneNumber ||
+        snapshotProfile.mobileNumber ||
+        snapshotUser.phoneNumber ||
+        snapshotUser.contactNumber ||
+        jobseeker.phoneNumber ||
+        jobseeker.contactNumber ||
+        "",
+    };
 
     sessionStorage.setItem(
       "resumePreviewData",
       JSON.stringify({
-        userData:
-          submittedResumeSnapshot.userData ||
-          submittedResumeSnapshot.user ||
-          jobseeker,
+        userData: {
+          ...jobseeker,
+          ...snapshotUser,
+          profileImage: snapshotFormData.profileImage,
+        },
         formData: snapshotFormData,
         workExperiences:
           submittedResumeSnapshot.workExperiences ||
