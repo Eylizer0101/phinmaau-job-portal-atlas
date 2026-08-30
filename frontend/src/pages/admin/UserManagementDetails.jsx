@@ -1317,7 +1317,19 @@ const UserManagementDetails = () => {
           No recent activity is available for this jobseeker.
         </div>
       )}
-      {showAllActivity && activityItems.length ? <Pagination currentPage={activityPage} totalItems={activityItems.length} pageSize={activityPageSize} onPageChange={setActivityPage} onPageSizeChange={(value) => { setActivityPageSize(value); setActivityPage(1); }} /> : null}
+      {showAllActivity && activityItems.length ? (
+        <Pagination
+          currentPage={activityPage}
+          totalItems={activityItems.length}
+          pageSize={activityPageSize}
+          onPageChange={setActivityPage}
+          onPageSizeChange={(value) => {
+            setActivityPageSize(value);
+            setActivityPage(1);
+          }}
+          className="!static"
+        />
+      ) : null}
     </section>
   );
 
