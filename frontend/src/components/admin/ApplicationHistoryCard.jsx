@@ -145,7 +145,7 @@ const ApplicationHistoryCard = ({ application, onView }) => {
       <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[#243b55]">
         <span className="inline-flex items-center gap-1 rounded-full border border-[#d8e2ee] px-3 py-1.5"><Icon name="briefcase" className="h-3.5 w-3.5" />{job.jobType || job.employmentType || "Type not specified"}</span>
         <span className="inline-flex items-center gap-1 rounded-full border border-[#d8e2ee] px-3 py-1.5"><Icon name="monitor" className="h-3.5 w-3.5" />{job.workMode || "Setup not specified"}</span>
-        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1.5 text-blue-700"><span className="text-sm font-bold leading-none" aria-hidden="true">₱</span>{formatSalary(job)}</span>
+        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1.5 text-blue-700"><span className="text-sm font-bold leading-none" aria-hidden="true"></span>{formatSalary(job)}</span>
         <span className="inline-flex items-center gap-1 rounded-full border border-[#d8e2ee] px-3 py-1.5"><Icon name="calendar" className="h-3.5 w-3.5" />Applied on {formatDateTime(application.appliedAt || application.createdAt)}</span>
       </div>
 
