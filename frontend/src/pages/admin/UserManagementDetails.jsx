@@ -1060,7 +1060,13 @@ const UserManagementDetails = () => {
                 {fullName}
               </h2>
 
-              <p className="mt-2 break-words text-[11px] leading-relaxed sm:text-[12px]">
+              {profile.address ? (
+                <p className="mt-2 break-words text-[11px] leading-relaxed sm:text-[12px]">
+                  {profile.address}
+                </p>
+              ) : null}
+
+              <p className={`${profile.address ? "mt-1" : "mt-2"} break-words text-[11px] leading-relaxed sm:text-[12px]`}>
                 {[user?.email, profile.phoneNumber || user?.phoneNumber || user?.contactNumber]
                   .filter(Boolean)
                   .join(" | ") || "Contact information not provided"}
