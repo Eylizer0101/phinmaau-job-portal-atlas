@@ -1287,9 +1287,54 @@ const UserManagementDetails = () => {
     <section className="flex min-h-[620px] flex-col rounded-[20px] border border-[#d8e2ee] bg-white p-5 shadow-sm sm:p-7">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div><h2 className="text-lg font-bold text-black">{showAllActivity ? "All Activity" : "Recent Activity"}</h2>{showAllActivity ? <p className="mt-1 text-xs text-gray-500">Complete activity log for this user.</p> : null}</div>
-        <button type="button" onClick={() => { setShowAllActivity((value) => !value); setActivityPage(1); }} className="text-xs font-semibold text-[#174b91] hover:underline">
-          {showAllActivity ? "← Back to Recent Activity" : "View All Activity →"}
-        </button>
+       <button
+  type="button"
+  onClick={() => {
+    setShowAllActivity((value) => !value);
+    setActivityPage(1);
+  }}
+  className="inline-flex items-center gap-1 text-xs font-semibold text-[#174b91] hover:underline"
+>
+  {showAllActivity ? (
+    <>
+      <svg
+        className="h-4 w-4 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M15 19l-7-7 7-7"
+        />
+      </svg>
+
+      <span>Back to Recent Activity</span>
+    </>
+  ) : (
+    <>
+      <span>View All Activity</span>
+
+      <svg
+        className="h-4 w-4 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M9 5l7 7-7 7"
+        />
+      </svg>
+    </>
+  )}
+</button>
       </div>
 
       {activityItems.length ? (
@@ -1342,17 +1387,29 @@ const UserManagementDetails = () => {
           <p className="mt-1 text-xs text-gray-500">Track where this user has applied and their progress.</p>
         </div>
         <div className="text-right">
-          <button type="button" onClick={() => navigate(`/admin/users/${userId}/application-history`)} className="text-xs 
-          font-semibold text-[#0057d9] 
-          hover:underline">View full tracking history <svg
-               className="w-[18px] h-[18px] shrink-0"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                          </svg>
+         <button
+  type="button"
+  onClick={() =>
+    navigate(`/admin/users/${userId}/application-history`)
+  }
+  className="inline-flex items-center gap-1 text-xs font-semibold text-[#0057d9] hover:underline"
+>
+  <span>View full tracking history</span>
+
+  <svg
+    className="h-4 w-4 shrink-0"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      d="M9 5l7 7-7 7"
+    />
+  </svg>
 </button>
           <p className="mt-1 text-[11px] text-gray-500">{applications.length} Total Applications</p>
         </div>
