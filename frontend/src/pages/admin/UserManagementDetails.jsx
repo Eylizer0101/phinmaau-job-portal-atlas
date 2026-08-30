@@ -172,9 +172,7 @@ const JobSeekerLevelBadgeCard = ({
           <div className="w-full max-w-[980px] overflow-hidden rounded-[22px] bg-white shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
             <div className="flex items-center justify-between gap-4 bg-[#2e66a6] px-5 py-4 sm:px-7">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/75">
-                  Job Seeker Ranking
-                </p>
+              
                 <h2
                   id="admin-job-seeker-levels-title"
                   className="mt-1 text-[21px] font-bold text-white sm:text-[24px]"
@@ -197,29 +195,6 @@ const JobSeekerLevelBadgeCard = ({
               <p className="text-sm leading-6 text-gray-600">
                 View the jobseeker&apos;s current rank and the complete job seeker level progression.
               </p>
-
-              <div className="mt-4 overflow-x-auto rounded-xl border border-[#d8e2ee] bg-[#f8fbff] px-4 py-3">
-                <div className="flex min-w-max items-center gap-2 text-sm font-semibold text-[#2e66a6]">
-                  {jobSeekerLevels.map(([levelName], index) => (
-                    <React.Fragment key={levelName}>
-                      <span
-                        className={
-                          levelName === currentRank
-                            ? "font-extrabold text-black"
-                            : ""
-                        }
-                      >
-                        {levelName}
-                      </span>
-                      {index < jobSeekerLevels.length - 1 ? (
-                        <span className="text-gray-400" aria-hidden="true">
-                          →
-                        </span>
-                      ) : null}
-                    </React.Fragment>
-                  ))}
-                </div>
-              </div>
 
               <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
                 {jobSeekerLevels.map(([levelName, levelBadge], index) => {
@@ -1085,10 +1060,10 @@ const UserManagementDetails = () => {
                   src={avatarUrl}
                   alt={fullName}
                   onError={() => setBrokenAvatar(true)}
-                  className="mt-4 h-[88px] w-[88px] object-cover sm:absolute sm:right-2 sm:top-0 sm:mt-0 sm:h-[96px] sm:w-[96px]"
+                  className="mt-4 h-[88px] w-[88px] object-cover sm:absolute sm:right-[18%] sm:top-0 sm:mt-0 sm:h-[96px] sm:w-[96px]"
                 />
               ) : (
-                <div className="mt-4 flex h-[88px] w-[88px] items-center justify-center bg-[#1f2430] text-[28px] font-bold text-white sm:absolute sm:right-2 sm:top-0 sm:mt-0 sm:h-[96px] sm:w-[96px]">
+                <div className="mt-4 flex h-[88px] w-[88px] items-center justify-center bg-[#1f2430] text-[28px] font-bold text-white sm:absolute sm:right-[18%] sm:top-0 sm:mt-0 sm:h-[96px] sm:w-[96px]">
                   {initials}
                 </div>
               )}
