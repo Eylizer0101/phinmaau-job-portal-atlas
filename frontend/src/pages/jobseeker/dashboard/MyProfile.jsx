@@ -1672,6 +1672,22 @@ const CredentialItem = ({
                 <FaDownload className="text-[10px]" />
                 {uploading ? 'Uploading...' : 'Upload'}
               </button>
+            ) : isApproved ? (
+              fileUrl ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onClose?.();
+                    onProtectedAction?.('credential-export', title, handleExportFile);
+                  }}
+                  className="h-8 px-3 rounded-md border border-[#d8e2ee] bg-white text-[#2e66a6] text-xs font-semibold inline-flex items-center justify-center gap-2 hover:bg-[#f7faff]"
+                >
+                  <FaDownload className="text-[10px]" />
+                  Export
+                </button>
+              ) : null
             ) : (
               <>
                 <button
@@ -1691,21 +1707,6 @@ const CredentialItem = ({
                 >
                   <FaTrash className="text-[10px]" /> Remove
                 </button>
-                {fileUrl && !needsAction ? (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onClose?.();
-                      onProtectedAction?.('credential-export', title, handleExportFile);
-                    }}
-                    className="h-8 px-3 rounded-md border border-[#d8e2ee] bg-white text-[#2e66a6] text-xs font-semibold inline-flex items-center justify-center gap-2 hover:bg-[#f7faff]"
-                  >
-                    <FaDownload className="text-[10px]" />
-                    Export
-                  </button>
-                ) : null}
               </>
             )}
           </div>
