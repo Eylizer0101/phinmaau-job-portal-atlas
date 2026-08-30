@@ -1,18 +1,17 @@
 import React from "react";
+import {
+  ApplicationStatusIcon,
+  MyApplicationsSvgIcon,
+} from "../shared/JobseekerIcons";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
-const Icon = ({ name, className = "h-4 w-4" }) => {
-  const paths = {
-    briefcase: <><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 12h18" /></>,
-    building: <><path d="M4 21V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v16M2 21h20M8 7h2m-2 4h2m-2 4h2m4-8h1m-1 4h1m-1 4h1" /></>,
-    monitor: <><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8m-4-4v4" /></>,
-    mapPin: <><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></>,
-    calendar: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M8 3v4m8-4v4M3 10h18" /></>,
-    eye: <><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" /><circle cx="12" cy="12" r="3" /></>,
-    clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
-  };
-  return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
+const StatusIcon = ({ name, className = "h-4 w-4" }) => {
+  if (name === "forInterview" || name === "withdrawn") {
+    return <ApplicationStatusIcon name={name} className={className} />;
+  }
+
+  return <MyApplicationsSvgIcon name={name} className={className} />;
 };
 
 const formatDate = (value) => {
@@ -59,13 +58,13 @@ const isOfferStage = (value) => normalizeStage(value).toLowerCase().includes("of
 export const getApplicationPresentation = (application = {}) => {
   const status = String(application.status || "pending").toLowerCase();
   const stage = normalizeStage(application.hiringStage);
-  if (status === "hired") return { label: "Hired", progress: 100, description: "Offer accepted", color: "emerald", statusIcon: "clock" };
-  if (status === "declined" || status === "vacancy full") return { label: "Declined", progress: 100, description: application.declineReason || (status === "vacancy full" ? "Position filled by another candidate" : "Application was not selected"), color: "rose", statusIcon: "clock" };
-  if (status === "withdrawn" || status === "cancelled") return { label: status === "withdrawn" ? "Withdrawn" : "Cancelled", progress: 30, description: status === "withdrawn" ? "Withdrawn by applicant" : "Application cancelled", color: "slate", statusIcon: "clock" };
+  if (status === "hired") return { label: "Hired", progress: 100, description: "Offer accepted", color: "emerald", statusIcon: "checkCircle" };
+  if (status === "declined" || status === "vacancy full") return { label: "Declined", progress: 100, description: application.declineReason || (status === "vacancy full" ? "Position filled by another candidate" : "Application was not selected"), color: "rose", statusIcon: "timesCircle" };
+  if (status === "withdrawn" || status === "cancelled") return { label: status === "withdrawn" ? "Withdrawn" : "Cancelled", progress: 30, description: status === "withdrawn" ? "Withdrawn by applicant" : "Application cancelled", color: "slate", statusIcon: status === "withdrawn" ? "withdrawn" : "timesCircle" };
   if (status === "for interview") {
-    if (isOfferStage(stage)) return { label: "Offered", progress: 90, description: "Job offer stage", color: "violet", statusIcon: "clock" };
+    if (isOfferStage(stage)) return { label: "Offered", progress: 90, description: "Job offer stage", color: "violet", statusIcon: "checkCircle" };
     const progress = stage.toLowerCase().includes("final") ? 85 : application?.interviewSchedule?.scheduledAt ? 75 : 70;
-    return { label: "For Interview", progress, description: stage || (application?.interviewSchedule?.scheduledAt ? "Interview scheduled" : "Interview stage"), color: "blue", statusIcon: "clock" };
+    return { label: "For Interview", progress, description: stage || (application?.interviewSchedule?.scheduledAt ? "Interview scheduled" : "Interview stage"), color: "blue", statusIcon: "forInterview" };
   }
   if (application.reviewedAt || application.viewedAt || application.isViewedByEmployer) return { label: "Pending", progress: 40, description: "Resume under review", color: "blue", statusTextClass: "text-amber-600", statusIcon: "clock" };
   return { label: "Pending", progress: 25, description: "Application received", color: "blue", statusTextClass: "text-amber-600", statusIcon: "clock" };
@@ -129,24 +128,24 @@ const ApplicationHistoryCard = ({ application, onView }) => {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <h3 className="text-sm font-bold text-black sm:text-base">{title}</h3>
-            <span className={cn("inline-flex items-center gap-1 text-xs font-medium", presentation.statusTextClass || colors.text)}><Icon name={presentation.statusIcon} className="h-3.5 w-3.5" />{presentation.label}</span>
+            <span className={cn("inline-flex items-center gap-1 text-xs font-medium", presentation.statusTextClass || colors.text)}><StatusIcon name={presentation.statusIcon} className="h-3.5 w-3.5" />{presentation.label}</span>
           </div>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#48617d]">
-            <span className="inline-flex items-center gap-1"><Icon name="building" className="h-3.5 w-3.5 text-[#8ca2bb]" />{company}</span>
+            <span className="inline-flex items-center gap-1"><MyApplicationsSvgIcon name="building" className="h-3.5 w-3.5 text-[#8ca2bb]" />{company}</span>
             <span className="text-[#c4d0dc]">|</span>
-            <span className="inline-flex items-center gap-1"><Icon name="briefcase" className="h-3.5 w-3.5 text-[#8ca2bb]" />{job.industry || profile.industry || "Industry not specified"}</span>
+            <span className="inline-flex items-center gap-1"><MyApplicationsSvgIcon name="industry" className="h-3.5 w-3.5 text-[#8ca2bb]" />{job.industry || profile.industry || "Industry not specified"}</span>
             <span className="text-[#c4d0dc]">|</span>
-            <span className="inline-flex min-w-0 items-center gap-1"><Icon name="mapPin" className="h-3.5 w-3.5 shrink-0 text-[#8ca2bb]" /><span className="truncate">{location}</span></span>
+            <span className="inline-flex min-w-0 items-center gap-1"><MyApplicationsSvgIcon name="location" className="h-3.5 w-3.5 shrink-0 text-[#8ca2bb]" /><span className="truncate">{location}</span></span>
           </div>
         </div>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[#243b55]">
-        <span className="inline-flex items-center gap-1 rounded-full border border-[#d8e2ee] px-3 py-1.5"><Icon name="briefcase" className="h-3.5 w-3.5" />{job.jobType || job.employmentType || "Type not specified"}</span>
-        <span className="inline-flex items-center gap-1 rounded-full border border-[#d8e2ee] px-3 py-1.5"><Icon name="monitor" className="h-3.5 w-3.5" />{job.workMode || "Setup not specified"}</span>
+        <span className="inline-flex items-center gap-1 rounded-full border border-[#d8e2ee] px-3 py-1.5"><MyApplicationsSvgIcon name="briefcase" className="h-3.5 w-3.5" />{job.jobType || job.employmentType || "Type not specified"}</span>
+        <span className="inline-flex items-center gap-1 rounded-full border border-[#d8e2ee] px-3 py-1.5"><MyApplicationsSvgIcon name="laptop" className="h-3.5 w-3.5" />{job.workMode || "Setup not specified"}</span>
         <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1.5 text-blue-700">
             <span className="text-sm  leading-none" aria-hidden="true">₱</span>{formatSalary(job)}</span>
-        <span className="inline-flex items-center gap-1 rounded-full border border-[#d8e2ee] px-3 py-1.5"><Icon name="calendar" className="h-3.5 w-3.5" />Applied on {formatDateTime(application.appliedAt || application.createdAt)}</span>
+        <span className="inline-flex items-center gap-1 rounded-full border border-[#d8e2ee] px-3 py-1.5"><MyApplicationsSvgIcon name="calendar" className="h-3.5 w-3.5" />Applied on {formatDateTime(application.appliedAt || application.createdAt)}</span>
       </div>
 
       <div className="mt-3 rounded-xl bg-[#f7f9fc] px-3 py-3">
@@ -164,8 +163,8 @@ const ApplicationHistoryCard = ({ application, onView }) => {
       </div>
 
       <div className="mt-3 flex items-center justify-between gap-3">
-        <span className="inline-flex items-center gap-1 text-[10px] text-[#6681a0]"><Icon name="clock" className="h-3 w-3" />{formatRelativeTime(application.updatedAt || application.reviewedAt || application.appliedAt || application.createdAt)}</span>
-        <button type="button" onClick={onView} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-[#0057d9] transition hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"><Icon name="eye" className="h-3.5 w-3.5" />View Application</button>
+        <span className="inline-flex items-center gap-1 text-[10px] text-[#6681a0]"><MyApplicationsSvgIcon name="clock" className="h-3 w-3" />{formatRelativeTime(application.updatedAt || application.reviewedAt || application.appliedAt || application.createdAt)}</span>
+        <button type="button" onClick={onView} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-[#0057d9] transition hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"><MyApplicationsSvgIcon name="eye" className="h-3.5 w-3.5" />View Application</button>
       </div>
     </article>
   );
