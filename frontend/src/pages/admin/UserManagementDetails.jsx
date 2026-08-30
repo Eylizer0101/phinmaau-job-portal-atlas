@@ -241,15 +241,7 @@ const JobSeekerLevelBadgeCard = ({
                 })}
               </div>
 
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setShowLevelModal(false)}
-                  className="h-11 rounded-lg bg-[#2e66a6] px-6 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-                >
-                  Close
-                </button>
-              </div>
+             
             </div>
           </div>
         </div>
