@@ -2,7 +2,11 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import AdminLayout from '../../layouts/AdminLayout';
-import { BuildingIcon } from '../../components/shared/JobseekerIcons';
+import {
+  BuildingIcon,
+  LocationIcon,
+  MyApplicationsSvgIcon,
+} from '../../components/shared/JobseekerIcons';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
@@ -932,9 +936,9 @@ const AdminJobView = () => {
   const compactPlaceholderChipClass =
     'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-2 py-1 text-[10px] font-semibold text-[#2e66a6]';
   const regularRelocationChipClass =
-    'shrink-0 whitespace-nowrap rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#2e66a6]';
+    'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#2e66a6]';
   const compactRelocationChipClass =
-    'shrink-0 whitespace-nowrap rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-2 py-1 text-[10px] font-semibold text-[#2e66a6]';
+    'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-2 py-1 text-[10px] font-semibold text-[#2e66a6]';
 
   return (
     <AdminLayout>
@@ -1016,8 +1020,8 @@ const AdminJobView = () => {
                             : regularDetailChipClass
                         }
                       >
-                        <SvgIcon
-                          name="building"
+                        <MyApplicationsSvgIcon
+                          name="laptop"
                           className={isWorkModeMissing ? 'h-3 w-3' : 'h-3.5 w-3.5'}
                         />
                         {String(job.workMode || '').trim() || 'Work mode not specified'}
@@ -1046,6 +1050,9 @@ const AdminJobView = () => {
                             : regularRelocationChipClass
                         }
                       >
+                        <LocationIcon
+                          className={isRelocationMissing ? 'h-3 w-3' : 'h-3.5 w-3.5'}
+                        />
                         {getRelocationDisplayLabel(job.willingToRelocate)}
                       </span>
                     </div>
