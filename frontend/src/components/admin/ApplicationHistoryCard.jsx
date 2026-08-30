@@ -44,7 +44,6 @@ const formatRelativeTime = (value) => {
 };
 
 const formatSalary = (job) => {
-  if (job.hideSalary) return "Salary hidden";
   const minimum = Number(job.salaryMin);
   const maximum = Number(job.salaryMax);
   const money = (value) => value.toLocaleString("en-PH");
