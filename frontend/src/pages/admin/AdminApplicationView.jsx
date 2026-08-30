@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
+import { MyApplicationsSvgIcon } from "../../components/shared/JobseekerIcons";
 
 const UI = {
   page: "min-h-screen bg-[#f8fafc]",
@@ -437,9 +438,11 @@ const CompanyLogo = ({ src, name }) => {
 const SectionHeader = ({ icon, title, subtitle }) => (
   <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
     <div className="flex items-center gap-2">
-      <span className="text-[#374151]">
-        <Icon name={icon} className="h-4 w-4" />
-      </span>
+      {icon ? (
+        <span className="text-[#374151]">
+          <Icon name={icon} className="h-4 w-4" />
+        </span>
+      ) : null}
       <h2 className={UI.title}>{title}</h2>
     </div>
     {subtitle ? <p className="text-xs font-medium text-slate-500">{subtitle}</p> : null}
@@ -699,7 +702,7 @@ const AdminApplicationView = () => {
 
                       {job.workMode ? (
                         <span className={UI.chip}>
-                          <Icon name="building" className="h-3.5 w-3.5" />
+                          <MyApplicationsSvgIcon name="laptop" className="h-3.5 w-3.5" />
                           {job.workMode}
                         </span>
                       ) : null}
@@ -798,7 +801,7 @@ const AdminApplicationView = () => {
 
           <div className="mb-5 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
             <section className={`${UI.sectionCard} p-5 sm:p-6`}>
-              <SectionHeader icon="tools" title="Required Skills" subtitle={`${requiredSkills.length} `} />
+              <SectionHeader title="Required Skills" subtitle={`${requiredSkills.length} `} />
               <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {requiredSkills.length ? (
                   requiredSkills.map((skill, index) => (
@@ -829,7 +832,7 @@ const AdminApplicationView = () => {
           </div>
 
           <section className={`${UI.sectionCard} p-5 sm:p-6`}>
-            <SectionHeader icon="briefcase" title="Perks and Benefits" subtitle={`${perksAndBenefits.length} `} />
+            <SectionHeader title="Perks and Benefits" subtitle={`${perksAndBenefits.length} `} />
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {perksAndBenefits.length ? (
                 perksAndBenefits.map((benefit, index) => (
