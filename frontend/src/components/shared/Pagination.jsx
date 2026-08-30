@@ -27,6 +27,7 @@ const Pagination = ({
   pageSize,
   onPageChange,
   onPageSizeChange,
+  showPageSize = true,
   ariaLabel = 'Pagination controls',
   className = '',
 }) => {
@@ -45,7 +46,7 @@ const Pagination = ({
       ? totalItems
       : Math.min(safePage * numericPageSize, totalItems);
 
-  if (totalItems <= 10) return null;
+  if (totalPages <= 1) return null;
 
   const changePage = (nextPage) => {
     const safeNextPage = Math.min(Math.max(nextPage, 1), totalPages);
@@ -71,7 +72,7 @@ const Pagination = ({
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+        {showPageSize ? <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
           <span className="whitespace-nowrap text-xs text-slate-500">Display Per Page:</span>
           <select
             value={pageSize}
@@ -84,7 +85,7 @@ const Pagination = ({
               </option>
             ))}
           </select>
-        </label>
+        </label> : null}
 
         <nav
           className="inline-flex min-h-9 items-center bg-white"

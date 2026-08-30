@@ -4,6 +4,7 @@ import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
 import { normalizeUserToResumeData } from "../../components/shared/resumePrintTemplate";
 import Pagination from "../../components/shared/Pagination";
+import ApplicationHistoryCard from "../../components/admin/ApplicationHistoryCard";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
@@ -1338,171 +1339,25 @@ const UserManagementDetails = () => {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold text-black">Application History</h2>
-          <p className="mt-1 text-xs text-gray-500">
-            Track where this user has applied and their progress.
-          </p>
+          <p className="mt-1 text-xs text-gray-500">Track where this user has applied and their progress.</p>
         </div>
-        <div className="text-right"><button type="button" onClick={() => navigate(`/admin/users/${userId}/application-history`)} className="text-xs font-semibold text-[#174b91] hover:underline">View full tracking history →</button><p className="mt-1 text-[11px] text-gray-500">{applications.length} Total Applications</p></div>
+        <div className="text-right">
+          <button type="button" onClick={() => navigate(`/admin/users/${userId}/application-history`)} className="text-xs font-semibold text-[#0057d9] hover:underline">View full tracking history →</button>
+          <p className="mt-1 text-[11px] text-gray-500">{applications.length} Total Applications</p>
+        </div>
       </div>
 
       {applications.length ? (
         <div className="mt-5 space-y-3">
-          {paginatedApplications.map((application) => {
-            const job = application.job || {};
-            const employerProfile = application.employer?.employerProfile || {};
-            const presentation = getApplicationPresentation(application);
-            const companyName =
-              job.companyName ||
-              employerProfile.companyName ||
-              "Company not specified";
-            const locationText =
-              job.location ||
-              job.address ||
-              employerProfile.regionCity ||
-              "Location not specified";
-            const timeline = (Array.isArray(application.activityHistory) ? application.activityHistory : [])
-              .map((item, index) => ({ key: item._id || `${application._id}-${index}`, title: item.title || item.description || "Application updated", date: item.occurredAt || item.createdAt || application.updatedAt }))
-              .filter((item) => item.date)
-              .sort((first, second) => new Date(second.date).getTime() - new Date(first.date).getTime())
-              .slice(0, 4);
-
-            return (
-              <article
-                key={application._id}
-                className="rounded-xl border border-[#d8e2ee] bg-white px-4 py-4 transition hover:border-[#b9cce1] sm:px-5"
-              >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-bold text-black">
-                      {job.title || job.jobTitle || "Job position"}
-                    </h3>
-                    <p className="mt-1 text-xs font-medium text-gray-600">
-                      {companyName}
-                    </p>
-
-                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-500">
-                      <span className="inline-flex items-center gap-1">
-                        <Icon name="mapPin" className="h-3.5 w-3.5" />
-                        {locationText}
-                      </span>
-                      <span aria-hidden="true">•</span>
-                      <span>
-                        Applied{" "}
-                        {formatDate(
-                          application.appliedAt || application.createdAt
-                        )}
-                      </span>
-                    </div>
-                  </div>
-
-                  <span
-                    className={cn(
-                      "inline-flex w-fit items-center rounded-full border px-3 py-1 text-[10px] font-semibold",
-                      presentation.badgeClass
-                    )}
-                  >
-                    {presentation.label}
-                  </span>
-                </div>
-
-                <div className="mt-4 flex items-center justify-between gap-4 text-[11px]">
-                  <span className="text-gray-600">
-                    {presentation.description}
-                  </span>
-                  <span className="shrink-0 font-semibold text-black">
-                    {presentation.progress}%
-                  </span>
-                </div>
-
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#edf2f7]">
-                  <div
-                    className={cn(
-                      "h-full rounded-full transition-all",
-                      presentation.barClass
-                    )}
-                    style={{ width: `${presentation.progress}%` }}
-                  />
-                </div>
-
-                <div className="mt-3 rounded-lg border border-[#e5edf5] bg-[#fbfdff] px-3 py-3">
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#2e66a6]">Progress Timeline</p>
-                  <div className="mt-2 space-y-1.5">{(timeline.length ? timeline : [{ key: `${application._id}-submitted`, title: "Application submitted", date: application.appliedAt || application.createdAt }]).map((item) => <div key={item.key} className="flex items-center justify-between gap-4 text-[10px]"><span className="text-gray-600">{item.title}</span><span className="shrink-0 text-gray-400">{formatDate(item.date)}</span></div>)}</div>
-                </div>
-
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                  <span className="text-[10px] text-gray-400">
-                    {formatRelativeTime(
-                      application.updatedAt ||
-                        application.reviewedAt ||
-                        application.appliedAt ||
-                        application.createdAt
-                    )}
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      navigate(`/admin/applications/${application._id}`)
-                    }
-                    className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#174b91] transition hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-                  >
-                    <Icon name="eye" className="h-3.5 w-3.5" />
-                    View application
-                  </button>
-                </div>
-              </article>
-            );
-          })}
-
+          {paginatedApplications.map((application) => (
+            <ApplicationHistoryCard key={application._id} application={application} onView={() => navigate(`/admin/applications/${application._id}`)} />
+          ))}
           {applications.length > APPLICATIONS_PER_PAGE ? (
-            <div className="flex flex-col gap-3 border-t border-[#d8e2ee] pt-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs text-gray-500">
-                Showing{" "}
-                {(applicationPage - 1) * APPLICATIONS_PER_PAGE + 1} to{" "}
-                {Math.min(
-                  applicationPage * APPLICATIONS_PER_PAGE,
-                  applications.length
-                )}{" "}
-                of {applications.length}
-              </p>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setApplicationPage((page) => Math.max(page - 1, 1))
-                  }
-                  disabled={applicationPage === 1}
-                  className="rounded-lg border border-[#d8e2ee] bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-45"
-                >
-                  Previous
-                </button>
-
-                <span className="rounded-lg bg-[#eef5fc] px-3 py-1.5 text-xs font-semibold text-[#2e66a6]">
-                  Page {applicationPage} of {totalApplicationPages}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setApplicationPage((page) =>
-                      Math.min(page + 1, totalApplicationPages)
-                    )
-                  }
-                  disabled={applicationPage === totalApplicationPages}
-                  className="rounded-lg border border-[#d8e2ee] bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-45"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
+            <Pagination currentPage={applicationPage} totalItems={applications.length} pageSize={APPLICATIONS_PER_PAGE} onPageChange={setApplicationPage} onPageSizeChange={() => {}} showPageSize={false} className="!static mt-4 px-0" />
           ) : null}
-
         </div>
       ) : (
-        <div className="mt-5 rounded-xl border border-dashed border-[#d8e2ee] bg-[#f8fafc] px-5 py-12 text-center text-sm text-gray-500">
-          No application history is available for this jobseeker.
-        </div>
+        <div className="mt-5 rounded-xl border border-dashed border-[#d8e2ee] bg-[#f8fafc] px-5 py-12 text-center text-sm text-gray-500">No application history is available for this jobseeker.</div>
       )}
     </section>
   );

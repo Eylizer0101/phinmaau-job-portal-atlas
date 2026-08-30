@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
 import Pagination from "../../components/shared/Pagination";
+import ApplicationHistoryCard from "../../components/admin/ApplicationHistoryCard";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
@@ -588,10 +589,10 @@ const AdminUserApplicationHistory = () => {
           <section className="flex min-h-[760px] flex-col rounded-[20px] border border-[#d8e2ee] bg-white p-5 shadow-sm sm:p-7">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div><h1 className="text-2xl font-bold text-black sm:text-3xl">
-                Full Application History
+                Application History
               </h1>
               <p className="mt-2 text-sm text-gray-500">
-                Every company this jobseeker has applied to, with stage-by-stage progress.
+                Track where this user has applied and their progress.
               </p></div>
               <span className="text-sm font-medium text-gray-500">{applications.length} Applications</span>
             </div>
@@ -627,159 +628,13 @@ const AdminUserApplicationHistory = () => {
 
             {filteredApplications.length ? (
               <div className="mt-5 flex-1 space-y-4">
-                {paginatedApplications.map(
-                  ({ application, presentation }) => {
-                    const job = application.job || {};
-                    const employerProfile =
-                      application.employer?.employerProfile || {};
-                    const companyName =
-                      job.companyName ||
-                      employerProfile.companyName ||
-                      "Company not specified";
-                    const jobTitle =
-                      job.title || job.jobTitle || "Job position";
-                    const locationText =
-                      job.location ||
-                      job.address ||
-                      employerProfile.regionCity ||
-                      "Location not specified";
-                    const timeline = buildProgressTimeline(
-                      application,
-                      presentation
-                    );
-
-                    return (
-                      <article
-                        key={application._id}
-                        className="rounded-[18px] border border-[#d8e2ee] bg-white p-4 shadow-[0_4px_14px_rgba(15,23,42,0.04)] transition hover:border-[#b9cce1] sm:p-5"
-                      >
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                          <div className="flex min-w-0 items-start gap-3">
-                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#eef5fc] text-[#2e66a6]">
-                              <Icon name="briefcase" className="h-5 w-5" />
-                            </div>
-
-                            <div className="min-w-0">
-                              <h2 className="text-base font-bold text-black">
-                                {jobTitle}
-                              </h2>
-                              <p className="mt-0.5 text-sm font-medium text-gray-600">
-                                {companyName}
-                              </p>
-
-                              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
-                                <span className="inline-flex items-center gap-1.5"><Icon name="briefcase" className="h-3.5 w-3.5" />{job.jobType || job.employmentType || "Type not specified"}</span>
-                                <span aria-hidden="true">•</span>
-                                <span>{job.workMode || "Work setup not specified"}</span>
-                                <span aria-hidden="true">•</span>
-                                <span>{job.industry || employerProfile.industry || "Industry not specified"}</span>
-                                <span aria-hidden="true">•</span>
-                                <span className="inline-flex items-center gap-1.5">
-                                  <Icon name="mapPin" className="h-3.5 w-3.5" />
-                                  {locationText}
-                                </span>
-                                <span aria-hidden="true">•</span>
-                                <span>{formatSalary(job)}</span>
-                                <span aria-hidden="true">•</span>
-                                <span className="inline-flex items-center gap-1.5">
-                                  <Icon name="calendar" className="h-3.5 w-3.5" />
-                                  Applied{" "}
-                                  {formatDateTime(
-                                    application.appliedAt ||
-                                      application.createdAt
-                                  )}
-                                </span>
-                                <span aria-hidden="true">•</span>
-                                <span>
-                                  {formatRelativeTime(
-                                    application.updatedAt ||
-                                      application.reviewedAt ||
-                                      application.appliedAt ||
-                                      application.createdAt
-                                  )}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <span
-                            className={cn(
-                              "inline-flex w-fit items-center rounded-full border px-3 py-1 text-xs font-semibold",
-                              presentation.badgeClass
-                            )}
-                          >
-                            {presentation.label}
-                          </span>
-                        </div>
-
-                        <div className="mt-5 flex items-center justify-between gap-4 text-xs">
-                          <span className="font-medium text-gray-600">
-                            {presentation.description}
-                          </span>
-                          <span className="shrink-0 font-semibold text-black">
-                            {presentation.progress}%
-                          </span>
-                        </div>
-
-                        <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#edf2f7]">
-                          <div
-                            className={cn(
-                              "h-full rounded-full transition-all",
-                              presentation.barClass
-                            )}
-                            style={{
-                              width: `${presentation.progress}%`,
-                            }}
-                          />
-                        </div>
-
-                        <div className="mt-4 rounded-xl bg-[#f7f9fc] px-4 py-4">
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#2e66a6]">
-                            Progress Timeline
-                          </p>
-
-                          {timeline.length ? (
-                            <ul className="mt-3 space-y-3">
-                              {timeline.map((item) => (
-                                <li
-                                  key={item.key}
-                                  className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 sm:grid-cols-[auto_minmax(0,1fr)_auto]"
-                                >
-                                  <span className="mt-1.5 h-2 w-2 rounded-full bg-[#3875ff]" />
-                                  <span className="min-w-0 text-xs font-medium leading-5 text-gray-700">
-                                    {item.title}
-                                  </span>
-                                  <span className="col-start-2 text-[11px] text-gray-400 sm:col-start-3 sm:whitespace-nowrap">
-                                    {formatDate(item.date)}
-                                  </span>
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <p className="mt-3 text-xs text-gray-500">
-                              No progress events are available yet.
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="mt-4 flex justify-end">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              navigate(
-                                `/admin/applications/${application._id}`
-                              )
-                            }
-                            className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-[#174b91] transition hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-                          >
-                            <Icon name="eye" className="h-4 w-4" />
-                            View application
-                          </button>
-                        </div>
-                      </article>
-                    );
-                  }
-                )}
+                {paginatedApplications.map(({ application }) => (
+                  <ApplicationHistoryCard
+                    key={application._id}
+                    application={application}
+                    onView={() => navigate(`/admin/applications/${application._id}`)}
+                  />
+                ))}
               </div>
             ) : (
               <div className="mt-5 flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-[#d8e2ee] bg-[#f8fafc] px-5 py-14 text-center">
