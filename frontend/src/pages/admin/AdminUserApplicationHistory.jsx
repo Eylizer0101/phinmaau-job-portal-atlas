@@ -421,7 +421,6 @@ const AdminUserApplicationHistory = () => {
 
       const response = await api.get(`/admin/users/${userId}`, {
         params: { fresh: Date.now() },
-        headers: { "Cache-Control": "no-cache" },
       });
 
       if (!response.data?.success) {
