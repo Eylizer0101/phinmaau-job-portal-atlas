@@ -712,7 +712,7 @@ const AdminApplicationView = () => {
                     type="button"
                     onClick={handleViewSubmittedResume}
                     className={cn(
-                      "inline-flex h-11 shrink-0 items-center justify-center gap-2 self-start rounded-lg bg-[#2e66a6] px-5 text-sm font-semibold text-white transition hover:bg-[#255487] lg:mt-1",
+                      "inline-flex h-11 shrink-0 items-center justify-center gap-2 self-start rounded-lg bg-[#2e66a6] px-5 text-sm font-semibold text-white transition hover:bg-[#255487] lg:self-center",
                       UI.ring
                     )}
                   >
