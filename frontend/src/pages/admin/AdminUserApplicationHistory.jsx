@@ -588,10 +588,10 @@ const AdminUserApplicationHistory = () => {
           <section className="flex min-h-[760px] flex-col rounded-[20px] border border-[#d8e2ee] bg-white p-5 shadow-sm sm:p-7">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div><h1 className="text-2xl font-bold text-black sm:text-3xl">
-                Application History
+                Full Application History
               </h1>
               <p className="mt-2 text-sm text-gray-500">
-                Track where this user has applied and their progress.
+                Every company this applicant has applied to, with stage-by-stage progress.
               </p></div>
               <span className="text-sm font-medium text-gray-500">{applications.length} Applications</span>
             </div>
