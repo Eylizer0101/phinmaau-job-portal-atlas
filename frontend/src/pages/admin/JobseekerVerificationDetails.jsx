@@ -363,24 +363,15 @@ const Spinner = ({ className = "w-4 h-4" }) => (
 // ======================= COMPONENTS =======================
 const Badge = ({ children, variant = "neutral" }) => {
   const variants = {
-    neutral: "bg-white text-black border-[#CBD5E1]",
-    success: "bg-[#2e66a6]/10 text-[#2e66a6] border-[#2e66a6]/25",
-    warning: "bg-[#F1F5F9] text-black border-[#CBD5E1]",
-    danger: "bg-white text-black border-[#CBD5E1]",
-    info: "bg-[#2e66a6]/10 text-[#2e66a6] border-[#2e66a6]/25",
-  };
-
-  const dots = {
-    neutral: "bg-black/40",
-    success: "bg-[#2e66a6]",
-    warning: "bg-black/55",
-    danger: "bg-black/70",
-    info: "bg-[#2e66a6]",
+    neutral: "bg-white text-gray-600 border-[#CBD5E1]",
+    success: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    warning: "bg-amber-50 text-amber-700 border-amber-200",
+    danger: "bg-red-50 text-red-700 border-red-200",
+    info: "bg-[#2e66a6]/10 text-[#2e66a6] border-[#2e66a6]/20",
   };
 
   return (
     <span className={cn(UI.badgeBase, variants[variant])}>
-      <span className={cn("w-2 h-2 rounded-full", dots[variant])} />
       {children}
     </span>
   );
