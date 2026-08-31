@@ -3285,6 +3285,7 @@ const CompanyProfile = () => {
                               value={companyData.businessEmail}
                               onChange={handleInputChange}
                               placeholder="careers@company.com"
+                              readOnly
                               disabled={saving}
                               className={cx('w-full rounded-[10px] border px-4 py-3 text-[14px] outline-none', fieldErrors.businessEmail ? 'border-red-400' : 'border-[#cbd5e1] focus:border-[#1769c2]')}
                             />
