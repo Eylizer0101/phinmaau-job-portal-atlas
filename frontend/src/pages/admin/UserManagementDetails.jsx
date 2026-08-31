@@ -768,6 +768,12 @@ const UserManagementDetails = () => {
         "Salary",
         [profile.minimumSalary, profile.maximumSalary]
           .filter(Boolean)
+          .map((value) => {
+            const numericValue = Number(String(value).replace(/,/g, ""));
+            return Number.isFinite(numericValue)
+              ? numericValue.toLocaleString("en-US")
+              : String(value);
+          })
           .join(" - "),
       ],
       ["Nationality", profile.nationality],
@@ -777,7 +783,7 @@ const UserManagementDetails = () => {
       ["Weight", profile.weight],
       ["Gender", profile.gender],
       ["Civil Status", profile.civilStatus],
-      ["Birthday", profile.birthday],
+      ["Birthday", formatDate(profile.birthday)],
     ],
   ].map((column) =>
     column.filter(([, value]) => String(value || "").trim())
