@@ -112,41 +112,6 @@ exports.removeAdminProfileLogo = async (req, res) => {
   }
 };
 
-exports.verifyCurrentAdminPassword = async (req, res) => {
-  try {
-    const adminPassword = String(req.body?.adminPassword || '');
-
-    if (!adminPassword) {
-      return res.status(400).json({
-        success: false,
-        code: 'ADMIN_PASSWORD_REQUIRED',
-        message: 'Password is required.',
-      });
-    }
-
-    const isValid = await isValidAdminPassword(req, adminPassword);
-
-    if (!isValid) {
-      return res.status(400).json({
-        success: false,
-        code: 'ADMIN_PASSWORD_INVALID',
-        message: 'Incorrect admin password.',
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: 'Admin password verified.',
-    });
-  } catch (error) {
-    console.error('Verify admin password error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Unable to verify the admin password.',
-    });
-  }
-};
-
 exports.updateAdminPassword = async (req, res) => {
   try {
     const { currentPassword, newPassword, confirmNewPassword } = req.body || {};
@@ -1914,11 +1879,7 @@ exports.updateEmployerVerificationStatus = async (req, res) => {
     const { overallStatus, remarks, rejectionReasons, rejectionMessage, adminPassword } = req.body;
 
     if (overallStatus === 'verified' && !(await isValidAdminPassword(req, adminPassword))) {
-      return res.status(400).json({
-        success: false,
-        code: 'ADMIN_PASSWORD_INVALID',
-        message: 'Incorrect admin password.',
-      });
+      return res.status(401).json({ success: false, message: 'Incorrect admin password.' });
     }
 
     const valid = ['unverified', 'pending', 'hold', 'verified', 'rejected'];
@@ -3098,27 +3059,60 @@ exports.requireAdminPasswordForCredential = async (req, res, next) => {
     if (!password) {
       return res.status(400).json({
         success: false,
-        code: 'ADMIN_PASSWORD_REQUIRED',
         message: 'Password is required.',
       });
     }
 
-    const isPasswordValid = await isValidAdminPassword(req, password);
+    const admin = await User.findById(req.userId).select('password role email');
 
-    if (!isPasswordValid) {
-      return res.status(400).json({
+    if (!admin || admin.role !== 'admin') {
+      return res.status(403).json({
         success: false,
-        code: 'ADMIN_PASSWORD_INVALID',
-        message: 'Incorrect admin password.',
+        message: 'Admin access is required.',
       });
     }
 
-    next();
+    let isPasswordValid = false;
+
+    if (admin.password) {
+      isPasswordValid = await bcrypt.compare(password, admin.password);
+    }
+
+    const defaultAdminEmail = String(process.env.DEFAULT_ADMIN_EMAIL || '')
+      .trim()
+      .toLowerCase();
+    const defaultAdminPassword = String(process.env.DEFAULT_ADMIN_PASSWORD || '');
+
+    const isDefaultAdmin =
+      defaultAdminEmail &&
+      String(admin.email || '').trim().toLowerCase() === defaultAdminEmail;
+
+    if (
+      !isPasswordValid &&
+      isDefaultAdmin &&
+      defaultAdminPassword &&
+      password === defaultAdminPassword
+    ) {
+      isPasswordValid = true;
+
+      const salt = await bcrypt.genSalt(10);
+      admin.password = await bcrypt.hash(defaultAdminPassword, salt);
+      await admin.save();
+    }
+
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Incorrect password.',
+      });
+    }
+
+    return next();
   } catch (error) {
-    console.error('Admin credential password verification error:', error);
+    console.error('Error verifying admin password for credential access:', error);
     return res.status(500).json({
       success: false,
-      message: 'Unable to verify admin password.',
+      message: 'Unable to verify password.',
     });
   }
 };

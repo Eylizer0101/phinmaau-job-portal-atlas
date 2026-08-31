@@ -363,15 +363,24 @@ const Spinner = ({ className = "w-4 h-4" }) => (
 // ======================= COMPONENTS =======================
 const Badge = ({ children, variant = "neutral" }) => {
   const variants = {
-    neutral: "bg-white text-gray-600 border-[#CBD5E1]",
-    success: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    warning: "bg-amber-50 text-amber-700 border-amber-200",
-    danger: "bg-red-50 text-red-700 border-red-200",
-    info: "bg-[#2e66a6]/10 text-[#2e66a6] border-[#2e66a6]/20",
+    neutral: "bg-white text-black border-[#CBD5E1]",
+    success: "bg-[#2e66a6]/10 text-[#2e66a6] border-[#2e66a6]/25",
+    warning: "bg-[#F1F5F9] text-black border-[#CBD5E1]",
+    danger: "bg-white text-black border-[#CBD5E1]",
+    info: "bg-[#2e66a6]/10 text-[#2e66a6] border-[#2e66a6]/25",
+  };
+
+  const dots = {
+    neutral: "bg-black/40",
+    success: "bg-[#2e66a6]",
+    warning: "bg-black/55",
+    danger: "bg-black/70",
+    info: "bg-[#2e66a6]",
   };
 
   return (
     <span className={cn(UI.badgeBase, variants[variant])}>
+      <span className={cn("w-2 h-2 rounded-full", dots[variant])} />
       {children}
     </span>
   );
@@ -878,14 +887,6 @@ const JobseekerVerificationDetails = () => {
     }
   };
 
-  const verifyCurrentAdminPassword = async (password) => {
-    const response = await api.post('/admin/profile/verify-password', {
-      adminPassword: password,
-    });
-
-    return response.data;
-  };
-
   const performDownloadFile = async (docType, fallbackName, password) => {
     const { blob, fileName } = await fetchDocumentBlob(
       docType,
@@ -928,7 +929,11 @@ const JobseekerVerificationDetails = () => {
           credentialPassword,
         );
       } else {
-        await verifyCurrentAdminPassword(credentialPassword);
+        await fetchDocumentBlob(
+          pendingCredentialAction.docType,
+          "inline",
+          credentialPassword,
+        );
 
         setApprovalPassword(credentialPassword);
         if (pendingCredentialAction.action === "approveAccount") {
@@ -994,14 +999,8 @@ const JobseekerVerificationDetails = () => {
       const response = await api.patch(
         `/admin/jobseekers/verification/${id}/docs/${docType}/check`,
         {},
-        {
-          headers: {
-            "x-admin-password": approvalPassword,
-          },
-        },
       );
       setSuccess(response.data?.message || "Document marked as checked.");
-      setApprovalPassword("");
       await fetchJobseekerDetails();
     } catch (checkError) {
       setError(
@@ -1193,16 +1192,32 @@ const JobseekerVerificationDetails = () => {
 
   const getStatusBadge = (status) => {
     const s = (status || "not_submitted").toLowerCase();
-    if (s === "verified" || s === "approved") {
+    if (s === "verified") return <Badge variant="success">Approved</Badge>;
+    if (s === "pending") return <Badge variant="warning">Pending</Badge>;
+    if (s === "rejected") return <Badge variant="danger">Declined</Badge>;
+    if (s === "hold") return <Badge variant="warning">On Hold</Badge>;
+    return <Badge variant="neutral">Not Submitted</Badge>;
+  };
+
+  const getCredentialStatusBadge = (status) => {
+    const normalizedStatus = String(status || "not_submitted").toLowerCase();
+
+    if (normalizedStatus === "approved") {
       return <Badge variant="success">Approved</Badge>;
     }
-    if (s === "pending" || s === "submitted") {
+
+    if (["pending", "submitted"].includes(normalizedStatus)) {
       return <Badge variant="warning">Pending</Badge>;
     }
-    if (s === "rejected" || s === "action_needed") {
+
+    if (["rejected", "action_needed"].includes(normalizedStatus)) {
       return <Badge variant="danger">Declined</Badge>;
     }
-    if (s === "hold") return <Badge variant="warning">On Hold</Badge>;
+
+    if (normalizedStatus === "hold") {
+      return <Badge variant="warning">On Hold</Badge>;
+    }
+
     return <Badge variant="neutral">Not Submitted</Badge>;
   };
 
@@ -1604,10 +1619,6 @@ const JobseekerVerificationDetails = () => {
                       </h3>
                     </div>
 
-                    <div className="mt-2">
-                      {getStatusBadge(credentialStatus)}
-                    </div>
-
                     <div className="mt-3 min-h-[54px] flex flex-1 items-start gap-2">
                       <div
                         className={cn(
@@ -1632,6 +1643,9 @@ const JobseekerVerificationDetails = () => {
                             ({fileSize})
                           </p>
                         ) : null}
+                        <div className="mt-2">
+                          {getCredentialStatusBadge(credentialStatus)}
+                        </div>
                       </div>
                     </div>
 
