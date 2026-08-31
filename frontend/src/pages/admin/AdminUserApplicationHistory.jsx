@@ -483,6 +483,30 @@ const AdminUserApplicationHistory = () => {
     };
   }, [applications]);
 
+  const hasActiveFilters = useMemo(
+    () =>
+      searchQuery.trim() !== "" ||
+      companyFilter !== "all" ||
+      industryFilter !== "all" ||
+      jobTitleFilter !== "all" ||
+      statusFilter !== "all" ||
+      timeFilter !== "all" ||
+      dateFrom !== "" ||
+      dateTo !== "",
+    [searchQuery, companyFilter, industryFilter, jobTitleFilter, statusFilter, timeFilter, dateFrom, dateTo]
+  );
+
+  const clearAllFilters = useCallback(() => {
+    setSearchQuery("");
+    setCompanyFilter("all");
+    setIndustryFilter("all");
+    setJobTitleFilter("all");
+    setStatusFilter("all");
+    setTimeFilter("all");
+    setDateFrom("");
+    setDateTo("");
+  }, []);
+
   const filteredApplications = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
@@ -613,7 +637,8 @@ const AdminUserApplicationHistory = () => {
                   className="h-10 w-full rounded-lg border border-[#d8e2ee] bg-white pl-9 pr-3 text-sm text-black outline-none transition placeholder:text-gray-400 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15 lg:max-w-none"
                 />
               </label>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <div className="grid flex-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
                 {[
                   [companyFilter, setCompanyFilter, "All Company", filterOptions.companies],
                   [industryFilter, setIndustryFilter, "All Industry", filterOptions.industries],
@@ -630,7 +655,22 @@ const AdminUserApplicationHistory = () => {
                     setDateTo(nextTo);
                   }}
                 />
+                </div>
+
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={clearAllFilters}
+                    className="flex h-10 items-center gap-2 rounded-lg border border-[#d8e2ee] bg-white px-4 text-sm font-medium text-[#2e66a6] transition hover:border-[#2e66a6] hover:bg-[#f7faff]"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v6h6M20 20v-6h-6M5.64 18.36A9 9 0 1020 12" />
+                    </svg>
+                    Clear
+                  </button>
+                )}
               </div>
+
               <p className="mt-2 text-xs text-gray-500">Showing {filteredApplications.length} of {applications.length} applications</p>
             </div>
 
