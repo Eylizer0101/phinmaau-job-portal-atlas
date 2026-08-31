@@ -1192,9 +1192,15 @@ const JobseekerVerificationDetails = () => {
 
   const getStatusBadge = (status) => {
     const s = (status || "not_submitted").toLowerCase();
-    if (s === "verified") return <Badge variant="success">Approved</Badge>;
-    if (s === "pending") return <Badge variant="warning">Pending</Badge>;
-    if (s === "rejected") return <Badge variant="danger">Declined</Badge>;
+    if (s === "verified" || s === "approved") {
+      return <Badge variant="success">Approved</Badge>;
+    }
+    if (s === "pending" || s === "submitted") {
+      return <Badge variant="warning">Pending</Badge>;
+    }
+    if (s === "rejected" || s === "action_needed") {
+      return <Badge variant="danger">Declined</Badge>;
+    }
     if (s === "hold") return <Badge variant="warning">On Hold</Badge>;
     return <Badge variant="neutral">Not Submitted</Badge>;
   };
@@ -1595,6 +1601,10 @@ const JobseekerVerificationDetails = () => {
                       <h3 className="min-w-0 text-xs font-bold leading-5 text-black">
                         {docType.label}
                       </h3>
+                    </div>
+
+                    <div className="mt-2">
+                      {getStatusBadge(credentialStatus)}
                     </div>
 
                     <div className="mt-3 min-h-[54px] flex flex-1 items-start gap-2">

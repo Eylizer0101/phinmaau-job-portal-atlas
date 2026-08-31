@@ -35,9 +35,14 @@ api.interceptors.response.use(
       'PENDING_ADMIN_APPROVAL',
     ];
 
+    const responseCode = error.response?.data?.code;
+    const isAdminPasswordValidationError =
+      responseCode === 'ADMIN_PASSWORD_INVALID' ||
+      responseCode === 'ADMIN_PASSWORD_REQUIRED';
+
     if (
-      error.response?.status === 401 ||
-      (error.response?.status === 403 && authBlockCodes.includes(error.response?.data?.code))
+      (error.response?.status === 401 && !isAdminPasswordValidationError) ||
+      (error.response?.status === 403 && authBlockCodes.includes(responseCode))
     ) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');

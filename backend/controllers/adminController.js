@@ -1879,7 +1879,11 @@ exports.updateEmployerVerificationStatus = async (req, res) => {
     const { overallStatus, remarks, rejectionReasons, rejectionMessage, adminPassword } = req.body;
 
     if (overallStatus === 'verified' && !(await isValidAdminPassword(req, adminPassword))) {
-      return res.status(401).json({ success: false, message: 'Incorrect admin password.' });
+      return res.status(400).json({
+        success: false,
+        code: 'ADMIN_PASSWORD_INVALID',
+        message: 'Incorrect admin password.',
+      });
     }
 
     const valid = ['unverified', 'pending', 'hold', 'verified', 'rejected'];
@@ -3059,11 +3063,12 @@ exports.requireAdminPasswordForCredential = async (req, res, next) => {
     if (!password) {
       return res.status(400).json({
         success: false,
+        code: 'ADMIN_PASSWORD_REQUIRED',
         message: 'Password is required.',
       });
     }
 
-    const admin = await User.findById(req.userId).select('password role email');
+    const admin = await User.findById(req.userId).select('+password role email');
 
     if (!admin || admin.role !== 'admin') {
       return res.status(403).json({
@@ -3101,9 +3106,10 @@ exports.requireAdminPasswordForCredential = async (req, res, next) => {
     }
 
     if (!isPasswordValid) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
-        message: 'Incorrect password.',
+        code: 'ADMIN_PASSWORD_INVALID',
+        message: 'Incorrect admin password.',
       });
     }
 
