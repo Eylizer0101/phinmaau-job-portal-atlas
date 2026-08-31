@@ -1201,24 +1201,46 @@ const JobseekerVerificationDetails = () => {
 
   const getCredentialStatusBadge = (status) => {
     const normalizedStatus = String(status || "not_submitted").toLowerCase();
+    const badgeClass =
+      "inline-flex max-w-full items-center justify-center rounded-full border px-3 py-1 text-center text-xs font-semibold leading-4 whitespace-nowrap";
 
     if (normalizedStatus === "approved") {
-      return <Badge variant="success">Approved</Badge>;
+      return (
+        <span className={cn(badgeClass, "border-[#2e66a6]/20 bg-[#2e66a6]/10 text-[#2e66a6]")}>
+          Approved
+        </span>
+      );
     }
 
     if (["pending", "submitted"].includes(normalizedStatus)) {
-      return <Badge variant="warning">Pending</Badge>;
+      return (
+        <span className={cn(badgeClass, "border-amber-200 bg-amber-50 text-amber-700")}>
+          Pending
+        </span>
+      );
     }
 
     if (["rejected", "action_needed"].includes(normalizedStatus)) {
-      return <Badge variant="danger">Declined</Badge>;
+      return (
+        <span className={cn(badgeClass, "border-red-200 bg-red-50 text-red-700")}>
+          Declined
+        </span>
+      );
     }
 
     if (normalizedStatus === "hold") {
-      return <Badge variant="warning">On Hold</Badge>;
+      return (
+        <span className={cn(badgeClass, "border-amber-200 bg-amber-50 text-amber-700")}>
+          On Hold
+        </span>
+      );
     }
 
-    return <Badge variant="neutral">Not Submitted</Badge>;
+    return (
+      <span className={cn(badgeClass, "border-gray-200 bg-gray-50 text-gray-700")}>
+        Not Submitted
+      </span>
+    );
   };
 
   if (loading) {
@@ -1643,7 +1665,7 @@ const JobseekerVerificationDetails = () => {
                             ({fileSize})
                           </p>
                         ) : null}
-                        <div className="mt-2">
+                        <div className="mt-2 flex justify-center">
                           {getCredentialStatusBadge(credentialStatus)}
                         </div>
                       </div>
