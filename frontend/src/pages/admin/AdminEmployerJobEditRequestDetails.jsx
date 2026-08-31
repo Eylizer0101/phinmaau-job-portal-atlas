@@ -2,6 +2,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, BriefcaseBusiness, CalendarClock, CalendarDays, ChevronRight, Clock3, ExternalLink, FileEdit, MapPin, RefreshCw, Search, UnlockKeyhole, Users, WalletCards, X } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
+import {
+  BuildingIcon,
+  FaGraduationCap,
+  FileIcon,
+  GlobeIcon,
+  LocationIcon,
+} from '../../components/shared/JobseekerIcons';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -546,7 +553,13 @@ const TopMetricCard = ({ title, value, icon, isPeso = false, href = '' }) => (
   <article className={`${UI.metricCard} min-w-0`}>
     <div className="flex h-full min-w-0 items-start gap-3">
       <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[#d9dbe3] bg-[#f9fafb] text-[#6b7280]">
-        {isPeso ? <span className="text-sm font-bold">₱</span> : <SvgIcon name={icon} className="h-4 w-4" />}
+        {isPeso ? (
+          <span className="text-sm font-bold">₱</span>
+        ) : icon === 'globe' ? (
+          <GlobeIcon className="h-4 w-4" />
+        ) : (
+          <SvgIcon name={icon} className="h-4 w-4" />
+        )}
       </span>
       <div className="min-w-0">
         <p className={UI.label}>{title}</p>
@@ -564,9 +577,15 @@ const TopMetricCard = ({ title, value, icon, isPeso = false, href = '' }) => (
 
 const SectionHeader = ({ icon, title }) => (
   <div className="flex items-center gap-2">
-    <span className="text-[#374151]">
-      <SvgIcon name={icon} className="h-4 w-4" />
-    </span>
+    {icon ? (
+      <span className="text-[#374151]">
+        {icon === 'graduation' ? (
+          <FaGraduationCap className="h-4 w-4" />
+        ) : (
+          <SvgIcon name={icon} className="h-4 w-4" />
+        )}
+      </span>
+    ) : null}
     <h2 className={UI.title}>{title}</h2>
   </div>
 );
@@ -703,7 +722,7 @@ const AdminEmployerJobEditRequestDetails = () => {
     { title: 'Salary', value: salary(job), icon: 'money', isPeso: true },
     { title: 'Experience', value: job.experienceLevel || 'No experience required', icon: 'clock' },
     { title: 'Educational Requirement', value: job.educationLevel || 'Educational requirement not specified', icon: 'graduation' },
-    { title: 'Website / Company URL', value: website || 'N/A', icon: 'external', href: normalizeExternalUrl(website) },
+    { title: 'Website / Company URL', value: website || 'N/A', icon: 'globe', href: normalizeExternalUrl(website) },
   ];
 
   return <div className="min-h-screen bg-[#f8fafc]">
@@ -736,6 +755,11 @@ const AdminEmployerJobEditRequestDetails = () => {
               <div className="min-w-0 flex-1">
                 <h1 className="text-[28px] font-bold leading-tight text-[#111827] sm:text-[32px]" title={job.title || 'Untitled Job'}>{job.title || 'Untitled Job'}</h1>
 
+                <div className="mt-2 flex items-center gap-2 text-[#4b5563]">
+                  <BuildingIcon className="h-4 w-4" />
+                  <span className="text-sm font-medium">{company}</span>
+                </div>
+
                 <div className="mt-2 flex items-center gap-2 text-[#6b7280]">
                   <SvgIcon name="location" className="h-4 w-4" />
                   <span className="text-sm">{job.location || 'Location not specified'}</span>
@@ -745,7 +769,7 @@ const AdminEmployerJobEditRequestDetails = () => {
                   <span className={UI.chip}><SvgIcon name="briefcase" className="h-3.5 w-3.5" />{job.jobType || 'Employment type not specified'}</span>
                   <span className={UI.chip}><SvgIcon name="building" className="h-3.5 w-3.5" />{job.workMode || 'Work mode not specified'}</span>
                   <span className={UI.chip}><SvgIcon name="users" className="h-3.5 w-3.5" />{vacancyText}</span>
-                  <span className={UI.chip}>{getRelocationDisplayLabel(job.willingToRelocate)}</span>
+                  <span className={UI.chip}><LocationIcon className="h-3.5 w-3.5" />{getRelocationDisplayLabel(job.willingToRelocate)}</span>
                 </div>
 
                 <p className="mt-3 text-xs text-[#6b7280]">
@@ -754,7 +778,7 @@ const AdminEmployerJobEditRequestDetails = () => {
               </div>
             </div>
 
-            <div className="flex w-full flex-col items-center lg:w-[285px] lg:self-center"><button type="button" onClick={openReviewModal} className="group flex w-full max-w-[285px] items-center gap-3 rounded-xl bg-[#1456ad] px-4 py-3 text-left text-white shadow-md transition hover:bg-[#10478f]"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15"><UnlockKeyhole size={18} /></span><span className="min-w-0 flex-1"><strong className="block text-sm">Review Request</strong><small className="block truncate text-[10px] text-blue-100">See what’s been requested.</small></span><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-white transition group-hover:translate-x-0.5"><ChevronRight size={18} /></span></button><p className="mt-2 flex w-full max-w-[285px] items-center justify-center gap-1 text-center text-xs text-slate-500"><CalendarClock size={14} />{requestDateLabel}: {formatDateTime(request.createdAt)}</p></div>
+            <div className="flex w-full flex-col items-center lg:w-[285px] lg:self-center"><button type="button" onClick={openReviewModal} className="group flex w-full max-w-[285px] items-center gap-3 rounded-xl bg-[#1456ad] px-4 py-3 text-left text-white shadow-md transition hover:bg-[#10478f]"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15"><FileIcon className="h-[18px] w-[18px]" /></span><span className="min-w-0 flex-1"><strong className="block text-sm">Review Request</strong><small className="block truncate text-[10px] text-blue-100">See what’s been requested.</small></span><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-white transition group-hover:translate-x-0.5"><ChevronRight size={18} /></span></button><p className="mt-2 flex w-full max-w-[285px] items-center justify-center gap-1 text-center text-xs text-slate-500"><CalendarClock size={14} />{requestDateLabel}: {formatDateTime(request.createdAt)}</p></div>
           </div>
         </div>
       </section>
@@ -775,7 +799,7 @@ const AdminEmployerJobEditRequestDetails = () => {
 
         <section className={`${UI.sectionCard} overflow-hidden`}>
           <div className="p-5 sm:p-6">
-            <SectionHeader icon="tools" title="Qualification" />
+            <SectionHeader icon="graduation" title="Qualification" />
             <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
               <RichTextContent value={job.requirements} fallback="No qualifications specified." />
             </div>
@@ -784,7 +808,7 @@ const AdminEmployerJobEditRequestDetails = () => {
 
         <section className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className={`${UI.sectionCard} p-5 sm:p-6`}>
-            <SectionHeader icon="tools" title="Required Skills" />
+            <SectionHeader title="Required Skills" />
             {requiredSkills.length > 0 ? (
               <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {requiredSkills.map((skill, index) => <div key={`${skill}-${index}`} className={UI.skillChip}>{skill}</div>)}
