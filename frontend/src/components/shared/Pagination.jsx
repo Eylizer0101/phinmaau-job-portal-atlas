@@ -64,7 +64,7 @@ const Pagination = ({
 
   return (
     <div
-      className={`sticky bottom-0 z-20 mt-0 flex min-h-[58px] flex-col gap-3 border-t border-gray-200 bg-white px-4 py-3 lg:flex-row lg:items-center lg:justify-between ${className}`}
+      className={`mt-0 flex min-h-[58px] flex-col gap-3 border-t border-gray-200 bg-white px-4 py-3 lg:flex-row lg:items-center lg:justify-between ${className}`}
       aria-label={ariaLabel}
     >
       <div className="whitespace-nowrap text-xs font-medium text-slate-500">

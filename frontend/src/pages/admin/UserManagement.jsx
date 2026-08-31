@@ -1111,6 +1111,10 @@ const UserManagement = () => {
   const [pageSize, setPageSize] = useState(10);
   const [totalUsers, setTotalUsers] = useState(0);
 
+  const desktopTableMinHeight = pageSize === 'all'
+    ? undefined
+    : `${54 + (Number(pageSize) * 66)}px`;
+
   const [userActionLoading, setUserActionLoading] = useState({});
 
   const [debouncedQuery, cancelQuery] = useDebouncedValue(query, 300);
@@ -1712,7 +1716,7 @@ const UserManagement = () => {
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="p-6">
 
-            {loading ? (
+            {loading && users.length === 0 ? (
               <div className="py-14 text-center" role="status" aria-live="polite">
                 <div
                   className="inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-[#2e66a6]"
@@ -1743,7 +1747,10 @@ const UserManagement = () => {
               </div>
             ) : (
               <>
-                <div className="hidden md:block overflow-x-auto">
+                <div
+                  className="hidden md:block overflow-x-auto"
+                  style={{ minHeight: desktopTableMinHeight }}
+                >
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
