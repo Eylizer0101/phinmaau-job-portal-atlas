@@ -1,5 +1,5 @@
 // src/pages/admin/JobseekerVerificationDetails.jsx
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import api from "../../services/api";
 import AdminLayout from "../../layouts/AdminLayout";
@@ -657,6 +657,7 @@ const JobseekerVerificationDetails = () => {
   const [checkingDoc, setCheckingDoc] = useState("");
   const [verifyCredential, setVerifyCredential] = useState(null);
   const [approvalPassword, setApprovalPassword] = useState("");
+  const approvalPasswordRef = useRef("");
   const [showRestoreModal, setShowRestoreModal] = useState(false);
 
   const API_BASE = api?.defaults?.baseURL || "";
@@ -936,6 +937,7 @@ const JobseekerVerificationDetails = () => {
         );
 
         setApprovalPassword(credentialPassword);
+        approvalPasswordRef.current = credentialPassword;
         if (pendingCredentialAction.action === "approveAccount") {
           setShowApproveModal(true);
         } else if (pendingCredentialAction.action === "approveCredential") {
@@ -1098,7 +1100,9 @@ const JobseekerVerificationDetails = () => {
       const res = await api.put(`/admin/jobseekers/verification/${id}/status`, {
         overallStatus: newStatus,
         adminRemarks: remarks,
-        ...(newStatus === "verified" ? { adminPassword: approvalPassword } : {}),
+        ...(newStatus === "verified"
+          ? { adminPassword: approvalPasswordRef.current || approvalPassword }
+          : {}),
         ...extraPayload,
       });
 
@@ -1114,6 +1118,7 @@ const JobseekerVerificationDetails = () => {
         await fetchJobseekerDetails();
         setShowApproveModal(false);
         setApprovalPassword("");
+        approvalPasswordRef.current = "";
         resetDeclineModal();
       } else {
         setError("Failed to update status.");
