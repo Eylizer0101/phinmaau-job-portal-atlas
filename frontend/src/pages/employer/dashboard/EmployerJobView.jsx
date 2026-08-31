@@ -896,9 +896,9 @@ const EmployerJobView = () => {
   const compactPlaceholderChipClass =
     'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#d9dbe3] bg-white px-2 py-1 text-[10px] font-medium text-[#374151]';
   const regularRelocationChipClass =
-    'shrink-0 whitespace-nowrap rounded-full border border-[#d9dbe3] bg-[#f3f4f6] px-3 py-1 text-xs font-medium text-[#374151]';
+    'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[#d9dbe3] bg-[#f3f4f6] px-3 py-1 text-xs font-medium text-[#374151]';
   const compactRelocationChipClass =
-    'shrink-0 whitespace-nowrap rounded-full border border-[#d9dbe3] bg-[#f3f4f6] px-2 py-1 text-[10px] font-medium text-[#374151]';
+    'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#d9dbe3] bg-[#f3f4f6] px-2 py-1 text-[10px] font-medium text-[#374151]';
 
   return (
     <EmployerLayout>
