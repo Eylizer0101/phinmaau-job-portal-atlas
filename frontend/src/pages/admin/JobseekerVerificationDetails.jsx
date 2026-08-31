@@ -1671,7 +1671,8 @@ const JobseekerVerificationDetails = () => {
                     <div
                       className={cn(
                         "flex min-h-[26px] w-full items-center justify-center overflow-hidden",
-                        credentialStatus === "not_submitted" ? "-mt-2" : "mt-2",
+                        "mt-2",
+                        credentialStatus === "not_submitted" && "-translate-y-4",
                       )}
                     >
                       {getCredentialStatusBadge(credentialStatus)}
