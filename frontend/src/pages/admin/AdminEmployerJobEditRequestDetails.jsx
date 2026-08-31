@@ -1,7 +1,139 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, BriefcaseBusiness, CalendarClock, ChevronRight, Clock3, ExternalLink, FileEdit, MapPin, RefreshCw, Search, UnlockKeyhole, Users, WalletCards, X } from 'lucide-react';
+import { ArrowLeft, BriefcaseBusiness, CalendarClock, CalendarDays, ChevronRight, Clock3, ExternalLink, FileEdit, MapPin, RefreshCw, Search, UnlockKeyhole, Users, WalletCards, X } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
+
+const cn = (...classes) => classes.filter(Boolean).join(' ');
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+const formatDateInput = (date) => {
+  const value = new Date(date);
+  if (Number.isNaN(value.getTime())) return '';
+  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
+};
+
+const formatDateRangeLabel = (value) => {
+  if (!value) return 'Select date';
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return 'Select date';
+  return date.toLocaleDateString('en-PH', { month: 'short', day: '2-digit', year: 'numeric' });
+};
+
+const addCalendarMonths = (date, amount) => {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + amount);
+  return next;
+};
+
+const getYearOptions = () => {
+  const currentYear = new Date().getFullYear();
+  return Array.from({ length: currentYear - 1949 }, (_, index) => 1950 + index);
+};
+
+const CalendarMonth = ({ monthDate, startDate, endDate, onPickDate, onChangeMonth }) => {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstWeekday = new Date(year, month, 1).getDay();
+  const gridStart = new Date(year, month, 1 - firstWeekday);
+  const start = startDate ? new Date(`${startDate}T00:00:00`) : null;
+  const end = endDate ? new Date(`${endDate}T00:00:00`) : null;
+  const days = Array.from({ length: 42 }, (_, index) => {
+    const day = new Date(gridStart);
+    day.setDate(gridStart.getDate() + index);
+    return day;
+  });
+  const isSameDay = (a, b) => a && b && a.toDateString() === b.toDateString();
+  const inRange = (day) => start && end && day >= start && day <= end;
+
+  return (
+    <div className="min-w-0 flex-1">
+      <div className="mb-4 grid grid-cols-[32px_1fr_32px] items-center gap-2">
+        <button type="button" onClick={() => onChangeMonth(addCalendarMonths(monthDate, -1))} className="flex h-8 w-8 items-center justify-center rounded-lg text-2xl text-slate-600 hover:bg-slate-100" aria-label="Previous month">‹</button>
+        <div className="grid grid-cols-[1fr_92px] gap-2">
+          <select value={month} onChange={(event) => onChangeMonth(new Date(year, Number(event.target.value), 1))} className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20" aria-label="Select month">
+            {MONTH_NAMES.map((name, index) => <option key={name} value={index}>{name}</option>)}
+          </select>
+          <select value={year} onChange={(event) => onChangeMonth(new Date(Number(event.target.value), month, 1))} className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20" aria-label="Select year">
+            {getYearOptions().map((yearOption) => <option key={yearOption} value={yearOption}>{yearOption}</option>)}
+          </select>
+        </div>
+        <button type="button" onClick={() => onChangeMonth(addCalendarMonths(monthDate, 1))} className="flex h-8 w-8 items-center justify-center rounded-lg text-2xl text-slate-600 hover:bg-slate-100" aria-label="Next month">›</button>
+      </div>
+      <div className="grid grid-cols-7 gap-y-2 text-center text-xs font-bold text-slate-500">
+        {['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].map((day) => <div key={day}>{day}</div>)}
+      </div>
+      <div className="mt-3 grid grid-cols-7 gap-y-1 text-center text-sm text-slate-600">
+        {days.map((day) => {
+          const value = formatDateInput(day);
+          const outside = day.getMonth() !== month;
+          const selected = isSameDay(day, start) || isSameDay(day, end);
+          return (
+            <button type="button" key={value} onClick={() => onPickDate(value)} className={cn(
+              'mx-auto flex h-10 w-full items-center justify-center transition focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20',
+              outside ? 'text-slate-300' : 'text-slate-700',
+              inRange(day) ? 'bg-[#2e66a6]/10 text-[#2e66a6]' : '',
+              selected ? 'rounded-lg bg-[#2e66a6] font-extrabold text-white shadow-md' : 'hover:bg-[#2e66a6]/10'
+            )}>{day.getDate()}</button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const CustomDateRangeModal = ({ open, startDate, endDate, onCancel, onApply }) => {
+  const todayValue = formatDateInput(new Date());
+  const initialStart = startDate || todayValue;
+  const initialEnd = endDate || todayValue;
+  const [draftStart, setDraftStart] = useState(initialStart);
+  const [draftEnd, setDraftEnd] = useState(initialEnd);
+  const [leftMonth, setLeftMonth] = useState(new Date(`${initialStart}T00:00:00`));
+  const [rightMonth, setRightMonth] = useState(new Date(`${initialEnd}T00:00:00`));
+
+  useEffect(() => {
+    if (!open) return;
+    const nextStart = startDate || formatDateInput(new Date());
+    const nextEnd = endDate || nextStart;
+    setDraftStart(nextStart);
+    setDraftEnd(nextEnd);
+    setLeftMonth(new Date(`${nextStart}T00:00:00`));
+    setRightMonth(new Date(`${nextEnd}T00:00:00`));
+  }, [open, startDate, endDate]);
+
+  if (!open) return null;
+
+  const pickDate = (value) => {
+    if (!draftStart || (draftStart && draftEnd)) {
+      setDraftStart(value);
+      setDraftEnd('');
+    } else if (new Date(`${value}T00:00:00`) < new Date(`${draftStart}T00:00:00`)) {
+      setDraftEnd(draftStart);
+      setDraftStart(value);
+    } else {
+      setDraftEnd(value);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 px-4 py-6" role="dialog" aria-modal="true" aria-label="Select custom date range">
+      <div className="w-full max-w-[920px] overflow-hidden rounded-xl bg-white shadow-2xl">
+        <div className="grid gap-6 px-6 pb-5 pt-6 md:grid-cols-[1fr_auto_1fr] md:items-end">
+          <div><div className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500">Start Date</div><div className="flex h-14 items-center gap-3 rounded-xl bg-slate-100 px-5 text-xl font-extrabold text-[#2e66a6]"><CalendarDays size={20} />{formatDateRangeLabel(draftStart)}</div></div>
+          <div className="hidden pb-4 text-3xl text-slate-500 md:block">→</div>
+          <div><div className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500">End Date</div><div className="flex h-14 items-center gap-3 rounded-xl bg-slate-100 px-5 text-xl font-extrabold text-[#2e66a6]"><CalendarDays size={20} />{formatDateRangeLabel(draftEnd)}</div></div>
+        </div>
+        <div className="grid gap-8 px-6 pb-5 md:grid-cols-2">
+          <CalendarMonth monthDate={leftMonth} startDate={draftStart} endDate={draftEnd} onPickDate={pickDate} onChangeMonth={setLeftMonth} />
+          <CalendarMonth monthDate={rightMonth} startDate={draftStart} endDate={draftEnd} onPickDate={pickDate} onChangeMonth={setRightMonth} />
+        </div>
+        <div className="flex items-center justify-end gap-5 border-t border-slate-100 px-6 py-5">
+          <button type="button" onClick={onCancel} className="text-base font-bold text-slate-600 transition hover:text-slate-900">Cancel</button>
+          <button type="button" onClick={() => draftStart && draftEnd && onApply(draftStart, draftEnd)} disabled={!draftStart || !draftEnd} className="h-12 rounded-xl bg-[#2e66a6] px-9 text-base font-extrabold text-white shadow-lg shadow-[#2e66a6]/25 transition hover:bg-[#255487] disabled:cursor-not-allowed disabled:opacity-60">Apply Range</button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const API_ORIGIN = 'https://phinmaau-job-portal-atlas.onrender.com';
 const assetUrl = (value, fallback = '/images/jobback.png') => {
@@ -882,27 +1014,18 @@ const AdminEmployerJobEditRequestDetails = () => {
           </section>
         </div>
       )}
-      {showModalCustomDate && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-label="Select custom date range">
-          <section className="w-full max-w-[720px] overflow-hidden rounded-xl bg-white shadow-2xl">
-            <div className="grid gap-5 px-6 py-7 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
-              <label className="block">
-                <span className="mb-2 block text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500">Start Date</span>
-                <span className="flex h-14 items-center gap-3 rounded-xl bg-slate-100 px-4 text-[#2e66a6]"><CalendarClock size={20} /><input type="date" value={modalDateFrom} onChange={(event) => setModalDateFrom(event.target.value)} className="min-w-0 flex-1 bg-transparent text-base font-extrabold outline-none" /></span>
-              </label>
-              <span className="hidden pb-3 text-2xl text-slate-500 sm:block">→</span>
-              <label className="block">
-                <span className="mb-2 block text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500">End Date</span>
-                <span className="flex h-14 items-center gap-3 rounded-xl bg-slate-100 px-4 text-[#2e66a6]"><CalendarClock size={20} /><input type="date" value={modalDateTo} min={modalDateFrom || undefined} onChange={(event) => setModalDateTo(event.target.value)} className="min-w-0 flex-1 bg-transparent text-base font-extrabold outline-none" /></span>
-              </label>
-            </div>
-            <div className="flex items-center justify-end gap-5 border-t border-slate-100 px-6 py-5">
-              <button type="button" onClick={() => setShowModalCustomDate(false)} className="font-bold text-slate-600 hover:text-slate-900">Cancel</button>
-              <button type="button" disabled={!modalDateFrom || !modalDateTo || modalDateFrom > modalDateTo} onClick={() => { setModalTime('custom'); setShowModalCustomDate(false); }} className="h-12 rounded-xl bg-[#2e66a6] px-8 font-extrabold text-white shadow-lg transition hover:bg-[#255487] disabled:cursor-not-allowed disabled:opacity-60">Apply Range</button>
-            </div>
-          </section>
-        </div>
-      )}
+      <CustomDateRangeModal
+        open={showModalCustomDate}
+        startDate={modalDateFrom}
+        endDate={modalDateTo}
+        onCancel={() => setShowModalCustomDate(false)}
+        onApply={(from, to) => {
+          setModalDateFrom(from);
+          setModalDateTo(to);
+          setModalTime('custom');
+          setShowModalCustomDate(false);
+        }}
+      />
     </div>
   </div>;
 };
