@@ -2,6 +2,11 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
+import {
+  BuildingIcon,
+  JobDetailsSvgIcon,
+  LocationIcon,
+} from '../../../components/shared/JobseekerIcons';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
@@ -730,6 +735,7 @@ const EmployerJobView = () => {
 
         if (jobData.employerDetails) {
           setCompanyInfo({
+            companyName: jobData.employerDetails.companyName || '',
             companyAddress: jobData.employerDetails.companyAddress || '',
             industry: jobData.employerDetails.industry || '',
             companyWebsite: jobData.employerDetails.companyWebsite || '',
@@ -876,6 +882,8 @@ const EmployerJobView = () => {
   const isVacanciesMissing =
     job.vacancies === undefined || job.vacancies === null || job.vacancies === '';
   const isRelocationMissing = !String(job.willingToRelocate || '').trim();
+  const companyName =
+    String(job.companyName || companyInfo?.companyName || '').trim() || 'Company not specified';
   const useSingleRowDraftPlaceholders =
     isDraftJob &&
     isJobTypeMissing &&
@@ -922,7 +930,7 @@ const EmployerJobView = () => {
             <div className="relative h-[190px] w-full overflow-hidden sm:h-[220px] lg:h-[250px]">
               <img
                 src={resolveAssetUrl(job?.employerDetails?.coverPhoto) || '/images/jobback.png'}
-                alt={`${job.companyName || 'Company'} cover banner`}
+                alt={`${companyName} cover banner`}
                 className="h-full w-full object-cover object-center"
                 onError={(event) => {
                   event.currentTarget.onerror = null;
@@ -935,12 +943,17 @@ const EmployerJobView = () => {
             <div className="px-5 pb-5 pt-4 sm:px-6">
               <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex min-w-0 flex-1 items-start gap-4">
-                  <CompanyLogo src={job.companyLogo} name={job.companyName} />
+                  <CompanyLogo src={job.companyLogo} name={companyName} />
 
                   <div className="min-w-0 flex-1">
-                <h1 className="text-[28px] font-bold leading-tight text-[#111827] sm:text-[32px]" title={job.title || 'Untitled Position'}>
+                    <h1 className="text-[28px] font-bold leading-tight text-[#111827] sm:text-[32px]" title={job.title || 'Untitled Position'}>
                       {String(job.title || '').trim() || 'Untitled Position'}
                     </h1>
+
+                    <div className="mt-2 flex items-center gap-2 text-[#4b5563]">
+                      <BuildingIcon className="h-4 w-4" />
+                      <span className="text-sm font-medium">{companyName}</span>
+                    </div>
 
                     <div className="mt-2 flex items-center gap-2 text-[#6b7280]">
                       <SvgIcon name="location" className="h-4 w-4" />
@@ -978,8 +991,8 @@ const EmployerJobView = () => {
                             : regularDetailChipClass
                         }
                       >
-                        <SvgIcon
-                          name="building"
+                        <JobDetailsSvgIcon
+                          name="laptop"
                           className={isDraftJob && isWorkModeMissing ? 'h-3 w-3' : 'h-3.5 w-3.5'}
                         />
                         {String(job.workMode || '').trim() || 'Work mode not specified'}
@@ -1008,6 +1021,9 @@ const EmployerJobView = () => {
                             : regularRelocationChipClass
                         }
                       >
+                        <LocationIcon
+                          className={isDraftJob && isRelocationMissing ? 'h-3 w-3' : 'h-3.5 w-3.5'}
+                        />
                         {getRelocationDisplayLabel(job.willingToRelocate)}
                       </span>
                     </div>
