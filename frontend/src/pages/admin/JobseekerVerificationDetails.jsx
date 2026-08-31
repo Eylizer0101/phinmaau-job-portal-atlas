@@ -1206,7 +1206,7 @@ const JobseekerVerificationDetails = () => {
 
     if (normalizedStatus === "approved") {
       return (
-        <span className={cn(badgeClass, "border-[#2e66a6]/20 bg-[#2e66a6]/10 text-[#2e66a6]")}>
+        <span className={cn(badgeClass, "border-emerald-200 bg-emerald-50 text-emerald-700")}>
           Approved
         </span>
       );
@@ -1665,10 +1665,11 @@ const JobseekerVerificationDetails = () => {
                             ({fileSize})
                           </p>
                         ) : null}
-                        <div className="mt-2 flex justify-center">
-                          {getCredentialStatusBadge(credentialStatus)}
-                        </div>
                       </div>
+                    </div>
+
+                    <div className="mt-2 flex min-h-[26px] w-full items-center justify-center overflow-hidden">
+                      {getCredentialStatusBadge(credentialStatus)}
                     </div>
 
                     {hasFile ? (
