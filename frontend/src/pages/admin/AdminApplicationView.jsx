@@ -663,7 +663,7 @@ const AdminApplicationView = () => {
           </div>
 
           <section className={`${UI.card} mb-5 overflow-hidden`}>
-            <div className="relative h-[170px] w-full overflow-hidden sm:h-[190px]">
+            <div className="relative h-44 w-full overflow-hidden sm:h-56 lg:h-64">
               <img
                 src={companyCoverUrl}
                 alt={`${companyName} cover`}

@@ -734,7 +734,7 @@ const AdminEmployerJobEditRequestDetails = () => {
       {notice && <div className="mb-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-800">{notice}</div>}
 
       <section className={`${UI.card} mb-5 overflow-hidden`}>
-        <div className="relative h-[120px] w-full overflow-hidden sm:h-[145px]">
+        <div className="relative h-44 w-full overflow-hidden sm:h-56 lg:h-64">
           <img
             src={assetUrl(employerProfile.coverPhoto, '/images/jobback.png')}
             alt={`${company || 'Company'} cover`}
