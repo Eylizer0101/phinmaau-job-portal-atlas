@@ -663,8 +663,8 @@ const AdminUserApplicationHistory = () => {
                     onClick={clearAllFilters}
                     className="flex h-10 items-center gap-2 rounded-lg border border-[#d8e2ee] bg-white px-4 text-sm font-medium text-[#2e66a6] transition hover:border-[#2e66a6] hover:bg-[#f7faff]"
                   >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v6h6M20 20v-6h-6M5.64 18.36A9 9 0 1020 12" />
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 12a9 9 0 0 1 15.73-6M18.73 6V2.5M18.73 6h-3.5M21 12a9 9 0 0 1-15.73 6M5.27 18v3.5M5.27 18h3.5" />
                     </svg>
                     Clear
                   </button>
