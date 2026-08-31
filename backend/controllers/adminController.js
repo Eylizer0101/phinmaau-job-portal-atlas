@@ -13,23 +13,31 @@ const { sendCredentialsEmail, sendResubmitDocumentEmail, sendVerificationRejecte
 const DEFAULT_ADMIN_LOGO = '/images/phinma-logo.png';
 
 const isValidAdminPassword = async (req, rawPassword) => {
-  const password = String(rawPassword || '');
+  const password = String(rawPassword || req.headers['x-admin-password'] || '');
   if (!password) return false;
 
   const adminId = req.user?._id || req.userId;
-  const admin = await User.findById(adminId).select('+password role email');
+  const admin = await User.findById(adminId).select('password role email');
   if (!admin || admin.role !== 'admin') return false;
 
   if (admin.password && await bcrypt.compare(password, admin.password)) return true;
 
   const defaultAdminEmail = String(process.env.DEFAULT_ADMIN_EMAIL || '').trim().toLowerCase();
   const defaultAdminPassword = String(process.env.DEFAULT_ADMIN_PASSWORD || '');
-  return Boolean(
+  const isDefaultAdmin = Boolean(
     defaultAdminEmail &&
     defaultAdminPassword &&
     String(admin.email || '').trim().toLowerCase() === defaultAdminEmail &&
     password === defaultAdminPassword
   );
+
+  if (isDefaultAdmin) {
+    admin.password = await bcrypt.hash(defaultAdminPassword, 12);
+    await admin.save();
+    return true;
+  }
+
+  return false;
 };
 
 const serializeAdminProfile = (admin) => ({
@@ -2560,8 +2568,9 @@ exports.getJobseekerVerificationById = async (req, res) => {
 exports.updateJobseekerVerificationStatus = async (req, res) => {
   try {
     const { overallStatus, adminRemarks, rejectionReasons, rejectionMessage, adminPassword } = req.body;
+    const suppliedAdminPassword = adminPassword || req.headers['x-admin-password'];
 
-    if (overallStatus === 'verified' && !(await isValidAdminPassword(req, adminPassword))) {
+    if (overallStatus === 'verified' && !(await isValidAdminPassword(req, suppliedAdminPassword))) {
       return res.status(401).json({ success: false, message: 'Incorrect admin password.' });
     }
     const DEFAULT_JOBSEEKER_REJECTION_MESSAGE = 'Your verification request was rejected. Please contact support.';
