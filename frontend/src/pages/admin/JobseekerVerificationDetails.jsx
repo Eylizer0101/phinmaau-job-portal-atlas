@@ -1721,7 +1721,7 @@ const JobseekerVerificationDetails = () => {
                       </div>
                     ) : (
                       <div className="mt-3 flex h-9 items-center justify-center rounded-lg border border-[#D9E2EC] bg-white text-[11px] font-medium text-[#667085]">
-                        Not submitted
+                        No file uploaded
                       </div>
                     )}
                   </article>
