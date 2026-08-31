@@ -14,6 +14,7 @@ router.get('/profile', adminController.getAdminProfile);
 router.put('/profile', uploadMiddleware.uploadProfileImage.single('organizationLogo'), adminController.updateAdminProfile);
 router.delete('/profile/logo', adminController.removeAdminProfileLogo);
 router.put('/profile/password', adminController.updateAdminPassword);
+router.post('/profile/verify-password', adminController.verifyCurrentAdminPassword);
 
 // Dashboard analytics route
 router.get('/dashboard', adminController.getAdminDashboardAnalytics);
@@ -60,7 +61,11 @@ router.get('/jobseekers/verification/:id', adminController.getJobseekerVerificat
 router.put('/jobseekers/verification/:id/status', adminController.updateJobseekerVerificationStatus);
 router.put('/jobseekers/verification/:id/hold', adminController.holdJobseekerVerification);
 router.patch('/jobseekers/verification/:id/restore', adminController.restoreJobseekerVerification);
-router.patch('/jobseekers/verification/:id/docs/:docType/check', adminController.checkJobseekerVerificationDocument);
+router.patch(
+  '/jobseekers/verification/:id/docs/:docType/check',
+  adminController.requireAdminPasswordForCredential,
+  adminController.checkJobseekerVerificationDocument
+);
 router.get('/jobseekers/verification/:id/docs', adminController.getJobseekerVerificationDocUrls);
 router.get(
   '/jobseekers/verification/:id/docs/:docType',

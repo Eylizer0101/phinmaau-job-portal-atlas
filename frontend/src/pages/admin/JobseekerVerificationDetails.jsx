@@ -878,6 +878,14 @@ const JobseekerVerificationDetails = () => {
     }
   };
 
+  const verifyCurrentAdminPassword = async (password) => {
+    const response = await api.post('/admin/profile/verify-password', {
+      adminPassword: password,
+    });
+
+    return response.data;
+  };
+
   const performDownloadFile = async (docType, fallbackName, password) => {
     const { blob, fileName } = await fetchDocumentBlob(
       docType,
@@ -920,11 +928,7 @@ const JobseekerVerificationDetails = () => {
           credentialPassword,
         );
       } else {
-        await fetchDocumentBlob(
-          pendingCredentialAction.docType,
-          "inline",
-          credentialPassword,
-        );
+        await verifyCurrentAdminPassword(credentialPassword);
 
         setApprovalPassword(credentialPassword);
         if (pendingCredentialAction.action === "approveAccount") {
@@ -990,8 +994,14 @@ const JobseekerVerificationDetails = () => {
       const response = await api.patch(
         `/admin/jobseekers/verification/${id}/docs/${docType}/check`,
         {},
+        {
+          headers: {
+            "x-admin-password": approvalPassword,
+          },
+        },
       );
       setSuccess(response.data?.message || "Document marked as checked.");
+      setApprovalPassword("");
       await fetchJobseekerDetails();
     } catch (checkError) {
       setError(
