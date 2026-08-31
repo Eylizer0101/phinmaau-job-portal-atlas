@@ -8,6 +8,7 @@ import {
   FileIcon,
   GlobeIcon,
   LocationIcon,
+  MyApplicationsSvgIcon,
 } from '../../components/shared/JobseekerIcons';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
@@ -767,7 +768,7 @@ const AdminEmployerJobEditRequestDetails = () => {
 
                 <div className="mt-4 flex flex-wrap gap-2">
                   <span className={UI.chip}><SvgIcon name="briefcase" className="h-3.5 w-3.5" />{job.jobType || 'Employment type not specified'}</span>
-                  <span className={UI.chip}><SvgIcon name="building" className="h-3.5 w-3.5" />{job.workMode || 'Work mode not specified'}</span>
+                  <span className={UI.chip}><MyApplicationsSvgIcon name="laptop" className="h-3.5 w-3.5" />{job.workMode || 'Work mode not specified'}</span>
                   <span className={UI.chip}><SvgIcon name="users" className="h-3.5 w-3.5" />{vacancyText}</span>
                   <span className={UI.chip}><LocationIcon className="h-3.5 w-3.5" />{getRelocationDisplayLabel(job.willingToRelocate)}</span>
                 </div>
@@ -799,7 +800,7 @@ const AdminEmployerJobEditRequestDetails = () => {
 
         <section className={`${UI.sectionCard} overflow-hidden`}>
           <div className="p-5 sm:p-6">
-            <SectionHeader icon="graduation" title="Qualification" />
+            <SectionHeader icon="tools" title="Qualification" />
             <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
               <RichTextContent value={job.requirements} fallback="No qualifications specified." />
             </div>
