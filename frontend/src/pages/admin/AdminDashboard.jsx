@@ -1379,7 +1379,7 @@ const getAdminNotificationLink = (notification) => {
 
 const AdminTopActions = () => {
   const navigate = useNavigate();
-  const [admin] = useState(getStoredAdmin);
+  const [admin, setAdmin] = useState(getStoredAdmin);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -1389,7 +1389,7 @@ const AdminTopActions = () => {
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const adminName = getAdminName(admin);
-  const adminImage = admin?.profileImage || admin?.avatar || admin?.image || "";
+  const adminImage = admin?.organizationLogo || admin?.profileImage || admin?.avatar || admin?.image || "/images/phinma-logo.png";
 
   const openSignOutModal = () => {
     if (isSigningOut) return;
@@ -1436,6 +1436,30 @@ const AdminTopActions = () => {
 
   useEffect(() => {
     fetchNotifications();
+  }, []);
+
+  useEffect(() => {
+    const syncAdminProfile = async () => {
+      try {
+        const response = await api.get("/admin/profile");
+        const profile = response.data?.profile || {};
+        const storedAdmin = getStoredAdmin() || {};
+        const nextAdmin = {
+          ...storedAdmin,
+          ...profile,
+          profileImage: profile.organizationLogo || storedAdmin.profileImage || "/images/phinma-logo.png",
+        };
+
+        setAdmin(nextAdmin);
+        localStorage.setItem("user", JSON.stringify(nextAdmin));
+      } catch (error) {
+        setAdmin(getStoredAdmin());
+      }
+    };
+
+    syncAdminProfile();
+    window.addEventListener("admin-profile-updated", syncAdminProfile);
+    return () => window.removeEventListener("admin-profile-updated", syncAdminProfile);
   }, []);
 
   useEffect(() => {
@@ -1578,11 +1602,15 @@ const AdminTopActions = () => {
           className="inline-flex items-center gap-2 rounded-full px-1.5 py-1 transition hover:bg-slate-100"
           aria-label="Open admin profile"
         >
-          {adminImage ? (
-            <img src={adminImage} alt={adminName} className="h-9 w-9 rounded-full object-cover" onError={(event) => { event.currentTarget.src = '/images/profile.png'; }} />
-          ) : (
-            <img src="/images/profile.png" alt="Default profile" className="h-9 w-9 rounded-full border border-slate-200 bg-white object-cover" />
-          )}
+          <img
+            src={adminImage}
+            alt={`${adminName} organization logo`}
+            className="h-9 w-9 rounded-full border border-slate-200 bg-white object-contain p-0.5"
+            onError={(event) => {
+              event.currentTarget.onerror = null;
+              event.currentTarget.src = "/images/phinma-logo.png";
+            }}
+          />
           <span className="hidden max-w-[120px] truncate text-xs font-bold text-slate-800 sm:block">{adminName}</span>
           <ChevronDown size={14} className="text-slate-500" />
         </button>
