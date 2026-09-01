@@ -391,7 +391,7 @@ const DateFilterDropdown = ({ value, dateFrom, dateTo, onChange }) => {
           event.stopPropagation();
           setOpen((prev) => !prev);
         }}
-        className="flex h-11 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+        className="flex h-12 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 hover:bg-slate-50 focus:outline-none focus-visible:border-[#2e66a6] focus-visible:ring-4 focus-visible:ring-[#2e66a6]/10"
       >
         <span className="truncate">{getDateFilterLabel(value, dateFrom, dateTo)}</span>
         <Icon name="calendar" className="h-4 w-4 text-gray-500" />
@@ -792,22 +792,29 @@ const AdminApplications = () => {
 
   return (
     <AdminLayout>
-      <div className="mx-auto max-w-7xl px-1 py-8">
+      <div className="mx-auto max-w-[1480px] px-1 py-7 sm:py-8">
         <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Applications</h1>
-            <p className="mt-1 text-sm text-gray-600">View, filter, and review applicant submissions.</p>
+            <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.02em] text-slate-950 sm:text-[34px]">Applications</h1>
+            <p className="mt-1.5 text-sm text-slate-600">View, filter, and review applicant submissions.</p>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-black/5">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-[minmax(250px,1.6fr)_repeat(6,minmax(120px,1fr))_auto]">
-            <div className="relative min-w-0 sm:col-span-2 lg:col-span-2 xl:col-span-1">
+        <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_28px_rgba(15,23,42,0.06)] sm:p-5">
+          <div
+            className={cn(
+              'grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:items-center',
+              hasActiveFilters
+                ? '2xl:grid-cols-[minmax(230px,1.35fr)_repeat(5,minmax(115px,0.72fr))_minmax(150px,0.9fr)_100px]'
+                : '2xl:grid-cols-[minmax(260px,1.45fr)_repeat(5,minmax(125px,0.8fr))_minmax(165px,1fr)]'
+            )}
+          >
+            <div className="relative min-w-0 sm:col-span-2 xl:col-span-2 2xl:col-span-1">
               <Icon name="search" className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 text-sm text-slate-700 outline-none shadow-sm transition hover:border-slate-300 focus:border-[#2e66a6] focus:bg-white focus:ring-2 focus:ring-[#2e66a6]/20"
+                className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 text-sm text-slate-700 outline-none shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 focus:border-[#2e66a6] focus:bg-white focus:ring-4 focus:ring-[#2e66a6]/10"
                 placeholder="Search applicant, job title..."
                 type="search"
               />
@@ -858,7 +865,7 @@ const AdminApplications = () => {
               <button
                 onClick={clearFilters}
                 type="button"
-                className="inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                className="inline-flex h-12 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#2e66a6]/30 bg-[#2e66a6]/5 px-3 text-sm font-semibold text-[#24558d] transition-all duration-200 hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 sm:col-span-2 xl:col-span-4 2xl:col-span-1"
               >
                 <Icon name="refresh" />
                 Clear
@@ -867,7 +874,7 @@ const AdminApplications = () => {
           </div>
         </div>
 
-        <div className="mt-7 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-black/5">
+        <div className="mt-7 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-600">
               <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
@@ -878,8 +885,17 @@ const AdminApplications = () => {
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[1050px] divide-y divide-slate-200 text-left">
-                  <thead className="bg-slate-50">
+                <table className="w-full min-w-[980px] table-fixed divide-y divide-slate-200 text-left">
+                  <colgroup>
+                    <col className="w-[27%]" />
+                    <col className="w-[11%]" />
+                    <col className="w-[15%]" />
+                    <col className="w-[16%]" />
+                    <col className="w-[16%]" />
+                    <col className="w-[9%]" />
+                    <col className="w-[6%]" />
+                  </colgroup>
+                  <thead className="bg-[#2e66a6]/[0.055]">
                     <tr>
                       {[
                         'Applicant',
@@ -892,7 +908,10 @@ const AdminApplications = () => {
                       ].map((head) => (
                         <th
                           key={head}
-                          className="whitespace-nowrap px-5 py-4 text-[11px] font-bold uppercase tracking-widest text-slate-500"
+                          className={cn(
+                            'whitespace-nowrap px-4 py-4 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-600',
+                            head === 'Actions' ? 'text-center' : ''
+                          )}
                         >
                           {head}
                         </th>
@@ -923,51 +942,51 @@ const AdminApplications = () => {
                               navigate(`/admin/applications/${app._id}`);
                             }
                           }}
-                          className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
+                          className="group cursor-pointer transition-all duration-200 hover:bg-[#2e66a6]/[0.055] focus:bg-[#2e66a6]/[0.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
                         >
-                          <td className="min-w-[220px] px-5 py-4">
+                          <td className="px-4 py-4">
                             <div className="flex items-center gap-3">
                               <ApplicantAvatar user={app.jobseeker} />
                               <div className="min-w-0">
-                                <p className="truncate text-sm font-bold text-slate-900">
+                                <p className="truncate text-sm font-bold text-slate-900" title={applicantName}>
                                   {applicantName}
                                 </p>
-                                <p className="truncate text-xs text-slate-500">
+                                <p className="truncate text-xs text-slate-500" title={app.jobseeker?.email || 'No email'}>
                                   {app.jobseeker?.email || 'No email'}
                                 </p>
                               </div>
                             </div>
                           </td>
 
-                          <td className="min-w-[130px] px-5 py-4 text-sm text-slate-600">
-                            {campus}
+                          <td className="px-4 py-4 text-sm text-slate-600">
+                            <p className="truncate" title={campus}>{campus}</p>
                           </td>
 
-                          <td className="min-w-[190px] px-5 py-4 text-sm text-slate-600">
-                            {course}
+                          <td className="px-4 py-4 text-sm text-slate-600">
+                            <p className="line-clamp-2" title={course}>{course}</p>
                           </td>
 
-                          <td className="min-w-[180px] px-5 py-4">
-                            <p className="text-sm font-bold text-slate-800">
+                          <td className="px-4 py-4">
+                            <p className="truncate text-sm font-bold text-slate-800" title={jobTitle}>
                               {truncate(jobTitle, 22)}
                             </p>
-                            <p className="text-xs text-slate-500">
+                            <p className="truncate text-xs text-slate-500">
                               {[app.job?.jobType, app.job?.workMode]
                                 .filter(Boolean)
                                 .join(' • ') || '—'}
                             </p>
                           </td>
 
-                          <td className="min-w-[170px] px-5 py-4">
-                            <p className="text-sm font-bold text-slate-800">
+                          <td className="px-4 py-4">
+                            <p className="truncate text-sm font-bold text-slate-800" title={company}>
                               {truncate(company, 22)}
                             </p>
-                            <p className="mt-0.5 text-xs text-slate-500">
+                            <p className="mt-0.5 truncate text-xs text-slate-500" title={industry}>
                               {truncate(industry, 28)}
                             </p>
                           </td>
 
-                          <td className="whitespace-nowrap px-5 py-4">
+                          <td className="whitespace-nowrap px-4 py-4">
                             <span
                               className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${statusClass(app.status)}`}
                             >
@@ -975,11 +994,11 @@ const AdminApplications = () => {
                             </span>
                           </td>
 
-                          <td className="px-5 py-4">
+                          <td className="px-3 py-4 text-center">
                             <button
                               onClick={() => navigate(`/admin/applications/${app._id}`)}
                               type="button"
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-[#2e66a6]/10 hover:text-[#2e66a6]"
+                              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-transparent text-slate-500 transition-all duration-200 group-hover:border-[#2e66a6]/15 group-hover:bg-white group-hover:text-[#2e66a6] group-hover:shadow-sm hover:!border-[#2e66a6]/25 hover:!bg-[#2e66a6] hover:!text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                               title="View application"
                               aria-label="View application"
                             >
@@ -1017,7 +1036,7 @@ const FilterSelect = ({ value, onChange, options }) => (
     <select
       value={value}
       onChange={(event) => onChange(event.target.value)}
-      className="h-12 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 pr-10 text-sm font-medium text-slate-700 outline-none transition focus:border-[#2e66a6] focus:bg-white focus:ring-2 focus:ring-[#2e66a6]/20"
+      className="h-12 w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 pr-10 text-sm font-medium text-slate-700 shadow-sm outline-none transition-all duration-200 hover:border-[#2e66a6]/40 focus:border-[#2e66a6] focus:bg-white focus:ring-4 focus:ring-[#2e66a6]/10"
     >
       {options.map((option) => <option key={option} value={option}>{option}</option>)}
     </select>
