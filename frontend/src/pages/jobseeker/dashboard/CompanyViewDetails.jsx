@@ -603,6 +603,40 @@ const JobCardLogo = ({ src, name }) => {
   );
 };
 
+const ReviewerAvatar = ({ src, name }) => {
+  const [failed, setFailed] = useState(false);
+  const hasImage = Boolean(src) && !failed;
+
+  return (
+    <div className="w-11 h-11 rounded-full bg-[#f0f4f8] border border-[#e1e8f0] overflow-hidden flex items-center justify-center shrink-0">
+      {hasImage ? (
+        <img
+          src={src}
+          alt={`${name || "Reviewer"} profile`}
+          className="w-full h-full object-cover"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <svg
+          className="w-6 h-6 text-[#60758a]"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.8"
+            d="M20 21a8 8 0 00-16 0"
+          />
+          <circle cx="12" cy="7" r="4" strokeWidth="1.8" />
+        </svg>
+      )}
+    </div>
+  );
+};
+
 const StarRating = ({ rating = 0, size = "w-5 h-5" }) => {
   const normalized = Math.max(0, Math.min(5, Number(rating) || 0));
   const fullStars = Math.floor(normalized);
@@ -759,6 +793,7 @@ const CompanyViewDetails = () => {
   const [reviewerName, setReviewerName] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewError, setReviewError] = useState("");
+  const [showDiscardReviewModal, setShowDiscardReviewModal] = useState(false);
 
   useEffect(() => {
     const checkReviewEligibility = async () => {
@@ -847,6 +882,7 @@ const CompanyViewDetails = () => {
         ? companyData.reviews.map((review, index) => ({
             _id: review?._id || review?.id || `review-${index}`,
             reviewerName: review?.reviewerName || "Anonymous User",
+            reviewerProfileImage: resolveAssetUrl(review?.reviewerProfileImage || review?.profileImage || ""),
             roleAppliedFor: String(review?.roleAppliedFor || "").trim() || null,
             rating: Number(review?.rating) || 0,
             processRating:
@@ -913,7 +949,7 @@ const CompanyViewDetails = () => {
         galleryImages: Array.isArray(companyData.galleryImages) ? companyData.galleryImages : [],
       };
     },
-    [resolveLogoUrl]
+    [resolveLogoUrl, resolveAssetUrl]
   );
 
   const checkIfSaved = useCallback(
@@ -992,6 +1028,7 @@ const CompanyViewDetails = () => {
         ? companyData.reviews.map((review, index) => ({
             id: review?._id || review?.id || `review-${index}`,
             reviewerName: review?.reviewerName || "Anonymous User",
+            reviewerProfileImage: resolveAssetUrl(review?.reviewerProfileImage || review?.profileImage || ""),
             roleAppliedFor: String(review?.roleAppliedFor || "").trim() || null,
             date: formatReviewDate(review?.createdAt || review?.date),
             rating: Number(review?.rating) || 0,
@@ -1337,17 +1374,61 @@ const CompanyViewDetails = () => {
     setReviewError("");
     resetReviewForm();
     setReviewAgreementAccepted(false);
+    setShowDiscardReviewModal(false);
     setReviewStep("privacy");
     setShowReviewModal(true);
   };
 
-  const closeReviewModal = () => {
+  const hasUnsavedReviewChanges = useMemo(() => {
+    return Boolean(
+      String(reviewRoleAppliedFor || "").trim() ||
+        reviewDaysToFirstResponse !== "" ||
+        reviewTotalProcessDays !== "" ||
+        reviewProcessRating > 0 ||
+        reviewOutcome !== "still_in_process" ||
+        reviewWouldApplyAgain !== true ||
+        String(reviewMessage || "").trim()
+    );
+  }, [
+    reviewRoleAppliedFor,
+    reviewDaysToFirstResponse,
+    reviewTotalProcessDays,
+    reviewProcessRating,
+    reviewOutcome,
+    reviewWouldApplyAgain,
+    reviewMessage,
+  ]);
+
+  const discardAndCloseReviewModal = () => {
     if (reviewSubmitting) return;
+    setShowDiscardReviewModal(false);
     setShowReviewModal(false);
     setReviewError("");
     setReviewStep("privacy");
     setReviewAgreementAccepted(false);
     resetReviewForm();
+  };
+
+  const closeReviewModal = () => {
+    if (reviewSubmitting) return;
+
+    if (reviewStep !== "success" && hasUnsavedReviewChanges) {
+      setShowDiscardReviewModal(true);
+      return;
+    }
+
+    discardAndCloseReviewModal();
+  };
+
+  const handleReviewFormBack = () => {
+    if (reviewSubmitting) return;
+
+    if (hasUnsavedReviewChanges) {
+      setShowDiscardReviewModal(true);
+      return;
+    }
+
+    setReviewStep("privacy");
   };
 
   const validateReviewForm = () => {
@@ -2271,9 +2352,10 @@ const CompanyViewDetails = () => {
                   >
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div className="flex items-start gap-3 min-w-0">
-                        <div className="w-11 h-11 rounded-xl bg-[#f0f4f8] border border-[#e1e8f0] flex items-center justify-center shrink-0">
-                          <SvgIcon name="industry" className="w-5 h-5 text-[#60758a]" />
-                        </div>
+                        <ReviewerAvatar
+                          src={review.reviewerProfileImage}
+                          name={review.reviewerName || "Anonymous User"}
+                        />
 
                         <div className="min-w-0">
                           <h3 className="text-[17px] font-bold text-black">
@@ -2695,7 +2777,7 @@ const CompanyViewDetails = () => {
 
                 <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                   <button
-                    onClick={() => setReviewStep("privacy")}
+                    onClick={handleReviewFormBack}
                     className="h-11 rounded-lg px-6 text-sm font-semibold text-gray-800 hover:bg-gray-100 transition"
                     disabled={reviewSubmitting}
                     type="button"
@@ -2753,11 +2835,7 @@ const CompanyViewDetails = () => {
                     <div className="border-t border-gray-200 px-8 py-4">
                       <button
                         type="button"
-                        onClick={() => {
-                          setShowReviewModal(false);
-                          setReviewStep("privacy");
-                          resetReviewForm();
-                        }}
+                        onClick={discardAndCloseReviewModal}
                         className="w-full rounded-xl bg-[#2e66a6] px-5 py-3 text-sm font-semibold text-white hover:bg-[#23508a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                       >
                         OK
@@ -2765,6 +2843,65 @@ const CompanyViewDetails = () => {
                     </div>
                   </>
                 )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDiscardReviewModal && (
+        <div className="fixed inset-0 z-[10050] flex items-center justify-center bg-black/55 px-4 py-6">
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="discard-review-title"
+            aria-describedby="discard-review-description"
+            className="w-full max-w-[430px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl"
+          >
+            <div className="px-6 pb-5 pt-6 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-500">
+                <svg
+                  className="h-6 w-6"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 9v4m0 4h.01M10.3 3.8L2.7 17a2 2 0 001.73 3h15.14a2 2 0 001.73-3L13.7 3.8a2 2 0 00-3.4 0z"
+                  />
+                </svg>
+              </div>
+
+              <h3 id="discard-review-title" className="mt-4 text-lg font-bold text-[#172033]">
+                Discard Review
+              </h3>
+              <p
+                id="discard-review-description"
+                className="mx-auto mt-2 max-w-[350px] text-sm leading-6 text-gray-600"
+              >
+                Are you sure you want to leave? Your review hasn&apos;t been submitted yet, and any
+                information you&apos;ve entered will be lost.
+              </p>
+
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowDiscardReviewModal(false)}
+                  className="h-11 rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                >
+                  Keep Editing
+                </button>
+                <button
+                  type="button"
+                  onClick={discardAndCloseReviewModal}
+                  className="h-11 rounded-xl bg-red-600 px-4 text-sm font-semibold text-white transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2"
+                >
+                  Discard Review
+                </button>
               </div>
             </div>
           </div>

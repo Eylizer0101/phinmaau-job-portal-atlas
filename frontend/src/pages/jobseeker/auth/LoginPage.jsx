@@ -1081,7 +1081,7 @@ const LoginPage = () => {
                 <div className="h-px bg-gray-100 mb-4" />
 
                 <p className="text-center text-sm text-gray-700">
-                  Don&apos;t have an account?{' '}
+                  Don&apos;t have an account yet?{' '}
                   <button
                     type="button"
                     onClick={() => navigate('/join-as')}

@@ -58,6 +58,34 @@ const buildReviewerName = (user) => {
   return 'Anonymous User';
 };
 
+const getReviewerProfileImageMap = async (reviews = []) => {
+  const reviewerIds = Array.from(
+    new Set(
+      (Array.isArray(reviews) ? reviews : [])
+        .map((review) => review?.reviewer)
+        .filter(Boolean)
+        .map((reviewerId) => String(reviewerId))
+    )
+  );
+
+  if (!reviewerIds.length) return new Map();
+
+  const reviewers = await User.find({
+    _id: { $in: reviewerIds },
+    role: 'jobseeker',
+    status: { $ne: 'deleted' },
+  })
+    .select('_id profileImage')
+    .lean();
+
+  return new Map(
+    reviewers.map((reviewer) => [
+      String(reviewer._id),
+      String(reviewer.profileImage || '').trim(),
+    ])
+  );
+};
+
 const computeReviewSummary = (reviews = []) => {
   const safeReviews = Array.isArray(reviews) ? reviews : [];
   const reviewCount = safeReviews.length;
@@ -145,7 +173,7 @@ exports.getCompanyReviewEligibility = async (req, res) => {
   }
 };
 
-const mapCompanyFromUser = (user) => {
+const mapCompanyFromUser = (user, reviewerProfileImageMap = new Map()) => {
   const ep = user?.employerProfile || {};
   const about = ep.companyDescription || '';
 
@@ -156,6 +184,8 @@ const mapCompanyFromUser = (user) => {
           _id: review._id,
           reviewer: review.reviewer,
           reviewerName: review.reviewerName || 'Anonymous User',
+          reviewerProfileImage:
+            reviewerProfileImageMap.get(String(review.reviewer || '')) || '',
           roleAppliedFor: String(review.roleAppliedFor || '').trim() || null,
           rating: Number(review.processRating ?? review.rating) || 0,
           processRating: Number(review.processRating ?? review.rating) || 0,
@@ -387,9 +417,13 @@ exports.getVerifiedCompanyDetails = async (req, res) => {
       });
     }
 
+    const reviewerProfileImageMap = await getReviewerProfileImageMap(
+      company?.employerProfile?.reviews
+    );
+
     return res.status(200).json({
       success: true,
-      company: mapCompanyFromUser(company),
+      company: mapCompanyFromUser(company, reviewerProfileImageMap),
     });
   } catch (error) {
     console.error('Error fetching verified company details:', error);
@@ -537,10 +571,14 @@ exports.submitCompanyReview = async (req, res) => {
     company.markModified('employerProfile.reviews');
     await company.save();
 
+    const reviewerProfileImageMap = await getReviewerProfileImageMap(
+      company?.employerProfile?.reviews
+    );
+
     return res.status(201).json({
       success: true,
       message: 'Review submitted successfully.',
-      company: mapCompanyFromUser(company),
+      company: mapCompanyFromUser(company, reviewerProfileImageMap),
     });
   } catch (error) {
     console.error('Error submitting company review:', error);
