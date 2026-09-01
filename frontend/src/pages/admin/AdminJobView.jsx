@@ -1060,7 +1060,7 @@ const AdminJobView = () => {
                           },
                         })
                       }
-                      className={`group flex h-12 w-full items-center gap-3 rounded-xl bg-[#2e66a6] px-4 text-left text-white shadow-[0_10px_22px_rgba(46,102,166,0.22)] transition hover:bg-[#25578f] ${UI.ring}`}
+                      className={`group flex h-14 w-full items-center gap-3 rounded-xl bg-[#2e66a6] px-4 text-left text-white shadow-[0_10px_22px_rgba(46,102,166,0.22)] transition hover:bg-[#25578f] ${UI.ring}`}
                       aria-label={`View ${applicants.length} ${applicants.length === 1 ? 'applicant' : 'applicants'}`}
                     >
                       <div className="flex -space-x-2">
@@ -1093,10 +1093,10 @@ const AdminJobView = () => {
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold">
+                        <p className="text-base font-bold">
                           {applicants.length} {applicants.length === 1 ? 'Applicant' : 'Applicants'}
                         </p>
-                        <p className="truncate text-[10px] text-blue-100">View submitted applications</p>
+                        <p className="truncate text-[11px] text-blue-100">View submitted applications</p>
                       </div>
 
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-white transition group-hover:translate-x-0.5">
