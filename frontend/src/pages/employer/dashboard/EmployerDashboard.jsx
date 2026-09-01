@@ -2074,7 +2074,7 @@ const EmployerDashboard = () => {
                   />
                 ) : (
                   <img
-                    src="/images/profile.png"
+                    src="/images/profiledot.png"
                     alt="Default profile"
                     className="h-10 w-10 rounded-full border border-gray-200 bg-white object-cover"
                   />
