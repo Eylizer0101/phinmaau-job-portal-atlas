@@ -172,7 +172,7 @@ const SALARY_PRIVACY_OPTIONS = [
     value: 'public',
     label: 'Public',
     description: 'Only companies you applied for.',
-    icon: '🌐',
+    icon: '🔓',
   },
   {
     value: 'only_me',
