@@ -635,8 +635,8 @@ const LoginPage = () => {
           }
         }}
       >
-        <div className="w-full max-w-[400px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
-          <div className="relative border-b border-gray-200 px-6 pb-5 pt-6">
+        <div className="w-full max-w-[440px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+          <div className="relative border-b border-gray-200 px-7 pb-6 pt-7">
             <button
               type="button"
               onClick={closeForgotPasswordModal}
@@ -653,7 +653,7 @@ const LoginPage = () => {
              <img
   src="/images/agpay.png"
   alt="AGAPAY"
-  className="mx-auto h-16 w-auto max-w-[220px] object-contain"
+  className="mx-auto h-20 w-auto max-w-[260px] object-contain"
 />
               <h3 id="forgot-password-title" className="mt-3 text-xl font-extrabold tracking-tight text-gray-950">
                 Forgot Password
@@ -662,7 +662,7 @@ const LoginPage = () => {
             </div>
           </div>
 
-          <form onSubmit={handleForgotPasswordSubmit} className="space-y-4 px-6 py-5" noValidate>
+          <form onSubmit={handleForgotPasswordSubmit} className="space-y-4 px-7 py-6" noValidate>
             <div className="space-y-1.5">
               <label htmlFor="forgot-password-email" className="block text-xs font-bold text-gray-900">
                 Enter Registered Email Address
