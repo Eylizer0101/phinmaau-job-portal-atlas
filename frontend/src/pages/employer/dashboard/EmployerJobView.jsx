@@ -205,22 +205,21 @@ const getExperienceDisplayLabel = (value) => {
 };
 
 const UI = {
-  page: 'min-h-screen ',
+  page: 'min-h-screen bg-transparent',
   container: 'mx-auto max-w-7xl px-1 py-8',
-  card: 'w-full rounded-2xl border border-[#d9dbe3] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]',
-  sectionCard: 'w-full rounded-xl border border-[#d9dbe3] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]',
-  metricCard: 'rounded-xl border border-[#d9dbe3] bg-white px-4 py-3.5 min-h-[86px] shadow-[0_3px_12px_rgba(15,23,42,0.04)]',
-  label: 'text-[11px] font-semibold uppercase tracking-[0.03em] text-[#6b7280]',
-  value: 'mt-1.5 text-[15px] font-semibold leading-6 text-[#111827]',
-  title: 'text-[15px] font-semibold text-[#111827]',
-  body: 'text-sm leading-7 text-[#4b5563]',
-  muted: 'text-sm text-[#6b7280]',
-  chip:
-    'inline-flex items-center gap-2 rounded-full border border-[#d9dbe3] bg-white px-3 py-1 text-xs font-medium text-[#374151]',
-  skillChip:
-    'rounded-lg border border-[#d9dbe3] bg-white px-3 py-2 text-xs text-[#6b7280]',
-  ring:
-    'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 focus-visible:ring-offset-white',
+  card: 'w-full rounded-2xl border border-[#e6edf5] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]',
+  sectionCard: 'w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]',
+  metricCard: 'h-full min-h-[96px] rounded-xl border border-[#d9e2ec] bg-white px-4 py-4 shadow-[0_4px_14px_rgba(15,23,42,0.08)]',
+  insetHead: 'border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6',
+  insetBody: 'px-5 py-5 sm:px-6',
+  label: 'text-sm font-semibold text-black',
+  value: 'mt-1 text-[15px] leading-6 text-black',
+  title: 'text-base font-bold text-black',
+  body: 'text-sm leading-7 text-black/70',
+  muted: 'text-sm text-black/60',
+  chip: 'inline-flex items-center gap-2 rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1.5 text-xs font-semibold text-black/80',
+  skillChip: 'rounded-xl border border-[#d9e2ec] bg-white px-4 py-3 text-sm text-black/75',
+  ring: 'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 focus-visible:ring-offset-white',
 };
 
 const normalizeLocation = (jobData) => {
@@ -547,18 +546,18 @@ const CompanyLogo = ({ src, name }) => {
 
   if (!src || failed) {
     return (
-      <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl border border-[#d9dbe3] bg-[#f3f4f6] sm:h-16 sm:w-16">
+      <div className="flex h-[58px] w-[58px] flex-shrink-0 items-center justify-center rounded-2xl border border-[#d8e2ee] bg-white sm:h-[72px] sm:w-[72px]">
         <span className="text-lg font-bold text-[#374151] sm:text-xl">{initial}</span>
       </div>
     );
   }
 
   return (
-    <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl border border-[#d9dbe3] bg-white sm:h-16 sm:w-16">
+    <div className="h-[58px] w-[58px] flex-shrink-0 overflow-hidden rounded-2xl border border-[#d8e2ee] bg-white p-1 sm:h-[72px] sm:w-[72px]">
       <img
         src={src}
         alt={`${name || 'Company'} logo`}
-        className="h-full w-full object-cover"
+        className="h-full w-full object-contain"
         onError={() => setFailed(true)}
         loading="lazy"
       />
@@ -904,322 +903,91 @@ const EmployerJobView = () => {
     <EmployerLayout>
       <div className={UI.page}>
         <div className={UI.container}>
-          <div className="mb-5">
-            <button
-              onClick={handleBack}
-              className={`inline-flex items-center justify-center gap-2 rounded-lg border border-[#d1d5db] bg-white px-4 py-2 text-sm font-medium text-[#111827] hover:bg-[#f9fafb] ${UI.ring}`}
-              type="button"
-            >
-              <SvgIcon name="arrowLeft" className="h-4 w-4" />
-              {backLabel}
-            </button>
+          <div className="relative h-[190px] overflow-hidden rounded-2xl border border-[#e6edf5] bg-[#eef3f8] shadow-[0_8px_24px_rgba(15,23,42,0.06)] sm:h-[215px] lg:h-[235px]">
+            <img
+              src={resolveAssetUrl(job?.employerDetails?.coverPhoto) || '/images/jobback.png'}
+              alt={`${companyName} cover banner`}
+              className="h-full w-full object-cover object-center"
+              onError={(event) => {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = '/images/jobback.png';
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-black/20" aria-hidden="true" />
+            <div className="absolute left-5 top-5 z-20 sm:left-6 sm:top-6">
+              <button onClick={handleBack} className={`inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-white/70 bg-white/95 px-3 text-sm font-semibold text-black shadow-sm backdrop-blur transition hover:bg-white ${UI.ring}`} type="button">
+                <SvgIcon name="arrowLeft" className="h-4 w-4" />
+                {`Back to ${backLabel}`}
+              </button>
+            </div>
           </div>
 
           {showSuccessIndicator && (
             <div className="pointer-events-none fixed left-1/2 top-[25%] z-[100] -translate-x-1/2 -translate-y-1/2 lg:left-[calc(50%+145px)]">
-              <div
-                role="status"
-                className="w-fit rounded-xl border border-green-200 bg-green-50 px-5 py-3 text-center text-sm font-semibold text-green-800 shadow-sm"
-              >
+              <div role="status" className="w-fit rounded-xl border border-green-200 bg-green-50 px-5 py-3 text-center text-sm font-semibold text-green-800 shadow-sm">
                 {successIndicator.message}
               </div>
             </div>
           )}
 
-          <div className={`${UI.card} mb-5 overflow-hidden`}>
-            <div className="relative h-[190px] w-full overflow-hidden sm:h-[220px] lg:h-[250px]">
-              <img
-                src={resolveAssetUrl(job?.employerDetails?.coverPhoto) || '/images/jobback.png'}
-                alt={`${companyName} cover banner`}
-                className="h-full w-full object-cover object-center"
-                onError={(event) => {
-                  event.currentTarget.onerror = null;
-                  event.currentTarget.src = '/images/jobback.png';
-                }}
-              />
-              <div className="absolute inset-0 bg-black/10" />
-            </div>
-
-            <div className="px-5 pb-5 pt-4 sm:px-6">
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="-mt-10 sm:-mt-12 relative z-10">
+            <section className={`${UI.card} mb-6 min-h-[210px] p-5 sm:min-h-[225px] sm:p-7 lg:min-h-[240px] lg:p-8 flex items-center`}>
+              <div className="flex w-full flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex min-w-0 flex-1 items-start gap-4">
                   <CompanyLogo src={job.companyLogo} name={companyName} />
-
                   <div className="min-w-0 flex-1">
-                    <h1 className="text-[28px] font-bold leading-tight text-[#111827] sm:text-[32px]" title={job.title || 'Untitled Position'}>
+                    <h1 className="overflow-hidden text-ellipsis text-3xl font-extrabold leading-tight tracking-tight text-black sm:text-4xl" style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2 }} title={job.title || 'Untitled Position'}>
                       {String(job.title || '').trim() || 'Untitled Position'}
                     </h1>
-
-                    <div className="mt-2 flex items-center gap-2 text-[#4b5563]">
-                      <BuildingIcon className="h-4 w-4" />
-                      <span className="text-sm font-medium">{companyName}</span>
+                    <div className="mt-2 flex items-center gap-2 text-sm text-black/70">
+                      <BuildingIcon className="h-4 w-4 text-black/60" />
+                      <span className="font-medium">{companyName}</span>
                     </div>
-
-                    <div className="mt-2 flex items-center gap-2 text-[#6b7280]">
-                      <SvgIcon name="location" className="h-4 w-4" />
-                      <span
-                        className={isDraftJob && isLocationMissing ? 'text-[11px]' : 'text-sm'}
-                      >
-                        {formatLocationDisplay(job.location)}
-                      </span>
+                    <div className="mt-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-black/50">
+                      <SvgIcon name="location" className="h-4 w-4 text-black/60" />
+                      <span className={isDraftJob && isLocationMissing ? 'text-[11px]' : ''}>{formatLocationDisplay(job.location)}</span>
                     </div>
-
-                    <div
-                      className={cn(
-                        'mt-4 flex flex-wrap gap-2',
-                        useSingleRowDraftPlaceholders && 'lg:flex-nowrap lg:gap-1.5'
-                      )}
-                    >
-                      <span
-                        className={
-                          isDraftJob && isJobTypeMissing
-                            ? compactPlaceholderChipClass
-                            : regularDetailChipClass
-                        }
-                      >
-                        <SvgIcon
-                          name="briefcase"
-                          className={isDraftJob && isJobTypeMissing ? 'h-3 w-3' : 'h-3.5 w-3.5'}
-                        />
-                        {String(job.jobType || '').trim() || 'Employment type not specified'}
-                      </span>
-
-                      <span
-                        className={
-                          isDraftJob && isWorkModeMissing
-                            ? compactPlaceholderChipClass
-                            : regularDetailChipClass
-                        }
-                      >
-                        <JobDetailsSvgIcon
-                          name="laptop"
-                          className={isDraftJob && isWorkModeMissing ? 'h-3 w-3' : 'h-3.5 w-3.5'}
-                        />
-                        {String(job.workMode || '').trim() || 'Work mode not specified'}
-                      </span>
-
-                      <span
-                        className={
-                          isDraftJob && isVacanciesMissing
-                            ? compactPlaceholderChipClass
-                            : regularDetailChipClass
-                        }
-                      >
-                        <SvgIcon
-                          name="users"
-                          className={isDraftJob && isVacanciesMissing ? 'h-3 w-3' : 'h-3.5 w-3.5'}
-                        />
-                        {!isVacanciesMissing
-                          ? `${job.vacancies} Vacancies`
-                          : 'Number of vacancies not specified'}
-                      </span>
-
-                      <span
-                        className={
-                          isDraftJob && isRelocationMissing
-                            ? compactRelocationChipClass
-                            : regularRelocationChipClass
-                        }
-                      >
-                        <LocationIcon
-                          className={isDraftJob && isRelocationMissing ? 'h-3 w-3' : 'h-3.5 w-3.5'}
-                        />
-                        {getRelocationDisplayLabel(job.willingToRelocate)}
-                      </span>
+                    <div className={cn('mt-4 flex flex-wrap gap-2', useSingleRowDraftPlaceholders && 'lg:flex-nowrap lg:gap-1.5')}>
+                      <span className={isDraftJob && isJobTypeMissing ? compactPlaceholderChipClass : UI.chip}><SvgIcon name="briefcase" className={isDraftJob && isJobTypeMissing ? 'h-3 w-3 text-black/60' : 'h-3.5 w-3.5 text-black/60'} />{String(job.jobType || '').trim() || 'Employment type not specified'}</span>
+                      <span className={isDraftJob && isWorkModeMissing ? compactPlaceholderChipClass : UI.chip}><JobDetailsSvgIcon name="laptop" className={isDraftJob && isWorkModeMissing ? 'h-3 w-3 text-black/60' : 'h-3.5 w-3.5 text-black/60'} />{String(job.workMode || '').trim() || 'Work mode not specified'}</span>
+                      <span className={isDraftJob && isVacanciesMissing ? compactPlaceholderChipClass : UI.chip}><SvgIcon name="users" className={isDraftJob && isVacanciesMissing ? 'h-3 w-3 text-black/60' : 'h-3.5 w-3.5 text-black/60'} />{!isVacanciesMissing ? `${job.vacancies} ${Number(job.vacancies) === 1 ? 'Vacancy' : 'Vacancies'}` : 'Number of vacancies not specified'}</span>
+                      <span className={isDraftJob && isRelocationMissing ? compactRelocationChipClass : UI.chip}><LocationIcon className={isDraftJob && isRelocationMissing ? 'h-3 w-3 text-black/60' : 'h-3.5 w-3.5 text-black/60'} />{getRelocationDisplayLabel(job.willingToRelocate)}</span>
                     </div>
-
-                    <div className="mt-3 text-xs text-[#6b7280]">
-                      <p>
-                        {formatPostedRelative(job.createdAt)}
-                        {job.applicationDeadline
-                          ? hasExtendedDeadline
-                            ? ` and deadline extended until ${formatFullDate(job.applicationDeadline)}`
-                            : ` and deadline of application is on ${formatFullDate(job.applicationDeadline)}`
-                          : ' and no application deadline specified'}
-                      </p>
-                    </div>
+                    <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-black/80"><SvgIcon name="clock" className="h-4 w-4 shrink-0" /><span>{formatPostedRelative(job.createdAt)}{job.applicationDeadline ? hasExtendedDeadline ? ` and deadline extended until ${formatFullDate(job.applicationDeadline)}` : ` and deadline of application is on ${formatFullDate(job.applicationDeadline)}` : ' and no application deadline specified'}</span></div>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => navigate(`/employer/job/${jobId}/applicants`)}
-                  className={`w-full rounded-xl bg-[#2e66a6] px-4 py-3 text-left text-white shadow-md transition hover:bg-[#25578f] lg:mt-8 lg:w-[255px] lg:self-center ${UI.ring}`}
-                  aria-label={`View ${jobApplications.length} applicants for ${job.title}`}
-                >
-                  <div className="flex items-center gap-3">
+                <div className="flex w-full shrink-0 lg:w-[285px]">
+                  <button type="button" onClick={() => navigate(`/employer/job/${jobId}/applicants`)} className={`group flex h-12 w-full items-center gap-3 rounded-xl bg-[#2e66a6] px-4 text-left text-white shadow-[0_10px_22px_rgba(46,102,166,0.22)] transition hover:bg-[#25578f] ${UI.ring}`} aria-label={`View ${jobApplications.length} applicants for ${job.title}`}>
                     <div className="flex -space-x-2">
-                      {applicantPreview.length ? (
-                        applicantPreview.map((application, index) => {
-                          const image = getApplicantImage(application);
-                          const applicantName = getApplicantName(application);
-
-                          return image ? (
-                            <img
-                              key={application._id || index}
-                              src={image}
-                              alt={applicantName}
-                              className="h-8 w-8 rounded-full border-2 border-white object-cover"
-                            />
-                          ) : (
-                            <span
-                              key={application._id || index}
-                              className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#dbeafe] text-[10px] font-bold text-[#1d4ed8]"
-                            >
-                              {applicantName.charAt(0).toUpperCase()}
-                            </span>
-                          );
-                        })
-                      ) : (
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-white/20">
-                          <SvgIcon name="users" className="h-4 w-4" />
-                        </span>
-                      )}
+                      {applicantPreview.length ? applicantPreview.map((application, index) => { const image = getApplicantImage(application); const applicantName = getApplicantName(application); return image ? (<img key={application._id || index} src={image} alt={applicantName} className="h-8 w-8 rounded-full border-2 border-white object-cover" />) : (<span key={application._id || index} className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#dbeafe] text-[10px] font-bold text-[#1d4ed8]">{applicantName.charAt(0).toUpperCase()}</span>); }) : (<span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-white/20"><SvgIcon name="users" className="h-4 w-4" /></span>)}
                     </div>
-
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold">
-                        {jobApplications.length} Applicant{jobApplications.length === 1 ? '' : 's'}
-                      </p>
-                      <p className="truncate text-[10px] text-blue-100">Review candidates who applied</p>
-                    </div>
-
-                    <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/15 text-white">
-                      <SvgIcon name="chevronRight" className="h-4 w-4" />
-                    </span>
-                  </div>
-                </button>
+                    <div className="min-w-0 flex-1"><p className="text-sm font-bold">{jobApplications.length} Applicant{jobApplications.length === 1 ? '' : 's'}</p><p className="truncate text-[10px] text-blue-100">Review candidates who applied</p></div>
+                    <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/15 text-white transition group-hover:translate-x-0.5"><SvgIcon name="chevronRight" className="h-4 w-4" /></span>
+                  </button>
+                </div>
               </div>
+            </section>
+
+            <div className="space-y-5">
+              <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <TopMetricCard icon="money" title="Salary" value={formatSalary(job.salaryMin, job.salaryMax, job.hideSalary)} isPeso />
+                <TopMetricCard icon="clock" title="Experience" value={getExperienceDisplayLabel(job.experienceLevel)} />
+                <TopMetricCard icon="graduation" title="Educational Requirement" value={String(job.educationLevel || '').trim() || 'Educational requirement not specified'} />
+                <TopMetricCard icon="globe" title="Website / Company URL" value={companyInfo?.companyWebsite || 'N/A'} href={normalizeExternalUrl(companyInfo?.companyWebsite)} />
+              </section>
+
+              <section className={UI.sectionCard}><div className={UI.insetBody}><div className="flex items-center gap-3 pt-2"><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#b9d0ea] bg-[#eef5fc] text-[#2e66a6]"><SvgIcon name="file" className="h-5 w-5" /></span><h2 className={UI.title}>Job Description</h2></div><div className="mt-4 text-sm leading-relaxed text-black/70 sm:text-base"><RichTextContent value={job.description} fallback="No job description provided" /></div></div></section>
+
+              <section className={UI.sectionCard}><div className={UI.insetBody}><div className="flex items-center gap-3 pt-2"><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#b9d0ea] bg-[#eef5fc] text-[#2e66a6]"><SvgIcon name="tools" className="h-5 w-5" /></span><h2 className={UI.title}>Qualification</h2></div><div className="mt-4 text-sm leading-relaxed text-black/70 sm:text-base"><RichTextContent value={job.requirements} fallback="No qualifications specified" /></div></div></section>
+
+              <section className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+                <div className={UI.sectionCard}><div className={UI.insetHead}><p className="text-sm font-semibold text-black">Required Skills</p></div><div className={UI.insetBody}>{requiredSkills.length > 0 ? (<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">{requiredSkills.map((skill, idx) => (<div key={`${skill}-${idx}`} className={UI.skillChip}>{skill}</div>))}</div>) : (<p className={UI.muted}>No skills specified</p>)}</div></div>
+                <div className={UI.sectionCard}><div className={UI.insetHead}><p className="text-sm font-semibold text-black">Work Location</p></div><div className="overflow-hidden">{getJobCoordinates(job) ? (<StaticLocationMap job={job} heightClass="h-[180px]" />) : job.locationImage ? (<img src={`https://phinmaau-job-portal-atlas.onrender.com${job.locationImage}`} alt="Work location" className="h-[180px] w-full object-cover" />) : (<div className="flex h-[180px] items-center justify-center bg-[#eef2f7] text-[#9ca3af]"><SvgIcon name="location" className="h-8 w-8" /></div>)}</div><div className="border-t border-[#e6edf5] px-4 py-3">{buildWorkLocationUrl(job) ? (<a href={buildWorkLocationUrl(job)} target="_blank" rel="noopener noreferrer" className={`rounded text-xs font-medium text-[#2e66a6] hover:underline ${UI.ring}`} title="Open work location in OpenStreetMap">{String(job.location || '').trim() || 'Work address not specified'}</a>) : (<p className="text-xs text-black/60">{String(job.location || '').trim() || 'Work address not specified'}</p>)}</div></div>
+              </section>
+
+              <section className={UI.sectionCard}><div className={UI.insetHead}><p className="text-sm font-semibold text-black">Perks and Benefits</p></div><div className={UI.insetBody}>{perksAndBenefitsList.length > 0 ? (<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">{perksAndBenefitsList.map((benefit, idx) => (<div key={`${benefit}-${idx}`} className={UI.skillChip}>{benefit}</div>))}</div>) : (<p className={UI.muted}>No perks or benefits specified</p>)}</div></section>
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 items-start gap-5">
-            <div className="min-w-0 space-y-5">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <TopMetricCard
-                  icon="money"
-                  title="Salary"
-                  value={formatSalary(job.salaryMin, job.salaryMax, job.hideSalary)}
-                  isPeso
-                />
-                <TopMetricCard
-                  icon="clock"
-                  title="Experience"
-                  value={getExperienceDisplayLabel(job.experienceLevel)}
-                />
-                <TopMetricCard
-                  icon="graduation"
-                  title="Educational Requirement"
-                  value={String(job.educationLevel || '').trim() || 'Educational requirement not specified'}
-                />
-                <TopMetricCard
-                  icon="globe"
-                  title="Website / Company URL"
-                  value={companyInfo?.companyWebsite || 'N/A'}
-                  href={normalizeExternalUrl(companyInfo?.companyWebsite)}
-                />
-              </div>
-
-              <div className={`${UI.sectionCard} overflow-hidden`}>
-                <div className="p-5 sm:p-6">
-                  <section>
-                    <SectionHeader icon="file" title="Job Description" />
-                    <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
-                      <RichTextContent value={job.description} fallback="No job description provided" />
-                    </div>
-                  </section>
-                </div>
-              </div>
-
-              <div className={`${UI.sectionCard} overflow-hidden`}>
-                <div className="p-5 sm:p-6">
-                  <section>
-                    <SectionHeader icon="tools" title="Qualification" />
-                    <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
-                      <RichTextContent value={job.requirements} fallback="No qualifications specified" />
-                    </div>
-                  </section>
-                </div>
-              </div>
-            </div>
-
-            <aside className="grid min-w-0 grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-              <div className={`${UI.sectionCard} p-5 sm:p-6`}>
-                <SectionHeader icon="tools" title="Required Skills" />
-
-                {requiredSkills.length > 0 ? (
-                  <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    {requiredSkills.map((skill, idx) => (
-                      <div key={`${skill}-${idx}`} className={UI.skillChip}>
-                        {skill}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className={`mt-4 ${UI.muted}`}>No skills specified</p>
-                )}
-              </div>
-
-              <div className={`${UI.sectionCard} overflow-hidden`}>
-                <div className="px-5 pt-5 sm:px-6 sm:pt-6">
-                  <SectionHeader icon="location" title="Work Location" />
-                </div>
-
-                <div className="mt-4 overflow-hidden">
-                  {getJobCoordinates(job) ? (
-                    <StaticLocationMap job={job} heightClass="h-[180px]" />
-                  ) : job.locationImage ? (
-                    <img
-                      src={`https://phinmaau-job-portal-atlas.onrender.com${job.locationImage}`}
-                      alt="Work location"
-                      className="h-[180px] w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-[180px] items-center justify-center bg-[#eef2f7] text-[#9ca3af]">
-                      <SvgIcon name="location" className="h-8 w-8" />
-                    </div>
-                  )}
-                </div>
-
-                <div className="border-t border-[#d9dbe3] px-4 py-3 sm:px-5">
-                  {buildWorkLocationUrl(job) ? (
-                    <a
-                      href={buildWorkLocationUrl(job)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`rounded text-xs font-medium text-[#2e66a6] hover:underline ${UI.ring}`}
-                      title="Open work location in OpenStreetMap"
-                    >
-                      {String(job.location || '').trim() || 'Work address not specified'}
-                    </a>
-                  ) : (
-                    <p className="text-xs text-[#6b7280]">
-                      {String(job.location || '').trim() || 'Work address not specified'}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </aside>
-
-              <div className={`${UI.sectionCard} overflow-hidden`}>
-                <div className="border-b border-[#d9dbe3] px-5 py-4 sm:px-6">
-                  <h3 className={UI.title}>Perks and Benefits</h3>
-                </div>
-
-                <div className="p-5 sm:p-6">
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    {perksAndBenefitsList.length > 0 ? (
-                      perksAndBenefitsList.map((benefit, idx) => (
-                        <div key={`${benefit}-${idx}`} className={UI.skillChip}>
-                          {benefit}
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-[#6b7280]">No perks or benefits specified</p>
-                    )}
-                  </div>
-                </div>
-              </div>
           </div>
         </div>
       </div>
