@@ -7,6 +7,7 @@ const AdminLayout = ({ children }) => {
 
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isContentModalOpen, setIsContentModalOpen] = useState(false);
   const [openDropdowns, setOpenDropdowns] = useState({
     Main: true,
     Records: true,
@@ -153,6 +154,17 @@ const AdminLayout = ({ children }) => {
   }, [location.pathname, navItems]);
 
   useEffect(() => setIsMobileNavOpen(false), [location.pathname]);
+
+  useEffect(() => {
+    const handleContentModalVisibility = (event) => {
+      setIsContentModalOpen(Boolean(event?.detail?.open));
+    };
+
+    window.addEventListener('admin-content-modal-visibility', handleContentModalVisibility);
+    return () => {
+      window.removeEventListener('admin-content-modal-visibility', handleContentModalVisibility);
+    };
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (e) => {
@@ -637,7 +649,8 @@ const AdminLayout = ({ children }) => {
       {/* desktop sidebar */}
       <aside
         className={[
-          "hidden md:flex md:flex-col md:fixed md:z-40",
+          isContentModalOpen ? "hidden" : "hidden md:flex",
+          "md:flex-col md:fixed md:z-40",
           "bg-white shadow-sm",
           "rounded-2xl",
           "border border-gray-200/80",
@@ -678,7 +691,9 @@ const AdminLayout = ({ children }) => {
         className={[
           "min-h-screen flex flex-col",
           "pl-0",
-          "md:pl-[calc(var(--sidebar-w)+(var(--sidebar-gutter)*2))]",
+          isContentModalOpen
+            ? "md:pl-0"
+            : "md:pl-[calc(var(--sidebar-w)+(var(--sidebar-gutter)*2))]",
         ].join(" ")}
       >
         {/* mobile topbar */}

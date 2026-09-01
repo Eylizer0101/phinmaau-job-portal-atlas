@@ -621,12 +621,28 @@ const AdminEmployerJobEditRequestDetails = () => {
   }, [requestId]);
 
   useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent('admin-content-modal-visibility', {
+        detail: { open: modalOpen },
+      })
+    );
+
     if (!modalOpen) return undefined;
+
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const close = (event) => { if (event.key === 'Escape') setModalOpen(false); };
     window.addEventListener('keydown', close);
-    return () => { document.body.style.overflow = previous; window.removeEventListener('keydown', close); };
+
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener('keydown', close);
+      window.dispatchEvent(
+        new CustomEvent('admin-content-modal-visibility', {
+          detail: { open: false },
+        })
+      );
+    };
   }, [modalOpen]);
 
   const job = request?.job || {};
@@ -927,7 +943,7 @@ const AdminEmployerJobEditRequestDetails = () => {
 
       {modalOpen && (
         <div
-          className="fixed inset-y-0 right-0 left-0 z-[9999] flex items-center justify-center bg-black/75 p-4 lg:left-[292px]"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 p-4"
           role="dialog"
           aria-modal="true"
           aria-label="Review edit request"
