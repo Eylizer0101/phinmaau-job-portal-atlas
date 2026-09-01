@@ -731,28 +731,32 @@ const AdminEmployerJobEditRequestDetails = () => {
   ];
 
   return <div className={UI.page}>
-    <div className="relative left-1/2 right-1/2 w-screen -ml-[50vw] -mr-[50vw] h-[240px] sm:h-[300px] lg:h-[330px] overflow-hidden bg-white">
-      <img
-        src={assetUrl(employerProfile.coverPhoto, '/images/jobback.png')}
-        alt={`${company || 'Company'} cover banner`}
-        className="h-full w-full object-cover object-center"
-        onError={(event) => {
-          event.currentTarget.onerror = null;
-          event.currentTarget.src = '/images/jobback.png';
-        }}
-      />
+    <div className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 lg:px-8">
+      <div className="relative h-[190px] overflow-hidden rounded-2xl border border-[#e6edf5] bg-[#eef3f8] shadow-[0_8px_24px_rgba(15,23,42,0.06)] sm:h-[215px] lg:h-[235px]">
+        <img
+          src={assetUrl(employerProfile.coverPhoto, '/images/jobback.png')}
+          alt={`${company || 'Company'} cover banner`}
+          className="h-full w-full object-cover object-center"
+          onError={(event) => {
+            event.currentTarget.onerror = null;
+            event.currentTarget.src = '/images/jobback.png';
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-black/20" aria-hidden="true" />
+
+        <div className="absolute left-5 top-5 z-20 sm:left-6 sm:top-6">
+          <button
+            type="button"
+            onClick={() => navigate('/admin/employer-job-edit-requests')}
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-white/70 bg-white/95 px-3 text-sm font-semibold text-black shadow-sm backdrop-blur transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#2e66a6]"
+          >
+            <ArrowLeft size={16} /> Back to Edit Requests
+          </button>
+        </div>
+      </div>
     </div>
 
-    <div className={`${UI.container} -mt-16 sm:-mt-20 lg:-mt-24 relative z-10`}>
-      <div className="absolute top-[-55px] left-4 sm:left-6 lg:left-8 z-30">
-        <button
-          type="button"
-          onClick={() => navigate('/admin/employer-job-edit-requests')}
-          className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-3 text-sm font-semibold text-black shadow-sm transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-        >
-          <ArrowLeft size={16} /> Back to Edit Requests
-        </button>
-      </div>
+    <div className={`${UI.container} -mt-10 sm:-mt-12 relative z-10`}>
 
       {notice && <div className="mb-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-800">{notice}</div>}
 
