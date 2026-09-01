@@ -2365,7 +2365,7 @@ const CompanyViewDetails = () => {
       {showReviewModal && (
         <div className="fixed inset-0 z-[85]">
           <div
-            className="absolute inset-0 bg-black/55 backdrop-blur-[1px]"
+            className={`absolute inset-0 ${reviewStep === "success" ? "bg-black/30" : "bg-black/55 backdrop-blur-[1px]"}`}
             onClick={closeReviewModal}
             aria-hidden="true"
           />
@@ -2383,9 +2383,11 @@ const CompanyViewDetails = () => {
               className={
                 reviewStep === "privacy"
                   ? "relative mx-auto w-full max-w-[860px] overflow-hidden rounded-[22px] border border-gray-200 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.12)]"
-                  : reviewStep === "confirm" || reviewStep === "success"
-                    ? "mx-auto w-full max-w-[760px] overflow-hidden rounded-[22px] border border-[#dfe6ee] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.18)]"
-                    : "mx-auto w-full max-w-[760px] rounded-2xl border border-[#dfe6ee] bg-white shadow-2xl"
+                  : reviewStep === "success"
+                    ? "mx-auto w-full max-w-md overflow-hidden rounded-2xl bg-white text-center shadow-2xl"
+                    : reviewStep === "confirm"
+                      ? "mx-auto w-full max-w-[760px] overflow-hidden rounded-[22px] border border-[#dfe6ee] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.18)]"
+                      : "mx-auto w-full max-w-[760px] rounded-2xl border border-[#dfe6ee] bg-white shadow-2xl"
               }
             >
               {reviewStep === "privacy" && (
@@ -2396,7 +2398,7 @@ const CompanyViewDetails = () => {
                 </div>
               )}
 
-              {reviewStep !== "privacy" && (
+              {reviewStep !== "privacy" && reviewStep !== "success" && (
               <div className="flex items-start justify-between gap-4 border-b border-[#e7edf3] px-5 py-5 sm:px-7">
                 <div>
                   <h3 className="text-[22px] font-bold text-[#172033]">
@@ -2432,7 +2434,9 @@ const CompanyViewDetails = () => {
                 className={
                   reviewStep === "privacy"
                     ? "relative z-10 px-5 pb-5 pt-4 sm:px-9 sm:pb-7 sm:pt-5 lg:px-12"
-                    : "px-5 py-6 sm:px-7"
+                    : reviewStep === "success"
+                      ? "p-0"
+                      : "px-5 py-6 sm:px-7"
                 }
               >
                 {reviewStep === "privacy" && (
@@ -2726,11 +2730,40 @@ const CompanyViewDetails = () => {
                 )}
 
                 {reviewStep === "success" && (
-                  <div className="py-4 text-center">
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl font-bold text-green-600">✓</div>
-                    <p className="mx-auto mt-5 max-w-[520px] text-sm leading-7 text-black/65">Your review has been posted and is now visible to other jobseekers.</p>
-                    <button type="button" onClick={() => { setShowReviewModal(false); setReviewStep("privacy"); resetReviewForm(); }} className="mt-7 h-11 min-w-[120px] rounded-lg bg-[#2e66a6] px-6 text-sm font-semibold text-white hover:bg-[#245387]">OK</button>
-                  </div>
+                  <>
+                    <div className="px-8 pb-6 pt-8">
+                      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#2e66a6] text-white">
+                        <svg className="h-10 w-10" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3.25-3.25a1 1 0 111.414-1.414L8.75 11.836l6.543-6.543a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+
+                      <h2 className="text-xl font-bold text-gray-900">
+                        Review Posted Successfully!
+                      </h2>
+                      <p className="mt-2 text-sm text-gray-600">
+                        Your review has been posted and is now visible to other jobseekers.
+                      </p>
+                    </div>
+
+                    <div className="border-t border-gray-200 px-8 py-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowReviewModal(false);
+                          setReviewStep("privacy");
+                          resetReviewForm();
+                        }}
+                        className="w-full rounded-xl bg-[#2e66a6] px-5 py-3 text-sm font-semibold text-white hover:bg-[#23508a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                      >
+                        OK
+                      </button>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
