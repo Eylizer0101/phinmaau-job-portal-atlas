@@ -928,9 +928,27 @@ const EmployerJobView = () => {
           </div>
 
           {showSuccessIndicator && (
-            <div className="pointer-events-none fixed left-1/2 top-[25%] z-[100] -translate-x-1/2 -translate-y-1/2 lg:left-[calc(50%+145px)]">
-              <div role="status" className="w-fit rounded-xl border border-green-200 bg-green-50 px-5 py-3 text-center text-sm font-semibold text-green-800 shadow-sm">
-                {successIndicator.message}
+            <div
+              className="fixed inset-0 z-[10060] flex items-center justify-center bg-black/25 px-4"
+              role="dialog"
+              aria-modal="true"
+              aria-live="polite"
+            >
+              <div className="w-full max-w-sm rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-2xl">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#e8f1ff]">
+                  <svg className="h-10 w-10 text-[#2e66a6]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <path
+                      d="M7.5 12.2l3 3 6-6"
+                      fill="none"
+                      stroke="white"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                <div className="text-xl font-bold text-gray-900">{successIndicator.message}</div>
               </div>
             </div>
           )}
