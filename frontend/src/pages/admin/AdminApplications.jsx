@@ -571,12 +571,23 @@ const truncate = (value, max = 22) => {
 
 const ApplicantAvatar = ({ user }) => {
   const name = getName(user);
+  const [imageError, setImageError] = useState(false);
+  const fallbackImage = '/images/profile.png';
   const apiHost = (process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
   const src = user?.profileImage ? (/^https?:\/\//i.test(user.profileImage) ? user.profileImage : `${apiHost}${user.profileImage.startsWith('/') ? user.profileImage : `/${user.profileImage}`}`) : '';
 
   return (
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#2e66a6]/10 text-[#2e66a6]">
-      {src ? <img src={src} alt={name} className="h-full w-full object-cover" /> : <Icon name="user" className="h-7 w-7" />}
+    <div
+      className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-[#2e66a6]/10 text-[#2e66a6] shadow-sm"
+      aria-label={`${name}'s profile picture`}
+    >
+      <img
+        src={src && !imageError ? src : fallbackImage}
+        alt={`${name}'s profile`}
+        className="h-full w-full bg-white object-cover"
+        loading="lazy"
+        onError={() => setImageError(true)}
+      />
     </div>
   );
 };
@@ -884,8 +895,8 @@ const AdminApplications = () => {
             <div className="p-6 text-sm font-semibold text-red-600">{error}</div>
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[980px] table-fixed divide-y divide-slate-200 text-left">
+              <div className="max-w-full overflow-x-auto lg:overflow-x-hidden">
+                <table className="w-full min-w-[900px] table-fixed divide-y divide-slate-200 text-left lg:min-w-0">
                   <colgroup>
                     <col className="w-[27%]" />
                     <col className="w-[11%]" />
