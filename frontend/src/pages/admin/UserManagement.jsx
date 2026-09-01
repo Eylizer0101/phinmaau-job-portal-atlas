@@ -1494,12 +1494,12 @@ const UserManagement = () => {
     setSuccess('Export completed successfully');
   };
 
-  const inputBase = 'h-11 w-full rounded-xl border border-gray-200 bg-white pl-11 pr-10 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60 transition-colors duration-200';
-  const selectBase = 'h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60 transition-colors duration-200';
+  const inputBase = 'h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-10 text-sm text-slate-900 placeholder-slate-400 shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 focus-visible:border-[#2e66a6] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/10 disabled:bg-slate-50 disabled:opacity-60';
+  const selectBase = 'h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 focus-visible:border-[#2e66a6] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/10 disabled:bg-slate-50 disabled:opacity-60';
 
   return (
     <AdminLayout>
-      <div className="mx-auto max-w-7xl px-1 py-8">
+      <div className="mx-auto max-w-[1480px] px-1 py-7 sm:py-8">
         {error && (
           <Alert
             type="error"
@@ -1523,20 +1523,24 @@ const UserManagement = () => {
         )}
 
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">User Management</h1>
-            <p className="mt-1 text-sm text-gray-600">View, filter, and manage registered users</p>
+          <div className="relative pl-4 sm:pl-5">
+            <span className="absolute bottom-1 left-0 top-1 w-1 rounded-full bg-[#2e66a6]" aria-hidden="true" />
+            <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.02em] text-slate-950 sm:text-[34px]">
+              User Management
+            </h1>
+            <p className="mt-1.5 text-sm text-slate-600">View, filter, and manage registered users</p>
           </div>
         </div>
 
-        <div className="relative z-20 mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="relative z-20 mb-6 overflow-visible rounded-2xl border border-slate-200 bg-white shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
+          <div className="h-1 rounded-t-2xl bg-gradient-to-r from-[#2e66a6] via-[#4d8bc5] to-[#d8e9f7]" aria-hidden="true" />
           <div className="p-5">
             <div
               className={cn(
-                'grid grid-cols-1 gap-3 xl:items-center',
+                'grid grid-cols-1 gap-3 md:grid-cols-2 2xl:items-center',
                 roleFilter === 'all'
-                  ? 'xl:grid-cols-[minmax(240px,1.4fr)_repeat(3,minmax(0,1fr))_auto]'
-                  : 'xl:grid-cols-[repeat(5,minmax(0,1fr))_auto]'
+                  ? '2xl:grid-cols-[minmax(300px,1.45fr)_repeat(3,minmax(180px,1fr))_auto]'
+                  : '2xl:grid-cols-[minmax(300px,1.4fr)_repeat(4,minmax(160px,1fr))_auto]'
               )}
             >
               <div className="relative min-w-0">
@@ -1550,8 +1554,8 @@ const UserManagement = () => {
                   id="userSearch"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 py-2.5 pl-11 pr-10 text-sm text-gray-900 placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
-                  placeholder="Search user name, email, company, student ID…"
+                  className={inputBase}
+                  placeholder="Search name, email, company, or student ID"
                   disabled={loading}
                   autoComplete="off"
                 />
@@ -1581,7 +1585,7 @@ const UserManagement = () => {
                   }
                   setCurrentPage(1);
                 }}
-                className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
+                className={selectBase}
                 disabled={loading}
                 aria-label="Filter by role"
               >
@@ -1598,7 +1602,7 @@ const UserManagement = () => {
                       setCampusFilter(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
+                    className={selectBase}
                     disabled={loading}
                     aria-label="Filter by campus"
                   >
@@ -1614,7 +1618,7 @@ const UserManagement = () => {
                       setCourseFilter(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
+                    className={selectBase}
                     disabled={loading}
                     aria-label="Filter by course"
                   >
@@ -1634,7 +1638,7 @@ const UserManagement = () => {
                       setCompanyFilter(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
+                    className={selectBase}
                     disabled={loading}
                     aria-label="Filter by company"
                   >
@@ -1650,7 +1654,7 @@ const UserManagement = () => {
                       setIndustryFilter(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
+                    className={selectBase}
                     disabled={loading}
                     aria-label="Filter by industry"
                   >
@@ -1674,7 +1678,7 @@ const UserManagement = () => {
                 <select
                   value={sort}
                   onChange={(e) => setSort(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:bg-gray-50 disabled:opacity-60"
+                  className={selectBase}
                   disabled={loading}
                   aria-label="Sort users"
                 >
@@ -1699,7 +1703,7 @@ const UserManagement = () => {
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="h-11 whitespace-nowrap rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:opacity-60"
+                  className="h-11 whitespace-nowrap rounded-xl border border-[#2e66a6]/30 bg-[#2e66a6]/5 px-5 text-sm font-semibold text-[#24558d] transition-all duration-200 hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 disabled:opacity-60 md:col-span-2 2xl:col-span-1"
                   disabled={loading}
                 >
                   Clear
@@ -1711,8 +1715,9 @@ const UserManagement = () => {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="p-6">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
+          <div className="h-1 bg-gradient-to-r from-[#2e66a6] via-[#2e66a6]/55 to-transparent" aria-hidden="true" />
+          <div className="p-4 sm:p-6">
 
             {loading && users.length === 0 ? (
               <div className="py-14 text-center" role="status" aria-live="polite">
@@ -1749,8 +1754,8 @@ const UserManagement = () => {
                   className="hidden md:block overflow-x-auto"
                   style={{ minHeight: desktopTableMinHeight }}
                 >
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                  <table className="min-w-full divide-y divide-slate-200">
+                    <thead className="bg-[#2e66a6]/[0.055]">
                       <tr>
                         <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Date Registered
@@ -1782,7 +1787,7 @@ const UserManagement = () => {
                       </tr>
                     </thead>
 
-                    <tbody className="divide-y divide-gray-200 bg-white">
+                    <tbody className="divide-y divide-slate-200 bg-white">
                       {filteredUsers.map((user) => {
                         const roleInfo = getRolePill(user.role);
                         const isLoading = userActionLoading[user.key];
@@ -1803,7 +1808,7 @@ const UserManagement = () => {
                                 handleViewDetails(user.key);
                               }
                             }}
-                            className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
+                            className="group cursor-pointer transition-all duration-200 hover:bg-[#2e66a6]/[0.055] focus:bg-[#2e66a6]/[0.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
                           >
                             <td className="px-5 py-4 text-sm text-gray-700 whitespace-nowrap">
                               {formatDate(user.createdAt)}
@@ -1858,7 +1863,7 @@ const UserManagement = () => {
                                   type="button"
                                   onClick={() => handleViewDetails(user.key)}
                                   disabled={isLoading}
-                                  className="inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
+                                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-transparent text-slate-500 transition-all duration-200 group-hover:border-[#2e66a6]/15 group-hover:bg-white group-hover:text-[#2e66a6] group-hover:shadow-sm hover:!border-[#2e66a6]/25 hover:!bg-[#2e66a6] hover:!text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                                   aria-label={`View ${user.name}`}
                                 >
                                   <Icon name="eye" className="h-4 w-4" />
@@ -1880,7 +1885,8 @@ const UserManagement = () => {
                     const isLoading = userActionLoading[user.key];
 
                     return (
-                      <Card key={user.key} hover padding={false}>
+                      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#2e66a6]/25 hover:shadow-md">
+                        <div className="h-1 bg-gradient-to-r from-[#2e66a6] to-[#73b7dc]" aria-hidden="true" />
                         <div className="p-4">
                           <div className="flex items-start gap-3">
                             <Avatar
@@ -1911,7 +1917,7 @@ const UserManagement = () => {
                                   type="button"
                                   onClick={() => handleViewDetails(user.key)}
                                   disabled={isLoading}
-                                  className="inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
+                                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#2e66a6]/10 text-[#2e66a6] transition-colors hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                                   aria-label={`View ${user.name}`}
                                 >
                                   <Icon name="eye" className="h-4 w-4" />
@@ -1974,7 +1980,7 @@ const UserManagement = () => {
                             </div>
                           </div>
                         </div>
-                      </Card>
+                      </div>
                     );
                   })}
                 </div>
