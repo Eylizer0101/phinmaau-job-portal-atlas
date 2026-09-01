@@ -862,11 +862,11 @@ const JobseekerVerification = () => {
 
   return (
     <AdminLayout>
-      <div className="mx-auto max-w-[1480px] px-1 py-7 sm:py-8">
+      <div className="mx-auto max-w-7xl px-1 py-8">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.02em] text-slate-950 sm:text-[34px]">Jobseeker Verification</h1>
-            <p className="mt-1.5 text-sm text-slate-600">Review, filter, and manage jobseeker verification requests</p>
+            <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Jobseeker Verification</h1>
+            <p className="mt-1 text-sm text-gray-600">Review, filter, and manage jobseeker verification requests</p>
           </div>
           <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
             <button type="button" onClick={() => { setArchiveMode(false); setFilters((prev) => ({ ...prev, status: "all", page: 1 })); }} className={cn("rounded-lg px-4 py-2 text-sm font-semibold", !archiveMode ? "bg-[#2e66a6]/10 text-[#2e66a6]" : "text-gray-600")}>Active <span className="ml-1 rounded-full bg-white px-2 py-0.5">{Math.max(0, stats.total - stats.rejected - stats.verified)}</span></button>
@@ -1010,9 +1010,9 @@ const JobseekerVerification = () => {
               </div>
             ) : (
               <>
-                <div className="hidden max-w-full overflow-x-auto lg:block lg:overflow-x-hidden">
-                  <table className="w-full min-w-[920px] table-fixed lg:min-w-0">
-                    <thead className="border-b border-gray-100 bg-[#2e66a6]/[0.055]">
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="w-full min-w-[1000px]">
+                    <thead className="bg-slate-50 border-b border-gray-100">
                       <tr>
                         <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Registered</th>
                         <th className="px-5 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Name</th>
@@ -1048,7 +1048,7 @@ const JobseekerVerification = () => {
                                 navigate(`/admin/jobseeker-verification/${item._id}`);
                               }
                             }}
-                            className="group cursor-pointer transition-all duration-200 hover:bg-[#2e66a6]/[0.055] focus:bg-[#2e66a6]/[0.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
+                            className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
                           >
                             <td className="px-5 py-4 text-sm text-gray-700 whitespace-nowrap">
                               {formatDate(item.createdAt)}
@@ -1057,12 +1057,12 @@ const JobseekerVerification = () => {
                             <td className="px-5 py-4">
                               <div className="flex items-center gap-3 min-w-0">
                                 <img
-                                  src={item.profileImage || "/images/profile.png"}
+                                  src={item.profileImage || "/images/default-jobseeker.svg"}
                                   alt={fullName}
                                   className="h-11 w-11 rounded-full object-cover border border-gray-200 bg-white"
                                   onError={(e) => {
                                     e.currentTarget.onerror = null;
-                                    e.currentTarget.src = "/images/profile.png";
+                                    e.currentTarget.src = "/images/default-jobseeker.svg";
                                   }}
                                 />
 
@@ -1124,12 +1124,12 @@ const JobseekerVerification = () => {
                       <Card key={item._id} className="p-4">
                         <div className="flex items-start gap-3">
                           <img
-                            src={item.profileImage || "/images/profile.png"}
+                            src={item.profileImage || "/images/default-jobseeker.svg"}
                             alt={fullName}
                             className="h-11 w-11 shrink-0 rounded-full object-cover border border-gray-200 bg-white"
                             onError={(e) => {
                               e.currentTarget.onerror = null;
-                              e.currentTarget.src = "/images/profile.png";
+                              e.currentTarget.src = "/images/default-jobseeker.svg";
                             }}
                           />
 
