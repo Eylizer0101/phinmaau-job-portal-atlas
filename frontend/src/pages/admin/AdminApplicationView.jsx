@@ -9,11 +9,14 @@ const UI = {
   card: "w-full rounded-2xl border border-[#e6edf5] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]",
   sectionCard: "w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]",
   metricCard: "h-full min-h-[96px] rounded-xl border border-[#d9e2ec] bg-white px-4 py-4 shadow-[0_4px_14px_rgba(15,23,42,0.08)]",
+  insetHead: "border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6",
+  insetBody: "px-5 py-5 sm:px-6",
   label: "text-sm font-semibold text-black",
   value: "mt-1 text-[15px] leading-6 text-black",
   title: "text-base font-bold text-black",
   chip: "inline-flex items-center gap-2 rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1.5 text-xs font-semibold text-black/80",
   skillChip: "rounded-xl border border-[#d9e2ec] bg-white px-4 py-3 text-sm text-black/75",
+  muted: "text-sm text-black/60",
   ring: "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 focus-visible:ring-offset-white",
 };
 
@@ -429,8 +432,8 @@ const CompanyLogo = ({ src, name }) => {
   const initial = String(name || "C").charAt(0).toUpperCase();
 
   return (
-    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#d9dbe3] bg-white text-lg font-bold text-[#374151] sm:h-16 sm:w-16 sm:text-xl">
-      {url ? <img src={url} alt={name || "Company"} className="h-full w-full object-cover" /> : initial}
+    <div className="flex h-[58px] w-[58px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#d8e2ee] bg-white p-1 text-lg font-bold text-[#374151] sm:h-[72px] sm:w-[72px] sm:text-xl">
+      {url ? <img src={url} alt={name || "Company"} className="h-full w-full object-contain" /> : initial}
     </div>
   );
 };
@@ -652,204 +655,231 @@ const AdminApplicationView = () => {
     <AdminLayout>
       <div className={UI.page}>
         <div className="mx-auto max-w-7xl px-1 py-8">
-          <section className="mb-5">
-            <div className="relative h-[190px] w-full overflow-hidden rounded-2xl border border-[#e6edf5] bg-[#eef3f8] shadow-[0_8px_24px_rgba(15,23,42,0.06)] sm:h-[215px] lg:h-[235px]">
-              <img
-                src={companyCoverUrl}
-                alt={`${companyName} cover`}
-                className="h-full w-full object-cover"
-                onError={(event) => {
-                  event.currentTarget.onerror = null;
-                  event.currentTarget.src = "/images/jobback.png";
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-black/20" />
-              <div className="absolute left-5 top-5 z-20 sm:left-6 sm:top-6">
-                <button
-                  onClick={() => navigate("/admin/applications")}
-                  className={cn("inline-flex h-9 items-center gap-2 rounded-xl border border-white/70 bg-white/95 px-3 text-sm font-semibold text-black shadow-sm backdrop-blur transition hover:bg-white", UI.ring)}
-                  type="button"
-                >
-                  <Icon name="arrowLeft" /> Back
-                </button>
-              </div>
-            </div>
+          <div className="relative h-[190px] overflow-hidden rounded-2xl border border-[#e6edf5] bg-[#eef3f8] shadow-[0_8px_24px_rgba(15,23,42,0.06)] sm:h-[215px] lg:h-[235px]">
+            <img
+              src={companyCoverUrl}
+              alt={`${companyName} cover`}
+              className="h-full w-full object-cover object-center"
+              onError={(event) => {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = "/images/jobback.png";
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-black/20" aria-hidden="true" />
 
-            <div className={`${UI.card} relative z-10 -mt-10 px-5 pb-6 pt-6 sm:px-7 lg:px-8`}>
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="absolute left-5 top-5 z-20 sm:left-6 sm:top-6">
+              <button
+                onClick={() => navigate("/admin/applications")}
+                className={cn(
+                  "inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-white/70 bg-white/95 px-3 text-sm font-semibold text-black shadow-sm backdrop-blur transition hover:bg-white",
+                  UI.ring
+                )}
+                type="button"
+              >
+                <Icon name="arrowLeft" />
+                Back
+              </button>
+            </div>
+          </div>
+
+          <div className="-mt-10 sm:-mt-12 relative z-10">
+            <section className={`${UI.card} mb-6 min-h-[210px] p-5 sm:min-h-[225px] sm:p-7 lg:min-h-[240px] lg:p-8 flex items-center`}>
+              <div className="flex w-full flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex min-w-0 flex-1 items-start gap-4">
                   <CompanyLogo src={job.companyLogo || employerProfile.companyLogo} name={companyName} />
 
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-black sm:text-4xl" title={job.title || job.jobTitle || "Untitled Job"}>
-                        {job.title || job.jobTitle || "Untitled Job"}
-                      </h1>
+                    <h1
+                      className="overflow-hidden text-ellipsis text-3xl font-extrabold leading-tight tracking-tight text-black sm:text-4xl"
+                      style={{ display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: 2 }}
+                      title={job.title || job.jobTitle || "Untitled Job"}
+                    >
+                      {job.title || job.jobTitle || "Untitled Job"}
+                    </h1>
+
+                    <div className="mt-2 inline-flex min-w-0 items-center gap-2 text-sm text-black/70">
+                      <Icon name="building" className="h-4 w-4 text-black/60" />
+                      <span className="min-w-0 truncate">{companyName}</span>
                     </div>
 
-                    <div className="mt-2 flex items-center gap-2 text-sm text-black/70">
-                      <Icon name="building" className="h-4 w-4 text-[#2e66a6]" />
-                      <span className="text-sm font-medium">{companyName}</span>
-                    </div>
-
-                    <div className="mt-1 flex items-start gap-2 text-xs font-semibold uppercase tracking-wide text-black/50">
-                      <Icon name="mapPin" className="mt-0.5 h-4 w-4 shrink-0 text-[#2e66a6]" />
-                      <span className="text-sm leading-6">{location}</span>
+                    <div className="mt-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-black/50">
+                      <Icon name="mapPin" className="h-4 w-4 shrink-0 text-black/60" />
+                      <span>{location}</span>
                     </div>
 
                     <div className="mt-4 flex flex-wrap gap-2">
-                      {job.jobType ? (
-                        <span className={UI.chip}>
-                          <Icon name="briefcase" className="h-3.5 w-3.5" />
-                          {job.jobType}
-                        </span>
-                      ) : null}
+                      <span className={UI.chip}>
+                        <Icon name="briefcase" className="h-3.5 w-3.5 text-black/60" />
+                        {job.jobType || "Employment type not specified"}
+                      </span>
 
-                      {job.workMode ? (
-                        <span className={UI.chip}>
-                          <MyApplicationsSvgIcon name="laptop" className="h-3.5 w-3.5" />
-                          {job.workMode}
-                        </span>
-                      ) : null}
+                      <span className={UI.chip}>
+                        <MyApplicationsSvgIcon name="laptop" className="h-3.5 w-3.5 text-black/60" />
+                        {job.workMode || "Work mode not specified"}
+                      </span>
 
-                      {job.vacancies ? (
-                        <span className={UI.chip}>
-                          <Icon name="users" className="h-3.5 w-3.5" />
-                          {job.vacancies} {Number(job.vacancies) === 1 ? "Vacancy" : "Vacancies"}
-                        </span>
-                      ) : null}
+                      <span className={UI.chip}>
+                        <Icon name="users" className="h-3.5 w-3.5 text-black/60" />
+                        {job.vacancies
+                          ? `${job.vacancies} ${Number(job.vacancies) === 1 ? "Vacancy" : "Vacancies"}`
+                          : "Number of vacancies not specified"}
+                      </span>
 
-                      {job.willingToRelocate ? (
-                        <span className={UI.chip}>
-                          <Icon name="mapPin" className="h-3.5 w-3.5" />
-                          {getRelocationDisplayLabel(job.willingToRelocate)}
-                        </span>
-                      ) : null}
+                      <span className={UI.chip}>
+                        <Icon name="mapPin" className="h-3.5 w-3.5 text-black/60" />
+                        {getRelocationDisplayLabel(job.willingToRelocate)}
+                      </span>
                     </div>
 
-                    <div className="mt-4 text-sm text-black/80">
-                      <p>
+                    <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-black/80">
+                      <Icon name="clock" className="h-4 w-4 shrink-0" />
+                      <span>
                         {formatPostedTime(job.createdAt || application.appliedAt || application.createdAt)}
                         {job.applicationDeadline
                           ? ` and deadline of application is on ${formatDate(job.applicationDeadline)}`
                           : ""}
-                      </p>
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 {hasSubmittedResumeSnapshot ? (
-                  <button
-                    type="button"
-                    onClick={handleViewSubmittedResume}
-                    className={cn(
-                      "inline-flex h-11 shrink-0 items-center justify-center gap-2 self-start rounded-lg bg-[#2e66a6] px-5 text-sm font-semibold text-white transition hover:bg-[#255487] lg:self-center",
-                      UI.ring
-                    )}
-                  >
-                    <Icon name="file" className="h-4 w-4" />
-                    View Submitted Resume
-                  </button>
+                  <div className="flex w-full shrink-0 lg:w-[260px]">
+                    <button
+                      type="button"
+                      onClick={handleViewSubmittedResume}
+                      className={cn(
+                        "inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-5 text-base font-semibold text-white shadow-[0_10px_22px_rgba(46,102,166,0.22)] transition hover:bg-[#25578f]",
+                        UI.ring
+                      )}
+                    >
+                      <Icon name="file" className="h-4 w-4" />
+                      View Submitted Resume
+                    </button>
+                  </div>
                 ) : null}
               </div>
-            </div>
-          </section>
+            </section>
 
-          <div className="mb-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <MetricCard icon="money" title="Salary" value={formatSalary(job.salaryMin, job.salaryMax)} isPeso />
-            <MetricCard icon="clock" title="Experience" value={job.experienceLevel || "No experience required"} />
-            <MetricCard icon="graduation" title="Educational Requirements" value={job.educationLevel || job.educationalRequirements || "Not specified"} />
-            <MetricCard
-              icon="globe"
-              title="Website Company URL"
-              value={
-                companyWebsiteUrl ? (
-                  <a
-                    href={companyWebsiteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="break-all text-[#2e66a6] underline decoration-[#2e66a6]/30 underline-offset-2 transition hover:text-[#255487]"
-                    title={companyWebsite}
-                  >
-                    {companyWebsite}
-                  </a>
-                ) : (
-                  "N/A"
-                )
-              }
-            />
-          </div>
-
-          <div className="mb-5">
-            <section className={`${UI.sectionCard} p-5 sm:p-6`}>
-              <SectionHeader icon="file" title="Job Description" />
-              <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
-                <RichTextContent
-                  value={job.description}
-                  fallback="No description provided."
+            <div className="space-y-5">
+              <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <MetricCard icon="money" title="Salary" value={formatSalary(job.salaryMin, job.salaryMax)} isPeso />
+                <MetricCard icon="clock" title="Experience" value={job.experienceLevel || "No experience required"} />
+                <MetricCard
+                  icon="graduation"
+                  title="Educational Requirement"
+                  value={job.educationLevel || job.educationalRequirements || "Educational requirement not specified"}
                 />
-              </div>
-            </section>
-          </div>
-
-          <div className="mb-5">
-            <section className={`${UI.sectionCard} p-5 sm:p-6`}>
-              <SectionHeader icon="tools" title="Qualification" />
-              <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
-                <RichTextContent
-                  value={job.requirements || job.qualification}
-                  fallback="No requirements provided."
+                <MetricCard
+                  icon="globe"
+                  title="Website / Company URL"
+                  value={
+                    companyWebsiteUrl ? (
+                      <a
+                        href={companyWebsiteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="break-all text-[#2e66a6] hover:underline"
+                        title={companyWebsite}
+                      >
+                        {companyWebsite}
+                      </a>
+                    ) : (
+                      "N/A"
+                    )
+                  }
                 />
-              </div>
-            </section>
-          </div>
+              </section>
 
-          <div className="mb-5 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <section className={`${UI.sectionCard} p-5 sm:p-6`}>
-              <SectionHeader title="Required Skills" subtitle={`${requiredSkills.length} `} />
-              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {requiredSkills.length ? (
-                  requiredSkills.map((skill, index) => (
-                    <div key={`${skill}-${index}`} className={UI.skillChip}>
-                      {skill}
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm font-medium text-[#6b7280]">No required skills listed.</p>
-                )}
-              </div>
-            </section>
-
-            <section className={`${UI.sectionCard} overflow-hidden`}>
-              <div className="px-5 pt-5 sm:px-6 sm:pt-6">
-                <SectionHeader icon="mapPin" title="Work Location" />
-              </div>
-              <div className="mt-4 overflow-hidden">
-                <StaticLocationMap job={job} address={location} heightClass="h-[180px]" />
-              </div>
-              <div className="border-t border-[#e5e7eb] px-4 py-3 sm:px-5">
-                <div className="flex items-start gap-2 text-[#374151]">
-                  <Icon name="mapPin" className="mt-0.5 h-4 w-4 shrink-0 text-[#2e66a6]" />
-                  <p className="text-sm font-medium leading-6">{location}</p>
-                </div>
-              </div>
-            </section>
-          </div>
-
-          <section className={`${UI.sectionCard} p-5 sm:p-6`}>
-            <SectionHeader title="Perks and Benefits" subtitle={`${perksAndBenefits.length} `} />
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {perksAndBenefits.length ? (
-                perksAndBenefits.map((benefit, index) => (
-                  <div key={`${benefit}-${index}`} className={UI.skillChip}>
-                    {benefit}
+              <section className={UI.sectionCard}>
+                <div className={UI.insetBody}>
+                  <div className="flex items-center gap-3 pt-2">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#b9d0ea] bg-[#eef5fc] text-[#2e66a6]">
+                      <Icon name="file" className="h-5 w-5" />
+                    </span>
+                    <h2 className={UI.title}>Job Description</h2>
                   </div>
-                ))
-              ) : (
-                <p className="text-sm font-medium text-[#6b7280]">No perks and benefits listed.</p>
-              )}
+                  <div className="mt-4 text-sm leading-relaxed text-black/70 sm:text-base">
+                    <RichTextContent value={job.description} fallback="No description provided." />
+                  </div>
+                </div>
+              </section>
+
+              <section className={UI.sectionCard}>
+                <div className={UI.insetBody}>
+                  <div className="flex items-center gap-3 pt-2">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#b9d0ea] bg-[#eef5fc] text-[#2e66a6]">
+                      <Icon name="tools" className="h-5 w-5" />
+                    </span>
+                    <h2 className={UI.title}>Qualification</h2>
+                  </div>
+                  <div className="mt-4 text-sm leading-relaxed text-black/70 sm:text-base">
+                    <RichTextContent value={job.requirements || job.qualification} fallback="No requirements provided." />
+                  </div>
+                </div>
+              </section>
+
+              <section className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+                <div className={UI.sectionCard}>
+                  <div className={UI.insetHead}>
+                    <p className="text-sm font-semibold text-black">Required Skills</p>
+                  </div>
+                  <div className={UI.insetBody}>
+                    {requiredSkills.length ? (
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {requiredSkills.map((skill, index) => (
+                          <div key={`${skill}-${index}`} className={UI.skillChip}>
+                            {skill}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className={UI.muted}>No skills specified</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className={UI.sectionCard}>
+                  <div className={UI.insetHead}>
+                    <p className="text-sm font-semibold text-black">Work Location</p>
+                  </div>
+                  <div className="overflow-hidden">
+                    <StaticLocationMap job={job} address={location} heightClass="h-[180px]" />
+                  </div>
+                  <div className="border-t border-[#e6edf5] px-4 py-3">
+                    <a
+                      href={buildOpenStreetMapUrl({ coords: getJobCoordinates(job), address: location })}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded text-xs font-medium text-[#2e66a6] hover:underline"
+                      title="Open work location in OpenStreetMap"
+                    >
+                      {location || "Work address not specified"}
+                    </a>
+                  </div>
+                </div>
+              </section>
+
+              <section className={UI.sectionCard}>
+                <div className={UI.insetHead}>
+                  <p className="text-sm font-semibold text-black">Perks and Benefits</p>
+                </div>
+                <div className={UI.insetBody}>
+                  {perksAndBenefits.length ? (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                      {perksAndBenefits.map((benefit, index) => (
+                        <div key={`${benefit}-${index}`} className={UI.skillChip}>
+                          {benefit}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className={UI.muted}>No perks or benefits specified</p>
+                  )}
+                </div>
+              </section>
             </div>
-          </section>
+          </div>
         </div>
       </div>
     </AdminLayout>

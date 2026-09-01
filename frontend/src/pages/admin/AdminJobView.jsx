@@ -184,17 +184,16 @@ const UI = {
   card: 'w-full rounded-2xl border border-[#e6edf5] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]',
   sectionCard: 'w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]',
   metricCard: 'h-full min-h-[96px] rounded-xl border border-[#d9e2ec] bg-white px-4 py-4 shadow-[0_4px_14px_rgba(15,23,42,0.08)]',
+  insetHead: 'border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6',
+  insetBody: 'px-5 py-5 sm:px-6',
   label: 'text-sm font-semibold text-black',
   value: 'mt-1 text-[15px] leading-6 text-black',
   title: 'text-base font-bold text-black',
-  body: 'text-sm leading-7 text-[#4b5563]',
+  body: 'text-sm leading-7 text-black/70',
   muted: 'text-sm text-black/60',
-  chip:
-    'inline-flex items-center gap-2 rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1.5 text-xs font-semibold text-black/80',
-  skillChip:
-    'rounded-xl border border-[#d9e2ec] bg-white px-4 py-3 text-sm text-black/75',
-  ring:
-    'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 focus-visible:ring-offset-white',
+  chip: 'inline-flex items-center gap-2 rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1.5 text-xs font-semibold text-black/80',
+  skillChip: 'rounded-xl border border-[#d9e2ec] bg-white px-4 py-3 text-sm text-black/75',
+  ring: 'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 focus-visible:ring-offset-white',
 };
 
 const normalizeLocation = (jobData) => {
@@ -543,18 +542,18 @@ const CompanyLogo = ({ src, name }) => {
 
   if (!src || failed) {
     return (
-      <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl border border-[#d9dbe3] bg-[#f3f4f6] sm:h-16 sm:w-16">
+      <div className="flex h-[58px] w-[58px] flex-shrink-0 items-center justify-center rounded-2xl border border-[#d8e2ee] bg-white sm:h-[72px] sm:w-[72px]">
         <span className="text-lg font-bold text-[#374151] sm:text-xl">{initial}</span>
       </div>
     );
   }
 
   return (
-    <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl border border-[#d9dbe3] bg-white sm:h-16 sm:w-16">
+    <div className="h-[58px] w-[58px] flex-shrink-0 overflow-hidden rounded-2xl border border-[#d8e2ee] bg-white p-1 sm:h-[72px] sm:w-[72px]">
       <img
         src={src}
         alt={`${name || 'Company'} logo`}
-        className="h-full w-full object-cover"
+        className="h-full w-full object-contain"
         onError={() => setFailed(true)}
         loading="lazy"
       />
@@ -932,62 +931,67 @@ const AdminJobView = () => {
     isRelocationMissing;
 
   const regularDetailChipClass =
-    'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1.5 text-xs font-semibold text-black/80';
+    'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#2e66a6]';
   const compactPlaceholderChipClass =
-    'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#d8e2ee] bg-[#f7faff] px-2 py-1 text-[10px] font-semibold text-black/70';
+    'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-2 py-1 text-[10px] font-semibold text-[#2e66a6]';
   const regularRelocationChipClass =
-    'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1.5 text-xs font-semibold text-black/80';
+    'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#2e66a6]';
   const compactRelocationChipClass =
-    'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#d8e2ee] bg-[#f7faff] px-2 py-1 text-[10px] font-semibold text-black/70';
+    'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-2 py-1 text-[10px] font-semibold text-[#2e66a6]';
 
   return (
     <AdminLayout>
       <div className={UI.page}>
         <div className={UI.container}>
-          <div className="mb-5">
-            <div className="relative h-[190px] w-full overflow-hidden rounded-2xl border border-[#e6edf5] bg-[#eef3f8] shadow-[0_8px_24px_rgba(15,23,42,0.06)] sm:h-[215px] lg:h-[235px]">
-              <img
-                src={assetUrl(companyInfo?.coverPhoto, '/images/jobback.png')}
-                alt={`${job.companyName || 'Company'} cover`}
-                className="h-full w-full object-cover"
-                onError={(event) => {
-                  event.currentTarget.onerror = null;
-                  event.currentTarget.src = '/images/jobback.png';
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-black/20" />
-              <div className="absolute left-5 top-5 z-20 sm:left-6 sm:top-6">
-                <button
-                  onClick={handleBack}
-                  className={`inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-white/70 bg-white/95 px-3 text-sm font-semibold text-black shadow-sm backdrop-blur transition hover:bg-white ${UI.ring}`}
-                  type="button"
-                >
-                  <SvgIcon name="arrowLeft" className="h-4 w-4" />
-                  {backLabel}
-                </button>
-              </div>
-            </div>
+          <div className="relative h-[190px] overflow-hidden rounded-2xl border border-[#e6edf5] bg-[#eef3f8] shadow-[0_8px_24px_rgba(15,23,42,0.06)] sm:h-[215px] lg:h-[235px]">
+            <img
+              src={assetUrl(companyInfo?.coverPhoto, '/images/jobback.png')}
+              alt={`${job.companyName || 'Company'} cover`}
+              className="h-full w-full object-cover object-center"
+              onError={(event) => {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = '/images/jobback.png';
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-black/20" aria-hidden="true" />
 
-            <div className={`${UI.card} relative z-10 -mt-10 px-5 pb-6 pt-6 sm:px-7 lg:px-8`}>
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="absolute left-5 top-5 z-20 sm:left-6 sm:top-6">
+              <button
+                onClick={handleBack}
+                className={`inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-white/70 bg-white/95 px-3 text-sm font-semibold text-black shadow-sm backdrop-blur transition hover:bg-white ${UI.ring}`}
+                type="button"
+              >
+                <SvgIcon name="arrowLeft" className="h-4 w-4" />
+                {backLabel}
+              </button>
+            </div>
+          </div>
+
+          <div className="-mt-10 sm:-mt-12 relative z-10">
+            <section className={`${UI.card} mb-6 min-h-[210px] p-5 sm:min-h-[225px] sm:p-7 lg:min-h-[240px] lg:p-8 flex items-center`}>
+              <div className="flex w-full flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex min-w-0 flex-1 items-start gap-4">
                   <CompanyLogo src={job.companyLogo} name={job.companyName} />
 
                   <div className="min-w-0 flex-1">
-                    <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-black sm:text-4xl" title={job.title}>
+                    <h1
+                      className="overflow-hidden text-ellipsis text-3xl font-extrabold leading-tight tracking-tight text-black sm:text-4xl"
+                      style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2 }}
+                      title={job.title}
+                    >
                       {job.title}
                     </h1>
 
-                    <div className="mt-2 flex items-center gap-2 text-sm text-black/70">
-                      <BuildingIcon className="h-4 w-4" />
-                      <span className="text-sm font-medium">
+                    <div className="mt-2 inline-flex min-w-0 items-center gap-2 text-sm text-black/70">
+                      <BuildingIcon className="h-4 w-4 text-black/60" />
+                      <span className="min-w-0 truncate">
                         {String(job.companyName || companyInfo?.companyName || '').trim() || 'Company not specified'}
                       </span>
                     </div>
 
                     <div className="mt-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-black/50">
-                      <SvgIcon name="location" className="h-4 w-4" />
-                      <span className={isLocationMissing ? 'text-[11px]' : 'text-sm'}>
+                      <SvgIcon name="location" className="h-4 w-4 text-black/60" />
+                      <span className={isLocationMissing ? 'text-[11px]' : ''}>
                         {formatLocationDisplay(job.location)}
                       </span>
                     </div>
@@ -998,164 +1002,117 @@ const AdminJobView = () => {
                         useSingleRowPlaceholders && 'lg:flex-nowrap lg:gap-1.5'
                       )}
                     >
-                      <span
-                        className={
-                          isJobTypeMissing
-                            ? compactPlaceholderChipClass
-                            : regularDetailChipClass
-                        }
-                      >
-                        <SvgIcon
-                          name="briefcase"
-                          className={isJobTypeMissing ? 'h-3 w-3' : 'h-3.5 w-3.5'}
-                        />
+                      <span className={isJobTypeMissing ? compactPlaceholderChipClass : UI.chip}>
+                        <SvgIcon name="briefcase" className={isJobTypeMissing ? 'h-3 w-3 text-black/60' : 'h-3.5 w-3.5 text-black/60'} />
                         {String(job.jobType || '').trim() || 'Employment type not specified'}
                       </span>
 
-                      <span
-                        className={
-                          isWorkModeMissing
-                            ? compactPlaceholderChipClass
-                            : regularDetailChipClass
-                        }
-                      >
-                        <MyApplicationsSvgIcon
-                          name="laptop"
-                          className={isWorkModeMissing ? 'h-3 w-3' : 'h-3.5 w-3.5'}
-                        />
+                      <span className={isWorkModeMissing ? compactPlaceholderChipClass : UI.chip}>
+                        <MyApplicationsSvgIcon name="laptop" className={isWorkModeMissing ? 'h-3 w-3 text-black/60' : 'h-3.5 w-3.5 text-black/60'} />
                         {String(job.workMode || '').trim() || 'Work mode not specified'}
                       </span>
 
-                      <span
-                        className={
-                          isVacanciesMissing
-                            ? compactPlaceholderChipClass
-                            : regularDetailChipClass
-                        }
-                      >
-                        <SvgIcon
-                          name="users"
-                          className={isVacanciesMissing ? 'h-3 w-3' : 'h-3.5 w-3.5'}
-                        />
+                      <span className={isVacanciesMissing ? compactPlaceholderChipClass : UI.chip}>
+                        <SvgIcon name="users" className={isVacanciesMissing ? 'h-3 w-3 text-black/60' : 'h-3.5 w-3.5 text-black/60'} />
                         {!isVacanciesMissing
                           ? `${job.vacancies} ${Number(job.vacancies) === 1 ? 'Vacancy' : 'Vacancies'}`
                           : 'Number of vacancies not specified'}
                       </span>
 
-                      <span
-                        className={
-                          isRelocationMissing
-                            ? compactRelocationChipClass
-                            : regularRelocationChipClass
-                        }
-                      >
-                        <LocationIcon
-                          className={isRelocationMissing ? 'h-3 w-3' : 'h-3.5 w-3.5'}
-                        />
+                      <span className={isRelocationMissing ? compactRelocationChipClass : UI.chip}>
+                        <LocationIcon className={isRelocationMissing ? 'h-3 w-3 text-black/60' : 'h-3.5 w-3.5 text-black/60'} />
                         {getRelocationDisplayLabel(job.willingToRelocate)}
                       </span>
                     </div>
 
-                    <div className="mt-4 text-sm text-black/80">
-                      <p>
+                    <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-black/80">
+                      <SvgIcon name="clock" className="h-4 w-4 shrink-0" />
+                      <span>
                         {formatPostedRelative(job.createdAt)}
                         {job.applicationDeadline
                           ? ` and deadline of application is on ${formatFullDate(job.applicationDeadline)}`
                           : ' and no application deadline specified'}
-                      </p>
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 {isArchivedView ? (
-                  <div className="flex w-full justify-center lg:w-[420px] lg:self-center">
-                    <div className="min-w-[220px] rounded-xl border border-[#d7e6f5] bg-[#f8fafc] px-5 py-4 text-center shadow-sm">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6b7280]">
-                        Archived Date
-                      </p>
-                      <p className="mt-1.5 text-center text-base font-bold text-[#111827]">
+                  <div className="flex w-full shrink-0 justify-center lg:w-[260px]">
+                    <div className="w-full rounded-xl border border-[#d8e2ee] bg-[#f7faff] px-5 py-4 text-center">
+                      <p className="text-xs font-semibold text-black/55">Archived Date</p>
+                      <p className="mt-1 text-base font-bold text-black">
                         {formatArchivedDate(job.archivedAt || job.updatedAt)}
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex w-full justify-start lg:w-auto lg:self-center lg:justify-end">
+                  <div className="flex w-full shrink-0 lg:w-[285px]">
                     <button
-                    type="button"
-                    onClick={() =>
-                      navigate(`/admin/jobs/${jobId}/applicants`, {
-                        state: {
-                          jobTitle: job.title,
-                          backPath: `/admin/jobs/${jobId}`,
-                          backLabel: 'Job Details',
-                        },
-                      })
-                    }
-                    className={`group flex w-full max-w-[285px] items-center gap-3 rounded-xl bg-[#2e66a6] px-4 py-3 text-left text-white shadow-md transition hover:bg-[#25598f] sm:w-auto ${UI.ring}`}
-                    aria-label={`View ${applicants.length} ${applicants.length === 1 ? 'applicant' : 'applicants'}`}
-                  >
-                    <div className="flex -space-x-2">
-                      {applicantPreview.length > 0 ? (
-                        applicantPreview.map((application, index) => {
-                          const image = getApplicantImage(application);
-                          const applicantName = getApplicantName(application);
-
-                          return image ? (
-                            <img
-                              key={application._id || index}
-                              src={image}
-                              alt={applicantName}
-                              className="h-8 w-8 rounded-full border-2 border-white object-cover"
-                            />
-                          ) : (
-                            <span
-                              key={application._id || index}
-                              className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#dbeafe] text-[10px] font-bold text-[#1d4ed8]"
-                            >
-                              {applicantName.charAt(0).toUpperCase()}
-                            </span>
-                          );
+                      type="button"
+                      onClick={() =>
+                        navigate(`/admin/jobs/${jobId}/applicants`, {
+                          state: {
+                            jobTitle: job.title,
+                            backPath: `/admin/jobs/${jobId}`,
+                            backLabel: 'Job Details',
+                          },
                         })
-                      ) : (
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-white/20">
-                          <SvgIcon name="users" className="h-4 w-4" />
-                        </span>
-                      )}
-                    </div>
+                      }
+                      className={`group flex h-12 w-full items-center gap-3 rounded-xl bg-[#2e66a6] px-4 text-left text-white shadow-[0_10px_22px_rgba(46,102,166,0.22)] transition hover:bg-[#25578f] ${UI.ring}`}
+                      aria-label={`View ${applicants.length} ${applicants.length === 1 ? 'applicant' : 'applicants'}`}
+                    >
+                      <div className="flex -space-x-2">
+                        {applicantPreview.length > 0 ? (
+                          applicantPreview.map((application, index) => {
+                            const image = getApplicantImage(application);
+                            const applicantName = getApplicantName(application);
 
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold">
-                        {applicants.length} {applicants.length === 1 ? 'Applicant' : 'Applicants'}
-                      </p>
-                      <p className="truncate text-[10px] text-blue-100">View submitted applications</p>
-                    </div>
+                            return image ? (
+                              <img
+                                key={application._id || index}
+                                src={image}
+                                alt={applicantName}
+                                className="h-8 w-8 rounded-full border-2 border-white object-cover"
+                              />
+                            ) : (
+                              <span
+                                key={application._id || index}
+                                className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#dbeafe] text-[10px] font-bold text-[#1d4ed8]"
+                              >
+                                {applicantName.charAt(0).toUpperCase()}
+                              </span>
+                            );
+                          })
+                        ) : (
+                          <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-white/20">
+                            <SvgIcon name="users" className="h-4 w-4" />
+                          </span>
+                        )}
+                      </div>
 
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-white transition group-hover:translate-x-0.5">
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold">
+                          {applicants.length} {applicants.length === 1 ? 'Applicant' : 'Applicants'}
+                        </p>
+                        <p className="truncate text-[10px] text-blue-100">View submitted applications</p>
+                      </div>
+
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-white transition group-hover:translate-x-0.5">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </span>
                     </button>
                   </div>
                 )}
               </div>
-            </div>
-          </div>
+            </section>
 
-          <div className="grid grid-cols-1 items-start gap-5">
-            <div className="min-w-0 space-y-5">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <TopMetricCard
-                  icon="money"
-                  title="Salary"
-                  value={formatSalary(job.salaryMin, job.salaryMax)}
-                  isPeso
-                />
-                <TopMetricCard
-                  icon="clock"
-                  title="Experience"
-                  value={job.experienceLevel || 'No experience required'}
-                />
+            <div className="space-y-5">
+              <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <TopMetricCard icon="money" title="Salary" value={formatSalary(job.salaryMin, job.salaryMax)} isPeso />
+                <TopMetricCard icon="clock" title="Experience" value={job.experienceLevel || 'No experience required'} />
                 <TopMetricCard
                   icon="graduation"
                   title="Educational Requirement"
@@ -1167,47 +1124,61 @@ const AdminJobView = () => {
                   value={companyInfo?.companyWebsite || 'N/A'}
                   href={normalizeExternalUrl(companyInfo?.companyWebsite)}
                 />
-              </div>
+              </section>
 
-              <div className={`${UI.sectionCard} overflow-hidden`}>
-                <div className="p-5 sm:p-6">
-                  <SectionHeader icon="file" title="Job Description" />
-                  <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
+              <section className={UI.sectionCard}>
+                <div className={UI.insetBody}>
+                  <div className="flex items-center gap-3 pt-2">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#b9d0ea] bg-[#eef5fc] text-[#2e66a6]">
+                      <SvgIcon name="file" className="h-5 w-5" />
+                    </span>
+                    <h2 className={UI.title}>Job Description</h2>
+                  </div>
+                  <div className="mt-4 text-sm leading-relaxed text-black/70 sm:text-base">
                     <RichTextContent value={job.description} fallback="No job description provided" />
                   </div>
                 </div>
-              </div>
+              </section>
 
-              <div className={`${UI.sectionCard} overflow-hidden`}>
-                <div className="p-5 sm:p-6">
-                  <SectionHeader icon="tools" title="Qualification" />
-                  <div className="mt-4 text-sm leading-7 text-[#4b5563] sm:text-[15px]">
+              <section className={UI.sectionCard}>
+                <div className={UI.insetBody}>
+                  <div className="flex items-center gap-3 pt-2">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#b9d0ea] bg-[#eef5fc] text-[#2e66a6]">
+                      <SvgIcon name="tools" className="h-5 w-5" />
+                    </span>
+                    <h2 className={UI.title}>Qualification</h2>
+                  </div>
+                  <div className="mt-4 text-sm leading-relaxed text-black/70 sm:text-base">
                     <RichTextContent value={job.requirements} fallback="No qualifications specified" />
                   </div>
                 </div>
-              </div>
+              </section>
 
               <section className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-                <div className={`${UI.sectionCard} p-5 sm:p-6`}>
-                  <h3 className={UI.title}>Required Skills</h3>
-                  {requiredSkills.length > 0 ? (
-                    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                      {requiredSkills.map((skill, idx) => (
-                        <div key={`${skill}-${idx}`} className={UI.skillChip}>
-                          {skill}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className={`mt-4 ${UI.muted}`}>No skills specified</p>
-                  )}
+                <div className={UI.sectionCard}>
+                  <div className={UI.insetHead}>
+                    <p className="text-sm font-semibold text-black">Required Skills</p>
+                  </div>
+                  <div className={UI.insetBody}>
+                    {requiredSkills.length > 0 ? (
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {requiredSkills.map((skill, idx) => (
+                          <div key={`${skill}-${idx}`} className={UI.skillChip}>
+                            {skill}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className={UI.muted}>No skills specified</p>
+                    )}
+                  </div>
                 </div>
 
-                <div className={`${UI.sectionCard} overflow-hidden`}>
-                  <div className="px-5 pt-5 sm:px-6 sm:pt-6">
-                    <SectionHeader icon="location" title="Work Location" />
+                <div className={UI.sectionCard}>
+                  <div className={UI.insetHead}>
+                    <p className="text-sm font-semibold text-black">Work Location</p>
                   </div>
-                  <div className="mt-4 overflow-hidden">
+                  <div className="overflow-hidden">
                     {String(job.location || '').trim() || getJobCoordinates(job) ? (
                       <StaticLocationMap job={job} heightClass="h-[180px]" />
                     ) : job.locationImage ? (
@@ -1217,12 +1188,12 @@ const AdminJobView = () => {
                         className="h-[180px] w-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-[180px] items-center justify-center bg-[#eef2f7] text-[#9ca3af]">
-                        <SvgIcon name="location" className="h-8 w-8" />
+                      <div className="flex h-[180px] items-center justify-center bg-black/5 text-black/40">
+                        <SvgIcon name="location" className="h-7 w-7" />
                       </div>
                     )}
                   </div>
-                  <div className="border-t border-[#e5e7eb] px-4 py-3 sm:px-5">
+                  <div className="border-t border-[#e6edf5] px-4 py-3">
                     {buildWorkLocationUrl(job) ? (
                       <a
                         href={buildWorkLocationUrl(job)}
@@ -1234,7 +1205,7 @@ const AdminJobView = () => {
                         {String(job.location || '').trim() || 'Work address not specified'}
                       </a>
                     ) : (
-                      <p className="text-xs text-[#6b7280]">
+                      <p className="text-xs text-black/60">
                         {String(job.location || '').trim() || 'Work address not specified'}
                       </p>
                     )}
@@ -1242,13 +1213,13 @@ const AdminJobView = () => {
                 </div>
               </section>
 
-              <div className={`${UI.sectionCard} overflow-hidden`}>
-                <div className="border-b border-[#e5e7eb] px-5 py-4 sm:px-6">
-                  <h3 className={UI.title}>Perks and Benefits</h3>
+              <section className={UI.sectionCard}>
+                <div className={UI.insetHead}>
+                  <p className="text-sm font-semibold text-black">Perks and Benefits</p>
                 </div>
-                <div className="p-5 sm:p-6">
+                <div className={UI.insetBody}>
                   {perksAndBenefitsList.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                       {perksAndBenefitsList.map((benefit, idx) => (
                         <div key={`${benefit}-${idx}`} className={UI.skillChip}>
                           {benefit}
@@ -1256,13 +1227,12 @@ const AdminJobView = () => {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-[#6b7280]">No perks or benefits specified</p>
+                    <p className={UI.muted}>No perks or benefits specified</p>
                   )}
                 </div>
-              </div>
+              </section>
             </div>
           </div>
-
         </div>
       </div>
     </AdminLayout>
