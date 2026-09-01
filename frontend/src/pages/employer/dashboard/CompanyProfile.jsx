@@ -4121,7 +4121,10 @@ const CompanyProfile = () => {
           <div className="fixed inset-0 z-[10060] bg-black/25 flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-live="polite">
             <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 text-center">
               <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center mb-4" style={{ backgroundColor: '#e8f1ff' }}>
-                <CheckCircleIcon className="h-9 w-9 text-[#2e66a6]" />
+                <svg className="w-10 h-10" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" fill="#2e66a6" />
+                  <path d="M7.5 12.2l3 3 6-6" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </div>
               <div className="text-xl font-bold text-gray-900">Changes Saved!</div>
               <div className="text-sm text-gray-500 mt-2">Your company profile has been updated successfully.</div>
