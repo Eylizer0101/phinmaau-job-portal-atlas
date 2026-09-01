@@ -731,7 +731,7 @@ const AdminEmployerJobEditRequestDetails = () => {
   ];
 
   return <div className={UI.page}>
-    <div className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-1 py-8">
       <div className="relative h-[190px] overflow-hidden rounded-2xl border border-[#e6edf5] bg-[#eef3f8] shadow-[0_8px_24px_rgba(15,23,42,0.06)] sm:h-[215px] lg:h-[235px]">
         <img
           src={assetUrl(employerProfile.coverPhoto, '/images/jobback.png')}
