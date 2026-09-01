@@ -1456,6 +1456,17 @@ const CompanyProfile = () => {
   }, [location.hash]);
 
   useEffect(() => {
+    if (!isEditOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isEditOpen]);
+
+  useEffect(() => {
     if (!isEditOpen) return;
 
     const combinedRegionCity = composeRegionCity(
