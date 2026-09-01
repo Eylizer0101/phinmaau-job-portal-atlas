@@ -163,7 +163,7 @@ const formatDate = (value) => {
 
 const salary = (job) => {
   if (job?.hideSalary) return 'Salary not disclosed';
-  const format = (value) => `₱${Number(value).toLocaleString('en-PH')}`;
+  const format = (value) => Number(value).toLocaleString('en-PH');
   if (Number.isFinite(job?.salaryMin) && Number.isFinite(job?.salaryMax)) return `${format(job.salaryMin)} – ${format(job.salaryMax)}`;
   return Number.isFinite(job?.salaryMin) ? `From ${format(job.salaryMin)}` : Number.isFinite(job?.salaryMax) ? `Up to ${format(job.salaryMax)}` : 'Not specified';
 };
