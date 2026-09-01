@@ -2374,14 +2374,18 @@ const CompanyViewDetails = () => {
             className={
               reviewStep === "privacy"
                 ? "absolute inset-0 flex items-center justify-center px-3 py-3 sm:px-4 sm:py-4"
-                : "absolute inset-0 overflow-y-auto px-4 py-6 sm:py-10"
+                : reviewStep === "confirm" || reviewStep === "success"
+                  ? "absolute inset-0 flex items-center justify-center overflow-y-auto px-4 py-6 sm:py-8"
+                  : "absolute inset-0 overflow-y-auto px-4 py-6 sm:py-10"
             }
           >
             <div
               className={
                 reviewStep === "privacy"
                   ? "relative mx-auto w-full max-w-[860px] overflow-hidden rounded-[22px] border border-gray-200 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.12)]"
-                  : "mx-auto w-full max-w-[760px] rounded-2xl border border-[#dfe6ee] bg-white shadow-2xl"
+                  : reviewStep === "confirm" || reviewStep === "success"
+                    ? "mx-auto w-full max-w-[760px] overflow-hidden rounded-[22px] border border-[#dfe6ee] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.18)]"
+                    : "mx-auto w-full max-w-[760px] rounded-2xl border border-[#dfe6ee] bg-white shadow-2xl"
               }
             >
               {reviewStep === "privacy" && (
@@ -2708,15 +2712,15 @@ const CompanyViewDetails = () => {
                 )}
 
                 {reviewStep === "confirm" && (
-                  <div className="text-center">
-                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf2fb] text-2xl text-[#2e66a6]">✓</div>
-                    <p className="mx-auto mt-5 max-w-[580px] text-sm leading-7 text-black/70">
+                  <div className="flex min-h-[300px] flex-col items-center justify-center py-4 text-center sm:min-h-[320px] sm:py-6">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#eaf2fb] text-[30px] font-light text-[#2e66a6] shadow-[inset_0_0_0_1px_rgba(46,102,166,0.05)]">✓</div>
+                    <p className="mx-auto mt-6 max-w-[590px] text-[14px] leading-7 text-black/70">
                       Before posting, please ensure that your feedback is <strong>accurate, complete, and based on your personal experience.</strong> By clicking <strong>Post Review</strong>, you confirm that the information provided is truthful and will be <strong>visible to other jobseekers.</strong>
                     </p>
-                    {reviewError && <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">{reviewError}</div>}
-                    <div className="mt-7 flex justify-center gap-3">
-                      <button type="button" disabled={reviewSubmitting} onClick={() => setReviewStep("form")} className="h-11 rounded-lg border border-gray-200 px-6 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-50">Go Back</button>
-                      <button type="button" disabled={reviewSubmitting} onClick={handleSubmitReview} className="h-11 rounded-lg bg-[#2e66a6] px-6 text-sm font-semibold text-white hover:bg-[#245387] disabled:cursor-not-allowed disabled:opacity-50">{reviewSubmitting ? "Posting..." : "Post Review"}</button>
+                    {reviewError && <div className="mt-5 w-full max-w-[590px] rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">{reviewError}</div>}
+                    <div className="mt-8 flex flex-wrap justify-center gap-3">
+                      <button type="button" disabled={reviewSubmitting} onClick={() => setReviewStep("form")} className="h-11 min-w-[118px] rounded-xl border border-[#d8e2ee] bg-white px-6 text-sm font-semibold text-gray-800 transition hover:bg-[#f7faff] disabled:opacity-50">Go Back</button>
+                      <button type="button" disabled={reviewSubmitting} onClick={handleSubmitReview} className="h-11 min-w-[132px] rounded-xl bg-[#2e66a6] px-6 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(46,102,166,0.20)] transition hover:bg-[#245387] disabled:cursor-not-allowed disabled:opacity-50">{reviewSubmitting ? "Posting..." : "Post Review"}</button>
                     </div>
                   </div>
                 )}
