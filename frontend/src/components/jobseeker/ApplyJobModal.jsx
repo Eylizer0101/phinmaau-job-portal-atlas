@@ -407,7 +407,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
           aria-labelledby="apply-job-modal-title"
           aria-describedby="apply-job-modal-description"
           className={`relative w-full overflow-hidden rounded-[32px] border border-[#e6edf5] bg-white shadow-[0_24px_70px_rgba(46,102,166,0.18)] ${
-            step === 4 ? 'max-w-[640px]' : 'max-w-[760px]'
+            step === 4 ? 'max-w-[640px]' : step === 3 ? 'max-w-[860px]' : 'max-w-[760px]'
           }`}
         >
           <button
@@ -420,8 +420,14 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
             <IconClose className="w-5 h-5" />
           </button>
 
-          <div className={`${step === 4 ? '' : 'max-h-[90vh] overflow-y-auto'}`}>
-            <div className={`${step === 4 ? 'px-8 sm:px-10 py-14 sm:py-16' : 'px-6 sm:px-10 pt-8 sm:pt-10 pb-8'}`}>
+          <div className={`${step === 4 || step === 3 ? '' : 'max-h-[90vh] overflow-y-auto'}`}>
+            <div className={`${
+              step === 4
+                ? 'px-8 sm:px-10 py-14 sm:py-16'
+                : step === 3
+                ? 'px-5 sm:px-9 lg:px-12 pt-7 sm:pt-8 pb-6 sm:pb-7'
+                : 'px-6 sm:px-10 pt-8 sm:pt-10 pb-8'
+            }`}>
               {profileLoading ? (
                 <div className="min-h-[420px] flex items-center justify-center">
                   <div className="text-center">
@@ -493,17 +499,40 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                   )}
 
                   {step === 3 && (
-                    <div className="max-w-[620px] mx-auto py-4 sm:py-6">
-                      <div>
-                        <div className="mx-auto w-14 h-14 rounded-full bg-[#eaf2fb] flex items-center justify-center text-[#2e66a6]">
-                          <IconLock className="w-7 h-7" />
+                    <div className="relative mx-auto max-w-[760px]">
+                      <div className="pointer-events-none absolute -top-24 left-1/2 h-52 w-52 -translate-x-1/2 rounded-full bg-[#2e66ff]/[0.06] blur-3xl" aria-hidden="true" />
+
+                      <div className="relative">
+                        <div className="-mt-2 flex justify-center sm:-mt-3">
+                          <div className="relative flex h-20 w-20 items-center justify-center sm:h-24 sm:w-24" aria-hidden="true">
+                            <div className="absolute inset-0 rounded-full bg-[#1e4ba0]/[0.06]" />
+                            <div className="absolute inset-2 rounded-full border border-[#1e4ba0]/15" />
+                            <div className="absolute left-2 top-5 h-1.5 w-1.5 rounded-full bg-[#2e66ff]" />
+                            <div className="absolute right-3 top-9 h-1.5 w-1.5 rounded-full bg-[#2e66ff]" />
+                            <div className="absolute right-7 bottom-2 h-1.5 w-1.5 rounded-full bg-[#2e66ff]/70" />
+                            <img
+                              src="/images/lock.png"
+                              alt="Lock"
+                              className="relative h-16 w-16 object-contain sm:h-20 sm:w-20"
+                              draggable="false"
+                            />
+                          </div>
                         </div>
 
-                        <h3 className="mt-4 text-center text-[25px] sm:text-[30px] font-bold tracking-[0.04em] text-black leading-tight">
+                        <h3 className="mt-0 text-center text-[25px] sm:text-[32px] lg:text-[36px] font-extrabold tracking-[0.08em] text-[#071b3a] leading-tight">
                           PRIVACY NOTICE
                         </h3>
 
-                        <div className="mt-5 rounded-[18px] border border-[#d8e2ee] bg-[#f7faff] px-5 sm:px-6 py-5 text-black/70 leading-[1.7] text-[13px] sm:text-[14px] text-left shadow-sm">
+                        <div className="mx-auto mt-3 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
+                          <span className="h-px w-12 bg-gradient-to-r from-transparent to-[#1e4ba0]" />
+                          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4" />
+                          </svg>
+                          <span className="h-px w-12 bg-gradient-to-l from-transparent to-[#1e4ba0]" />
+                        </div>
+
+                        <div className="mt-4 sm:mt-5 rounded-[18px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 sm:px-7 py-4 sm:py-5 text-black/70 leading-[1.65] text-[12px] sm:text-[14px] text-left shadow-[0_10px_30px_rgba(30,75,160,0.08)]">
                           <p className="font-bold text-black/80">
                             After updating your profile and applying to this job, your personal information
                             will be collected and processed for recruitment and hiring purposes.
@@ -525,7 +554,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                           </p>
                         </div>
 
-                        <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-[#d8e2ee] bg-white px-4 py-3 text-[13px] text-black/70">
+                        <label className="mt-4 sm:mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-[#d8e2ee] bg-white px-4 py-3 text-[13px] text-black/70">
                           <input
                             type="checkbox"
                             checked={privacyAccepted}
@@ -544,7 +573,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                           </div>
                         )}
 
-                        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                        <div className="mt-5 sm:mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                           <button
                             type="button"
                             onClick={() => {
