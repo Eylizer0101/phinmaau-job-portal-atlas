@@ -760,15 +760,17 @@ const AdminEmployerJobEditRequestDetails = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-black/20" aria-hidden="true" />
 
-        <div className="absolute left-5 top-5 z-20 sm:left-6 sm:top-6">
-          <button
-            type="button"
-            onClick={() => navigate('/admin/employer-job-edit-requests')}
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-white/70 bg-white/95 px-3 text-sm font-semibold text-black shadow-sm backdrop-blur transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#2e66a6]"
-          >
-            <ArrowLeft size={16} /> Back to Edit Requests
-          </button>
-        </div>
+        {!modalOpen && (
+          <div className="absolute left-5 top-5 z-20 sm:left-6 sm:top-6">
+            <button
+              type="button"
+              onClick={() => navigate('/admin/employer-job-edit-requests')}
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-white/70 bg-white/95 px-3 text-sm font-semibold text-black shadow-sm backdrop-blur transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#2e66a6]"
+            >
+              <ArrowLeft size={16} /> Back to Edit Requests
+            </button>
+          </div>
+        )}
       </div>
     </div>
 
