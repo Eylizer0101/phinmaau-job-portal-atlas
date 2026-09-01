@@ -395,7 +395,7 @@ const DateFilterDropdown = ({ value, dateFrom, dateTo, onChange }) => {
           event.stopPropagation();
           setOpen((prev) => !prev);
         }}
-        className="flex h-11 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+        className="flex h-12 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:border-[#2e66a6]/40 hover:bg-slate-50 focus:outline-none focus-visible:border-[#2e66a6] focus-visible:ring-4 focus-visible:ring-[#2e66a6]/10"
       >
         <span className="truncate">{getDateFilterLabel(value, dateFrom, dateTo)}</span>
         <Icon name="calendar" className="h-4 w-4 text-gray-500" />
@@ -576,17 +576,17 @@ const AdminJobOffers = () => {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gray-50 px-0 py-8">
-        <div className="mx-auto w-full max-w-7xl space-y-5 px-1">
+      <div className="min-h-screen bg-slate-50/70 px-0 py-7 sm:py-8">
+        <div className="mx-auto w-full max-w-[1480px] space-y-6 px-1">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-[-0.02em] text-black">Job Offers</h1>
-              <p className="mt-1 text-sm text-gray-600">View, filter, and review all posted job opportunities.</p>
+              <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.02em] text-slate-950 sm:text-[34px]">Job Offers</h1>
+              <p className="mt-1.5 text-sm text-slate-600">View, filter, and review all posted job opportunities.</p>
             </div>
           </div>
 
-          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(240px,1.4fr)_repeat(4,minmax(135px,0.75fr))_minmax(190px,1fr)_auto] xl:items-end">
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_28px_rgba(15,23,42,0.06)] sm:p-5">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-[minmax(280px,1.5fr)_repeat(4,minmax(145px,0.8fr))_minmax(190px,1fr)_auto] 2xl:items-end">
               <label className="relative block">
                 <span className="sr-only">Search job offers</span>
                 <Icon name="search" className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
@@ -594,7 +594,7 @@ const AdminJobOffers = () => {
                   value={filters.search}
                   onChange={(e) => updateFilter('search', e.target.value)}
                   placeholder="Search company, job title..."
-                  className="h-12 w-full rounded-xl border border-gray-200 bg-white pl-12 pr-4 text-sm text-black outline-none transition placeholder:text-gray-400 hover:border-gray-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                  className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 text-sm text-slate-900 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-[#2e66a6]/40 focus:border-[#2e66a6] focus:ring-4 focus:ring-[#2e66a6]/10"
                 />
               </label>
 
@@ -614,7 +614,7 @@ const AdminJobOffers = () => {
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                  className="inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#2e66a6]/30 bg-[#2e66a6]/5 px-5 text-sm font-semibold text-[#24558d] transition-all duration-200 hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 md:col-span-2 2xl:col-span-1"
                 >
                   <Icon name="refresh" /> Clear All
                 </button>
@@ -622,19 +622,29 @@ const AdminJobOffers = () => {
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="w-full min-w-[1060px] table-fixed divide-y divide-slate-200">
+                <colgroup>
+                  <col className="w-[11%]" />
+                  <col className="w-[25%]" />
+                  <col className="w-[20%]" />
+                  <col className="w-[8%]" />
+                  <col className="w-[9%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[7%]" />
+                </colgroup>
+                <thead className="bg-[#2e66a6]/[0.055]">
                   <tr>
                     {['Date Posted', 'Company', 'Job Title', 'Vacancy', 'Applicant', 'Status', 'Valid Until', 'Actions'].map((header) => (
-                      <th key={header} className="whitespace-nowrap px-6 py-4 text-left text-[11px] font-bold uppercase tracking-[0.14em] text-gray-500">
+                      <th key={header} className={cn('whitespace-nowrap px-4 py-4 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-slate-600', header === 'Actions' ? 'text-center' : '')}>
                         {header}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 bg-white">
+                <tbody className="divide-y divide-slate-100 bg-white">
                   {loading ? (
                     <tr>
                       <td colSpan="8" className="px-6 py-12 text-center text-sm text-gray-500">
@@ -675,10 +685,10 @@ const AdminJobOffers = () => {
                               navigate(`/admin/jobs/${job._id}`, { state: { backPath: '/admin/job-offers', backLabel: 'Job Offers' } });
                             }
                           }}
-                          className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
+                          className="group cursor-pointer transition-all duration-200 hover:bg-[#2e66a6]/[0.055] focus:bg-[#2e66a6]/[0.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
                         >
-                          <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">{formatDate(job.createdAt)}</td>
-                          <td className="px-6 py-4">
+                          <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-600">{formatDate(job.createdAt)}</td>
+                          <td className="px-4 py-4">
                             <div className="flex items-center gap-3">
                               <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#2e66a6]/15 bg-[#2e66a6]/10 text-[#2e66a6]">
                                 {job.companyLogo ? (
@@ -688,28 +698,28 @@ const AdminJobOffers = () => {
                                 )}
                               </div>
                               <div className="min-w-0">
-                                <p className="whitespace-nowrap text-sm font-bold text-black">{job.companyName || 'N/A'}</p>
-                                <p className="whitespace-nowrap text-xs text-gray-500">{job.category || 'N/A'}</p>
+                                <p className="truncate text-sm font-bold text-slate-950" title={job.companyName || 'N/A'}>{job.companyName || 'N/A'}</p>
+                                <p className="truncate text-xs text-slate-500" title={job.category || 'N/A'}>{job.category || 'N/A'}</p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <p className="whitespace-nowrap text-sm font-bold text-black">{job.title || 'N/A'}</p>
-                            <p className="whitespace-nowrap text-xs text-gray-500">{[job.jobType, job.workMode].filter(Boolean).join(' • ') || 'N/A'}</p>
+                          <td className="px-4 py-4">
+                            <p className="truncate text-sm font-bold text-slate-950" title={job.title || 'N/A'}>{job.title || 'N/A'}</p>
+                            <p className="truncate text-xs text-slate-500">{[job.jobType, job.workMode].filter(Boolean).join(' • ') || 'N/A'}</p>
                           </td>
-                          <td className="whitespace-nowrap px-6 py-4 text-center text-sm font-semibold text-black">{job.vacancies ?? 0}</td>
-                          <td className="whitespace-nowrap px-6 py-4 text-center text-sm font-semibold text-black">{job.applicantCount || 0}</td>
-                          <td className="whitespace-nowrap px-6 py-4">
+                          <td className="whitespace-nowrap px-4 py-4 text-center text-sm font-semibold text-slate-900">{job.vacancies ?? 0}</td>
+                          <td className="whitespace-nowrap px-4 py-4 text-center text-sm font-semibold text-slate-900">{job.applicantCount || 0}</td>
+                          <td className="whitespace-nowrap px-4 py-4">
                             <span className={cn('inline-flex rounded-full border px-3 py-1 text-[11px] font-bold uppercase', status.className)}>
                               {status.label}
                             </span>
                           </td>
-                          <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">{formatDate(job.applicationDeadline)}</td>
-                          <td className="whitespace-nowrap px-6 py-4 text-center">
+                          <td className="whitespace-nowrap px-4 py-4 text-sm text-slate-600">{formatDate(job.applicationDeadline)}</td>
+                          <td className="whitespace-nowrap px-4 py-4 text-center">
                             <button
                               type="button"
                               onClick={() => navigate(`/admin/jobs/${job._id}`, { state: { backPath: '/admin/job-offers', backLabel: 'Job Offers' } })}
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-gray-500 transition hover:bg-[#eef5fc] hover:text-[#2e66a6] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-transparent text-slate-500 transition-all duration-200 group-hover:border-[#2e66a6]/15 group-hover:bg-white group-hover:text-[#2e66a6] group-hover:shadow-sm hover:!border-[#2e66a6]/25 hover:!bg-[#2e66a6] hover:!text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                               title="View job offer"
                               aria-label="View job offer"
                             >
@@ -744,7 +754,7 @@ const Select = ({ value, onChange, options }) => (
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="h-12 w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 pr-10 text-sm font-semibold text-gray-700 outline-none transition hover:border-gray-300 focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+      className="h-12 w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 pr-10 text-sm font-semibold text-slate-700 shadow-sm outline-none transition-all duration-200 hover:border-[#2e66a6]/40 focus:border-[#2e66a6] focus:ring-4 focus:ring-[#2e66a6]/10"
     >
       {options.map((option) => <option key={option} value={option}>{option}</option>)}
     </select>
