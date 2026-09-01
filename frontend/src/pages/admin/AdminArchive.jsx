@@ -692,15 +692,15 @@ const AdminArchive = () => {
 
   return (
     <AdminLayout>
-      <main className="mx-auto w-full max-w-[1280px] px-1 py-8">
+      <main className="mx-auto w-full max-w-[1480px] px-1 py-7 sm:py-8">
         <header className="mb-5">
-          <h1 className="text-2xl font-bold tracking-[-0.02em] text-black sm:text-3xl">Archived</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-[30px] font-semibold leading-tight tracking-[-0.02em] text-slate-950 sm:text-[34px]">Archived</h1>
+          <p className="mt-1.5 text-sm text-slate-600">
             Manage archived jobseekers, employers, posts, comments, and inactive accounts.
           </p>
         </header>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
           <div className={filterGridClass}>
             <label className="relative block">
               <span className="sr-only">Search archived records</span>
@@ -813,12 +813,12 @@ const AdminArchive = () => {
           </p>
         </section>
 
-        <section className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <div className={isJobseekerView || isEmployerView ? "min-w-[1080px]" : "min-w-[900px]"}>
+        <section className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
+          <div className="max-w-full overflow-x-auto lg:overflow-x-hidden">
+            <div className={isJobseekerView || isEmployerView ? "min-w-[960px] lg:min-w-0" : "min-w-[820px] lg:min-w-0"}>
               <div
                 className={cn(
-                  "grid gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600",
+                  "grid gap-4 border-b border-slate-200 bg-[#2e66a6]/[0.055] px-5 py-4 text-[11px] font-bold uppercase tracking-wide text-slate-600",
                   tableGridClass
                 )}
               >
@@ -929,7 +929,7 @@ const AdminArchive = () => {
                             event.stopPropagation();
                             navigate(`/admin/archive/account/${entry.accountId}`);
                           }}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-[#212C61]/40 hover:bg-[#212C61]/5 hover:text-[#212C61] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#212C61]/30"
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15"
                           aria-label={`Open archived records of ${name}`}
                           title="View archive details"
                         >
