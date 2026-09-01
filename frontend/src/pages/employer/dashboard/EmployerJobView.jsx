@@ -568,7 +568,7 @@ const CompanyLogo = ({ src, name }) => {
 const TopMetricCard = ({ icon, title, value, isPeso = false, href = '' }) => (
   <div className={UI.metricCard}>
     <div className="flex items-start gap-3">
-      <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl border border-[#d8e2ee] bg-[#f8fafc] text-black/55">
+      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[#d9dbe3] bg-[#f9fafb] text-[#6b7280]">
         {isPeso ? <span className="text-sm font-bold">₱</span> : <SvgIcon name={icon} className="h-4 w-4" />}
       </div>
 
@@ -891,29 +891,18 @@ const EmployerJobView = () => {
     isRelocationMissing;
 
   const regularDetailChipClass =
-    'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1.5 text-xs font-semibold text-black/80';
+    'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[#d9dbe3] bg-white px-3 py-1 text-xs font-medium text-[#374151]';
   const compactPlaceholderChipClass =
-    'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#d8e2ee] bg-[#f7faff] px-2.5 py-1 text-[10px] font-semibold text-black/75';
+    'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#d9dbe3] bg-white px-2 py-1 text-[10px] font-medium text-[#374151]';
   const regularRelocationChipClass =
-    'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1.5 text-xs font-semibold text-black/80';
+    'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[#d9dbe3] bg-[#f3f4f6] px-3 py-1 text-xs font-medium text-[#374151]';
   const compactRelocationChipClass =
-    'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#d8e2ee] bg-[#f7faff] px-2.5 py-1 text-[10px] font-semibold text-black/75';
+    'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#d9dbe3] bg-[#f3f4f6] px-2 py-1 text-[10px] font-medium text-[#374151]';
 
   return (
     <EmployerLayout>
       <div className={UI.page}>
         <div className={UI.container}>
-          <div className="mb-4">
-            <button
-              onClick={handleBack}
-              className={`inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-3 text-sm font-semibold text-black shadow-sm transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] ${UI.ring}`}
-              type="button"
-            >
-              <SvgIcon name="arrowLeft" className="h-4 w-4" />
-              {`Back to ${backLabel}`}
-            </button>
-          </div>
-
           <div className="relative h-[190px] overflow-hidden rounded-2xl border border-[#e6edf5] bg-[#eef3f8] shadow-[0_8px_24px_rgba(15,23,42,0.06)] sm:h-[215px] lg:h-[235px]">
             <img
               src={resolveAssetUrl(job?.employerDetails?.coverPhoto) || '/images/jobback.png'}
@@ -925,6 +914,12 @@ const EmployerJobView = () => {
               }}
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-black/20" aria-hidden="true" />
+            <div className="absolute left-5 top-5 z-20 sm:left-6 sm:top-6">
+              <button onClick={handleBack} className={`inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-white/70 bg-white/95 px-3 text-sm font-semibold text-black shadow-sm backdrop-blur transition hover:bg-white ${UI.ring}`} type="button">
+                <SvgIcon name="arrowLeft" className="h-4 w-4" />
+                {`Back to ${backLabel}`}
+              </button>
+            </div>
           </div>
 
           {showSuccessIndicator && (
@@ -936,7 +931,7 @@ const EmployerJobView = () => {
           )}
 
           <div className="-mt-10 sm:-mt-12 relative z-10">
-            <section className={`${UI.card} mb-6 min-h-[210px] p-5 sm:min-h-[225px] sm:p-7 lg:min-h-[240px] lg:p-8 flex items-center shadow-[0_10px_28px_rgba(15,23,42,0.07)]`}>
+            <section className={`${UI.card} mb-6 min-h-[210px] p-5 sm:min-h-[225px] sm:p-7 lg:min-h-[240px] lg:p-8 flex items-center`}>
               <div className="flex w-full flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex min-w-0 flex-1 items-start gap-4">
                   <CompanyLogo src={job.companyLogo} name={companyName} />
@@ -982,13 +977,13 @@ const EmployerJobView = () => {
                 <TopMetricCard icon="globe" title="Website / Company URL" value={companyInfo?.companyWebsite || 'N/A'} href={normalizeExternalUrl(companyInfo?.companyWebsite)} />
               </section>
 
-              <section className={UI.sectionCard}><div className={UI.insetBody}><div className="flex items-center gap-3 pt-2"><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#b9d0ea] bg-[#eef5fc] text-[#2e66a6] shadow-[0_3px_10px_rgba(46,102,166,0.08)]"><SvgIcon name="file" className="h-5 w-5" /></span><h2 className={UI.title}>Job Description</h2></div><div className="mt-4 text-sm leading-relaxed text-black/70 sm:text-base"><RichTextContent value={job.description} fallback="No job description provided" /></div></div></section>
+              <section className={UI.sectionCard}><div className={UI.insetBody}><div className="flex items-center gap-3 pt-2"><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#b9d0ea] bg-[#eef5fc] text-[#2e66a6]"><SvgIcon name="file" className="h-5 w-5" /></span><h2 className={UI.title}>Job Description</h2></div><div className="mt-4 text-sm leading-relaxed text-black/70 sm:text-base"><RichTextContent value={job.description} fallback="No job description provided" /></div></div></section>
 
-              <section className={UI.sectionCard}><div className={UI.insetBody}><div className="flex items-center gap-3 pt-2"><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#b9d0ea] bg-[#eef5fc] text-[#2e66a6] shadow-[0_3px_10px_rgba(46,102,166,0.08)]"><SvgIcon name="tools" className="h-5 w-5" /></span><h2 className={UI.title}>Qualification</h2></div><div className="mt-4 text-sm leading-relaxed text-black/70 sm:text-base"><RichTextContent value={job.requirements} fallback="No qualifications specified" /></div></div></section>
+              <section className={UI.sectionCard}><div className={UI.insetBody}><div className="flex items-center gap-3 pt-2"><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#b9d0ea] bg-[#eef5fc] text-[#2e66a6]"><SvgIcon name="tools" className="h-5 w-5" /></span><h2 className={UI.title}>Qualification</h2></div><div className="mt-4 text-sm leading-relaxed text-black/70 sm:text-base"><RichTextContent value={job.requirements} fallback="No qualifications specified" /></div></div></section>
 
               <section className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
                 <div className={UI.sectionCard}><div className={UI.insetHead}><p className="text-sm font-semibold text-black">Required Skills</p></div><div className={UI.insetBody}>{requiredSkills.length > 0 ? (<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">{requiredSkills.map((skill, idx) => (<div key={`${skill}-${idx}`} className={UI.skillChip}>{skill}</div>))}</div>) : (<p className={UI.muted}>No skills specified</p>)}</div></div>
-                <div className={UI.sectionCard}><div className={UI.insetHead}><p className="text-sm font-semibold text-black">Work Location</p></div><div className="overflow-hidden">{getJobCoordinates(job) ? (<StaticLocationMap job={job} heightClass="h-[180px]" />) : job.locationImage ? (<img src={`https://phinmaau-job-portal-atlas.onrender.com${job.locationImage}`} alt="Work location" className="h-[180px] w-full object-cover" />) : (<div className="flex h-[180px] items-center justify-center bg-[#f8fafc] text-black/35"><SvgIcon name="location" className="h-8 w-8" /></div>)}</div><div className="border-t border-[#e6edf5] px-4 py-3">{buildWorkLocationUrl(job) ? (<a href={buildWorkLocationUrl(job)} target="_blank" rel="noopener noreferrer" className={`rounded text-xs font-medium text-[#2e66a6] hover:underline ${UI.ring}`} title="Open work location in OpenStreetMap">{String(job.location || '').trim() || 'Work address not specified'}</a>) : (<p className="text-xs text-black/60">{String(job.location || '').trim() || 'Work address not specified'}</p>)}</div></div>
+                <div className={UI.sectionCard}><div className={UI.insetHead}><p className="text-sm font-semibold text-black">Work Location</p></div><div className="overflow-hidden">{getJobCoordinates(job) ? (<StaticLocationMap job={job} heightClass="h-[180px]" />) : job.locationImage ? (<img src={`https://phinmaau-job-portal-atlas.onrender.com${job.locationImage}`} alt="Work location" className="h-[180px] w-full object-cover" />) : (<div className="flex h-[180px] items-center justify-center bg-[#eef2f7] text-[#9ca3af]"><SvgIcon name="location" className="h-8 w-8" /></div>)}</div><div className="border-t border-[#e6edf5] px-4 py-3">{buildWorkLocationUrl(job) ? (<a href={buildWorkLocationUrl(job)} target="_blank" rel="noopener noreferrer" className={`rounded text-xs font-medium text-[#2e66a6] hover:underline ${UI.ring}`} title="Open work location in OpenStreetMap">{String(job.location || '').trim() || 'Work address not specified'}</a>) : (<p className="text-xs text-black/60">{String(job.location || '').trim() || 'Work address not specified'}</p>)}</div></div>
               </section>
 
               <section className={UI.sectionCard}><div className={UI.insetHead}><p className="text-sm font-semibold text-black">Perks and Benefits</p></div><div className={UI.insetBody}>{perksAndBenefitsList.length > 0 ? (<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">{perksAndBenefitsList.map((benefit, idx) => (<div key={`${benefit}-${idx}`} className={UI.skillChip}>{benefit}</div>))}</div>) : (<p className={UI.muted}>No perks or benefits specified</p>)}</div></section>
