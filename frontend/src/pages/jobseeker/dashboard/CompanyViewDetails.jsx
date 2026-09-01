@@ -2370,8 +2370,29 @@ const CompanyViewDetails = () => {
             aria-hidden="true"
           />
 
-          <div className="absolute inset-0 overflow-y-auto px-4 py-6 sm:py-10">
-            <div className="mx-auto w-full max-w-[760px] rounded-2xl border border-[#dfe6ee] bg-white shadow-2xl">
+          <div
+            className={
+              reviewStep === "privacy"
+                ? "absolute inset-0 flex items-center justify-center px-3 py-3 sm:px-4 sm:py-4"
+                : "absolute inset-0 overflow-y-auto px-4 py-6 sm:py-10"
+            }
+          >
+            <div
+              className={
+                reviewStep === "privacy"
+                  ? "relative mx-auto w-full max-w-[860px] overflow-hidden rounded-[22px] border border-gray-200 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.12)]"
+                  : "mx-auto w-full max-w-[760px] rounded-2xl border border-[#dfe6ee] bg-white shadow-2xl"
+              }
+            >
+              {reviewStep === "privacy" && (
+                <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+                  <div className="absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-[#2e66ff]/[0.07] blur-3xl" />
+                  <div className="absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-[#56b5dc]/[0.12] blur-3xl" />
+                  <div className="absolute -bottom-24 -right-20 h-56 w-56 rounded-full bg-[#1e4ba0]/[0.10] blur-3xl" />
+                </div>
+              )}
+
+              {reviewStep !== "privacy" && (
               <div className="flex items-start justify-between gap-4 border-b border-[#e7edf3] px-5 py-5 sm:px-7">
                 <div>
                   <h3 className="text-[22px] font-bold text-[#172033]">
@@ -2401,27 +2422,100 @@ const CompanyViewDetails = () => {
                   <span className="text-2xl leading-none text-gray-600">×</span>
                 </button>
               </div>
+              )}
 
-              <div className="px-5 py-6 sm:px-7">
+              <div
+                className={
+                  reviewStep === "privacy"
+                    ? "relative z-10 px-5 pb-5 pt-4 sm:px-9 sm:pb-7 sm:pt-5 lg:px-12"
+                    : "px-5 py-6 sm:px-7"
+                }
+              >
                 {reviewStep === "privacy" && (
                   <div>
-                    <div className="rounded-2xl border border-[#d8e2ee] bg-[#f7faff] p-5 text-sm leading-7 text-black/70">
-                      <p className="font-semibold text-black/80">Before submitting your rating, please review the following:</p>
-                      <p className="mt-3">Your rating and review will help other jobseekers understand what to expect from a company’s hiring process. By submitting, you confirm that the information you provide is <strong>based on your personal experience and is accurate to the best of your knowledge.</strong></p>
-                      <p className="mt-3">Your <strong>company, role applied for, hiring timeline, application rating, outcome, and review</strong> may be displayed to other AGAPAY users. Your name may also be displayed with your review if you choose to provide it.</p>
-                      <p className="mt-3">Please do not include <strong>personal, confidential, or sensitive information</strong> about yourself, the company, employees, recruiters, or other applicants in your review.</p>
-                      <p className="mt-3">Your rating is intended to share your <strong>hiring experience</strong>, not to disclose confidential company information or personally identify individuals.</p>
-                      <p className="mt-3">By continuing, you acknowledge that your submission may be reviewed by <strong>AGAPAY</strong> and displayed on the platform in accordance with these guidelines.</p>
+                    <button
+                      onClick={closeReviewModal}
+                      className="absolute right-4 top-4 h-10 w-10 rounded-full border border-slate-200 bg-white/90 text-[#0f2442] shadow-sm hover:bg-slate-50 flex items-center justify-center transition focus:outline-none focus:ring-2 focus:ring-offset-2 sm:right-6 sm:top-5"
+                      style={{ "--tw-ring-color": "#1e4ba0" }}
+                      aria-label="Close"
+                      title="Close"
+                      disabled={reviewSubmitting}
+                      type="button"
+                    >
+                      <span className="text-2xl leading-none" aria-hidden="true">×</span>
+                    </button>
+
+                    <div className="-mt-1 flex justify-center sm:-mt-2">
+                      <div className="relative flex h-20 w-20 items-center justify-center sm:h-24 sm:w-24" aria-hidden="true">
+                        <div className="absolute inset-0 rounded-full bg-[#1e4ba0]/[0.06]" />
+                        <div className="absolute inset-2 rounded-full border border-[#1e4ba0]/15" />
+                        <div className="absolute left-2 top-5 h-1.5 w-1.5 rounded-full bg-[#2e66ff]" />
+                        <div className="absolute right-3 top-9 h-1.5 w-1.5 rounded-full bg-[#2e66ff]" />
+                        <div className="absolute right-7 bottom-2 h-1.5 w-1.5 rounded-full bg-[#2e66ff]/70" />
+                        <img
+                          src="/images/lock.png"
+                          alt="Lock"
+                          className="relative h-16 w-16 object-contain sm:h-20 sm:w-20"
+                          draggable="false"
+                        />
+                      </div>
                     </div>
 
-                    <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-[#d8e2ee] px-4 py-3 text-sm text-black/75">
-                      <input type="checkbox" checked={reviewAgreementAccepted} onChange={(event) => setReviewAgreementAccepted(event.target.checked)} className="mt-0.5 h-4 w-4 accent-[#2e66a6]" />
-                      <span>I understand and agree to the Privacy Notice &amp; Rating Agreement.</span>
+                    <h3
+                      className="mt-0 text-center font-extrabold text-[#071b3a] text-[22px] sm:text-[28px] lg:text-[32px] leading-tight"
+                      style={{ letterSpacing: "0.06em" }}
+                    >
+                      PRIVACY NOTICE &amp; RATING AGREEMENT
+                    </h3>
+
+                    <div className="mx-auto mt-3 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
+                      <span className="h-px w-12 bg-gradient-to-r from-transparent to-[#1e4ba0]" />
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4" />
+                      </svg>
+                      <span className="h-px w-12 bg-gradient-to-l from-transparent to-[#1e4ba0]" />
+                    </div>
+
+                    <div className="mt-4 sm:mt-5 mx-auto max-w-[760px] rounded-[18px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 py-4 shadow-[0_10px_30px_rgba(30,75,160,0.08)] sm:px-7 sm:py-5">
+                      <div className="text-[12px] sm:text-[13px] text-[#0f2442] leading-5 sm:leading-[1.45rem]">
+                        <p className="font-semibold">Before submitting your rating, please review the following:</p>
+                        <p className="mt-2">Your rating and review will help other jobseekers understand what to expect from a company’s hiring process. By submitting, you confirm that the information you provide is <strong>based on your personal experience and is accurate to the best of your knowledge.</strong></p>
+                        <p className="mt-2">Your <strong>company, role applied for, hiring timeline, application rating, outcome, and review</strong> may be displayed to other AGAPAY users. Your name may also be displayed with your review if you choose to provide it.</p>
+                        <p className="mt-2">Please do not include <strong>personal, confidential, or sensitive information</strong> about yourself, the company, employees, recruiters, or other applicants in your review.</p>
+                        <p className="mt-2">Your rating is intended to share your <strong>hiring experience</strong>, not to disclose confidential company information or personally identify individuals.</p>
+                        <p className="mt-2">By continuing, you acknowledge that your submission may be reviewed by <strong>AGAPAY</strong> and displayed on the platform in accordance with these guidelines.</p>
+                      </div>
+                    </div>
+
+                    <label className="mt-4 sm:mt-5 mx-auto flex max-w-[760px] cursor-pointer items-start gap-3 rounded-xl border border-[#d8e2ee] bg-white/80 px-4 py-3 text-sm text-[#0f2442] select-none">
+                      <input
+                        type="checkbox"
+                        checked={reviewAgreementAccepted}
+                        onChange={(event) => setReviewAgreementAccepted(event.target.checked)}
+                        className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 focus:ring-2 focus:ring-offset-2"
+                        style={{ accentColor: "#1e4ba0", "--tw-ring-color": "#1e4ba0" }}
+                      />
+                      <span className="leading-5">I understand and agree to the Privacy Notice &amp; Rating Agreement.</span>
                     </label>
 
-                    <div className="mt-6 flex justify-end gap-3">
-                      <button type="button" onClick={closeReviewModal} className="h-11 rounded-lg border border-gray-200 px-6 text-sm font-semibold text-gray-800 hover:bg-gray-50">Back</button>
-                      <button type="button" disabled={!reviewAgreementAccepted} onClick={() => setReviewStep("form")} className="h-11 rounded-lg bg-[#2e66a6] px-6 text-sm font-semibold text-white hover:bg-[#245387] disabled:cursor-not-allowed disabled:opacity-50">Continue to Rate</button>
+                    <div className="mt-4 sm:mt-5 flex justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={closeReviewModal}
+                        className="h-11 min-w-[120px] rounded-xl border border-[#d8e2ee] bg-white px-6 text-sm font-semibold text-[#0f2442] transition hover:bg-slate-50"
+                      >
+                        Back
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!reviewAgreementAccepted}
+                        onClick={() => setReviewStep("form")}
+                        className="h-11 min-w-[190px] rounded-xl px-6 text-sm font-bold text-white transition shadow-[0_10px_22px_rgba(30,75,160,0.25)] disabled:cursor-not-allowed"
+                        style={{ backgroundColor: reviewAgreementAccepted ? "#1e4ba0" : "#93a6c9" }}
+                      >
+                        Continue to Rate
+                      </button>
                     </div>
                   </div>
                 )}
