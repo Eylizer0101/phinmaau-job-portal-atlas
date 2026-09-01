@@ -927,7 +927,7 @@ const AdminEmployerJobEditRequestDetails = () => {
 
       {modalOpen && (
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 p-4"
+          className="fixed inset-y-0 right-0 left-0 z-[9999] flex items-center justify-center bg-black/75 p-4 lg:left-[292px]"
           role="dialog"
           aria-modal="true"
           aria-label="Review edit request"
