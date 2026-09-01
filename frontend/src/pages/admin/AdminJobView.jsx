@@ -179,20 +179,20 @@ const normalizeExternalUrl = (value = '') => {
 };
 
 const UI = {
-  page: 'min-h-screen bg-[#f8fafc]',
+  page: 'min-h-screen bg-transparent',
   container: 'mx-auto max-w-7xl px-1 py-8',
-  card: 'w-full rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]',
-  sectionCard: 'w-full rounded-xl border border-[#e5e7eb] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]',
+  card: 'w-full rounded-2xl border border-[#e6edf5] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]',
+  sectionCard: 'w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]',
   metricCard: 'h-full min-h-[96px] rounded-xl border border-[#d9e2ec] bg-white px-4 py-4 shadow-[0_4px_14px_rgba(15,23,42,0.08)]',
-  label: 'text-[11px] font-semibold uppercase tracking-[0.03em] text-[#6b7280]',
-  value: 'mt-1.5 text-[15px] font-semibold leading-6 text-[#111827]',
-  title: 'text-[15px] font-semibold text-[#111827]',
+  label: 'text-sm font-semibold text-black',
+  value: 'mt-1 text-[15px] leading-6 text-black',
+  title: 'text-base font-bold text-black',
   body: 'text-sm leading-7 text-[#4b5563]',
-  muted: 'text-sm text-[#6b7280]',
+  muted: 'text-sm text-black/60',
   chip:
-    'inline-flex items-center gap-2 rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#2e66a6]',
+    'inline-flex items-center gap-2 rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1.5 text-xs font-semibold text-black/80',
   skillChip:
-    'rounded-xl border border-[#d7e6f5] bg-[#f8fafc] px-3 py-2 text-xs font-medium text-[#374151]',
+    'rounded-xl border border-[#d9e2ec] bg-white px-4 py-3 text-sm text-black/75',
   ring:
     'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 focus-visible:ring-offset-white',
 };
@@ -932,31 +932,20 @@ const AdminJobView = () => {
     isRelocationMissing;
 
   const regularDetailChipClass =
-    'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#2e66a6]';
+    'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1.5 text-xs font-semibold text-black/80';
   const compactPlaceholderChipClass =
-    'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-2 py-1 text-[10px] font-semibold text-[#2e66a6]';
+    'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#d8e2ee] bg-[#f7faff] px-2 py-1 text-[10px] font-semibold text-black/70';
   const regularRelocationChipClass =
-    'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-3 py-1 text-xs font-semibold text-[#2e66a6]';
+    'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1.5 text-xs font-semibold text-black/80';
   const compactRelocationChipClass =
-    'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#d7e6f5] bg-[#eef5fc] px-2 py-1 text-[10px] font-semibold text-[#2e66a6]';
+    'inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#d8e2ee] bg-[#f7faff] px-2 py-1 text-[10px] font-semibold text-black/70';
 
   return (
     <AdminLayout>
       <div className={UI.page}>
         <div className={UI.container}>
           <div className="mb-5">
-            <button
-              onClick={handleBack}
-              className={`inline-flex items-center justify-center gap-2 rounded-lg border border-[#d7e6f5] bg-white px-4 py-2 text-sm font-semibold text-[#111827] hover:bg-[#eef5fc] hover:text-[#2e66a6] ${UI.ring}`}
-              type="button"
-            >
-              <SvgIcon name="arrowLeft" className="h-4 w-4" />
-              {backLabel}
-            </button>
-          </div>
-
-          <div className={`${UI.card} mb-5 overflow-hidden`}>
-            <div className="relative h-44 w-full overflow-hidden sm:h-56 lg:h-64">
+            <div className="relative h-[190px] w-full overflow-hidden rounded-2xl border border-[#e6edf5] bg-[#eef3f8] shadow-[0_8px_24px_rgba(15,23,42,0.06)] sm:h-[215px] lg:h-[235px]">
               <img
                 src={assetUrl(companyInfo?.coverPhoto, '/images/jobback.png')}
                 alt={`${job.companyName || 'Company'} cover`}
@@ -966,27 +955,37 @@ const AdminJobView = () => {
                   event.currentTarget.src = '/images/jobback.png';
                 }}
               />
-              <div className="absolute inset-0 bg-black/10" />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-black/20" />
+              <div className="absolute left-5 top-5 z-20 sm:left-6 sm:top-6">
+                <button
+                  onClick={handleBack}
+                  className={`inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-white/70 bg-white/95 px-3 text-sm font-semibold text-black shadow-sm backdrop-blur transition hover:bg-white ${UI.ring}`}
+                  type="button"
+                >
+                  <SvgIcon name="arrowLeft" className="h-4 w-4" />
+                  {backLabel}
+                </button>
+              </div>
             </div>
 
-            <div className="px-5 pb-5 pt-4 sm:px-6">
+            <div className={`${UI.card} relative z-10 -mt-10 px-5 pb-6 pt-6 sm:px-7 lg:px-8`}>
               <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex min-w-0 flex-1 items-start gap-4">
                   <CompanyLogo src={job.companyLogo} name={job.companyName} />
 
                   <div className="min-w-0 flex-1">
-                    <h1 className="text-[28px] font-bold leading-tight text-[#111827] sm:text-[32px]" title={job.title}>
+                    <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-black sm:text-4xl" title={job.title}>
                       {job.title}
                     </h1>
 
-                    <div className="mt-2 flex items-center gap-2 text-[#4b5563]">
+                    <div className="mt-2 flex items-center gap-2 text-sm text-black/70">
                       <BuildingIcon className="h-4 w-4" />
                       <span className="text-sm font-medium">
                         {String(job.companyName || companyInfo?.companyName || '').trim() || 'Company not specified'}
                       </span>
                     </div>
 
-                    <div className="mt-2 flex items-center gap-2 text-[#6b7280]">
+                    <div className="mt-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-black/50">
                       <SvgIcon name="location" className="h-4 w-4" />
                       <span className={isLocationMissing ? 'text-[11px]' : 'text-sm'}>
                         {formatLocationDisplay(job.location)}
@@ -1057,7 +1056,7 @@ const AdminJobView = () => {
                       </span>
                     </div>
 
-                    <div className="mt-3 text-xs text-[#6b7280]">
+                    <div className="mt-4 text-sm text-black/80">
                       <p>
                         {formatPostedRelative(job.createdAt)}
                         {job.applicationDeadline
