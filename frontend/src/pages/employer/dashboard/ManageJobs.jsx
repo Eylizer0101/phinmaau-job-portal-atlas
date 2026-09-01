@@ -2285,7 +2285,7 @@ const ManageJobs = () => {
                 <div
                   className={cn(
                     'mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full text-white',
-                    success.type === 'draft' ? 'bg-amber-500' : 'bg-[#2e66a6]'
+                    'bg-[#2e66a6]'
                   )}
                 >
                   <svg className="h-10 w-10" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
