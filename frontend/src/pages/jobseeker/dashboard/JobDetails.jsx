@@ -901,11 +901,7 @@ const JobDetails = () => {
   }, []);
 
   const isJobActive = useCallback(() => {
-    if (!job) return false;
-    if (!job.isActive || !job.isPublished) return false;
-    if (String(job.status || '').toLowerCase() === 'filled') return false;
-    if (job.applicationDeadline && new Date(job.applicationDeadline) < new Date()) return false;
-    return true;
+    return isOpenJobListing(job);
   }, [job]);
 
   const fetchJobDetails = useCallback(async () => {

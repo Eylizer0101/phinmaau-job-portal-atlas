@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import api from "../../../services/api";
 import ApplyJobModal from "../../../components/jobseeker/ApplyJobModal";
-import { filterOpenJobListings } from "../../../utils/jobVisibility";
+import { filterOpenJobListings, isOpenJobListing } from "../../../utils/jobVisibility";
 
 const DEFAULT_COMPANY_LOGO = "/images/companyicon.png";
 
@@ -1444,13 +1444,8 @@ const CompanyViewDetails = () => {
         return;
       }
 
-      if (!job.isActive || !job.isPublished) {
+      if (!isOpenJobListing(job)) {
         alert("This job is no longer accepting applications");
-        return;
-      }
-
-      if (job.applicationDeadline && new Date(job.applicationDeadline) < new Date()) {
-        alert("Application deadline has passed");
         return;
       }
 

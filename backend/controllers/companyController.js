@@ -15,6 +15,30 @@ const normalizeBooleanValue = (value, fallback = true) => {
   return fallback;
 };
 
+const getApplicationDeadlineStartInManila = (value) => {
+  if (!value) return null;
+
+  const deadline = new Date(value);
+  if (Number.isNaN(deadline.getTime())) return null;
+
+  const rawValue = String(value).trim();
+  const dateMatch = rawValue.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const year = dateMatch ? Number(dateMatch[1]) : deadline.getUTCFullYear();
+  const monthIndex = dateMatch ? Number(dateMatch[2]) - 1 : deadline.getUTCMonth();
+  const day = dateMatch ? Number(dateMatch[3]) : deadline.getUTCDate();
+
+  return Date.UTC(year, monthIndex, day - 1, 16);
+};
+
+const isPublicJobOpen = (job, now = new Date()) => {
+  if (!job) return false;
+  if (job.isPublished !== true || job.isActive !== true || job.isArchived === true) return false;
+  if (String(job.status || '').trim().toLowerCase() !== 'published') return false;
+
+  const deadlineStart = getApplicationDeadlineStartInManila(job.applicationDeadline);
+  return deadlineStart === null || now.getTime() < deadlineStart;
+};
+
 const buildReviewerName = (user) => {
   const fullName = String(user?.fullName || '').trim();
   if (fullName) return fullName;
@@ -143,16 +167,21 @@ const mapSavedCompanyWithJobs = async (user) => {
     employer: user._id,
     isPublished: true,
     isActive: true,
+    status: 'published',
+    $or: [
+      { isArchived: false },
+      { isArchived: { $exists: false } },
+    ],
   })
     .sort({ createdAt: -1 })
     .select(
-      'title description requirements jobType educationLevel category salaryMin salaryMax location workMode applicationDeadline vacancies skillsRequired experienceLevel openToFreshGraduates perksAndBenefits otherBenefits willingToRelocate locationImage employer companyName companyLogo isUrgent isActive isPublished createdAt updatedAt'
+      'title description requirements jobType educationLevel category salaryMin salaryMax location workMode applicationDeadline vacancies skillsRequired experienceLevel openToFreshGraduates perksAndBenefits otherBenefits willingToRelocate locationImage employer companyName companyLogo isUrgent isActive isPublished isArchived status createdAt updatedAt'
     )
     .lean();
 
   return {
     ...mappedCompany,
-    jobs: Array.isArray(jobs) ? jobs : [],
+    jobs: Array.isArray(jobs) ? jobs.filter((job) => isPublicJobOpen(job)) : [],
   };
 };
 

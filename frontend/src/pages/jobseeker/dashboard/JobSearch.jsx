@@ -6,7 +6,7 @@ import { JOB_TYPES, EXPERIENCE_LEVELS, EDUCATION_LEVELS } from '../../../constan
 import { PH_PROVINCES_BY_REGION, PH_CITIES_BY_PROVINCE } from '../../../constants/phLocations';
 import api from '../../../services/api';
 import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
-import { filterOpenJobListings } from '../../../utils/jobVisibility';
+import { filterOpenJobListings, isOpenJobListing } from '../../../utils/jobVisibility';
 
 const normalizeAmount = (value) => String(value || '').replace(/[^\d]/g, '');
 
@@ -1280,13 +1280,8 @@ const JobSearch = () => {
         return;
       }
 
-      if (!job.isActive || !job.isPublished || String(job.status || '').toLowerCase() === 'filled') {
+      if (!isOpenJobListing(job)) {
         alert(String(job.status || '').toLowerCase() === 'filled' ? 'The vacancy is already full.' : 'This job is no longer accepting applications');
-        return;
-      }
-
-      if (job.applicationDeadline && new Date(job.applicationDeadline) < new Date()) {
-        alert('Application deadline has passed');
         return;
       }
 

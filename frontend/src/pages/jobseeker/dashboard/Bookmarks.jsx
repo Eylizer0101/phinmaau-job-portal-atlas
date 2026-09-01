@@ -5,7 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import JobSeekerLayout from '../../../layouts/JobSeekerLayout';
 import api from '../../../services/api';
 import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
-import { filterOpenJobListings } from '../../../utils/jobVisibility';
+import { filterOpenJobListings, isOpenJobListing } from '../../../utils/jobVisibility';
 
 const DEFAULT_COMPANY_LOGO = '/images/companyicon.png';
 
@@ -2206,10 +2206,7 @@ const Bookmarks = () => {
 
 
   const isJobActive = useCallback((job) => {
-    if (!job) return false;
-    if (job.isActive === false || job.isPublished === false) return false;
-    if (job.applicationDeadline && new Date(job.applicationDeadline) < new Date()) return false;
-    return true;
+    return isOpenJobListing(job);
   }, []);
 
   const handleShareJob = useCallback(
@@ -2339,13 +2336,8 @@ const Bookmarks = () => {
           return;
         }
 
-        if (!job?.isActive || !job?.isPublished) {
+        if (!isOpenJobListing(job)) {
           setToastMessage('error', 'This job is no longer accepting applications.');
-          return;
-        }
-
-        if (job?.applicationDeadline && new Date(job.applicationDeadline) < new Date()) {
-          setToastMessage('error', 'Application deadline has passed.');
           return;
         }
 
