@@ -1002,7 +1002,7 @@ const LoginPage = () => {
 
                 <div className="space-y-1">
                   <div className="flex justify-center sm:justify-start -mt-2">
-                    <div className="origin-center scale-90 min-h-[86px] flex items-center">
+                    <div className="origin-left scale-90 min-h-[86px] flex items-center">
                       {RECAPTCHA_SITE_KEY ? (
                         showCaptcha ? (
                           <ReCAPTCHA
