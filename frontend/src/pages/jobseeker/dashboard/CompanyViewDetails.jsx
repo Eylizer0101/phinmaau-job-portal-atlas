@@ -743,6 +743,12 @@ const CompanyViewDetails = () => {
   const [saveLoading, setSaveLoading] = useState(false);
 
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewStep, setReviewStep] = useState("privacy");
+  const [reviewAgreementAccepted, setReviewAgreementAccepted] = useState(false);
+  const [reviewEligible, setReviewEligible] = useState(false);
+  const [reviewEligibilityMessage, setReviewEligibilityMessage] = useState(
+    "You can write a review after applying to a job from this company."
+  );
   const [reviewProcessRating, setReviewProcessRating] = useState(0);
   const [reviewRoleAppliedFor, setReviewRoleAppliedFor] = useState("");
   const [reviewDaysToFirstResponse, setReviewDaysToFirstResponse] = useState("");
@@ -753,6 +759,33 @@ const CompanyViewDetails = () => {
   const [reviewerName, setReviewerName] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewError, setReviewError] = useState("");
+
+  useEffect(() => {
+    const checkReviewEligibility = async () => {
+      const token = localStorage.getItem("token");
+      const user = getStoredUser();
+
+      if (!id || !token || user?.role !== "jobseeker") {
+        setReviewEligible(false);
+        return;
+      }
+
+      try {
+        const response = await api.get(`/companies/verified/${id}/review-eligibility`);
+        setReviewEligible(Boolean(response?.data?.eligible));
+        setReviewEligibilityMessage(
+          response?.data?.message || "You can write a review after applying to a job from this company."
+        );
+      } catch (error) {
+        setReviewEligible(false);
+        setReviewEligibilityMessage(
+          error?.response?.data?.message || "You can write a review after applying to a job from this company."
+        );
+      }
+    };
+
+    checkReviewEligibility();
+  }, [id]);
 
   const [applyingJob, setApplyingJob] = useState(null);
   const [showApplyModal, setShowApplyModal] = useState(false);
@@ -1299,8 +1332,12 @@ const CompanyViewDetails = () => {
       return;
     }
 
+    if (!reviewEligible) return;
+
     setReviewError("");
     resetReviewForm();
+    setReviewAgreementAccepted(false);
+    setReviewStep("privacy");
     setShowReviewModal(true);
   };
 
@@ -1308,7 +1345,35 @@ const CompanyViewDetails = () => {
     if (reviewSubmitting) return;
     setShowReviewModal(false);
     setReviewError("");
+    setReviewStep("privacy");
+    setReviewAgreementAccepted(false);
     resetReviewForm();
+  };
+
+  const validateReviewForm = () => {
+    const trimmedRoleAppliedFor = String(reviewRoleAppliedFor || "").trim();
+    const trimmedMessage = String(reviewMessage || "").trim();
+    const daysToFirstResponse = reviewDaysToFirstResponse === "" ? 0 : Number(reviewDaysToFirstResponse);
+    const totalProcessDays = reviewTotalProcessDays === "" ? 0 : Number(reviewTotalProcessDays);
+
+    if (!trimmedRoleAppliedFor) return "Please enter the role you applied for.";
+    if (!reviewProcessRating || reviewProcessRating < 1 || reviewProcessRating > 5) {
+      return "Please select an application process rating from 1 to 5.";
+    }
+    if (!Number.isFinite(daysToFirstResponse) || daysToFirstResponse < 0) {
+      return "Days to first response must be 0 or higher.";
+    }
+    if (!Number.isFinite(totalProcessDays) || totalProcessDays < 0) {
+      return "Total process length must be 0 or higher.";
+    }
+    if (!trimmedMessage) return "Please enter your review.";
+    return "";
+  };
+
+  const handleReviewNext = () => {
+    const validationError = validateReviewForm();
+    setReviewError(validationError);
+    if (!validationError) setReviewStep("confirm");
   };
 
   const handleSubmitReview = async () => {
@@ -1378,10 +1443,8 @@ const CompanyViewDetails = () => {
         }
 
         setActiveTab("reviews");
-        setShowReviewModal(false);
+        setReviewStep("success");
         setReviewError("");
-        resetReviewForm();
-        showToast(response.data.message || "Review submitted successfully!", "success");
 
         try {
           await fetchCompanyDetails();
@@ -1411,7 +1474,7 @@ const CompanyViewDetails = () => {
   };
 
   const handleWriteReview = () => {
-    openReviewModal();
+    if (reviewEligible) openReviewModal();
   };
 
   const handleApplyClick = async (job) => {
@@ -1683,12 +1746,12 @@ const CompanyViewDetails = () => {
               <div className="flex flex-col items-stretch gap-3 rounded-2xl border border-[#e6edf5] bg-[#f7faff] p-4">
                 <button
                   type="button"
-                  onClick={companyJobs.length > 0 ? handleWriteReview : undefined}
-                  disabled={companyJobs.length === 0}
-                  aria-disabled={companyJobs.length === 0}
-                  title={companyJobs.length === 0 ? "Reviews are available when the company has an open position." : "Write a Review"}
+                  onClick={reviewEligible ? handleWriteReview : undefined}
+                  disabled={!reviewEligible}
+                  aria-disabled={!reviewEligible}
+                  title={reviewEligible ? "Write a Review" : reviewEligibilityMessage}
                   className={`${UI.btnBase} ${UI.btnMd} ${UI.ring} w-full ${
-                    companyJobs.length > 0
+                    reviewEligible
                       ? UI.btnPrimary
                       : "cursor-not-allowed border border-gray-200 bg-gray-100 text-gray-400"
                   }`}
@@ -2312,10 +2375,18 @@ const CompanyViewDetails = () => {
               <div className="flex items-start justify-between gap-4 border-b border-[#e7edf3] px-5 py-5 sm:px-7">
                 <div>
                   <h3 className="text-[22px] font-bold text-[#172033]">
-                    Rate a company's hiring process
+                    {reviewStep === "privacy"
+                      ? "Privacy Notice & Rating Agreement"
+                      : reviewStep === "confirm"
+                        ? "Ready to Post Your Review?"
+                        : reviewStep === "success"
+                          ? "Review Posted Successfully!"
+                          : "Rate a company's hiring process"}
                   </h3>
                   <p className="mt-1 text-sm text-black/55">
-                    Help other jobseekers know what to expect — especially how long it took.
+                    {reviewStep === "form"
+                      ? "Help other jobseekers know what to expect — especially how long it took."
+                      : ""}
                   </p>
                 </div>
 
@@ -2332,6 +2403,31 @@ const CompanyViewDetails = () => {
               </div>
 
               <div className="px-5 py-6 sm:px-7">
+                {reviewStep === "privacy" && (
+                  <div>
+                    <div className="rounded-2xl border border-[#d8e2ee] bg-[#f7faff] p-5 text-sm leading-7 text-black/70">
+                      <p className="font-semibold text-black/80">Before submitting your rating, please review the following:</p>
+                      <p className="mt-3">Your rating and review will help other jobseekers understand what to expect from a company’s hiring process. By submitting, you confirm that the information you provide is <strong>based on your personal experience and is accurate to the best of your knowledge.</strong></p>
+                      <p className="mt-3">Your <strong>company, role applied for, hiring timeline, application rating, outcome, and review</strong> may be displayed to other AGAPAY users. Your name may also be displayed with your review if you choose to provide it.</p>
+                      <p className="mt-3">Please do not include <strong>personal, confidential, or sensitive information</strong> about yourself, the company, employees, recruiters, or other applicants in your review.</p>
+                      <p className="mt-3">Your rating is intended to share your <strong>hiring experience</strong>, not to disclose confidential company information or personally identify individuals.</p>
+                      <p className="mt-3">By continuing, you acknowledge that your submission may be reviewed by <strong>AGAPAY</strong> and displayed on the platform in accordance with these guidelines.</p>
+                    </div>
+
+                    <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-[#d8e2ee] px-4 py-3 text-sm text-black/75">
+                      <input type="checkbox" checked={reviewAgreementAccepted} onChange={(event) => setReviewAgreementAccepted(event.target.checked)} className="mt-0.5 h-4 w-4 accent-[#2e66a6]" />
+                      <span>I understand and agree to the Privacy Notice &amp; Rating Agreement.</span>
+                    </label>
+
+                    <div className="mt-6 flex justify-end gap-3">
+                      <button type="button" onClick={closeReviewModal} className="h-11 rounded-lg border border-gray-200 px-6 text-sm font-semibold text-gray-800 hover:bg-gray-50">Back</button>
+                      <button type="button" disabled={!reviewAgreementAccepted} onClick={() => setReviewStep("form")} className="h-11 rounded-lg bg-[#2e66a6] px-6 text-sm font-semibold text-white hover:bg-[#245387] disabled:cursor-not-allowed disabled:opacity-50">Continue to Rate</button>
+                    </div>
+                  </div>
+                )}
+
+                {reviewStep === "form" && (
+                <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block mb-2 text-sm font-semibold text-gray-900">
@@ -2497,23 +2593,47 @@ const CompanyViewDetails = () => {
 
                 <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                   <button
-                    onClick={closeReviewModal}
+                    onClick={() => setReviewStep("privacy")}
                     className="h-11 rounded-lg px-6 text-sm font-semibold text-gray-800 hover:bg-gray-100 transition"
                     disabled={reviewSubmitting}
                     type="button"
                   >
-                    Cancel
+                    Back
                   </button>
 
                   <button
-                    onClick={handleSubmitReview}
+                    onClick={handleReviewNext}
                     disabled={reviewSubmitting}
                     className="h-11 rounded-lg bg-[#172033] px-6 text-sm font-semibold text-white transition hover:bg-[#0f1726] disabled:opacity-60"
                     type="button"
                   >
-                    {reviewSubmitting ? "Posting..." : "Post review"}
+                    Next
                   </button>
                 </div>
+                </>
+                )}
+
+                {reviewStep === "confirm" && (
+                  <div className="text-center">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf2fb] text-2xl text-[#2e66a6]">✓</div>
+                    <p className="mx-auto mt-5 max-w-[580px] text-sm leading-7 text-black/70">
+                      Before posting, please ensure that your feedback is <strong>accurate, complete, and based on your personal experience.</strong> By clicking <strong>Post Review</strong>, you confirm that the information provided is truthful and will be <strong>visible to other jobseekers.</strong>
+                    </p>
+                    {reviewError && <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">{reviewError}</div>}
+                    <div className="mt-7 flex justify-center gap-3">
+                      <button type="button" disabled={reviewSubmitting} onClick={() => setReviewStep("form")} className="h-11 rounded-lg border border-gray-200 px-6 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-50">Go Back</button>
+                      <button type="button" disabled={reviewSubmitting} onClick={handleSubmitReview} className="h-11 rounded-lg bg-[#2e66a6] px-6 text-sm font-semibold text-white hover:bg-[#245387] disabled:cursor-not-allowed disabled:opacity-50">{reviewSubmitting ? "Posting..." : "Post Review"}</button>
+                    </div>
+                  </div>
+                )}
+
+                {reviewStep === "success" && (
+                  <div className="py-4 text-center">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl font-bold text-green-600">✓</div>
+                    <p className="mx-auto mt-5 max-w-[520px] text-sm leading-7 text-black/65">Your review has been posted and is now visible to other jobseekers.</p>
+                    <button type="button" onClick={() => { setShowReviewModal(false); setReviewStep("privacy"); resetReviewForm(); }} className="mt-7 h-11 min-w-[120px] rounded-lg bg-[#2e66a6] px-6 text-sm font-semibold text-white hover:bg-[#245387]">OK</button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -1757,7 +1757,8 @@ const EmployerDashboard = () => {
                   id="logout-desc"
                   className="mt-2 text-sm sm:text-base text-gray-600 text-center"
                 >
-                  You’re about to sign out of your account. You can sign in again anytime.
+                  <span className="block">Are you sure you want to sign out of your account?</span>
+                  <span className="block">You can sign in again anytime.</span>
                 </p>
 
                 <div className="mt-6 flex items-center justify-center gap-3">
@@ -2072,12 +2073,11 @@ const EmployerDashboard = () => {
                     onError={() => setCompanyLogoError(true)}
                   />
                 ) : (
-                  <span
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-[#2e66a6] bg-[#2e66a6]"
-                    aria-hidden="true"
-                  >
-                    <OutlineIcon name="building" className="h-6 w-6 text-white" />
-                  </span>
+                  <img
+                    src="/images/profile.png"
+                    alt="Default profile"
+                    className="h-10 w-10 rounded-full border border-gray-200 bg-white object-cover"
+                  />
                 )}
                 <OutlineIcon
                   name="chevronDown"

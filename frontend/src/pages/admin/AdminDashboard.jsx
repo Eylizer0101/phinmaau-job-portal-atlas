@@ -1579,11 +1579,9 @@ const AdminTopActions = () => {
           aria-label="Open admin profile"
         >
           {adminImage ? (
-            <img src={adminImage} alt={adminName} className="h-9 w-9 rounded-full object-cover" />
+            <img src={adminImage} alt={adminName} className="h-9 w-9 rounded-full object-cover" onError={(event) => { event.currentTarget.src = '/images/profile.png'; }} />
           ) : (
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 text-xs font-extrabold text-slate-700">
-              {getInitials(adminName)}
-            </span>
+            <img src="/images/profile.png" alt="Default profile" className="h-9 w-9 rounded-full border border-slate-200 bg-white object-cover" />
           )}
           <span className="hidden max-w-[120px] truncate text-xs font-bold text-slate-800 sm:block">{adminName}</span>
           <ChevronDown size={14} className="text-slate-500" />
@@ -1659,7 +1657,8 @@ const AdminTopActions = () => {
               </h2>
 
               <p id="admin-signout-description" className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-600">
-                You’re about to sign out of your account. You can sign in again anytime.
+                <span className="block">Are you sure you want to sign out of your account?</span>
+                <span className="block">You can sign in again anytime.</span>
               </p>
 
               <div className="mt-6 flex items-center justify-center gap-3">

@@ -135,6 +135,14 @@ const IconInfo = ({ className = 'w-4 h-4' }) => (
   </svg>
 );
 
+const IconLock = ({ className = 'w-7 h-7' }) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+    <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.8" />
+    <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <circle cx="12" cy="15" r="1.2" fill="currentColor" />
+  </svg>
+);
+
 const IconBuilding = ({ className = 'w-4 h-4' }) => (
   <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
     <path d="M4 20V6.8A.8.8 0 0 1 4.8 6H12v14M12 20h8V10.8a.8.8 0 0 0-.8-.8H12" stroke="currentColor" strokeWidth="1.6" />
@@ -198,6 +206,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
   const [profileError, setProfileError] = useState('');
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
 
   const [userData, setUserData] = useState(null);
 
@@ -212,6 +221,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
 
     setStep(safeInitialStep);
     setSubmitError('');
+    setPrivacyAccepted(false);
     setProfileError('');
     fetchProfile();
 
@@ -261,6 +271,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
   const closeAndReset = () => {
     setStep(1);
     setSubmitError('');
+    setPrivacyAccepted(false);
     setProfileError('');
     onClose?.();
   };
@@ -295,6 +306,11 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
 
   const handleSubmit = async () => {
     const jobId = job?._id || job?.id;
+
+    if (!privacyAccepted) {
+      setSubmitError('Please confirm that you understand the Privacy Notice.');
+      return;
+    }
 
     if (!jobId) {
       setSubmitError('Job information is missing.');
@@ -477,18 +493,18 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                   )}
 
                   {step === 3 && (
-                    <div className="max-w-[560px] mx-auto py-6 sm:py-8">
-                      <div className="text-center">
-                        <div className="mx-auto w-14 h-14 rounded-full border-2 border-[#2e66a6] flex items-center justify-center text-[#2e66a6]">
-                          <IconCheckCircle className="w-7 h-7" />
+                    <div className="max-w-[620px] mx-auto py-4 sm:py-6">
+                      <div>
+                        <div className="mx-auto w-14 h-14 rounded-full bg-[#eaf2fb] flex items-center justify-center text-[#2e66a6]">
+                          <IconLock className="w-7 h-7" />
                         </div>
 
-                        <h3 className="mt-5 text-[28px] sm:text-[32px] font-semibold text-black leading-tight">
-                          Privacy &amp; Notice
+                        <h3 className="mt-4 text-center text-[25px] sm:text-[30px] font-bold tracking-[0.04em] text-black leading-tight">
+                          PRIVACY NOTICE
                         </h3>
 
-                        <div className="mt-4 rounded-[18px] border border-[#d8e2ee] bg-[#f7faff] px-4 sm:px-5 py-4 text-black/70 leading-[1.65] text-[13px] sm:text-[14px] text-center shadow-sm">
-                          <p>
+                        <div className="mt-5 rounded-[18px] border border-[#d8e2ee] bg-[#f7faff] px-5 sm:px-6 py-5 text-black/70 leading-[1.7] text-[13px] sm:text-[14px] text-left shadow-sm">
+                          <p className="font-bold text-black/80">
                             After updating your profile and applying to this job, your personal information
                             will be collected and processed for recruitment and hiring purposes.
                           </p>
@@ -501,11 +517,26 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                           </p>
 
                           <p className="mt-3">
-                            All information will be handled securely and kept confidential. By clicking
-                            "Submit Application", you confirm your information is accurate and you consent
-                            to its use for recruitment purposes.
+                            All information will be handled securely and kept confidential.{' '}
+                            <strong className="text-black/80">
+                              By clicking “Submit Application”, you confirm your information is accurate and
+                              you consent to its use for recruitment purposes.
+                            </strong>
                           </p>
                         </div>
+
+                        <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-[#d8e2ee] bg-white px-4 py-3 text-[13px] text-black/70">
+                          <input
+                            type="checkbox"
+                            checked={privacyAccepted}
+                            onChange={(event) => {
+                              setPrivacyAccepted(event.target.checked);
+                              if (event.target.checked) setSubmitError('');
+                            }}
+                            className="mt-0.5 h-4 w-4 accent-[#2e66a6]"
+                          />
+                          <span>I have read and understand the Privacy Notice.</span>
+                        </label>
 
                         {submitError && (
                           <div className="mt-4 rounded-xl border border-red-200 bg-[#fff7f7] px-4 py-3 text-sm font-medium text-red-600 text-left">
@@ -513,12 +544,24 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                           </div>
                         )}
 
-                        <div className="mt-6">
+                        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSubmitError('');
+                              setPrivacyAccepted(false);
+                              setStep(1);
+                            }}
+                            disabled={submitLoading}
+                            className="h-[46px] rounded-xl border border-[#d8e2ee] bg-white px-6 text-[15px] font-bold text-black/70 hover:bg-gray-50 transition disabled:opacity-70"
+                          >
+                            Back
+                          </button>
                           <button
                             type="button"
                             onClick={handleSubmit}
-                            disabled={submitLoading}
-                            className="w-full sm:w-[280px] h-[46px] rounded-xl border border-[#2e66a6] bg-[#2e66a6] text-white text-[15px] font-bold shadow-[0_10px_22px_rgba(46,102,166,0.18)] hover:bg-[#25578f] active:bg-[#1f4b7c] transition disabled:opacity-70"
+                            disabled={submitLoading || !privacyAccepted}
+                            className="w-full sm:w-[240px] h-[46px] rounded-xl border border-[#2e66a6] bg-[#2e66a6] text-white text-[15px] font-bold shadow-[0_10px_22px_rgba(46,102,166,0.18)] hover:bg-[#25578f] active:bg-[#1f4b7c] transition disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             {submitLoading ? 'Submitting...' : 'Submit Application'}
                           </button>

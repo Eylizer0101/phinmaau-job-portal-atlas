@@ -8,6 +8,13 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 router.get('/verified', companyController.getVerifiedCompanies);
 router.get('/verified/:id', companyController.getVerifiedCompanyDetails);
 
+router.get(
+  '/verified/:id/review-eligibility',
+  protect,
+  authorize('jobseeker'),
+  companyController.getCompanyReviewEligibility
+);
+
 // Job seeker review route
 router.post(
   '/verified/:id/reviews',

@@ -19,6 +19,7 @@ const LoginPage = () => {
   const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY || '';
 
   const [formData, setFormData] = useState({ username: '', password: '' });
+  const [rememberMe, setRememberMe] = useState(false);
   const [focused, setFocused] = useState({ username: false, password: false });
   const [fieldErrors, setFieldErrors] = useState({ username: '', password: '' });
 
@@ -60,6 +61,7 @@ const LoginPage = () => {
 
   const LOGIN_LOCK_KEY = 'login_lock_current_browser';
   const LOGIN_ATTEMPTS_KEY = 'login_attempts_current_browser';
+  const REMEMBERED_USERNAME_KEY = 'remembered_login_username';
 
   const lockUntilRef = useRef(null);
 
@@ -123,6 +125,14 @@ const LoginPage = () => {
     const prefillUsername = location?.state?.username || location?.state?.email;
     if (prefillUsername && typeof prefillUsername === 'string') {
       setFormData((prev) => ({ ...prev, username: prefillUsername }));
+    } else {
+      try {
+        const rememberedUsername = localStorage.getItem(REMEMBERED_USERNAME_KEY) || '';
+        if (rememberedUsername) {
+          setFormData((prev) => ({ ...prev, username: rememberedUsername }));
+          setRememberMe(true);
+        }
+      } catch {}
     }
 
     const successMessage = location?.state?.successMessage;
@@ -441,6 +451,13 @@ const LoginPage = () => {
 
       resetAttemptsAndLock();
       storeAuth(token, user);
+      try {
+        if (rememberMe) {
+          localStorage.setItem(REMEMBERED_USERNAME_KEY, normalizeUsername(formData.username));
+        } else {
+          localStorage.removeItem(REMEMBERED_USERNAME_KEY);
+        }
+      } catch {}
       resetCaptcha();
       if (role === 'admin') {
         navigate('/admin/dashboard');
@@ -951,11 +968,32 @@ const LoginPage = () => {
                       {focused.password && !fieldErrors.password && helperText('password-help')}
                       {errorText('password-error', fieldErrors.password)}
                     </div>
+                  </div>
+
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(event) => {
+                          const checked = event.target.checked;
+                          setRememberMe(checked);
+                          if (!checked) {
+                            try {
+                              localStorage.removeItem(REMEMBERED_USERNAME_KEY);
+                            } catch {}
+                          }
+                        }}
+                        disabled={loading || isLocked}
+                        className="h-4 w-4 rounded border-gray-300 accent-[#2e66a6]"
+                      />
+                      Remember Me
+                    </label>
 
                     <button
                       type="button"
                       onClick={openForgotPasswordModal}
-                      className="mt-1 text-xs font-semibold text-[#2e66a6] hover:text-[#245387] whitespace-nowrap"
+                      className="text-xs font-semibold text-[#2e66a6] hover:text-[#245387] whitespace-nowrap"
                     >
                       Forgot password?
                     </button>

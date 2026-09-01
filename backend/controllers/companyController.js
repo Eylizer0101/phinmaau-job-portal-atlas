@@ -1,6 +1,7 @@
 // backend/controllers/companyController.js
 const User = require('../models/User');
 const Job = require('../models/Job');
+const Application = require('../models/Application');
 
 // helper: safe regex
 const escapeRegex = (s) => String(s || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -97,6 +98,51 @@ const computeRatingBreakdown = (reviews = []) => {
   });
 
   return breakdown;
+};
+
+const getReviewEligibility = async (companyId, jobseekerId) => {
+  const hasApplication = await Application.exists({
+    employer: companyId,
+    jobseeker: jobseekerId,
+  });
+
+  return Boolean(hasApplication);
+};
+
+// GET /api/companies/verified/:id/review-eligibility
+exports.getCompanyReviewEligibility = async (req, res) => {
+  try {
+    const company = await User.findOne({
+      _id: req.params.id,
+      role: 'employer',
+      status: { $ne: 'deleted' },
+    }).select('_id employerProfile.reviews');
+
+    if (!company) {
+      return res.status(404).json({ success: false, message: 'Company not found.' });
+    }
+
+    const eligible = await getReviewEligibility(company._id, req.user._id);
+    const alreadyReviewed = Array.isArray(company?.employerProfile?.reviews)
+      && company.employerProfile.reviews.some(
+        (review) => String(review?.reviewer) === String(req.user._id)
+      );
+
+    return res.status(200).json({
+      success: true,
+      eligible: eligible && !alreadyReviewed,
+      hasApplication: eligible,
+      alreadyReviewed,
+      message: alreadyReviewed
+        ? 'You have already reviewed this company.'
+        : eligible
+          ? 'You can review this company.'
+          : 'You can write a review after applying to a job from this company.',
+    });
+  } catch (error) {
+    console.error('Error checking company review eligibility:', error);
+    return res.status(500).json({ success: false, message: 'Unable to check review eligibility.' });
+  }
 };
 
 const mapCompanyFromUser = (user) => {
@@ -443,6 +489,14 @@ exports.submitCompanyReview = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'You cannot review your own company.',
+      });
+    }
+
+    const eligibleToReview = await getReviewEligibility(company._id, req.user._id);
+    if (!eligibleToReview) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can write a review only after applying to a job from this company.',
       });
     }
 

@@ -1010,9 +1010,7 @@ const useDebouncedValue = (value, delay = 300) => {
 
 const Avatar = React.memo(({ img, name, role = 'jobseeker', size = 40, className }) => {
   const [imageError, setImageError] = useState(false);
-  const fallbackImage = role === 'employer'
-    ? '/images/default-company.svg'
-    : '/images/default-jobseeker.svg';
+  const fallbackImage = '/images/profile.png';
 
   const boxStyle = {
     height: `${size}px`,

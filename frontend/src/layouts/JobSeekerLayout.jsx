@@ -823,7 +823,8 @@ const JobSeekerLayout = ({ children }) => {
                 id="logout-desc"
                 className="mt-2 text-sm sm:text-[15px] text-gray-600 text-center leading-relaxed"
               >
-                You’re about to sign out of your account. You can sign in again anytime.
+                <span className="block">Are you sure you want to sign out of your account?</span>
+                <span className="block">You can sign in again anytime.</span>
               </p>
 
               <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
