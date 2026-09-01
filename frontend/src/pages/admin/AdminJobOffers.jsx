@@ -585,8 +585,8 @@ const AdminJobOffers = () => {
             </div>
           </div>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_28px_rgba(15,23,42,0.06)] sm:p-5">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-[minmax(280px,1.5fr)_repeat(4,minmax(145px,0.8fr))_minmax(190px,1fr)_auto] 2xl:items-end">
+          <section className="min-w-0 overflow-visible rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_28px_rgba(15,23,42,0.06)] sm:p-5">
+            <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[minmax(250px,1.3fr)_repeat(4,minmax(130px,0.72fr))_minmax(170px,0.9fr)_120px] 2xl:items-end">
               <label className="relative block">
                 <span className="sr-only">Search job offers</span>
                 <Icon name="search" className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
@@ -614,7 +614,7 @@ const AdminJobOffers = () => {
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#2e66a6]/30 bg-[#2e66a6]/5 px-5 text-sm font-semibold text-[#24558d] transition-all duration-200 hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 md:col-span-2 2xl:col-span-1"
+                  className="inline-flex h-12 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#2e66a6]/30 bg-[#2e66a6]/5 px-3 text-sm font-semibold text-[#24558d] transition-all duration-200 hover:border-[#2e66a6] hover:bg-[#2e66a6] hover:text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-[#2e66a6]/15 md:col-span-2 xl:col-span-3 2xl:col-span-1"
                 >
                   <Icon name="refresh" /> Clear All
                 </button>
