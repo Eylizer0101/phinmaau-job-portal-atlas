@@ -5,6 +5,7 @@ import api from "../../services/api";
 import { normalizeUserToResumeData } from "../../components/shared/resumePrintTemplate";
 import Pagination from "../../components/shared/Pagination";
 import ApplicationHistoryCard from "../../components/admin/ApplicationHistoryCard";
+import { CompanyViewSvgIcon } from "../../components/shared/JobseekerIcons";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
@@ -1930,7 +1931,7 @@ const UserManagementDetails = () => {
                         },
                       })
                     }
-                    className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                    className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-xl border border-transparent bg-[#1e4ba0] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1b4290] active:bg-[#163879] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1e4ba0] focus-visible:ring-offset-2"
                   >
                     <Icon name="eye" className="h-4 w-4" />
                     View Job
@@ -2295,7 +2296,7 @@ const UserManagementDetails = () => {
 
                       <div className="mt-3 space-y-2 text-sm text-black/60">
                         <p className="flex items-start gap-2">
-                          <Icon name="building" className="mt-0.5 h-4 w-4 shrink-0 text-[#2e66a6]" />
+                          <CompanyViewSvgIcon name="industry" className="mt-0.5 h-4 w-4 shrink-0 text-[#2e66a6]" />
                           <span>{employerProfile.industry || "Industry not specified"}</span>
                         </p>
                         <p className="flex items-start gap-2">
