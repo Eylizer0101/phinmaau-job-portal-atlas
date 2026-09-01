@@ -970,7 +970,7 @@ const Companies = () => {
                             </h3>
 
                             <span
-                              className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white border border-[#212C61]/20 shadow-sm shrink-0"
+                              className="inline-flex items-center justify-center w-8 h-8 shrink-0"
                               title="Verified"
                               aria-label="Verified company"
                             >
