@@ -526,7 +526,20 @@ const Settings = () => {
               focusRing
             )}
           >
-            ← Back
+           <svg
+  className="w-[18px] h-[18px] shrink-0"
+  fill="none"
+  stroke="currentColor"
+  viewBox="0 0 24 24"
+  aria-hidden="true"
+>
+  <path
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2"
+    d="M15 19l-7-7 7-7"
+  />
+</svg> Back
           </button>
 
           <div className="mb-6">

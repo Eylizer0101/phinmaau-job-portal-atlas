@@ -1212,7 +1212,24 @@ const ArchivedDeclinedApplicants = () => {
                         const busy = action.id === app._id;
 
                         return (
-                          <tr key={app._id} className="hover:bg-gray-50">
+                          <tr
+                            key={app._id}
+                            role="link"
+                            tabIndex={0}
+                            aria-label={`View application of ${name}`}
+                            className="cursor-pointer transition-colors hover:bg-gray-50 focus-visible:bg-[#2e66a6]/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
+                            onClick={(event) => {
+                              if (event.target.closest?.('a, button, input, select, textarea')) return;
+                              navigate(`/employer/application/${app._id}`);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.target !== event.currentTarget) return;
+                              if (event.key !== 'Enter' && event.key !== ' ') return;
+
+                              event.preventDefault();
+                              navigate(`/employer/application/${app._id}`);
+                            }}
+                          >
                             <td className="px-6 py-4 text-sm text-gray-900">{formatDate(app.appliedAt)}</td>
 
                             <td className="px-6 py-4">

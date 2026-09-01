@@ -1354,7 +1354,37 @@ const ArchivedJobs = () => {
                         const logoUrl = job.companyLogo && String(job.companyLogo).trim() ? job.companyLogo : '';
 
                         return (
-                          <tr key={job._id} className="transition-colors hover:bg-[#2e66a6]/[0.06]">
+                          <tr
+                            key={job._id}
+                            role="link"
+                            tabIndex={0}
+                            aria-label={`View ${title}`}
+                            className="group cursor-pointer transition-colors hover:bg-[#2e66a6]/[0.06] focus-visible:bg-[#2e66a6]/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
+                            onClick={(event) => {
+                              if (event.target.closest?.('a, button, input, select, textarea')) return;
+
+                              navigate(`/employer/manage-jobs/${job._id}/view`, {
+                                state: {
+                                  from: 'archivedJobs',
+                                  backPath: '/employer/manage-jobs/archived',
+                                  backLabel: 'Archived Jobs',
+                                },
+                              });
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.target !== event.currentTarget) return;
+                              if (event.key !== 'Enter' && event.key !== ' ') return;
+
+                              event.preventDefault();
+                              navigate(`/employer/manage-jobs/${job._id}/view`, {
+                                state: {
+                                  from: 'archivedJobs',
+                                  backPath: '/employer/manage-jobs/archived',
+                                  backLabel: 'Archived Jobs',
+                                },
+                              });
+                            }}
+                          >
                             <td className="px-6 py-4 align-middle text-sm font-medium text-gray-700">
                               {formatDate(job.archivedAt)}
                             </td>
