@@ -2812,7 +2812,7 @@ const Bookmarks = () => {
                         <p className="mt-3 text-sm sm:text-[15px] text-black/70 leading-6">
                           You haven&apos;t saved any jobs.
                           <br />
-                          Click &quot;Browse Jobs&quot; to start exploring opportunities and save jobs you want to revisit later.
+                          Click &quot;<strong className="font-bold">Browse Jobs</strong>&quot; to start exploring opportunities and save jobs you want to revisit later.
                         </p>
 
                         <div className="mt-6">
@@ -3178,7 +3178,7 @@ const Bookmarks = () => {
                         <p className="mt-3 text-sm sm:text-[15px] text-black/70 leading-6">
                           You haven&apos;t saved any companies.
                           <br />
-                          Click &quot;Browse Companies&quot; to start exploring companies and save companies you want to revisit later.
+                          Click &quot;<strong className="font-bold">Browse Companies</strong>&quot; to start exploring companies and save companies you want to revisit later.
                         </p>
 
                         <div className="mt-6">

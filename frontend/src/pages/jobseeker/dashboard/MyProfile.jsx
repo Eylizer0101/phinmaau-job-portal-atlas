@@ -169,10 +169,10 @@ const CIVIL_STATUS_OPTIONS = [
 
 const SALARY_PRIVACY_OPTIONS = [
   {
-    value: 'limited',
-    label: 'Limited',
-    description: 'Only companies you applied to can see your salary.',
-    icon: '▦',
+    value: 'public',
+    label: 'Public',
+    description: 'Only companies you applied for.',
+    icon: '🌐',
   },
   {
     value: 'only_me',
@@ -339,7 +339,9 @@ const normalizeSkillRows = (items = [], keepEmpty = false) => {
     .map((item) => {
       if (item && typeof item === 'object') {
         return {
-          skill: String(item.skill || item.name || '').trim(),
+          skill: keepEmpty
+            ? String(item.skill || item.name || '')
+            : String(item.skill || item.name || '').trim(),
           proficiency: PROFICIENCY_LEVEL_OPTIONS.includes(item.proficiency) ? item.proficiency : DEFAULT_PROFICIENCY_LEVEL,
         };
       }
@@ -5125,8 +5127,10 @@ const MyProfile = () => {
           aboutMe: profile.aboutMe || '',
           minimumSalary: formatSalaryInput(profile.minimumSalary),
           maximumSalary: formatSalaryInput(profile.maximumSalary),
-          salaryPrivacy: ['limited', 'only_me'].includes(profile.salaryPrivacy)
+          salaryPrivacy: ['public', 'only_me'].includes(profile.salaryPrivacy)
             ? profile.salaryPrivacy
+            : profile.salaryPrivacy === 'limited'
+              ? 'public'
             : 'only_me',
 
           address: profile.address || '',
@@ -6733,7 +6737,7 @@ const MyProfile = () => {
                   {[formData.email, formData.phoneNumber].filter(Boolean).join(' • ')}
                 </div>
               ) : null}
-              <div className="mt-2 font-serif text-[16px] leading-7 text-gray-500">
+              <div className="mt-2 font-serif text-[16px] leading-7 text-gray-900">
                 {[
                   formData.campus,
                   formData.course,

@@ -150,7 +150,7 @@ const protectApplicantSalaryForEmployer = (application) => {
             ...plain.resumeSnapshot,
             profile: {
               ...snapshotProfile,
-              salaryPrivacy: 'limited',
+              salaryPrivacy: 'public',
               salaryHidden: false,
             },
           }
@@ -688,30 +688,33 @@ const closeJobWhenVacancyIsFull = async (jobId) => {
     return { isFull: false, hiredCount, vacancyLimit, affectedPendingCount: 0, job };
   }
 
-  const pendingApplications = await Application.find({
+  const affectedApplications = await Application.find({
     job: job._id,
-    status: 'pending'
+    status: { $in: ['pending', 'for interview'] }
   }).select('_id job jobseeker employer status lastActiveStatus');
 
-  if (pendingApplications.length) {
-    await Application.updateMany(
-      { _id: { $in: pendingApplications.map((app) => app._id) } },
-      {
-        $set: {
-          status: 'vacancy full',
-          reviewedAt: new Date(),
-          notes: 'The vacancy is already full.',
+  if (affectedApplications.length) {
+    await Application.bulkWrite(
+      affectedApplications.map((app) => ({
+        updateOne: {
+          filter: { _id: app._id },
+          update: { $set: {
+            lastActiveStatus: app.status,
+            status: 'vacancy full',
+            reviewedAt: new Date(),
+            notes: 'The vacancy is already full.',
           isDeclinedArchived: false,
           declinedArchivedAt: null,
           declinedFrom: '',
-          declineReason: '',
-          declineComment: ''
+            declineReason: '',
+            declineComment: ''
+          } }
         }
-      }
+      }))
     );
 
     await Promise.allSettled(
-      pendingApplications.map((app) =>
+      affectedApplications.map((app) =>
         notificationController.createVacancyFullNotification(app, job)
       )
     );
@@ -728,7 +731,7 @@ const closeJobWhenVacancyIsFull = async (jobId) => {
     isFull: true,
     hiredCount,
     vacancyLimit,
-    affectedPendingCount: pendingApplications.length,
+    affectedPendingCount: affectedApplications.length,
     job
   };
 };
@@ -1110,16 +1113,14 @@ exports.withdrawMyApplication = async (req, res) => {
 
     const currentStatus = String(application.status || '').toLowerCase();
 
-    if (INACTIVE_APPLICATION_STATUSES.includes(currentStatus)) {
+    if (!['pending', 'for interview'].includes(currentStatus)) {
       return res.status(400).json({
         success: false,
-        message: 'Application is already inactive'
+        message: 'Only pending or for interview applications can be withdrawn'
       });
     }
 
-    if (ACTIVE_APPLICATION_STATUSES.includes(currentStatus)) {
-      application.lastActiveStatus = currentStatus;
-    }
+    application.lastActiveStatus = currentStatus;
 
     application.status = 'withdrawn';
     await application.save();

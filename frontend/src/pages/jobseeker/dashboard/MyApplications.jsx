@@ -94,6 +94,12 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           />
         </svg>
       );
+    case 'candidateHired':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 19a6 6 0 00-12 0m6-8a4 4 0 100-8 4 4 0 000 8zm7 2 2 2 4-4" />
+        </svg>
+      );
     case 'timesCircle':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -470,7 +476,7 @@ const MyApplications = () => {
       case 'declined':
         return 'Declined';
       case 'vacancy full':
-        return 'Positions Filled';
+        return 'Candidate Hired';
       case 'withdrawn':
         return 'You withdrawn this application';
       case 'cancelled':
@@ -519,8 +525,9 @@ const MyApplications = () => {
       case 'hired':
         return 'checkCircle';
       case 'declined':
-      case 'vacancy full':
         return 'timesCircle';
+      case 'vacancy full':
+        return 'candidateHired';
       case 'withdrawn':
       case 'cancelled':
         return 'minusCircle';
@@ -1161,7 +1168,7 @@ const MyApplications = () => {
                   <p className={`mt-2 max-w-lg mx-auto ${UI.body} ${UI.textSecondary}`}>
                     You haven&apos;t applied for any jobs yet.
                   </p>
-                  <p className={`mt-1 max-w-lg mx-auto ${UI.body} ${UI.textSecondary}`}>
+                  <p className={`mt-1 max-w-2xl mx-auto ${UI.body} ${UI.textSecondary}`}>
                     Browse available job opportunities and submit an application to get started.
                   </p>
 
@@ -1210,9 +1217,10 @@ const MyApplications = () => {
                   const resumeUrl = application.jobseeker?.jobSeekerProfile?.resumeUrl || '';
                   const logoUrl = getCompanyLogo(application);
 
-                  const isActiveCard = ACTIVE_STATUSES.includes(statusValue);
                   const isReactivatableCard = REACTIVATABLE_STATUSES.includes(statusValue);
                   const isDeclinedCard = statusValue === 'declined';
+                  const canWithdraw = ['pending', 'for interview'].includes(statusValue);
+                  const showWithdraw = ['pending', 'for interview', 'hired', 'declined', 'vacancy full'].includes(statusValue);
                   const isActionLoading = actionLoadingId === application._id;
 
                   const declineReason = String(application.declineReason || '').trim();
@@ -1296,12 +1304,13 @@ const MyApplications = () => {
                           </div>
 
                           <div className="flex flex-wrap items-center gap-2 xl:flex-shrink-0 xl:justify-end">
-                            {isActiveCard && (
+                            {showWithdraw && (
                               <button
                                 type="button"
                                 onClick={() => handleWithdraw(application._id)}
-                                disabled={isActionLoading}
-                                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnDangerSoft} ${UI.ring}`}
+                                disabled={isActionLoading || !canWithdraw}
+                                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnDangerSoft} ${UI.ring} ${!canWithdraw ? 'cursor-not-allowed opacity-50' : ''}`}
+                                title={canWithdraw ? 'Withdraw application' : 'This application can no longer be withdrawn'}
                               >
                                 <SvgIcon name="minusCircle" className="w-4 h-4" />
                                 Withdraw

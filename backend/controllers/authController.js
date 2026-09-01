@@ -1953,7 +1953,9 @@ exports.updateProfile = async (req, res) => {
 
       if (Object.prototype.hasOwnProperty.call(updateData.jobSeekerProfile, 'salaryPrivacy')) {
         const requestedPrivacy = String(updateData.jobSeekerProfile.salaryPrivacy || '').trim();
-        updateData.jobSeekerProfile.salaryPrivacy = ['limited', 'only_me'].includes(requestedPrivacy)
+        updateData.jobSeekerProfile.salaryPrivacy = requestedPrivacy === 'limited'
+          ? 'public'
+          : ['public', 'only_me'].includes(requestedPrivacy)
           ? requestedPrivacy
           : 'only_me';
       } else {
@@ -2015,9 +2017,12 @@ exports.updateSalaryExpectation = async (req, res) => {
     }
 
     const { minSalary, maxSalary, currency, privacy } = req.body;
-    const normalizedPrivacy = ['limited', 'only_me'].includes(String(privacy || '').trim())
-      ? String(privacy).trim()
-      : 'only_me';
+    const requestedPrivacy = String(privacy || '').trim();
+    const normalizedPrivacy = requestedPrivacy === 'limited'
+      ? 'public'
+      : ['public', 'only_me'].includes(requestedPrivacy)
+        ? requestedPrivacy
+        : 'only_me';
 
     const payload = {
       'jobSeekerProfile.minimumSalary': minSalary !== undefined && minSalary !== null ? String(minSalary).trim() : '',

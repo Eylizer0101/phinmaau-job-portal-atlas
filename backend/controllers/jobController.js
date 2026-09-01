@@ -1,5 +1,6 @@
 const Job = require('../models/Job');
 const User = require('../models/User');
+const Application = require('../models/Application');
 const notificationController = require('./notificationController');
 
 
@@ -1280,6 +1281,8 @@ exports.updateJob = async (req, res) => {
     const currentLogo = employer?.employerProfile?.companyLogo || '';
 
     const wasDraft = job.isPublished === false;
+    const wasFilledForVacancy = String(job.status || '').toLowerCase() === 'filled';
+    const previousVacancyCount = Number(job.vacancies || 0);
     const previousApplicationDeadline = job.applicationDeadline
       ? new Date(job.applicationDeadline)
       : null;
@@ -1541,6 +1544,54 @@ exports.updateJob = async (req, res) => {
     }
 
     await job.save();
+
+    const nextVacancyCount = Number(job.vacancies || 0);
+    if (
+      Number.isFinite(previousVacancyCount) &&
+      Number.isFinite(nextVacancyCount) &&
+      nextVacancyCount > previousVacancyCount
+    ) {
+      const hiredCount = await Application.countDocuments({ job: job._id, status: 'hired' });
+
+      if (hiredCount < nextVacancyCount) {
+        const applicationsToRestore = await Application.find({
+          job: job._id,
+          status: 'vacancy full',
+          lastActiveStatus: { $in: ['pending', 'for interview'] }
+        }).select('_id lastActiveStatus');
+
+        if (applicationsToRestore.length) {
+          await Application.bulkWrite(
+            applicationsToRestore.map((application) => ({
+              updateOne: {
+                filter: { _id: application._id },
+                update: {
+                  $set: {
+                    status: application.lastActiveStatus,
+                    reviewedAt: null,
+                    notes: '',
+                    isDeclinedArchived: false,
+                    declinedArchivedAt: null,
+                    declinedFrom: '',
+                    declineReason: '',
+                    declineComment: ''
+                  }
+                }
+              }
+            }))
+          );
+        }
+
+        if (wasFilledForVacancy) {
+          job.status = 'published';
+          job.isActive = true;
+          job.isPublished = true;
+          job.filledAt = null;
+          job.filledReason = '';
+          await job.save();
+        }
+      }
+    }
 
     if (wasDraft && nowPublished) {
       await sendJobMatchNotifications(job);

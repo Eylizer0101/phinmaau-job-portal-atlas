@@ -635,8 +635,8 @@ const LoginPage = () => {
           }
         }}
       >
-        <div className="w-full max-w-[360px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
-          <div className="relative border-b border-gray-200 px-5 pb-4 pt-5">
+        <div className="w-full max-w-[400px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+          <div className="relative border-b border-gray-200 px-6 pb-5 pt-6">
             <button
               type="button"
               onClick={closeForgotPasswordModal}
@@ -662,7 +662,7 @@ const LoginPage = () => {
             </div>
           </div>
 
-          <form onSubmit={handleForgotPasswordSubmit} className="space-y-3.5 px-5 py-4" noValidate>
+          <form onSubmit={handleForgotPasswordSubmit} className="space-y-4 px-6 py-5" noValidate>
             <div className="space-y-1.5">
               <label htmlFor="forgot-password-email" className="block text-xs font-bold text-gray-900">
                 Enter Registered Email Address
