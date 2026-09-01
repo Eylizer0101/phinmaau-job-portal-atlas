@@ -1118,13 +1118,12 @@ const EmployerDashboard = () => {
         );
       case 'building':
         return (
-          <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" shapeRendering="geometricPrecision">
+          <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth={1.7}
-              vectorEffect="non-scaling-stroke"
-              d="M4 21h16M7 21V7a1 1 0 011-1h8a1 1 0 011 1v14M9 10h.01M9 13h.01M9 16h.01M15 10h.01M15 13h.01M15 16h.01"
+              strokeWidth={1.6}
+              d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3.75h1.5m-1.5 3.75h1.5m3-7.5H15m-1.5 3.75H15m-1.5 3.75H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"
             />
           </svg>
         );
