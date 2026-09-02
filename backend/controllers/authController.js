@@ -980,6 +980,10 @@ exports.register = async (req, res) => {
         expiresAt: null,
         verifiedAt: new Date(),
       },
+      settingsVerification: {
+        emailVerified: true,
+        phoneVerified: false,
+      },
 
       firstName: cleanFirstName,
       middleName: cleanMiddleName,
@@ -1247,6 +1251,10 @@ exports.registerEmployer = async (req, res) => {
         tokenHash: '',
         expiresAt: null,
         verifiedAt: new Date(),
+      },
+      settingsVerification: {
+        emailVerified: true,
+        phoneVerified: false,
       },
 
       employerProfile: {
@@ -2368,7 +2376,14 @@ exports.getCurrentUser = async (req, res) => {
         updatedAt: user.updatedAt,
         mustChangePassword: Boolean(user.mustChangePassword),
         notificationPreferences: user.notificationPreferences,
-        settingsVerification: user.settingsVerification,
+        settingsVerification: {
+          ...(user.settingsVerification?.toObject?.() || user.settingsVerification || {}),
+          emailVerified: Boolean(
+            user.settingsVerification?.emailVerified ||
+            (!user.settingsVerification?.pendingEmail && user.emailVerification?.verifiedAt)
+          ),
+          phoneVerified: Boolean(user.settingsVerification?.phoneVerified),
+        },
         jobSeekerProfile: user.role === 'jobseeker' ? user.jobSeekerProfile : undefined,
         employerProfile: user.role === 'employer' ? user.employerProfile : undefined,
       },
@@ -3205,8 +3220,8 @@ exports.requestEmailChangeVerification = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Current password is required.' });
     }
 
-    if (!emailLower || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailLower)) {
-      return res.status(400).json({ success: false, message: 'Please enter a valid new email address.' });
+    if (!emailLower || !isGmailAddress(emailLower)) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid Gmail address ending in @gmail.com.' });
     }
 
     const user = await User.findById(userId);
@@ -3225,6 +3240,13 @@ exports.requestEmailChangeVerification = async (req, res) => {
     const code = generateNumericOtp();
     const expiresAt = new Date(Date.now() + SETTINGS_OTP_EXPIRES_MINUTES * 60 * 1000);
 
+    await sendSettingsEmailVerificationCode({
+      to: emailLower,
+      fullName: user.fullName || user.firstName || user.username || 'User',
+      code,
+      expiresInMinutes: SETTINGS_OTP_EXPIRES_MINUTES,
+    });
+
     user.settingsVerification = {
       ...(user.settingsVerification?.toObject?.() || user.settingsVerification || {}),
       pendingEmail: emailLower,
@@ -3236,13 +3258,6 @@ exports.requestEmailChangeVerification = async (req, res) => {
 
     await user.save();
 
-    await sendSettingsEmailVerificationCode({
-      to: emailLower,
-      fullName: user.fullName || user.firstName || user.username || 'User',
-      code,
-      expiresInMinutes: SETTINGS_OTP_EXPIRES_MINUTES,
-    });
-
     return res.status(200).json({
       success: true,
       message: 'Verification code sent to your new email address.',
@@ -3250,7 +3265,7 @@ exports.requestEmailChangeVerification = async (req, res) => {
     });
   } catch (error) {
     console.error('Error requesting email verification:', error);
-    return res.status(500).json({ success: false, message: error.message || 'Error sending email verification code.' });
+    return res.status(500).json({ success: false, message: 'We couldn\'t send the verification code. Please try again later.' });
   }
 };
 
@@ -3285,7 +3300,7 @@ exports.resendEmailVerificationCode = async (req, res) => {
     return res.status(200).json({ success: true, message: 'Verification code sent.' });
   } catch (error) {
     console.error('Error resending email verification:', error);
-    return res.status(500).json({ success: false, message: error.message || 'Error resending verification code.' });
+    return res.status(500).json({ success: false, message: 'We couldn\'t resend the verification code. Please try again later.' });
   }
 };
 
@@ -3369,6 +3384,11 @@ exports.requestPhoneChangeVerification = async (req, res) => {
     const code = generateNumericOtp();
     const expiresAt = new Date(Date.now() + SETTINGS_OTP_EXPIRES_MINUTES * 60 * 1000);
 
+    await sendBrevoSms({
+      to: cleanPhone,
+      message: `Your AGAPAY mobile verification code is ${code}. This code expires in ${SETTINGS_OTP_EXPIRES_MINUTES} minutes.`,
+    });
+
     user.settingsVerification = {
       ...(user.settingsVerification?.toObject?.() || user.settingsVerification || {}),
       pendingPhoneNumber: cleanPhone,
@@ -3380,15 +3400,10 @@ exports.requestPhoneChangeVerification = async (req, res) => {
 
     await user.save();
 
-    await sendBrevoSms({
-      to: cleanPhone,
-      message: `Your AGAPAY mobile verification code is ${code}. This code expires in ${SETTINGS_OTP_EXPIRES_MINUTES} minutes.`,
-    });
-
     return res.status(200).json({ success: true, message: 'Verification code sent to your mobile number.', pendingPhoneNumber: cleanPhone });
   } catch (error) {
     console.error('Error requesting phone verification:', error);
-    return res.status(500).json({ success: false, message: error.message || 'Error sending mobile verification code.' });
+    return res.status(500).json({ success: false, message: 'We couldn\'t send the verification code. Please try again later.' });
   }
 };
 
@@ -3424,7 +3439,7 @@ exports.resendPhoneVerificationCode = async (req, res) => {
     return res.status(200).json({ success: true, message: 'Mobile verification code sent.' });
   } catch (error) {
     console.error('Error resending phone verification:', error);
-    return res.status(500).json({ success: false, message: error.message || 'Error resending mobile verification code.' });
+    return res.status(500).json({ success: false, message: 'We couldn\'t resend the verification code. Please try again later.' });
   }
 };
 

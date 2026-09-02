@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../../../services/api.js';
 import { FaEye, FaEyeSlash, FaInfoCircle } from 'react-icons/fa';
 
@@ -21,15 +21,8 @@ const Panel = ({ title, blue = false, children }) => (
 );
 
 const StatusBadge = ({ verified }) => (
-  <span
-    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${
-      verified
-        ? 'bg-[#eaf2fb] text-[#2e66a6] border-[#d8e2ee]'
-        : 'bg-[#f7faff] text-black/55 border-[#e6edf5]'
-    }`}
-  >
-    <span className={`w-2 h-2 rounded-full ${verified ? 'bg-[#2e66a6]' : 'bg-black/35'}`} />
-    {verified ? 'verified' : 'unverified'}
+  <span className="inline-flex items-center px-1 text-xs font-semibold text-[#2e66a6]">
+    {verified ? 'Verified' : 'Unverified'}
   </span>
 );
 
@@ -65,13 +58,13 @@ const TextInput = ({ value, onChange, placeholder, type = 'text', ...props }) =>
   />
 );
 
-const SaveButton = ({ loading, children = 'Save' }) => (
+const SaveButton = ({ loading, children = 'Save', loadingText = 'Saving...' }) => (
   <button
     type="submit"
     disabled={loading}
     className={`px-7 h-11 rounded-xl bg-[#2e66a6] hover:bg-[#25578f] active:bg-[#1f4b7c] text-white text-sm font-bold shadow-[0_10px_22px_rgba(46,102,166,0.18)] transition disabled:opacity-60 ${focusRing}`}
   >
-    {loading ? 'Saving...' : children}
+    {loading ? loadingText : children}
   </button>
 );
 
@@ -147,6 +140,10 @@ const Settings = () => {
   const [mobileChangeMessage, setMobileChangeMessage] = useState({ type: '', text: '' });
   const [mobileVerifyMessage, setMobileVerifyMessage] = useState({ type: '', text: '' });
   const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
+  const [emailResendSeconds, setEmailResendSeconds] = useState(0);
+  const [mobileResendSeconds, setMobileResendSeconds] = useState(0);
+  const emailSectionRef = useRef(null);
+  const mobileSectionRef = useRef(null);
 
   useAutoDismissError(emailChangeMessage, setEmailChangeMessage);
   useAutoDismissError(emailVerifyMessage, setEmailVerifyMessage);
@@ -194,6 +191,14 @@ const Settings = () => {
     fetchMe();
   }, [fetchMe]);
 
+  useEffect(() => {
+    if (loadingUser) return;
+
+    const section = new URLSearchParams(window.location.search).get('section');
+    const target = section === 'mobile' ? mobileSectionRef.current : section === 'email' ? emailSectionRef.current : null;
+    if (target) window.requestAnimationFrame(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }, [loadingUser]);
+
   const verification = me?.settingsVerification || {};
   const displayEmail = me?.email || '—';
   const displayMobile = me?.jobSeekerProfile?.phoneNumber || '—';
@@ -201,6 +206,34 @@ const Settings = () => {
   const phoneVerified = Boolean(verification.phoneVerified);
   const pendingEmail = verification.pendingEmail || '';
   const pendingPhone = verification.pendingPhoneNumber || '';
+
+  useEffect(() => {
+    const requestedAt = verification.emailOtpRequestedAt ? new Date(verification.emailOtpRequestedAt).getTime() : 0;
+    setEmailResendSeconds(requestedAt ? Math.max(0, Math.ceil((requestedAt + 180000 - Date.now()) / 1000)) : 0);
+  }, [verification.emailOtpRequestedAt]);
+
+  useEffect(() => {
+    const requestedAt = verification.phoneOtpRequestedAt ? new Date(verification.phoneOtpRequestedAt).getTime() : 0;
+    setMobileResendSeconds(requestedAt ? Math.max(0, Math.ceil((requestedAt + 180000 - Date.now()) / 1000)) : 0);
+  }, [verification.phoneOtpRequestedAt]);
+
+  useEffect(() => {
+    if (emailResendSeconds <= 0) return undefined;
+    const timer = setInterval(() => setEmailResendSeconds((seconds) => Math.max(0, seconds - 1)), 1000);
+    return () => clearInterval(timer);
+  }, [emailResendSeconds > 0]);
+
+  useEffect(() => {
+    if (mobileResendSeconds <= 0) return undefined;
+    const timer = setInterval(() => setMobileResendSeconds((seconds) => Math.max(0, seconds - 1)), 1000);
+    return () => clearInterval(timer);
+  }, [mobileResendSeconds > 0]);
+
+  const formatCountdown = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes} minute${minutes === 1 ? '' : 's'}, ${remainingSeconds} second${remainingSeconds === 1 ? '' : 's'}`;
+  };
 
   const fullName = useMemo(() => buildFullName(me), [me]);
 
@@ -213,6 +246,11 @@ const Settings = () => {
       return;
     }
 
+    if (!/^[^\s@]+@gmail\.com$/i.test(newEmail.trim())) {
+      setEmailChangeMessage({ type: 'error', text: 'Please enter a valid Gmail address ending in @gmail.com.' });
+      return;
+    }
+
     try {
       setSavingEmailChange(true);
       const res = await api.post('/auth/settings/request-email-verification', {
@@ -221,6 +259,8 @@ const Settings = () => {
       });
       setEmailChangeMessage({ type: 'success', text: res.data?.message || 'Verification code sent to your new email address.' });
       setEmailPassword('');
+      setNewEmail('');
+      setEmailResendSeconds(180);
       await fetchMe();
     } catch (err) {
       setEmailChangeMessage({ type: 'error', text: err.response?.data?.message || 'Failed to send email verification code.' });
@@ -261,6 +301,7 @@ const Settings = () => {
     try {
       const res = await api.post('/auth/settings/resend-email-verification');
       setEmailVerifyMessage({ type: 'success', text: res.data?.message || 'Verification code sent.' });
+      setEmailResendSeconds(180);
       await fetchMe();
     } catch (err) {
       setEmailVerifyMessage({ type: 'error', text: err.response?.data?.message || 'Failed to resend email verification code.' });
@@ -284,6 +325,8 @@ const Settings = () => {
       setSavingMobileChange(true);
       const res = await api.post('/auth/settings/request-phone-verification', { phoneNumber: cleanMobileNumber });
       setMobileChangeMessage({ type: 'success', text: res.data?.message || 'Verification code sent to your mobile number.' });
+      setNewMobile('');
+      setMobileResendSeconds(180);
       await fetchMe();
     } catch (err) {
       setMobileChangeMessage({ type: 'error', text: err.response?.data?.message || 'Failed to send mobile verification code.' });
@@ -325,6 +368,7 @@ const Settings = () => {
     try {
       const res = await api.post('/auth/settings/resend-phone-verification');
       setMobileVerifyMessage({ type: 'success', text: res.data?.message || 'Mobile verification code sent.' });
+      setMobileResendSeconds(180);
       await fetchMe();
     } catch (err) {
       setMobileVerifyMessage({ type: 'error', text: err.response?.data?.message || 'Failed to resend mobile verification code.' });
@@ -385,10 +429,6 @@ const Settings = () => {
         <p className="text-sm sm:text-base text-black/60 mt-2">Manage your email, mobile number, and password.</p>
       </div>
 
-      {loadingUser ? (
-        <div className="bg-[#f7faff] border border-[#e6edf5] rounded-2xl p-5 text-sm text-black/60 shadow-sm">Loading settings...</div>
-      ) : null}
-
       {error ? (
         <div className="mb-4 bg-[#fff7f7] border border-red-200 rounded-2xl p-4 text-sm text-red-700 shadow-sm">
           <div>{error}</div>
@@ -396,7 +436,8 @@ const Settings = () => {
       ) : null}
 
       <div className="space-y-5">
-        <Panel title="Change Email">
+        <div ref={emailSectionRef} className="scroll-mt-24">
+        <Panel title="Change Email" blue>
           <form onSubmit={handleRequestEmailChange}>
             <InlineMessage message={emailChangeMessage} />
             <div className="space-y-4 text-sm">
@@ -408,7 +449,7 @@ const Settings = () => {
               <p className="text-xs text-black/50">To change your email, please complete the following fields.</p>
               {pendingEmail ? <p className="text-xs text-[#2e66a6]">Pending new email verification: {pendingEmail}</p> : null}
 
-              <div className="grid grid-cols-1 sm:grid-cols-[170px_1fr] max-w-xl items-start sm:items-center gap-2 sm:gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-[170px_220px] max-w-xl items-start sm:items-center gap-2 sm:gap-3">
                 <label className="text-black/70">Current Password:</label>
                 <PasswordInput
                   value={emailPassword}
@@ -436,12 +477,13 @@ const Settings = () => {
             </div>
 
             <div className="mt-6 flex justify-end">
-              <SaveButton loading={savingEmailChange} />
+              <SaveButton loading={savingEmailChange} loadingText="Sending...">Update Email</SaveButton>
             </div>
           </form>
         </Panel>
+        </div>
 
-        <Panel title="Verify Email" blue>
+        {pendingEmail ? <Panel title="Verify Email" blue>
           <form onSubmit={handleVerifyEmail}>
             <InlineMessage message={emailVerifyMessage} />
             <div className="space-y-4 text-sm">
@@ -452,30 +494,35 @@ const Settings = () => {
               </div>
               <p className="text-xs text-black/50">To verify your email, please enter the code we sent through your email.</p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-[170px_1fr] max-w-xl items-start sm:items-center gap-2 sm:gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-[170px_220px] max-w-xl items-start sm:items-center gap-2 sm:gap-3">
                 <label className="text-black/70">Verification Code:</label>
                 <TextInput
                   value={emailCode}
                   onChange={(e) => {
-                    setEmailCode(e.target.value);
+                    setEmailCode(e.target.value.replace(/\D/g, '').slice(0, 6));
                     if (emailVerifyMessage.text) setEmailVerifyMessage({ type: '', text: '' });
                   }}
                   placeholder="Enter code here"
+                  inputMode="numeric"
+                  maxLength={6}
                 />
               </div>
 
-              <button type="button" onClick={handleResendEmail} className="inline-flex w-fit text-xs font-semibold text-[#2e66a6] underline underline-offset-4 hover:text-[#25578f] transition">
-                Can't find our email? Resend verification email
+              <button type="button" onClick={handleResendEmail} disabled={emailResendSeconds > 0} className="inline-flex w-fit text-xs font-semibold text-[#2e66a6] underline underline-offset-4 hover:text-[#25578f] transition disabled:no-underline disabled:opacity-60 disabled:cursor-not-allowed">
+                {emailResendSeconds > 0
+                  ? `Resend verification in ${formatCountdown(emailResendSeconds)}`
+                  : "Didn't get the code? Resend verification email"}
               </button>
             </div>
 
             <div className="mt-6 flex justify-end">
-              <SaveButton loading={verifyingEmail} />
+              <SaveButton loading={verifyingEmail} loadingText="Verifying...">Verify Email</SaveButton>
             </div>
           </form>
-        </Panel>
+        </Panel> : null}
 
-        <Panel title="Change Mobile Number">
+        <div ref={mobileSectionRef} className="scroll-mt-24">
+        <Panel title="Change Mobile Number" blue>
           <form onSubmit={handleRequestMobileChange}>
             <InlineMessage message={mobileChangeMessage} />
             <div className="space-y-4 text-sm">
@@ -485,11 +532,11 @@ const Settings = () => {
                 <StatusBadge verified={phoneVerified} />
               </div>
               <p className="text-xs text-black/50">
-                Your mobile number will be used to send important updates on your applications, and allow recruiters to contact you and invite you to interviews.
+                Your mobile number may be used to send important updates about your applications and allow employers to contact you and invite you to interviews.
               </p>
               {pendingPhone ? <p className="text-xs text-[#2e66a6]">Pending new mobile verification: {pendingPhone}</p> : null}
 
-              <div className="grid grid-cols-1 sm:grid-cols-[170px_1fr] max-w-xl items-start sm:items-center gap-2 sm:gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-[170px_220px] max-w-xl items-start sm:items-center gap-2 sm:gap-3">
                 <label className="text-black/70">Mobile Number:</label>
                 <div className="relative">
                   <TextInput
@@ -510,12 +557,13 @@ const Settings = () => {
             </div>
 
             <div className="mt-6 flex justify-end">
-              <SaveButton loading={savingMobileChange} />
+              <SaveButton loading={savingMobileChange} loadingText="Sending...">Update Mobile Number</SaveButton>
             </div>
           </form>
         </Panel>
+        </div>
 
-        <Panel title="Verify Mobile Number" blue>
+        {pendingPhone ? <Panel title="Verify Mobile Number" blue>
           <form onSubmit={handleVerifyMobile}>
             <InlineMessage message={mobileVerifyMessage} />
             <div className="space-y-4 text-sm">
@@ -526,27 +574,31 @@ const Settings = () => {
               </div>
               <p className="text-xs text-black/50">Enter the code we sent to you via SMS to verify your mobile number.</p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-[170px_1fr] max-w-xl items-start sm:items-center gap-2 sm:gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-[170px_220px] max-w-xl items-start sm:items-center gap-2 sm:gap-3">
                 <label className="text-black/70">Verification Code:</label>
                 <TextInput
                   value={mobileCode}
-                  onChange={(e) => setMobileCode(e.target.value)}
+                  onChange={(e) => setMobileCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   placeholder="Enter code here"
+                  inputMode="numeric"
+                  maxLength={6}
                 />
               </div>
 
-              <button type="button" onClick={handleResendMobile} className="inline-flex w-fit text-xs font-semibold text-[#2e66a6] underline underline-offset-4 hover:text-[#25578f] transition">
-                Send verification code
+              <button type="button" onClick={handleResendMobile} disabled={mobileResendSeconds > 0} className="inline-flex w-fit text-xs font-semibold text-[#2e66a6] underline underline-offset-4 hover:text-[#25578f] transition disabled:no-underline disabled:opacity-60 disabled:cursor-not-allowed">
+                {mobileResendSeconds > 0
+                  ? `Resend verification in ${formatCountdown(mobileResendSeconds)}`
+                  : "Didn't receive the code? Resend verification code"}
               </button>
             </div>
 
             <div className="mt-6 flex justify-end">
-              <SaveButton loading={verifyingMobile} />
+              <SaveButton loading={verifyingMobile} loadingText="Verifying...">Verify Mobile Number</SaveButton>
             </div>
           </form>
-        </Panel>
+        </Panel> : null}
 
-        <Panel title="Password">
+        <Panel title="Password" blue>
           <form onSubmit={handleChangePassword}>
             <InlineMessage message={passwordMessage} />
             <div className="space-y-4 text-sm">

@@ -2648,6 +2648,7 @@ const BasicInfoModal = ({
   cityOptions,
   yearOptions,
   onEmailUpdate,
+  onMobileUpdate,
   error,
 }) => {
   if (!open) return null;
@@ -2815,14 +2816,20 @@ const BasicInfoModal = ({
                   </button>
                 </div>
 
-                <div className="grid grid-cols-[120px_1fr] items-center gap-3">
+                <div className="grid grid-cols-[120px_1fr_auto] items-center gap-3">
                   <label className="text-sm text-gray-500">Mobile Number*</label>
                   <input
                     value={drafts.phoneNumber || ''}
-                    required
-                    onChange={(e) => onChange('phoneNumber', e.target.value)}
-                    className="h-11 px-3 border border-gray-300 rounded-[3px] outline-none focus:border-[#2e66a6] focus:ring-1 focus:ring-[#2e66a6]"
+                    disabled
+                    className="h-11 px-3 border border-gray-300 rounded-[3px] bg-gray-100 text-gray-500 outline-none"
                   />
+                  <button
+                    type="button"
+                    onClick={onMobileUpdate}
+                    className="h-11 px-4 text-[#2e66a6] font-bold text-sm hover:underline"
+                  >
+                    UPDATE
+                  </button>
                 </div>
 
                 <div className="pt-4 border-t border-gray-200">
@@ -7177,7 +7184,8 @@ const MyProfile = () => {
         provinceOptions={provinceOptions}
         cityOptions={cityOptions}
         yearOptions={yearOptions}
-        onEmailUpdate={openEmailUpdateModal}
+        onEmailUpdate={() => navigate('/jobseeker/settings?section=email')}
+        onMobileUpdate={() => navigate('/jobseeker/settings?section=mobile')}
         error={error}
       />
 
