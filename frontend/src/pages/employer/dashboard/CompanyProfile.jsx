@@ -8,6 +8,7 @@ import {
   PH_CITIES_BY_PROVINCE,
 } from '../../../constants/phLocations';
 import api from '../../../services/api';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const cx = (...classes) => classes.filter(Boolean).join(' ');
 
@@ -2988,7 +2989,7 @@ const CompanyProfile = () => {
                       aria-label={showCredentialPassword ? 'Hide password' : 'Show password'}
                       title={showCredentialPassword ? 'Hide password' : 'Show password'}
                     >
-                      {showCredentialPassword ? <EyeOffIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+                      {showCredentialPassword ? <FaEyeSlash /> : <FaEye />}
                     </button>
                   </div>
                 </div>

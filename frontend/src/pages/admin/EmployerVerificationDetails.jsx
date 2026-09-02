@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState, useCallback, useRef } from "react"
 import { useParams, Link } from "react-router-dom";
 import api from "../../services/api";
 import AdminLayout from "../../layouts/AdminLayout";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
@@ -1500,7 +1501,7 @@ const EmployerVerificationDetails = () => {
                       aria-label={showCredentialPassword ? "Hide password" : "Show password"}
                       title={showCredentialPassword ? "Hide password" : "Show password"}
                     >
-                      <SvgIcon name={showCredentialPassword ? "eyeOff" : "eye"} className="h-5 w-5" />
+                      {showCredentialPassword ? <FaEyeSlash /> : <FaEye />}
                     </button>
                   </div>
 

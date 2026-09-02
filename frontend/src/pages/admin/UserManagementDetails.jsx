@@ -6,6 +6,7 @@ import { normalizeUserToResumeData } from "../../components/shared/resumePrintTe
 import Pagination from "../../components/shared/Pagination";
 import ApplicationHistoryCard from "../../components/admin/ApplicationHistoryCard";
 import { CompanyViewSvgIcon } from "../../components/shared/JobseekerIcons";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
@@ -2417,7 +2418,7 @@ const UserManagementDetails = () => {
                       <div className="relative">
                         <input type={showCredentialPassword ? "text" : "password"} value={credentialAccess.password} onChange={(event) => setCredentialAccess((current) => ({ ...current, password: event.target.value, error: "" }))} placeholder="Enter your password" autoFocus disabled={credentialAccess.verifying} className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 pr-12 text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20 disabled:bg-gray-50" />
                         <button type="button" onClick={() => setShowCredentialPassword((visible) => !visible)} disabled={credentialAccess.verifying} className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-gray-500 hover:text-[#2e66a6] disabled:opacity-60" aria-label={showCredentialPassword ? "Hide password" : "Show password"}>
-                          <Icon name="eye" className="h-5 w-5" />
+                          {showCredentialPassword ? <FaEyeSlash /> : <FaEye />}
                         </button>
                       </div>
                     </div>

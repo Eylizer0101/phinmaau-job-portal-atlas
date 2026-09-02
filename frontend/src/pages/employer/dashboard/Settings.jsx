@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
 
@@ -83,18 +84,7 @@ const PasswordInput = ({ visible, onToggle, ...props }) => (
       aria-label={visible ? 'Hide password' : 'Show password'}
       title={visible ? 'Hide password' : 'Show password'}
     >
-      {visible ? (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M10.6 10.7a2 2 0 002.7 2.7" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9.9 4.3A10.8 10.8 0 0112 4c5.2 0 9 5 9 5a15 15 0 01-3.1 3.6M6.2 6.2C4.2 7.5 3 9 3 9s3.8 5 9 5c1 0 2-.2 2.9-.5" />
-        </svg>
-      ) : (
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 12s3.8-5 9-5 9 5 9 5-3.8 5-9 5-9-5-9-5z" />
-          <circle cx="12" cy="12" r="2.5" />
-        </svg>
-      )}
+      {visible ? <FaEyeSlash aria-hidden="true" /> : <FaEye aria-hidden="true" />}
     </button>
   </div>
 );

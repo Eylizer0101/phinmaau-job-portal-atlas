@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const createMathChallenge = () => {
   const left = Math.floor(Math.random() * 40) + 10;
@@ -228,21 +229,8 @@ const ResetPassword = () => {
   const fieldClass = (hasError) =>
     `${inputBase} ${hasError ? 'border-red-400' : 'border-gray-200'}`;
 
-  const eyeIcon = (visible) => (
-    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-      {visible ? (
-        <>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M3 3l18 18" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M10.6 10.7a2 2 0 002.7 2.7M9.9 4.2A10.7 10.7 0 0112 4c5 0 8.7 4.4 9 8-.1 1.3-.7 2.7-1.7 3.9M6.2 6.2C4.3 7.6 3.2 9.8 3 12c.3 3.6 4 8 9 8 1.6 0 3-.4 4.2-1" />
-        </>
-      ) : (
-        <>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z" />
-          <circle cx="12" cy="12" r="2.5" strokeWidth="1.8" />
-        </>
-      )}
-    </svg>
-  );
+  const eyeIcon = (visible) =>
+    visible ? <FaEyeSlash aria-hidden="true" /> : <FaEye aria-hidden="true" />;
 
   const isExpired = secondsRemaining <= 0;
   const passwordStrength = getPasswordStrength(formData.newPassword);
