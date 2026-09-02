@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../../../services/api.js';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaCheckCircle, FaEye, FaEyeSlash, FaInfoCircle } from 'react-icons/fa';
 
 const focusRing =
   'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 focus-visible:ring-offset-white';
@@ -88,6 +88,40 @@ const InlineMessage = ({ message }) => {
   );
 };
 
+const SuccessPopup = ({ open, title, message, iconType = 'success', onClose }) => {
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const timer = setTimeout(() => onClose?.(), 3000);
+    return () => clearTimeout(timer);
+  }, [open, title, message, iconType, onClose]);
+
+  if (!open) return null;
+
+  const isInformation = iconType === 'info';
+
+  return (
+    <div
+      className="fixed inset-0 z-[10060] flex items-center justify-center bg-black/25 px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-live="polite"
+    >
+      <div className="w-full max-w-sm rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-2xl">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#e8f1ff]">
+          {isInformation ? (
+            <FaInfoCircle className="text-4xl text-[#2e66a6]" />
+          ) : (
+            <FaCheckCircle className="text-4xl text-green-600" />
+          )}
+        </div>
+        <div className="text-xl font-bold text-gray-900">{title}</div>
+        <div className="mt-2 text-sm text-gray-500">{message}</div>
+      </div>
+    </div>
+  );
+};
+
 const useAutoDismissError = (message, setMessage) => {
   useEffect(() => {
     if (message?.type !== 'error' || !message?.text) return undefined;
@@ -144,8 +178,22 @@ const Settings = () => {
   const [mobileResendSeconds, setMobileResendSeconds] = useState(0);
   const [showEmailVerification, setShowEmailVerification] = useState(false);
   const [showMobileVerification, setShowMobileVerification] = useState(false);
+  const [successPopup, setSuccessPopup] = useState({
+    open: false,
+    title: '',
+    message: '',
+    iconType: 'success',
+  });
   const emailSectionRef = useRef(null);
   const mobileSectionRef = useRef(null);
+
+  const closeSuccessPopup = useCallback(() => {
+    setSuccessPopup((current) => ({ ...current, open: false }));
+  }, []);
+
+  const showSuccessPopup = useCallback((title, message, iconType = 'success') => {
+    setSuccessPopup({ open: true, title, message, iconType });
+  }, []);
 
   useAutoDismissError(emailChangeMessage, setEmailChangeMessage);
   useAutoDismissError(emailVerifyMessage, setEmailVerifyMessage);
@@ -255,11 +303,14 @@ const Settings = () => {
 
     try {
       setSavingEmailChange(true);
-      const res = await api.post('/auth/settings/request-email-verification', {
+      await api.post('/auth/settings/request-email-verification', {
         currentPassword: emailPassword,
         newEmail,
       });
-      setEmailChangeMessage({ type: 'success', text: res.data?.message || 'Verification code sent to your new email address.' });
+      showSuccessPopup(
+        'Verification Email Sent!',
+        'A verification email has been sent to your new email address. Please check your inbox to verify your email.'
+      );
       setEmailPassword('');
       setNewEmail('');
       setEmailResendSeconds(180);
@@ -284,7 +335,10 @@ const Settings = () => {
     try {
       setVerifyingEmail(true);
       const res = await api.post('/auth/settings/verify-email', { code: emailCode });
-      setEmailVerifyMessage({ type: 'success', text: res.data?.message || 'Email verified successfully.' });
+      showSuccessPopup(
+        'Email Changed Successfully!',
+        'Your new email address has been verified and saved.'
+      );
       setEmailCode('');
       setShowEmailVerification(false);
       if (res.data?.user) {
@@ -303,8 +357,11 @@ const Settings = () => {
   const handleResendEmail = async () => {
     setEmailVerifyMessage({ type: '', text: '' });
     try {
-      const res = await api.post('/auth/settings/resend-email-verification');
-      setEmailVerifyMessage({ type: 'success', text: res.data?.message || 'Verification code sent.' });
+      await api.post('/auth/settings/resend-email-verification');
+      showSuccessPopup(
+        'Verification Email Resent!',
+        'A new verification email has been sent to your email address. Please check your inbox.'
+      );
       setEmailResendSeconds(180);
       await fetchMe();
     } catch (err) {
@@ -327,8 +384,12 @@ const Settings = () => {
 
     try {
       setSavingMobileChange(true);
-      const res = await api.post('/auth/settings/request-phone-verification', { phoneNumber: cleanMobileNumber });
-      setMobileChangeMessage({ type: 'success', text: res.data?.message || 'Verification code sent to your mobile number.' });
+      await api.post('/auth/settings/request-phone-verification', { phoneNumber: cleanMobileNumber });
+      showSuccessPopup(
+        'Verification Code Sent!',
+        'A verification code has been sent to your new mobile number. Enter the code to verify your number.',
+        'info'
+      );
       setNewMobile('');
       setMobileResendSeconds(180);
       setShowMobileVerification(true);
@@ -352,7 +413,10 @@ const Settings = () => {
     try {
       setVerifyingMobile(true);
       const res = await api.post('/auth/settings/verify-phone', { code: mobileCode });
-      setMobileVerifyMessage({ type: 'success', text: res.data?.message || 'Mobile number verified successfully.' });
+      showSuccessPopup(
+        'Mobile Number Changed Successfully!',
+        'Your new mobile number has been verified and saved.'
+      );
       setMobileCode('');
       setNewMobile('');
       setShowMobileVerification(false);
@@ -372,8 +436,12 @@ const Settings = () => {
   const handleResendMobile = async () => {
     setMobileVerifyMessage({ type: '', text: '' });
     try {
-      const res = await api.post('/auth/settings/resend-phone-verification');
-      setMobileVerifyMessage({ type: 'success', text: res.data?.message || 'Mobile verification code sent.' });
+      await api.post('/auth/settings/resend-phone-verification');
+      showSuccessPopup(
+        'Verification Code Resent!',
+        'A new verification code has been sent to your mobile number. Enter the latest code to continue.',
+        'info'
+      );
       setMobileResendSeconds(180);
       await fetchMe();
     } catch (err) {
@@ -429,7 +497,15 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-8"><div className="max-w-6xl mx-auto">
+    <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-8">
+      <SuccessPopup
+        open={successPopup.open}
+        title={successPopup.title}
+        message={successPopup.message}
+        iconType={successPopup.iconType}
+        onClose={closeSuccessPopup}
+      />
+      <div className="max-w-6xl mx-auto">
       <div className="mb-4">
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-black">Settings</h1>
         <p className="text-sm sm:text-base text-black/60 mt-2">Manage your email, mobile number, and password.</p>
