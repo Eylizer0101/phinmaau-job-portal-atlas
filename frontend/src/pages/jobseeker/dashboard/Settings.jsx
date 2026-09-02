@@ -229,19 +229,22 @@ const Settings = () => {
 
   const passwordRequirements = [
     { label: 'At least 8 characters', met: newPassword.length >= 8 },
-    { label: 'Starts with an uppercase letter', met: /^[A-Z]/.test(newPassword) },
+    { label: 'At least one uppercase letter', met: /[A-Z]/.test(newPassword) },
     { label: 'At least one lowercase letter', met: /[a-z]/.test(newPassword) },
     { label: 'At least one number', met: /\d/.test(newPassword) },
     { label: 'At least one special character', met: /[^A-Za-z0-9]/.test(newPassword) },
   ];
 
   const metPasswordRequirements = passwordRequirements.filter((requirement) => requirement.met).length;
-  const passwordStrength =
-    metPasswordRequirements === passwordRequirements.length
-      ? { label: 'Strong password', color: 'text-green-700', bar: 'bg-green-600', width: 'w-full' }
-      : metPasswordRequirements >= 3
-        ? { label: 'Good password, but still incomplete', color: 'text-amber-700', bar: 'bg-amber-500', width: 'w-2/3' }
-        : { label: 'Weak password', color: 'text-red-700', bar: 'bg-red-500', width: 'w-1/3' };
+  const passwordStrengthLevels = [
+    { label: 'Very Weak', color: 'text-red-700', bar: 'bg-red-600', width: 'w-1/6' },
+    { label: 'Weak', color: 'text-red-700', bar: 'bg-red-500', width: 'w-2/6' },
+    { label: 'Fair', color: 'text-orange-700', bar: 'bg-orange-500', width: 'w-3/6' },
+    { label: 'Good', color: 'text-amber-700', bar: 'bg-amber-500', width: 'w-4/6' },
+    { label: 'Strong', color: 'text-lime-700', bar: 'bg-lime-500', width: 'w-5/6' },
+    { label: 'Very Strong', color: 'text-green-700', bar: 'bg-green-600', width: 'w-full' },
+  ];
+  const passwordStrength = passwordStrengthLevels[metPasswordRequirements];
 
   const fetchMe = useCallback(async () => {
     try {
@@ -485,7 +488,7 @@ const Settings = () => {
     if (!passwordRequirements.every((requirement) => requirement.met)) {
       setPasswordMessage({
         type: 'error',
-        text: 'New password must start with an uppercase letter and contain at least 8 characters, lowercase, number, and special character.',
+        text: 'New password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character.',
       });
       return;
     }
