@@ -455,7 +455,7 @@ const Settings = () => {
               <p className="text-xs text-black/50">To change your email, please complete the following fields.</p>
               {showEmailVerification && pendingEmail ? <p className="text-xs text-[#2e66a6]">Pending new email verification: {pendingEmail}</p> : null}
 
-              <div className="grid grid-cols-1 sm:grid-cols-[170px_220px] max-w-xl items-start sm:items-center gap-2 sm:gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-[140px_220px] max-w-xl items-start sm:items-center gap-2 sm:gap-1">
                 <label className="text-black/70">Current Password:</label>
                 <PasswordInput
                   value={emailPassword}
@@ -500,7 +500,7 @@ const Settings = () => {
               </div>
               <p className="text-xs text-black/50">To verify your email, please enter the code we sent through your email.</p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-[170px_220px] max-w-xl items-start sm:items-center gap-2 sm:gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-[140px_220px] max-w-xl items-start sm:items-center gap-2 sm:gap-1">
                 <label className="text-black/70">Verification Code:</label>
                 <TextInput
                   value={emailCode}
