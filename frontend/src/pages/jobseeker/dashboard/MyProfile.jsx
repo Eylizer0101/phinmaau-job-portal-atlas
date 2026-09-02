@@ -6753,18 +6753,17 @@ const MyProfile = () => {
               </div>
             </div>
 
-            <div className="hidden sm:flex w-[124px] h-[124px] mr-6 bg-[#1f2430] text-white items-center justify-center font-serif text-[32px] font-bold shrink-0 overflow-hidden">
-              {profileImageUrl ? (
-                <img
-                  src={profileImageUrl}
-                  alt={fullName || 'Profile photo'}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span>
-                  {(formData.firstName?.[0] || 'U').toUpperCase()}{(formData.lastName?.[0] || '').toUpperCase()}
-                </span>
-              )}
+            <div className="hidden sm:flex w-[124px] h-[124px] mr-6 bg-white text-white items-center justify-center font-serif text-[32px] font-bold shrink-0 overflow-hidden">
+              <img
+                src={profileImageUrl || '/images/profile.png'}
+                alt={fullName || 'Profile photo'}
+                className="w-full h-full object-cover bg-white"
+                onError={(event) => {
+                  if (!event.currentTarget.src.endsWith('/images/profile.png')) {
+                    event.currentTarget.src = '/images/profile.png';
+                  }
+                }}
+              />
             </div>
           </div>
         </div>
