@@ -814,6 +814,15 @@ exports.applyForJob = async (req, res) => {
       });
     }
 
+    const settingsVerification = jobseeker.settingsVerification || {};
+    if (settingsVerification.emailVerified !== true || settingsVerification.phoneVerified !== true) {
+      return res.status(403).json({
+        success: false,
+        code: 'CONTACT_VERIFICATION_REQUIRED',
+        message: 'Your email address and mobile number must both be verified before you can apply for a job.'
+      });
+    }
+
     const profileCv = jobseeker.jobSeekerProfile?.verificationDocs?.cv;
 
     if (!profileCv?.url) {

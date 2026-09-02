@@ -1589,6 +1589,14 @@ exports.login = async (req, res) => {
         extensionName: user.extensionName,
         mustChangePassword: Boolean(user.mustChangePassword),
         isFirstLogin,
+        settingsVerification: {
+          ...(user.settingsVerification?.toObject?.() || user.settingsVerification || {}),
+          emailVerified: Boolean(
+            user.settingsVerification?.emailVerified ||
+            user.emailVerification?.verifiedAt
+          ),
+          phoneVerified: Boolean(user.settingsVerification?.phoneVerified),
+        },
         jobSeekerProfile: user.role === 'jobseeker' ? user.jobSeekerProfile : undefined,
         employerProfile: user.role === 'employer' ? user.employerProfile : undefined,
       },

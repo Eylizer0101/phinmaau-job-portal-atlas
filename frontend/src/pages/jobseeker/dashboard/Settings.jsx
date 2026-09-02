@@ -358,8 +358,8 @@ const Settings = () => {
       setVerifyingEmail(true);
       const res = await api.post('/auth/settings/verify-email', { code: emailCode });
       showSuccessPopup(
-        'Email Changed Successfully!',
-        'Your new email address has been verified and saved.'
+        'Email Updated Successfully!',
+        'Your email has been updated successfully.'
       );
       setEmailCode('');
       setShowEmailVerification(false);
@@ -436,8 +436,8 @@ const Settings = () => {
       setVerifyingMobile(true);
       const res = await api.post('/auth/settings/verify-phone', { code: mobileCode });
       showSuccessPopup(
-        'Mobile Number Changed Successfully!',
-        'Your new mobile number has been verified and saved.'
+        'Contact Number Updated Successfully!',
+        'Your contact number has been updated successfully.'
       );
       setMobileCode('');
       setNewMobile('');
@@ -504,7 +504,10 @@ const Settings = () => {
         currentPassword,
         newPassword,
       });
-      setPasswordMessage({ type: 'success', text: res.data?.message || 'Password changed successfully.' });
+      showSuccessPopup(
+        'Password Updated Successfully!',
+        'Your password has been updated successfully.'
+      );
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');

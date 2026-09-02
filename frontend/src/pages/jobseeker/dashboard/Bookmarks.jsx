@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import JobSeekerLayout from '../../../layouts/JobSeekerLayout';
 import api from '../../../services/api';
 import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
+import ApplicationVerificationModal from '../../../components/jobseeker/ApplicationVerificationModal';
 import { filterOpenJobListings, isOpenJobListing } from '../../../utils/jobVisibility';
 
 const DEFAULT_COMPANY_LOGO = '/images/companyicon.png';
@@ -1742,6 +1743,7 @@ const Bookmarks = () => {
   const [activeCompanyTab, setActiveCompanyTab] = useState('about');
 
   const [showApplyModal, setShowApplyModal] = useState(false);
+  const [showContactVerificationNotice, setShowContactVerificationNotice] = useState(false);
   const [modalJob, setModalJob] = useState(null);
 
   const [appliedMap, setAppliedMap] = useState({});
@@ -2261,7 +2263,7 @@ const Bookmarks = () => {
     [setToastMessage]
   );
 
-  const handleApplyClick = useCallback(() => {
+  const handleApplyClick = useCallback(async () => {
     const token = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
 
@@ -2271,7 +2273,10 @@ const Bookmarks = () => {
     }
 
     try {
-      const user = JSON.parse(userStr);
+      const storedUser = JSON.parse(userStr);
+      const response = await api.get('/auth/me');
+      const user = response.data?.user || response.data?.data?.user || storedUser;
+      localStorage.setItem('user', JSON.stringify(user));
 
       if (user.role !== 'jobseeker') {
         setToastMessage('error', 'Only job seekers can apply for jobs.');
@@ -2286,6 +2291,11 @@ const Bookmarks = () => {
         else if (verificationStatus === 'rejected') message += 'Your verification was rejected. Please contact admin.';
         else message += 'Please complete verification before applying.';
         setToastMessage('error', message);
+        return;
+      }
+
+      if (!user.settingsVerification?.emailVerified || !user.settingsVerification?.phoneVerified) {
+        setShowContactVerificationNotice(true);
         return;
       }
 
@@ -2318,7 +2328,10 @@ const Bookmarks = () => {
       }
 
       try {
-        const parsedUser = JSON.parse(user);
+        const storedUser = JSON.parse(user);
+        const response = await api.get('/auth/me');
+        const parsedUser = response.data?.user || response.data?.data?.user || storedUser;
+        localStorage.setItem('user', JSON.stringify(parsedUser));
 
         if (parsedUser.role !== 'jobseeker') {
           setToastMessage('error', 'Only job seekers can apply for jobs.');
@@ -2333,6 +2346,11 @@ const Bookmarks = () => {
           else if (verificationStatus === 'rejected') message += 'Your verification was rejected. Please contact admin.';
           else message += 'Please complete verification before applying.';
           setToastMessage('error', message);
+          return;
+        }
+
+        if (!parsedUser.settingsVerification?.emailVerified || !parsedUser.settingsVerification?.phoneVerified) {
+          setShowContactVerificationNotice(true);
           return;
         }
 
@@ -3746,6 +3764,10 @@ const Bookmarks = () => {
             document.body
           )}
 
+        <ApplicationVerificationModal
+          open={showContactVerificationNotice}
+          onClose={() => setShowContactVerificationNotice(false)}
+        />
         <ApplyJobModal
           isOpen={showApplyModal}
           onClose={() => {

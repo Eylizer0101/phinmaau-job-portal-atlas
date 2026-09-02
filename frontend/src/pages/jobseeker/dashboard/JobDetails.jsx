@@ -4,6 +4,7 @@ import axios from 'axios';
 import JobSeekerLayout from '../../../layouts/JobSeekerLayout';
 import api from '../../../services/api';
 import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
+import ApplicationVerificationModal from '../../../components/jobseeker/ApplicationVerificationModal';
 import { isOpenJobListing } from '../../../utils/jobVisibility';
 
 /**
@@ -784,6 +785,7 @@ const JobDetails = () => {
   const [error, setError] = useState('');
 
   const [showApplyModal, setShowApplyModal] = useState(false);
+  const [showContactVerificationNotice, setShowContactVerificationNotice] = useState(false);
   const [applyingJob, setApplyingJob] = useState(null);
   const [applyModalInitialStep, setApplyModalInitialStep] = useState(1);
 
@@ -1160,7 +1162,7 @@ const JobDetails = () => {
     }
   }, [navigate, job, isSaved, setToastWithAutoClear]);
 
-  const handleApplyClick = useCallback(() => {
+  const handleApplyClick = useCallback(async () => {
     const token = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
 
@@ -1170,7 +1172,10 @@ const JobDetails = () => {
     }
 
     try {
-      const user = JSON.parse(userStr);
+      const storedUser = JSON.parse(userStr);
+      const response = await api.get('/auth/me');
+      const user = response.data?.user || response.data?.data?.user || storedUser;
+      localStorage.setItem('user', JSON.stringify(user));
 
       if (user.role !== 'jobseeker') {
         setToastWithAutoClear('error', 'Only job seekers can apply for jobs.');
@@ -1189,6 +1194,11 @@ const JobDetails = () => {
           message += 'Please complete verification before applying.';
         }
         setToastWithAutoClear('error', message);
+        return;
+      }
+
+      if (!user.settingsVerification?.emailVerified || !user.settingsVerification?.phoneVerified) {
+        setShowContactVerificationNotice(true);
         return;
       }
 
@@ -1623,6 +1633,10 @@ const JobDetails = () => {
             </div>
           </div>
         </div>
+        <ApplicationVerificationModal
+          open={showContactVerificationNotice}
+          onClose={() => setShowContactVerificationNotice(false)}
+        />
         <ApplyJobModal
           isOpen={showApplyModal}
           initialStep={applyModalInitialStep}

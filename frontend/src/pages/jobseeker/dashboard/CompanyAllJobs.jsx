@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import api from "../../../services/api";
 import ApplyJobModal from "../../../components/jobseeker/ApplyJobModal";
+import ApplicationVerificationModal from "../../../components/jobseeker/ApplicationVerificationModal";
 import Pagination from "../../../components/shared/Pagination";
 import { filterOpenJobListings } from "../../../utils/jobVisibility";
 
@@ -67,6 +68,7 @@ const CompanyAllJobs = () => {
   const [pageSize, setPageSize] = useState(10);
   const [selectedJob, setSelectedJob] = useState(null);
   const [showApplyModal, setShowApplyModal] = useState(false);
+  const [showContactVerificationNotice, setShowContactVerificationNotice] = useState(false);
   const [appliedIds, setAppliedIds] = useState([]);
   const [savedJobIds, setSavedJobIds] = useState([]);
   const [savingJobId, setSavingJobId] = useState("");
@@ -184,8 +186,31 @@ const CompanyAllJobs = () => {
   useEffect(() => { setPage(1); }, [search, pageSize]);
   useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
 
-  const handleApply = (job) => {
+  const handleApply = async (job) => {
     if (appliedIds.includes(job._id)) return;
+
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+    if (!token || !userStr) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const storedUser = JSON.parse(userStr);
+      const response = await api.get('/auth/me');
+      const user = response.data?.user || response.data?.data?.user || storedUser;
+      localStorage.setItem("user", JSON.stringify(user));
+      if (user.role !== "jobseeker") return;
+
+      if (!user.settingsVerification?.emailVerified || !user.settingsVerification?.phoneVerified) {
+        setShowContactVerificationNotice(true);
+        return;
+      }
+    } catch {
+      return;
+    }
+
     setSelectedJob(job);
     setShowApplyModal(true);
   };
@@ -531,6 +556,10 @@ const CompanyAllJobs = () => {
         </section>
       </div>
 
+      <ApplicationVerificationModal
+        open={showContactVerificationNotice}
+        onClose={() => setShowContactVerificationNotice(false)}
+      />
       {showApplyModal && selectedJob ? (
         <ApplyJobModal
           job={selectedJob}

@@ -4,6 +4,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { FaClipboardCheck } from "react-icons/fa";
 import api from "../../../services/api";
 import ApplyJobModal from "../../../components/jobseeker/ApplyJobModal";
+import ApplicationVerificationModal from "../../../components/jobseeker/ApplicationVerificationModal";
 import { filterOpenJobListings, isOpenJobListing } from "../../../utils/jobVisibility";
 
 const DEFAULT_COMPANY_LOGO = "/images/companyicon.png";
@@ -837,6 +838,7 @@ const CompanyViewDetails = () => {
 
   const [applyingJob, setApplyingJob] = useState(null);
   const [showApplyModal, setShowApplyModal] = useState(false);
+  const [showContactVerificationNotice, setShowContactVerificationNotice] = useState(false);
   const [appliedJobIds, setAppliedJobIds] = useState([]);
   const [savedJobIds, setSavedJobIds] = useState([]);
   const [savingJobId, setSavingJobId] = useState("");
@@ -1605,7 +1607,10 @@ const CompanyViewDetails = () => {
     }
 
     try {
-      const parsedUser = JSON.parse(user);
+      const storedUser = JSON.parse(user);
+      const response = await api.get('/auth/me');
+      const parsedUser = response.data?.user || response.data?.data?.user || storedUser;
+      localStorage.setItem('user', JSON.stringify(parsedUser));
 
       if (parsedUser.role !== "jobseeker") {
         alert("Only job seekers can apply for jobs");
@@ -1620,6 +1625,11 @@ const CompanyViewDetails = () => {
         else if (verificationStatus === "rejected") message += "Your verification was rejected. Please contact admin.";
         else message += "Please complete verification before applying.";
         alert(message);
+        return;
+      }
+
+      if (!parsedUser.settingsVerification?.emailVerified || !parsedUser.settingsVerification?.phoneVerified) {
+        setShowContactVerificationNotice(true);
         return;
       }
 
@@ -3024,6 +3034,10 @@ const CompanyViewDetails = () => {
         </div>
       )}
 
+      <ApplicationVerificationModal
+        open={showContactVerificationNotice}
+        onClose={() => setShowContactVerificationNotice(false)}
+      />
       <ApplyJobModal
         isOpen={showApplyModal}
         onClose={() => {

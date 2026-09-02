@@ -6,6 +6,7 @@ import { JOB_TYPES, EXPERIENCE_LEVELS, EDUCATION_LEVELS } from '../../../constan
 import { PH_PROVINCES_BY_REGION, PH_CITIES_BY_PROVINCE } from '../../../constants/phLocations';
 import api from '../../../services/api';
 import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
+import ApplicationVerificationModal from '../../../components/jobseeker/ApplicationVerificationModal';
 import { filterOpenJobListings, isOpenJobListing } from '../../../utils/jobVisibility';
 
 const normalizeAmount = (value) => String(value || '').replace(/[^\d]/g, '');
@@ -553,6 +554,7 @@ const JobSearch = () => {
   const [layoutView, setLayoutView] = useState('grid');
   const [applyingJob, setApplyingJob] = useState(null);
   const [showApplyModal, setShowApplyModal] = useState(false);
+  const [showContactVerificationNotice, setShowContactVerificationNotice] = useState(false);
 
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [debouncedLocation, setDebouncedLocation] = useState('');
@@ -1250,7 +1252,7 @@ const JobSearch = () => {
     }
   };
 
-  const handleApplyClick = (job) => {
+  const handleApplyClick = async (job) => {
     const token = localStorage.getItem('token');
     const user = localStorage.getItem('user');
     const jobId = job?._id || job?.id;
@@ -1262,7 +1264,10 @@ const JobSearch = () => {
     }
 
     try {
-      const parsedUser = JSON.parse(user);
+      const storedUser = JSON.parse(user);
+      const response = await api.get('/auth/me');
+      const parsedUser = response.data?.user || response.data?.data?.user || storedUser;
+      localStorage.setItem('user', JSON.stringify(parsedUser));
 
       if (parsedUser.role !== 'jobseeker') {
         alert('Only job seekers can apply for jobs');
@@ -1277,6 +1282,11 @@ const JobSearch = () => {
         else if (verificationStatus === 'rejected') message += 'Your verification was rejected. Please contact admin.';
         else message += 'Please complete verification before applying.';
         alert(message);
+        return;
+      }
+
+      if (!parsedUser.settingsVerification?.emailVerified || !parsedUser.settingsVerification?.phoneVerified) {
+        setShowContactVerificationNotice(true);
         return;
       }
 
@@ -1954,6 +1964,10 @@ const JobSearch = () => {
           </div>
         </div>
 
+        <ApplicationVerificationModal
+          open={showContactVerificationNotice}
+          onClose={() => setShowContactVerificationNotice(false)}
+        />
         <ApplyJobModal
           isOpen={showApplyModal}
           onClose={() => {
