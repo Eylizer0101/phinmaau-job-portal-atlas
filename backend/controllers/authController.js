@@ -2375,7 +2375,7 @@ exports.getCurrentUser = async (req, res) => {
           ...(user.settingsVerification?.toObject?.() || user.settingsVerification || {}),
           emailVerified: Boolean(
             user.settingsVerification?.emailVerified ||
-            (!user.settingsVerification?.pendingEmail && user.emailVerification?.verifiedAt)
+            user.emailVerification?.verifiedAt
           ),
           phoneVerified: Boolean(user.settingsVerification?.phoneVerified),
         },
@@ -3257,7 +3257,6 @@ exports.requestEmailChangeVerification = async (req, res) => {
       emailOtpHash: hashToken(code),
       emailOtpExpiresAt: expiresAt,
       emailOtpRequestedAt: new Date(),
-      emailVerified: false,
     };
 
     await user.save();
@@ -3349,6 +3348,13 @@ exports.verifyEmailChangeCode = async (req, res) => {
       emailOtpHash: '',
       emailOtpExpiresAt: null,
       emailOtpRequestedAt: null,
+    };
+
+    user.emailVerification = {
+      ...(user.emailVerification?.toObject?.() || user.emailVerification || {}),
+      tokenHash: '',
+      expiresAt: null,
+      verifiedAt: new Date(),
     };
 
     await user.save();
