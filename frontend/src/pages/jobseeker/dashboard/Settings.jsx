@@ -142,6 +142,8 @@ const Settings = () => {
   const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
   const [emailResendSeconds, setEmailResendSeconds] = useState(0);
   const [mobileResendSeconds, setMobileResendSeconds] = useState(0);
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [showMobileVerification, setShowMobileVerification] = useState(false);
   const emailSectionRef = useRef(null);
   const mobileSectionRef = useRef(null);
 
@@ -261,6 +263,7 @@ const Settings = () => {
       setEmailPassword('');
       setNewEmail('');
       setEmailResendSeconds(180);
+      setShowEmailVerification(true);
       await fetchMe();
     } catch (err) {
       setEmailChangeMessage({ type: 'error', text: err.response?.data?.message || 'Failed to send email verification code.' });
@@ -283,6 +286,7 @@ const Settings = () => {
       const res = await api.post('/auth/settings/verify-email', { code: emailCode });
       setEmailVerifyMessage({ type: 'success', text: res.data?.message || 'Email verified successfully.' });
       setEmailCode('');
+      setShowEmailVerification(false);
       if (res.data?.user) {
         setMe(res.data.user);
         localStorage.setItem('user', JSON.stringify(res.data.user));
@@ -327,6 +331,7 @@ const Settings = () => {
       setMobileChangeMessage({ type: 'success', text: res.data?.message || 'Verification code sent to your mobile number.' });
       setNewMobile('');
       setMobileResendSeconds(180);
+      setShowMobileVerification(true);
       await fetchMe();
     } catch (err) {
       setMobileChangeMessage({ type: 'error', text: err.response?.data?.message || 'Failed to send mobile verification code.' });
@@ -350,6 +355,7 @@ const Settings = () => {
       setMobileVerifyMessage({ type: 'success', text: res.data?.message || 'Mobile number verified successfully.' });
       setMobileCode('');
       setNewMobile('');
+      setShowMobileVerification(false);
       if (res.data?.user) {
         setMe(res.data.user);
         localStorage.setItem('user', JSON.stringify(res.data.user));
@@ -447,7 +453,7 @@ const Settings = () => {
                 <StatusBadge verified={emailVerified} />
               </div>
               <p className="text-xs text-black/50">To change your email, please complete the following fields.</p>
-              {pendingEmail ? <p className="text-xs text-[#2e66a6]">Pending new email verification: {pendingEmail}</p> : null}
+              {showEmailVerification && pendingEmail ? <p className="text-xs text-[#2e66a6]">Pending new email verification: {pendingEmail}</p> : null}
 
               <div className="grid grid-cols-1 sm:grid-cols-[170px_220px] max-w-xl items-start sm:items-center gap-2 sm:gap-3">
                 <label className="text-black/70">Current Password:</label>
@@ -483,7 +489,7 @@ const Settings = () => {
         </Panel>
         </div>
 
-        {pendingEmail ? <Panel title="Verify Email" blue>
+        {showEmailVerification && pendingEmail ? <Panel title="Verify Email" blue>
           <form onSubmit={handleVerifyEmail}>
             <InlineMessage message={emailVerifyMessage} />
             <div className="space-y-4 text-sm">
@@ -534,7 +540,7 @@ const Settings = () => {
               <p className="text-xs text-black/50">
                 Your mobile number may be used to send important updates about your applications and allow employers to contact you and invite you to interviews.
               </p>
-              {pendingPhone ? <p className="text-xs text-[#2e66a6]">Pending new mobile verification: {pendingPhone}</p> : null}
+              {showMobileVerification && pendingPhone ? <p className="text-xs text-[#2e66a6]">Pending new mobile verification: {pendingPhone}</p> : null}
 
               <div className="grid grid-cols-1 sm:grid-cols-[170px_220px] max-w-xl items-start sm:items-center gap-2 sm:gap-3">
                 <label className="text-black/70">Mobile Number:</label>
@@ -563,7 +569,7 @@ const Settings = () => {
         </Panel>
         </div>
 
-        {pendingPhone ? <Panel title="Verify Mobile Number" blue>
+        {showMobileVerification && pendingPhone ? <Panel title="Verify Mobile Number" blue>
           <form onSubmit={handleVerifyMobile}>
             <InlineMessage message={mobileVerifyMessage} />
             <div className="space-y-4 text-sm">
