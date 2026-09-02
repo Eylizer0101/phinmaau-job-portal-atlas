@@ -833,7 +833,7 @@ const LoginPage = () => {
                 />
               </div>
 
-              <h2 className="text-2xl font-medium text-gray-900">Welcome to AGAPAY</h2>
+              <h2 className="text-2xl font-semibold text-gray-900">Welcome to AGAPAY</h2>
               <p className="mt-2 text-[15px] text-gray-700">Sign in to continue to your account</p>
             </div>
 
