@@ -20,11 +20,30 @@ const Panel = ({ title, blue = false, children }) => (
   </div>
 );
 
-const StatusBadge = ({ verified }) => (
-  <span className="inline-flex items-center px-1 text-xs font-semibold text-[#2e66a6]">
-    {verified ? 'Verified' : 'Unverified'}
-  </span>
-);
+const StatusBadge = ({ verified, label = 'contact information' }) => {
+  if (verified) {
+    return (
+      <span
+        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white"
+        title={`Verified ${label}`}
+        aria-label={`Verified ${label}`}
+      >
+        <img
+          src="/images/checkmo.png"
+          alt=""
+          className="h-6 w-6 object-contain"
+          draggable="false"
+        />
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center px-1 text-xs font-semibold text-[#2e66a6]">
+      Unverified
+    </span>
+  );
+};
 
 const PasswordInput = ({ value, onChange, placeholder, show, onToggle, autoComplete }) => (
   <div className="relative">
@@ -526,7 +545,7 @@ const Settings = () => {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-black/70">Current Email Address:</span>
                 <span className="font-medium text-black">{displayEmail}</span>
-                <StatusBadge verified={emailVerified} />
+                <StatusBadge verified={emailVerified} label="email" />
               </div>
               <p className="text-xs text-black/50">To change your email, please complete the following fields.</p>
               {showEmailVerification && pendingEmail ? <p className="text-xs text-[#2e66a6]">Pending new email verification: {pendingEmail}</p> : null}
@@ -572,7 +591,7 @@ const Settings = () => {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-black/70">Current Email Address:</span>
                 <span className="font-medium text-black">{pendingEmail || displayEmail}</span>
-                <StatusBadge verified={emailVerified && !pendingEmail} />
+                <StatusBadge verified={emailVerified && !pendingEmail} label="email" />
               </div>
               <p className="text-xs text-black/50">To verify your email, please enter the code we sent through your email.</p>
 
@@ -611,7 +630,7 @@ const Settings = () => {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-black/70">Mobile Number:</span>
                 <span className="font-medium text-black">{displayMobile}</span>
-                <StatusBadge verified={phoneVerified} />
+                <StatusBadge verified={phoneVerified} label="mobile number" />
               </div>
               <p className="text-xs text-black/50">
                 Your mobile number may be used to send important updates about your applications and allow employers to contact you and invite you to interviews.
@@ -651,7 +670,7 @@ const Settings = () => {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-black/70">Mobile Number:</span>
                 <span className="font-medium text-black">{pendingPhone || displayMobile}</span>
-                <StatusBadge verified={phoneVerified && !pendingPhone} />
+                <StatusBadge verified={phoneVerified && !pendingPhone} label="mobile number" />
               </div>
               <p className="text-xs text-black/50">Enter the code we sent to you via SMS to verify your mobile number.</p>
 
