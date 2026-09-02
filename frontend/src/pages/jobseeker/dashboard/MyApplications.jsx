@@ -476,7 +476,7 @@ const MyApplications = () => {
       case 'declined':
         return 'Declined';
       case 'vacancy full':
-        return 'Candidate Hired';
+        return 'Position Filled';
       case 'withdrawn':
         return 'You withdrawn this application';
       case 'cancelled':

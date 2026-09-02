@@ -196,6 +196,16 @@ const companyReviewSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    application: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Application',
+      default: null,
+    },
+    job: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Job',
+      default: null,
+    },
     roleAppliedFor: {
       type: String,
       default: 'Role not specified',

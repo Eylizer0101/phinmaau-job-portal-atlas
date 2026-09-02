@@ -128,13 +128,53 @@ const computeRatingBreakdown = (reviews = []) => {
   return breakdown;
 };
 
-const getReviewEligibility = async (companyId, jobseekerId) => {
-  const hasApplication = await Application.exists({
+const getReviewEligibility = async (companyId, jobseekerId, reviews = []) => {
+  const applications = await Application.find({
     employer: companyId,
     jobseeker: jobseekerId,
-  });
+  })
+    .select('_id job')
+    .populate('job', 'title')
+    .sort({ createdAt: -1 })
+    .lean();
 
-  return Boolean(hasApplication);
+  const jobseekerReviews = (Array.isArray(reviews) ? reviews : []).filter(
+    (review) => String(review?.reviewer) === String(jobseekerId)
+  );
+  const reviewedApplicationIds = new Set(
+    jobseekerReviews.map((review) => String(review?.application || '')).filter(Boolean)
+  );
+  const reviewedJobIds = new Set(
+    jobseekerReviews.map((review) => String(review?.job || '')).filter(Boolean)
+  );
+  const legacyReviewedRoles = new Set(
+    jobseekerReviews
+      .filter((review) => !review?.application && !review?.job)
+      .map((review) => String(review?.roleAppliedFor || '').trim().toLowerCase())
+      .filter(Boolean)
+  );
+
+  const eligibleApplications = applications
+    .filter((application) => application?.job?._id && application?.job?.title)
+    .filter((application) => {
+      const applicationId = String(application._id);
+      const jobId = String(application.job._id);
+      const jobTitle = String(application.job.title || '').trim().toLowerCase();
+
+      return !reviewedApplicationIds.has(applicationId)
+        && !reviewedJobIds.has(jobId)
+        && !legacyReviewedRoles.has(jobTitle);
+    })
+    .map((application) => ({
+      applicationId: String(application._id),
+      jobId: String(application.job._id),
+      jobTitle: String(application.job.title || '').trim(),
+    }));
+
+  return {
+    hasApplication: applications.length > 0,
+    eligibleApplications,
+  };
 };
 
 // GET /api/companies/verified/:id/review-eligibility
@@ -150,21 +190,24 @@ exports.getCompanyReviewEligibility = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Company not found.' });
     }
 
-    const eligible = await getReviewEligibility(company._id, req.user._id);
-    const alreadyReviewed = Array.isArray(company?.employerProfile?.reviews)
-      && company.employerProfile.reviews.some(
-        (review) => String(review?.reviewer) === String(req.user._id)
-      );
+    const reviewEligibility = await getReviewEligibility(
+      company._id,
+      req.user._id,
+      company?.employerProfile?.reviews
+    );
+    const eligible = reviewEligibility.eligibleApplications.length > 0;
+    const reviewLimitReached = reviewEligibility.hasApplication && !eligible;
 
     return res.status(200).json({
       success: true,
-      eligible: eligible && !alreadyReviewed,
-      hasApplication: eligible,
-      alreadyReviewed,
-      message: alreadyReviewed
-        ? 'You have already reviewed this company.'
+      eligible,
+      hasApplication: reviewEligibility.hasApplication,
+      reviewLimitReached,
+      eligibleApplications: reviewEligibility.eligibleApplications,
+      message: reviewLimitReached
+        ? 'You’ve already reviewed all available job posts from this employer.'
         : eligible
-          ? 'You can review this company.'
+          ? 'You can review an application from this company.'
           : 'You can write a review after applying to a job from this company.',
     });
   } catch (error) {
@@ -186,6 +229,8 @@ const mapCompanyFromUser = (user, reviewerProfileImageMap = new Map()) => {
           reviewerName: review.reviewerName || 'Anonymous User',
           reviewerProfileImage:
             reviewerProfileImageMap.get(String(review.reviewer || '')) || '',
+          applicationId: review.application || null,
+          jobId: review.job || null,
           roleAppliedFor: String(review.roleAppliedFor || '').trim() || null,
           rating: Number(review.processRating ?? review.rating) || 0,
           processRating: Number(review.processRating ?? review.rating) || 0,
@@ -440,8 +485,9 @@ exports.submitCompanyReview = async (req, res) => {
   try {
     const { id } = req.params;
     const {
+      applicationId,
+      jobId,
       processRating,
-      roleAppliedFor,
       daysToFirstResponse,
       totalProcessDays,
       outcome,
@@ -452,7 +498,6 @@ exports.submitCompanyReview = async (req, res) => {
     const numericProcessRating = Number(processRating);
     const numericDaysToFirstResponse = Number(daysToFirstResponse ?? 0);
     const numericTotalProcessDays = Number(totalProcessDays ?? 0);
-    const trimmedRoleAppliedFor = String(roleAppliedFor || '').trim();
     const trimmedMessage = String(message || '').trim();
 
     if (!numericProcessRating || numericProcessRating < 1 || numericProcessRating > 5) {
@@ -462,10 +507,10 @@ exports.submitCompanyReview = async (req, res) => {
       });
     }
 
-    if (!trimmedRoleAppliedFor) {
+    if (!applicationId) {
       return res.status(400).json({
         success: false,
-        message: 'Role applied for is required.',
+        message: 'Please select a job application to review.',
       });
     }
 
@@ -526,13 +571,30 @@ exports.submitCompanyReview = async (req, res) => {
       });
     }
 
-    const eligibleToReview = await getReviewEligibility(company._id, req.user._id);
-    if (!eligibleToReview) {
+    const selectedApplication = await Application.findOne({
+      _id: applicationId,
+      employer: company._id,
+      jobseeker: req.user._id,
+    })
+      .select('_id job')
+      .populate('job', 'title');
+
+    if (!selectedApplication?.job?._id || !selectedApplication?.job?.title) {
       return res.status(403).json({
         success: false,
-        message: 'You can write a review only after applying to a job from this company.',
+        message: 'The selected job application is not eligible for review.',
       });
     }
+
+    const selectedJobId = String(selectedApplication.job._id);
+    if (jobId && String(jobId) !== selectedJobId) {
+      return res.status(400).json({
+        success: false,
+        message: 'The selected job does not match this application.',
+      });
+    }
+
+    const trimmedRoleAppliedFor = String(selectedApplication.job.title).trim();
 
     if (!company.employerProfile) {
       company.employerProfile = {};
@@ -544,18 +606,30 @@ exports.submitCompanyReview = async (req, res) => {
 
     const alreadyReviewed = company.employerProfile.reviews.some(
       (review) => String(review?.reviewer) === String(req.user?._id)
+        && (
+          String(review?.application || '') === String(selectedApplication._id)
+          || String(review?.job || '') === selectedJobId
+          || (
+            !review?.application
+            && !review?.job
+            && String(review?.roleAppliedFor || '').trim().toLowerCase()
+              === trimmedRoleAppliedFor.toLowerCase()
+          )
+        )
     );
 
     if (alreadyReviewed) {
       return res.status(400).json({
         success: false,
-        message: 'You have already reviewed this company.',
+        message: 'You have already reviewed this job application.',
       });
     }
 
     company.employerProfile.reviews.push({
       reviewer: req.user._id,
       reviewerName: buildReviewerName(req.user),
+      application: selectedApplication._id,
+      job: selectedApplication.job._id,
       roleAppliedFor: trimmedRoleAppliedFor,
       rating: numericProcessRating,
       processRating: numericProcessRating,

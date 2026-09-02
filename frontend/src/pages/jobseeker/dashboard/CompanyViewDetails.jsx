@@ -783,6 +783,10 @@ const CompanyViewDetails = () => {
   const [reviewEligibilityMessage, setReviewEligibilityMessage] = useState(
     "You can write a review after applying to a job from this company."
   );
+  const [eligibleReviewApplications, setEligibleReviewApplications] = useState([]);
+  const [reviewLimitReached, setReviewLimitReached] = useState(false);
+  const [showReviewLimitModal, setShowReviewLimitModal] = useState(false);
+  const [reviewApplicationId, setReviewApplicationId] = useState("");
   const [reviewProcessRating, setReviewProcessRating] = useState(0);
   const [reviewRoleAppliedFor, setReviewRoleAppliedFor] = useState("");
   const [reviewDaysToFirstResponse, setReviewDaysToFirstResponse] = useState("");
@@ -808,11 +812,19 @@ const CompanyViewDetails = () => {
       try {
         const response = await api.get(`/companies/verified/${id}/review-eligibility`);
         setReviewEligible(Boolean(response?.data?.eligible));
+        setEligibleReviewApplications(
+          Array.isArray(response?.data?.eligibleApplications)
+            ? response.data.eligibleApplications
+            : []
+        );
+        setReviewLimitReached(Boolean(response?.data?.reviewLimitReached));
         setReviewEligibilityMessage(
           response?.data?.message || "You can write a review after applying to a job from this company."
         );
       } catch (error) {
         setReviewEligible(false);
+        setEligibleReviewApplications([]);
+        setReviewLimitReached(false);
         setReviewEligibilityMessage(
           error?.response?.data?.message || "You can write a review after applying to a job from this company."
         );
@@ -1339,6 +1351,7 @@ const CompanyViewDetails = () => {
       .trim();
 
     setReviewProcessRating(0);
+    setReviewApplicationId("");
     setReviewRoleAppliedFor("");
     setReviewDaysToFirstResponse("");
     setReviewTotalProcessDays("");
@@ -1369,7 +1382,10 @@ const CompanyViewDetails = () => {
       return;
     }
 
-    if (!reviewEligible) return;
+    if (!reviewEligible) {
+      if (reviewLimitReached) setShowReviewLimitModal(true);
+      return;
+    }
 
     setReviewError("");
     resetReviewForm();
@@ -1381,7 +1397,7 @@ const CompanyViewDetails = () => {
 
   const hasUnsavedReviewChanges = useMemo(() => {
     return Boolean(
-      String(reviewRoleAppliedFor || "").trim() ||
+      reviewApplicationId ||
         reviewDaysToFirstResponse !== "" ||
         reviewTotalProcessDays !== "" ||
         reviewProcessRating > 0 ||
@@ -1390,7 +1406,7 @@ const CompanyViewDetails = () => {
         String(reviewMessage || "").trim()
     );
   }, [
-    reviewRoleAppliedFor,
+    reviewApplicationId,
     reviewDaysToFirstResponse,
     reviewTotalProcessDays,
     reviewProcessRating,
@@ -1437,7 +1453,9 @@ const CompanyViewDetails = () => {
     const daysToFirstResponse = reviewDaysToFirstResponse === "" ? 0 : Number(reviewDaysToFirstResponse);
     const totalProcessDays = reviewTotalProcessDays === "" ? 0 : Number(reviewTotalProcessDays);
 
-    if (!trimmedRoleAppliedFor) return "Please enter the role you applied for.";
+    if (!reviewApplicationId || !trimmedRoleAppliedFor) {
+      return "Please select the role you applied for.";
+    }
     if (!reviewProcessRating || reviewProcessRating < 1 || reviewProcessRating > 5) {
       return "Please select an application process rating from 1 to 5.";
     }
@@ -1479,8 +1497,8 @@ const CompanyViewDetails = () => {
     const totalProcessDays =
       reviewTotalProcessDays === "" ? 0 : Number(reviewTotalProcessDays);
 
-    if (!trimmedRoleAppliedFor) {
-      setReviewError("Please enter the role you applied for.");
+    if (!reviewApplicationId || !trimmedRoleAppliedFor) {
+      setReviewError("Please select the role you applied for.");
       return;
     }
 
@@ -1509,6 +1527,10 @@ const CompanyViewDetails = () => {
       setReviewError("");
 
       const response = await api.post(`/companies/verified/${id}/reviews`, {
+        applicationId: reviewApplicationId,
+        jobId: eligibleReviewApplications.find(
+          (application) => application.applicationId === reviewApplicationId
+        )?.jobId,
         processRating: reviewProcessRating,
         roleAppliedFor: trimmedRoleAppliedFor,
         daysToFirstResponse,
@@ -1526,6 +1548,13 @@ const CompanyViewDetails = () => {
         setActiveTab("reviews");
         setReviewStep("success");
         setReviewError("");
+
+        const remainingApplications = eligibleReviewApplications.filter(
+          (application) => application.applicationId !== reviewApplicationId
+        );
+        setEligibleReviewApplications(remainingApplications);
+        setReviewEligible(remainingApplications.length > 0);
+        setReviewLimitReached(remainingApplications.length === 0);
 
         try {
           await fetchCompanyDetails();
@@ -1555,7 +1584,12 @@ const CompanyViewDetails = () => {
   };
 
   const handleWriteReview = () => {
-    if (reviewEligible) openReviewModal();
+    if (reviewEligible) {
+      openReviewModal();
+      return;
+    }
+
+    if (reviewLimitReached) setShowReviewLimitModal(true);
   };
 
   const handleApplyClick = async (job) => {
@@ -1827,12 +1861,12 @@ const CompanyViewDetails = () => {
               <div className="flex flex-col items-stretch gap-3 rounded-2xl border border-[#e6edf5] bg-[#f7faff] p-4">
                 <button
                   type="button"
-                  onClick={reviewEligible ? handleWriteReview : undefined}
-                  disabled={!reviewEligible}
-                  aria-disabled={!reviewEligible}
-                  title={reviewEligible ? "Write a Review" : reviewEligibilityMessage}
+                  onClick={reviewEligible || reviewLimitReached ? handleWriteReview : undefined}
+                  disabled={!reviewEligible && !reviewLimitReached}
+                  aria-disabled={!reviewEligible && !reviewLimitReached}
+                  title={reviewEligibilityMessage}
                   className={`${UI.btnBase} ${UI.btnMd} ${UI.ring} w-full ${
-                    reviewEligible
+                    reviewEligible || reviewLimitReached
                       ? UI.btnPrimary
                       : "cursor-not-allowed border border-gray-200 bg-gray-100 text-gray-400"
                   }`}
@@ -2628,14 +2662,27 @@ const CompanyViewDetails = () => {
                     <label className="block mb-2 text-sm font-semibold text-gray-900">
                       Role you applied for *
                     </label>
-                    <input
-                      value={reviewRoleAppliedFor}
-                      onChange={(e) => setReviewRoleAppliedFor(e.target.value)}
-                      placeholder="e.g. Frontend Engineer"
-                      maxLength={160}
+                    <select
+                      value={reviewApplicationId}
+                      onChange={(event) => {
+                        const applicationId = event.target.value;
+                        const selectedApplication = eligibleReviewApplications.find(
+                          (application) => application.applicationId === applicationId
+                        );
+                        setReviewApplicationId(applicationId);
+                        setReviewRoleAppliedFor(selectedApplication?.jobTitle || "");
+                        setReviewError("");
+                      }}
                       disabled={reviewSubmitting}
-                      className="w-full h-11 rounded-lg border border-gray-200 px-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
-                    />
+                      className="w-full h-11 rounded-lg border border-gray-200 bg-white px-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                    >
+                      <option value="">Select a role</option>
+                      {eligibleReviewApplications.map((application) => (
+                        <option key={application.applicationId} value={application.applicationId}>
+                          {application.jobTitle}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                 </div>
@@ -2844,6 +2891,45 @@ const CompanyViewDetails = () => {
                   </>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showReviewLimitModal && (
+        <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/35 px-4">
+          <div
+            className="w-full max-w-md overflow-hidden rounded-2xl bg-white text-center shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="review-limit-title"
+            aria-describedby="review-limit-description"
+          >
+            <div className="px-8 pb-6 pt-8">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#2e66a6] text-white">
+                <svg className="h-10 w-10" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3.25-3.25a1 1 0 111.414-1.414L8.75 11.836l6.543-6.543a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <h2 id="review-limit-title" className="text-xl font-bold text-gray-900">
+                Review Limit Reached!
+              </h2>
+              <p id="review-limit-description" className="mt-2 text-sm text-gray-600">
+                You’ve already reviewed all available job posts from this employer.
+              </p>
+            </div>
+            <div className="border-t border-gray-200 p-4">
+              <button
+                type="button"
+                onClick={() => setShowReviewLimitModal(false)}
+                className="h-11 w-full rounded-xl bg-[#2e66a6] px-6 text-sm font-semibold text-white transition hover:bg-[#245387]"
+              >
+                OK
+              </button>
             </div>
           </div>
         </div>
