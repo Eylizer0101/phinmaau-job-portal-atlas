@@ -1267,7 +1267,7 @@ const JobSeekerDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-[1.05fr_1.2fr]">
           {/* LEFT PANEL */}
           <div className="bg-white">
-            <div className="bg-[#2f2b2b] px-6 py-4 text-white">
+            <div className="bg-[#2e66a6] px-6 py-4 text-white">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10">
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1340,8 +1340,16 @@ const JobSeekerDashboard = () => {
           </div>
 
           {/* RIGHT PANEL */}
-          <div className="border-t border-[#D9E3F2] bg-white px-6 py-7 md:border-l md:border-t-0 md:px-8 md:py-8 mt-16">
+          <div className="border-t border-[#D9E3F2] bg-white px-6 py-7 md:border-l md:border-t-0 md:px-8 md:py-8">
             <form onSubmit={handleForcedPasswordChangeSubmit} className="space-y-5" noValidate>
+              <div className="flex w-full justify-center pb-1">
+                <img
+                  src="/images/agpay.png"
+                  alt="AGAPAY"
+                  className="h-16 w-auto max-w-[220px] object-contain"
+                />
+              </div>
+
               <div>
                 <label htmlFor="currentPassword" className="mb-2 block text-sm font-bold text-black">
                   Current Password
@@ -1454,7 +1462,7 @@ const JobSeekerDashboard = () => {
                     )}
                   </button>
                 </div>
-                <p className="mt-2 text-xs text-gray-500">Select a new, strong password.</p>
+                <p className="mt-2 text-xs text-gray-500">Set a new, strong password.</p>
                 {passwordErrors.newPassword ? (
                   <p className="mt-1 text-xs text-red-600">{passwordErrors.newPassword}</p>
                 ) : null}

@@ -199,7 +199,7 @@ const MainLandingPage = () => {
 
           <section className="mt-8 shrink-0 text-center lg:mt-5">
             <h2 className="text-2xl font-semibold text-[#202020] lg:text-[28px]">
-              Find your next job with one of <span className="underline underline-offset-4">Our Partners</span>
+              Find your next job with one of <span className="text-[#3558A8] underline underline-offset-4">Our Partners</span>
             </h2>
 
             <div className="relative mx-auto mt-5 w-full max-w-[1380px] lg:mt-3">

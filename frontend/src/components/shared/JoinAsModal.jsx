@@ -161,7 +161,7 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
 
           <p className="mt-4 text-center text-sm text-gray-700">
             Already have an account?{" "}
-            <Link to="/login" className="font-semibold" style={{ color: BLUE.primary }}>
+            <Link to="/login" className="font-semibold underline underline-offset-2" style={{ color: BLUE.primary }}>
               Sign In here
             </Link>
           </p>
@@ -278,7 +278,7 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
                 style={{ accentColor: BLUE.primary, "--tw-ring-color": BLUE.ring }}
               />
               <span className="text-sm sm:text-base leading-6 text-[#0f2442]">
-                I agree to the AGAPAY <span className="font-semibold" style={{ color: BLUE.primary }}>Privacy Policy</span>
+                I have read and understood the DATA PRIVACY NOTICE
               </span>
             </label>
           </div>
