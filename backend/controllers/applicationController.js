@@ -815,7 +815,25 @@ exports.applyForJob = async (req, res) => {
     }
 
     const settingsVerification = jobseeker.settingsVerification || {};
-    if (settingsVerification.emailVerified !== true || settingsVerification.phoneVerified !== true) {
+    const emailVerified = Boolean(
+      settingsVerification.emailVerified === true ||
+      jobseeker.emailVerification?.verifiedAt
+    );
+    const hasRegisteredPhone = Boolean(String(jobseeker.jobSeekerProfile?.phoneNumber || '').trim());
+    const phoneVerified = Boolean(
+      settingsVerification.phoneVerified === true ||
+      (verificationStatus === 'verified' && hasRegisteredPhone)
+    );
+
+    if (phoneVerified && settingsVerification.phoneVerified !== true) {
+      jobseeker.settingsVerification = {
+        ...(settingsVerification.toObject?.() || settingsVerification),
+        phoneVerified: true,
+      };
+      await jobseeker.save();
+    }
+
+    if (!emailVerified || !phoneVerified) {
       return res.status(403).json({
         success: false,
         code: 'CONTACT_VERIFICATION_REQUIRED',

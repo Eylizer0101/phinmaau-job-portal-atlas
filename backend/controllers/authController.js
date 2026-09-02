@@ -84,6 +84,18 @@ const isApprovedJobseekerAccount = (user) => {
     )
   );
 };
+const hasRegisteredJobseekerPhone = (user) =>
+  Boolean(String(user?.jobSeekerProfile?.phoneNumber || '').trim());
+const ensureRegisteredJobseekerPhoneVerified = (user) => {
+  if (!isApprovedJobseekerAccount(user) || !hasRegisteredJobseekerPhone(user)) return false;
+  if (user.settingsVerification?.phoneVerified === true) return false;
+
+  user.settingsVerification = {
+    ...(user.settingsVerification?.toObject?.() || user.settingsVerification || {}),
+    phoneVerified: true,
+  };
+  return true;
+};
 const canUsePasswordRecovery = (user) => {
   if (!user || user.isActive !== true || String(user.status || '').toLowerCase() !== 'active') return false;
   if (user.role === 'admin') return true;
@@ -982,7 +994,7 @@ exports.register = async (req, res) => {
       },
       settingsVerification: {
         emailVerified: true,
-        phoneVerified: false,
+        phoneVerified: true,
       },
 
       firstName: cleanFirstName,
@@ -1566,6 +1578,7 @@ exports.login = async (req, res) => {
 
     const isFirstLogin = user.role === 'jobseeker' && !user.lastLogin;
 
+    ensureRegisteredJobseekerPhoneVerified(user);
     user.lastLogin = Date.now();
     clearFailedLogins(user);
     await user.save();
@@ -2337,6 +2350,7 @@ exports.getCurrentUser = async (req, res) => {
       if (!user.jobSeekerProfile.verificationDocs) user.jobSeekerProfile.verificationDocs = {};
       const verificationDocs = user.jobSeekerProfile.verificationDocs;
       let repairedRequiredCredentials = false;
+      const repairedPhoneVerification = ensureRegisteredJobseekerPhoneVerified(user);
 
       REQUIRED_ALUMNI_DOC_TYPES.forEach((requiredType) => {
         const requiredDocument = verificationDocs[requiredType];
@@ -2348,7 +2362,7 @@ exports.getCurrentUser = async (req, res) => {
         }
       });
 
-      if (repairedRequiredCredentials || user.isVerified !== true) {
+      if (repairedRequiredCredentials || repairedPhoneVerification || user.isVerified !== true) {
         user.isVerified = true;
         user.jobSeekerProfile.verificationStatus = 'verified';
         await user.save();
@@ -3413,7 +3427,10 @@ exports.requestPhoneChangeVerification = async (req, res) => {
       phoneOtpHash: hashToken(code),
       phoneOtpExpiresAt: expiresAt,
       phoneOtpRequestedAt: new Date(),
-      phoneVerified: false,
+      phoneVerified: Boolean(
+        user.settingsVerification?.phoneVerified ||
+        (isApprovedJobseekerAccount(user) && hasRegisteredJobseekerPhone(user))
+      ),
     };
 
     await user.save();
