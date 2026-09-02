@@ -1252,11 +1252,6 @@ exports.registerEmployer = async (req, res) => {
         expiresAt: null,
         verifiedAt: new Date(),
       },
-      settingsVerification: {
-        emailVerified: true,
-        phoneVerified: false,
-      },
-
       employerProfile: {
         companyName: cleanCompanyName,
         companyWebsiteUrl: normalizedWebsiteUrl,
@@ -3220,8 +3215,17 @@ exports.requestEmailChangeVerification = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Current password is required.' });
     }
 
-    if (!emailLower || !isGmailAddress(emailLower)) {
-      return res.status(400).json({ success: false, message: 'Please enter a valid Gmail address ending in @gmail.com.' });
+    const emailIsValid = req.user.role === 'jobseeker'
+      ? isGmailAddress(emailLower)
+      : isValidBusinessEmail(emailLower);
+
+    if (!emailLower || !emailIsValid) {
+      return res.status(400).json({
+        success: false,
+        message: req.user.role === 'jobseeker'
+          ? 'Please enter a valid Gmail address ending in @gmail.com.'
+          : 'Please enter a valid email address.',
+      });
     }
 
     const user = await User.findById(userId);
