@@ -1684,7 +1684,7 @@ If you don’t receive a confirmation email within 48 hours or have any question
                     <p className="text-center text-sm text-gray-700">
                       Already have an account?{' '}
                       <Link to="/login" className="font-semibold text-[#2e66a6] hover:text-[#245387] underline">
-                        Sign in
+                        Sign In
                       </Link>
                     </p>
                   </div>
