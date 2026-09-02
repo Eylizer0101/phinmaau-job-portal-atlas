@@ -1,7 +1,7 @@
 // src/pages/jobseeker/dashboard/CompanyViewDetails.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { FaCheckCircle } from "react-icons/fa";
+import { FaClipboardCheck } from "react-icons/fa";
 import api from "../../../services/api";
 import ApplyJobModal from "../../../components/jobseeker/ApplyJobModal";
 import { filterOpenJobListings, isOpenJobListing } from "../../../utils/jobVisibility";
@@ -2851,7 +2851,7 @@ const CompanyViewDetails = () => {
                   <div>
                     <div className="relative flex items-start gap-4 px-5 py-6 pr-14 sm:gap-5 sm:px-7 sm:py-7 sm:pr-16">
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#e8f1ff] sm:h-14 sm:w-14">
-                        <FaCheckCircle className="text-[28px] text-[#2e66a6] sm:text-[32px]" aria-hidden="true" />
+                        <FaClipboardCheck className="text-[27px] text-[#2e66a6] sm:text-[31px]" aria-hidden="true" />
                       </div>
 
                       <div className="min-w-0 text-left">
