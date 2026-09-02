@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../../../services/api.js';
-import { FaEye, FaEyeSlash, FaInfoCircle } from 'react-icons/fa';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const focusRing =
   'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 focus-visible:ring-offset-white';
@@ -557,7 +557,6 @@ const Settings = () => {
                     pattern="[0-9]*"
                     maxLength={11}
                   />
-                  <FaInfoCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-[#2e66a6]" />
                 </div>
               </div>
             </div>
