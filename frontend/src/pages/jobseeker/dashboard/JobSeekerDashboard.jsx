@@ -1,6 +1,7 @@
 // src/pages/jobseeker/dashboard/JobSeekerDashboard.jsx
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import api from '../../../services/api';
 import { getProvinceFromLocation } from "../../../constants/phLocations";
 import { filterOpenJobListings } from '../../../utils/jobVisibility';
@@ -1376,31 +1377,7 @@ const JobSeekerDashboard = () => {
                     className="absolute inset-y-0 right-0 inline-flex items-center px-4 text-gray-500"
                     tabIndex={-1}
                   >
-                    {showPasswords.currentPassword ? (
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4-10-7 0-1.657 1.343-3.157 3.515-4.37M9.88 9.88A3 3 0 0114.12 14.12M6.1 6.1L3 3m18 18-3.1-3.1M9.88 9.88L6.1 6.1m8.02 8.02 3.78 3.78M14.12 14.12l-4.24-4.24"
-                        />
-                      </svg>
-                    ) : (
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                        />
-                      </svg>
-                    )}
+                    {showPasswords.currentPassword ? <FaEyeSlash /> : <FaEye />}
                   </button>
                 </div>
                 <p className="mt-2 text-xs text-gray-500">Enter your temporary password.</p>
@@ -1435,31 +1412,7 @@ const JobSeekerDashboard = () => {
                     className="absolute inset-y-0 right-0 inline-flex items-center px-4 text-gray-500"
                     tabIndex={-1}
                   >
-                    {showPasswords.newPassword ? (
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4-10-7 0-1.657 1.343-3.157 3.515-4.37M9.88 9.88A3 3 0 0114.12 14.12M6.1 6.1L3 3m18 18-3.1-3.1M9.88 9.88L6.1 6.1m8.02 8.02 3.78 3.78M14.12 14.12l-4.24-4.24"
-                        />
-                      </svg>
-                    ) : (
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                        />
-                      </svg>
-                    )}
+                    {showPasswords.newPassword ? <FaEyeSlash /> : <FaEye />}
                   </button>
                 </div>
                 <p className="mt-2 text-xs text-gray-500">Set a new, strong password.</p>
@@ -1494,31 +1447,7 @@ const JobSeekerDashboard = () => {
                     className="absolute inset-y-0 right-0 inline-flex items-center px-4 text-gray-500"
                     tabIndex={-1}
                   >
-                    {showPasswords.confirmNewPassword ? (
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4-10-7 0-1.657 1.343-3.157 3.515-4.37M9.88 9.88A3 3 0 0114.12 14.12M6.1 6.1L3 3m18 18-3.1-3.1M9.88 9.88L6.1 6.1m8.02 8.02 3.78 3.78M14.12 14.12l-4.24-4.24"
-                        />
-                      </svg>
-                    ) : (
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                        />
-                      </svg>
-                    )}
+                    {showPasswords.confirmNewPassword ? <FaEyeSlash /> : <FaEye />}
                   </button>
                 </div>
                 <p className="mt-2 text-xs text-gray-500">Re-enter to confirm your new password.</p>
