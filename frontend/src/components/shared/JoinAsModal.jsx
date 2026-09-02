@@ -162,7 +162,7 @@ By registering your organization on AGAPAY, you agree to the secure and responsi
           <p className="mt-4 text-center text-sm text-gray-700">
             Already have an account?{" "}
             <Link to="/login" className="font-semibold" style={{ color: BLUE.primary }}>
-              Sign in here
+              Sign In here
             </Link>
           </p>
         </div>
