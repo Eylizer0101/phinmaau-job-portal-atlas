@@ -27,7 +27,7 @@ const ApplicationVerificationModal = ({ open, onClose }) => {
           Action Required!
         </div>
         <div className="mt-2 text-sm leading-6 text-gray-500">
-          Your email address or mobile number isn&apos;t verified yet. Please verify both before continuing. You can&apos;t apply for this job until both are verified.
+          Looks like your email or contact number isn&apos;t verified yet. Please verify it first to continue. You can&apos;t apply for these job posts until its verified.
         </div>
       </div>
     </div>
