@@ -1,6 +1,7 @@
 // src/pages/jobseeker/dashboard/CompanyViewDetails.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { FaCheckCircle } from "react-icons/fa";
 import api from "../../../services/api";
 import ApplyJobModal from "../../../components/jobseeker/ApplyJobModal";
 import { filterOpenJobListings, isOpenJobListing } from "../../../utils/jobVisibility";
@@ -2502,7 +2503,7 @@ const CompanyViewDetails = () => {
                   : reviewStep === "success"
                     ? "mx-auto w-full max-w-md overflow-hidden rounded-2xl bg-white text-center shadow-2xl"
                     : reviewStep === "confirm"
-                      ? "mx-auto w-full max-w-[760px] overflow-hidden rounded-[22px] border border-[#dfe6ee] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.18)]"
+                      ? "mx-auto w-full max-w-[560px] overflow-hidden rounded-xl border border-[#dfe6ee] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.18)]"
                       : "mx-auto w-full max-w-[760px] rounded-2xl border border-[#dfe6ee] bg-white shadow-2xl"
               }
             >
@@ -2514,7 +2515,7 @@ const CompanyViewDetails = () => {
                 </div>
               )}
 
-              {reviewStep !== "privacy" && reviewStep !== "success" && (
+              {reviewStep !== "privacy" && reviewStep !== "success" && reviewStep !== "confirm" && (
               <div className="flex items-start justify-between gap-4 border-b border-[#e7edf3] px-5 py-5 sm:px-7">
                 <div>
                   <h3 className="text-[22px] font-bold text-[#172033]">
@@ -2552,6 +2553,8 @@ const CompanyViewDetails = () => {
                     ? "relative z-10 px-5 pb-5 pt-4 sm:px-9 sm:pb-7 sm:pt-5 lg:px-12"
                     : reviewStep === "success"
                       ? "p-0"
+                      : reviewStep === "confirm"
+                        ? "p-0"
                       : "px-5 py-6 sm:px-7"
                 }
               >
@@ -2845,15 +2848,42 @@ const CompanyViewDetails = () => {
                 )}
 
                 {reviewStep === "confirm" && (
-                  <div className="flex min-h-[300px] flex-col items-center justify-center py-4 text-center sm:min-h-[320px] sm:py-6">
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#eaf2fb] text-[30px] font-light text-[#2e66a6] shadow-[inset_0_0_0_1px_rgba(46,102,166,0.05)]">✓</div>
-                    <p className="mx-auto mt-6 max-w-[590px] text-[14px] leading-7 text-black/70">
-                      Before posting, please ensure that your feedback is <strong>accurate, complete, and based on your personal experience.</strong> By clicking <strong>Post Review</strong>, you confirm that the information provided is truthful and will be <strong>visible to other jobseekers.</strong>
-                    </p>
-                    {reviewError && <div className="mt-5 w-full max-w-[590px] rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">{reviewError}</div>}
-                    <div className="mt-8 flex flex-wrap justify-center gap-3">
-                      <button type="button" disabled={reviewSubmitting} onClick={() => setReviewStep("form")} className="h-11 min-w-[118px] rounded-xl border border-[#d8e2ee] bg-white px-6 text-sm font-semibold text-gray-800 transition hover:bg-[#f7faff] disabled:opacity-50">Go Back</button>
-                      <button type="button" disabled={reviewSubmitting} onClick={handleSubmitReview} className="h-11 min-w-[132px] rounded-xl bg-[#2e66a6] px-6 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(46,102,166,0.20)] transition hover:bg-[#245387] disabled:cursor-not-allowed disabled:opacity-50">{reviewSubmitting ? "Posting..." : "Post Review"}</button>
+                  <div>
+                    <div className="relative flex items-start gap-4 px-5 py-6 pr-14 sm:gap-5 sm:px-7 sm:py-7 sm:pr-16">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#e8f1ff] sm:h-14 sm:w-14">
+                        <FaCheckCircle className="text-[28px] text-[#2e66a6] sm:text-[32px]" aria-hidden="true" />
+                      </div>
+
+                      <div className="min-w-0 text-left">
+                        <h3 className="text-xl font-bold leading-7 text-[#172033]">
+                          Ready to Post Your Review?
+                        </h3>
+                        <p className="mt-2 text-sm leading-6 text-black/65">
+                          Before posting, please ensure that your feedback is <strong>accurate, complete, and based on your personal experience.</strong> By clicking <strong>Post Review</strong>, you confirm that the information provided is truthful and will be <strong>visible to other jobseekers.</strong>
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={closeReviewModal}
+                        disabled={reviewSubmitting}
+                        className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-gray-600 transition hover:bg-gray-100 disabled:opacity-50 sm:right-5 sm:top-5"
+                        aria-label="Close"
+                        title="Close"
+                      >
+                        <span className="text-2xl leading-none" aria-hidden="true">×</span>
+                      </button>
+                    </div>
+
+                    {reviewError && (
+                      <div className="mx-5 mb-5 rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700 sm:mx-7">
+                        {reviewError}
+                      </div>
+                    )}
+
+                    <div className="flex flex-col-reverse gap-3 border-t border-[#e7edf3] bg-[#fafbfd] px-5 py-4 sm:flex-row sm:justify-end sm:px-7">
+                      <button type="button" disabled={reviewSubmitting} onClick={() => setReviewStep("form")} className="h-11 rounded-lg border border-[#2e66a6] bg-white px-6 text-sm font-semibold text-[#2e66a6] transition hover:bg-[#f7faff] disabled:opacity-50">Go Back</button>
+                      <button type="button" disabled={reviewSubmitting} onClick={handleSubmitReview} className="h-11 rounded-lg bg-[#2e66a6] px-6 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(46,102,166,0.18)] transition hover:bg-[#245387] disabled:cursor-not-allowed disabled:opacity-50">{reviewSubmitting ? "Posting..." : "Post Review"}</button>
                     </div>
                   </div>
                 )}
