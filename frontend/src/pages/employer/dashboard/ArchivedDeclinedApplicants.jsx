@@ -41,12 +41,12 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
       );
     case 'restore':
       return (
-        <img
-          src="/images/restorist.png"
-          alt=""
-          className={className}
-          aria-hidden="true"
-        />
+       <img 
+  src="/images/restorist.png" 
+  alt="" 
+  className={`${className} scale-125`}
+  aria-hidden="true" 
+/>
       );
     default:
       return null;
