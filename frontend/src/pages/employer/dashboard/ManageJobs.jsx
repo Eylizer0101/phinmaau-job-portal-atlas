@@ -1593,8 +1593,10 @@ const ManageJobs = () => {
                               onClick={() => setStatusConfirmationJob(job)}
                               disabled={busyThisRow}
                               className={cn(
-                                'inline-flex h-10 w-[42px] items-center justify-center rounded-lg border px-0 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-                                'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 focus-visible:ring-amber-500'
+                                'inline-flex h-10 items-center justify-center rounded-lg border px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+                                derivedStatus === 'open'
+                                  ? 'border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:ring-[#2e66a6]'
+                                  : 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 focus-visible:ring-amber-500'
                               )}
                               aria-label={`${derivedStatus === 'open' ? 'Close Job' : 'Open Job'} ${title}`}
                               title={derivedStatus === 'open' ? 'Close Job' : 'Open Job'}
@@ -1602,22 +1604,9 @@ const ManageJobs = () => {
                               {busyThisRow && ['open', 'close'].includes(action.type) ? (
                                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#2e66a6]" />
                               ) : derivedStatus === 'open' ? (
-                                  <span
-                                    className="h-7 w-7 bg-current"
-                                    style={{
-                                      WebkitMaskImage: "url('/images/lockerist.png')",
-                                      maskImage: "url('/images/lockerist.png')",
-                                      WebkitMaskPosition: 'center',
-                                      maskPosition: 'center',
-                                      WebkitMaskRepeat: 'no-repeat',
-                                      maskRepeat: 'no-repeat',
-                                      WebkitMaskSize: 'contain',
-                                      maskSize: 'contain',
-                                    }}
-                                    aria-hidden="true"
-                                  />
+                                  <img src="/images/lockerist.png" alt="" className="h-7 w-7 object-contain" />
                                 ) : (
-                                  <Icon name="closeJob" className="h-3 w-3" />
+                                  <Icon name="closeJob" className="h-4 w-4" />
                               )}
                             </button>
                           )}
@@ -1847,8 +1836,10 @@ const ManageJobs = () => {
                                     onClick={() => setStatusConfirmationJob(job)}
                                     disabled={busyThisRow}
                                     className={cn(
-                                      'inline-flex h-10 w-[42px] shrink-0 items-center justify-center rounded-lg border px-0 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-                                      'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 focus-visible:ring-amber-500'
+                                      'inline-flex h-10 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+                                      derivedStatus === 'open'
+                                        ? 'border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:ring-[#2e66a6]'
+                                        : 'border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 focus-visible:ring-amber-500'
                                     )}
                                     aria-label={`${derivedStatus === 'open' ? 'Close Job' : 'Open Job'} ${title}`}
                                     title={derivedStatus === 'open' ? 'Close Job' : 'Open Job'}
@@ -1856,22 +1847,9 @@ const ManageJobs = () => {
                                     {busyThisRow && ['open', 'close'].includes(action.type) ? (
                                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#2e66a6]" />
                                     ) : derivedStatus === 'open' ? (
-                                        <span
-                                          className="h-7 w-7 bg-current"
-                                          style={{
-                                            WebkitMaskImage: "url('/images/lockerist.png')",
-                                            maskImage: "url('/images/lockerist.png')",
-                                            WebkitMaskPosition: 'center',
-                                            maskPosition: 'center',
-                                            WebkitMaskRepeat: 'no-repeat',
-                                            maskRepeat: 'no-repeat',
-                                            WebkitMaskSize: 'contain',
-                                            maskSize: 'contain',
-                                          }}
-                                          aria-hidden="true"
-                                        />
+                                        <img src="/images/lockerist.png" alt="" className="h-7 w-7 object-contain" />
                                       ) : (
-                                        <Icon name="closeJob" className="h-3 w-3" />
+                                        <Icon name="closeJob" className="h-4 w-4" />
                                     )}
                                   </button>
                                 )}
