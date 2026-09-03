@@ -55,10 +55,12 @@ const ActionIcon = ({ name, className = 'h-5 w-5' }) => {
 
   if (name === 'restore') {
     return (
-      <svg {...common}>
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M3.75 9.75h4.5v-4.5" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M5.3 7.2A8.25 8.25 0 112.9 13" />
-      </svg>
+      <img
+        src="/images/restoris.png"
+        alt=""
+        className={className}
+        aria-hidden="true"
+      />
     );
   }
 
