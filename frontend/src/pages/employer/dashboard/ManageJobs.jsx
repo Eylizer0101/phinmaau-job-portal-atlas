@@ -1604,7 +1604,7 @@ const ManageJobs = () => {
                               {busyThisRow && ['open', 'close'].includes(action.type) ? (
                                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#2e66a6]" />
                               ) : derivedStatus === 'open' ? (
-                                  <img src="/images/lockerist.png" alt="" className="h-4 w-4 object-contain" />
+                                  <img src="/images/lockerist.png" alt="" className="h-6 w-6 object-contain" />
                                 ) : (
                                   <Icon name="closeJob" className="h-4 w-4" />
                               )}
