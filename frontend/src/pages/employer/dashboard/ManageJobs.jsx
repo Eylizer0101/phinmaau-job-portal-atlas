@@ -1617,7 +1617,7 @@ const ManageJobs = () => {
                                     aria-hidden="true"
                                   />
                                 ) : (
-                                  <Icon name="closeJob" className="h-4 w-4" />
+                                  <Icon name="closeJob" className="h-3 w-3" />
                               )}
                             </button>
                           )}
@@ -1871,7 +1871,7 @@ const ManageJobs = () => {
                                           aria-hidden="true"
                                         />
                                       ) : (
-                                        <Icon name="closeJob" className="h-4 w-4" />
+                                        <Icon name="closeJob" className="h-3 w-3" />
                                     )}
                                   </button>
                                 )}
