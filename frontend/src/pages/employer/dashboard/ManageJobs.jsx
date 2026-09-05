@@ -33,7 +33,9 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
         </svg>
       );
     case 'publish':
-      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 16V4m0 0L7 9m5-5 5 5M5 20h14" /></svg>;
+      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 3v10m0-10L8.5 6.5M12 3l3.5 3.5M7 13l-2 8 7-2 7 2-2-8M9.5 15.5l2.5 3 2.5-3" /></svg>;
+    case 'filled':
+      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2M5 7h14a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 13l2 2 4-4" /></svg>;
     case 'openJob':
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 11V9a5 5 0 019-3M7 11h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg>;
     case 'closeJob':
@@ -477,6 +479,7 @@ const ManageJobs = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [openStatusMenuId, setOpenStatusMenuId] = useState('');
   const [statusConfirmationJob, setStatusConfirmationJob] = useState(null);
+  const [publishValidationJob, setPublishValidationJob] = useState(null);
 
   const [action, setAction] = useState({ type: '', jobId: '' });
   const [editRequests, setEditRequests] = useState([]);
@@ -983,8 +986,10 @@ const ManageJobs = () => {
 
       if (err.response?.status === 403 && err.response?.data?.code === 'EMPLOYER_NOT_VERIFIED') {
         setError(err.response?.data?.message || verificationBannerMessage || 'Verification required to publish.');
+      } else if (err.response?.status === 400) {
+        setPublishValidationJob(jobToUpdate);
       } else {
-        setError('Failed to publish job. Please complete required fields and try again.');
+        setError(err.response?.data?.message || 'Failed to publish job. Please try again.');
       }
     } finally {
       setAction({ type: '', jobId: '' });
@@ -1399,6 +1404,7 @@ const ManageJobs = () => {
                   <option value="open">Open</option>
                   <option value="closed">Closed</option>
                   <option value="expired">Expired</option>
+                  <option value="filled">Filled</option>
                   <option value="draft">Draft</option>
                 </select>
 
@@ -1530,9 +1536,20 @@ const ManageJobs = () => {
                               {title}
                             </button>
                             <div className="mt-2 flex flex-wrap items-center gap-2">
-                              <span className={cn('inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold', getStatusPill(job))}>
-                                {getStatusText(job)}
-                              </span>
+                              {derivedStatus === 'filled' ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setStatusConfirmationJob(job)}
+                                  className={cn('inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2', getStatusPill(job))}
+                                  aria-label={`View filled status information for ${title}`}
+                                >
+                                  {getStatusText(job)}
+                                </button>
+                              ) : (
+                                <span className={cn('inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold', getStatusPill(job))}>
+                                  {getStatusText(job)}
+                                </span>
+                              )}
                               {(() => {
                                 const badge = getEditRequestBadge(job._id);
                                 return badge ? (
@@ -1607,6 +1624,8 @@ const ManageJobs = () => {
                             >
                               {busyThisRow && ['open', 'close'].includes(action.type) ? (
                                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#2e66a6]" />
+                              ) : derivedStatus === 'expired' ? (
+                                <Icon name="calendar" className="h-4 w-4" />
                               ) : derivedStatus === 'open' ? (
                                   <span
                                     className="h-7 w-7 bg-current"
@@ -1639,7 +1658,7 @@ const ManageJobs = () => {
                               {busyThisRow && action.type === 'publish' ? (
                                 <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-current" />
                               ) : (
-                                <Icon name="check" className="h-4 w-4" />
+                                <Icon name="publish" className="h-4 w-4" />
                               )}
                             </button>
                           )}
@@ -1798,9 +1817,20 @@ const ManageJobs = () => {
 
                             <td className="px-6 py-4 align-middle">
                               <div className="flex flex-wrap items-center gap-2">
-                                <span className={cn('inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold', getStatusPill(job))}>
-                                  {getStatusText(job)}
-                                </span>
+                                {derivedStatus === 'filled' ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setStatusConfirmationJob(job)}
+                                    className={cn('inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2', getStatusPill(job))}
+                                    aria-label={`View filled status information for ${title}`}
+                                  >
+                                    {getStatusText(job)}
+                                  </button>
+                                ) : (
+                                  <span className={cn('inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold', getStatusPill(job))}>
+                                    {getStatusText(job)}
+                                  </span>
+                                )}
 
                               </div>
                             </td>
@@ -1861,6 +1891,8 @@ const ManageJobs = () => {
                                   >
                                     {busyThisRow && ['open', 'close'].includes(action.type) ? (
                                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-[#2e66a6]" />
+                                    ) : derivedStatus === 'expired' ? (
+                                      <Icon name="calendar" className="h-4 w-4" />
                                     ) : derivedStatus === 'open' ? (
                                         <span
                                           className="h-7 w-7 bg-current"
@@ -1893,7 +1925,7 @@ const ManageJobs = () => {
                                     {busyThisRow && action.type === 'publish' ? (
                                       <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-current" />
                                     ) : (
-                                      <Icon name="check" className="h-4 w-4" />
+                                      <Icon name="publish" className="h-4 w-4" />
                                     )}
                                   </button>
                                 )}
@@ -2110,6 +2142,7 @@ const ManageJobs = () => {
 
         {statusConfirmationJob && (() => {
           const status = getDerivedStatus(statusConfirmationJob);
+          const isFilledJob = status === 'filled';
           const isReopening = status !== 'open';
           const isExpiredJob = status === 'expired';
           const busy =
@@ -2137,12 +2170,16 @@ const ManageJobs = () => {
                     <div
                       className={cn(
                         'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl',
-                        isReopening
+                        isFilledJob
+                          ? 'bg-violet-100 text-violet-700'
+                          : isReopening
                           ? 'bg-blue-100 text-[#2e66a6]'
                           : 'bg-amber-100 text-amber-700'
                       )}
                     >
-                      {isReopening ? (
+                      {isFilledJob ? (
+                        <Icon name="filled" className="h-6 w-6" />
+                      ) : isReopening ? (
                         <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12a8 8 0 0114.93-4M20 4v5h-5M20 12a8 8 0 01-14.93 4M4 20v-5h5" />
                         </svg>
@@ -2155,7 +2192,7 @@ const ManageJobs = () => {
 
                     <div className="min-w-0">
                       <h2 id="status-confirmation-title" className="text-xl font-bold text-gray-900">
-                        {isExpiredJob ? 'Application Deadline Expired' : isReopening ? 'Open Job' : 'Close Job'}
+                        {isFilledJob ? 'Job Position Filled' : isExpiredJob ? 'Application Deadline Expired' : isReopening ? 'Open Job' : 'Close Job'}
                       </h2>
                       <p className="mt-1 truncate text-sm font-semibold text-gray-600">
                         {safeTitle(statusConfirmationJob)}
@@ -2167,16 +2204,20 @@ const ManageJobs = () => {
                     id="status-confirmation-description"
                     className={cn(
                       'mt-5 rounded-xl border p-4',
-                      isReopening
+                      isFilledJob
+                        ? 'border-violet-200 bg-violet-50'
+                        : isReopening
                         ? 'border-blue-200 bg-blue-50'
                         : 'border-amber-200 bg-amber-50'
                     )}
                   >
                     <p className={cn(
                       'text-sm font-semibold',
-                      isReopening ? 'text-blue-900' : 'text-amber-900'
+                      isFilledJob ? 'text-violet-900' : isReopening ? 'text-blue-900' : 'text-amber-900'
                     )}>
-                      {isExpiredJob
+                      {isFilledJob
+                        ? `The “${safeTitle(statusConfirmationJob)}” job post cannot be reopened or closed because the position has already been filled.`
+                        : isExpiredJob
                         ? 'This job cannot be reopened because its application deadline has expired.'
                         : isReopening
                         ? 'Are you sure you want to reopen this job post?'
@@ -2184,9 +2225,11 @@ const ManageJobs = () => {
                     </p>
                     <p className={cn(
                       'mt-2 text-sm leading-6',
-                      isReopening ? 'text-blue-800' : 'text-amber-800'
+                      isFilledJob ? 'text-violet-800' : isReopening ? 'text-blue-800' : 'text-amber-800'
                     )}>
-                      {isExpiredJob
+                      {isFilledJob
+                        ? 'You may still view, edit, or archive this job post using the available actions.'
+                        : isExpiredJob
                         ? 'Please use the existing edit process and update the Application Deadline first. After the new deadline is approved and saved, you can return here and reopen the job.'
                         : isReopening
                         ? 'It will start accepting new applications again.'
@@ -2195,18 +2238,24 @@ const ManageJobs = () => {
                   </div>
 
                   <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                    <button
-                      type="button"
-                      onClick={() => setStatusConfirmationJob(null)}
-                      disabled={busy}
-                      className="rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      Cancel
-                    </button>
+                    {!isFilledJob && (
+                      <button
+                        type="button"
+                        onClick={() => setStatusConfirmationJob(null)}
+                        disabled={busy}
+                        className="rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                    )}
 
                     <button
                       type="button"
                       onClick={() => {
+                        if (isFilledJob) {
+                          setStatusConfirmationJob(null);
+                          return;
+                        }
                         if (isExpiredJob) {
                           const jobToEdit = statusConfirmationJob;
                           setStatusConfirmationJob(null);
@@ -2218,7 +2267,9 @@ const ManageJobs = () => {
                       disabled={busy}
                       className={cn(
                         'inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60',
-                        isReopening
+                        isFilledJob
+                          ? 'bg-[#2e66a6] hover:bg-[#255487] focus-visible:ring-[#2e66a6]'
+                          : isReopening
                           ? 'bg-[#2e66a6] hover:bg-[#255487] focus-visible:ring-[#2e66a6]'
                           : 'bg-amber-600 hover:bg-amber-700 focus-visible:ring-amber-600'
                       )}
@@ -2226,7 +2277,7 @@ const ManageJobs = () => {
                       {busy && (
                         <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                       )}
-                      {isExpiredJob ? 'Go to Edit Job' : isReopening ? 'Open Job' : 'Close Job'}
+                      {isFilledJob ? 'OK' : isExpiredJob ? 'Go to Edit Job' : isReopening ? 'Open Job' : 'Close Job'}
                     </button>
                   </div>
                 </div>
@@ -2234,6 +2285,69 @@ const ManageJobs = () => {
             </div>
           );
         })()}
+
+        {publishValidationJob && (
+          <div
+            className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 p-4"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setPublishValidationJob(null);
+            }}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="publish-validation-title"
+              aria-describedby="publish-validation-description"
+              className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
+            >
+              <div className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                    <Icon name="publish" className="h-6 w-6" />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 id="publish-validation-title" className="text-xl font-bold text-gray-900">
+                      Publish Job
+                    </h2>
+                    <p className="mt-1 truncate text-sm font-semibold text-gray-600">
+                      {safeTitle(publishValidationJob)}
+                    </p>
+                  </div>
+                </div>
+
+                <div id="publish-validation-description" className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-sm font-semibold text-amber-900">
+                    The “{safeTitle(publishValidationJob)}” job post cannot be published yet.
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-amber-800">
+                    Please complete all required fields and try again.
+                  </p>
+                </div>
+
+                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setPublishValidationJob(null)}
+                    className="rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2"
+                  >
+                    Dismiss
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const jobToEdit = publishValidationJob;
+                      setPublishValidationJob(null);
+                      navigate(`/employer/edit-job/${jobToEdit._id}`);
+                    }}
+                    className="rounded-xl bg-[#2e66a6] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#255487] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                  >
+                    Go to Edit Job
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showDeleteModal && selectedJob && (
           <div
