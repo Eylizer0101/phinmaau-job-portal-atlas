@@ -1211,7 +1211,7 @@ const ArchivedJobs = () => {
                           </div>
                         </div>
 
-                        <div className="mt-4 grid grid-cols-4 gap-2">
+                        <div className="mt-4 grid grid-cols-2 gap-2">
                           <Link
                             to={`/employer/manage-jobs/${job._id}/view`}
                             state={{
@@ -1224,15 +1224,6 @@ const ArchivedJobs = () => {
                             title="View"
                           >
                             <ActionIcon name="view" />
-                          </Link>
-
-                          <Link
-                            to={`/employer/edit-job/${job._id}`}
-                            className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/[0.06] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-                            aria-label={`Edit ${title}`}
-                            title="Edit"
-                          >
-                            <ActionIcon name="edit" />
                           </Link>
 
                           <button
@@ -1403,15 +1394,6 @@ const ArchivedJobs = () => {
                                   title="View"
                                 >
                                   <ActionIcon name="view" className="h-4 w-4" />
-                                </Link>
-
-                                <Link
-                                  to={`/employer/edit-job/${job._id}`}
-                                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:border-[#2e66a6]/40 hover:bg-[#2e66a6]/[0.06] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-                                  aria-label={`Edit ${title}`}
-                                  title="Edit"
-                                >
-                                  <ActionIcon name="edit" className="h-4 w-4" />
                                 </Link>
 
                                 <button

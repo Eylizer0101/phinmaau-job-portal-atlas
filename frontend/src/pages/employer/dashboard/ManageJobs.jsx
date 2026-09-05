@@ -676,7 +676,8 @@ const ManageJobs = () => {
       setSuccess({
         type: 'draft',
         title: 'Draft Saved Successfully',
-        message: `${savedJobTitle || 'Your job'} was saved as a draft. The saved job is highlighted below.`,
+        jobTitle: savedJobTitle || 'Your job',
+        message: 'was saved as a draft. The saved job is highlighted below.',
       });
     } else if (location.state?.jobPostSuccess || successType === 'post') {
       setRecentlyHighlightedJobId(String(location.state?.highlightedJobId || ''));
@@ -879,6 +880,11 @@ const ManageJobs = () => {
   };
 
   const handleEditAction = (job) => {
+    if (getDerivedStatus(job) === 'filled') {
+      openEditRequestFlow(job);
+      return;
+    }
+
     if (isJobEditLocked(job)) {
       openEditRequestFlow(job);
       return;
@@ -1595,8 +1601,8 @@ const ManageJobs = () => {
                               'inline-flex h-10 items-center justify-center rounded-lg border px-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
                               'border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:ring-[#2e66a6]'
                             )}
-                            aria-label={`${isJobEditLocked(job) ? 'Request edit access for' : 'Edit'} ${title}`}
-                            title={isJobEditLocked(job) ? 'Editing locked — request access' : 'Edit'}
+                            aria-label={`${derivedStatus === 'filled' ? 'Editing unavailable for' : isJobEditLocked(job) ? 'Request edit access for' : 'Edit'} ${title}`}
+                            title={derivedStatus === 'filled' ? 'Editing unavailable — position filled' : isJobEditLocked(job) ? 'Editing locked — request access' : 'Edit'}
                           >
                             <Icon name="edit" className="h-4 w-4" />
                           </button>
@@ -1863,8 +1869,8 @@ const ManageJobs = () => {
                                     'inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
                                     'border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:ring-[#2e66a6]'
                                   )}
-                                  aria-label={`${isJobEditLocked(job) ? 'Request edit access for' : 'Edit'} ${title}`}
-                                  title={isJobEditLocked(job) ? 'Editing locked — request access' : 'Edit'}
+                                  aria-label={`${derivedStatus === 'filled' ? 'Editing unavailable for' : isJobEditLocked(job) ? 'Request edit access for' : 'Edit'} ${title}`}
+                                  title={derivedStatus === 'filled' ? 'Editing unavailable — position filled' : isJobEditLocked(job) ? 'Editing locked — request access' : 'Edit'}
                                 >
                                   <Icon name="edit" className="h-4 w-4" />
                                 </button>
@@ -1985,21 +1991,36 @@ const ManageJobs = () => {
 
                 <h2 className="mt-4 text-2xl font-bold text-[#173f8a]">Editing Locked</h2>
                 <p className="mx-auto mt-2 max-w-md text-base leading-6 text-gray-500">
-                  This job post has been published for more than 1 hour and can no longer be edited.
+                  {getDerivedStatus(lockedJob) === 'filled'
+                    ? 'This job post has been filled and is no longer available for editing.'
+                    : 'This job post has been published for more than 1 hour and can no longer be edited.'}
                 </p>
 
                 <div className="mt-6 rounded-2xl border border-gray-200 border-l-4 border-l-amber-400 bg-slate-50 px-5 py-4 text-left">
                   <p className="font-bold text-[#173f8a]">{safeTitle(lockedJob)}</p>
                   <p className="mt-1 text-sm text-gray-500">{safeCompany(lockedJob)}</p>
                   <p className="mt-3 text-sm text-gray-500">
-                    Posted {formatDate(getPublishedDate(lockedJob))} · Valid until {formatDate(lockedJob.applicationDeadline)}
+                    Posted {formatDate(getPublishedDate(lockedJob))} · {getDerivedStatus(lockedJob) === 'filled'
+                      ? `Filled ${formatDate(lockedJob.filledAt || lockedJob.updatedAt)}`
+                      : `Valid until ${formatDate(lockedJob.applicationDeadline)}`}
                   </p>
                 </div>
 
                 <p className="mt-6 text-sm text-gray-500">
-                  Need to make changes? Submit an edit request to the administrator.
+                  {getDerivedStatus(lockedJob) === 'filled'
+                    ? 'This position has already been filled, so changes to the job post are no longer permitted.'
+                    : 'Need to make changes? Submit an edit request to the administrator.'}
                 </p>
 
+                {getDerivedStatus(lockedJob) === 'filled' ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowLockedModal(false)}
+                    className="mt-5 w-full rounded-xl bg-[#173f8a] px-5 py-3 text-sm font-bold text-white hover:bg-[#12336f]"
+                  >
+                    Okay
+                  </button>
+                ) : (
                 <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
                   <button
                     type="button"
@@ -2025,6 +2046,7 @@ const ManageJobs = () => {
                     Request Edit
                   </button>
                 </div>
+                )}
               </div>
             </div>
           </div>
@@ -2400,7 +2422,11 @@ const ManageJobs = () => {
                   {success.title}
                 </h2>
                 <p className="mt-2 text-sm text-gray-600">
-                  {success.message}
+                  {success.type === 'draft' ? (
+                    <>
+                      “<span className="font-semibold text-[#2e66a6]">{success.jobTitle}</span>” {success.message}
+                    </>
+                  ) : success.message}
                 </p>
               </div>
 

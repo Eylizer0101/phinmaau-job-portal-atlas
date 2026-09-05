@@ -579,7 +579,7 @@ const Alert = ({ type = 'error', children, onClose }) => {
 const Modal = ({
   open,
   title,
-  description,
+  applicantName,
   confirmText = 'Confirm',
   cancelText = 'Cancel',
   onConfirm,
@@ -608,19 +608,26 @@ const Modal = ({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative w-full max-w-md rounded-2xl bg-white shadow-xl border border-gray-200"
+        className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white text-center shadow-2xl"
       >
-        <div className="p-6">
-          <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-          {description && <p className="mt-2 text-sm text-gray-600">{description}</p>}
+        <div className="px-8 pb-6 pt-8">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-[#2e66a6]">
+            <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 12a9 9 0 1 0 3-6.7M3 4v6h6" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-bold text-gray-900">{title}</h3>
+          <p className="mt-2 text-sm leading-6 text-gray-600">
+            This will move “<span className="font-semibold text-[#2e66a6]">{applicantName}</span>” application back to the declined applicants list.
+          </p>
         </div>
-        <div className="flex items-center justify-end gap-2 px-6 pb-6">
+        <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-8 py-4">
           <Button variant="secondary" size="sm" onClick={onClose} disabled={loading}>
             {cancelText}
           </Button>
@@ -1024,7 +1031,7 @@ const ArchivedDeclinedApplicants = () => {
       <div className="inline-flex items-center rounded-2xl border border-gray-200 bg-white p-1 shadow-sm">
         <button
           type="button"
-          onClick={() => navigate('/employer/hired?status=declined')}
+          onClick={() => navigate('/employer/declined')}
           className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
         >
           <span>Declined</span>
@@ -1364,12 +1371,8 @@ const ArchivedDeclinedApplicants = () => {
 
         <Modal
           open={!!restoreTarget}
-          title="Restore declined applicant?"
-          description={
-            restoreTarget
-              ? `This will move ${buildApplicantName(restoreTarget.jobseeker)}'s declined application record back to the declined applicants list.`
-              : ''
-          }
+          title="Restore Declined Applicant?"
+          applicantName={restoreTarget ? buildApplicantName(restoreTarget.jobseeker) : ''}
           confirmText="Restore"
           cancelText="Cancel"
           loading={action.type === 'restore' && !!action.id}
