@@ -196,6 +196,7 @@ const Settings = () => {
   const [passwordForm, setPasswordForm] = useState({ oldPassword: '', newPassword: '', retypeNewPassword: '' });
   const [passwordVisibility, setPasswordVisibility] = useState({ email: false, old: false, new: false, retype: false });
   const [verificationStatus, setVerificationStatus] = useState({ emailVerified: false, phoneVerified: false });
+  const [showMobileVerification, setShowMobileVerification] = useState(false);
   const [emailResendSeconds, setEmailResendSeconds] = useState(0);
   const [phoneResendSeconds, setPhoneResendSeconds] = useState(0);
   const [successPopup, setSuccessPopup] = useState({ open: false, title: '', message: '', iconType: 'success' });
@@ -475,6 +476,7 @@ const Settings = () => {
 
       setPhoneForm((prev) => ({ ...prev, pendingPhoneNumber: data?.pendingPhoneNumber || targetNumber }));
       setPhoneForm((prev) => ({ ...prev, newMobileNumber: '' }));
+      setShowMobileVerification(true);
       setPhoneResendSeconds(180);
       showSuccessPopup('Verification Code Sent!', 'A verification code has been sent to your new mobile number. Enter the code to verify your number.', 'info');
     } catch (error) {
@@ -502,6 +504,7 @@ const Settings = () => {
 
       const nextMobile = data?.user?.employerProfile?.mobileNumber || phoneForm.pendingPhoneNumber || phoneForm.newMobileNumber;
       setPhoneForm({ mobileNumber: nextMobile, newMobileNumber: '', verificationCode: '', pendingPhoneNumber: '' });
+      setShowMobileVerification(false);
       setVerificationStatus((prev) => ({ ...prev, phoneVerified: true }));
       refreshUserCache(data?.user);
       showSuccessPopup('Contact Number Updated Successfully!', 'Your contact number has been updated successfully.');
@@ -739,7 +742,7 @@ const Settings = () => {
 
               <Section
                 title="Change Mobile Number"
-                actionText={phoneForm.pendingPhoneNumber ? '' : 'Update Mobile Number'}
+                actionText="Update Mobile Number"
                 onAction={handlePhoneRequest}
                 loading={saving.phone}
                 loadingText="Sending..."
@@ -768,7 +771,7 @@ const Settings = () => {
                     />
                   </div>
 
-                  {phoneForm.pendingPhoneNumber ? (
+                  {showMobileVerification && phoneForm.pendingPhoneNumber ? (
                     <div className="rounded-2xl border border-[#d8e2ee] bg-[#f7faff] p-4">
                       <div className="mb-4 flex flex-wrap items-center gap-2">
                         <span className="text-black/70">Pending Mobile Number:</span>
