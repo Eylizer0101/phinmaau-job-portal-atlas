@@ -34,10 +34,16 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
       );
     case 'publish':
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 16V4m0 0L7 9m5-5 5 5M5 20h14" /></svg>;
+    case 'rocket':
+      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M14.5 5.5c2.25-2.25 4.75-2.5 5.75-2.5 0 1-.25 3.5-2.5 5.75l-4.25 4.25-4.25-3.25 5.25-4.25zM9.25 9.75 6 9l-3 3 4.75 1.25M13.5 13l.75 3.25L12 20l-1.25-4.75M7 17c-1.5.25-2.75 1.5-3 3 1.5-.25 2.75-1.5 3-3z" /><circle cx="15.5" cy="7.5" r="1.5" /></svg>;
     case 'openJob':
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 11V9a5 5 0 019-3M7 11h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg>;
     case 'closeJob':
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M7 11V8a5 5 0 0110 0v3m-10 0h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg>;
+    case 'hired':
+      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 12l2 2 4-4m5-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+    case 'filled':
+      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m-11 0h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2zm5 6 1.5 1.5L15 11" /></svg>;
     case 'more':
       return <svg {...common}><circle cx="12" cy="5" r="1.5" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" /><circle cx="12" cy="19" r="1.5" fill="currentColor" stroke="none" /></svg>;
     case 'lock':
@@ -477,6 +483,8 @@ const ManageJobs = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [openStatusMenuId, setOpenStatusMenuId] = useState('');
   const [statusConfirmationJob, setStatusConfirmationJob] = useState(null);
+  const [publishValidationJob, setPublishValidationJob] = useState(null);
+  const [filledJob, setFilledJob] = useState(null);
 
   const [action, setAction] = useState({ type: '', jobId: '' });
   const [editRequests, setEditRequests] = useState([]);
@@ -945,14 +953,14 @@ const ManageJobs = () => {
   };
 
   const handlePublish = async (jobId) => {
+    const jobToUpdate = jobs.find((job) => job._id === jobId);
+    if (!jobToUpdate) return;
+
     try {
       if (!isEmployerVerified) {
         setError(verificationBannerMessage || 'Your company is not verified yet. Publishing is disabled.');
         return;
       }
-
-      const jobToUpdate = jobs.find((job) => job._id === jobId);
-      if (!jobToUpdate) return;
 
       if (action.jobId) return;
       setAction({ type: 'publish', jobId });
@@ -984,7 +992,7 @@ const ManageJobs = () => {
       if (err.response?.status === 403 && err.response?.data?.code === 'EMPLOYER_NOT_VERIFIED') {
         setError(err.response?.data?.message || verificationBannerMessage || 'Verification required to publish.');
       } else {
-        setError('Failed to publish job. Please complete required fields and try again.');
+        setPublishValidationJob(jobToUpdate);
       }
     } finally {
       setAction({ type: '', jobId: '' });
@@ -1521,14 +1529,14 @@ const ManageJobs = () => {
                           </div>
 
                           <div className="min-w-0 flex-1">
-                            <button
-                              type="button"
-                              onClick={() => handleEditAction(job)}
-                              className="block w-full truncate text-left text-sm font-semibold text-gray-900 hover:text-[#2e66a6]"
+                            <Link
+                              to={`/employer/manage-jobs/${job._id}/view`}
+                              state={{ from: 'manageJobs', backPath: '/employer/manage-jobs', backLabel: 'Manage Jobs' }}
+                              className="block w-full truncate text-left text-sm font-semibold text-[#2e66a6] hover:underline"
                               title={title}
                             >
                               {title}
-                            </button>
+                            </Link>
                             <div className="mt-2 flex flex-wrap items-center gap-2">
                               <span className={cn('inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold', getStatusPill(job))}>
                                 {getStatusText(job)}
@@ -1639,8 +1647,20 @@ const ManageJobs = () => {
                               {busyThisRow && action.type === 'publish' ? (
                                 <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-current" />
                               ) : (
-                                <Icon name="check" className="h-4 w-4" />
+                                <Icon name="rocket" className="h-4 w-4" />
                               )}
+                            </button>
+                          )}
+
+                          {derivedStatus === 'filled' && (
+                            <button
+                              type="button"
+                              onClick={() => setFilledJob(job)}
+                              className="inline-flex h-10 items-center justify-center rounded-lg border border-violet-200 bg-violet-50 px-3 text-violet-700 transition hover:bg-violet-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+                              aria-label={`Filled position details for ${title}`}
+                              title="Job Position Filled"
+                            >
+                              <Icon name="hired" className="h-5 w-5" />
                             </button>
                           )}
 
@@ -1769,12 +1789,14 @@ const ManageJobs = () => {
                                 </div>
 
                                 <div className="min-w-0">
-                                  <div
-                                    className="block truncate text-sm font-semibold text-gray-900 transition-colors group-hover:text-[#2e66a6]"
+                                  <Link
+                                    to={`/employer/manage-jobs/${job._id}/view`}
+                                    state={{ from: 'manageJobs', backPath: '/employer/manage-jobs', backLabel: 'Manage Jobs' }}
+                                    className="block truncate text-sm font-semibold text-[#2e66a6] hover:underline"
                                     title={title}
                                   >
                                     {title}
-                                  </div>
+                                  </Link>
                                   {(() => {
                                     const badge = getEditRequestBadge(job._id);
                                     return badge ? (
@@ -1893,8 +1915,20 @@ const ManageJobs = () => {
                                     {busyThisRow && action.type === 'publish' ? (
                                       <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-current" />
                                     ) : (
-                                      <Icon name="check" className="h-4 w-4" />
+                                      <Icon name="rocket" className="h-4 w-4" />
                                     )}
+                                  </button>
+                                )}
+
+                                {derivedStatus === 'filled' && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setFilledJob(job)}
+                                    className="inline-flex h-10 w-[42px] shrink-0 items-center justify-center rounded-lg border border-violet-200 bg-violet-50 text-violet-700 transition hover:bg-violet-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+                                    aria-label={`Filled position details for ${title}`}
+                                    title="Job Position Filled"
+                                  >
+                                    <Icon name="hired" className="h-5 w-5" />
                                   </button>
                                 )}
 
@@ -2142,15 +2176,10 @@ const ManageJobs = () => {
                           : 'bg-amber-100 text-amber-700'
                       )}
                     >
-                      {isReopening ? (
-                        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12a8 8 0 0114.93-4M20 4v5h-5M20 12a8 8 0 01-14.93 4M4 20v-5h5" />
-                        </svg>
-                      ) : (
-                        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6M5 12a7 7 0 1014 0 7 7 0 00-14 0z" />
-                        </svg>
-                      )}
+                      <Icon
+                        name={isExpiredJob ? 'calendar' : isReopening ? 'openJob' : 'closeJob'}
+                        className="h-6 w-6"
+                      />
                     </div>
 
                     <div className="min-w-0">
@@ -2177,19 +2206,19 @@ const ManageJobs = () => {
                       isReopening ? 'text-blue-900' : 'text-amber-900'
                     )}>
                       {isExpiredJob
-                        ? 'This job cannot be reopened because its application deadline has expired.'
+                        ? <>The “{safeTitle(statusConfirmationJob)}” job post cannot be reopened because its application deadline has expired.</>
                         : isReopening
-                        ? 'Are you sure you want to reopen this job post?'
-                        : 'Are you sure you want to close this job post?'}
+                        ? <>Are you sure you want to reopen the “{safeTitle(statusConfirmationJob)}” job post?</>
+                        : <>Are you sure you want to close the “{safeTitle(statusConfirmationJob)}” job post?</>}
                     </p>
                     <p className={cn(
                       'mt-2 text-sm leading-6',
                       isReopening ? 'text-blue-800' : 'text-amber-800'
                     )}>
                       {isExpiredJob
-                        ? 'Please use the existing edit process and update the Application Deadline first. After the new deadline is approved and saved, you can return here and reopen the job.'
+                        ? 'Please update the Application Deadline through the edit process.'
                         : isReopening
-                        ? 'It will start accepting new applications again.'
+                        ? 'It will become visible to job seekers and start accepting new applications again.'
                         : 'It will no longer be visible to job seekers or accept new applications.'}
                     </p>
                   </div>
@@ -2234,6 +2263,81 @@ const ManageJobs = () => {
             </div>
           );
         })()}
+
+        {publishValidationJob && (
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setPublishValidationJob(null);
+            }}
+          >
+            <div role="dialog" aria-modal="true" aria-labelledby="publish-validation-title" className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+              <div className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-[#2e66a6]">
+                    <Icon name="rocket" className="h-6 w-6" />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 id="publish-validation-title" className="text-xl font-bold text-gray-900">Publish Job</h2>
+                    <p className="mt-1 truncate text-sm font-semibold text-gray-600">{safeTitle(publishValidationJob)}</p>
+                  </div>
+                </div>
+
+                <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
+                  The “{safeTitle(publishValidationJob)}” job post cannot be published yet. Please complete all required fields and try again.
+                </div>
+
+                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <button type="button" onClick={() => setPublishValidationJob(null)} className="rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-50">
+                    Dismiss
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const jobToEdit = publishValidationJob;
+                      setPublishValidationJob(null);
+                      handleEditAction(jobToEdit);
+                    }}
+                    className="rounded-xl bg-[#2e66a6] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#255487]"
+                  >
+                    Go to Edit Job
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {filledJob && (
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setFilledJob(null);
+            }}
+          >
+            <div role="dialog" aria-modal="true" aria-labelledby="filled-job-title" className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+              <div className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-700">
+                    <Icon name="filled" className="h-7 w-7" />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 id="filled-job-title" className="text-xl font-bold text-gray-900">Job Position Filled</h2>
+                    <p className="mt-1 truncate text-sm font-semibold text-gray-600">{safeTitle(filledJob)}</p>
+                  </div>
+                </div>
+
+                <div className="mt-5 rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm leading-6 text-violet-900">
+                  This “{safeTitle(filledJob)}” job post cannot be reopened or closed, because the position has already been filled.
+                </div>
+
+                <button type="button" onClick={() => setFilledJob(null)} className="mt-6 w-full rounded-xl bg-[#2e66a6] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#255487]">
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showDeleteModal && selectedJob && (
           <div
