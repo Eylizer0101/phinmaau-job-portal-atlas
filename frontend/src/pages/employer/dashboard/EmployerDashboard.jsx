@@ -1811,10 +1811,10 @@ const EmployerDashboard = () => {
                 }}
                 className={[
                   'relative mt-8 inline-flex h-10 w-10 items-center justify-center rounded-lg p-2',
-                  'border border-gray-200 bg-white text-gray-700 shadow-sm transition-colors',
-                  'hover:bg-gray-50 hover:text-[#2e66a6] hover:shadow-md',
+                  'border-0 bg-transparent text-gray-900 shadow-none transition-colors',
+                  'hover:bg-transparent hover:text-gray-900',
                   'active:scale-[0.98]',
-                  'focus:outline-none focus:ring-2 focus:ring-[#2e66a6] focus:ring-offset-2',
+                  'focus:border-0 focus:outline-none focus:ring-0 focus:ring-offset-0',
                 ].join(' ')}
                 aria-label="Notifications"
                 aria-haspopup="menu"
