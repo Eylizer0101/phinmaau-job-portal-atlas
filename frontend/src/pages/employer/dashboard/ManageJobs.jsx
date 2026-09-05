@@ -1496,7 +1496,7 @@ const ManageJobs = () => {
                         className={cn(
                           'rounded-2xl border bg-white p-4 shadow-sm transition',
                           String(job._id) === recentlySavedDraftId
-                            ? 'border-[#173f8a] bg-amber-50/40 ring-2 ring-[#173f8a]'
+                            ? 'border-[#173f8a] bg-[#2e66a6]/10 ring-2 ring-[#173f8a]'
                             : 'border-gray-200'
                         )}
                       >
@@ -1713,7 +1713,7 @@ const ManageJobs = () => {
                             className={cn(
                               'group cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]',
                               String(job._id) === recentlySavedDraftId
-                                ? 'bg-amber-50 ring-2 ring-inset ring-[#173f8a]'
+                                ? 'bg-[#2e66a6]/10 ring-2 ring-inset ring-[#173f8a]'
                                 : 'hover:bg-[#2e66a6]/[0.06] focus-visible:bg-[#2e66a6]/[0.08]'
                             )}
                             tabIndex={0}

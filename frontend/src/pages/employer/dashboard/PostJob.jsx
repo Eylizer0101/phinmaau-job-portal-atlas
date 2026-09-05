@@ -1794,14 +1794,26 @@ const PostJob = () => {
     setSuccess('');
 
     try {
-      await postJob({ isDraft: true });
+      const response = await postJob({ isDraft: true });
+      const savedJob = response?.data?.job;
+      const savedJobId = savedJob?._id || savedJob?.id || '';
       setShowCancelModal(false);
       allowNavigationRef.current = true;
 
       if (pendingLeavePath === '__browser_back__') {
         window.history.go(-2);
       } else {
-        navigate(pendingLeavePath || '/employer/manage-jobs');
+        const destination = pendingLeavePath || '/employer/manage-jobs';
+        navigate(destination, {
+          state: destination === '/employer/manage-jobs'
+            ? {
+                jobDraftSaved: true,
+                successType: 'post-draft',
+                savedJobId,
+                savedJobTitle: savedJob?.title || formData.title || 'Untitled Draft',
+              }
+            : undefined,
+        });
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save the job as draft. Please try again.');
