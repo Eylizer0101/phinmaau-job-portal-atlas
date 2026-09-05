@@ -638,11 +638,7 @@ const Settings = () => {
             </p>
           </div>
 
-          {loadingPage ? (
-            <div className="rounded-2xl border border-[#e6edf5] bg-[#f7faff] p-5 text-sm text-black/60 shadow-sm">
-              Loading settings...
-            </div>
-          ) : (
+          {!loadingPage ? (
             <div className="space-y-5">
               <Message type={messageType.general}>{messages.general}</Message>
 
@@ -934,7 +930,7 @@ const Settings = () => {
                 </div>
               </Section>
             </div>
-          )}
+          ) : null}
       </div>
     </EmployerLayout>
   );
