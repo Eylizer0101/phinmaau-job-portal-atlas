@@ -948,13 +948,14 @@ const ManageJobs = () => {
   };
 
   const handlePublish = async (jobId) => {
+    const jobToUpdate = jobs.find((job) => job._id === jobId);
+
     try {
       if (!isEmployerVerified) {
         setError(verificationBannerMessage || 'Your company is not verified yet. Publishing is disabled.');
         return;
       }
 
-      const jobToUpdate = jobs.find((job) => job._id === jobId);
       if (!jobToUpdate) return;
 
       if (action.jobId) return;
