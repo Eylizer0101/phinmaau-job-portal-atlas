@@ -41,7 +41,7 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
     case 'closeJob':
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M7 11V8a5 5 0 0110 0v3m-10 0h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg>;
     case 'hired':
-      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 12l2 2 4-4m5-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+      return <svg {...common}><circle cx="12" cy="12" r="9" strokeWidth={1.75} /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8.5 12.25l2.25 2.25 4.75-5" /></svg>;
     case 'filled':
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m-11 0h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2zm5 6 1.5 1.5L15 11" /></svg>;
     case 'more':
@@ -2292,20 +2292,18 @@ const ManageJobs = () => {
             }}
           >
             <div role="dialog" aria-modal="true" aria-labelledby="filled-job-title" className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
-              <div className="flex items-start gap-5 px-6 py-6">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-700">
-                    <Icon name="filled" className="h-7 w-7" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h2 id="filled-job-title" className="text-xl font-bold text-gray-900">Job Position Filled</h2>
-                    <p className="mt-2 text-sm leading-6 text-gray-600">
-                      This “<span className="font-semibold text-[#2e66a6]">{safeTitle(filledJob)}</span>” job post cannot be reopened or closed, because the position has already been filled.
-                    </p>
-                  </div>
+              <div className="px-8 pb-5 pt-8 text-center">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-violet-100 text-violet-700">
+                  <Icon name="filled" className="h-9 w-9" />
+                </div>
+                <h2 id="filled-job-title" className="mt-4 text-xl font-bold text-gray-900">Job Position Filled</h2>
+                <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-gray-600">
+                  This “<span className="font-semibold text-[#2e66a6]">{safeTitle(filledJob)}</span>” job post cannot be reopened or closed, because the position has already been filled.
+                </p>
               </div>
 
-              <div className="flex justify-end border-t border-gray-200 px-6 py-4">
-                <button type="button" onClick={() => setFilledJob(null)} className="rounded-md bg-[#2e66a6] px-8 py-2.5 text-sm font-bold text-white hover:bg-[#255487]">
+              <div className="px-8 pb-7">
+                <button type="button" onClick={() => setFilledJob(null)} className="w-full rounded-md bg-[#2e66a6] px-8 py-2.5 text-sm font-bold text-white hover:bg-[#255487]">
                   OK
                 </button>
               </div>
