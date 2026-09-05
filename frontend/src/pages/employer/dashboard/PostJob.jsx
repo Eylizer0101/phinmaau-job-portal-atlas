@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
+import CenteredIndicator from '../../../components/shared/CenteredIndicator';
 import { BuildingIcon, JobDetailsSvgIcon } from '../../../components/shared/JobseekerIcons';
 import {
   JOB_TYPES,
@@ -1992,8 +1993,8 @@ const PostJob = () => {
             )}
           </div>
 
-          {error && <Alert type="error">{error}</Alert>}
-          {success && <Alert type="success">{success}</Alert>}
+          <CenteredIndicator type="error" message={error} onClose={() => setError('')} />
+          <CenteredIndicator type="success" message={success} onClose={() => setSuccess('')} />
 
           <div
             aria-disabled={!isCompanyProfileComplete}

@@ -1,6 +1,7 @@
 // src/pages/employer/dashboard/CompanyProfile.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import EmployerLayout from '../../../layouts/EmployerLayout';
+import CenteredIndicator from '../../../components/shared/CenteredIndicator';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   PH_REGIONS,
@@ -2609,27 +2610,8 @@ const CompanyProfile = () => {
             Back
           </button>
 
-          {(error || success) && (
-            <div className="mb-4 space-y-3">
-              {error ? (
-                <div className="rounded-[14px] border border-red-200 bg-red-50 px-4 py-3">
-                  <div className="flex items-center gap-2 text-red-700">
-                    <WarningIcon className="h-5 w-5" />
-                    <p className="text-sm font-medium">{error}</p>
-                  </div>
-                </div>
-              ) : null}
-
-              {success ? (
-                <div className="rounded-[14px] border border-[#d1d5db] bg-[#f3f4f6] px-4 py-3">
-                  <div className="flex items-center gap-2 text-[#2e66a6]">
-                    <CheckCircleIcon className="h-5 w-5" />
-                    <p className="text-sm font-medium">{success}</p>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          )}
+          <CenteredIndicator type="error" message={error} onClose={() => setError('')} />
+          <CenteredIndicator type="success" message={success} onClose={() => setSuccess('')} />
 
           <div className="overflow-hidden rounded-[16px]">
             <div className="relative h-[220px] sm:h-[260px] lg:h-[300px] overflow-hidden rounded-t-[16px] border border-b-0 border-[#d1d5db] bg-white">

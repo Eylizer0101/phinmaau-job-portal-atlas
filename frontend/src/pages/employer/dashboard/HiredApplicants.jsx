@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import Pagination from '../../../components/shared/Pagination';
+import CenteredIndicator from '../../../components/shared/CenteredIndicator';
 
 const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
   const common = { className, fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', ...props };
@@ -883,23 +884,7 @@ const selectBase =
           )}
         </div>
 
-        {error && (
-          <div
-            className="mb-5 flex items-start justify-between gap-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-900"
-            role="alert"
-            aria-live="assertive"
-          >
-            <div className="min-w-0">{error}</div>
-            <button
-              type="button"
-              onClick={() => setError('')}
-              className="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
-              aria-label="Dismiss message"
-            >
-              Dismiss
-            </button>
-          </div>
-        )}
+        <CenteredIndicator type="error" message={error} onClose={() => setError('')} />
 
         {/* Filters */}
         <div className="relative z-20 mb-6 overflow-visible rounded-[22px] border border-gray-300 bg-[#ffffff] shadow-sm">

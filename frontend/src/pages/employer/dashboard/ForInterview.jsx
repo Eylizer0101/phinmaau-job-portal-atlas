@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import Pagination from '../../../components/shared/Pagination';
+import CenteredIndicator from '../../../components/shared/CenteredIndicator';
 import api from '../../../services/api';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
@@ -1463,12 +1464,6 @@ const ForInterview = () => {
     fetchForInterviewApplications();
   }, [fetchForInterviewApplications]);
 
-  useEffect(() => {
-    if (!success) return;
-    const t = setTimeout(() => setSuccess(''), 2200);
-    return () => clearTimeout(t);
-  }, [success]);
-
   const filteredApplications = useMemo(() => {
     const q = query.trim().toLowerCase();
 
@@ -1920,17 +1915,8 @@ const selectBase =
           </p>
         </div>
 
-        {error && (
-          <Alert type="error" onClose={() => setError('')}>
-            {error}
-          </Alert>
-        )}
-
-        {success && (
-          <Alert type="success" onClose={() => setSuccess('')}>
-            {success}
-          </Alert>
-        )}
+        <CenteredIndicator type="error" message={error} onClose={() => setError('')} />
+        <CenteredIndicator type="success" message={success} onClose={() => setSuccess('')} />
 
         <div className="mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="p-5">
