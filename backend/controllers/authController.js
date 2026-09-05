@@ -2369,6 +2369,46 @@ exports.getCurrentUser = async (req, res) => {
       }
     }
 
+    let employerProfileForResponse;
+    if (user?.role === 'employer') {
+      employerProfileForResponse = user.employerProfile?.toObject?.() || user.employerProfile || {};
+      const reviews = Array.isArray(employerProfileForResponse.reviews)
+        ? employerProfileForResponse.reviews
+        : [];
+      const reviewerIds = Array.from(
+        new Set(
+          reviews
+            .map((review) => review?.reviewer)
+            .filter(Boolean)
+            .map((reviewerId) => String(reviewerId))
+        )
+      );
+
+      if (reviewerIds.length) {
+        const reviewers = await User.find({
+          _id: { $in: reviewerIds },
+          status: { $ne: 'deleted' },
+        })
+          .select('_id profileImage')
+          .lean();
+        const reviewerProfileImageMap = new Map(
+          reviewers.map((reviewer) => [
+            String(reviewer._id),
+            String(reviewer.profileImage || '').trim(),
+          ])
+        );
+
+        employerProfileForResponse = {
+          ...employerProfileForResponse,
+          reviews: reviews.map((review) => ({
+            ...review,
+            reviewerProfileImage:
+              reviewerProfileImageMap.get(String(review?.reviewer || '')) || '',
+          })),
+        };
+      }
+    }
+
     res.status(200).json({
       success: true,
       user: {
@@ -2402,7 +2442,7 @@ exports.getCurrentUser = async (req, res) => {
           phoneVerified: Boolean(user.settingsVerification?.phoneVerified),
         },
         jobSeekerProfile: user.role === 'jobseeker' ? user.jobSeekerProfile : undefined,
-        employerProfile: user.role === 'employer' ? user.employerProfile : undefined,
+        employerProfile: user.role === 'employer' ? employerProfileForResponse : undefined,
       },
     });
   } catch (error) {
