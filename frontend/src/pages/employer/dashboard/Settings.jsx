@@ -196,6 +196,7 @@ const Settings = () => {
   const [passwordForm, setPasswordForm] = useState({ oldPassword: '', newPassword: '', retypeNewPassword: '' });
   const [passwordVisibility, setPasswordVisibility] = useState({ email: false, old: false, new: false, retype: false });
   const [verificationStatus, setVerificationStatus] = useState({ emailVerified: false, phoneVerified: false });
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
   const [showMobileVerification, setShowMobileVerification] = useState(false);
   const [emailResendSeconds, setEmailResendSeconds] = useState(0);
   const [phoneResendSeconds, setPhoneResendSeconds] = useState(0);
@@ -406,6 +407,7 @@ const Settings = () => {
 
       setEmailForm((prev) => ({ ...prev, pendingEmail: data?.pendingEmail || prev.newEmail }));
       setEmailForm((prev) => ({ ...prev, currentPassword: '', newEmail: '' }));
+      setShowEmailVerification(true);
       setEmailResendSeconds(180);
       showSuccessPopup('Verification Email Sent!', 'A verification email has been sent to your new email address. Please check your inbox to verify your email.', 'info');
     } catch (error) {
@@ -433,6 +435,7 @@ const Settings = () => {
 
       const nextEmail = data?.user?.email || emailForm.pendingEmail || emailForm.newEmail;
       setEmailForm({ currentEmail: nextEmail, currentPassword: '', newEmail: '', verificationCode: '', pendingEmail: '' });
+      setShowEmailVerification(false);
       setVerificationStatus((prev) => ({ ...prev, emailVerified: true }));
       refreshUserCache(data?.user);
       showSuccessPopup('Email Updated Successfully!', 'Your email has been updated successfully.');
@@ -668,7 +671,7 @@ const Settings = () => {
 
               <Section
                 title="Change Email"
-                actionText={emailForm.pendingEmail ? '' : 'Update Email'}
+                actionText="Update Email"
                 onAction={handleEmailRequest}
                 loading={saving.email}
                 loadingText="Sending..."
@@ -703,7 +706,7 @@ const Settings = () => {
                     />
                   </div>
 
-                  {emailForm.pendingEmail ? (
+                  {showEmailVerification && emailForm.pendingEmail ? (
                     <div className="rounded-2xl border border-[#d8e2ee] bg-[#f7faff] p-4">
                       <div className="mb-4 flex flex-wrap items-center gap-2">
                         <span className="text-black/70">Pending Email Address:</span>
