@@ -699,7 +699,7 @@ const Settings = () => {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-black/70">Current Email Address:</span>
                     <span className="font-medium text-black">{emailForm.currentEmail || 'No email found'}</span>
-                    <StatusBadge verified={verificationStatus.emailVerified && !emailForm.pendingEmail} label="email" />
+                    <StatusBadge verified={verificationStatus.emailVerified} label="email" />
                   </div>
 
                   <p className="text-xs text-black/50">To change your email, please complete the following fields.</p>
@@ -779,7 +779,7 @@ const Settings = () => {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-black/70">Current Mobile Number:</span>
                     <strong className="font-medium text-black">{phoneForm.mobileNumber || 'No mobile number'}</strong>
-                    <StatusBadge verified={verificationStatus.phoneVerified && !phoneForm.pendingPhoneNumber} label="mobile number" />
+                    <StatusBadge verified={verificationStatus.phoneVerified} label="mobile number" />
                   </div>
 
                   <div className="grid max-w-xl grid-cols-1 items-start gap-2 sm:grid-cols-[max-content_220px] sm:items-center">

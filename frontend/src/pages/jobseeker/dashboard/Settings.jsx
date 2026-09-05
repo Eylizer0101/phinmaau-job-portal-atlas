@@ -205,6 +205,8 @@ const Settings = () => {
   });
   const emailSectionRef = useRef(null);
   const mobileSectionRef = useRef(null);
+  const emailVerificationRef = useRef(null);
+  const mobileVerificationRef = useRef(null);
 
   const closeSuccessPopup = useCallback(() => {
     setSuccessPopup((current) => ({ ...current, open: false }));
@@ -300,6 +302,22 @@ const Settings = () => {
     const timer = setInterval(() => setMobileResendSeconds((seconds) => Math.max(0, seconds - 1)), 1000);
     return () => clearInterval(timer);
   }, [mobileResendSeconds > 0]);
+
+  useEffect(() => {
+    if (!showEmailVerification || !pendingEmail) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      emailVerificationRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [showEmailVerification, pendingEmail]);
+
+  useEffect(() => {
+    if (!showMobileVerification || !pendingPhone) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      mobileVerificationRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [showMobileVerification, pendingPhone]);
 
   const formatCountdown = (seconds) => {
     const minutes = Math.floor(seconds / 60);
@@ -590,7 +608,8 @@ const Settings = () => {
         </Panel>
         </div>
 
-        {showEmailVerification && pendingEmail ? <Panel title="Verify Email" blue>
+        {showEmailVerification && pendingEmail ? <div ref={emailVerificationRef} className="scroll-mt-24">
+        <Panel title="Verify Email" blue>
           <form onSubmit={handleVerifyEmail}>
             <InlineMessage message={emailVerifyMessage} />
             <div className="space-y-4 text-sm">
@@ -626,7 +645,8 @@ const Settings = () => {
               <SaveButton loading={verifyingEmail} loadingText="Verifying...">Verify Email</SaveButton>
             </div>
           </form>
-        </Panel> : null}
+        </Panel>
+        </div> : null}
 
         <div ref={mobileSectionRef} className="scroll-mt-24">
         <Panel title="Change Mobile Number" blue>
@@ -669,7 +689,8 @@ const Settings = () => {
         </Panel>
         </div>
 
-        {showMobileVerification && pendingPhone ? <Panel title="Verify Mobile Number" blue>
+        {showMobileVerification && pendingPhone ? <div ref={mobileVerificationRef} className="scroll-mt-24">
+        <Panel title="Verify Mobile Number" blue>
           <form onSubmit={handleVerifyMobile}>
             <InlineMessage message={mobileVerifyMessage} />
             <div className="space-y-4 text-sm">
@@ -702,7 +723,8 @@ const Settings = () => {
               <SaveButton loading={verifyingMobile} loadingText="Verifying...">Verify Mobile Number</SaveButton>
             </div>
           </form>
-        </Panel> : null}
+        </Panel>
+        </div> : null}
 
         <Panel title="Password" blue>
           <form onSubmit={handleChangePassword}>

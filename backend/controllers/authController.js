@@ -96,6 +96,28 @@ const ensureRegisteredJobseekerPhoneVerified = (user) => {
   };
   return true;
 };
+const isApprovedEmployerAccount = (user) =>
+  Boolean(
+    user?.role === 'employer' &&
+    String(user.employerProfile?.verificationDocs?.overallStatus || '').toLowerCase() === 'verified'
+  );
+const ensureApprovedEmployerContactsVerified = (user) => {
+  if (!isApprovedEmployerAccount(user)) return false;
+
+  const currentVerification = user.settingsVerification?.toObject?.() || user.settingsVerification || {};
+  const shouldVerifyEmail = Boolean(String(user.email || '').trim()) && currentVerification.emailVerified !== true;
+  const shouldVerifyPhone =
+    Boolean(String(user.employerProfile?.mobileNumber || '').trim()) && currentVerification.phoneVerified !== true;
+
+  if (!shouldVerifyEmail && !shouldVerifyPhone) return false;
+
+  user.settingsVerification = {
+    ...currentVerification,
+    emailVerified: shouldVerifyEmail ? true : Boolean(currentVerification.emailVerified),
+    phoneVerified: shouldVerifyPhone ? true : Boolean(currentVerification.phoneVerified),
+  };
+  return true;
+};
 const canUsePasswordRecovery = (user) => {
   if (!user || user.isActive !== true || String(user.status || '').toLowerCase() !== 'active') return false;
   if (user.role === 'admin') return true;
@@ -1264,6 +1286,10 @@ exports.registerEmployer = async (req, res) => {
         expiresAt: null,
         verifiedAt: new Date(),
       },
+      settingsVerification: {
+        emailVerified: true,
+        phoneVerified: false,
+      },
       employerProfile: {
         companyName: cleanCompanyName,
         companyWebsiteUrl: normalizedWebsiteUrl,
@@ -1662,6 +1688,7 @@ exports.loginEmployer = async (req, res) => {
       user.status = 'active';
     }
 
+    ensureApprovedEmployerContactsVerified(user);
     user.lastLogin = Date.now();
     await user.save();
 
@@ -2367,6 +2394,10 @@ exports.getCurrentUser = async (req, res) => {
         user.jobSeekerProfile.verificationStatus = 'verified';
         await user.save();
       }
+    }
+
+    if (user?.role === 'employer' && ensureApprovedEmployerContactsVerified(user)) {
+      await user.save();
     }
 
     let employerProfileForResponse;
