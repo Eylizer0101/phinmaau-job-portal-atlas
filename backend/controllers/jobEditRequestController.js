@@ -110,11 +110,19 @@ exports.createRequest = async (req, res) => {
       });
     }
 
+    const reason = String(req.body.reason || '').trim();
+    if (!reason) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reason for the edit request is required.',
+      });
+    }
+
     const request = await JobEditRequest.create({
       job: job._id,
       employer: req.user._id,
       requestedSections,
-      reason: String(req.body.reason || '').trim(),
+      reason,
     });
 
     const employer = await User.findById(req.user._id).select(

@@ -1891,7 +1891,7 @@ const MessagePopup = ({ open, onClose, applicant, application }) => {
                   <p className="truncate font-bold text-gray-900">{selectedName}</p>
                   <p className="truncate text-sm text-gray-600">
                     {selectedJobTitle !== 'Job Seeker' ? (
-                      <>Applied for: <strong className="font-bold text-gray-900">{selectedJobTitle}</strong></>
+                      <>Applied for: <strong className="font-bold text-[#174b91] underline underline-offset-2">{selectedJobTitle}</strong></>
                     ) : selectedJobTitle}
                   </p>
                 </div>
@@ -2399,7 +2399,7 @@ const ApplicationDetails = () => {
                   </span>
                 </div>
                 <p className="mt-2 text-sm text-gray-500">
-                  Applied for{' '}
+                  Applied for:{' '}
                   {application.job?._id || application.job ? (
                     <Link
                       to={`/employer/manage-jobs/${application.job?._id || application.job}/view`}

@@ -1007,8 +1007,7 @@ const HiringStageModal = ({
     if (added) {
       setCustomStage('');
       setSelectedStage(value);
-      const applied = await onSelect(value);
-      if (applied) onClose();
+      await onSelect(value);
     }
   };
 

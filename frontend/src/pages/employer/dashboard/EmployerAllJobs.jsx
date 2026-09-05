@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import Pagination from '../../../components/shared/Pagination';
 import api from '../../../services/api';
+import { filterOpenJobListings } from '../../../utils/jobVisibility';
 
 const JobCardIcon = ({ name, className = 'w-4 h-4' }) => {
   if (name === 'location') {
@@ -63,7 +64,7 @@ const EmployerAllJobs = () => {
         const profile = user?.employerProfile || {};
         const allJobs = Array.isArray(jobsResponse?.data?.jobs) ? jobsResponse.data.jobs : [];
         setCompany({ companyName: profile.companyName || 'Company', companyLogo: profile.companyLogo || '' });
-        setJobs(allJobs.filter((job) => job?.isPublished === true && job?.isActive === true && job?.isArchived !== true));
+        setJobs(filterOpenJobListings(allJobs));
       } catch (requestError) {
         if (mounted) setError(requestError?.response?.data?.message || 'Unable to load your job posts.');
       } finally {
@@ -118,7 +119,7 @@ const EmployerAllJobs = () => {
               </div>
               <div className="relative w-full lg:max-w-md">
                 <svg className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-black/40" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="m21 21-4.35-4.35m1.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" /></svg>
-                <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search job title or location" className="h-12 w-full rounded-xl border border-[#d8e2ee] py-3 pl-12 pr-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15" />
+                <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search jobs, title, or locations..." className="h-12 w-full rounded-xl border border-[#d8e2ee] py-3 pl-12 pr-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15" />
               </div>
             </div>
 

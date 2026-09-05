@@ -698,7 +698,7 @@ const ManageJobs = () => {
 
     const timer = window.setTimeout(() => {
       setRecentlySavedDraftId('');
-    }, 10000);
+    }, 3000);
 
     return () => window.clearTimeout(timer);
   }, [recentlySavedDraftId]);
@@ -891,6 +891,10 @@ const ManageJobs = () => {
       setError('Select at least one section that needs to be edited.');
       return;
     }
+    if (!requestReason.trim()) {
+      setError('Enter a reason for the edit request.');
+      return;
+    }
 
     try {
       setRequestSubmitting(true);
@@ -899,7 +903,7 @@ const ManageJobs = () => {
         `https://phinmaau-job-portal-atlas.onrender.com/api/job-edit-requests/job/${lockedJob._id}`,
         {
           requestedSections: requestSections,
-          reason: requestReason,
+          reason: requestReason.trim(),
         },
         {
           headers: {
@@ -1492,7 +1496,7 @@ const ManageJobs = () => {
                         className={cn(
                           'rounded-2xl border bg-white p-4 shadow-sm transition',
                           String(job._id) === recentlySavedDraftId
-                            ? 'border-amber-300 bg-amber-50/40 ring-2 ring-amber-200'
+                            ? 'border-[#173f8a] bg-amber-50/40 ring-2 ring-[#173f8a]'
                             : 'border-gray-200'
                         )}
                       >
@@ -1709,7 +1713,7 @@ const ManageJobs = () => {
                             className={cn(
                               'group cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]',
                               String(job._id) === recentlySavedDraftId
-                                ? 'bg-amber-50 ring-2 ring-inset ring-amber-200'
+                                ? 'bg-amber-50 ring-2 ring-inset ring-[#173f8a]'
                                 : 'hover:bg-[#2e66a6]/[0.06] focus-visible:bg-[#2e66a6]/[0.08]'
                             )}
                             tabIndex={0}
@@ -2060,12 +2064,13 @@ const ManageJobs = () => {
 
                 <div>
                   <label htmlFor="edit-request-reason" className="block text-base font-bold text-[#173f8a]">
-                    Reason for the request <span className="font-normal text-gray-400">(optional)</span>
+                    Reason for the request <span className="text-red-600" aria-hidden="true">*</span>
                   </label>
                   <textarea
                     id="edit-request-reason"
                     value={requestReason}
                     onChange={(event) => setRequestReason(event.target.value)}
+                    required
                     rows={4}
                     maxLength={1000}
                     placeholder="Explain why this post needs to be edited..."
@@ -2086,7 +2091,7 @@ const ManageJobs = () => {
                 <button
                   type="button"
                   onClick={submitEditRequest}
-                  disabled={requestSubmitting || !requestSections.length}
+                  disabled={requestSubmitting || !requestSections.length || !requestReason.trim()}
                   className="inline-flex min-w-[165px] items-center justify-center gap-2 rounded-xl bg-[#173f8a] px-5 py-3 text-sm font-bold text-white hover:bg-[#12336f] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {requestSubmitting ? (

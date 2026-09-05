@@ -20,7 +20,7 @@ const jobEditRequestSchema = new mongoose.Schema({
   reason: {
     type: String,
     trim: true,
-    default: '',
+    required: [true, 'Reason for the edit request is required.'],
     maxlength: 1000,
   },
   status: {

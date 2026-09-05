@@ -8,6 +8,7 @@ import {
   PH_CITIES_BY_PROVINCE,
 } from '../../../constants/phLocations';
 import api from '../../../services/api';
+import { filterOpenJobListings } from '../../../utils/jobVisibility';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const cx = (...classes) => classes.filter(Boolean).join(' ');
@@ -73,6 +74,31 @@ const getReviewOutcome = (value) => ({
   not_offered: 'Not offered',
   withdrew: 'Withdrew',
 }[String(value || '').toLowerCase()] || value || 'Outcome not provided');
+
+const COMPANY_ACTIVITY_PREVIEW_LIMIT = 6;
+
+const resolveReviewerImage = (value) => {
+  const image = String(value || '').trim();
+  if (!image || /^https?:\/\//i.test(image)) return image;
+  const apiOrigin = String(api?.defaults?.baseURL || process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api')
+    .replace(/\/api\/?$/, '');
+  return `${apiOrigin}/${image.replace(/^\/+/, '')}`;
+};
+
+const ReviewerAvatar = ({ src, name }) => {
+  const [failed, setFailed] = useState(false);
+  const initial = String(name || 'A').trim().charAt(0).toUpperCase() || 'A';
+
+  return (
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#dfe7f0] bg-[#eef5fc]">
+      {src && !failed ? (
+        <img src={src} alt={`${name || 'Reviewer'} profile`} className="h-full w-full object-cover" onError={() => setFailed(true)} />
+      ) : (
+        <span className="text-sm font-bold text-[#2e66a6]">{initial}</span>
+      )}
+    </div>
+  );
+};
 
 const MAX_LOGO_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_COVER_SIZE_BYTES = 5 * 1024 * 1024;
@@ -1376,19 +1402,22 @@ const CompanyProfile = () => {
         setShowMoreReadyMadeCovers(false);
         revokeLocalPreviewUrls();
         setGalleryFiles([]);
-        setCompanyReviews(Array.isArray(p?.reviews) ? p.reviews : []);
+        let reviews = Array.isArray(p?.reviews) ? p.reviews : [];
+        try {
+          const companyResponse = await api.get(`/companies/verified/${user._id}`);
+          reviews = Array.isArray(companyResponse?.data?.company?.reviews)
+            ? companyResponse.data.company.reviews
+            : reviews;
+        } catch (reviewsError) {
+          console.error('Failed to load reviewer profile pictures:', reviewsError);
+        }
+        setCompanyReviews(reviews);
 
         setCompanyActivityLoading(true);
         try {
           const jobsResponse = await api.get('/jobs/employer/my-jobs');
           const jobs = Array.isArray(jobsResponse?.data?.jobs) ? jobsResponse.data.jobs : [];
-          setCompanyJobs(
-            jobs.filter((job) =>
-              job?.isPublished === true &&
-              job?.isActive === true &&
-              job?.isArchived !== true
-            )
-          );
+          setCompanyJobs(filterOpenJobListings(jobs));
         } catch (jobsError) {
           console.error('Failed to load company jobs:', jobsError);
           setCompanyJobs([]);
@@ -2824,7 +2853,7 @@ const CompanyProfile = () => {
                           <h2 className="text-[24px] font-bold text-black">Your Job Post at {companyData.companyName || 'Company'}</h2>
                           <p className="mt-1 text-[16px] text-black/65">{companyJobs.length} Active Position{companyJobs.length === 1 ? '' : 's'}</p>
                         </div>
-                        {companyJobs.length ? (
+                        {companyJobs.length > COMPANY_ACTIVITY_PREVIEW_LIMIT ? (
                           <button type="button" onClick={() => navigate('/employer/company-profile/jobs')} className="inline-flex items-center gap-2 
                           text-[15px] font-medium text-[#2e66a6] 
                           hover:text-[#25578f]">View all jobs  <svg
@@ -2892,7 +2921,7 @@ const CompanyProfile = () => {
                     <div className="rounded-[18px] border border-[#d1d5db] bg-white p-7 shadow-[0_2px_6px_rgba(15,23,42,0.05)]">
                       <div className="flex flex-wrap items-start justify-between gap-4">
                         <div><h2 className="text-[24px] font-bold text-black">Applications Process at {companyData.companyName || 'Company'}</h2><p className="mt-1 text-[16px] text-black/65">{companyReviews.length} Total Application{companyReviews.length === 1 ? '' : 's'}</p></div>
-                        {companyReviews.length ? <button type="button" onClick={() => navigate('/employer/company-profile/reviews')} 
+                        {companyReviews.length > COMPANY_ACTIVITY_PREVIEW_LIMIT ? <button type="button" onClick={() => navigate('/employer/company-profile/reviews')} 
                         className="inline-flex items-center gap-2 text-[15px] font-medium text-[#2e66a6] 
                         hover:text-[#25578f]">See all reviews<svg
                             className="w-[18px] h-[18px] shrink-0"
@@ -2910,7 +2939,7 @@ const CompanyProfile = () => {
                           {companyReviews.slice(0, 6).map((review, index) => (
                             <article key={review._id || index} className="rounded-2xl border border-[#dfe7f0] bg-white px-5 py-5 shadow-[0_10px_28px_rgba(46,102,166,0.06)] sm:px-6 sm:py-6">
                               <div className="flex flex-wrap items-start justify-between gap-3">
-                                <div><h3 className="text-[17px] font-bold text-black">{review.reviewerName || 'Anonymous User'}</h3><p className="mt-1 text-sm text-black/55">{review.roleAppliedFor || 'Role not provided'}{formatReviewAge(review.createdAt) ? ` · ${formatReviewAge(review.createdAt)}` : ''}</p></div>
+                                <div className="flex min-w-0 items-start gap-3"><ReviewerAvatar src={resolveReviewerImage(review.reviewerProfileImage || review.profileImage)} name={review.reviewerName || 'Anonymous User'} /><div><h3 className="text-[17px] font-bold text-black">{review.reviewerName || 'Anonymous User'}</h3><p className="mt-1 text-sm text-black/55">{review.roleAppliedFor || 'Role not provided'}{formatReviewAge(review.createdAt) ? ` · ${formatReviewAge(review.createdAt)}` : ''}</p></div></div>
                                 <span className="rounded-full border border-[#dfe7f0] bg-[#fbfcfe] px-3 py-1 text-xs font-semibold text-[#2e66a6]">{getReviewOutcome(review.outcome)}</span>
                               </div>
                               {review.message ? <p className="mt-5 whitespace-pre-line text-[16px] leading-7 text-black/80">{review.message}</p> : null}

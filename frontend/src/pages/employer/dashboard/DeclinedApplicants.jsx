@@ -742,7 +742,7 @@ const DeclinedApplicants = () => {
 
   const jobOptions = useMemo(() => {
     return [
-      { value: 'all', label: 'All Jobs' },
+      { value: 'all', label: 'All Job Title' },
       ...jobs.map((j) => ({
         value: j._id,
         label: j.title || 'Untitled Job',
@@ -1181,8 +1181,8 @@ const DeclinedApplicants = () => {
                               </div>
                             </td>
 
-                            <td className="px-6 py-4 text-center">
-                              <span className="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-800">
+                            <td className="px-6 py-4 text-center align-middle">
+                              <span className="text-sm font-semibold text-red-600">
                                 {declinedStageLabel}
                               </span>
                               <div className="mt-1 text-xs text-gray-600">
@@ -1252,7 +1252,7 @@ const DeclinedApplicants = () => {
                             </div>
                           </div>
 
-                          <span className="inline-flex shrink-0 items-center rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-800">
+                          <span className="shrink-0 text-xs font-semibold text-red-600">
                             {declinedStageLabel}
                           </span>
                         </div>

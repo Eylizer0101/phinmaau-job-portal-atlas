@@ -2125,7 +2125,7 @@ const EmployerDashboard = () => {
               key: 'hired',
               label: 'Hired Applicants',
               value: dashboardData.applications.hired,
-              image: '/images/employer2.png',
+              image: '/images/dashboardcheckicon.png',
               href: '/employer/hired',
             },
             {
