@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import Pagination from '../../../components/shared/Pagination';
+import CenteredIndicator from '../../../components/shared/CenteredIndicator';
 
 const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
   const common = { className, fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24', ...props };
@@ -812,12 +813,6 @@ const ArchivedDeclinedApplicants = () => {
     fetchArchivedDeclinedApplications();
   }, [fetchJobs, fetchArchivedDeclinedApplications]);
 
-  useEffect(() => {
-    if (!success) return;
-    const t = setTimeout(() => setSuccess(''), 2200);
-    return () => clearTimeout(t);
-  }, [success]);
-
   const jobOptions = useMemo(() => {
     return [
       { value: 'all', label: 'All Jobs' },
@@ -1068,17 +1063,9 @@ const ArchivedDeclinedApplicants = () => {
             <p className="mt-1 text-sm text-gray-600">Restore archived declined application records</p>
           </div>
 
-          <div className="min-w-0 xl:pt-1 [&>div]:mb-0">
-            {error && (
-              <Alert type="error" onClose={() => setError('')}>
-                {error}
-              </Alert>
-            )}
-            {success && (
-              <Alert type="success" onClose={() => setSuccess('')}>
-                {success}
-              </Alert>
-            )}
+          <div className="min-w-0 xl:pt-1">
+            <CenteredIndicator type="error" message={error} onClose={() => setError('')} />
+            <CenteredIndicator type="success" message={success} onClose={() => setSuccess('')} />
           </div>
 
           <div className="xl:pt-1">{headerRight}</div>

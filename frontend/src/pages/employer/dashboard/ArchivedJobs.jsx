@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import Pagination from '../../../components/shared/Pagination';
+import CenteredIndicator from '../../../components/shared/CenteredIndicator';
 
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
@@ -602,18 +603,6 @@ const ArchivedJobs = () => {
   }, []);
 
   useEffect(() => {
-    if (!error) return;
-    const t = setTimeout(() => setError(''), 3500);
-    return () => clearTimeout(t);
-  }, [error]);
-
-  useEffect(() => {
-    if (!success) return;
-    const t = setTimeout(() => setSuccess(''), 2500);
-    return () => clearTimeout(t);
-  }, [success]);
-
-  useEffect(() => {
     if (!showDeleteModal) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -1054,53 +1043,8 @@ const ArchivedJobs = () => {
           </div>
 
           <div className="min-w-0 xl:pt-1">
-            {error && (
-              <div className="rounded-xl border border-red-200 bg-red-50 p-4" role="alert" aria-live="assertive">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <svg className="mt-0.5 h-5 w-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <p className="text-sm font-medium text-red-900">{error}</p>
-                  </div>
-                  <button
-                    onClick={() => setError('')}
-                    className="rounded-lg px-2 py-1 text-sm font-medium text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-                    aria-label="Dismiss error"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {success && (
-              <div className="rounded-xl border border-[#2e66a6]/25 bg-[#2e66a6]/10 p-4" role="status" aria-live="polite">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <svg className="mt-0.5 h-5 w-5 text-[#2e66a6]" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <p className="text-sm font-medium text-gray-900">{success}</p>
-                  </div>
-                  <button
-                    onClick={() => setSuccess('')}
-                    className="rounded-lg px-2 py-1 text-sm font-medium text-[#2e66a6] hover:bg-[#2e66a6]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
-                    aria-label="Dismiss success"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-            )}
+            <CenteredIndicator type="error" message={error} onClose={() => setError('')} />
+            <CenteredIndicator type="success" message={success} onClose={() => setSuccess('')} />
           </div>
 
           <div className="xl:pt-1">{headerRight}</div>
