@@ -1786,7 +1786,7 @@ const ForInterview = () => {
       if (!responseData.application) {
         updateApplicationInState({ ...stageTarget, hiringStage: stage });
       }
-      setSuccess('Hiring stage updated.');
+      setSuccess('Hiring stage updated Successfully');
       return true;
     } catch (stageError) {
       setError(stageError?.response?.data?.message || stageError?.message || 'Failed to update hiring stage.');
@@ -1916,7 +1916,13 @@ const selectBase =
         </div>
 
         <CenteredIndicator type="error" message={error} onClose={() => setError('')} />
-        <CenteredIndicator type="success" message={success} onClose={() => setSuccess('')} />
+        <CenteredIndicator
+          type="success"
+          message={success}
+          title={success}
+          hideMessage
+          onClose={() => setSuccess('')}
+        />
 
         <div className="mb-6 overflow-visible rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="p-5">
