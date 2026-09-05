@@ -1372,7 +1372,6 @@ const ForInterview = () => {
   }, []);
 
   const Avatar = ({ img, name, size = 46, altKey }) => {
-    const initial = (name?.trim()?.[0] || 'U').toUpperCase();
     const src = img ? getImageUrl(img) : '';
     const isBroken = brokenAvatars.has(String(altKey));
 
@@ -1390,7 +1389,7 @@ const ForInterview = () => {
             onError={() => markBroken(altKey)}
           />
         ) : (
-          <span className="text-sm font-bold text-gray-700">{initial}</span>
+          <img src="/images/profile.png" alt="Default profile" className="h-full w-full object-cover" />
         )}
       </div>
     );

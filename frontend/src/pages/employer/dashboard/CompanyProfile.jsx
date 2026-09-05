@@ -87,14 +87,13 @@ const resolveReviewerImage = (value) => {
 
 const ReviewerAvatar = ({ src, name }) => {
   const [failed, setFailed] = useState(false);
-  const initial = String(name || 'A').trim().charAt(0).toUpperCase() || 'A';
 
   return (
     <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#dfe7f0] bg-[#eef5fc]">
       {src && !failed ? (
         <img src={src} alt={`${name || 'Reviewer'} profile`} className="h-full w-full object-cover" onError={() => setFailed(true)} />
       ) : (
-        <span className="text-sm font-bold text-[#2e66a6]">{initial}</span>
+        <img src="/images/profile.png" alt="Default profile" className="h-full w-full object-cover" />
       )}
     </div>
   );

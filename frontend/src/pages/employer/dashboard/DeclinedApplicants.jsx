@@ -644,7 +644,6 @@ const DeclinedApplicants = () => {
 
   const Avatar = useCallback(
     ({ img, name, size = 48, altKey }) => {
-      const initial = (name?.trim()?.[0] || 'U').toUpperCase();
       const src = img ? getImageUrl(img) : '';
       const isBroken = brokenAvatars.has(String(altKey));
       const boxStyle = { height: `${size}px`, width: `${size}px` };
@@ -663,7 +662,7 @@ const DeclinedApplicants = () => {
               onError={() => markBroken(altKey)}
             />
           ) : (
-            <span className="text-sm font-bold text-gray-700">{initial}</span>
+            <img src="/images/profile.png" alt="Default profile" className="h-full w-full object-cover" />
           )}
         </div>
       );

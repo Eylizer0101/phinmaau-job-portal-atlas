@@ -602,7 +602,15 @@ const JobApplicants = () => {
                   <article key={application._id} className="rounded-3xl border border-[#e3e5ef] bg-white p-6 shadow-sm">
                     <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
                       <div className="flex min-w-0 items-center gap-5">
-                        {image ? <img src={image} alt={name} className="h-20 w-20 rounded-full object-cover" /> : <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#e8edff] text-2xl font-bold text-[#2e66a6]">{name.charAt(0).toUpperCase()}</div>}
+                        <img
+                          src={image || '/images/profile.png'}
+                          alt={image ? name : 'Default profile'}
+                          className="h-20 w-20 rounded-full object-cover"
+                          onError={(event) => {
+                            event.currentTarget.onerror = null;
+                            event.currentTarget.src = '/images/profile.png';
+                          }}
+                        />
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-3"><h2 className="text-xl font-bold text-[#111827]">{name}</h2><span className={`rounded-full px-3 py-1 text-xs font-semibold ${application.alreadyEmployed ? 'bg-amber-100 text-amber-800' : statusStyle(application.status)}`}>{application.alreadyEmployed ? 'Already Employed' : statusLabel(application.status)}</span></div>
                           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#7b8190]"><span className="inline-flex items-center gap-1.5"><SvgIcon name="mail" />{user.email || 'Not provided'}</span><span className="hidden text-[#c2c5ce] sm:inline">|</span><span className="inline-flex items-center gap-1.5"><SvgIcon name="phone" />{phone}</span></div>

@@ -1808,17 +1808,15 @@ const MessagePopup = ({ open, onClose, applicant, application }) => {
                     >
                       <div className="flex items-start gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#2e66a6]/20 bg-[#2e66a6]/10">
-                          {avatar ? (
-                            <img
-                              src={avatar}
-                              alt={title}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-sm font-bold text-[#2e66a6]">
-                              {(title?.[0] || 'U').toUpperCase()}
-                            </span>
-                          )}
+                          <img
+                            src={avatar || '/images/profile.png'}
+                            alt={avatar ? title : 'Default profile'}
+                            className="h-full w-full object-cover"
+                            onError={(event) => {
+                              event.currentTarget.onerror = null;
+                              event.currentTarget.src = '/images/profile.png';
+                            }}
+                          />
                         </div>
 
                         <div className="min-w-0 flex-1">
@@ -2384,7 +2382,13 @@ const ApplicationDetails = () => {
         <main className="overflow-hidden rounded-[20px] border border-[#d8e2ee] bg-white">
           <div className="flex flex-col gap-5 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 flex-1 items-center gap-5">
-              <div className="h-[108px] w-[108px] shrink-0 overflow-hidden rounded-full bg-[#eef5fc]">{image && !avatarBroken ? <img src={image} alt={name} onError={() => setAvatarBroken(true)} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-[#2e66a6]">{name[0]}</div>}</div>
+              <div className="h-[108px] w-[108px] shrink-0 overflow-hidden rounded-full bg-[#eef5fc]">
+                {image && !avatarBroken ? (
+                  <img src={image} alt={name} onError={() => setAvatarBroken(true)} className="h-full w-full object-cover" />
+                ) : (
+                  <img src="/images/profile.png" alt="Default profile" className="h-full w-full object-cover" />
+                )}
+              </div>
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 items-center gap-3 whitespace-nowrap">
                   <AutoFitApplicationHeaderName>{name}</AutoFitApplicationHeaderName>
@@ -2474,7 +2478,14 @@ const ApplicationDetails = () => {
                       onError={() => setAvatarBroken(true)}
                       className="mt-3 h-[78px] w-[78px] object-cover sm:absolute sm:right-[110px] sm:top-0 sm:mt-0"
                     />
-                  ) : null}
+                  ) : (
+                    <img
+                      ref={resumeProfileImageRef}
+                      src="/images/profile.png"
+                      alt="Default profile"
+                      className="mt-3 h-[78px] w-[78px] object-cover sm:absolute sm:right-[110px] sm:top-0 sm:mt-0"
+                    />
+                  )}
                 </header>
 
                 {isMeaningfulResumeValue(profile.aboutMe) ? (
