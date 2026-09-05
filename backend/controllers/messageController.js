@@ -69,6 +69,25 @@ const buildConversationId = (userA, userB, applicationId = null) => {
   return applicationId ? `${participants}_${applicationId.toString()}` : participants;
 };
 
+const getValidRequestedConversationId = (conversationId, userA, userB, applicationId = null) => {
+  if (!conversationId) return null;
+
+  const requestedId = conversationId.toString();
+  const legacyConversationId = buildConversationId(userA, userB);
+  const applicationConversationId = applicationId
+    ? buildConversationId(userA, userB, applicationId)
+    : null;
+
+  if (
+    requestedId === legacyConversationId ||
+    (applicationConversationId && requestedId === applicationConversationId)
+  ) {
+    return requestedId;
+  }
+
+  return null;
+};
+
 const findApplicationBetweenUsers = async (senderId, receiverId, jobId = null, applicationId = null) => {
   const query = {
     $or: [
@@ -92,7 +111,13 @@ const findApplicationBetweenUsers = async (senderId, receiverId, jobId = null, a
 // 1) Employer can start chat anytime
 // 2) Jobseeker cannot send first message
 // 3) Jobseeker can only reply once thread already exists
-const checkMessagingAccess = async (senderId, receiverId, jobId = null, applicationId = null) => {
+const checkMessagingAccess = async (
+  senderId,
+  receiverId,
+  jobId = null,
+  applicationId = null,
+  requestedConversationId = null
+) => {
   try {
     if (!senderId || !receiverId) {
       return {
@@ -129,7 +154,13 @@ const checkMessagingAccess = async (senderId, receiverId, jobId = null, applicat
       };
     }
 
-    const conversationId = buildConversationId(senderId, receiverId, application._id);
+    const conversationId =
+      getValidRequestedConversationId(
+        requestedConversationId,
+        senderId,
+        receiverId,
+        application._id
+      ) || buildConversationId(senderId, receiverId, application._id);
     const firstMessage = await Message.findOne({ conversationId })
       .sort({ createdAt: 1 })
       .select('sender createdAt');
@@ -176,7 +207,15 @@ const checkMessagingAccess = async (senderId, receiverId, jobId = null, applicat
 // ✅ SIMPLIFIED SEND MESSAGE FUNCTION
 exports.sendMessage = async (req, res) => {
   try {
-    const { receiverId, content, messageType, interviewDetails, jobId, applicationId } = req.body;
+    const {
+      receiverId,
+      content,
+      messageType,
+      interviewDetails,
+      jobId,
+      applicationId,
+      conversationId: requestedConversationId
+    } = req.body;
 
     // Validate required fields
     if (!receiverId) {
@@ -203,7 +242,13 @@ exports.sendMessage = async (req, res) => {
     }
 
     // ✅ NEW ACCESS RULE
-    const access = await checkMessagingAccess(req.user._id, receiverId, jobId, applicationId);
+    const access = await checkMessagingAccess(
+      req.user._id,
+      receiverId,
+      jobId,
+      applicationId,
+      requestedConversationId
+    );
 
     if (!access.allowed) {
       return res.status(403).json({

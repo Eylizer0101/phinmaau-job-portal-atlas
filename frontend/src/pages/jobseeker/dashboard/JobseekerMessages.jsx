@@ -686,6 +686,18 @@ const JobseekerMessages = () => {
       if (fileToSend) formData.append('file', fileToSend);
       formData.append('receiverId', receiverId);
       formData.append('content', messageToSend);
+      if (selectedConversation._id) {
+        formData.append('conversationId', selectedConversation._id);
+      }
+      if (selectedConversation.application?._id) {
+        formData.append('applicationId', selectedConversation.application._id);
+      }
+      if (selectedConversation.application?.job?._id || selectedConversation.application?.job) {
+        formData.append(
+          'jobId',
+          selectedConversation.application.job?._id || selectedConversation.application.job
+        );
+      }
 
       const response = await axios.post(`${API_BASE_URL}/messages/send`, formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },

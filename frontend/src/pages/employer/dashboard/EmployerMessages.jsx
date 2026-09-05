@@ -1566,6 +1566,9 @@ const EmployerMessages = () => {
       if (fileToSend) formData.append('file', fileToSend);
       formData.append('receiverId', receiverId);
       formData.append('content', optimisticMsg.content);
+      if (!selectedConversation.__temp && selectedConversation._id) {
+        formData.append('conversationId', selectedConversation._id);
+      }
       if (selectedApplication?._id) formData.append('applicationId', selectedApplication._id);
       if (selectedApplication?.job?._id || selectedApplication?.job) {
         formData.append('jobId', selectedApplication.job?._id || selectedApplication.job);
