@@ -1811,7 +1811,8 @@ const EmployerDashboard = () => {
                 }}
                 className={[
                   'relative mt-8 inline-flex h-10 w-10 items-center justify-center rounded-lg p-2',
-                  'text-gray-700 transition-colors hover:text-[#2e66a6]',
+                  'border border-gray-200 bg-white text-gray-700 shadow-sm transition-colors',
+                  'hover:bg-gray-50 hover:text-[#2e66a6] hover:shadow-md',
                   'active:scale-[0.98]',
                   'focus:outline-none focus:ring-2 focus:ring-[#2e66a6] focus:ring-offset-2',
                 ].join(' ')}
