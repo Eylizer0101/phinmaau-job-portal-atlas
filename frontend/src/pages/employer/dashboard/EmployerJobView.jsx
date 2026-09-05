@@ -1002,7 +1002,7 @@ const EmployerJobView = () => {
                         );
                       }) : (<span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-white/20"><SvgIcon name="users" className="h-4 w-4" /></span>)}
                     </div>
-                    <div className="min-w-0 flex-1"><p className="text-base font-bold">{jobApplications.length} Applicant{jobApplications.length === 1 ? '' : 's'}</p><p className="truncate text-[11px] text-blue-100">Candidates who applied.</p></div>
+                    <div className="min-w-0 flex-1"><p className="text-base font-bold">{jobApplications.length} Applicant{jobApplications.length === 1 ? '' : 's'}</p><p className="whitespace-nowrap text-[11px] text-blue-100">Candidates who applied</p></div>
                     <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/15 text-white transition group-hover:translate-x-0.5"><SvgIcon name="chevronRight" className="h-4 w-4" /></span>
                   </button>
                 </div>
