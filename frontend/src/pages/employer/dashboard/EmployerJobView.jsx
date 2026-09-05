@@ -983,7 +983,22 @@ const EmployerJobView = () => {
                 <div className="flex w-full shrink-0 lg:w-[285px]">
                   <button type="button" onClick={() => navigate(`/employer/job/${jobId}/applicants`)} className={`group flex h-14 w-full items-center gap-3 rounded-xl bg-[#2e66a6] px-4 text-left text-white shadow-[0_10px_22px_rgba(46,102,166,0.22)] transition hover:bg-[#25578f] ${UI.ring}`} aria-label={`View ${jobApplications.length} applicants for ${job.title}`}>
                     <div className="flex -space-x-2">
-                      {applicantPreview.length ? applicantPreview.map((application, index) => { const image = getApplicantImage(application); const applicantName = getApplicantName(application); return image ? (<img key={application._id || index} src={image} alt={applicantName} className="h-8 w-8 rounded-full border-2 border-white object-cover" />) : (<span key={application._id || index} className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#dbeafe] text-[10px] font-bold text-[#1d4ed8]">{applicantName.charAt(0).toUpperCase()}</span>); }) : (<span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-white/20"><SvgIcon name="users" className="h-4 w-4" /></span>)}
+                      {applicantPreview.length ? applicantPreview.map((application, index) => {
+                        const image = getApplicantImage(application);
+                        const applicantName = getApplicantName(application);
+                        return (
+                          <img
+                            key={application._id || index}
+                            src={image || '/images/profile.png'}
+                            alt={image ? applicantName : 'Default profile'}
+                            className="h-8 w-8 rounded-full border-2 border-white object-cover"
+                            onError={(event) => {
+                              event.currentTarget.onerror = null;
+                              event.currentTarget.src = '/images/profile.png';
+                            }}
+                          />
+                        );
+                      }) : (<span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-white/20"><SvgIcon name="users" className="h-4 w-4" /></span>)}
                     </div>
                     <div className="min-w-0 flex-1"><p className="text-base font-bold">{jobApplications.length} Applicant{jobApplications.length === 1 ? '' : 's'}</p><p className="truncate text-[11px] text-blue-100">Review candidates who applied</p></div>
                     <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/15 text-white transition group-hover:translate-x-0.5"><SvgIcon name="chevronRight" className="h-4 w-4" /></span>

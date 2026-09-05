@@ -847,8 +847,8 @@ const ScheduleInterviewModal = ({
                 </div>
 
                 <div className="mb-6 flex items-center gap-4 border-b border-gray-200 pb-5">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#1154cc] text-lg font-semibold text-[#1154cc]">
-                    {(applicantName?.trim()?.[0] || 'A').toUpperCase()}
+                  <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-[#1154cc]">
+                    <img src="/images/profile.png" alt="Default profile" className="h-full w-full object-cover" />
                   </div>
                   <div>
                     <div className="text-2xl font-semibold text-gray-900">{applicantName}</div>
@@ -1731,8 +1731,8 @@ const EmployerMessages = () => {
           </div>
 
           <div className="mt-3 flex items-center gap-4 border-b border-gray-200 pb-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#d9ae22] text-lg font-semibold text-gray-900">
-              {(confirmationData.applicantName?.trim()?.[0] || 'A').toUpperCase()}
+            <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-[#d9ae22]">
+              <img src="/images/profile.png" alt="Default profile" className="h-full w-full object-cover" />
             </div>
 
             <div className="min-w-0">
@@ -2049,20 +2049,15 @@ const EmployerMessages = () => {
                           >
                             <div className="flex items-start gap-3">
                               <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#2e66a6]/20 bg-[#2e66a6]/10">
-                                {avatarUrl ? (
-                                  <img
-                                    src={avatarUrl}
-                                    alt={title}
-                                    className="h-full w-full object-cover"
-                                    onError={(event) => {
-                                      event.currentTarget.style.display = 'none';
-                                    }}
-                                  />
-                                ) : (
-                                  <span className="text-sm font-bold text-[#2e66a6]">
-                                    {(title?.trim()?.[0] || 'U').toUpperCase()}
-                                  </span>
-                                )}
+                                <img
+                                  src={avatarUrl || '/images/profile.png'}
+                                  alt={avatarUrl ? title : 'Default profile'}
+                                  className="h-full w-full object-cover"
+                                  onError={(event) => {
+                                    event.currentTarget.onerror = null;
+                                    event.currentTarget.src = '/images/profile.png';
+                                  }}
+                                />
                               </div>
 
                               <div className="min-w-0 flex-1">
@@ -2164,20 +2159,15 @@ const EmployerMessages = () => {
 
                             return (
                               <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#2e66a6]/20 bg-[#2e66a6]/10">
-                                {avatarUrl ? (
-                                  <img
-                                    src={avatarUrl}
-                                    alt={title}
-                                    className="h-full w-full object-cover"
-                                    onError={(event) => {
-                                      event.currentTarget.style.display = 'none';
-                                    }}
-                                  />
-                                ) : (
-                                  <span className="text-sm font-bold text-[#2e66a6]">
-                                    {(title?.trim()?.[0] || 'U').toUpperCase()}
-                                  </span>
-                                )}
+                                <img
+                                  src={avatarUrl || '/images/profile.png'}
+                                  alt={avatarUrl ? title : 'Default profile'}
+                                  className="h-full w-full object-cover"
+                                  onError={(event) => {
+                                    event.currentTarget.onerror = null;
+                                    event.currentTarget.src = '/images/profile.png';
+                                  }}
+                                />
                               </div>
                             );
                           })()}

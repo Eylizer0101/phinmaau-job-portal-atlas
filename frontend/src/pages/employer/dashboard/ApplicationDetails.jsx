@@ -1872,17 +1872,15 @@ const MessagePopup = ({ open, onClose, applicant, application }) => {
             <>
               <header className="flex min-h-[94px] items-center gap-3 border-b border-[#e6edf5] bg-white px-5 pr-16">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#2e66a6]/20 bg-[#2e66a6]/10">
-                  {selectedAvatar ? (
-                    <img
-                      src={selectedAvatar}
-                      alt={selectedName}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-sm font-bold text-[#2e66a6]">
-                      {(selectedName?.[0] || 'U').toUpperCase()}
-                    </span>
-                  )}
+                  <img
+                    src={selectedAvatar || '/images/profile.png'}
+                    alt={selectedAvatar ? selectedName : 'Default profile'}
+                    className="h-full w-full object-cover"
+                    onError={(event) => {
+                      event.currentTarget.onerror = null;
+                      event.currentTarget.src = '/images/profile.png';
+                    }}
+                  />
                 </div>
 
                 <div className="min-w-0 flex-1">
