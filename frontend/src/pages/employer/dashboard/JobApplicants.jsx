@@ -425,6 +425,8 @@ const JobApplicants = () => {
   const [applications, setApplications] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [levelFilter, setLevelFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('newest_applied');
   const [dateFilter, setDateFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -465,10 +467,13 @@ const JobApplicants = () => {
 
   const filteredApplicants = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
-    return applicantCards.filter(({ application, user, profile }) => {
+    const levelOrder = ['First Time Job Seeker', 'Intermediate', 'Expert', 'Pro', 'Legend'];
+    const filtered = applicantCards.filter(({ application, user, profile, level }) => {
+      if (['withdrawn', 'cancelled'].includes(String(application.status || '').toLowerCase())) return false;
       const name = user.fullName || [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' ');
       const searchableText = [name, user.email, profile.phoneNumber, profile.contactNumber, job?.title].filter(Boolean).join(' ').toLowerCase();
       if (query && !searchableText.includes(query)) return false;
+      if (levelFilter !== 'all' && level !== levelFilter) return false;
 
       if (statusFilter === 'already_employed') {
         if (!application.alreadyEmployed) return false;
@@ -489,7 +494,20 @@ const JobApplicants = () => {
       }
       return true;
     });
-  }, [applicantCards, searchTerm, statusFilter, dateFrom, dateTo, job]);
+
+    const sortableApplicants = sortBy === 'best_match'
+      ? filtered.filter(({ matchScore }) => matchScore >= 55)
+      : filtered;
+
+    return [...sortableApplicants].sort((first, second) => {
+      if (sortBy === 'oldest_applied') return new Date(first.application.appliedAt || first.application.createdAt || 0) - new Date(second.application.appliedAt || second.application.createdAt || 0);
+      if (sortBy === 'best_match') return first.matchScore - second.matchScore;
+      if (sortBy === 'highest_match') return second.matchScore - first.matchScore;
+      if (sortBy === 'highest_level') return levelOrder.indexOf(second.level) - levelOrder.indexOf(first.level);
+      if (sortBy === 'lowest_level') return levelOrder.indexOf(first.level) - levelOrder.indexOf(second.level);
+      return new Date(second.application.appliedAt || second.application.createdAt || 0) - new Date(first.application.appliedAt || first.application.createdAt || 0);
+    });
+  }, [applicantCards, searchTerm, statusFilter, levelFilter, sortBy, dateFrom, dateTo, job]);
 
   const totalItems = filteredApplicants.length;
   const numericPageSize = pageSize === 'all' ? Math.max(totalItems, 1) : Number(pageSize);
@@ -524,11 +542,15 @@ const JobApplicants = () => {
   const hasActiveFilters =
     searchTerm.trim() !== '' ||
     statusFilter !== 'all' ||
+    levelFilter !== 'all' ||
+    sortBy !== 'newest_applied' ||
     dateFilter !== 'all';
 
   const clearFilters = () => {
     setSearchTerm('');
     setStatusFilter('all');
+    setLevelFilter('all');
+    setSortBy('newest_applied');
     setDateFilter('all');
     setDateFrom('');
     setDateTo('');
@@ -552,8 +574,8 @@ const JobApplicants = () => {
           <div
             className={
               hasActiveFilters
-                ? 'grid gap-3 lg:grid-cols-[1.45fr_0.8fr_0.9fr_auto]'
-                : 'grid gap-3 lg:grid-cols-[1.45fr_0.8fr_0.9fr]'
+                ? 'grid gap-3 lg:grid-cols-[1.3fr_0.7fr_0.8fr_0.8fr_0.7fr_auto]'
+                : 'grid gap-3 lg:grid-cols-[1.3fr_0.7fr_0.8fr_0.8fr_0.7fr]'
             }
           >
             <div className="relative">
@@ -568,12 +590,28 @@ const JobApplicants = () => {
               <option value="declined">Declined</option>
               <option value="already_employed">Already Employed</option>
             </select>
+            <select value={levelFilter} onChange={(event) => { setLevelFilter(event.target.value); setCurrentPage(1); }} className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
+              <option value="all">All Job Seeker Level</option>
+              <option value="First Time Job Seeker">First Time Job Seeker</option>
+              <option value="Intermediate">Intermediate</option>
+              <option value="Expert">Expert</option>
+              <option value="Pro">Pro</option>
+              <option value="Legend">Legend</option>
+            </select>
             <div className="relative">
               <SvgIcon name="calendar" className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
               <select value={dateFilter} onChange={(event) => changeDateFilter(event.target.value)} className="h-12 w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 pr-12 text-sm font-medium text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
                 {dateOptions.map((option) => <option key={option.value} value={option.value}>{option.value === dateFilter ? getDateOptionLabel(option.value, dateFrom, dateTo) : option.label}</option>)}
               </select>
             </div>
+            <select value={sortBy} onChange={(event) => { setSortBy(event.target.value); setCurrentPage(1); }} className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
+              <option value="newest_applied">Newest Applied</option>
+              <option value="oldest_applied">Oldest Applied</option>
+              <option value="best_match">Best Match</option>
+              <option value="highest_match">Highest Match</option>
+              <option value="highest_level">Highest Level</option>
+              <option value="lowest_level">Lowest Level</option>
+            </select>
 
             {hasActiveFilters && (
               <button

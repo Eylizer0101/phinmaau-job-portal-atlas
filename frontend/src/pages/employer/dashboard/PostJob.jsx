@@ -1081,9 +1081,6 @@ const PostJob = () => {
       const url = String(typeof item === 'string' ? item : item?.url || '').trim();
       return Boolean(url) && !/^(blob:|data:)/i.test(url);
     });
-    const hasSocialMedia = [p.facebookUrl, p.instagramUrl, p.youtubeUrl, p.xUrl]
-      .some((value) => /^https?:\/\/\S+$/i.test(String(value || '').trim()));
-
     return [
       !String(p.companyName || '').trim() ? 'Company Name' : null,
       !String(p.businessEmail || '').trim() ? 'Business Email' : null,
@@ -1092,8 +1089,6 @@ const PostJob = () => {
       !String(p.industry || '').trim() ? 'Industry' : null,
       !String(p.companyAddress || '').trim() ? 'Complete Office Address' : null,
       !String(p.companyDescription || '').trim() ? 'About the Company' : null,
-      !String(p.companyWebsiteUrl || '').trim() ? 'Company Website' : null,
-      !hasSocialMedia ? 'Social Media' : null,
       !String(p.companyLogo || '').trim() ? 'Company Logo' : null,
       !String(p.coverPhoto || '').trim() ? 'Cover Photo' : null,
       !hasSavedGalleryPhoto ? 'Gallery' : null,
@@ -2956,7 +2951,7 @@ const PostJob = () => {
                 className="mt-0 text-center text-[22px] font-extrabold leading-tight text-[#071b3a] sm:text-[27px] lg:text-[30px]"
                 style={{ letterSpacing: '0.04em' }}
               >
-                Privacy Notice &amp; Posting Agreement
+                PRIVACY NOTICE &amp; POSTING AGREEMENT
               </h2>
 
               <div className="mx-auto mt-2 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
@@ -2970,29 +2965,14 @@ const PostJob = () => {
 
               <div className="mx-auto mt-3 max-w-[760px] rounded-[16px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 py-4 shadow-[0_10px_30px_rgba(30,75,160,0.08)] sm:px-6 sm:py-4">
                 <div className="space-y-2.5 text-justify text-[13px] leading-6 text-[#0f2442] sm:text-sm">
-                  <p>
-                    By publishing this job post, you confirm that all information provided is
-                    accurate and complies with our platform policies.
-                  </p>
-                  <p>
-                    Once published, your job post will be visible to eligible job seekers.
-                    Applicants may view the information you provide, including the job title,
-                    company name, job description, qualifications, work location, salary
-                    (if disclosed), and other hiring details.
-                  </p>
-                  <p>
-                    You may access applicants&apos; submitted information solely for recruitment
-                    purposes and must keep all personal information confidential.
-                  </p>
-                  <p>
-                    To maintain the integrity of job listings, this post cannot be edited after
-                    one (1) hour from publication. Any changes after this period require approval
-                    from the platform administrator.
-                  </p>
+                  <p>By publishing this job post, you confirm that the information provided is <strong>accurate, complete, and intended for legitimate hiring purposes.</strong></p>
+                  <p>Once published, your job post will be <strong>visible to eligible job seekers.</strong> Applicants may view the information you provide, including the job title, job description, qualifications, work location, salary (if disclosed), and other hiring details.</p>
+                  <p>Any applicant information you receive through <strong>AGAPAY</strong> must be used only for recruitment purposes and handled with appropriate confidentiality. You are responsible for protecting applicants&apos; personal information and must <strong>keep it confidential and use it only for legitimate recruitment purposes.</strong></p>
+                  <p>To maintain the integrity of job listings, this post cannot be edited after <strong>one (1) hour</strong> from publication. After this period, any changes require an <strong>edit request for administrator review and approval</strong> before you can edit the job post again.</p>
                 </div>
               </div>
 
-              <label className="mx-auto mt-3 flex max-w-[760px] cursor-pointer items-start gap-3 rounded-[14px] border border-[#cdddf0] bg-[#f5f9fe] px-4 py-3 transition hover:border-[#9ebee2] hover:bg-[#eef5ff]">
+              <label className="mx-auto mt-3 flex max-w-[760px] cursor-pointer items-start gap-3 px-1 py-2">
                 <input
                   type="checkbox"
                   checked={privacyAccepted}

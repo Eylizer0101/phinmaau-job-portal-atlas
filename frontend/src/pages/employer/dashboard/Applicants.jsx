@@ -1559,6 +1559,7 @@ const Applicants = () => {
   const [success, setSuccess] = useState('');
 
   const [selectedJob, setSelectedJob] = useState(jobId || 'all');
+  const [selectedLevel, setSelectedLevel] = useState('all');
   const [statusFilter, setStatusFilter] = useState('pending');
 
   const [query, setQuery] = useState('');
@@ -1775,6 +1776,27 @@ const Applicants = () => {
           return [name, email, jobTitle, company, loc].some((t) => t.includes(q));
         });
 
+    const getApplicantMetrics = (application) => {
+      const profile = application?.jobseeker?.jobSeekerProfile || {};
+      const work = Array.isArray(profile.workExperiences) ? profile.workExperiences : [];
+      const education = Array.isArray(profile.educationEntries) ? profile.educationEntries : [];
+      const skills = [...parseSkills(profile.technicalSkills), ...parseSkills(profile.softSkills)];
+      const level = calculateJobSeekerLevel({
+        skills,
+        certifications: profile.certifications || [],
+        projects: profile.projects || [],
+        seminars: profile.seminars || [],
+        awards: profile.awards || [],
+        workExperiences: work,
+      }).currentRank;
+      const matchScore = calculateApplicationMatch({ job: application.job || {}, profile, skills, work, education }).score;
+      return { level, matchScore };
+    };
+
+    const levelFiltered = selectedLevel === 'all'
+      ? searched
+      : searched.filter((application) => getApplicantMetrics(application).level === selectedLevel);
+
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
@@ -1797,7 +1819,7 @@ const Applicants = () => {
     const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
     const startOfThisYear = new Date(now.getFullYear(), 0, 1);
 
-    const filteredBySort = searched.filter((a) => {
+    const filteredBySort = levelFiltered.filter((a) => {
       if (filterBy === 'all') return true;
 
       const appliedDate = new Date(a.appliedAt || 0);
@@ -1848,45 +1870,23 @@ const Applicants = () => {
       return true;
     });
 
-    const getSalaryValue = (app) => {
-      const job = app.job || {};
-      const salaryFields = [
-        job.salary,
-        job.salaryMax,
-        job.maxSalary,
-        job.maximumSalary,
-        job.salary_max,
-        job.salaryRange,
-        job.monthlySalary,
-      ];
+    const sortableApplications = sortBy === 'best_match'
+      ? filteredBySort.filter((application) => getApplicantMetrics(application).matchScore >= 55)
+      : filteredBySort;
 
-      const numbers = salaryFields
-        .flatMap((value) => String(value || '').match(/\d+(?:,\d{3})*(?:\.\d+)?/g) || [])
-        .map((value) => Number(value.replace(/,/g, '')))
-        .filter((value) => !Number.isNaN(value));
+    const sorted = [...sortableApplications].sort((a, b) => {
+      const firstMetrics = getApplicantMetrics(a);
+      const secondMetrics = getApplicantMetrics(b);
+      const levelOrder = ['First Time Job Seeker', 'Intermediate', 'Expert', 'Pro', 'Legend'];
 
-      return numbers.length ? Math.max(...numbers) : 0;
-    };
-
-    const getExpiryDate = (app) => {
-      const job = app.job || {};
-      const rawExpiry = job.expiryDate || job.expiresAt || job.deadline || job.applicationDeadline || job.expirationDate || job.closingDate;
-      const expiryTime = new Date(rawExpiry || 0).getTime();
-      return Number.isNaN(expiryTime) || expiryTime === 0 ? Number.MAX_SAFE_INTEGER : expiryTime;
-    };
-
-    const sorted = [...filteredBySort].sort((a, b) => {
-      if (sortBy === 'salary_high_to_low') {
-        return getSalaryValue(b) - getSalaryValue(a);
-      }
-
-      if (sortBy === 'expiry_soonest') {
-        return getExpiryDate(a) - getExpiryDate(b);
-      }
+      if (sortBy === 'best_match') return firstMetrics.matchScore - secondMetrics.matchScore;
+      if (sortBy === 'highest_match') return secondMetrics.matchScore - firstMetrics.matchScore;
+      if (sortBy === 'highest_level') return levelOrder.indexOf(secondMetrics.level) - levelOrder.indexOf(firstMetrics.level);
+      if (sortBy === 'lowest_level') return levelOrder.indexOf(firstMetrics.level) - levelOrder.indexOf(secondMetrics.level);
 
       const da = new Date(a.appliedAt || 0).getTime();
       const db = new Date(b.appliedAt || 0).getTime();
-      return db - da;
+      return sortBy === 'oldest_applied' ? da - db : db - da;
     });
 
     return sorted;
@@ -1897,6 +1897,7 @@ const Applicants = () => {
     customDateStart,
     debouncedQuery,
     filterBy,
+    selectedLevel,
     sortBy,
     statusFilter,
   ]);
@@ -1913,7 +1914,7 @@ const Applicants = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [customDateEnd, customDateStart, debouncedQuery, filterBy, selectedJob, sortBy]);
+  }, [customDateEnd, customDateStart, debouncedQuery, filterBy, selectedJob, selectedLevel, sortBy]);
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
@@ -1924,9 +1925,10 @@ const Applicants = () => {
       query.trim() !== '' ||
       filterBy !== 'all' ||
       sortBy !== 'most_recent' ||
-      selectedJob !== 'all'
+      selectedJob !== 'all' ||
+      selectedLevel !== 'all'
     );
-  }, [query, filterBy, sortBy, selectedJob]);
+  }, [query, filterBy, sortBy, selectedJob, selectedLevel]);
 
   const handleStatusUpdate = async (applicationId, newStatus, extraPayload = {}) => {
     try {
@@ -2029,12 +2031,6 @@ const Applicants = () => {
     setCurrentPage(1);
   };
 
-  const sortOptions = [
-    { value: 'salary_high_to_low', label: 'Salary Highest to Lowest' },
-    { value: 'expiry_soonest', label: 'Expiry Date Soonest to Latest' },
-    { value: 'most_recent', label: 'Most Recent Newest to Oldest' },
-  ];
-
   const clearFilters = () => {
     setQuery('');
     setFilterBy('all');
@@ -2044,6 +2040,7 @@ const Applicants = () => {
     setSortBy('most_recent');
     setOpenFilterMenu(null);
     setSelectedJob('all');
+    setSelectedLevel('all');
     syncStatusToURL('pending');
     setCurrentPage(1);
   };
@@ -2080,8 +2077,8 @@ const Applicants = () => {
           <div
             className={
               hasActiveFilters
-                ? 'grid gap-3 lg:grid-cols-[1.45fr_0.8fr_0.9fr_0.65fr_auto]'
-                : 'grid gap-3 lg:grid-cols-[1.45fr_0.8fr_0.9fr_0.65fr]'
+                ? 'grid gap-3 lg:grid-cols-[1.35fr_0.75fr_0.8fr_0.8fr_0.65fr_auto]'
+                : 'grid gap-3 lg:grid-cols-[1.35fr_0.75fr_0.8fr_0.8fr_0.65fr]'
             }
           >
             <div className="relative">
@@ -2126,10 +2123,25 @@ const Applicants = () => {
               {jobOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.value === 'all'
-                    ? 'All Jobs'
+                    ? 'All Job Title'
                     : option.label.replace(/\s*\(\d+\)$/, '')}
                 </option>
               ))}
+            </select>
+
+            <select
+              value={selectedLevel}
+              onChange={(event) => { setSelectedLevel(event.target.value); setCurrentPage(1); }}
+              className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm font-medium text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20"
+              aria-label="Filter applicants by job seeker level"
+              disabled={isLoading}
+            >
+              <option value="all">All Job Seeker Level</option>
+              <option value="First Time Job Seeker">First Time Job Seeker</option>
+              <option value="Intermediate">Intermediate</option>
+              <option value="Expert">Expert</option>
+              <option value="Pro">Pro</option>
+              <option value="Legend">Legend</option>
             </select>
 
             <EmployerDateFilterDropdown
@@ -2161,9 +2173,12 @@ const Applicants = () => {
                   role="menu"
                 >
                   {[
-                    ['salary_high_to_low', 'Salary Highest to Lowest'],
-                    ['expiry_soonest', 'Expiry Date Soonest to Latest'],
-                    ['most_recent', 'Most Recent Newest to Oldest'],
+                    ['most_recent', 'Newest Applied'],
+                    ['oldest_applied', 'Oldest Applied'],
+                    ['best_match', 'Best Match'],
+                    ['highest_match', 'Highest Match'],
+                    ['highest_level', 'Highest Level'],
+                    ['lowest_level', 'Lowest Level'],
                   ].map(([value, label]) => (
                     <button
                       key={value}

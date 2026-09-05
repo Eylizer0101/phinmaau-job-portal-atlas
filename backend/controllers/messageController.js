@@ -64,8 +64,9 @@ const attachFullName = (u) => {
   return u;
 };
 
-const buildConversationId = (userA, userB) => {
-  return [userA.toString(), userB.toString()].sort().join('_');
+const buildConversationId = (userA, userB, applicationId = null) => {
+  const participants = [userA.toString(), userB.toString()].sort().join('_');
+  return applicationId ? `${participants}_${applicationId.toString()}` : participants;
 };
 
 const findApplicationBetweenUsers = async (senderId, receiverId, jobId = null, applicationId = null) => {
@@ -128,7 +129,7 @@ const checkMessagingAccess = async (senderId, receiverId, jobId = null, applicat
       };
     }
 
-    const conversationId = buildConversationId(senderId, receiverId);
+    const conversationId = buildConversationId(senderId, receiverId, application._id);
     const firstMessage = await Message.findOne({ conversationId })
       .sort({ createdAt: 1 })
       .select('sender createdAt');
@@ -212,7 +213,7 @@ exports.sendMessage = async (req, res) => {
     }
 
     // Generate conversation ID
-    const conversationId = access.conversationId || buildConversationId(req.user._id, receiverId);
+    const conversationId = access.conversationId || buildConversationId(req.user._id, receiverId, access.application?._id);
 
     // Create message object
     const messageData = {
@@ -551,6 +552,7 @@ exports.getConversations = async (req, res) => {
     ];
 
     const applicationByOtherUser = new Map();
+    const applicationById = new Map();
 
     if (otherUserIds.length) {
       const relatedApplications = await Application.find({
@@ -573,6 +575,7 @@ exports.getConversations = async (req, res) => {
         .lean();
 
       relatedApplications.forEach((application) => {
+        applicationById.set(String(application._id), application);
         const employerId = application?.employer?.toString();
         const jobseekerId = application?.jobseeker?.toString();
         const otherUserId =
@@ -587,6 +590,7 @@ exports.getConversations = async (req, res) => {
     const enrichedConversations = visibleConversations.map((conversation) => ({
       ...conversation,
       application:
+        applicationById.get(String(conversation?.lastMessage?.application || '')) ||
         applicationByOtherUser.get(conversation?.otherUser?._id?.toString()) || null
     }));
 
@@ -1019,7 +1023,7 @@ exports.scheduleInterview = async (req, res) => {
       });
     }
 
-    const conversationId = access.conversationId || buildConversationId(req.user._id, receiverId);
+    const conversationId = access.conversationId || buildConversationId(req.user._id, receiverId, access.application?._id);
 
     const message = new Message({
       conversationId,

@@ -1274,12 +1274,17 @@ const EmployerMessages = () => {
   );
 
   const conversationEntries = useMemo(() => {
-    const conversationByJobseeker = new Map();
+    const conversationByApplication = new Map();
+    const legacyConversationByJobseeker = new Map();
+    const consumedLegacyConversations = new Set();
 
     conversations.forEach((conversation) => {
       const jobseekerId = String(conversation?.otherUser?._id || '');
-      if (jobseekerId && !conversationByJobseeker.has(jobseekerId)) {
-        conversationByJobseeker.set(jobseekerId, conversation);
+      const applicationId = String(conversation?.application?._id || conversation?.lastMessage?.application || '');
+      if (applicationId) {
+        conversationByApplication.set(applicationId, conversation);
+      } else if (jobseekerId && !legacyConversationByJobseeker.has(jobseekerId)) {
+        legacyConversationByJobseeker.set(jobseekerId, conversation);
       }
     });
 
@@ -1292,7 +1297,16 @@ const EmployerMessages = () => {
 
         if (!applicationId || !jobseekerId) return null;
 
-        const existingConversation = conversationByJobseeker.get(jobseekerId) || null;
+        const applicationConversation = conversationByApplication.get(applicationId) || null;
+        const legacyConversation = legacyConversationByJobseeker.get(jobseekerId) || null;
+        const existingConversation = applicationConversation || (
+          legacyConversation && !consumedLegacyConversations.has(legacyConversation._id)
+            ? legacyConversation
+            : null
+        );
+        if (!applicationConversation && existingConversation) {
+          consumedLegacyConversations.add(existingConversation._id);
+        }
         const jobseeker =
           application?.jobseeker && typeof application.jobseeker === 'object'
             ? application.jobseeker
@@ -1552,6 +1566,10 @@ const EmployerMessages = () => {
       if (fileToSend) formData.append('file', fileToSend);
       formData.append('receiverId', receiverId);
       formData.append('content', optimisticMsg.content);
+      if (selectedApplication?._id) formData.append('applicationId', selectedApplication._id);
+      if (selectedApplication?.job?._id || selectedApplication?.job) {
+        formData.append('jobId', selectedApplication.job?._id || selectedApplication.job);
+      }
 
       const res = await api.post('/messages/send', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -1565,7 +1583,8 @@ const EmployerMessages = () => {
         const refreshedConversations = await fetchConversations('active');
         const createdConversation = refreshedConversations.find(
           (conversation) =>
-            String(conversation?.otherUser?._id || '') === String(receiverId)
+            String(conversation?.otherUser?._id || '') === String(receiverId) &&
+            String(conversation?.application?._id || conversation?.lastMessage?.application || '') === String(selectedApplication?._id || '')
         );
 
         if (createdConversation) {

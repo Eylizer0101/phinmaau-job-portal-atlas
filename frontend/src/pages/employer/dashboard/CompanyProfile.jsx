@@ -2172,7 +2172,7 @@ const CompanyProfile = () => {
     const industry = String(companyData.industry || '').trim();
     const companyDescription = String(companyData.companyDescription || '').trim();
     const companyWebsiteUrl = String(companyData.companyWebsiteUrl || '').trim();
-    const socialMediaUrls = [companyData.facebookUrl, companyData.instagramUrl, companyData.youtubeUrl, companyData.xUrl]
+    const socialMediaUrls = [companyData.facebookUrl, companyData.instagramUrl, companyData.youtubeUrl, companyData.linkedinUrl, companyData.xUrl]
       .map((value) => String(value || '').trim());
     const isWebUrl = (value) => /^https?:\/\/\S+$/i.test(value);
 
@@ -2208,11 +2208,10 @@ const CompanyProfile = () => {
       next.industry = `Industry must not exceed ${MAX_INDUSTRY_LENGTH} characters.`;
     }
 
-    if (!companyWebsiteUrl) next.companyWebsiteUrl = 'Company website is required.';
-    else if (!isWebUrl(companyWebsiteUrl)) next.companyWebsiteUrl = 'Enter a valid website URL beginning with http:// or https://.';
+    if (companyWebsiteUrl && !isWebUrl(companyWebsiteUrl)) next.companyWebsiteUrl = 'Enter a valid website URL beginning with http:// or https://.';
 
-    if (!socialMediaUrls.some(isWebUrl)) {
-      next.socialMedia = 'Add at least one valid Social Media link beginning with http:// or https://.';
+    if (socialMediaUrls.some((url) => url && !isWebUrl(url))) {
+      next.socialMedia = 'Enter valid Social Media links beginning with http:// or https://.';
     }
 
     if (!companyDescription) {
@@ -2244,6 +2243,7 @@ const CompanyProfile = () => {
     companyData.mobileNumber,
     companyData.facebookUrl,
     companyData.instagramUrl,
+    companyData.linkedinUrl,
     companyData.youtubeUrl,
     companyData.xUrl,
     galleryDisplayItems.length,
@@ -3417,7 +3417,7 @@ const CompanyProfile = () => {
                           </div>
                         </FormField>
 
-                        <FormField label="Company Website" required error={fieldErrors.companyWebsiteUrl}>
+                        <FormField label="Company Website (Optional)" error={fieldErrors.companyWebsiteUrl}>
                           <input
                             type="text"
                             name="companyWebsiteUrl"
@@ -3744,7 +3744,7 @@ const CompanyProfile = () => {
                             <LinkIcon className="h-5 w-5" />
                           </div>
                           <div>
-                            <h3 className="text-[21px] font-bold text-[#081b35]">Social Media</h3>
+                            <h3 className="text-[21px] font-bold text-[#081b35]">Social Media (Optional)</h3>
                             <p className="text-[13px] text-[#66758b]">Connect your official company accounts.</p>
                           </div>
                         </div>

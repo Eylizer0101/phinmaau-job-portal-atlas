@@ -61,7 +61,7 @@ export const getResumeSalaryDisplay = (profile = {}, viewerMode = 'jobseeker') =
   const isEmployerViewer = viewerMode === 'employer';
 
   if (isEmployerViewer && (profile?.salaryHidden === true || privacy === 'only_me')) {
-    return "Salary hidden due to user's privacy settings.";
+    return 'Salary hidden.';
   }
 
   return [profile?.minimumSalary, profile?.maximumSalary]
