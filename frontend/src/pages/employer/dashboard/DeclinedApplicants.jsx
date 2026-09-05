@@ -1120,7 +1120,7 @@ const DeclinedApplicants = () => {
                         <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Job Applied
                         </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                        <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
                           Decline Stage
                         </th>
                         <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
@@ -1182,11 +1182,13 @@ const DeclinedApplicants = () => {
                             </td>
 
                             <td className="px-6 py-4 text-center align-middle">
-                              <span className="text-sm font-semibold text-red-600">
-                                {declinedStageLabel}
-                              </span>
-                              <div className="mt-1 text-xs text-gray-600">
-                                {formatDate(app.reviewedAt)}
+                              <div className="flex w-full flex-col items-center justify-center text-center">
+                                <span className="text-sm font-semibold text-red-600">
+                                  {declinedStageLabel}
+                                </span>
+                                <div className="mt-1 text-xs text-gray-600">
+                                  {formatDate(app.reviewedAt)}
+                                </div>
                               </div>
                             </td>
 
