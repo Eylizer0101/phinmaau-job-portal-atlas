@@ -500,6 +500,21 @@ const EmployerDashboard = () => {
     }
   };
 
+  const markAllNotificationsAsRead = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(
+        'https://phinmaau-job-portal-atlas.onrender.com/api/notifications/mark-all-read',
+        null,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setNotifications((prev) => prev.map((notification) => ({ ...notification, isRead: true })));
+      setNotifUnreadCount(0);
+    } catch (e) {
+      console.error('Error marking all notifications as read:', e);
+    }
+  };
+
   const handleNotifItemClick = async (notif) => {
     const link = String(notif?.link || '').trim();
     const id = notif?._id;
@@ -1622,17 +1637,6 @@ const EmployerDashboard = () => {
     }
   };
 
-  const getNotifIconStyle = (n) => {
-    const isUnread = n?.isRead === false;
-
-    return {
-      wrap: isUnread
-        ? 'bg-white border-[#2e66a6]/30 text-[#2e66a6]'
-        : 'bg-white border-gray-200 text-gray-600',
-      dot: isUnread ? 'bg-[#2e66a6]' : 'bg-gray-300',
-    };
-  };
-
   return (
     <EmployerLayout>
       <style>{`
@@ -1806,11 +1810,8 @@ const EmployerDashboard = () => {
                   if (next) fetchNotifications({ silent: false });
                 }}
                 className={[
-                  'relative inline-flex items-center mt-8 justify-center',
-                  'h-10 w-10 rounded-xl',
-                  'border border-gray-200 bg-white text-gray-800',
-                  'shadow-sm transition',
-                  'hover:bg-gray-50 hover:shadow-md',
+                  'relative mt-8 inline-flex h-10 w-10 items-center justify-center rounded-lg p-2',
+                  'text-gray-700 transition-colors hover:text-[#2e66a6]',
                   'active:scale-[0.98]',
                   'focus:outline-none focus:ring-2 focus:ring-[#2e66a6] focus:ring-offset-2',
                 ].join(' ')}
@@ -1820,11 +1821,10 @@ const EmployerDashboard = () => {
                 aria-controls="employer-notifications-menu"
                 title="Notifications"
               >
-                <OutlineIcon name="bell" className="w-6 h-6 text-[#2e66a6]" />
+                <OutlineIcon name="bell" className="h-6 w-6" />
 
                 {notifUnreadCount > 0 ? (
                   <>
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#2e66a6] border-2 border-white" />
                     <span
                       className="absolute -top-2 -right-2 min-w-[20px] h-[20px] px-1
                                  bg-red-600 text-white text-[11px] font-bold
@@ -1842,44 +1842,35 @@ const EmployerDashboard = () => {
                 <div
                   id="employer-notifications-menu"
                   className={[
-                    'fixed left-1/2 top-[76px] z-[80] w-[calc(100vw-2rem)] max-w-[380px] -translate-x-1/2',
-                    'md:absolute md:left-auto md:right-0 md:top-auto md:mt-2 md:w-[380px] md:max-w-[92vw] md:translate-x-0 md:z-50',
-                    'bg-white rounded-2xl shadow-xl',
-                    'border border-gray-100 overflow-hidden',
-                    'origin-top-right',
+                    'fixed left-1/2 top-[76px] z-[80] w-[calc(100vw-1.5rem)] max-w-sm -translate-x-1/2',
+                    'md:absolute md:left-auto md:right-0 md:top-auto md:mt-2 md:w-96 md:max-w-[calc(100vw-1.5rem)] md:translate-x-0 md:z-50',
+                    'max-h-[520px] overflow-y-auto rounded-xl border border-gray-200 bg-white py-2 shadow-xl',
                   ].join(' ')}
                   role="menu"
                   aria-label="Notifications panel"
                 >
-                  <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-900">Notifications</p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {notifUnreadCount > 0 ? (
-                          <span className="inline-flex items-center gap-2">
-                            <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-[#2e66a6]/10 text-[#2e66a6] font-semibold border border-[#2e66a6]/20">
-                              {notifUnreadCount > 99 ? '99+' : notifUnreadCount} unread
-                            </span>
-                          </span>
-                        ) : (
-                          <span className="text-gray-500">You’re all caught up</span>
-                        )}
-                      </p>
-                    </div>
+                  <div className="border-b border-gray-100 px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="rounded-lg bg-[#2e66a6]/10 p-2">
+                          <OutlineIcon name="bell" className="h-4 w-4 text-[#2e66a6]" />
+                        </div>
+                        <h3 className="font-semibold text-gray-900">Notifications</h3>
+                      </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setNotifOpen(false)}
-                      className="shrink-0 inline-flex items-center justify-center h-8 px-3 rounded-lg
-                                 text-xs font-semibold text-gray-600 border border-gray-200
-                                 hover:bg-gray-50 hover:text-gray-800 transition
-                                 focus:outline-none focus:ring-2 focus:ring-[#2e66a6] focus:ring-offset-2"
-                    >
-                      Close
-                    </button>
+                      {notifUnreadCount > 0 ? (
+                        <button
+                          type="button"
+                          onClick={markAllNotificationsAsRead}
+                          className="rounded-md px-2 py-1 text-sm font-medium text-[#2e66a6] transition hover:text-[#25558c] focus:outline-none focus:ring-2 focus:ring-[#2e66a6] focus:ring-offset-2"
+                        >
+                          Mark all as read
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
 
-                  <div className="max-h-[calc(100vh-190px)] md:max-h-[420px] overflow-auto">
+                  <div className="px-1 py-2">
                     {notifLoading ? (
                       <div className="p-4 space-y-3">
                         {[...Array(4)].map((_, i) => (
@@ -1894,26 +1885,24 @@ const EmployerDashboard = () => {
                         ))}
                       </div>
                     ) : notifications.length === 0 ? (
-                      <div className="p-8 text-center">
-                        <div className="w-12 h-12 mx-auto bg-white rounded-2xl flex items-center justify-center mb-3 text-[#2e66a6] border border-[#2e66a6]/20">
-                          <OutlineIcon name="bell" className="w-6 h-6" />
+                      <div className="px-4 py-8 text-center">
+                        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+                          <OutlineIcon name="bell" className="h-6 w-6 text-gray-400" />
                         </div>
-                        <p className="font-semibold text-gray-900">No notifications</p>
-                        <p className="text-sm text-gray-600 mt-1">We’ll notify you when something needs your attention.</p>
+                        <p className="text-sm text-gray-600">No new notifications</p>
+                        <p className="mt-1 text-xs text-gray-400">You're all caught up!</p>
                       </div>
                     ) : (
-                      <div className="py-2">
+                      <div className="space-y-3 px-1">
                         {groupedNotifications.map((group) => (
                           <div key={group.label}>
-                            <div className="px-4 pb-2 pt-3 text-xs font-bold uppercase tracking-wide text-gray-500">
+                            <div className="px-3 pb-1 pt-2 text-xs font-bold uppercase tracking-wide text-gray-500">
                               {group.label}
                             </div>
 
                             {group.items.map((n) => {
                               const isUnread = n?.isRead === false;
                               const notificationIcon = getNotifIcon(n);
-                              const iconStyle = getNotifIconStyle(n);
-
                               return (
                                 <button
                                   key={n._id}
@@ -1921,16 +1910,16 @@ const EmployerDashboard = () => {
                                   onClick={() => handleNotifItemClick(n)}
                                   role="menuitem"
                                   className={[
-                                    'w-full text-left px-4 py-3 transition flex gap-3 items-start',
+                                    'flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-colors',
                                     'focus:outline-none focus:ring-2 focus:ring-[#2e66a6] focus:ring-inset',
                                     'hover:bg-gray-50',
-                                    isUnread ? 'bg-[#2e66a6]/[0.04]' : '',
+                                    isUnread ? 'bg-blue-50' : 'bg-white',
                                   ].join(' ')}
                                 >
                                   <div
                                     className={[
-                                      'mt-0.5 h-9 w-9 rounded-xl border flex items-center justify-center shrink-0',
-                                      iconStyle.wrap,
+                                      'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
+                                      isUnread ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600',
                                     ].join(' ')}
                                     aria-hidden="true"
                                   >
@@ -1942,7 +1931,7 @@ const EmployerDashboard = () => {
                                       <div className="min-w-0 flex-1">
                                         <p
                                           className={[
-                                            'text-sm font-semibold truncate',
+                                            'min-w-0 flex-1 break-words text-sm font-semibold leading-5',
                                             isUnread ? 'text-gray-900' : 'text-gray-800',
                                           ].join(' ')}
                                         >
@@ -1950,7 +1939,7 @@ const EmployerDashboard = () => {
                                         </p>
 
                                         {n.message ? (
-                                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">{n.message}</p>
+                                          <p className="mt-1 line-clamp-2 break-words text-sm leading-5 text-gray-700">{n.message}</p>
                                         ) : null}
                                       </div>
 
@@ -1969,14 +1958,14 @@ const EmployerDashboard = () => {
                   </div>
 
                   {notifications.length > 0 && !notifLoading ? (
-                    <div className="px-4 py-4 border-t border-gray-100 bg-white">
+                    <div className="border-t border-gray-100 px-4 py-3">
                      <button
   type="button"
   onClick={() => {
     setNotifOpen(false);
     navigate('/employer/notifications');
   }}
-  className="w-full flex items-center justify-center gap-2 bg-white px-4 py-3 text-sm font-semibold text-[#2e66a6] hover:text-[#25558c] transition"
+  className="flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[#2e66a6] transition hover:text-[#25558c]"
 >
   View all notifications
   <OutlineIcon name="arrow" className="h-4 w-4 text-[#2e66a6]" />
