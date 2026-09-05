@@ -59,9 +59,10 @@ const buildReviewerName = (user) => {
 };
 
 const getReviewerProfileImageMap = async (reviews = []) => {
+  const safeReviews = Array.isArray(reviews) ? reviews : [];
   const reviewerIds = Array.from(
     new Set(
-      (Array.isArray(reviews) ? reviews : [])
+      safeReviews
         .map((review) => review?.reviewer)
         .filter(Boolean)
         .map((reviewerId) => String(reviewerId))
@@ -72,18 +73,43 @@ const getReviewerProfileImageMap = async (reviews = []) => {
 
   const reviewers = await User.find({
     _id: { $in: reviewerIds },
-    role: 'jobseeker',
     status: { $ne: 'deleted' },
   })
     .select('_id profileImage')
     .lean();
 
-  return new Map(
+  const profileImageMap = new Map(
     reviewers.map((reviewer) => [
       String(reviewer._id),
       String(reviewer.profileImage || '').trim(),
     ])
   );
+
+  const reviewsWithoutCurrentImage = safeReviews.filter(
+    (review) => !profileImageMap.get(String(review?.reviewer || '')) && review?.application
+  );
+
+  if (reviewsWithoutCurrentImage.length) {
+    const applicationIds = reviewsWithoutCurrentImage.map((review) => review.application);
+    const applications = await Application.find({ _id: { $in: applicationIds } })
+      .select('_id jobseeker resumeSnapshot')
+      .lean();
+    const applicationMap = new Map(
+      applications.map((application) => [String(application._id), application])
+    );
+
+    reviewsWithoutCurrentImage.forEach((review) => {
+      const application = applicationMap.get(String(review.application));
+      const snapshotImage = String(application?.resumeSnapshot?.user?.profileImage || '').trim();
+      const reviewerId = String(review?.reviewer || application?.jobseeker || '');
+
+      if (reviewerId && snapshotImage && !profileImageMap.get(reviewerId)) {
+        profileImageMap.set(reviewerId, snapshotImage);
+      }
+    });
+  }
+
+  return profileImageMap;
 };
 
 const computeReviewSummary = (reviews = []) => {

@@ -82,6 +82,9 @@ const resolveReviewerImage = (value) => {
   if (!image || /^https?:\/\//i.test(image)) return image;
   const apiOrigin = String(api?.defaults?.baseURL || process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api')
     .replace(/\/api\/?$/, '');
+  if (!image.includes('/')) {
+    return `${apiOrigin}/uploads/profile-images/${image}`;
+  }
   return `${apiOrigin}/${image.replace(/^\/+/, '')}`;
 };
 
