@@ -426,7 +426,7 @@ const JobApplicants = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [levelFilter, setLevelFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('newest_applied');
+  const [sortBy, setSortBy] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -543,14 +543,14 @@ const JobApplicants = () => {
     searchTerm.trim() !== '' ||
     statusFilter !== 'all' ||
     levelFilter !== 'all' ||
-    sortBy !== 'newest_applied' ||
+    sortBy !== '' ||
     dateFilter !== 'all';
 
   const clearFilters = () => {
     setSearchTerm('');
     setStatusFilter('all');
     setLevelFilter('all');
-    setSortBy('newest_applied');
+    setSortBy('');
     setDateFilter('all');
     setDateFrom('');
     setDateTo('');
@@ -605,6 +605,7 @@ const JobApplicants = () => {
               </select>
             </div>
             <select value={sortBy} onChange={(event) => { setSortBy(event.target.value); setCurrentPage(1); }} className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20">
+              <option value="" disabled>Sort By</option>
               <option value="newest_applied">Newest Applied</option>
               <option value="oldest_applied">Oldest Applied</option>
               <option value="best_match">Best Match</option>
