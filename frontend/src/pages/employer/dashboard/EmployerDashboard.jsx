@@ -1822,7 +1822,7 @@ const EmployerDashboard = () => {
                 aria-controls="employer-notifications-menu"
                 title="Notifications"
               >
-                <OutlineIcon name="bell" className="h-6 w-6" />
+                <OutlineIcon name="bell" className="h-6 w-6 text-black" />
 
                 {notifUnreadCount > 0 ? (
                   <>
