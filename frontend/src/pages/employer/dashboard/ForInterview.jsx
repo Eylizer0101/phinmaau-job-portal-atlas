@@ -1006,8 +1006,6 @@ const HiringStageModal = ({
     const added = await onAddCustom(value);
     if (added) {
       setCustomStage('');
-      setSelectedStage(value);
-      await onSelect(value);
     }
   };
 
@@ -1059,7 +1057,7 @@ const HiringStageModal = ({
               </button>
             </div>
             <p className="mt-2 text-xs text-gray-500">
-             The stage you add is applied to this applicant right away.
+              The stage you add will appear below. Select it when you are ready to apply it.
             </p>
             {localError ? <p className="mt-2 text-xs font-medium text-red-600">{localError}</p> : null}
           </div>
