@@ -1,9 +1,9 @@
 // src/pages/employer/dashboard/Settings.jsx
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaCheckCircle, FaEye, FaEyeSlash, FaInfoCircle } from 'react-icons/fa';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
 
@@ -11,7 +11,6 @@ const suffixOptions = ['', 'Jr.', 'Sr.', 'I', 'II', 'III', 'IV', 'V'];
 
 const initialMessages = {
   name: '',
-  position: '',
   email: '',
   phone: '',
   password: '',
@@ -23,15 +22,16 @@ const cx = (...classes) => classes.filter(Boolean).join(' ');
 const focusRing =
   'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 focus-visible:ring-offset-white';
 
-const Section = ({ title, description, actionText, actionType = 'button', onAction, loading, children }) => (
+const Section = ({ title, description, actionText, actionType = 'button', onAction, loading, loadingText = 'Saving...', children }) => (
   <section className="overflow-hidden rounded-2xl border border-[#e6edf5] bg-white shadow-[0_12px_30px_rgba(46,102,166,0.06)]">
-    <div className="flex flex-col gap-3 border-b border-[#e6edf5] bg-[#f7faff] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h2 className="text-sm font-bold text-black">{title}</h2>
-        {description ? <p className="mt-1 text-xs text-black/55">{description}</p> : null}
-      </div>
+    <div className="border-b border-[#2e66a6] bg-[#2e66a6] px-5 py-3 text-white">
+      <h2 className="text-sm font-bold">{title}</h2>
+    </div>
 
-      {actionText ? (
+    <div className="px-5 py-5 sm:px-6 sm:py-6">
+      {description ? <p className="mb-5 text-xs text-black/55">{description}</p> : null}
+      {children}
+      {actionText ? <div className="mt-6 flex justify-end">
         <button
           type={actionType}
           onClick={onAction}
@@ -41,18 +41,45 @@ const Section = ({ title, description, actionText, actionType = 'button', onActi
             focusRing
           )}
         >
-          {loading ? 'Saving...' : actionText}
+          {loading ? loadingText : actionText}
         </button>
-      ) : null}
+      </div> : null}
     </div>
-
-    <div className="px-5 py-5 sm:px-6 sm:py-6">{children}</div>
   </section>
 );
 
+const StatusBadge = ({ verified, label }) => verified ? (
+  <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white" title={`Verified ${label}`} aria-label={`Verified ${label}`}>
+    <img src="/images/checkmo.png" alt="" className="h-6 w-6 object-contain" draggable="false" />
+  </span>
+) : (
+  <span className="inline-flex items-center px-1 text-xs font-semibold text-[#2e66a6]">Unverified</span>
+);
+
+const SuccessPopup = ({ open, title, message, iconType = 'success', onClose }) => {
+  useEffect(() => {
+    if (!open) return undefined;
+    const timer = setTimeout(() => onClose?.(), 3000);
+    return () => clearTimeout(timer);
+  }, [open, title, message, iconType, onClose]);
+
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[10060] flex items-center justify-center bg-black/25 px-4" role="dialog" aria-modal="true" aria-live="polite">
+      <div className="w-full max-w-sm rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-2xl">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#e8f1ff]">
+          {iconType === 'info' ? <FaInfoCircle className="text-4xl text-[#2e66a6]" /> : <FaCheckCircle className="text-4xl text-green-600" />}
+        </div>
+        <div className="text-xl font-bold text-gray-900">{title}</div>
+        <div className="mt-2 text-sm text-gray-500">{message}</div>
+      </div>
+    </div>
+  );
+};
+
 const TextInput = ({ label, className = '', ...props }) => (
   <label className={cx('block', className)}>
-    <span className="mb-2 block text-xs font-semibold text-black/65">{label}</span>
+    {label ? <span className="mb-2 block text-xs font-semibold text-black/65">{label}</span> : null}
     <input
       {...props}
       className={cx(
@@ -131,6 +158,7 @@ const InlineActionButton = ({ children, className = '', ...props }) => (
     type="button"
     className={cx(
       'inline-flex w-fit items-center text-xs font-semibold text-[#2e66a6] underline underline-offset-4 transition hover:text-[#25578f]',
+      'disabled:cursor-not-allowed disabled:no-underline disabled:opacity-60',
       focusRing,
       className
     )}
@@ -158,33 +186,47 @@ const Settings = () => {
   const navigate = useNavigate();
 
   const [loadingPage, setLoadingPage] = useState(true);
-  const [saving, setSaving] = useState({ name: false, position: false, email: false, phone: false, password: false });
+  const [saving, setSaving] = useState({ name: false, email: false, phone: false, password: false });
   const [messages, setMessages] = useState(initialMessages);
   const [messageType, setMessageType] = useState(initialMessages);
 
   const [nameForm, setNameForm] = useState({ firstName: '', middleName: '', lastName: '', extensionName: '' });
-  const [positionForm, setPositionForm] = useState({ position: '' });
   const [emailForm, setEmailForm] = useState({ currentEmail: '', currentPassword: '', newEmail: '', verificationCode: '', pendingEmail: '' });
   const [phoneForm, setPhoneForm] = useState({ mobileNumber: '', newMobileNumber: '', verificationCode: '', pendingPhoneNumber: '' });
   const [passwordForm, setPasswordForm] = useState({ oldPassword: '', newPassword: '', retypeNewPassword: '' });
-  const [passwordVisibility, setPasswordVisibility] = useState({ old: false, new: false, retype: false });
+  const [passwordVisibility, setPasswordVisibility] = useState({ email: false, old: false, new: false, retype: false });
+  const [verificationStatus, setVerificationStatus] = useState({ emailVerified: false, phoneVerified: false });
+  const [emailResendSeconds, setEmailResendSeconds] = useState(0);
+  const [phoneResendSeconds, setPhoneResendSeconds] = useState(0);
+  const [successPopup, setSuccessPopup] = useState({ open: false, title: '', message: '', iconType: 'success' });
   const messageTimersRef = useRef({});
 
   const passwordRequirements = [
     { label: 'At least 8 characters', met: passwordForm.newPassword.length >= 8 },
-    { label: 'Starts with an uppercase letter', met: /^[A-Z]/.test(passwordForm.newPassword) },
+    { label: 'At least one uppercase letter', met: /[A-Z]/.test(passwordForm.newPassword) },
     { label: 'At least one lowercase letter', met: /[a-z]/.test(passwordForm.newPassword) },
     { label: 'At least one number', met: /\d/.test(passwordForm.newPassword) },
     { label: 'At least one special character', met: /[^A-Za-z0-9]/.test(passwordForm.newPassword) },
   ];
 
   const metPasswordRequirements = passwordRequirements.filter((requirement) => requirement.met).length;
-  const passwordStrength =
-    metPasswordRequirements === passwordRequirements.length
-      ? { label: 'Strong password', color: 'text-green-700', bar: 'bg-green-600', width: 'w-full' }
-      : metPasswordRequirements >= 3
-        ? { label: 'Good password, but still incomplete', color: 'text-amber-700', bar: 'bg-amber-500', width: 'w-2/3' }
-        : { label: 'Weak password', color: 'text-red-700', bar: 'bg-red-500', width: 'w-1/3' };
+  const passwordStrengthLevels = [
+    { label: 'Very Weak', color: 'text-red-700', bar: 'bg-red-600', width: 'w-1/6' },
+    { label: 'Weak', color: 'text-red-700', bar: 'bg-red-500', width: 'w-2/6' },
+    { label: 'Fair', color: 'text-orange-700', bar: 'bg-orange-500', width: 'w-3/6' },
+    { label: 'Good', color: 'text-amber-700', bar: 'bg-amber-500', width: 'w-4/6' },
+    { label: 'Strong', color: 'text-lime-700', bar: 'bg-lime-500', width: 'w-5/6' },
+    { label: 'Very Strong', color: 'text-green-700', bar: 'bg-green-600', width: 'w-full' },
+  ];
+  const passwordStrength = passwordStrengthLevels[metPasswordRequirements];
+
+  const closeSuccessPopup = useCallback(() => {
+    setSuccessPopup((current) => ({ ...current, open: false }));
+  }, []);
+
+  const showSuccessPopup = useCallback((title, message, iconType = 'success') => {
+    setSuccessPopup({ open: true, title, message, iconType });
+  }, []);
 
   const authHeaders = useMemo(() => {
     const token = localStorage.getItem('token');
@@ -249,8 +291,6 @@ const Settings = () => {
         extensionName: user.extensionName || '',
       });
 
-      setPositionForm({ position: employerProfile.position || '' });
-
       setEmailForm((prev) => ({
         ...prev,
         currentEmail: user.email || employerProfile.businessEmail || '',
@@ -262,6 +302,20 @@ const Settings = () => {
         mobileNumber: employerProfile.mobileNumber || '',
         pendingPhoneNumber: user.settingsVerification?.pendingPhoneNumber || '',
       }));
+
+      setVerificationStatus({
+        emailVerified: Boolean(user.settingsVerification?.emailVerified),
+        phoneVerified: Boolean(user.settingsVerification?.phoneVerified),
+      });
+
+      const emailRequestedAt = user.settingsVerification?.emailOtpRequestedAt
+        ? new Date(user.settingsVerification.emailOtpRequestedAt).getTime()
+        : 0;
+      const phoneRequestedAt = user.settingsVerification?.phoneOtpRequestedAt
+        ? new Date(user.settingsVerification.phoneOtpRequestedAt).getTime()
+        : 0;
+      setEmailResendSeconds(emailRequestedAt ? Math.max(0, Math.ceil((emailRequestedAt + 180000 - Date.now()) / 1000)) : 0);
+      setPhoneResendSeconds(phoneRequestedAt ? Math.max(0, Math.ceil((phoneRequestedAt + 180000 - Date.now()) / 1000)) : 0);
     } catch (error) {
       showMessage('general', error.response?.data?.message || 'Unable to load settings data.', 'error');
     } finally {
@@ -273,6 +327,24 @@ const Settings = () => {
     fetchUserData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (emailResendSeconds <= 0) return undefined;
+    const timer = setInterval(() => setEmailResendSeconds((seconds) => Math.max(0, seconds - 1)), 1000);
+    return () => clearInterval(timer);
+  }, [emailResendSeconds > 0]);
+
+  useEffect(() => {
+    if (phoneResendSeconds <= 0) return undefined;
+    const timer = setInterval(() => setPhoneResendSeconds((seconds) => Math.max(0, seconds - 1)), 1000);
+    return () => clearInterval(timer);
+  }, [phoneResendSeconds > 0]);
+
+  const formatCountdown = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes} minute${minutes === 1 ? '' : 's'}, ${remainingSeconds} second${remainingSeconds === 1 ? '' : 's'}`;
+  };
 
   const handleNameSave = async () => {
     const firstName = nameForm.firstName.trim();
@@ -297,7 +369,7 @@ const Settings = () => {
       const { data } = await axios.put(`${API_BASE}/auth/update-profile`, payload, { headers: authHeaders });
       refreshUserCache(data?.user || payload);
       setNameForm(payload);
-      showMessage('name', 'Name updated successfully.');
+      showSuccessPopup('Employer Name Changed Successfully!', 'Your employer name has been updated and saved.');
     } catch (error) {
       showMessage('name', error.response?.data?.message || 'Unable to update name.', 'error');
     } finally {
@@ -305,37 +377,19 @@ const Settings = () => {
     }
   };
 
-  const handlePositionSave = async () => {
-    const position = positionForm.position.trim();
-
-    if (!position) {
-      showMessage('position', 'Position is required.', 'error');
-      return;
-    }
-
-    try {
-      setSaving((prev) => ({ ...prev, position: true }));
-      clearMessage('position');
-
-      const formData = new FormData();
-      formData.append('position', position);
-
-      const { data } = await axios.put(`${API_BASE}/auth/update-company-profile`, formData, {
-        headers: { ...authHeaders, 'Content-Type': 'multipart/form-data' },
-      });
-
-      refreshUserCache(data?.user);
-      showMessage('position', 'Position updated successfully.');
-    } catch (error) {
-      showMessage('position', error.response?.data?.message || 'Unable to update position.', 'error');
-    } finally {
-      setSaving((prev) => ({ ...prev, position: false }));
-    }
-  };
-
   const handleEmailRequest = async () => {
     if (!emailForm.currentPassword.trim() || !emailForm.newEmail.trim()) {
       showMessage('email', 'Current password and new email address are required.', 'error');
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailForm.newEmail.trim())) {
+      showMessage('email', 'Please enter a valid email address.', 'error');
+      return;
+    }
+
+    if (emailForm.newEmail.trim().toLowerCase() === emailForm.currentEmail.trim().toLowerCase()) {
+      showMessage('email', 'New email must be different from your current email.', 'error');
       return;
     }
 
@@ -350,7 +404,9 @@ const Settings = () => {
       );
 
       setEmailForm((prev) => ({ ...prev, pendingEmail: data?.pendingEmail || prev.newEmail }));
-      showMessage('email', data?.message || 'Verification code sent to your new email address.');
+      setEmailForm((prev) => ({ ...prev, currentPassword: '', newEmail: '' }));
+      setEmailResendSeconds(180);
+      showSuccessPopup('Verification Email Sent!', 'A verification email has been sent to your new email address. Please check your inbox to verify your email.', 'info');
     } catch (error) {
       showMessage('email', error.response?.data?.message || 'Unable to send email verification code.', 'error');
     } finally {
@@ -376,8 +432,9 @@ const Settings = () => {
 
       const nextEmail = data?.user?.email || emailForm.pendingEmail || emailForm.newEmail;
       setEmailForm({ currentEmail: nextEmail, currentPassword: '', newEmail: '', verificationCode: '', pendingEmail: '' });
+      setVerificationStatus((prev) => ({ ...prev, emailVerified: true }));
       refreshUserCache(data?.user);
-      showMessage('email', data?.message || 'Email verified successfully.');
+      showSuccessPopup('Email Updated Successfully!', 'Your email has been updated successfully.');
     } catch (error) {
       showMessage('email', error.response?.data?.message || 'Unable to verify email code.', 'error');
     } finally {
@@ -385,8 +442,22 @@ const Settings = () => {
     }
   };
 
+  const handleEmailResend = async () => {
+    try {
+      setSaving((prev) => ({ ...prev, email: true }));
+      clearMessage('email');
+      await axios.post(`${API_BASE}/auth/settings/resend-email-verification`, {}, { headers: authHeaders });
+      setEmailResendSeconds(180);
+      showSuccessPopup('Verification Email Resent!', 'A new verification email has been sent to your email address. Please check your inbox.', 'info');
+    } catch (error) {
+      showMessage('email', error.response?.data?.message || 'Unable to resend email verification code.', 'error');
+    } finally {
+      setSaving((prev) => ({ ...prev, email: false }));
+    }
+  };
+
   const handlePhoneRequest = async () => {
-    const targetNumber = phoneForm.newMobileNumber.trim() || phoneForm.mobileNumber.trim();
+    const targetNumber = phoneForm.newMobileNumber.trim();
     if (!/^09\d{9}$/.test(targetNumber)) {
       showMessage('phone', 'Please enter a valid 11-digit Philippine mobile number starting with 09.', 'error');
       return;
@@ -403,7 +474,9 @@ const Settings = () => {
       );
 
       setPhoneForm((prev) => ({ ...prev, pendingPhoneNumber: data?.pendingPhoneNumber || targetNumber }));
-      showMessage('phone', data?.message || 'Verification code sent to your mobile number.');
+      setPhoneForm((prev) => ({ ...prev, newMobileNumber: '' }));
+      setPhoneResendSeconds(180);
+      showSuccessPopup('Verification Code Sent!', 'A verification code has been sent to your new mobile number. Enter the code to verify your number.', 'info');
     } catch (error) {
       showMessage('phone', error.response?.data?.message || 'Unable to send mobile verification code.', 'error');
     } finally {
@@ -429,8 +502,9 @@ const Settings = () => {
 
       const nextMobile = data?.user?.employerProfile?.mobileNumber || phoneForm.pendingPhoneNumber || phoneForm.newMobileNumber;
       setPhoneForm({ mobileNumber: nextMobile, newMobileNumber: '', verificationCode: '', pendingPhoneNumber: '' });
+      setVerificationStatus((prev) => ({ ...prev, phoneVerified: true }));
       refreshUserCache(data?.user);
-      showMessage('phone', data?.message || 'Mobile number verified successfully.');
+      showSuccessPopup('Contact Number Updated Successfully!', 'Your contact number has been updated successfully.');
     } catch (error) {
       showMessage('phone', error.response?.data?.message || 'Unable to verify mobile code.', 'error');
     } finally {
@@ -442,8 +516,9 @@ const Settings = () => {
     try {
       setSaving((prev) => ({ ...prev, phone: true }));
       clearMessage('phone');
-      const { data } = await axios.post(`${API_BASE}/auth/settings/resend-phone-verification`, {}, { headers: authHeaders });
-      showMessage('phone', data?.message || 'Mobile verification code sent.');
+      await axios.post(`${API_BASE}/auth/settings/resend-phone-verification`, {}, { headers: authHeaders });
+      setPhoneResendSeconds(180);
+      showSuccessPopup('Verification Code Resent!', 'A new verification code has been sent to your mobile number. Enter the latest code to continue.', 'info');
     } catch (error) {
       showMessage('phone', error.response?.data?.message || 'Unable to resend mobile verification code.', 'error');
     } finally {
@@ -464,7 +539,7 @@ const Settings = () => {
 
     const isStrongPassword =
       passwordForm.newPassword.length >= 8 &&
-      /^[A-Z]/.test(passwordForm.newPassword) &&
+      /[A-Z]/.test(passwordForm.newPassword) &&
       /[a-z]/.test(passwordForm.newPassword) &&
       /\d/.test(passwordForm.newPassword) &&
       /[^A-Za-z0-9]/.test(passwordForm.newPassword);
@@ -472,7 +547,7 @@ const Settings = () => {
     if (!isStrongPassword) {
       showMessage(
         'password',
-        'New password must start with an uppercase letter and contain at least 8 characters, lowercase, number, and special character.',
+        'New password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character.',
         'error'
       );
       return;
@@ -495,8 +570,8 @@ const Settings = () => {
 
       refreshUserCache(data?.user);
       setPasswordForm({ oldPassword: '', newPassword: '', retypeNewPassword: '' });
-      setPasswordVisibility({ old: false, new: false, retype: false });
-      showMessage('password', data?.message || 'Password changed successfully.');
+      setPasswordVisibility({ email: false, old: false, new: false, retype: false });
+      showSuccessPopup('Password Updated Successfully!', 'Your password has been updated successfully.');
     } catch (error) {
       showMessage('password', error.response?.data?.message || 'Unable to change password.', 'error');
     } finally {
@@ -506,8 +581,8 @@ const Settings = () => {
 
   return (
     <EmployerLayout>
-      <div className="mx-auto max-w-7xl px-1 py-8">
-        <div className="mx-auto max-w-7xl px-1 py-8">
+      <SuccessPopup open={successPopup.open} title={successPopup.title} message={successPopup.message} iconType={successPopup.iconType} onClose={closeSuccessPopup} />
+      <div className="mx-auto max-w-6xl px-1 py-8">
           <button
             type="button"
             onClick={() => navigate(-1)}
@@ -535,7 +610,7 @@ const Settings = () => {
           <div className="mb-6">
             <h1 className="text-3xl font-bold tracking-tight text-black sm:text-4xl">Settings</h1>
             <p className="mt-2 text-sm text-black/60 sm:text-base">
-              Manage your account settings, contact details, and security.
+              Manage your account settings and preferences.
             </p>
           </div>
 
@@ -549,7 +624,7 @@ const Settings = () => {
 
               <Section
                 title="Change Name"
-                description="Keep your employer account identity accurate."
+                description="Keep your employer account information accurate and up to date."
                 actionText="Save"
                 onAction={handleNameSave}
                 loading={saving.name}
@@ -589,44 +664,28 @@ const Settings = () => {
               </Section>
 
               <Section
-                title="Position"
-                description="Update your role or job title inside the company."
-                actionText="Save"
-                onAction={handlePositionSave}
-                loading={saving.position}
-              >
-                <Message type={messageType.position}>{messages.position}</Message>
-                <div className="max-w-xl">
-                  <TextInput
-                    label="Role"
-                    placeholder="e.g. HR Manager"
-                    value={positionForm.position}
-                    onChange={(e) => setPositionForm({ position: e.target.value })}
-                  />
-                </div>
-              </Section>
-
-              <Section
-                title="Email"
-                description="Change your login email with password confirmation and verification."
-                actionText="Save"
+                title="Change Email"
+                actionText={emailForm.pendingEmail ? '' : 'Update Email'}
                 onAction={handleEmailRequest}
                 loading={saving.email}
+                loadingText="Sending..."
               >
                 <Message type={messageType.email}>{messages.email}</Message>
                 <div className="space-y-5 text-sm">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-black/70">Current Email Address:</span>
                     <span className="font-medium text-black">{emailForm.currentEmail || 'No email found'}</span>
+                    <StatusBadge verified={verificationStatus.emailVerified && !emailForm.pendingEmail} label="email" />
                   </div>
 
                   <p className="text-xs text-black/50">To change your email, please complete the following fields.</p>
 
-                  <div className="grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-[180px_1fr] sm:items-center">
+                  <div className="grid max-w-xl grid-cols-1 items-start gap-2 sm:grid-cols-[max-content_220px] sm:items-center">
                     <label className="text-sm text-black/70">Current Password:</label>
-                    <TextInput
-                      label=""
-                      type="password"
+                    <PasswordInput
+                      visible={passwordVisibility.email}
+                      onToggle={() => setPasswordVisibility((prev) => ({ ...prev, email: !prev.email }))}
+                      placeholder="Enter password here"
                       value={emailForm.currentPassword}
                       onChange={(e) => setEmailForm((prev) => ({ ...prev, currentPassword: e.target.value }))}
                     />
@@ -635,6 +694,7 @@ const Settings = () => {
                     <TextInput
                       label=""
                       type="email"
+                      placeholder="Enter new email here"
                       value={emailForm.newEmail}
                       onChange={(e) => setEmailForm((prev) => ({ ...prev, newEmail: e.target.value }))}
                     />
@@ -642,12 +702,24 @@ const Settings = () => {
 
                   {emailForm.pendingEmail ? (
                     <div className="rounded-2xl border border-[#d8e2ee] bg-[#f7faff] p-4">
+                      <div className="mb-4 flex flex-wrap items-center gap-2">
+                        <span className="text-black/70">Pending Email Address:</span>
+                        <span className="font-medium text-black">{emailForm.pendingEmail}</span>
+                        <StatusBadge verified={false} label="email" />
+                      </div>
                       <TextInput
                         label={`Verification Code sent to ${emailForm.pendingEmail}`}
+                        className="max-w-[360px]"
+                        placeholder="Enter code here"
                         value={emailForm.verificationCode}
-                        onChange={(e) => setEmailForm((prev) => ({ ...prev, verificationCode: e.target.value }))}
+                        onChange={(e) => setEmailForm((prev) => ({ ...prev, verificationCode: e.target.value.replace(/\D/g, '').slice(0, 6) }))}
+                        inputMode="numeric"
+                        maxLength={6}
                       />
-                      <div className="mt-4 flex justify-end">
+                      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                        <InlineActionButton onClick={handleEmailResend} disabled={saving.email || emailResendSeconds > 0}>
+                          {emailResendSeconds > 0 ? `Resend verification in ${formatCountdown(emailResendSeconds)}` : "Didn't get the code? Resend verification email"}
+                        </InlineActionButton>
                         <button
                           type="button"
                           onClick={handleEmailVerify}
@@ -657,7 +729,7 @@ const Settings = () => {
                             focusRing
                           )}
                         >
-                          Verify Email Code
+                          Verify Email
                         </button>
                       </div>
                     </div>
@@ -666,36 +738,24 @@ const Settings = () => {
               </Section>
 
               <Section
-                title="Mobile Number"
-                description="Verify the contact number used for notifications and recruitment updates."
-                actionText="Verify"
+                title="Change Mobile Number"
+                actionText={phoneForm.pendingPhoneNumber ? '' : 'Update Mobile Number'}
                 onAction={handlePhoneRequest}
                 loading={saving.phone}
+                loadingText="Sending..."
               >
                 <Message type={messageType.phone}>{messages.phone}</Message>
                 <div className="space-y-5 text-sm">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-black/70">Current Mobile Number:</span>
                     <strong className="font-medium text-black">{phoneForm.mobileNumber || 'No mobile number'}</strong>
-                    <InlineActionButton
-                      onClick={() =>
-                        setPhoneForm((prev) => {
-                          const currentMobile = String(prev.mobileNumber || '');
-                          const localMobile = currentMobile.startsWith('+63')
-                            ? `0${currentMobile.slice(3)}`
-                            : currentMobile.replace(/\D/g, '').slice(0, 11);
-
-                          return { ...prev, newMobileNumber: localMobile };
-                        })
-                      }
-                    >
-                      change
-                    </InlineActionButton>
+                    <StatusBadge verified={verificationStatus.phoneVerified && !phoneForm.pendingPhoneNumber} label="mobile number" />
                   </div>
 
-                  <div className="max-w-xl">
+                  <div className="grid max-w-xl grid-cols-1 items-start gap-2 sm:grid-cols-[max-content_220px] sm:items-center">
+                    <label className="text-sm text-black/70">Mobile Number:</label>
                     <TextInput
-                      label="New Mobile Number"
+                      label=""
                       placeholder="e.g. 09000000000"
                       value={phoneForm.newMobileNumber}
                       onChange={(e) => {
@@ -708,29 +768,37 @@ const Settings = () => {
                     />
                   </div>
 
-                  <p className="text-xs font-semibold text-black/65">
-                    Enter the code we sent to you via SMS to verify your mobile number.
-                  </p>
-
-                  <div className="max-w-xl">
-                    <TextInput
-                      label="Verification Code"
-                      value={phoneForm.verificationCode}
-                      onChange={(e) => setPhoneForm((prev) => ({ ...prev, verificationCode: e.target.value }))}
-                    />
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-3">
-                    <InlineActionButton onClick={handlePhoneVerify}>Verify code</InlineActionButton>
-                    <InlineActionButton onClick={handlePhoneResend}>Didn't get code? Send code again</InlineActionButton>
-                  </div>
+                  {phoneForm.pendingPhoneNumber ? (
+                    <div className="rounded-2xl border border-[#d8e2ee] bg-[#f7faff] p-4">
+                      <div className="mb-4 flex flex-wrap items-center gap-2">
+                        <span className="text-black/70">Pending Mobile Number:</span>
+                        <strong className="font-medium text-black">{phoneForm.pendingPhoneNumber}</strong>
+                        <StatusBadge verified={false} label="mobile number" />
+                      </div>
+                      <div className="max-w-[360px]">
+                        <TextInput
+                          label="Verification Code"
+                          placeholder="Enter code here"
+                          value={phoneForm.verificationCode}
+                          onChange={(e) => setPhoneForm((prev) => ({ ...prev, verificationCode: e.target.value.replace(/\D/g, '').slice(0, 6) }))}
+                          inputMode="numeric"
+                          maxLength={6}
+                        />
+                      </div>
+                      <div className="mt-4 flex flex-wrap items-center gap-3">
+                        <InlineActionButton onClick={handlePhoneVerify} disabled={saving.phone}>Verify code</InlineActionButton>
+                        <InlineActionButton onClick={handlePhoneResend} disabled={saving.phone || phoneResendSeconds > 0}>
+                          {phoneResendSeconds > 0 ? `Resend verification in ${formatCountdown(phoneResendSeconds)}` : "Didn't receive the code? Resend verification code"}
+                        </InlineActionButton>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </Section>
 
               <Section
                 title="Password"
-                description="Protect your account by updating your password regularly."
-                actionText="Submit"
+                actionText="Save"
                 onAction={handlePasswordSubmit}
                 loading={saving.password}
               >
@@ -738,11 +806,12 @@ const Settings = () => {
                 <div className="space-y-5 text-sm">
                   <p className="text-xs text-black/50">To change your password, please complete the following fields.</p>
 
-                  <div className="grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-[180px_1fr] sm:items-center">
-                    <label className="text-sm text-black/70">Old Password:</label>
+                  <div className="grid max-w-2xl grid-cols-1 items-start gap-3 sm:grid-cols-[200px_1fr] sm:items-center">
+                    <label className="text-sm text-black/70">Current Password:</label>
                     <PasswordInput
                       visible={passwordVisibility.old}
                       onToggle={() => setPasswordVisibility((prev) => ({ ...prev, old: !prev.old }))}
+                      placeholder="Enter current password here"
                       value={passwordForm.oldPassword}
                       onChange={(e) => setPasswordForm((prev) => ({ ...prev, oldPassword: e.target.value }))}
                       autoComplete="current-password"
@@ -753,6 +822,7 @@ const Settings = () => {
                       <PasswordInput
                         visible={passwordVisibility.new}
                         onToggle={() => setPasswordVisibility((prev) => ({ ...prev, new: !prev.new }))}
+                        placeholder="Enter new password here"
                         value={passwordForm.newPassword}
                         onChange={(e) => {
                           setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }));
@@ -809,6 +879,7 @@ const Settings = () => {
                     <PasswordInput
                       visible={passwordVisibility.retype}
                       onToggle={() => setPasswordVisibility((prev) => ({ ...prev, retype: !prev.retype }))}
+                      placeholder="Retype new password here"
                       value={passwordForm.retypeNewPassword}
                       onChange={(e) => setPasswordForm((prev) => ({ ...prev, retypeNewPassword: e.target.value }))}
                       autoComplete="new-password"
@@ -818,7 +889,6 @@ const Settings = () => {
               </Section>
             </div>
           )}
-        </div>
       </div>
     </EmployerLayout>
   );
