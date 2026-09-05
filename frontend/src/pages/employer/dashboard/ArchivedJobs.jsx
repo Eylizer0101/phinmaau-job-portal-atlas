@@ -753,23 +753,23 @@ const ArchivedJobs = () => {
     const status = getDerivedStatus(job);
 
     if (status === 'open') {
-      return 'This job post will be restored as Closed. To make it visible in the job offers and accept applications again, you must open the job post.';
+      return 'This job post was archived while Open. Restoring it will return it as Closed and keep it unavailable to job seekers until you choose to reopen the job post again.';
     }
 
     if (status === 'closed') {
-      return 'This job post will be restored as Closed. It will appear in your active job posts but will remain unavailable for new applications.';
+      return 'Restoring it will return the closed job post to your active list while keeping its Closed status for future reference or management.';
     }
 
     if (status === 'expired') {
-      return 'This job post will be restored as Expired. It will return to your active job posts but will remain unavailable for applications unless you extend its application deadline.';
+      return 'Restoring it will return the expired job post to your active list while keeping its Expired status. You can update the job post and republish it if needed.';
     }
 
     if (status === 'draft') {
-      return 'This job post will be restored as a Draft. It will remain unpublished and invisible to job seekers until you publish it.';
+      return 'Restoring it will return the draft to your active list, where you can continue editing and complete the job post before publishing.';
     }
 
     if (status === 'filled') {
-      return 'This job post will be restored as Filled. It will return to your active job posts but will remain unavailable for new applications.';
+      return 'Restoring it will return the filled job post to your active list while keeping its Filled status and application records for future reference.';
     }
 
     return 'This job post will be restored to your active job posts using the status it had before it was archived.';
@@ -1514,34 +1514,28 @@ const ArchivedJobs = () => {
               aria-describedby="restore-job-description"
               className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl"
             >
-              <div className="p-6">
-                <div className="mb-4 flex items-start gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#2e66a6]/10 text-[#2e66a6]">
+              <div className="flex items-start gap-5 px-6 py-6">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#2e66a6]/10 text-[#2e66a6]">
                     <ActionIcon name="restore" className="h-6 w-6" />
                   </div>
 
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <h3 id="restore-job-title" className="text-lg font-semibold text-gray-900">
-                      Restore this job post?
+                      Restore Job Post
                     </h3>
+                    <p id="restore-job-description" className="mt-2 text-sm leading-6 text-gray-600">
+                      Are you sure you want to restore this “<span className="font-semibold text-[#2e66a6]">{restoreJobCandidate.title || 'Untitled Draft'}</span>” job post?{' '}
+                      {getRestoreConfirmationMessage(restoreJobCandidate)}
+                    </p>
                   </div>
-                </div>
+              </div>
 
-                <div className="mb-6 rounded-xl border border-[#2e66a6]/20 bg-[#2e66a6]/[0.06] p-4">
-                  <p className="font-semibold text-gray-900">
-                    “{restoreJobCandidate.title || 'Untitled Draft'}”
-                  </p>
-                  <p id="restore-job-description" className="mt-1 text-sm leading-6 text-gray-700">
-                    {getRestoreConfirmationMessage(restoreJobCandidate)}
-                  </p>
-                </div>
-
-                <div className="flex justify-end gap-3">
+                <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
                   <button
                     type="button"
                     onClick={() => setRestoreJobCandidate(null)}
                     disabled={action.type === 'restore' && action.jobId === restoreJobCandidate._id}
-                    className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 disabled:opacity-50"
+                    className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 disabled:opacity-50"
                   >
                     Cancel
                   </button>
@@ -1550,17 +1544,16 @@ const ArchivedJobs = () => {
                     type="button"
                     onClick={() => handleRestore(restoreJobCandidate._id)}
                     disabled={action.type === 'restore' && action.jobId === restoreJobCandidate._id}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#2e66a6] px-4 py-2 text-sm font-semibold text-white hover:bg-[#255487] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-md bg-[#2e66a6] px-4 py-2 text-sm font-semibold text-white hover:bg-[#255487] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] disabled:opacity-50"
                   >
                     {action.type === 'restore' && action.jobId === restoreJobCandidate._id ? (
                       <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-white" />
                     ) : (
                       <ActionIcon name="restore" />
                     )}
-                    Restore Job Post
+                    Restore Job
                   </button>
                 </div>
-              </div>
             </div>
           </div>
         )}

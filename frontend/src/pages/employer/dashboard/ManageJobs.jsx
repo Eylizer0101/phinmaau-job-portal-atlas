@@ -785,23 +785,23 @@ const ManageJobs = () => {
     const status = getDerivedStatus(job);
 
     if (status === 'open') {
-      return 'This job post is currently Open. Archiving it will remove it from the job offers and listings, and job seekers will no longer be able to view or apply for it.';
+      return 'Archiving this open job post will remove it from your active list. Job seekers will no longer be able to view or apply for it.';
     }
 
     if (status === 'closed') {
-      return 'This job post is currently Closed. Archiving it will move the job post to your archived records for future reference.';
+      return 'Archiving this closed job post will remove it from your active list and move it to your archived records.';
     }
 
     if (status === 'expired') {
-      return 'This job has Expired. Archiving it will remove it from your active job posts while keeping it available in your archived records.';
+      return 'Archiving this expired job post will remove it from your active list and move it to your archived records.';
     }
 
     if (status === 'draft') {
-      return 'This job is currently a Draft. Archiving it will remove the draft from your active list and store it in your archived records. It will remain unpublished and invisible to job seekers.';
+      return 'Archiving this draft job post will remove it from your active list and move it to your archived records.';
     }
 
     if (status === 'filled') {
-      return 'This job is currently Filled. Archiving it will remove it from your active job posts while keeping it available in your archived records.';
+      return 'Archiving this filled job post will remove it from your active list and move it to your archived records for future reference.';
     }
 
     return 'Archiving this job will remove it from your active jobs and move it to your archived records.';
@@ -2049,7 +2049,7 @@ const ManageJobs = () => {
                     <div>
                       <h2 className="text-xl font-bold text-[#173f8a]">Submit edit request</h2>
                       <p className="mt-1 text-sm leading-6 text-gray-500">
-                        The administrator will review your request and temporarily unlock “{safeTitle(lockedJob)}” if approved.
+                        The administrator will review your request. If approved, “<span className="font-bold text-gray-700">{safeTitle(lockedJob)}</span>” will be temporarily unlocked for editing.
                       </p>
                     </div>
                   </div>
@@ -2325,36 +2325,28 @@ const ManageJobs = () => {
               aria-describedby="delete-desc"
               className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl"
             >
-              <div className="p-6">
-                <div className="mb-4 flex items-start gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-100">
-                    <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.998-.833-2.732 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                    </svg>
+              <div className="flex items-start gap-5 px-6 py-6">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-red-100 text-red-600">
+                    <Icon name="trash" className="h-6 w-6" />
                   </div>
 
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <h3 id="delete-title" className="text-lg font-semibold text-gray-900">
                       Archive Job Post
                     </h3>
+                    <p id="delete-desc" className="mt-2 text-sm leading-6 text-gray-600">
+                      Are you sure you want to archive this “<span className="font-semibold text-[#2e66a6]">{selectedJob.title || 'Untitled Draft'}</span>” job post?{' '}
+                      {getArchiveConfirmationMessage(selectedJob)}
+                    </p>
                   </div>
-                </div>
+              </div>
 
-                <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4">
-                  <p className="font-semibold text-red-900">
-                    “{selectedJob.title || 'Untitled Draft'}”
-                  </p>
-                  <p id="delete-desc" className="mt-1 text-sm text-red-800">
-                    {getArchiveConfirmationMessage(selectedJob)}
-                  </p>
-                </div>
-
-                <div className="flex justify-end gap-3">
+                <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
                   <button
                     ref={cancelBtnRef}
                     onClick={closeModal}
                     disabled={action.type === 'delete' && action.jobId === selectedJob._id}
-                    className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 disabled:opacity-50"
+                    className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 disabled:opacity-50"
                   >
                     Cancel
                   </button>
@@ -2362,7 +2354,7 @@ const ManageJobs = () => {
                   <button
                     onClick={() => handleDelete(selectedJob._id)}
                     disabled={action.type === 'delete' && action.jobId === selectedJob._id}
-                    className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-50"
                   >
                     {action.type === 'delete' && action.jobId === selectedJob._id ? (
                       <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-white" />
@@ -2374,7 +2366,6 @@ const ManageJobs = () => {
                     Archive Job
                   </button>
                 </div>
-              </div>
             </div>
           </div>
         )}
