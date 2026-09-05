@@ -1080,7 +1080,7 @@ const CredentialRow = ({
   return (
     <div className="flex items-center justify-between gap-4 rounded-[12px] border border-[#d1d5db] bg-[#f3f4f6] px-4 py-4">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#d1d5db] bg-white text-[#6b7280]">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#d1d5db] bg-white text-[#6b7280]">
           <FileIcon className="w-4 h-4" />
         </div>
 
@@ -1290,11 +1290,11 @@ const CompanyProfile = () => {
   const socialLinks = useMemo(
     () =>
       [
-        { key: 'facebookUrl', label: 'Facebook', url: companyData.facebookUrl },
-        { key: 'instagramUrl', label: 'Instagram', url: companyData.instagramUrl },
-        { key: 'youtubeUrl', label: 'YouTube', url: companyData.youtubeUrl },
+        { key: 'facebookUrl', label: 'Facebook', url: companyData.facebookUrl, icon: 'facebook', iconClassName: 'text-[#1877f2]' },
+        { key: 'instagramUrl', label: 'Instagram', url: companyData.instagramUrl, icon: 'instagram', iconClassName: 'text-[#e1306c]' },
+        { key: 'youtubeUrl', label: 'YouTube', url: companyData.youtubeUrl, icon: 'youtube', iconClassName: 'text-[#ff0000]' },
         { key: 'linkedinUrl', label: 'LinkedIn', url: companyData.linkedinUrl },
-        { key: 'xUrl', label: 'X / Twitter', url: companyData.xUrl },
+        { key: 'xUrl', label: 'X / Twitter', url: companyData.xUrl, icon: 'x', iconClassName: 'text-black' },
       ].filter((item) => String(item.url || '').trim()),
     [companyData.facebookUrl, companyData.instagramUrl, companyData.youtubeUrl, companyData.linkedinUrl, companyData.xUrl]
   );
@@ -2785,7 +2785,11 @@ const CompanyProfile = () => {
                             >
                               <div className="flex min-w-0 items-center gap-3">
                                 <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#d1d5db] bg-white text-[#6b7280]">
-                                  <LinkIcon className="h-4 w-4" />
+                                  {item.icon ? (
+                                    <SocialBrandIcon name={item.icon} className={`h-4 w-4 ${item.iconClassName || ''}`} />
+                                  ) : (
+                                    <LinkIcon className="h-4 w-4" />
+                                  )}
                                 </div>
                                 <div className="min-w-0">
                                   <p className="text-sm font-semibold text-[#000000]">{item.label}</p>

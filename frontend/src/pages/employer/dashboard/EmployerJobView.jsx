@@ -883,6 +883,8 @@ const EmployerJobView = () => {
   const isRelocationMissing = !String(job.willingToRelocate || '').trim();
   const companyName =
     String(job.companyName || companyInfo?.companyName || '').trim() || 'Company not specified';
+  const companyIndustry =
+    String(companyInfo?.industry || job?.employerDetails?.industry || '').trim() || 'Industry not specified';
   const useSingleRowDraftPlaceholders =
     isDraftJob &&
     isJobTypeMissing &&
@@ -964,7 +966,7 @@ const EmployerJobView = () => {
                     </h1>
                     <div className="mt-2 flex items-center gap-2 text-sm text-black/70">
                       <BuildingIcon className="h-4 w-4 text-black/60" />
-                      <span className="font-medium">{companyName}</span>
+                      <span className="font-medium">{companyIndustry}</span>
                     </div>
                     <div className="mt-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-black/50">
                       <SvgIcon name="location" className="h-4 w-4 text-black/60" />
@@ -1000,7 +1002,7 @@ const EmployerJobView = () => {
                         );
                       }) : (<span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-white/20"><SvgIcon name="users" className="h-4 w-4" /></span>)}
                     </div>
-                    <div className="min-w-0 flex-1"><p className="text-base font-bold">{jobApplications.length} Applicant{jobApplications.length === 1 ? '' : 's'}</p><p className="truncate text-[11px] text-blue-100">Review candidates who applied</p></div>
+                    <div className="min-w-0 flex-1"><p className="text-base font-bold">{jobApplications.length} Applicant{jobApplications.length === 1 ? '' : 's'}</p><p className="truncate text-[11px] text-blue-100">Candidates who applied.</p></div>
                     <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/15 text-white transition group-hover:translate-x-0.5"><SvgIcon name="chevronRight" className="h-4 w-4" /></span>
                   </button>
                 </div>

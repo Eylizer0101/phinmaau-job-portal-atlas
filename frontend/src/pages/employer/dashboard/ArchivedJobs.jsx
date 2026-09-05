@@ -1458,7 +1458,7 @@ const ArchivedJobs = () => {
                                   aria-label={`View ${title}`}
                                   title="View"
                                 >
-                                  <ActionIcon name="view" />
+                                  <ActionIcon name="view" className="h-4 w-4" />
                                 </Link>
 
                                 <Link
@@ -1467,7 +1467,7 @@ const ArchivedJobs = () => {
                                   aria-label={`Edit ${title}`}
                                   title="Edit"
                                 >
-                                  <ActionIcon name="edit" />
+                                  <ActionIcon name="edit" className="h-4 w-4" />
                                 </Link>
 
                                 <button
@@ -1481,7 +1481,7 @@ const ArchivedJobs = () => {
                                   {busyThisRow && action.type === 'restore' ? (
                                     <span className="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-current" />
                                   ) : (
-                                    <ActionIcon name="restore" />
+                                    <ActionIcon name="restore" className="h-4 w-4" />
                                   )}
                                 </button>
                               </div>

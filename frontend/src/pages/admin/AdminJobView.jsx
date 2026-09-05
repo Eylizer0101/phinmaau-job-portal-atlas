@@ -986,7 +986,7 @@ const AdminJobView = () => {
                     <div className="mt-2 inline-flex min-w-0 items-center gap-2 text-sm text-black/70">
                       <BuildingIcon className="h-4 w-4 text-black/60" />
                       <span className="min-w-0 truncate">
-                        {String(job.companyName || companyInfo?.companyName || '').trim() || 'Company not specified'}
+                        {String(companyInfo?.industry || job?.employerDetails?.industry || '').trim() || 'Industry not specified'}
                       </span>
                     </div>
 
