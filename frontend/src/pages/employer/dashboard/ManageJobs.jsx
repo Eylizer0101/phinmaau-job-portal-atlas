@@ -2012,15 +2012,7 @@ const ManageJobs = () => {
                     : 'Need to make changes? Submit an edit request to the administrator.'}
                 </p>
 
-                {getDerivedStatus(lockedJob) === 'filled' ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowLockedModal(false)}
-                    className="mt-5 w-full rounded-xl bg-[#173f8a] px-5 py-3 text-sm font-bold text-white hover:bg-[#12336f]"
-                  >
-                    Okay
-                  </button>
-                ) : (
+                {getDerivedStatus(lockedJob) !== 'filled' ? (
                 <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
                   <button
                     type="button"
@@ -2046,7 +2038,7 @@ const ManageJobs = () => {
                     Request Edit
                   </button>
                 </div>
-                )}
+                ) : null}
               </div>
             </div>
           </div>
