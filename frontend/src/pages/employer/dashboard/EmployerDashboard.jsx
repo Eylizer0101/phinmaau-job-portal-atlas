@@ -1822,7 +1822,7 @@ const EmployerDashboard = () => {
                 aria-controls="employer-notifications-menu"
                 title="Notifications"
               >
-                <OutlineIcon name="bell" className="h-6 w-6 text-black" />
+                <FontAwesomeIcon icon={faBell} className="h-5 w-5 text-black" />
 
                 {notifUnreadCount > 0 ? (
                   <>
@@ -1854,7 +1854,7 @@ const EmployerDashboard = () => {
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <div className="rounded-lg bg-[#2e66a6]/10 p-2">
-                          <OutlineIcon name="bell" className="h-4 w-4 text-[#2e66a6]" />
+                          <FontAwesomeIcon icon={faBell} className="h-4 w-4 text-[#2e66a6]" />
                         </div>
                         <h3 className="font-semibold text-gray-900">Notifications</h3>
                       </div>
