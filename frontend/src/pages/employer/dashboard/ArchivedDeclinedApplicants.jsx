@@ -723,7 +723,6 @@ const ArchivedDeclinedApplicants = () => {
 
   const Avatar = useCallback(
     ({ img, name, size = 48, altKey }) => {
-      const initial = (name?.trim()?.[0] || 'U').toUpperCase();
       const src = img ? getImageUrl(img) : '';
       const isBroken = brokenAvatars.has(String(altKey));
       const boxStyle = { height: `${size}px`, width: `${size}px` };
@@ -742,7 +741,7 @@ const ArchivedDeclinedApplicants = () => {
               onError={() => markBroken(altKey)}
             />
           ) : (
-            <span className="text-sm font-bold text-gray-700">{initial}</span>
+            <img src="/images/profile.png" alt="Default profile" className="h-full w-full object-cover" />
           )}
         </div>
       );
@@ -1193,7 +1192,7 @@ const ArchivedDeclinedApplicants = () => {
                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                           Job Applied
                         </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                           Decline Stage
                         </th>
                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -1256,11 +1255,13 @@ const ArchivedDeclinedApplicants = () => {
                             </td>
 
                             <td className="px-6 py-4 text-center">
-                              <span className="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-800">
-                                {declinedStageLabel}
-                              </span>
-                              <div className="mt-1 text-xs text-gray-600">
-                                {formatDate(app.reviewedAt)}
+                              <div className="flex w-full flex-col items-center justify-center text-center">
+                                <span className="text-sm font-semibold text-red-600">
+                                  {declinedStageLabel}
+                                </span>
+                                <div className="mt-1 text-xs text-gray-600">
+                                  {formatDate(app.reviewedAt)}
+                                </div>
                               </div>
                             </td>
 
@@ -1320,7 +1321,7 @@ const ArchivedDeclinedApplicants = () => {
                             </div>
                           </div>
 
-                          <span className="shrink-0 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold bg-red-50 text-red-800 border border-red-200">
+                          <span className="shrink-0 text-xs font-semibold text-red-600">
                             {declinedStageLabel}
                           </span>
                         </div>
