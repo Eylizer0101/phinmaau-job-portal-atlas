@@ -2292,7 +2292,7 @@ const ManageJobs = () => {
           >
             <div role="dialog" aria-modal="true" aria-labelledby="filled-job-title" className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
               <div className="px-8 pb-5 pt-8 text-center">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-violet-100 text-violet-700">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#2e66a6] text-white shadow-md shadow-[#2e66a6]/25">
                   <Icon name="filled" className="h-9 w-9" />
                 </div>
                 <h2 id="filled-job-title" className="mt-4 text-xl font-bold text-gray-900">Job Position Filled</h2>
