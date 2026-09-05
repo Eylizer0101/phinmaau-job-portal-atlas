@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import Pagination from '../../../components/shared/Pagination';
-import CenteredIndicator from '../../../components/shared/CenteredIndicator';
 
 /* =======================
    Small UI helpers
@@ -1641,6 +1640,13 @@ const Applicants = () => {
     setStatusFilter('pending');
   }, [location.search]);
 
+  // auto-clear success
+  useEffect(() => {
+    if (!success) return;
+    const t = setTimeout(() => setSuccess(''), 2200);
+    return () => clearTimeout(t);
+  }, [success]);
+
   const syncStatusToURL = (value) => {
     setStatusFilter(value);
 
@@ -2055,8 +2061,16 @@ const Applicants = () => {
           </div>
         </div>
 
-        <CenteredIndicator type="error" message={error} onClose={() => setError('')} />
-        <CenteredIndicator type="success" message={success} onClose={() => setSuccess('')} />
+        {error && (
+          <Alert type="error" onClose={() => setError('')}>
+            {error}
+          </Alert>
+        )}
+        {success && (
+          <Alert type="success" onClose={() => setSuccess('')}>
+            {success}
+          </Alert>
+        )}
 
         {/* Filters Bar */}
         <div className="relative z-20 mb-8 overflow-visible rounded-3xl border border-[#e3e5ef] bg-white p-5 shadow-sm">

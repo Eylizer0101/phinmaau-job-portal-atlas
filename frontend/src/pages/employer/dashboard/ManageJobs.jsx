@@ -3,7 +3,6 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import Pagination from '../../../components/shared/Pagination';
-import CenteredIndicator from '../../../components/shared/CenteredIndicator';
 
 /* =======================
    Small UI helpers
@@ -714,6 +713,12 @@ const ManageJobs = () => {
     return () => window.clearTimeout(timer);
   }, [recentlyHighlightedJobId]);
 
+  useEffect(() => {
+    if (!error) return;
+    const t = setTimeout(() => setError(''), 3500);
+    return () => clearTimeout(t);
+  }, [error]);
+
   const formatDate = (dateString) => {
     if (!dateString) return '—';
     const date = new Date(dateString);
@@ -1340,8 +1345,12 @@ const ManageJobs = () => {
             )}
           </div>
 
-          <div className="min-w-0 xl:pt-1">
-            <CenteredIndicator type="error" message={error} onClose={() => setError('')} />
+          <div className="min-w-0 xl:pt-1 [&>div]:mb-0">
+            {error && (
+              <Alert type="error" onClose={() => setError('')}>
+                {error}
+              </Alert>
+            )}
           </div>
 
           <div className="xl:pt-1">{headerRight}</div>

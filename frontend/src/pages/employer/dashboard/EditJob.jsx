@@ -4,7 +4,6 @@ import 'leaflet/dist/leaflet.css';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
-import CenteredIndicator from '../../../components/shared/CenteredIndicator';
 import {
   JOB_TYPES,
   EXPERIENCE_LEVELS,
@@ -2379,6 +2378,12 @@ const EditJob = () => {
     };
   }, [showDeleteModal]);
 
+  useEffect(() => {
+    if (!success) return;
+    const t = setTimeout(() => setSuccess(''), 2500);
+    return () => clearTimeout(t);
+  }, [success]);
+
   const descLen = getRichTextPlainText(formData.description).length;
   const reqLen = getRichTextPlainText(formData.requirements).length;
 
@@ -2466,8 +2471,16 @@ const EditJob = () => {
             </div>
           </div>
 
-          <CenteredIndicator type="error" message={error} onClose={() => setError('')} />
-          <CenteredIndicator type="success" message={success} onClose={() => setSuccess('')} />
+          {error && (
+            <Alert type="error" onClose={() => setError('')}>
+              {error}
+            </Alert>
+          )}
+          {success && (
+            <Alert type="success" onClose={() => setSuccess('')}>
+              {success}
+            </Alert>
+          )}
 
           <JobFormProgress activeStep={activeStep} onStepChange={handleStepChange} canOpenStep={canOpenStep} />
 
