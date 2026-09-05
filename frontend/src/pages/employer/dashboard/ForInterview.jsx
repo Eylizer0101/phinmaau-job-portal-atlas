@@ -996,6 +996,9 @@ const HiringStageModal = ({
 
   if (!open || !application) return null;
 
+  const finalStatus = String(application.status || '').trim().toLowerCase();
+  const isFinalized = finalStatus === 'hired' || finalStatus === 'declined';
+
   const addCustomStage = async () => {
     const value = customStage.replace(/\s+/g, ' ').trim();
     if (!value) {
@@ -1006,6 +1009,8 @@ const HiringStageModal = ({
     const added = await onAddCustom(value);
     if (added) {
       setCustomStage('');
+      setSelectedStage(value);
+      await onSelect(value);
     }
   };
 
@@ -1035,6 +1040,7 @@ const HiringStageModal = ({
               <input
                 id="customHiringStage"
                 value={customStage}
+                disabled={busy || isFinalized}
                 onChange={(event) => setCustomStage(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter') {
@@ -1048,7 +1054,7 @@ const HiringStageModal = ({
               />
               <button
                 type="button"
-                disabled={busy || !customStage.trim()}
+                disabled={busy || isFinalized || !customStage.trim()}
                 onClick={addCustomStage}
                 className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#102a78] px-5 text-sm font-semibold text-white hover:bg-[#0d2365] disabled:opacity-50"
               >
@@ -1056,9 +1062,15 @@ const HiringStageModal = ({
                 Add
               </button>
             </div>
-            <p className="mt-2 text-xs text-gray-500">
-              The stage you add will appear below. Select it when you are ready to apply it.
-            </p>
+            {isFinalized ? (
+              <p className="mt-2 text-xs font-medium text-green-700">
+                Applicant marked as {finalStatus === 'hired' ? 'Hired' : 'Declined'}. Close this modal when you are done.
+              </p>
+            ) : (
+              <p className="mt-2 text-xs text-gray-500">
+                The stage you add is applied to this applicant right away.
+              </p>
+            )}
             {localError ? <p className="mt-2 text-xs font-medium text-red-600">{localError}</p> : null}
           </div>
 
@@ -1090,7 +1102,7 @@ const HiringStageModal = ({
                 >
                   <button
                     type="button"
-                    disabled={busy}
+                    disabled={busy || isFinalized}
                     onClick={async () => {
                       setSelectedStage(stage);
                       const applied = await onSelect(stage);
@@ -1121,7 +1133,7 @@ const HiringStageModal = ({
 
                   <button
                     type="button"
-                    disabled={busy}
+                    disabled={busy || isFinalized}
                     onClick={async () => {
                       const deleted = await onDeleteStage(stage);
                       if (deleted && isSameHiringStage(stage, selectedStage)) {
@@ -1771,10 +1783,9 @@ const ForInterview = () => {
         throw new Error(responseData.message || 'Failed to update hiring stage.');
       }
       if (responseData.finalStatus === 'hired' || responseData.finalStatus === 'declined') {
+        applyHiringStageResponse(responseData);
         setApplications((previous) => previous.filter((item) => item._id !== stageTarget._id));
         setSuccess(responseData.message || `Applicant marked as ${responseData.finalStatus}.`);
-        setStageModalOpen(false);
-        setStageTarget(null);
         return true;
       }
       applyHiringStageResponse(responseData);
