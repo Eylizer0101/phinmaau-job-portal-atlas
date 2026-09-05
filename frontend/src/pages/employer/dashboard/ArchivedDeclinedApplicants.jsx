@@ -1074,7 +1074,13 @@ const ArchivedDeclinedApplicants = () => {
 
           <div className="min-w-0 xl:pt-1">
             <CenteredIndicator type="error" message={error} onClose={() => setError('')} />
-            <CenteredIndicator type="success" message={success} onClose={() => setSuccess('')} />
+            <CenteredIndicator
+              type="success"
+              message={success}
+              title={success}
+              hideMessage
+              onClose={() => setSuccess('')}
+            />
           </div>
 
           <div className="xl:pt-1">{headerRight}</div>

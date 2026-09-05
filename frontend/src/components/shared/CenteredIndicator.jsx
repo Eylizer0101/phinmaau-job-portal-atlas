@@ -1,10 +1,10 @@
 import React from 'react';
 
-const CenteredIndicator = ({ type = 'success', message, onClose }) => {
+const CenteredIndicator = ({ type = 'success', message, title, hideMessage = false, onClose }) => {
   if (!message) return null;
 
   const isError = type === 'error';
-  const title = isError ? 'Unable to Complete Action' : 'Action Completed Successfully';
+  const displayTitle = title || (isError ? 'Unable to Complete Action' : 'Action Completed Successfully');
 
   return (
     <div
@@ -31,8 +31,8 @@ const CenteredIndicator = ({ type = 'success', message, onClose }) => {
               </svg>
             )}
           </div>
-          <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-          <p className="mt-2 text-sm text-gray-600">{message}</p>
+          <h2 className="text-xl font-bold text-gray-900">{displayTitle}</h2>
+          {!hideMessage && <p className="mt-2 text-sm text-gray-600">{message}</p>}
         </div>
         <div className="border-t border-gray-200 px-8 py-4">
           <button
