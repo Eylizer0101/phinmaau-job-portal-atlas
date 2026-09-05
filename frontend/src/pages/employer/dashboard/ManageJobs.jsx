@@ -41,7 +41,7 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
     case 'closeJob':
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M7 11V8a5 5 0 0110 0v3m-10 0h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg>;
     case 'hired':
-      return <svg {...common}><circle cx="12" cy="12" r="9" strokeWidth={1.75} /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8.5 12.25l2.25 2.25 4.75-5" /></svg>;
+      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 12l2 2 4-4m5-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
     case 'filled':
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m-11 0h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2zm5 6 1.5 1.5L15 11" /></svg>;
     case 'more':
@@ -1660,7 +1660,7 @@ const ManageJobs = () => {
                               aria-label={`Filled position details for ${title}`}
                               title="Job Position Filled"
                             >
-                              <Icon name="hired" className="h-5 w-5" />
+                              <Icon name="hired" className="block h-5 w-5 shrink-0 translate-y-px" />
                             </button>
                           )}
 
@@ -1928,7 +1928,7 @@ const ManageJobs = () => {
                                     aria-label={`Filled position details for ${title}`}
                                     title="Job Position Filled"
                                   >
-                                    <Icon name="hired" className="h-5 w-5" />
+                                    <Icon name="hired" className="block h-5 w-5 shrink-0 translate-y-px" />
                                   </button>
                                 )}
 
@@ -2192,8 +2192,7 @@ const ManageJobs = () => {
                         : isReopening
                         ? <>Are you sure you want to reopen the “<span className="font-semibold text-[#2e66a6]">{safeTitle(statusConfirmationJob)}</span>” job post?</>
                         : <>Are you sure you want to close the “<span className="font-semibold text-[#2e66a6]">{safeTitle(statusConfirmationJob)}</span>” job post?</>}
-                      </p>
-                      <p className="mt-1">
+                      {' '}
                       {isExpiredJob
                         ? 'Please update the Application Deadline through the edit process.'
                         : isReopening
