@@ -202,6 +202,8 @@ const Settings = () => {
   const [phoneResendSeconds, setPhoneResendSeconds] = useState(0);
   const [successPopup, setSuccessPopup] = useState({ open: false, title: '', message: '', iconType: 'success' });
   const messageTimersRef = useRef({});
+  const emailVerificationRef = useRef(null);
+  const mobileVerificationRef = useRef(null);
 
   const passwordRequirements = [
     { label: 'At least 8 characters', met: passwordForm.newPassword.length >= 8 },
@@ -341,6 +343,22 @@ const Settings = () => {
     const timer = setInterval(() => setPhoneResendSeconds((seconds) => Math.max(0, seconds - 1)), 1000);
     return () => clearInterval(timer);
   }, [phoneResendSeconds > 0]);
+
+  useEffect(() => {
+    if (!showEmailVerification || !emailForm.pendingEmail) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      emailVerificationRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [showEmailVerification, emailForm.pendingEmail]);
+
+  useEffect(() => {
+    if (!showMobileVerification || !phoneForm.pendingPhoneNumber) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      mobileVerificationRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [showMobileVerification, phoneForm.pendingPhoneNumber]);
 
   const formatCountdown = (seconds) => {
     const minutes = Math.floor(seconds / 60);
@@ -706,13 +724,19 @@ const Settings = () => {
                     />
                   </div>
 
-                  {showEmailVerification && emailForm.pendingEmail ? (
-                    <div className="rounded-2xl border border-[#d8e2ee] bg-[#f7faff] p-4">
-                      <div className="mb-4 flex flex-wrap items-center gap-2">
+                </div>
+              </Section>
+
+              {showEmailVerification && emailForm.pendingEmail ? (
+                <div ref={emailVerificationRef} className="scroll-mt-24">
+                  <Section title="Verify Email">
+                    <div className="space-y-5 text-sm">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-black/70">Pending Email Address:</span>
                         <span className="font-medium text-black">{emailForm.pendingEmail}</span>
                         <StatusBadge verified={false} label="email" />
                       </div>
+                      <p className="text-xs text-black/50">To verify your email, please enter the code we sent through your email.</p>
                       <TextInput
                         label={`Verification Code sent to ${emailForm.pendingEmail}`}
                         className="max-w-[360px]"
@@ -722,10 +746,10 @@ const Settings = () => {
                         inputMode="numeric"
                         maxLength={6}
                       />
-                      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                        <InlineActionButton onClick={handleEmailResend} disabled={saving.email || emailResendSeconds > 0}>
-                          {emailResendSeconds > 0 ? `Resend verification in ${formatCountdown(emailResendSeconds)}` : "Didn't get the code? Resend verification email"}
-                        </InlineActionButton>
+                      <InlineActionButton onClick={handleEmailResend} disabled={saving.email || emailResendSeconds > 0}>
+                        {emailResendSeconds > 0 ? `Resend verification in ${formatCountdown(emailResendSeconds)}` : "Didn't get the code? Resend verification email"}
+                      </InlineActionButton>
+                      <div className="flex justify-end">
                         <button
                           type="button"
                           onClick={handleEmailVerify}
@@ -739,9 +763,9 @@ const Settings = () => {
                         </button>
                       </div>
                     </div>
-                  ) : null}
+                  </Section>
                 </div>
-              </Section>
+              ) : null}
 
               <Section
                 title="Change Mobile Number"
@@ -774,13 +798,19 @@ const Settings = () => {
                     />
                   </div>
 
-                  {showMobileVerification && phoneForm.pendingPhoneNumber ? (
-                    <div className="rounded-2xl border border-[#d8e2ee] bg-[#f7faff] p-4">
-                      <div className="mb-4 flex flex-wrap items-center gap-2">
+                </div>
+              </Section>
+
+              {showMobileVerification && phoneForm.pendingPhoneNumber ? (
+                <div ref={mobileVerificationRef} className="scroll-mt-24">
+                  <Section title="Verify Mobile Number">
+                    <div className="space-y-5 text-sm">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-black/70">Pending Mobile Number:</span>
                         <strong className="font-medium text-black">{phoneForm.pendingPhoneNumber}</strong>
                         <StatusBadge verified={false} label="mobile number" />
                       </div>
+                      <p className="text-xs text-black/50">Enter the code we sent to you via SMS to verify your mobile number.</p>
                       <div className="max-w-[360px]">
                         <TextInput
                           label="Verification Code"
@@ -791,16 +821,26 @@ const Settings = () => {
                           maxLength={6}
                         />
                       </div>
-                      <div className="mt-4 flex flex-wrap items-center gap-3">
-                        <InlineActionButton onClick={handlePhoneVerify} disabled={saving.phone}>Verify code</InlineActionButton>
-                        <InlineActionButton onClick={handlePhoneResend} disabled={saving.phone || phoneResendSeconds > 0}>
-                          {phoneResendSeconds > 0 ? `Resend verification in ${formatCountdown(phoneResendSeconds)}` : "Didn't receive the code? Resend verification code"}
-                        </InlineActionButton>
+                      <InlineActionButton onClick={handlePhoneResend} disabled={saving.phone || phoneResendSeconds > 0}>
+                        {phoneResendSeconds > 0 ? `Resend verification in ${formatCountdown(phoneResendSeconds)}` : "Didn't receive the code? Resend verification code"}
+                      </InlineActionButton>
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={handlePhoneVerify}
+                          disabled={saving.phone}
+                          className={cx(
+                            'inline-flex h-11 items-center justify-center rounded-xl bg-[#2e66a6] px-5 text-sm font-bold text-white transition hover:bg-[#25578f] disabled:opacity-60',
+                            focusRing
+                          )}
+                        >
+                          Verify Mobile Number
+                        </button>
                       </div>
                     </div>
-                  ) : null}
+                  </Section>
                 </div>
-              </Section>
+              ) : null}
 
               <Section
                 title="Password"
