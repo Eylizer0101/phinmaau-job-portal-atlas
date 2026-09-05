@@ -2259,11 +2259,11 @@ const EditJob = () => {
     setPublishing(true);
     try {
       const payload = buildPayload({ mode: 'publish' });
-      const response = await persist(payload);
-      const savedId = response.data?.job?._id || response.data?.job?.id || id;
+      await persist(payload);
       setSuccess('Job posted successfully!');
       await new Promise((resolve) => setTimeout(resolve, 1200));
-      navigate(`/employer/manage-jobs/${savedId}/view`, {
+      navigate('/employer/manage-jobs', {
+        replace: true,
         state: { jobEditSuccess: true, successType: 'edit-publish' },
       });
     } catch (err) {

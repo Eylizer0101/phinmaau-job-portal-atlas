@@ -1880,15 +1880,12 @@ const PostJob = () => {
     try {
       const response = await postJob({ isDraft: false });
       if (response.data?.success) {
-        const publishedJob = response.data?.job;
-        const publishedJobId = publishedJob?._id || publishedJob?.id;
-        if (!publishedJobId) throw new Error('Published job ID was not returned by the server.');
         setShowPrivacyModal(false);
         setShowPreviewModal(false);
         setSuccess('Job posted successfully!');
         await new Promise((resolve) => setTimeout(resolve, 1200));
         allowNavigationRef.current = true;
-        navigate(`/employer/manage-jobs/${publishedJobId}/view`, {
+        navigate('/employer/manage-jobs', {
           replace: true,
           state: { jobPostSuccess: true, successType: 'post' },
         });
