@@ -1880,6 +1880,9 @@ const PostJob = () => {
     try {
       const response = await postJob({ isDraft: false });
       if (response.data?.success) {
+        const publishedJob = response.data?.job;
+        const publishedJobId = publishedJob?._id || publishedJob?.id || '';
+
         setShowPrivacyModal(false);
         setShowPreviewModal(false);
         setSuccess('Job posted successfully!');
@@ -1887,7 +1890,11 @@ const PostJob = () => {
         allowNavigationRef.current = true;
         navigate('/employer/manage-jobs', {
           replace: true,
-          state: { jobPostSuccess: true, successType: 'post' },
+          state: {
+            jobPostSuccess: true,
+            successType: 'post',
+            highlightedJobId: publishedJobId,
+          },
         });
       } else {
         setError(response.data?.message || 'Failed to post job');

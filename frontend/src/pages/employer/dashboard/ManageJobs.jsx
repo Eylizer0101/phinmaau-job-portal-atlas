@@ -471,7 +471,7 @@ const ManageJobs = () => {
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(null);
-  const [recentlySavedDraftId, setRecentlySavedDraftId] = useState('');
+  const [recentlyHighlightedJobId, setRecentlyHighlightedJobId] = useState('');
 
   const [selectedJob, setSelectedJob] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -664,19 +664,21 @@ const ManageJobs = () => {
     if (draftWasSaved) {
       const savedJobTitle = String(location.state?.savedJobTitle || 'Your job').trim();
 
-      setRecentlySavedDraftId(String(location.state?.savedJobId || ''));
+      setRecentlyHighlightedJobId(String(location.state?.savedJobId || ''));
       setSuccess({
         type: 'draft',
         title: 'Draft Saved Successfully',
         message: `${savedJobTitle || 'Your job'} was saved as a draft. The saved job is highlighted below.`,
       });
     } else if (location.state?.jobPostSuccess || successType === 'post') {
+      setRecentlyHighlightedJobId(String(location.state?.highlightedJobId || ''));
       setSuccess({
         type: 'post',
         title: 'Job Posted Successfully',
         message: 'Your job listing is now live and visible to applicants.',
       });
     } else if (successType === 'edit-publish') {
+      setRecentlyHighlightedJobId(String(location.state?.highlightedJobId || ''));
       setSuccess({
         type: 'edit',
         title: 'Job Updated & Published Successfully',
@@ -694,14 +696,14 @@ const ManageJobs = () => {
   }, [location.pathname, location.state, navigate]);
 
   useEffect(() => {
-    if (!recentlySavedDraftId) return undefined;
+    if (!recentlyHighlightedJobId) return undefined;
 
     const timer = window.setTimeout(() => {
-      setRecentlySavedDraftId('');
+      setRecentlyHighlightedJobId('');
     }, 3000);
 
     return () => window.clearTimeout(timer);
-  }, [recentlySavedDraftId]);
+  }, [recentlyHighlightedJobId]);
 
   useEffect(() => {
     if (!error) return;
@@ -1495,7 +1497,7 @@ const ManageJobs = () => {
                         key={job._id}
                         className={cn(
                           'rounded-2xl border bg-white p-4 shadow-sm transition',
-                          String(job._id) === recentlySavedDraftId
+                          String(job._id) === recentlyHighlightedJobId
                             ? 'border-[#173f8a] bg-[#2e66a6]/10 ring-2 ring-[#173f8a]'
                             : 'border-gray-200'
                         )}
@@ -1712,7 +1714,7 @@ const ManageJobs = () => {
                             role="link"
                             className={cn(
                               'group cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]',
-                              String(job._id) === recentlySavedDraftId
+                              String(job._id) === recentlyHighlightedJobId
                                 ? 'bg-[#2e66a6]/10 ring-2 ring-inset ring-[#173f8a]'
                                 : 'hover:bg-[#2e66a6]/[0.06] focus-visible:bg-[#2e66a6]/[0.08]'
                             )}
