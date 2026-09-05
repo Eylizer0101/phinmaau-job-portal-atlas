@@ -2185,9 +2185,6 @@ const ManageJobs = () => {
                       <h2 id="status-confirmation-title" className="text-xl font-bold text-gray-900">
                         {isExpiredJob ? 'Application Deadline Expired' : isReopening ? 'Open Job' : 'Close Job'}
                       </h2>
-                      <p className="mt-2 truncate text-sm font-semibold text-[#2e66a6]">
-                        {safeTitle(statusConfirmationJob)}
-                      </p>
                     <div id="status-confirmation-description" className="mt-2 text-sm leading-6 text-gray-600">
                       <p>
                       {isExpiredJob
@@ -2261,7 +2258,6 @@ const ManageJobs = () => {
                   </div>
                   <div className="min-w-0 flex-1">
                     <h2 id="publish-validation-title" className="text-xl font-bold text-gray-900">Publish Job</h2>
-                    <p className="mt-2 truncate text-sm font-semibold text-[#2e66a6]">{safeTitle(publishValidationJob)}</p>
                     <p className="mt-2 text-sm leading-6 text-gray-600">
                       The “<span className="font-semibold text-[#2e66a6]">{safeTitle(publishValidationJob)}</span>” job post cannot be published yet. Please complete all required fields and try again.
                     </p>
@@ -2302,7 +2298,6 @@ const ManageJobs = () => {
                   </div>
                   <div className="min-w-0 flex-1">
                     <h2 id="filled-job-title" className="text-xl font-bold text-gray-900">Job Position Filled</h2>
-                    <p className="mt-2 truncate text-sm font-semibold text-[#2e66a6]">{safeTitle(filledJob)}</p>
                     <p className="mt-2 text-sm leading-6 text-gray-600">
                       This “<span className="font-semibold text-[#2e66a6]">{safeTitle(filledJob)}</span>” job post cannot be reopened or closed, because the position has already been filled.
                     </p>
