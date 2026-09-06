@@ -100,6 +100,13 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 19a6 6 0 00-12 0m6-8a4 4 0 100-8 4 4 0 000 8zm7 2 2 2 4-4" />
         </svg>
       );
+    case 'statusRequest':
+      return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 4l16 8-16 8 3-8-3-8Z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M7 12h13" />
+        </svg>
+      );
     case 'timesCircle':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -350,9 +357,13 @@ const MyApplications = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [statusRequestApplication, setStatusRequestApplication] = useState(null);
+  const [statusRequestReason, setStatusRequestReason] = useState('');
+  const [statusRequestLoading, setStatusRequestLoading] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
+  const highlightedApplicationId = new URLSearchParams(location.search).get('application') || '';
 
   const inFlightRef = useRef(false);
   const tabRefs = useRef({});
@@ -743,6 +754,18 @@ const MyApplications = () => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
 
+  useEffect(() => {
+    if (!highlightedApplicationId) return;
+    const targetIndex = searchedApplications.findIndex(
+      (application) => String(application._id) === String(highlightedApplicationId)
+    );
+    if (targetIndex < 0) return;
+    if (pageSize !== 'all') setCurrentPage(Math.floor(targetIndex / numericPageSize) + 1);
+    window.setTimeout(() => {
+      document.getElementById(`jobseeker-application-${highlightedApplicationId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  }, [highlightedApplicationId, searchedApplications, pageSize, numericPageSize]);
+
   const filterLabel = useMemo(() => {
     if (statusFilter === 'declined') return 'Declined Applications';
     if (mainTab === 'inactive') return 'Withdrawn / Cancelled Applications';
@@ -858,6 +881,41 @@ const MyApplications = () => {
     }
   };
 
+  const handleSendStatusRequest = async () => {
+    if (!statusRequestApplication?._id || !statusRequestReason || statusRequestLoading) return;
+
+    try {
+      setStatusRequestLoading(true);
+      setError('');
+      const response = await api.post(
+        `/applications/${statusRequestApplication._id}/employment-status-request`,
+        { reason: statusRequestReason }
+      );
+
+      if (response.data?.success) {
+        const updatedApplication = response.data.application;
+        setApplications((previous) =>
+          previous.map((application) =>
+            application._id === updatedApplication._id ? updatedApplication : application
+          )
+        );
+        setStatusRequestApplication(null);
+        setStatusRequestReason('');
+        setActionMessage('status-requested');
+      }
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Failed to send status change request.');
+    } finally {
+      setStatusRequestLoading(false);
+    }
+  };
+
+  const isCurrentlyEmployed = applications.some(
+    (application) =>
+      String(application.status || '').toLowerCase() === 'hired' &&
+      String(application.employmentStatus || 'active').toLowerCase() !== 'inactive'
+  );
+
   return (
     <div className={`${UI.pageBg} min-h-screen`}>
       <div className="max-w-[1400px] mx-auto mt-2 px-4 sm:px-6 lg:px-8 py-8">
@@ -966,12 +1024,18 @@ const MyApplications = () => {
                   <SvgIcon name="checkCircle" className="h-8 w-8" />
                 </div>
                 <h2 className="mt-4 text-xl font-bold text-gray-900">
-                  {actionMessage === 'withdrawn' ? 'Application Withdrawn' : 'Application Reactivated'}
+                  {actionMessage === 'withdrawn'
+                    ? 'Application Withdrawn'
+                    : actionMessage === 'reactivated'
+                    ? 'Application Reactivated'
+                    : 'Status change request sent successfully!'}
                 </h2>
                 <p className="mt-2 text-sm text-gray-500">
                   {actionMessage === 'withdrawn'
                     ? 'Your application has been successfully withdrawn.'
-                    : 'Your application has been successfully reactivated.'}
+                    : actionMessage === 'reactivated'
+                    ? 'Your application has been successfully reactivated.'
+                    : 'Your request has been sent to the Company / Employer for review.'}
                 </p>
               </div>
             </div>
@@ -1046,9 +1110,24 @@ const MyApplications = () => {
 
           <div className="pt-2">
             <div className={`${UI.card} overflow-hidden`}>
-              <div className="px-5 pb-4 pt-5 text-center sm:px-6">
-                <h3 className={`text-lg font-bold tracking-tight ${UI.textPrimary}`}>Understanding Application Status</h3>
-                <p className={`mt-0.5 text-sm ${UI.textSecondary}`}>Quick guide for what each status means.</p>
+              <div className="flex flex-col gap-4 px-5 pb-4 pt-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <div className="text-left">
+                  <h3 className={`text-lg font-bold tracking-tight ${UI.textPrimary}`}>Understanding Application Status</h3>
+                  <p className={`mt-0.5 text-sm ${UI.textSecondary}`}>Quick guide for what each status means.</p>
+                </div>
+                <div className={`inline-flex items-center gap-3 rounded-xl border px-4 py-2.5 ${isCurrentlyEmployed ? 'border-emerald-200 bg-emerald-50' : 'border-gray-200 bg-gray-50'}`}>
+                  <span className={isCurrentlyEmployed ? 'text-emerald-700' : 'text-gray-500'}>
+                    <SvgIcon name={isCurrentlyEmployed ? 'checkCircle' : 'briefcase'} className="h-5 w-5" />
+                  </span>
+                  <div className="text-left">
+                    <p className={`text-sm font-semibold ${isCurrentlyEmployed ? 'text-emerald-800' : 'text-gray-800'}`}>
+                      {isCurrentlyEmployed ? 'Employed' : 'Unemployed'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {isCurrentlyEmployed ? 'Currently working in a role' : 'Not working at the moment'}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 border-t border-gray-200 md:grid-cols-4">
@@ -1240,12 +1319,19 @@ const MyApplications = () => {
                   const canWithdraw = ['pending', 'for interview', 'vacancy full'].includes(statusValue);
                   const showWithdraw = ['pending', 'for interview', 'hired', 'declined', 'vacancy full'].includes(statusValue);
                   const isActionLoading = actionLoadingId === application._id;
+                  const employmentStatus = String(application.employmentStatus || 'active').toLowerCase();
+                  const employmentRequestStatus = String(application.employmentStatusRequest?.status || 'none').toLowerCase();
+                  const canRequestEmploymentChange = statusValue === 'hired' && employmentStatus !== 'inactive';
 
                   const declineReason = String(application.declineReason || '').trim();
                   const declineComment = String(application.declineComment || '').trim();
 
                   return (
-                    <div key={application._id} className={`${UI.card} ${UI.cardHover} overflow-hidden`}>
+                    <div
+                      key={application._id}
+                      id={`jobseeker-application-${application._id}`}
+                      className={`${UI.card} ${UI.cardHover} overflow-hidden ${String(application._id) === String(highlightedApplicationId) ? 'border-[#2e66a6]/40 bg-[#2e66a6]/[0.04] ring-2 ring-[#2e66a6]/10' : ''}`}
+                    >
                       <div className="p-5 sm:p-6">
                         <div className="flex items-start gap-4">
                           <CompanyLogo logoUrl={logoUrl} companyName={companyName} />
@@ -1362,6 +1448,23 @@ const MyApplications = () => {
                                 Job
                               </span>
                             )}
+
+                            {canRequestEmploymentChange && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (employmentRequestStatus === 'pending') return;
+                                  setStatusRequestApplication(application);
+                                  setStatusRequestReason('');
+                                }}
+                                disabled={employmentRequestStatus === 'pending'}
+                                className={`${UI.btnBase} ${UI.btnMd} border border-[#2e66a6]/25 bg-white text-[#2e66a6] hover:bg-[#2e66a6]/5 ${UI.ring}`}
+                                title={employmentRequestStatus === 'pending' ? 'Your request is awaiting employer review' : 'Request an employment status change'}
+                              >
+                                <SvgIcon name="statusRequest" className="h-4 w-4" />
+                                {employmentRequestStatus === 'pending' ? 'Request Pending' : 'Status Request'}
+                              </button>
+                            )}
                           </div>
                         </div>
 
@@ -1419,6 +1522,63 @@ const MyApplications = () => {
           )}
         </div>
       </div>
+
+      {statusRequestApplication && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4" role="dialog" aria-modal="true" aria-labelledby="status-request-title">
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
+                  <SvgIcon name="statusRequest" className="h-5 w-5" />
+                </span>
+                <div>
+                  <h2 id="status-request-title" className="text-lg font-bold text-gray-900">What would you like to request?</h2>
+                  <p className="mt-1 text-sm text-gray-500">The Company / Employer reviews and approves the status you request.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (statusRequestLoading) return;
+                  setStatusRequestApplication(null);
+                  setStatusRequestReason('');
+                }}
+                className="rounded-lg p-1 text-gray-500 hover:bg-gray-100"
+                aria-label="Close status request modal"
+              >
+                <SvgIcon name="timesCircle" className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              {[
+                { value: 'contract_ended', title: 'Contract Ended', description: 'Previous contract has finished' },
+                { value: 'employment_ended', title: 'Employment Ended', description: 'No longer employed in this role' },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setStatusRequestReason(option.value)}
+                  className={`w-full rounded-xl border px-4 py-3 text-left transition ${statusRequestReason === option.value ? 'border-[#2e66a6] bg-[#2e66a6]/5 ring-2 ring-[#2e66a6]/10' : 'border-gray-200 hover:border-[#2e66a6]/50'}`}
+                  aria-pressed={statusRequestReason === option.value}
+                >
+                  <span className="block text-sm font-semibold text-gray-900">{option.title}</span>
+                  <span className="mt-0.5 block text-xs text-gray-500">{option.description}</span>
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSendStatusRequest}
+              disabled={!statusRequestReason || statusRequestLoading}
+              className={`${UI.btnBase} ${UI.btnLg} ${UI.btnPrimary} ${UI.ring} mt-5 w-full`}
+            >
+              {statusRequestLoading ? 'Sending request...' : 'Send request to employer'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

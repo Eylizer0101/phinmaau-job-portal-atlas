@@ -166,6 +166,37 @@ const applicationSchema = new mongoose.Schema({
     reviewedAt: Date,
     notes: String,
 
+    employmentStatus: {
+        type: String,
+        enum: ['active', 'inactive'],
+        default: 'active'
+    },
+    employmentStatusRequest: {
+        reason: {
+            type: String,
+            enum: ['contract_ended', 'employment_ended', ''],
+            default: ''
+        },
+        status: {
+            type: String,
+            enum: ['none', 'pending', 'approved', 'declined'],
+            default: 'none'
+        },
+        requestedAt: {
+            type: Date,
+            default: null
+        },
+        reviewedAt: {
+            type: Date,
+            default: null
+        },
+        reviewedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            default: null
+        }
+    },
+
     // ✅ NEW: track if employer already viewed the application details
     isViewedByEmployer: {
         type: Boolean,
@@ -248,5 +279,6 @@ applicationSchema.index({ jobseeker: 1, status: 1 });
 applicationSchema.index({ employer: 1, 'interviewSchedule.scheduledAt': 1 });
 applicationSchema.index({ employer: 1, hiringStage: 1 });
 applicationSchema.index({ employer: 1, status: 1, isDeclinedArchived: 1 });
+applicationSchema.index({ employer: 1, 'employmentStatusRequest.status': 1 });
 
 module.exports = mongoose.model('Application', applicationSchema);

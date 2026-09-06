@@ -22,6 +22,8 @@ const {
   getJobseekerStatus,
   withdrawMyApplication,
   reactivateMyApplication,
+  requestEmploymentStatusChange,
+  reviewEmploymentStatusChange,
 
   // ✅ DECLINED / ARCHIVE FLOW
   getEmployerDeclinedApplications,
@@ -45,6 +47,7 @@ router.get('/jobseeker/all', protect, authorize('jobseeker'), getJobseekerApplic
 router.get('/job/:jobId/check', protect, authorize('jobseeker'), checkIfApplied);
 router.put('/:applicationId/withdraw', protect, authorize('jobseeker'), withdrawMyApplication);
 router.put('/:applicationId/reactivate', protect, authorize('jobseeker'), reactivateMyApplication);
+router.post('/:applicationId/employment-status-request', protect, authorize('jobseeker'), requestEmploymentStatusChange);
 
 // Admin routes
 router.get('/admin/all', protect, authorize('admin'), getAdminApplications);
@@ -55,6 +58,7 @@ router.get('/employer/for-interview', protect, authorize('employer'), getEmploye
 router.get('/employer/hired', protect, authorize('employer'), getEmployerHiredApplications);
 router.get('/employer/interview-calendar', protect, authorize('employer'), getEmployerInterviewCalendar);
 router.get('/employer/interviewer-options', protect, authorize('employer'), getEmployerInterviewerOptions);
+router.put('/:applicationId/employment-status-request/review', protect, authorize('employer'), reviewEmploymentStatusChange);
 
 // ✅ DECLINED ROUTES
 router.get('/employer/declined', protect, authorize('employer'), getEmployerDeclinedApplications);

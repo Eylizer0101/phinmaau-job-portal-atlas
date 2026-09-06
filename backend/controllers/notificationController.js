@@ -558,6 +558,69 @@ exports.createVacancyFullNotification = async (application, job) => {
     }
 };
 
+exports.createEmploymentStatusRequestNotification = async (application) => {
+    try {
+        const jobseeker = application?.jobseeker || {};
+        const jobseekerId = jobseeker?._id || jobseeker;
+        const nameParts = [jobseeker?.firstName, jobseeker?.middleName, jobseeker?.lastName]
+            .map((part) => String(part || '').trim())
+            .filter(Boolean);
+        const jobseekerName = String(jobseeker?.fullName || '').trim() || nameParts.join(' ') || 'A job seeker';
+
+        const notification = new Notification({
+            user: application.employer?._id || application.employer,
+            type: 'employment_status_request',
+            title: 'Employment Status Change Request',
+            message: `${jobseekerName} has requested to change their employment status.`,
+            relatedId: application._id,
+            relatedModel: 'Application',
+            link: `/employer/hired?statusRequest=${application._id}`,
+            metadata: {
+                applicationId: application._id,
+                jobseekerId,
+                jobseekerName,
+                jobTitle: application?.job?.title || '',
+                requestReason: application?.employmentStatusRequest?.reason || ''
+            }
+        });
+
+        await notification.save();
+        return notification;
+    } catch (error) {
+        console.error('Error creating employment status request notification:', error);
+        return null;
+    }
+};
+
+exports.createEmploymentStatusDecisionNotification = async (application, decision) => {
+    try {
+        const approved = decision === 'approved';
+        const notification = new Notification({
+            user: application.jobseeker?._id || application.jobseeker,
+            type: 'employment_status_update',
+            title: approved ? 'Status Change Request Approved' : 'Status Change Request Declined',
+            message: approved
+                ? 'Your request to update your employment status has been approved.'
+                : 'Your request to update your employment status has been declined.',
+            relatedId: application._id,
+            relatedModel: 'Application',
+            link: `/jobseeker/my-applications?status=hired&application=${application._id}`,
+            metadata: {
+                applicationId: application._id,
+                jobTitle: application?.job?.title || '',
+                decision,
+                employmentStatus: application.employmentStatus
+            }
+        });
+
+        await notification.save();
+        return notification;
+    } catch (error) {
+        console.error('Error creating employment status decision notification:', error);
+        return null;
+    }
+};
+
 // Create new message notification
 exports.createMessageNotification = async (senderId, receiverId, message) => {
     try {

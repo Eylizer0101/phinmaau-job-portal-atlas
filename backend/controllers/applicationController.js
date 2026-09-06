@@ -1271,6 +1271,128 @@ exports.reactivateMyApplication = async (req, res) => {
   }
 };
 
+exports.requestEmploymentStatusChange = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const reason = String(req.body?.reason || '').trim().toLowerCase();
+
+    if (!['contract_ended', 'employment_ended'].includes(reason)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please select Contract Ended or Employment Ended.'
+      });
+    }
+
+    const requestedAt = new Date();
+    const application = await Application.findOneAndUpdate(
+      {
+        _id: applicationId,
+        jobseeker: req.user._id,
+        status: 'hired',
+        employmentStatus: { $ne: 'inactive' },
+        'employmentStatusRequest.status': { $ne: 'pending' }
+      },
+      {
+        $set: {
+          employmentStatus: 'active',
+          employmentStatusRequest: {
+            reason,
+            status: 'pending',
+            requestedAt,
+            reviewedAt: null,
+            reviewedBy: null
+          }
+        }
+      },
+      { new: true, runValidators: true }
+    )
+      .populate('job', 'title companyName companyLogo')
+      .populate('jobseeker', 'fullName firstName middleName lastName email profileImage')
+      .populate('employer', 'fullName employerProfile.companyName employerProfile.companyLogo');
+
+    if (!application) {
+      return res.status(409).json({
+        success: false,
+        message: 'This request cannot be sent. The application must be hired and active, with no pending request.'
+      });
+    }
+
+    await notificationController.createEmploymentStatusRequestNotification(application);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Status change request sent successfully!',
+      application
+    });
+  } catch (error) {
+    console.error('Error requesting employment status change:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error sending employment status change request.'
+    });
+  }
+};
+
+exports.reviewEmploymentStatusChange = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const decision = String(req.body?.decision || '').trim().toLowerCase();
+
+    if (!['approved', 'declined'].includes(decision)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Decision must be approved or declined.'
+      });
+    }
+
+    const reviewedAt = new Date();
+    const update = {
+      'employmentStatusRequest.status': decision,
+      'employmentStatusRequest.reviewedAt': reviewedAt,
+      'employmentStatusRequest.reviewedBy': req.user._id
+    };
+    if (decision === 'approved') update.employmentStatus = 'inactive';
+    else update.employmentStatus = 'active';
+
+    const application = await Application.findOneAndUpdate(
+      {
+        _id: applicationId,
+        employer: req.user._id,
+        status: 'hired',
+        'employmentStatusRequest.status': 'pending'
+      },
+      { $set: update },
+      { new: true, runValidators: true }
+    )
+      .populate('job', 'title companyName companyLogo salaryMin salaryMax')
+      .populate('jobseeker', 'fullName firstName middleName lastName email profileImage phoneNumber contactNumber jobSeekerProfile.phoneNumber jobSeekerProfile.mobileNumber')
+      .populate('employer', 'fullName employerProfile.companyName employerProfile.companyLogo');
+
+    if (!application) {
+      return res.status(409).json({
+        success: false,
+        message: 'This request is no longer pending or does not belong to your company.'
+      });
+    }
+
+    await notificationController.createEmploymentStatusDecisionNotification(application, decision);
+
+    return res.status(200).json({
+      success: true,
+      message: decision === 'approved'
+        ? 'Status change approved successfully!'
+        : 'Status change request declined!',
+      application
+    });
+  } catch (error) {
+    console.error('Error reviewing employment status change:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error reviewing employment status change request.'
+    });
+  }
+};
+
 
 // ✅ ADMIN: GET ALL APPLICATIONS FOR ADMIN APPLICATIONS PAGE
 exports.getAdminApplications = async (req, res) => {

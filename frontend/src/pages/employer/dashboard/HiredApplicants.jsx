@@ -1,6 +1,6 @@
 // src/pages/employer/dashboard/HiredApplicants.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import Pagination from '../../../components/shared/Pagination';
@@ -33,6 +33,19 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
       return (
         <svg {...common}>
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.9 12.1A2 2 0 0116.1 21H7.9a2 2 0 01-2-1.9L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16" />
+        </svg>
+      );
+    case 'request':
+      return (
+        <svg {...common}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4l16 8-16 8 3-8-3-8Z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12h13" />
+        </svg>
+      );
+    case 'check':
+      return (
+        <svg {...common}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m5 12 4 4L19 6" />
         </svg>
       );
     default:
@@ -456,6 +469,7 @@ const useDebouncedValue = (value, delay = 250) => {
 
 const HiredApplicants = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const API_BASE = (process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
 
   const [applications, setApplications] = useState([]);
@@ -478,6 +492,9 @@ const HiredApplicants = () => {
   const [pageSize, setPageSize] = useState(10);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [brokenAvatars, setBrokenAvatars] = useState(() => new Set());
+  const [reviewApplication, setReviewApplication] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewResult, setReviewResult] = useState(null);
 
   const debouncedQuery = useDebouncedValue(query, 250);
 
@@ -620,6 +637,29 @@ const HiredApplicants = () => {
   useEffect(() => {
     fetchHiredApplicants();
   }, [fetchHiredApplicants]);
+
+  useEffect(() => {
+    if (!reviewResult) return undefined;
+    const timer = window.setTimeout(() => setReviewResult(null), 3000);
+    return () => window.clearTimeout(timer);
+  }, [reviewResult]);
+
+  useEffect(() => {
+    const applicationId = new URLSearchParams(location.search).get('statusRequest');
+    if (!applicationId || loading) return;
+    setQuery('');
+    setSelectedJob('all');
+    setDateFilter('all');
+    setSortBy('recent');
+    const targetIndex = applications.findIndex((application) => String(application._id) === String(applicationId));
+    if (targetIndex >= 0 && pageSize !== 'all') {
+      setCurrentPage(Math.floor(targetIndex / Number(pageSize)) + 1);
+    }
+    window.setTimeout(() => {
+      const prefix = window.innerWidth < 768 ? 'hired-application-mobile' : 'hired-application';
+      document.getElementById(`${prefix}-${applicationId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  }, [location.search, loading, applications, pageSize]);
 
   const filteredApplications = useMemo(() => {
     const q = debouncedQuery.trim().toLowerCase();
@@ -808,6 +848,45 @@ const HiredApplicants = () => {
       setError(archiveError?.response?.data?.message || 'Failed to archive declined applicant.');
     } finally {
       setArchivingId(null);
+    }
+  };
+
+  const handleReviewStatusRequest = async (decision) => {
+    if (!reviewApplication?._id || reviewLoading) return;
+
+    try {
+      setReviewLoading(true);
+      setError('');
+      const response = await axios.put(
+        `https://phinmaau-job-portal-atlas.onrender.com/api/applications/${reviewApplication._id}/employment-status-request/review`,
+        { decision },
+        { headers: getAuthHeaders() }
+      );
+
+      if (response.data?.success) {
+        const updatedApplication = response.data.application;
+        setApplications((previous) =>
+          previous.map((application) =>
+            application._id === updatedApplication._id
+              ? { ...updatedApplication, _recordStatus: 'hired' }
+              : application
+          )
+        );
+        setReviewApplication(null);
+        setReviewResult({
+          decision,
+          title: decision === 'approved'
+            ? 'Status change approved successfully!'
+            : 'Status change request declined!',
+          description: decision === 'approved'
+            ? "The job seeker's employment status has been changed from Active to Inactive."
+            : "The job seeker's employment status remains Active."
+        });
+      }
+    } catch (reviewError) {
+      setError(reviewError?.response?.data?.message || 'Failed to review the status change request.');
+    } finally {
+      setReviewLoading(false);
     }
   };
 
@@ -1044,6 +1123,7 @@ const selectBase =
                       return (
                         <tr
                           key={app._id}
+                          id={`hired-application-${app._id}`}
                           role="link"
                           tabIndex={0}
                           aria-label={`View application of ${name}`}
@@ -1057,7 +1137,10 @@ const selectBase =
                             event.preventDefault();
                             navigate(`/employer/application/${app._id}?from=hired`);
                           }}
-                          className="border-b border-gray-200 last:border-b-0 group cursor-pointer transition-colors hover:bg-[#2e66a6]/[0.06] focus-visible:bg-[#2e66a6]/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
+                          className={cn(
+                            'border-b border-gray-200 last:border-b-0 group cursor-pointer transition-colors hover:bg-[#2e66a6]/[0.06] focus-visible:bg-[#2e66a6]/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]',
+                            String(app.employmentStatusRequest?.status || '').toLowerCase() === 'pending' && 'bg-[#2e66a6]/[0.08]'
+                          )}
                         >
                           <td className="px-6 py-4 text-[15px] text-gray-700">
                             {formatDate(app.appliedAt)}
@@ -1110,6 +1193,18 @@ const selectBase =
                                 <Icon name="eye" className="h-4 w-4" />
                                 <span>Application</span>
                               </Link>
+                              {String(app.employmentStatusRequest?.status || '').toLowerCase() === 'pending' && (
+                                <button
+                                  type="button"
+                                  onClick={() => setReviewApplication(app)}
+                                  className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#2e66a6]/25 bg-[#2e66a6]/5 text-[#2e66a6] hover:bg-[#2e66a6]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                                  aria-label={`Review employment status request from ${name}`}
+                                  title="Review employment status request"
+                                >
+                                  <Icon name="request" className="h-4 w-4" />
+                                  <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-white bg-red-500" aria-hidden="true" />
+                                </button>
+                              )}
                               {app._recordStatus === 'declined' && (
                                 <button
                                   type="button"
@@ -1140,7 +1235,7 @@ const selectBase =
                   const jobTitle = app.job?.title || '—';
 
                   return (
-                    <div key={app._id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                    <div key={app._id} id={`hired-application-mobile-${app._id}`} className={cn('rounded-2xl border border-gray-200 bg-white p-4 shadow-sm', String(app.employmentStatusRequest?.status || '').toLowerCase() === 'pending' && 'border-[#2e66a6]/30 bg-[#2e66a6]/[0.06]')}>
                       <div className="flex items-start gap-3">
                         <Avatar
                           img={app.jobseeker?.profileImage}
@@ -1187,6 +1282,17 @@ const selectBase =
                           <Icon name="eye" className="h-4 w-4" />
                           <span>Application</span>
                         </Link>
+                        {String(app.employmentStatusRequest?.status || '').toLowerCase() === 'pending' && (
+                          <button
+                            type="button"
+                            onClick={() => setReviewApplication(app)}
+                            className="relative mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#2e66a6]/25 bg-[#2e66a6]/5 px-4 py-2 text-sm font-semibold text-[#2e66a6] hover:bg-[#2e66a6]/10"
+                          >
+                            <Icon name="request" className="h-4 w-4" />
+                            Review Status Request
+                            <span className="absolute right-3 top-2 h-2.5 w-2.5 rounded-full bg-red-500" aria-hidden="true" />
+                          </button>
+                        )}
                         {app._recordStatus === 'declined' && (
                           <button
                             type="button"
@@ -1223,6 +1329,52 @@ const selectBase =
           setCurrentPage(1);
         }}
       />
+
+      {reviewApplication && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4" role="dialog" aria-modal="true" aria-labelledby="review-request-title">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="review-request-title" className="text-lg font-bold text-gray-900">Approve Request?</h2>
+                <p className="mt-2 text-sm leading-6 text-gray-600">
+                  Are you sure you want to approve the job seeker's request to end their current employment status? Their employment record will change from Active to Inactive.
+                </p>
+              </div>
+              <button type="button" onClick={() => !reviewLoading && setReviewApplication(null)} className="rounded-lg p-1 text-gray-500 hover:bg-gray-100" aria-label="Close request review modal">
+                <Icon name="x" className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+              Request reason:{' '}
+              <strong className="text-gray-900">
+                {reviewApplication.employmentStatusRequest?.reason === 'contract_ended' ? 'Contract Ended' : 'Employment Ended'}
+              </strong>
+            </p>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button type="button" onClick={() => handleReviewStatusRequest('declined')} disabled={reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60">
+                Decline Request
+              </button>
+              <button type="button" onClick={() => handleReviewStatusRequest('approved')} disabled={reviewLoading} className="inline-flex h-11 items-center justify-center rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white hover:bg-[#25558c] disabled:opacity-60">
+                {reviewLoading ? 'Processing...' : 'Approve Request'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {reviewResult && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/25 px-4" role="status" aria-live="polite">
+          <div className="w-full max-w-sm rounded-2xl bg-white px-6 py-7 text-center shadow-2xl">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
+              <Icon name="check" className="h-8 w-8" />
+            </div>
+            <h2 className="mt-4 text-xl font-bold text-gray-900">{reviewResult.title}</h2>
+            <p className="mt-2 text-sm text-gray-500">{reviewResult.description}</p>
+          </div>
+        </div>
+      )}
     </EmployerLayout>
   );
 };
