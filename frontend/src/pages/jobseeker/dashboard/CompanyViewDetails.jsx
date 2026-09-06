@@ -2798,8 +2798,11 @@ const CompanyViewDetails = () => {
                           checked={reviewWouldApplyAgain === true}
                           onChange={() => setReviewWouldApplyAgain(true)}
                           disabled={reviewSubmitting}
-                          className="h-4 w-4 accent-[#172033]"
+                          className="sr-only"
                         />
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-gray-500 bg-white" aria-hidden="true">
+                          {reviewWouldApplyAgain === true ? <span className="h-2.5 w-2.5 rounded-full bg-black" /> : null}
+                        </span>
                         Yes
                       </label>
                       <label className="inline-flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
@@ -2809,8 +2812,11 @@ const CompanyViewDetails = () => {
                           checked={reviewWouldApplyAgain === false}
                           onChange={() => setReviewWouldApplyAgain(false)}
                           disabled={reviewSubmitting}
-                          className="h-4 w-4 accent-[#172033]"
+                          className="sr-only"
                         />
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-gray-500 bg-white" aria-hidden="true">
+                          {reviewWouldApplyAgain === false ? <span className="h-2.5 w-2.5 rounded-full bg-black" /> : null}
+                        </span>
                         No
                       </label>
                     </div>
