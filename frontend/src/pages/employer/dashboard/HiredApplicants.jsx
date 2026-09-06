@@ -42,6 +42,12 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12h13" />
         </svg>
       );
+    case 'edit':
+      return (
+        <svg {...common}>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M16.732 3.732a2.5 2.5 0 113.536 3.536L8.5 19.036 4 20l.964-4.5L16.732 3.732z" />
+        </svg>
+      );
     case 'check':
       return (
         <svg {...common}>
@@ -483,6 +489,7 @@ const HiredApplicants = () => {
 
   const [query, setQuery] = useState('');
   const [selectedJob, setSelectedJob] = useState('all');
+  const [employmentFilter, setEmploymentFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
   const [customDateFrom, setCustomDateFrom] = useState('');
   const [customDateTo, setCustomDateTo] = useState('');
@@ -495,6 +502,10 @@ const HiredApplicants = () => {
   const [reviewApplication, setReviewApplication] = useState(null);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewResult, setReviewResult] = useState(null);
+  const [updateApplication, setUpdateApplication] = useState(null);
+  const [updateReason, setUpdateReason] = useState('');
+  const [updateStep, setUpdateStep] = useState('reason');
+  const [updateLoading, setUpdateLoading] = useState(false);
 
   const debouncedQuery = useDebouncedValue(query, 250);
 
@@ -677,6 +688,12 @@ const HiredApplicants = () => {
           return [name, email, jobTitle].some((v) => v.includes(q));
         });
 
+    const employmentFiltered = employmentFilter === 'all'
+      ? searched
+      : searched.filter((application) =>
+          String(application.employmentStatus || 'active').toLowerCase() === employmentFilter
+        );
+
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
@@ -695,7 +712,7 @@ const HiredApplicants = () => {
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     const startOfNextYear = new Date(now.getFullYear() + 1, 0, 1);
 
-    const filteredByDate = searched.filter((a) => {
+    const filteredByDate = employmentFiltered.filter((a) => {
       if (q || dateFilter === 'all') return true;
 
       const appliedDate = new Date(a.appliedAt || 0);
@@ -787,7 +804,7 @@ const HiredApplicants = () => {
     });
 
     return sorted;
-  }, [applications, buildApplicantName, dateFilter, customDateFrom, customDateTo, debouncedQuery, selectedJob, sortBy]);
+  }, [applications, buildApplicantName, dateFilter, customDateFrom, customDateTo, debouncedQuery, employmentFilter, selectedJob, sortBy]);
 
 
   const totalItems = filteredApplications.length;
@@ -806,6 +823,7 @@ const HiredApplicants = () => {
   const clearFilters = () => {
     setQuery('');
     setSelectedJob('all');
+    setEmploymentFilter('all');
     setDateFilter('all');
     setCustomDateFrom('');
     setCustomDateTo('');
@@ -831,7 +849,52 @@ const HiredApplicants = () => {
   ];
 
   const hasActiveFilters =
-    query.trim() || selectedJob !== 'all' || dateFilter !== 'all' || sortBy !== 'recent';
+    query.trim() || selectedJob !== 'all' || employmentFilter !== 'all' || dateFilter !== 'all' || sortBy !== 'recent';
+
+  const openEmploymentUpdate = (application) => {
+    setUpdateApplication(application);
+    setUpdateReason('');
+    setUpdateStep('reason');
+  };
+
+  const closeEmploymentUpdate = () => {
+    if (updateLoading) return;
+    setUpdateApplication(null);
+    setUpdateReason('');
+    setUpdateStep('reason');
+  };
+
+  const handleEmployerEmploymentUpdate = async () => {
+    if (!updateApplication?._id || !updateReason || updateLoading) return;
+    try {
+      setUpdateLoading(true);
+      setError('');
+      const response = await axios.put(
+        `https://phinmaau-job-portal-atlas.onrender.com/api/applications/${updateApplication._id}/employment-status`,
+        { reason: updateReason },
+        { headers: getAuthHeaders() }
+      );
+      if (response.data?.success) {
+        const updatedApplication = response.data.application;
+        setApplications((previous) => previous.map((application) =>
+          application._id === updatedApplication._id
+            ? { ...updatedApplication, _recordStatus: 'hired' }
+            : application
+        ));
+        setUpdateApplication(null);
+        setUpdateReason('');
+        setUpdateStep('reason');
+        setReviewResult({
+          title: 'Employment status updated successfully!',
+          description: "The job seeker's employment status has been changed from Active to Inactive."
+        });
+      }
+    } catch (updateError) {
+      setError(updateError?.response?.data?.message || 'Failed to update the employment status.');
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
 
   const handleArchiveDeclined = async (applicationId) => {
     if (archivingId) return;
@@ -970,7 +1033,7 @@ const selectBase =
         <div className="relative z-20 mb-6 overflow-visible rounded-[22px] border border-gray-300 bg-[#ffffff] shadow-sm">
           <div className="overflow-visible p-5">
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-              <div className={hasActiveFilters ? 'lg:col-span-3' : 'lg:col-span-4'}>
+              <div className={hasActiveFilters ? 'lg:col-span-2' : 'lg:col-span-3'}>
                 <div className="relative">
                   <span className="pointer-events-none absolute left-4 top-3.5 text-gray-400">
                     <Icon name="search" className="h-5 w-5" />
@@ -1002,7 +1065,7 @@ const selectBase =
                 </div>
               </div>
 
-              <div className="lg:col-span-3">
+              <div className="lg:col-span-2">
                 <label className="sr-only" htmlFor="jobFilter">
                   Filter by job
                 </label>
@@ -1018,6 +1081,24 @@ const selectBase =
                       {o.label}
                     </option>
                   ))}
+                </select>
+              </div>
+
+              <div className="lg:col-span-2">
+                <label className="sr-only" htmlFor="employmentFilter">Filter by employment status</label>
+                <select
+                  id="employmentFilter"
+                  value={employmentFilter}
+                  onChange={(event) => {
+                    setEmploymentFilter(event.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className={selectBase}
+                  disabled={loading}
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
                 </select>
               </div>
 
@@ -1101,9 +1182,9 @@ const selectBase =
                       <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
                         Job Applied
                       </th>
-                      {statusFilter === 'all' && (
-                        <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">Status</th>
-                      )}
+                      <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">
+                        Status
+                      </th>
                       {statusFilter === 'declined' && (
                         <th className="px-6 py-5 text-left text-sm font-semibold uppercase tracking-wide text-gray-700">Decline Stage</th>
                       )}
@@ -1169,13 +1250,13 @@ const selectBase =
                             <div className="text-[15px] font-semibold text-gray-900">{jobTitle}</div>
                           </td>
 
-                          {statusFilter === 'all' && (
-                            <td className="px-6 py-4">
-                              <span className={cn('rounded-full px-3 py-1 text-xs font-semibold', app._recordStatus === 'declined' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700')}>
-                                {app._recordStatus === 'declined' ? 'Declined' : 'Hired'}
-                              </span>
-                            </td>
-                          )}
+                          <td className="px-6 py-4">
+                            {String(app.employmentStatus || 'active').toLowerCase() === 'inactive' ? (
+                              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">Inactive</span>
+                            ) : (
+                              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Active</span>
+                            )}
+                          </td>
 
                           {statusFilter === 'declined' && (
                             <td className="px-6 py-4 text-sm text-gray-700">
@@ -1203,6 +1284,18 @@ const selectBase =
                                 >
                                   <Icon name="request" className="h-4 w-4" />
                                   <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-white bg-red-500" aria-hidden="true" />
+                                </button>
+                              )}
+                              {String(app.employmentStatus || 'active').toLowerCase() === 'active' &&
+                                String(app.employmentStatusRequest?.status || 'none').toLowerCase() !== 'pending' && (
+                                <button
+                                  type="button"
+                                  onClick={() => openEmploymentUpdate(app)}
+                                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#2e66a6]/25 bg-[#2e66a6]/5 text-[#2e66a6] hover:bg-[#2e66a6]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                                  aria-label={`Update employment status of ${name}`}
+                                  title="Update employment status"
+                                >
+                                  <Icon name="edit" className="h-4 w-4" />
                                 </button>
                               )}
                               {app._recordStatus === 'declined' && (
@@ -1266,6 +1359,13 @@ const selectBase =
                           <p className="text-sm font-semibold text-gray-900">{jobTitle}</p>
                         </div>
 
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Status</p>
+                          <p className={cn('text-sm font-semibold', String(app.employmentStatus || 'active').toLowerCase() === 'inactive' ? 'text-gray-700' : 'text-emerald-700')}>
+                            {String(app.employmentStatus || 'active').toLowerCase() === 'inactive' ? 'Inactive' : 'Active'}
+                          </p>
+                        </div>
+
                         {statusFilter === 'declined' && app._recordStatus === 'declined' && (
                           <div>
                             <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Decline Stage</p>
@@ -1291,6 +1391,17 @@ const selectBase =
                             <Icon name="request" className="h-4 w-4" />
                             Review Status Request
                             <span className="absolute right-3 top-2 h-2.5 w-2.5 rounded-full bg-red-500" aria-hidden="true" />
+                          </button>
+                        )}
+                        {String(app.employmentStatus || 'active').toLowerCase() === 'active' &&
+                          String(app.employmentStatusRequest?.status || 'none').toLowerCase() !== 'pending' && (
+                          <button
+                            type="button"
+                            onClick={() => openEmploymentUpdate(app)}
+                            className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#2e66a6]/25 bg-[#2e66a6]/5 px-4 py-2 text-sm font-semibold text-[#2e66a6] hover:bg-[#2e66a6]/10"
+                          >
+                            <Icon name="edit" className="h-4 w-4" />
+                            Update Status
                           </button>
                         )}
                         {app._recordStatus === 'declined' && (
@@ -1329,6 +1440,72 @@ const selectBase =
           setCurrentPage(1);
         }}
       />
+
+      {updateApplication && updateStep === 'reason' && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4" role="dialog" aria-modal="true" aria-labelledby="update-employment-title">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="update-employment-title" className="text-lg font-bold text-gray-900">Why are you updating this job seeker's employment status?</h2>
+                <p className="mt-1 text-sm text-gray-500">Select the reason for ending this job seeker's current employment.</p>
+              </div>
+              <button type="button" onClick={closeEmploymentUpdate} className="rounded-lg p-1 text-gray-500 hover:bg-gray-100" aria-label="Close update employment modal">
+                <Icon name="x" className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="mt-5 space-y-3">
+              {[
+                { value: 'contract_ended', title: 'Contract Ended', description: 'Previous contract has finished' },
+                { value: 'employment_ended', title: 'Employment Ended', description: 'No longer employed in this role' }
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setUpdateReason(option.value)}
+                  className={cn('w-full rounded-xl border px-4 py-3 text-left transition', updateReason === option.value ? 'border-[#2e66a6] bg-[#2e66a6]/5 ring-2 ring-[#2e66a6]/10' : 'border-gray-200 hover:border-[#2e66a6]/50')}
+                  aria-pressed={updateReason === option.value}
+                >
+                  <span className="block text-sm font-semibold text-gray-900">{option.title}</span>
+                  <span className="mt-0.5 block text-xs text-gray-500">{option.description}</span>
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setUpdateStep('confirm')}
+              disabled={!updateReason}
+              className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white hover:bg-[#25558c] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
+
+      {updateApplication && updateStep === 'confirm' && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4" role="dialog" aria-modal="true" aria-labelledby="confirm-employment-title">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="confirm-employment-title" className="text-lg font-bold text-gray-900">End Employment?</h2>
+                <p className="mt-2 text-sm leading-6 text-gray-600">
+                  Are you sure you want to update the job seeker's employment status? Their current status will change from Active to Inactive.{' '}
+                  (<strong className="text-gray-900">{updateReason === 'contract_ended' ? 'Contract Ended' : 'Employment Ended'}</strong>)
+                </p>
+              </div>
+              <button type="button" onClick={closeEmploymentUpdate} disabled={updateLoading} className="rounded-lg p-1 text-gray-500 hover:bg-gray-100 disabled:opacity-50" aria-label="Close confirmation modal">
+                <Icon name="x" className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button type="button" onClick={() => setUpdateStep('reason')} disabled={updateLoading} className="inline-flex h-11 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">Back</button>
+              <button type="button" onClick={handleEmployerEmploymentUpdate} disabled={updateLoading} className="inline-flex h-11 items-center justify-center rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white hover:bg-[#25558c] disabled:opacity-50">
+                {updateLoading ? 'Updating...' : 'Update Status'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {reviewApplication && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4" role="dialog" aria-modal="true" aria-labelledby="review-request-title">

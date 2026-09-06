@@ -24,6 +24,7 @@ const {
   reactivateMyApplication,
   requestEmploymentStatusChange,
   reviewEmploymentStatusChange,
+  updateEmploymentStatusByEmployer,
 
   // ✅ DECLINED / ARCHIVE FLOW
   getEmployerDeclinedApplications,
@@ -59,6 +60,7 @@ router.get('/employer/hired', protect, authorize('employer'), getEmployerHiredAp
 router.get('/employer/interview-calendar', protect, authorize('employer'), getEmployerInterviewCalendar);
 router.get('/employer/interviewer-options', protect, authorize('employer'), getEmployerInterviewerOptions);
 router.put('/:applicationId/employment-status-request/review', protect, authorize('employer'), reviewEmploymentStatusChange);
+router.put('/:applicationId/employment-status', protect, authorize('employer'), updateEmploymentStatusByEmployer);
 
 // ✅ DECLINED ROUTES
 router.get('/employer/declined', protect, authorize('employer'), getEmployerDeclinedApplications);

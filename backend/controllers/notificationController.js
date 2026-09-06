@@ -621,6 +621,41 @@ exports.createEmploymentStatusDecisionNotification = async (application, decisio
     }
 };
 
+exports.createEmployerEmploymentStatusUpdateNotification = async (application) => {
+    try {
+        const reason = application.employmentEndReason === 'contract_ended'
+            ? 'Contract Ended'
+            : 'Employment Ended';
+        const companyName = application?.employer?.employerProfile?.companyName
+            || application?.employer?.fullName
+            || 'the employer';
+        const jobTitle = application?.job?.title || 'your hired position';
+
+        const notification = new Notification({
+            user: application.jobseeker?._id || application.jobseeker,
+            type: 'employment_status_update',
+            title: 'Employment Status Updated',
+            message: `Your employment status for ${jobTitle} has been updated from Active to Inactive by ${companyName}. Reason: ${reason}.`,
+            relatedId: application._id,
+            relatedModel: 'Application',
+            link: `/jobseeker/my-applications?status=hired&application=${application._id}`,
+            metadata: {
+                applicationId: application._id,
+                jobTitle,
+                employmentStatus: application.employmentStatus,
+                employmentEndReason: application.employmentEndReason,
+                initiatedBy: 'employer'
+            }
+        });
+
+        await notification.save();
+        return notification;
+    } catch (error) {
+        console.error('Error creating employer employment status update notification:', error);
+        return null;
+    }
+};
+
 // Create new message notification
 exports.createMessageNotification = async (senderId, receiverId, message) => {
     try {

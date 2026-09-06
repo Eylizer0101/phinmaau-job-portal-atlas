@@ -171,6 +171,20 @@ const applicationSchema = new mongoose.Schema({
         enum: ['active', 'inactive'],
         default: 'active'
     },
+    employmentEndReason: {
+        type: String,
+        enum: ['contract_ended', 'employment_ended', ''],
+        default: ''
+    },
+    employmentEndedAt: {
+        type: Date,
+        default: null
+    },
+    employmentUpdatedBy: {
+        type: String,
+        enum: ['jobseeker', 'employer', ''],
+        default: ''
+    },
     employmentStatusRequest: {
         reason: {
             type: String,

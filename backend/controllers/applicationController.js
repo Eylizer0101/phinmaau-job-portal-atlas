@@ -1351,7 +1351,11 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
       'employmentStatusRequest.reviewedAt': reviewedAt,
       'employmentStatusRequest.reviewedBy': req.user._id
     };
-    if (decision === 'approved') update.employmentStatus = 'inactive';
+    if (decision === 'approved') {
+      update.employmentStatus = 'inactive';
+      update.employmentEndedAt = reviewedAt;
+      update.employmentUpdatedBy = 'jobseeker';
+    }
     else update.employmentStatus = 'active';
 
     const application = await Application.findOneAndUpdate(
@@ -1375,6 +1379,11 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
       });
     }
 
+    if (decision === 'approved') {
+      application.employmentEndReason = application.employmentStatusRequest.reason;
+      await application.save();
+    }
+
     await notificationController.createEmploymentStatusDecisionNotification(application, decision);
 
     return res.status(200).json({
@@ -1389,6 +1398,64 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Error reviewing employment status change request.'
+    });
+  }
+};
+
+exports.updateEmploymentStatusByEmployer = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const reason = String(req.body?.reason || '').trim().toLowerCase();
+
+    if (!['contract_ended', 'employment_ended'].includes(reason)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please select Contract Ended or Employment Ended.'
+      });
+    }
+
+    const employmentEndedAt = new Date();
+    const application = await Application.findOneAndUpdate(
+      {
+        _id: applicationId,
+        employer: req.user._id,
+        status: 'hired',
+        employmentStatus: { $ne: 'inactive' },
+        'employmentStatusRequest.status': { $ne: 'pending' }
+      },
+      {
+        $set: {
+          employmentStatus: 'inactive',
+          employmentEndReason: reason,
+          employmentEndedAt,
+          employmentUpdatedBy: 'employer'
+        }
+      },
+      { new: true, runValidators: true }
+    )
+      .populate('job', 'title companyName companyLogo salaryMin salaryMax')
+      .populate('jobseeker', 'fullName firstName middleName lastName email profileImage phoneNumber contactNumber jobSeekerProfile.phoneNumber jobSeekerProfile.mobileNumber')
+      .populate('employer', 'fullName employerProfile.companyName employerProfile.companyLogo');
+
+    if (!application) {
+      return res.status(409).json({
+        success: false,
+        message: 'This employment is already inactive, has a pending request, or does not belong to your company.'
+      });
+    }
+
+    await notificationController.createEmployerEmploymentStatusUpdateNotification(application);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Employment status updated successfully!',
+      application
+    });
+  } catch (error) {
+    console.error('Error updating employment status by employer:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error updating employment status.'
     });
   }
 };
