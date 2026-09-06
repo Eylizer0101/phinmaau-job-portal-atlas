@@ -1064,7 +1064,7 @@ const LoginPage = () => {
                       Signing in...
                     </div>
                   ) : (
-                    'Sign in'
+                    'Sign In'
                   )}
                 </button>
               </form>
