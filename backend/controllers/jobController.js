@@ -3,6 +3,70 @@ const User = require('../models/User');
 const Application = require('../models/Application');
 const notificationController = require('./notificationController');
 
+const syncFilledJobAfterVacancyUpdate = async (job) => {
+  if (!job?._id) return null;
+
+  const vacancyLimit = Number(job.vacancies || 0);
+  if (!Number.isFinite(vacancyLimit) || vacancyLimit < 1) return null;
+
+  const hiredCount = await Application.countDocuments({
+    job: job._id,
+    status: 'hired'
+  });
+
+  if (hiredCount < vacancyLimit) {
+    return { isFull: false, hiredCount, vacancyLimit };
+  }
+
+  const affectedApplications = await Application.find({
+    job: job._id,
+    status: { $in: ['pending', 'for interview'] }
+  }).select('_id job jobseeker employer status lastActiveStatus');
+
+  if (affectedApplications.length) {
+    await Application.bulkWrite(
+      affectedApplications.map((application) => ({
+        updateOne: {
+          filter: { _id: application._id },
+          update: {
+            $set: {
+              lastActiveStatus: application.status,
+              status: 'vacancy full',
+              reviewedAt: new Date(),
+              notes: 'The vacancy is already full.',
+              isDeclinedArchived: false,
+              declinedArchivedAt: null,
+              declinedFrom: '',
+              declineReason: '',
+              declineComment: ''
+            }
+          }
+        }
+      }))
+    );
+
+    await Promise.allSettled(
+      affectedApplications.map((application) =>
+        notificationController.createVacancyFullNotification(application, job)
+      )
+    );
+  }
+
+  job.status = 'filled';
+  job.isActive = false;
+  job.isPublished = true;
+  job.filledAt = job.filledAt || new Date();
+  job.filledReason = 'Vacancy is already full';
+  await job.save();
+
+  return {
+    isFull: true,
+    hiredCount,
+    vacancyLimit,
+    affectedPendingCount: affectedApplications.length
+  };
+};
+
 
 const escapeRegExp = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -1265,6 +1329,14 @@ exports.updateJob = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to update this job' });
     }
 
+    if (String(job.status || '').toLowerCase() === 'filled') {
+      return res.status(403).json({
+        success: false,
+        code: 'JOB_POSITION_FILLED',
+        message: 'This job can no longer be edited because all available positions have already been filled.'
+      });
+    }
+
     const isPublishedJob = job.isPublished === true || String(job.status || '').toLowerCase() === 'published';
     const publishedAtValue = job.publishedAt || job.createdAt;
     const publishedAt = publishedAtValue ? new Date(publishedAtValue) : null;
@@ -1558,7 +1630,13 @@ exports.updateJob = async (req, res) => {
     await job.save();
 
     const nextVacancyCount = Number(job.vacancies || 0);
+
+    // Recalculate only after the employer has saved the actual vacancy value.
+    // This prevents an approved edit request from changing statuses before the edit is saved.
+    const vacancySyncResult = await syncFilledJobAfterVacancyUpdate(job);
+
     if (
+      !vacancySyncResult?.isFull &&
       Number.isFinite(previousVacancyCount) &&
       Number.isFinite(nextVacancyCount) &&
       nextVacancyCount > previousVacancyCount
@@ -1612,7 +1690,8 @@ exports.updateJob = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Job updated successfully',
-      job
+      job,
+      vacancy: vacancySyncResult || undefined
     });
   } catch (error) {
     console.error('Error updating job:', error);

@@ -1413,6 +1413,7 @@ const ManageJobs = () => {
                   <option value="open">Open</option>
                   <option value="closed">Closed</option>
                   <option value="expired">Expired</option>
+                  <option value="filled">Filled</option>
                   <option value="draft">Draft</option>
                 </select>
 
