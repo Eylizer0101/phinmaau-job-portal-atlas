@@ -1115,18 +1115,19 @@ const MyApplications = () => {
                   <h3 className={`text-lg font-bold tracking-tight ${UI.textPrimary}`}>Understanding Application Status</h3>
                   <p className={`mt-0.5 text-sm ${UI.textSecondary}`}>Quick guide for what each status means.</p>
                 </div>
-                <div className={`inline-flex items-center gap-3 rounded-xl border px-4 py-2.5 ${isCurrentlyEmployed ? 'border-emerald-200 bg-emerald-50' : 'border-gray-200 bg-gray-50'}`}>
+                <div className={`inline-flex items-center gap-3 whitespace-nowrap rounded-xl border px-4 py-2.5 ${isCurrentlyEmployed ? 'border-emerald-200 bg-emerald-50' : 'border-gray-200 bg-gray-50'}`}>
                   <span className={isCurrentlyEmployed ? 'text-emerald-700' : 'text-gray-500'}>
                     <SvgIcon name={isCurrentlyEmployed ? 'checkCircle' : 'briefcase'} className="h-5 w-5" />
                   </span>
-                  <div className="text-left">
-                    <p className={`text-sm font-semibold ${isCurrentlyEmployed ? 'text-emerald-800' : 'text-gray-800'}`}>
+                  <p className="text-left text-sm">
+                    <span className={`font-semibold ${isCurrentlyEmployed ? 'text-emerald-800' : 'text-gray-800'}`}>
                       {isCurrentlyEmployed ? 'Employed' : 'Unemployed'}
-                    </p>
-                    <p className="text-xs text-gray-500">
+                    </span>
+                    <span className="mx-2 text-gray-300" aria-hidden="true">|</span>
+                    <span className="text-gray-500">
                       {isCurrentlyEmployed ? 'Currently working in a role' : 'Not working at the moment'}
-                    </p>
-                  </div>
+                    </span>
+                  </p>
                 </div>
               </div>
 

@@ -82,12 +82,13 @@ const attachEmploymentStatus = async (applications = []) => {
   const hiredApplications = await Application.find({
     jobseeker: { $in: jobseekerIds },
     status: 'hired',
+    employmentStatus: { $ne: 'inactive' },
   })
     .populate({
       path: 'job',
       select: 'title companyName employer',
     })
-    .select('_id job jobseeker employer status hiredAt reviewedAt updatedAt')
+    .select('_id job jobseeker employer status employmentStatus hiredAt reviewedAt updatedAt')
     .sort({ reviewedAt: -1, updatedAt: -1 })
     .lean();
 
@@ -1420,15 +1421,21 @@ exports.updateEmploymentStatusByEmployer = async (req, res) => {
         _id: applicationId,
         employer: req.user._id,
         status: 'hired',
-        employmentStatus: { $ne: 'inactive' },
-        'employmentStatusRequest.status': { $ne: 'pending' }
+        employmentStatus: { $ne: 'inactive' }
       },
       {
         $set: {
           employmentStatus: 'inactive',
           employmentEndReason: reason,
           employmentEndedAt,
-          employmentUpdatedBy: 'employer'
+          employmentUpdatedBy: 'employer',
+          employmentStatusRequest: {
+            reason: '',
+            status: 'none',
+            requestedAt: null,
+            reviewedAt: null,
+            reviewedBy: null
+          }
         }
       },
       { new: true, runValidators: true }
@@ -1440,7 +1447,7 @@ exports.updateEmploymentStatusByEmployer = async (req, res) => {
     if (!application) {
       return res.status(409).json({
         success: false,
-        message: 'This employment is already inactive, has a pending request, or does not belong to your company.'
+        message: 'This employment is already inactive or does not belong to your company.'
       });
     }
 
@@ -2595,7 +2602,8 @@ exports.updateApplicationHiringStage = async (req, res) => {
           _id: { $ne: application._id },
           jobseeker: application.jobseeker?._id || application.jobseeker,
           job: { $ne: application.job?._id || application.job },
-          status: 'hired'
+          status: 'hired',
+          employmentStatus: { $ne: 'inactive' }
         }).select('_id');
 
         if (otherHiredApplication) {
@@ -2721,7 +2729,8 @@ exports.updateApplicationStatus = async (req, res) => {
         _id: { $ne: application._id },
         jobseeker: application.jobseeker,
         job: { $ne: application.job?._id || application.job },
-        status: 'hired'
+        status: 'hired',
+        employmentStatus: { $ne: 'inactive' }
       }).select('_id job employer');
 
       if (otherHiredApplication) {
