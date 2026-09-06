@@ -729,13 +729,14 @@ const JobseekerVerification = () => {
           sort: filters.sort,
         };
 
-        if (filters.search) params.search = filters.search;
-        if (filters.campus !== "all") params.campus = filters.campus;
-        if (filters.course !== "all") params.course = filters.course;
+        const hasSearch = Boolean(filters.search);
+        if (hasSearch) params.search = filters.search;
+        if (!hasSearch && filters.campus !== "all") params.campus = filters.campus;
+        if (!hasSearch && filters.course !== "all") params.course = filters.course;
         if (archiveMode) params.status = "rejected";
-        else if (filters.status !== "all") params.status = filters.status;
-        if (filters.dateFrom) params.dateFrom = filters.dateFrom;
-        if (filters.dateTo) params.dateTo = filters.dateTo;
+        else if (!hasSearch && filters.status !== "all") params.status = filters.status;
+        if (!hasSearch && filters.dateFrom) params.dateFrom = filters.dateFrom;
+        if (!hasSearch && filters.dateTo) params.dateTo = filters.dateTo;
 
         const res = await api.get("/admin/jobseekers/verification", { params });
         const payload = res?.data || {};

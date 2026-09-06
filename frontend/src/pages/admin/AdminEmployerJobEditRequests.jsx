@@ -192,8 +192,14 @@ const AdminEmployerJobEditRequests = () => {
     return requests.filter((item) => {
       const itemStatus = item.status === 'pending' ? 'pending' : 'reviewed';
       const created = new Date(item.createdAt);
-      return (!query || companyName(item).toLowerCase().includes(query) || String(item?.job?.title || '').toLowerCase().includes(query)) &&
-        (company === 'all' || companyName(item) === company) &&
+      const matchesSearch =
+        companyName(item).toLowerCase().includes(query) ||
+        String(item?.job?.title || '').toLowerCase().includes(query) ||
+        industryName(item).toLowerCase().includes(query);
+
+      if (query) return matchesSearch;
+
+      return (company === 'all' || companyName(item) === company) &&
         (industry === 'all' || industryName(item) === industry) &&
         (jobTitle === 'all' || item?.job?.title === jobTitle) &&
         (status === 'all' || status === itemStatus) &&

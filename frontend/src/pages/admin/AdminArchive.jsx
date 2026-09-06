@@ -621,18 +621,19 @@ const AdminArchive = () => {
     setErrorMessage("");
 
     try {
+      const hasSearch = Boolean(filters.search.trim());
       const response = await api.get("/admin/archive", {
         params: {
           q: filters.search,
-          role: filters.role,
-          type: filters.type,
-          campus: filters.campus,
-          course: filters.course,
-          company: filters.company,
-          industry: filters.industry,
-          date: filters.date,
-          dateFrom: filters.dateFrom,
-          dateTo: filters.dateTo,
+          role: hasSearch ? "all" : filters.role,
+          type: hasSearch ? "all" : filters.type,
+          campus: hasSearch ? "all" : filters.campus,
+          course: hasSearch ? "all" : filters.course,
+          company: hasSearch ? "all" : filters.company,
+          industry: hasSearch ? "all" : filters.industry,
+          date: hasSearch ? "all" : filters.date,
+          dateFrom: hasSearch ? "" : filters.dateFrom,
+          dateTo: hasSearch ? "" : filters.dateTo,
         },
       });
 

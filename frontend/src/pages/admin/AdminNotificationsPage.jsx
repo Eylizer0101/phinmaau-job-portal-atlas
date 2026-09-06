@@ -185,7 +185,17 @@ const AdminNotificationsPage = () => {
       }
 
       const link = getAdminNotificationLink(notification);
-      if (link) navigate(link);
+      if (link) {
+        const navigationState = link.startsWith("/admin/jobs/")
+          ? { backPath: "/admin/job-offers", backLabel: "Job Offers", fromNotification: true }
+          : link.startsWith("/admin/applications/")
+          ? { backPath: "/admin/applications", backLabel: "Applications", fromNotification: true }
+          : link.startsWith("/admin/employer-job-edit-requests/")
+          ? { backPath: "/admin/employer-job-edit-requests", backLabel: "Edit Requests", fromNotification: true }
+          : undefined;
+
+        navigate(link, navigationState ? { state: navigationState } : undefined);
+      }
     } catch (error) {
       console.error("Error opening notification:", error);
     }

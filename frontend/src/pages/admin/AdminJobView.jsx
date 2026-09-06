@@ -672,8 +672,8 @@ const AdminJobView = () => {
     return Boolean(location.state?.isArchivedView) || params.get('archive') === '1';
   }, [location.search, location.state]);
 
-  const backPath = location.state?.backPath || (isArchivedView ? '/admin/archive' : '/admin/users');
-  const backLabel = location.state?.backLabel || (isArchivedView ? 'Archive' : 'Back');
+  const backPath = location.state?.backPath || (isArchivedView ? '/admin/archive' : '/admin/job-offers');
+  const backLabel = location.state?.backLabel || (isArchivedView ? 'Archive' : 'Job Offers');
 
   const handleBack = () => {
     navigate(backPath);

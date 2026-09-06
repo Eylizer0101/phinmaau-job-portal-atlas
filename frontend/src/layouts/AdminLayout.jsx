@@ -146,6 +146,30 @@ const AdminLayout = ({ children }) => {
     [navSections]
   );
 
+  useEffect(() => {
+    const activeSections = navSections
+      .filter((section) =>
+        section.items.some((item) => location.pathname.startsWith(item.path))
+      )
+      .map((section) => section.name);
+
+    if (!activeSections.length) return;
+
+    setOpenDropdowns((previous) => {
+      let changed = false;
+      const next = { ...previous };
+
+      activeSections.forEach((sectionName) => {
+        if (!next[sectionName]) {
+          next[sectionName] = true;
+          changed = true;
+        }
+      });
+
+      return changed ? next : previous;
+    });
+  }, [location.pathname, navSections]);
+
   const currentLabel = useMemo(() => {
     const match = navItems
       .filter((i) => location.pathname.startsWith(i.path))

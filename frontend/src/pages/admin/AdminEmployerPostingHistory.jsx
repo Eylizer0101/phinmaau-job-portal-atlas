@@ -625,6 +625,8 @@ const AdminEmployerPostingHistory = () => {
         location.toLowerCase().includes(query) ||
         jobStatus.includes(query);
 
+      if (query) return matchesSearch;
+
       const matchesTitle = jobTitle === "all" || title === jobTitle;
       const matchesStatus = status === "all" || jobStatus === status;
 
@@ -634,12 +636,7 @@ const AdminEmployerPostingHistory = () => {
         dateTo
       );
 
-      return (
-        matchesSearch &&
-        matchesTitle &&
-        matchesStatus &&
-        matchesDate
-      );
+      return matchesTitle && matchesStatus && matchesDate;
     });
 
     return [...list].sort((a, b) => {

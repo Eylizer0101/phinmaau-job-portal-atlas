@@ -1089,6 +1089,12 @@ const UserManagement = () => {
     verified: 0,
     rejected: 0
   });
+  const [filterOptions, setFilterOptions] = useState({
+    campuses: [],
+    courses: [],
+    companies: [],
+    industries: [],
+  });
 
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [roleFilter, setRoleFilter] = useState('all');
@@ -1127,18 +1133,19 @@ const UserManagement = () => {
       setLoading(true);
       clearMessages();
 
+      const hasSearch = Boolean(debouncedQuery);
       const params = {
         page: currentPage,
         limit: pageSize === 'all' ? 100000 : pageSize,
-        role: roleFilter !== 'all' ? roleFilter : undefined,
-        campus: roleFilter === 'jobseeker' && campusFilter !== 'all' ? campusFilter : undefined,
-        course: roleFilter === 'jobseeker' && courseFilter !== 'all' ? courseFilter : undefined,
-        company: roleFilter === 'employer' && companyFilter !== 'all' ? companyFilter : undefined,
-        industry: roleFilter === 'employer' && industryFilter !== 'all' ? industryFilter : undefined,
         search: debouncedQuery || undefined,
         sort,
-        dateFrom: dateFrom || undefined,
-        dateTo: dateTo || undefined
+        role: !hasSearch && roleFilter !== 'all' ? roleFilter : undefined,
+        campus: !hasSearch && roleFilter === 'jobseeker' && campusFilter !== 'all' ? campusFilter : undefined,
+        course: !hasSearch && roleFilter === 'jobseeker' && courseFilter !== 'all' ? courseFilter : undefined,
+        company: !hasSearch && roleFilter === 'employer' && companyFilter !== 'all' ? companyFilter : undefined,
+        industry: !hasSearch && roleFilter === 'employer' && industryFilter !== 'all' ? industryFilter : undefined,
+        dateFrom: !hasSearch && dateFrom ? dateFrom : undefined,
+        dateTo: !hasSearch && dateTo ? dateTo : undefined
       };
 
       const response = await api.get('/admin/users', { params });
@@ -1193,6 +1200,14 @@ const UserManagement = () => {
             pending: 0,
             verified: 0,
             rejected: 0
+          }
+        );
+        setFilterOptions(
+          response.data.options || {
+            campuses: [],
+            courses: [],
+            companies: [],
+            industries: [],
           }
         );
       } else {
@@ -1329,23 +1344,23 @@ const UserManagement = () => {
   const filteredUsers = useMemo(() => {
     let filtered = users;
 
-    if (roleFilter !== 'all') {
+    if (!debouncedQuery && roleFilter !== 'all') {
       filtered = filtered.filter(user => user.role === roleFilter);
     }
 
-    if (roleFilter === 'jobseeker' && campusFilter !== 'all') {
+    if (!debouncedQuery && roleFilter === 'jobseeker' && campusFilter !== 'all') {
       filtered = filtered.filter((user) => user.campus === campusFilter);
     }
 
-    if (roleFilter === 'jobseeker' && courseFilter !== 'all') {
+    if (!debouncedQuery && roleFilter === 'jobseeker' && courseFilter !== 'all') {
       filtered = filtered.filter((user) => user.course === courseFilter);
     }
 
-    if (roleFilter === 'employer' && companyFilter !== 'all') {
+    if (!debouncedQuery && roleFilter === 'employer' && companyFilter !== 'all') {
       filtered = filtered.filter((user) => user.companyName === companyFilter);
     }
 
-    if (roleFilter === 'employer' && industryFilter !== 'all') {
+    if (!debouncedQuery && roleFilter === 'employer' && industryFilter !== 'all') {
       filtered = filtered.filter((user) => user.industry === industryFilter);
     }
 
@@ -1359,7 +1374,7 @@ const UserManagement = () => {
       );
     }
 
-    if (dateFrom || dateTo) {
+    if (!debouncedQuery && (dateFrom || dateTo)) {
       const start = dateFrom ? new Date(`${dateFrom}T00:00:00`) : null;
       const end = dateTo ? new Date(`${dateTo}T23:59:59`) : null;
 
@@ -1395,23 +1410,23 @@ const UserManagement = () => {
   ]);
 
   const campusOptions = useMemo(
-    () => uniqueNormalizedOptions(users.map((user) => user.campus), normalizeCampusName),
-    [users]
+    () => uniqueNormalizedOptions(filterOptions.campuses || [], normalizeCampusName),
+    [filterOptions.campuses]
   );
 
   const courseOptions = useMemo(
-    () => [...new Set(users.map((user) => user.course).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
-    [users]
+    () => [...new Set((filterOptions.courses || []).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [filterOptions.courses]
   );
 
   const companyOptions = useMemo(
-    () => [...new Set(users.map((user) => user.companyName).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
-    [users]
+    () => [...new Set((filterOptions.companies || []).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [filterOptions.companies]
   );
 
   const industryOptions = useMemo(
-    () => [...new Set(users.map((user) => user.industry).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
-    [users]
+    () => [...new Set((filterOptions.industries || []).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [filterOptions.industries]
   );
 
   const handleSelectAll = (e) => {
@@ -1736,14 +1751,6 @@ const UserManagement = () => {
                 <p className="mt-2 text-sm text-gray-600">
                   Try adjusting your filters or search terms
                 </p>
-                <div className="mt-6">
-                  <Button
-                    variant="primary"
-                    onClick={clearFilters}
-                  >
-                    Clear All Filters
-                  </Button>
-                </div>
               </div>
             ) : (
               <>

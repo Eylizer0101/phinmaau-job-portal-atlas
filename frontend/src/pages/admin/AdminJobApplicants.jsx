@@ -949,6 +949,8 @@ const AdminJobApplicants = () => {
         name.includes(normalizedSearch) ||
         email.includes(normalizedSearch);
 
+      if (normalizedSearch) return matchesSearch;
+
       const matchesCampus =
         campusFilter === 'all' ||
         normalizeFilterKey(campus) === normalizeFilterKey(campusFilter);
@@ -964,7 +966,7 @@ const AdminJobApplicants = () => {
         dateFilter === 'all' ||
         isDateWithinRange(getApplicationDate(application), dateRange.from, dateRange.to);
 
-      return matchesSearch && matchesCampus && matchesCourse && matchesStatus && matchesDate;
+      return matchesCampus && matchesCourse && matchesStatus && matchesDate;
     });
 
     return [...filtered].sort((first, second) => {

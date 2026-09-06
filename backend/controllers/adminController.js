@@ -1254,6 +1254,49 @@ exports.getAllUsers = async (req, res) => {
       }
     );
 
+    const uniqueSortedUserOptions = (values = [], normalizer = (value) => String(value || '').trim()) => {
+      const optionMap = new Map();
+      values.forEach((value) => {
+        const normalizedValue = normalizer(value);
+        if (!normalizedValue) return;
+        const key = normalizedValue.toLocaleLowerCase();
+        if (!optionMap.has(key)) optionMap.set(key, normalizedValue);
+      });
+      return [...optionMap.values()].sort((a, b) => a.localeCompare(b));
+    };
+
+    const userFilterOptions = {
+      campuses: uniqueSortedUserOptions(
+        allUsersForStats
+          .filter((user) => String(user.role || '').toLowerCase() === 'jobseeker')
+          .map((user) =>
+            user?.jobSeekerProfile?.campus ||
+            user?.jobSeekerProfile?.educationEntries?.find((entry) => entry?.campus)?.campus ||
+            ''
+          ),
+        normalizeDashboardCampus
+      ),
+      courses: uniqueSortedUserOptions(
+        allUsersForStats
+          .filter((user) => String(user.role || '').toLowerCase() === 'jobseeker')
+          .map((user) =>
+            user?.jobSeekerProfile?.course ||
+            user?.jobSeekerProfile?.educationEntries?.find((entry) => entry?.course)?.course ||
+            ''
+          )
+      ),
+      companies: uniqueSortedUserOptions(
+        allUsersForStats
+          .filter((user) => String(user.role || '').toLowerCase() === 'employer')
+          .map((user) => user?.employerProfile?.companyName || '')
+      ),
+      industries: uniqueSortedUserOptions(
+        allUsersForStats
+          .filter((user) => String(user.role || '').toLowerCase() === 'employer')
+          .map((user) => user?.employerProfile?.industry || '')
+      ),
+    };
+
     const totalItems = await User.countDocuments(baseQuery);
     const totalPages = Math.max(Math.ceil(totalItems / limit), 1);
     const safePage = Math.min(page, totalPages);
@@ -1299,6 +1342,7 @@ exports.getAllUsers = async (req, res) => {
       success: true,
       users: normalizedUsers,
       stats,
+      options: userFilterOptions,
       total: totalItems,
       pagination: {
         page: safePage,
@@ -1678,6 +1722,7 @@ exports.getEmployersForVerification = async (req, res) => {
     const verificationQueue = normalizedAll.filter((item) => {
       const currentStatus = String(item.overallStatus || 'unverified').toLowerCase();
       if (status === 'rejected' || status === 'declined') return currentStatus === 'rejected';
+      if (search) return true;
       return !['verified', 'approved', 'rejected', 'declined'].includes(currentStatus);
     });
 
@@ -2279,9 +2324,9 @@ exports.getJobseekersForVerification = async (req, res) => {
       status: { $ne: 'deleted' },
     };
 
-    if (status && ['not_submitted', 'pending', 'verified', 'rejected', 'hold'].includes(status)) {
+    if (!search && status && ['not_submitted', 'pending', 'verified', 'rejected', 'hold'].includes(status)) {
       query['jobSeekerProfile.verificationDocs.overallStatus'] = status;
-    } else {
+    } else if (!search) {
       query['jobSeekerProfile.verificationDocs.overallStatus'] = { $nin: ['verified', 'rejected'] };
     }
 
@@ -2325,8 +2370,9 @@ exports.getJobseekersForVerification = async (req, res) => {
       User.find({ role: 'jobseeker', status: { $ne: 'deleted' } }).select('-password'),
     ]);
     const normalized = users.map(normalizeJobseekerForList);
+    const normalizedAllJobseekers = statsUsers.map(normalizeJobseekerForList);
 
-    const allStats = statsUsers.map(normalizeJobseekerForList).reduce(
+    const allStats = normalizedAllJobseekers.reduce(
       (acc, item) => {
         const currentStatus = String(item.verificationStatus || 'not_submitted').toLowerCase();
 
@@ -2366,11 +2412,11 @@ exports.getJobseekersForVerification = async (req, res) => {
     };
 
     const campuses = uniqueNormalizedOptions(
-      normalized.map((item) => item.campus),
+      normalizedAllJobseekers.map((item) => item.campus),
       normalizeDashboardCampus
     );
-    const courses = uniqueNormalizedOptions(normalized.map((item) => item.course));
-    const addresses = uniqueNormalizedOptions(normalized.map((item) => item.address));
+    const courses = uniqueNormalizedOptions(normalizedAllJobseekers.map((item) => item.course));
+    const addresses = uniqueNormalizedOptions(normalizedAllJobseekers.map((item) => item.address));
 
     let filtered = normalized;
 
@@ -3191,10 +3237,16 @@ exports.getAdminJobOffers = async (req, res) => {
     if (industry) baseQuery.category = { $regex: `^${escapeRegex(industry)}$`, $options: 'i' };
     if (jobTitle) baseQuery.title = { $regex: `^${escapeRegex(jobTitle)}$`, $options: 'i' };
 
-    const allJobs = await Job.find(baseQuery)
-      .populate('employer', 'employerProfile.companyLogo employerProfile.industry employerProfile.companyName')
-      .sort({ createdAt: -1 })
-      .lean();
+    const [allJobs, optionJobs] = await Promise.all([
+      Job.find(baseQuery)
+        .populate('employer', 'employerProfile.companyLogo employerProfile.industry employerProfile.companyName')
+        .sort({ createdAt: -1 })
+        .lean(),
+      Job.find({ isArchived: { $ne: true }, isPublished: true })
+        .populate('employer', 'employerProfile.companyLogo employerProfile.industry employerProfile.companyName')
+        .select('title companyName category employer')
+        .lean(),
+    ]);
 
     const allJobIds = allJobs.map((job) => job._id);
     const applicationCounts = await Application.aggregate([
@@ -3217,6 +3269,14 @@ exports.getAdminJobOffers = async (req, res) => {
         category,
         applicantCount: countMap[String(job._id)] || job.applicationCount || 0,
         adminStatus: getAdminJobOfferStatus(job),
+      };
+    });
+
+    const optionSourceJobs = optionJobs.map((job) => {
+      const employerProfile = job?.employer?.employerProfile || {};
+      return {
+        ...job,
+        category: job.category || employerProfile.industry || 'N/A',
       };
     });
 
@@ -3245,9 +3305,9 @@ exports.getAdminJobOffers = async (req, res) => {
       jobs: paginatedJobs,
       stats,
       options: {
-        companies: uniqueSorted(transformedJobs.map((job) => job.companyName)),
-        industries: uniqueSorted(transformedJobs.map((job) => job.category)),
-        jobTitles: uniqueSorted(transformedJobs.map((job) => job.title)),
+        companies: uniqueSorted(optionSourceJobs.map((job) => job.companyName)),
+        industries: uniqueSorted(optionSourceJobs.map((job) => job.category)),
+        jobTitles: uniqueSorted(optionSourceJobs.map((job) => job.title)),
       },
       pagination: {
         page,

@@ -481,13 +481,14 @@ const AdminSystemLogs = () => {
   const loadLogs = useCallback(async () => {
     try {
       setLoading(true); setError('');
+      const hasSearch = Boolean(search);
       const response = await api.get('/admin/system-logs', {
         params: {
           q: search,
-          role: filters.role,
-          date: filters.date,
-          dateFrom: filters.dateFrom,
-          dateTo: filters.dateTo,
+          role: hasSearch ? 'all' : filters.role,
+          date: hasSearch ? 'all' : filters.date,
+          dateFrom: hasSearch ? '' : filters.dateFrom,
+          dateTo: hasSearch ? '' : filters.dateTo,
           page,
           limit: pageSize === 'all' ? 100000 : pageSize,
         },
