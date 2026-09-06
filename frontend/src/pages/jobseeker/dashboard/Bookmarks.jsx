@@ -2872,9 +2872,28 @@ const Bookmarks = () => {
                                   <span className="text-black/60">
                                     <BuildingIcon className="h-4 w-4" />
                                   </span>
-                                  <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
-                                    {String(selectedJob?.employerDetails?.industry || selectedJob?.employer?.employerProfile?.industry || selectedJob?.category || '').trim() || 'Industry not specified'}
-                                  </span>
+                                  {selectedJobCompanyId ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const returnTo = `/jobseeker/bookmarks?tab=jobs&job=${encodeURIComponent(selectedJob._id)}`;
+                                        navigate(`/jobseeker/company-details/${selectedJobCompanyId}`, {
+                                          state: {
+                                            sourcePage: 'bookmarks',
+                                            returnTo,
+                                            selectedJobId: selectedJob._id,
+                                          },
+                                        });
+                                      }}
+                                      className={`min-w-0 overflow-hidden text-ellipsis whitespace-nowrap rounded-sm text-[#2e66a6] underline underline-offset-2 hover:text-[#1f4f86] ${UI.ring}`}
+                                    >
+                                      {String(selectedJob?.employerDetails?.industry || selectedJob?.employer?.employerProfile?.industry || selectedJob?.category || '').trim() || 'Industry not specified'}
+                                    </button>
+                                  ) : (
+                                    <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[#2e66a6] underline underline-offset-2">
+                                      {String(selectedJob?.employerDetails?.industry || selectedJob?.employer?.employerProfile?.industry || selectedJob?.category || '').trim() || 'Industry not specified'}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
 

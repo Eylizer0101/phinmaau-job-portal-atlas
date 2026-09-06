@@ -1364,9 +1364,26 @@ const JobDetails = () => {
                         <span className="text-black/60">
                           <BuildingIcon className="w-4 h-4" />
                         </span>
-                        <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
-                          {String(companyInfo?.industry || job?.employerDetails?.industry || job?.category || '').trim() || 'Industry not specified'}
-                        </span>
+                        {companyId ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigate(`/jobseeker/company-details/${companyId}`, {
+                                state: {
+                                  sourcePage: 'jobdetails',
+                                  returnTo: `${location.pathname}${location.search}`,
+                                },
+                              })
+                            }
+                            className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap rounded-sm text-[#2e66a6] underline underline-offset-2 hover:text-[#1f4f86] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
+                          >
+                            {String(companyInfo?.industry || job?.employerDetails?.industry || job?.category || '').trim() || 'Industry not specified'}
+                          </button>
+                        ) : (
+                          <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[#2e66a6] underline underline-offset-2">
+                            {String(companyInfo?.industry || job?.employerDetails?.industry || job?.category || '').trim() || 'Industry not specified'}
+                          </span>
+                        )}
                       </div>
                     </div>
 
