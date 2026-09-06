@@ -2114,55 +2114,49 @@ const Bookmarks = () => {
   const selectedJobSummaryCards = useMemo(() => {
     if (!selectedJob) return [];
 
-    const cards = [];
     const hasSalary =
       normalizeBoolean(selectedJob.hideSalary) ||
       selectedJob.salaryMin !== undefined && selectedJob.salaryMin !== null && selectedJob.salaryMin !== '' ||
       selectedJob.salaryMax !== undefined && selectedJob.salaryMax !== null && selectedJob.salaryMax !== '';
 
-    if (hasSalary) {
-      cards.push({
+    return [
+      {
         key: 'salary',
         icon: 'money',
         title: 'Salary',
-        value: formatSalary(
-          selectedJob.salaryMin,
-          selectedJob.salaryMax,
-          normalizeBoolean(selectedJob.hideSalary)
-        ).replace(/₱/g, ''),
+        value: hasSalary
+          ? formatSalary(
+              selectedJob.salaryMin,
+              selectedJob.salaryMax,
+              normalizeBoolean(selectedJob.hideSalary)
+            ).replace(/₱/g, '')
+          : 'Not specified',
         isPeso: true,
-      });
-    }
-
-    if (hasValidDisplayValue(selectedJob.experienceLevel)) {
-      cards.push({
+      },
+      {
         key: 'experience',
         icon: 'clock',
         title: 'Experience',
-        value: getExperienceBadgeLabel(selectedJob.experienceLevel),
-      });
-    }
-
-    if (hasValidDisplayValue(selectedJob.educationLevel)) {
-      cards.push({
+        value: hasValidDisplayValue(selectedJob.experienceLevel)
+          ? getExperienceBadgeLabel(selectedJob.experienceLevel)
+          : 'Not specified',
+      },
+      {
         key: 'education',
         icon: 'graduation',
         title: 'Educational Requirement',
-        value: formatEducationDisplay(selectedJob.educationLevel),
-      });
-    }
-
-    if (companyWebsiteUrl) {
-      cards.push({
+        value: hasValidDisplayValue(selectedJob.educationLevel)
+          ? formatEducationDisplay(selectedJob.educationLevel)
+          : 'Not specified',
+      },
+      {
         key: 'website',
         icon: 'globe',
         title: 'Website / Company URL',
-        value: companyWebsiteUrl,
-        href: companyWebsiteUrl,
-      });
-    }
-
-    return cards;
+        value: companyWebsiteUrl || 'Not specified',
+        href: companyWebsiteUrl || undefined,
+      },
+    ];
   }, [selectedJob, companyWebsiteUrl]);
 
   const selectedJobApplyState = selectedJob
@@ -3020,15 +3014,7 @@ const Bookmarks = () => {
                       </div>
 
                       {selectedJobSummaryCards.length > 0 ? (
-                        <div className={`grid grid-cols-1 gap-4 ${
-                          selectedJobSummaryCards.length >= 4
-                            ? 'sm:grid-cols-2 xl:grid-cols-4'
-                            : selectedJobSummaryCards.length === 3
-                            ? 'md:grid-cols-3'
-                            : selectedJobSummaryCards.length === 2
-                            ? 'sm:grid-cols-2'
-                            : ''
-                        }`}>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                           {selectedJobSummaryCards.map((card) => (
                             <TopMetricCard
                               key={card.key}
@@ -3043,8 +3029,7 @@ const Bookmarks = () => {
                       ) : null}
 
                       <div className="space-y-5">
-                        {hasValidDisplayValue(selectedJob.description) ? (
-                          <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+                        <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
                             <div className="px-5 py-5 sm:px-6">
                               <section>
                                 <div className="flex items-center gap-3 pt-2">
@@ -3052,15 +3037,13 @@ const Bookmarks = () => {
                                   <h3 className="text-sm font-semibold text-black">Job Description</h3>
                                 </div>
                                 <div className="mt-4 text-sm leading-relaxed text-black/70 sm:text-base">
-                                  <RichTextContent value={selectedJob.description} />
+                                  <RichTextContent value={selectedJob.description} fallback="No description provided." />
                                 </div>
                               </section>
                             </div>
                           </div>
-                        ) : null}
 
-                        {hasValidDisplayValue(selectedJob.requirements) ? (
-                          <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+                        <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
                             <div className="px-5 py-5 sm:px-6">
                               <section>
                                 <div className="flex items-center gap-3 pt-2">
@@ -3068,17 +3051,13 @@ const Bookmarks = () => {
                                   <h3 className="text-sm font-semibold text-black">Qualification</h3>
                                 </div>
                                 <div className="mt-4 text-sm leading-relaxed text-black/70 sm:text-base">
-                                  <RichTextContent value={selectedJob.requirements} />
+                                  <RichTextContent value={selectedJob.requirements} fallback="No requirements provided." />
                                 </div>
                               </section>
                             </div>
                           </div>
-                        ) : null}
 
-                        {(Array.isArray(selectedJob.skillsRequired) &&
-                          selectedJob.skillsRequired.filter(Boolean).length > 0) ||
-                        hasValidDisplayValue(selectedJob.location) ? (
-                          <section className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+                        <section className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
                             {Array.isArray(selectedJob.skillsRequired) &&
                             selectedJob.skillsRequired.filter(Boolean).length > 0 ? (
                               <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
@@ -3094,39 +3073,54 @@ const Bookmarks = () => {
                                 </div>
                               </div>
                             ) : (
-                              <div className="hidden lg:block" aria-hidden="true" />
+                              <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+                                <div className="border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6">
+                                  <p className="text-sm font-semibold text-black">Required Skills</p>
+                                </div>
+                                <div className="px-5 py-5 sm:px-6">
+                                  <p className={UI.meta}>No skills specified</p>
+                                </div>
+                              </div>
                             )}
 
-                            {hasValidDisplayValue(selectedJob.location) ? (
-                              <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+                            <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
                                 <div className="border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6">
                                   <p className="text-sm font-semibold text-black">Work Location</p>
                                 </div>
                                 <div className="overflow-hidden">
-                                  <StaticLocationMap job={selectedJob} heightClass="h-[180px]" />
+                                  {hasValidDisplayValue(selectedJob.location) ? (
+                                    <StaticLocationMap job={selectedJob} heightClass="h-[180px]" />
+                                  ) : (
+                                    <div className="flex h-[180px] items-center justify-center bg-black/5 text-black/40">
+                                      <div className="text-center">
+                                        <SvgIcon name="location" className="mx-auto h-7 w-7" />
+                                        <p className="mt-2 text-xs">No work location provided</p>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                                 <div className="border-t border-[#e6edf5] px-4 py-3">
-                                  <p className="text-xs text-black/65">{formatLocationDisplay(selectedJob.location)}</p>
+                                  <p className="text-xs text-black/65">{hasValidDisplayValue(selectedJob.location) ? formatLocationDisplay(selectedJob.location) : 'Location not specified'}</p>
                                 </div>
                               </div>
-                            ) : null}
                           </section>
-                        ) : null}
 
-                        {perksAndBenefitsList.length > 0 ? (
-                          <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
+                        <div className="w-full overflow-hidden rounded-xl border border-[#e6edf5] bg-white shadow-[0_4px_16px_rgba(15,23,42,0.04)]">
                             <div className="border-b border-[#e6edf5] bg-[#f8fafc] px-5 py-3.5 sm:px-6">
                               <p className="text-sm font-semibold text-black">Perks and Benefits</p>
                             </div>
                             <div className="px-5 py-5 sm:px-6">
-                              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                                {perksAndBenefitsList.map((benefit, idx) => (
-                                  <JobDetailItem key={`${benefit}-${idx}`}>{benefit}</JobDetailItem>
-                                ))}
-                              </div>
+                              {perksAndBenefitsList.length > 0 ? (
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                  {perksAndBenefitsList.map((benefit, idx) => (
+                                    <JobDetailItem key={`${benefit}-${idx}`}>{benefit}</JobDetailItem>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className={UI.meta}>No perks or benefits specified</p>
+                              )}
                             </div>
                           </div>
-                        ) : null}
                       </div>
                     </div>
                   )}
