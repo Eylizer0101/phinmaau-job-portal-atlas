@@ -585,7 +585,7 @@ const Settings = () => {
                   placeholder="Enter password here"
                   show={showEmailPassword}
                   onToggle={() => setShowEmailPassword((v) => !v)}
-                  autoComplete="current-password"
+                  autoComplete="off"
                 />
 
                 <label className="text-black/70">New Email Address:</label>
@@ -597,6 +597,7 @@ const Settings = () => {
                   }}
                   placeholder="Enter new email here"
                   type="email"
+                  autoComplete="off"
                 />
               </div>
             </div>
@@ -634,11 +635,22 @@ const Settings = () => {
                 />
               </div>
 
-              <button type="button" onClick={handleResendEmail} disabled={emailResendSeconds > 0} className="inline-flex w-fit text-xs font-semibold text-[#2e66a6] underline underline-offset-4 hover:text-[#25578f] transition disabled:no-underline disabled:opacity-60 disabled:cursor-not-allowed">
-                {emailResendSeconds > 0
-                  ? `Resend verification in ${formatCountdown(emailResendSeconds)}`
-                  : "Didn't get the code? Resend verification email"}
-              </button>
+              {emailResendSeconds > 0 ? (
+                <span className="inline-flex w-fit text-xs font-semibold text-[#2e66a6]/60">
+                  {`Resend verification in ${formatCountdown(emailResendSeconds)}`}
+                </span>
+              ) : (
+                <p className="text-xs text-black/60">
+                  Didn't get the code?{' '}
+                  <button
+                    type="button"
+                    onClick={handleResendEmail}
+                    className="font-semibold text-[#2e66a6] underline underline-offset-4 transition hover:text-[#25578f]"
+                  >
+                    Resend verification email
+                  </button>
+                </p>
+              )}
             </div>
 
             <div className="mt-6 flex justify-end">

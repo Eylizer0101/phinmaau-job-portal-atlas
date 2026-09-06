@@ -1457,12 +1457,12 @@ const EmployerDashboard = () => {
           </div>
 
           <div className="border-t border-gray-200 bg-white px-6 py-7 md:border-l md:border-t-0 md:px-8 md:py-8">
-            <form onSubmit={handleForcedPasswordChangeSubmit} className="space-y-5" noValidate>
+            <form onSubmit={handleForcedPasswordChangeSubmit} className="flex h-full flex-col gap-5" noValidate>
               <div className="flex w-full justify-center pb-1">
                 <img
                   src="/images/agpay.png"
                   alt="AGAPAY"
-                  className="h-16 w-auto max-w-[220px] object-contain"
+                  className="h-20 w-auto max-w-[280px] object-contain sm:h-24"
                 />
               </div>
 
@@ -1582,7 +1582,7 @@ const EmployerDashboard = () => {
                 </div>
               ) : null}
 
-              <div className="pt-2">
+              <div className="mt-auto pt-2">
                 <button
                   type="submit"
                   disabled={passwordSubmitting}

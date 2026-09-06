@@ -525,8 +525,8 @@ exports.submitCompanyReview = async (req, res) => {
     } = req.body;
 
     const numericProcessRating = Number(processRating);
-    const numericDaysToFirstResponse = Number(daysToFirstResponse ?? 0);
-    const numericTotalProcessDays = Number(totalProcessDays ?? 0);
+    const numericDaysToFirstResponse = Number(daysToFirstResponse);
+    const numericTotalProcessDays = Number(totalProcessDays);
     const trimmedMessage = String(message || '').trim();
 
     if (!numericProcessRating || numericProcessRating < 1 || numericProcessRating > 5) {
@@ -544,19 +544,28 @@ exports.submitCompanyReview = async (req, res) => {
     }
 
     if (
-      !Number.isFinite(numericDaysToFirstResponse) ||
+      daysToFirstResponse === '' ||
+      daysToFirstResponse === null ||
+      daysToFirstResponse === undefined ||
+      !Number.isInteger(numericDaysToFirstResponse) ||
       numericDaysToFirstResponse < 0
     ) {
       return res.status(400).json({
         success: false,
-        message: 'Days to first response must be 0 or higher.',
+        message: 'Days to first response is required and must be a whole number of 0 or higher.',
       });
     }
 
-    if (!Number.isFinite(numericTotalProcessDays) || numericTotalProcessDays < 0) {
+    if (
+      totalProcessDays === '' ||
+      totalProcessDays === null ||
+      totalProcessDays === undefined ||
+      !Number.isInteger(numericTotalProcessDays) ||
+      numericTotalProcessDays < 0
+    ) {
       return res.status(400).json({
         success: false,
-        message: 'Total process length must be 0 or higher.',
+        message: 'Total process length is required and must be a whole number of 0 or higher.',
       });
     }
 
@@ -569,14 +578,24 @@ exports.submitCompanyReview = async (req, res) => {
 
     const allowedOutcomes = [
       'received_offer',
-      'rejected',
       'ghosted',
       'withdrew',
       'still_in_process',
     ];
-    const normalizedOutcome = allowedOutcomes.includes(String(outcome || '').trim())
-      ? String(outcome).trim()
-      : 'still_in_process';
+    const normalizedOutcome = String(outcome || '').trim();
+    if (!allowedOutcomes.includes(normalizedOutcome)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please select a valid outcome.',
+      });
+    }
+
+    if (typeof wouldApplyAgain !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: 'Please select whether you would apply again.',
+      });
+    }
 
     const company = await User.findOne({
       _id: id,
@@ -665,7 +684,7 @@ exports.submitCompanyReview = async (req, res) => {
       daysToFirstResponse: numericDaysToFirstResponse,
       totalProcessDays: numericTotalProcessDays,
       outcome: normalizedOutcome,
-      wouldApplyAgain: normalizeBooleanValue(wouldApplyAgain, true),
+      wouldApplyAgain,
       message: trimmedMessage,
       createdAt: new Date(),
       updatedAt: new Date(),

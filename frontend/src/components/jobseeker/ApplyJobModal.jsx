@@ -532,7 +532,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                           <span className="h-px w-12 bg-gradient-to-l from-transparent to-[#1e4ba0]" />
                         </div>
 
-                        <div className="mt-4 sm:mt-5 rounded-[18px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 sm:px-7 py-4 sm:py-5 text-black/70 leading-[1.65] text-[12px] sm:text-[14px] text-left shadow-[0_10px_30px_rgba(30,75,160,0.08)]">
+                        <div className="mt-4 sm:mt-5 rounded-[18px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 sm:px-7 py-4 sm:py-5 font-bold text-black/80 leading-[1.65] text-[14px] sm:text-[15px] text-left shadow-[0_10px_30px_rgba(30,75,160,0.08)]">
                           <p className="font-bold text-black/80">
                             After updating your profile and applying to this job, your personal information
                             will be collected and processed for recruitment and hiring purposes.
@@ -554,7 +554,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                           </p>
                         </div>
 
-                        <label className="mt-4 sm:mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-[#d8e2ee] bg-white px-4 py-3 text-[13px] text-black/70">
+                        <label className="mt-3 sm:mt-4 flex cursor-pointer items-center gap-3 px-1 py-1 text-[15px] text-black/80">
                           <input
                             type="checkbox"
                             checked={privacyAccepted}
@@ -562,7 +562,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                               setPrivacyAccepted(event.target.checked);
                               if (event.target.checked) setSubmitError('');
                             }}
-                            className="mt-0.5 h-4 w-4 accent-[#2e66a6]"
+                            className="h-5 w-5 shrink-0 accent-[#2e66a6]"
                           />
                           <span>I have read and understand the Privacy Notice.</span>
                         </label>

@@ -3331,7 +3331,10 @@ exports.requestEmailChangeVerification = async (req, res) => {
       return res.status(400).json({ success: false, message: 'New email must be different from your current email.' });
     }
 
-    const existing = await User.findOne({ email: emailLower, _id: { $ne: userId } });
+    const existing = await User.findOne({
+      _id: { $ne: userId },
+      $or: [{ email: emailLower }, { username: emailLower }],
+    });
     if (existing) return res.status(400).json({ success: false, message: 'Email is already used by another account.' });
 
     const code = generateNumericOtp();
@@ -3344,12 +3347,30 @@ exports.requestEmailChangeVerification = async (req, res) => {
       expiresInMinutes: SETTINGS_OTP_EXPIRES_MINUTES,
     });
 
+    const previousEmail = normalizeEmail(user.email);
+    user.email = emailLower;
+    if (normalizeEmail(user.username) === previousEmail) {
+      user.username = emailLower;
+    }
+    if (user.role === 'employer') {
+      if (!user.employerProfile) user.employerProfile = {};
+      user.employerProfile.businessEmail = emailLower;
+    }
+
     user.settingsVerification = {
       ...(user.settingsVerification?.toObject?.() || user.settingsVerification || {}),
+      emailVerified: false,
       pendingEmail: emailLower,
       emailOtpHash: hashToken(code),
       emailOtpExpiresAt: expiresAt,
       emailOtpRequestedAt: new Date(),
+    };
+
+    user.emailVerification = {
+      ...(user.emailVerification?.toObject?.() || user.emailVerification || {}),
+      tokenHash: '',
+      expiresAt: null,
+      verifiedAt: null,
     };
 
     await user.save();
@@ -3358,6 +3379,7 @@ exports.requestEmailChangeVerification = async (req, res) => {
       success: true,
       message: 'Verification code sent to your new email address.',
       pendingEmail: emailLower,
+      user: await User.findById(user._id).select('-password'),
     });
   } catch (error) {
     console.error('Error requesting email verification:', error);

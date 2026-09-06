@@ -1802,8 +1802,8 @@ const Bookmarks = () => {
   const [reviewRoleAppliedFor, setReviewRoleAppliedFor] = useState('');
   const [reviewDaysToFirstResponse, setReviewDaysToFirstResponse] = useState('');
   const [reviewTotalProcessDays, setReviewTotalProcessDays] = useState('');
-  const [reviewOutcome, setReviewOutcome] = useState('still_in_process');
-  const [reviewWouldApplyAgain, setReviewWouldApplyAgain] = useState(true);
+  const [reviewOutcome, setReviewOutcome] = useState('');
+  const [reviewWouldApplyAgain, setReviewWouldApplyAgain] = useState(null);
   const [reviewMessage, setReviewMessage] = useState('');
   const [reviewerName, setReviewerName] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
@@ -2474,8 +2474,8 @@ const Bookmarks = () => {
     setReviewRoleAppliedFor('');
     setReviewDaysToFirstResponse('');
     setReviewTotalProcessDays('');
-    setReviewOutcome('still_in_process');
-    setReviewWouldApplyAgain(true);
+    setReviewOutcome('');
+    setReviewWouldApplyAgain(null);
     setReviewMessage('');
     setReviewerName(
       defaultReviewerName ||
@@ -2533,8 +2533,8 @@ const Bookmarks = () => {
         reviewDaysToFirstResponse !== '' ||
         reviewTotalProcessDays !== '' ||
         reviewProcessRating > 0 ||
-        reviewOutcome !== 'still_in_process' ||
-        reviewWouldApplyAgain !== true ||
+        reviewOutcome !== '' ||
+        reviewWouldApplyAgain !== null ||
         String(reviewMessage || '').trim()
     );
   }, [
@@ -2545,6 +2545,40 @@ const Bookmarks = () => {
     reviewOutcome,
     reviewWouldApplyAgain,
     reviewMessage,
+  ]);
+
+  const isReviewFormComplete = useMemo(() => {
+    const days = Number(reviewDaysToFirstResponse);
+    const totalDays = Number(reviewTotalProcessDays);
+
+    return Boolean(
+      String(selectedCompany?.companyName || '').trim() &&
+        reviewApplicationId &&
+        String(reviewRoleAppliedFor || '').trim() &&
+        reviewDaysToFirstResponse !== '' &&
+        Number.isInteger(days) &&
+        days >= 0 &&
+        reviewTotalProcessDays !== '' &&
+        Number.isInteger(totalDays) &&
+        totalDays >= 0 &&
+        reviewProcessRating >= 1 &&
+        reviewProcessRating <= 5 &&
+        typeof reviewWouldApplyAgain === 'boolean' &&
+        reviewOutcome &&
+        String(reviewMessage || '').trim() &&
+        String(reviewerName || '').trim()
+    );
+  }, [
+    selectedCompany?.companyName,
+    reviewApplicationId,
+    reviewDaysToFirstResponse,
+    reviewMessage,
+    reviewOutcome,
+    reviewProcessRating,
+    reviewerName,
+    reviewRoleAppliedFor,
+    reviewTotalProcessDays,
+    reviewWouldApplyAgain,
   ]);
 
   const discardAndCloseReviewModal = useCallback(() => {
@@ -2582,10 +2616,10 @@ const Bookmarks = () => {
   const validateReviewForm = useCallback(() => {
     const trimmedRoleAppliedFor = String(reviewRoleAppliedFor || '').trim();
     const trimmedMessage = String(reviewMessage || '').trim();
-    const daysToFirstResponse =
-      reviewDaysToFirstResponse === '' ? 0 : Number(reviewDaysToFirstResponse);
-    const totalProcessDays =
-      reviewTotalProcessDays === '' ? 0 : Number(reviewTotalProcessDays);
+    const daysToFirstResponse = Number(reviewDaysToFirstResponse);
+    const totalProcessDays = Number(reviewTotalProcessDays);
+
+    if (!String(selectedCompany?.companyName || '').trim()) return 'Company is required.';
 
     if (!reviewApplicationId || !trimmedRoleAppliedFor) {
       return 'Please select the role you applied for.';
@@ -2593,21 +2627,28 @@ const Bookmarks = () => {
     if (!reviewProcessRating || reviewProcessRating < 1 || reviewProcessRating > 5) {
       return 'Please select an application process rating from 1 to 5.';
     }
-    if (!Number.isFinite(daysToFirstResponse) || daysToFirstResponse < 0) {
-      return 'Days to first response must be 0 or higher.';
+    if (reviewDaysToFirstResponse === '' || !Number.isInteger(daysToFirstResponse) || daysToFirstResponse < 0) {
+      return 'Days to first response is required and must be a whole number of 0 or higher.';
     }
-    if (!Number.isFinite(totalProcessDays) || totalProcessDays < 0) {
-      return 'Total process length must be 0 or higher.';
+    if (reviewTotalProcessDays === '' || !Number.isInteger(totalProcessDays) || totalProcessDays < 0) {
+      return 'Total process length is required and must be a whole number of 0 or higher.';
     }
+    if (typeof reviewWouldApplyAgain !== 'boolean') return 'Please select Yes or No for whether you would apply again.';
+    if (!reviewOutcome) return 'Please select an outcome.';
     if (!trimmedMessage) return 'Please enter your review.';
+    if (!String(reviewerName || '').trim()) return 'Your name is required.';
     return '';
   }, [
     reviewApplicationId,
     reviewDaysToFirstResponse,
     reviewMessage,
+    reviewOutcome,
     reviewProcessRating,
+    reviewerName,
     reviewRoleAppliedFor,
     reviewTotalProcessDays,
+    reviewWouldApplyAgain,
+    selectedCompany?.companyName,
   ]);
 
   const handleReviewNext = useCallback(() => {
@@ -4161,7 +4202,7 @@ const Bookmarks = () => {
                       </div>
                     </div>
 
-                    <label className="mt-4 sm:mt-5 mx-auto flex max-w-[760px] cursor-pointer items-start gap-3 rounded-xl border border-[#d8e2ee] bg-white/80 px-4 py-3 text-sm text-[#0f2442] select-none">
+                    <label className="mt-3 sm:mt-4 mx-auto flex max-w-[760px] cursor-pointer items-center gap-3 px-1 py-1 text-[15px] text-[#0f2442] select-none">
                       <input
                         type="checkbox"
                         checked={reviewAgreementAccepted}
@@ -4225,7 +4266,7 @@ const Bookmarks = () => {
                       disabled={reviewSubmitting}
                       className="w-full h-11 rounded-lg border border-gray-200 bg-white px-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
                     >
-                      <option value="">Select a role</option>
+                      <option value="" disabled>Select a role</option>
                       {eligibleReviewApplications.map((application) => (
                         <option key={application.applicationId} value={application.applicationId}>
                           {application.jobTitle}
@@ -4245,11 +4286,13 @@ const Bookmarks = () => {
                   <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block mb-2 text-sm font-semibold text-gray-900">
-                        Days to first response
+                        Days to first response *
                       </label>
                       <input
                         type="number"
                         min="0"
+                        step="1"
+                        required
                         value={reviewDaysToFirstResponse}
                         onChange={(e) => setReviewDaysToFirstResponse(e.target.value)}
                         placeholder="e.g. 3"
@@ -4261,11 +4304,13 @@ const Bookmarks = () => {
 
                     <div>
                       <label className="block mb-2 text-sm font-semibold text-gray-900">
-                        Total process length (days)
+                        Total process length (days) *
                       </label>
                       <input
                         type="number"
                         min="0"
+                        step="1"
+                        required
                         value={reviewTotalProcessDays}
                         onChange={(e) => setReviewTotalProcessDays(e.target.value)}
                         placeholder="e.g. 21"
@@ -4291,7 +4336,7 @@ const Bookmarks = () => {
 
                   <div>
                     <label className="block mb-3 text-sm font-semibold text-gray-900">
-                      Would you apply again?
+                      Would you apply again? *
                     </label>
                     <div className="flex items-center gap-5">
                       <label className="inline-flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
@@ -4322,7 +4367,7 @@ const Bookmarks = () => {
 
                 <div className="mt-5">
                   <label className="block mb-2 text-sm font-semibold text-gray-900">
-                    Outcome
+                    Outcome *
                   </label>
                   <select
                     value={reviewOutcome}
@@ -4330,8 +4375,8 @@ const Bookmarks = () => {
                     disabled={reviewSubmitting}
                     className="w-full h-11 rounded-lg border border-gray-200 bg-white px-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
                   >
+                    <option value="" disabled>Select an outcome</option>
                     <option value="received_offer">Received offer</option>
-                    <option value="rejected">Rejected</option>
                     <option value="ghosted">Ghosted</option>
                     <option value="withdrew">Withdrew</option>
                     <option value="still_in_process">Still in process</option>
@@ -4355,7 +4400,7 @@ const Bookmarks = () => {
 
                 <div className="mt-5">
                   <label className="block mb-2 text-sm font-semibold text-gray-900">
-                    Your name
+                    Your name *
                   </label>
                   <input
                     value={reviewerName}
@@ -4383,7 +4428,7 @@ const Bookmarks = () => {
 
                   <button
                     onClick={handleReviewNext}
-                    disabled={reviewSubmitting}
+                    disabled={reviewSubmitting || !isReviewFormComplete}
                     className="h-11 rounded-lg bg-[#172033] px-6 text-sm font-semibold text-white transition hover:bg-[#0f1726] disabled:opacity-60"
                     type="button"
                   >
