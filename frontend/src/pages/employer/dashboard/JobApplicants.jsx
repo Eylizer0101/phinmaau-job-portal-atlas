@@ -473,6 +473,7 @@ const JobApplicants = () => {
       const name = user.fullName || [user.firstName, user.middleName, user.lastName].filter(Boolean).join(' ');
       const searchableText = [name, user.email, profile.phoneNumber, profile.contactNumber, job?.title].filter(Boolean).join(' ').toLowerCase();
       if (query && !searchableText.includes(query)) return false;
+      if (query) return true;
       if (levelFilter !== 'all' && level !== levelFilter) return false;
 
       if (statusFilter === 'already_employed') {

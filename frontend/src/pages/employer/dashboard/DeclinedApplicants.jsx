@@ -757,7 +757,7 @@ const DeclinedApplicants = () => {
     const q = debouncedQuery.trim().toLowerCase();
     let list = [...applications];
 
-    if (selectedJob !== 'all') {
+    if (!q && selectedJob !== 'all') {
       list = list.filter((a) => a.job?._id === selectedJob);
     }
 
@@ -793,49 +793,49 @@ const DeclinedApplicants = () => {
     const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
     const startOfThisYear = new Date(now.getFullYear(), 0, 1);
 
-    if (filterBy === 'today') {
+    if (!q && filterBy === 'today') {
       list = list.filter((a) => {
         const date = new Date(a.appliedAt || 0);
         return !Number.isNaN(date.getTime()) && date >= startOfToday && date < startOfTomorrow;
       });
-    } else if (filterBy === 'yesterday') {
+    } else if (!q && filterBy === 'yesterday') {
       list = list.filter((a) => {
         const date = new Date(a.appliedAt || 0);
         return !Number.isNaN(date.getTime()) && date >= startOfYesterday && date < startOfToday;
       });
-    } else if (filterBy === 'this_week') {
+    } else if (!q && filterBy === 'this_week') {
       list = list.filter((a) => {
         const date = new Date(a.appliedAt || 0);
         return !Number.isNaN(date.getTime()) && date >= startOfWeek && date < startOfNextWeek;
       });
-    } else if (filterBy === 'last_7_days') {
+    } else if (!q && filterBy === 'last_7_days') {
       list = list.filter((a) => {
         const date = new Date(a.appliedAt || 0);
         return !Number.isNaN(date.getTime()) && date >= sevenDaysAgo && date < startOfTomorrow;
       });
-    } else if (filterBy === 'this_month') {
+    } else if (!q && filterBy === 'this_month') {
       list = list.filter((a) => {
         const date = new Date(a.appliedAt || 0);
         return !Number.isNaN(date.getTime()) && date >= startOfMonth && date < startOfNextMonth;
       });
-    } else if (filterBy === 'last_month') {
+    } else if (!q && filterBy === 'last_month') {
       const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       list = list.filter((a) => {
         const date = new Date(a.appliedAt || 0);
         return !Number.isNaN(date.getTime()) && date >= startOfLastMonth && date < startOfCurrentMonth;
       });
-    } else if (filterBy === 'this_year') {
+    } else if (!q && filterBy === 'this_year') {
       list = list.filter((a) => {
         const date = new Date(a.appliedAt || 0);
         return !Number.isNaN(date.getTime()) && date >= startOfYear && date < startOfNextYear;
       });
-    } else if (filterBy === 'last_year') {
+    } else if (!q && filterBy === 'last_year') {
       list = list.filter((a) => {
         const date = new Date(a.appliedAt || 0);
         return !Number.isNaN(date.getTime()) && date >= startOfLastYear && date < startOfThisYear;
       });
-    } else if (filterBy === 'custom' && customDateFrom && customDateTo) {
+    } else if (!q && filterBy === 'custom' && customDateFrom && customDateTo) {
       const customStart = new Date(`${customDateFrom}T00:00:00`);
       const customEndExclusive = new Date(`${customDateTo}T00:00:00`);
       customEndExclusive.setDate(customEndExclusive.getDate() + 1);

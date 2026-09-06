@@ -594,12 +594,9 @@ const HiredApplicants = () => {
       setLoading(true);
       setError('');
 
-      const params = {};
-      if (selectedJob !== 'all') params.jobId = selectedJob;
-
       const response = await axios.get(
         'https://phinmaau-job-portal-atlas.onrender.com/api/applications/employer/hired',
-        { headers: getAuthHeaders(), params }
+        { headers: getAuthHeaders() }
       );
       const combined = (response.data?.applications || []).map((application) => ({
           ...application,
@@ -627,9 +624,13 @@ const HiredApplicants = () => {
   const filteredApplications = useMemo(() => {
     const q = debouncedQuery.trim().toLowerCase();
 
+    const jobFiltered = !q && selectedJob !== 'all'
+      ? applications.filter((a) => a.job?._id === selectedJob)
+      : applications;
+
     const searched = !q
-      ? applications
-      : applications.filter((a) => {
+      ? jobFiltered
+      : jobFiltered.filter((a) => {
           const name = buildApplicantName(a.jobseeker).toLowerCase();
           const email = String(a.jobseeker?.email || '').toLowerCase();
           const jobTitle = String(a.job?.title || '').toLowerCase();
@@ -655,7 +656,7 @@ const HiredApplicants = () => {
     const startOfNextYear = new Date(now.getFullYear() + 1, 0, 1);
 
     const filteredByDate = searched.filter((a) => {
-      if (dateFilter === 'all') return true;
+      if (q || dateFilter === 'all') return true;
 
       const appliedDate = new Date(a.appliedAt || 0);
       if (Number.isNaN(appliedDate.getTime())) return false;
@@ -746,7 +747,7 @@ const HiredApplicants = () => {
     });
 
     return sorted;
-  }, [applications, buildApplicantName, dateFilter, customDateFrom, customDateTo, debouncedQuery, sortBy]);
+  }, [applications, buildApplicantName, dateFilter, customDateFrom, customDateTo, debouncedQuery, selectedJob, sortBy]);
 
 
   const totalItems = filteredApplications.length;

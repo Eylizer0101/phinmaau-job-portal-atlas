@@ -836,7 +836,7 @@ const ArchivedDeclinedApplicants = () => {
     const q = debouncedQuery.trim().toLowerCase();
     let list = [...applications];
 
-    if (selectedJob !== 'all') {
+    if (!q && selectedJob !== 'all') {
       list = list.filter((a) => a.job?._id === selectedJob);
     }
 
@@ -881,47 +881,47 @@ const ArchivedDeclinedApplicants = () => {
       return Number.isNaN(archivedDate.getTime()) ? new Date(0) : archivedDate;
     };
 
-    if (sort === 'today') {
+    if (!q && sort === 'today') {
       list = list.filter((application) => {
         const date = getComparableDate(application);
         return date >= startOfToday && date < startOfTomorrow;
       });
-    } else if (sort === 'yesterday') {
+    } else if (!q && sort === 'yesterday') {
       list = list.filter((application) => {
         const date = getComparableDate(application);
         return date >= startOfYesterday && date < startOfToday;
       });
-    } else if (sort === 'this_week') {
+    } else if (!q && sort === 'this_week') {
       list = list.filter((application) => {
         const date = getComparableDate(application);
         return date >= startOfWeek && date < startOfNextWeek;
       });
-    } else if (sort === 'last_7_days') {
+    } else if (!q && sort === 'last_7_days') {
       list = list.filter((application) => {
         const date = getComparableDate(application);
         return date >= sevenDaysAgo && date < startOfTomorrow;
       });
-    } else if (sort === 'this_month') {
+    } else if (!q && sort === 'this_month') {
       list = list.filter((application) => {
         const date = getComparableDate(application);
         return date >= startOfMonth && date < startOfNextMonth;
       });
-    } else if (sort === 'last_month') {
+    } else if (!q && sort === 'last_month') {
       list = list.filter((application) => {
         const date = getComparableDate(application);
         return date >= startOfLastMonth && date < startOfMonth;
       });
-    } else if (sort === 'this_year') {
+    } else if (!q && sort === 'this_year') {
       list = list.filter((application) => {
         const date = getComparableDate(application);
         return date >= startOfYear && date < startOfNextYear;
       });
-    } else if (sort === 'last_year') {
+    } else if (!q && sort === 'last_year') {
       list = list.filter((application) => {
         const date = getComparableDate(application);
         return date >= startOfLastYear && date < startOfYear;
       });
-    } else if (sort === 'custom' && customDateFrom && customDateTo) {
+    } else if (!q && sort === 'custom' && customDateFrom && customDateTo) {
       const customStart = new Date(`${customDateFrom}T00:00:00`);
       const customEndExclusive = new Date(`${customDateTo}T00:00:00`);
       customEndExclusive.setDate(customEndExclusive.getDate() + 1);

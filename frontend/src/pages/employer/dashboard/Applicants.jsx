@@ -1706,8 +1706,7 @@ const Applicants = () => {
       setAppsLoading(true);
       clearMessages();
 
-      let url = 'https://phinmaau-job-portal-atlas.onrender.com/api/applications/employer/all';
-      if (selectedJob !== 'all') url = `https://phinmaau-job-portal-atlas.onrender.com/api/applications/job/${selectedJob}`;
+      const url = 'https://phinmaau-job-portal-atlas.onrender.com/api/applications/employer/all';
 
       const res = await axios.get(url, { headers: getAuthHeaders() });
 
@@ -1764,9 +1763,13 @@ const Applicants = () => {
 
     const statusFiltered = pendingOnly.filter((a) => !a.alreadyEmployed);
 
+    const jobFiltered = !q && selectedJob !== 'all'
+      ? statusFiltered.filter((a) => a.job?._id === selectedJob)
+      : statusFiltered;
+
     const searched = !q
-      ? statusFiltered
-      : statusFiltered.filter((a) => {
+      ? jobFiltered
+      : jobFiltered.filter((a) => {
           const u = a.jobseeker || {};
           const name = buildApplicantName(u).toLowerCase();
           const email = (u.email || '').toLowerCase();
@@ -1793,7 +1796,7 @@ const Applicants = () => {
       return { level, matchScore };
     };
 
-    const levelFiltered = selectedLevel === 'all'
+    const levelFiltered = q || selectedLevel === 'all'
       ? searched
       : searched.filter((application) => getApplicantMetrics(application).level === selectedLevel);
 
@@ -1820,7 +1823,7 @@ const Applicants = () => {
     const startOfThisYear = new Date(now.getFullYear(), 0, 1);
 
     const filteredBySort = levelFiltered.filter((a) => {
-      if (filterBy === 'all') return true;
+      if (q || filterBy === 'all') return true;
 
       const appliedDate = new Date(a.appliedAt || 0);
       if (Number.isNaN(appliedDate.getTime())) return false;
@@ -1870,7 +1873,7 @@ const Applicants = () => {
       return true;
     });
 
-    const sortableApplications = sortBy === 'best_match'
+    const sortableApplications = !q && sortBy === 'best_match'
       ? filteredBySort.filter((application) => getApplicantMetrics(application).matchScore >= 55)
       : filteredBySort;
 
@@ -1897,6 +1900,7 @@ const Applicants = () => {
     customDateStart,
     debouncedQuery,
     filterBy,
+    selectedJob,
     selectedLevel,
     sortBy,
     statusFilter,

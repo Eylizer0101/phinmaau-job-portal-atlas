@@ -1138,11 +1138,11 @@ const ManageJobs = () => {
 
     let list = [...jobs];
 
-    if (jobFilter !== 'all') {
+    if (!query && jobFilter !== 'all') {
       list = list.filter((j) => j._id === jobFilter);
     }
 
-    if (statusFilter !== 'all') {
+    if (!query && statusFilter !== 'all') {
       list = list.filter((j) => getDerivedStatus(j) === statusFilter);
     }
 
@@ -1189,49 +1189,49 @@ const ManageJobs = () => {
     const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
     const startOfCurrentYear = new Date(now.getFullYear(), 0, 1);
 
-    if (dateFilter === 'today') {
+    if (!query && dateFilter === 'today') {
       list = list.filter((job) => {
         const date = getComparableDate(job);
         return date >= startOfToday && date < startOfTomorrow;
       });
-    } else if (dateFilter === 'yesterday') {
+    } else if (!query && dateFilter === 'yesterday') {
       list = list.filter((job) => {
         const date = getComparableDate(job);
         return date >= startOfYesterday && date < startOfToday;
       });
-    } else if (dateFilter === 'this_week') {
+    } else if (!query && dateFilter === 'this_week') {
       list = list.filter((job) => {
         const date = getComparableDate(job);
         return date >= startOfWeek && date < startOfNextWeek;
       });
-    } else if (dateFilter === 'last_7_days') {
+    } else if (!query && dateFilter === 'last_7_days') {
       list = list.filter((job) => {
         const date = getComparableDate(job);
         return date >= sevenDaysAgo && date < startOfTomorrow;
       });
-    } else if (dateFilter === 'this_month') {
+    } else if (!query && dateFilter === 'this_month') {
       list = list.filter((job) => {
         const date = getComparableDate(job);
         return date >= startOfMonth && date < startOfNextMonth;
       });
-    } else if (dateFilter === 'last_month') {
+    } else if (!query && dateFilter === 'last_month') {
       const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       list = list.filter((job) => {
         const date = getComparableDate(job);
         return date >= startOfLastMonth && date < startOfCurrentMonth;
       });
-    } else if (dateFilter === 'this_year') {
+    } else if (!query && dateFilter === 'this_year') {
       list = list.filter((job) => {
         const date = getComparableDate(job);
         return date >= startOfYear && date < startOfNextYear;
       });
-    } else if (dateFilter === 'last_year') {
+    } else if (!query && dateFilter === 'last_year') {
       list = list.filter((job) => {
         const date = getComparableDate(job);
         return date >= startOfLastYear && date < startOfCurrentYear;
       });
-    } else if (dateFilter === 'custom' && customDateFrom && customDateTo) {
+    } else if (!query && dateFilter === 'custom' && customDateFrom && customDateTo) {
       const customStart = new Date(`${customDateFrom}T00:00:00`);
       const customEndExclusive = new Date(`${customDateTo}T00:00:00`);
       customEndExclusive.setDate(customEndExclusive.getDate() + 1);

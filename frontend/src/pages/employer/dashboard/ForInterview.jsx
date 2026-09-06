@@ -1435,8 +1435,7 @@ const ForInterview = () => {
       setLoading(true);
       setError('');
 
-      const params = selectedJob !== 'all' ? { jobId: selectedJob } : {};
-      const res = await api.get('/applications/employer/for-interview', { params });
+      const res = await api.get('/applications/employer/for-interview');
 
       if (res.data?.success) {
         setApplications(res.data.applications || []);
@@ -1469,6 +1468,10 @@ const ForInterview = () => {
 
     let list = [...applications];
 
+    if (!q && selectedJob !== 'all') {
+      list = list.filter((app) => app.job?._id === selectedJob);
+    }
+
     if (q) {
       list = list.filter((app) => {
         const name = buildApplicantName(app.jobseeker).toLowerCase();
@@ -1500,50 +1503,50 @@ const ForInterview = () => {
       return Number.isNaN(parsed.getTime()) ? null : parsed;
     };
 
-    if (filterBy === 'today') {
+    if (!q && filterBy === 'today') {
       list = list.filter((app) => {
         const date = getComparableDate(app);
         return date && date >= startOfToday && date < startOfTomorrow;
       });
-    } else if (filterBy === 'yesterday') {
+    } else if (!q && filterBy === 'yesterday') {
       list = list.filter((app) => {
         const date = getComparableDate(app);
         return date && date >= startOfYesterday && date < startOfToday;
       });
-    } else if (filterBy === 'this_week') {
+    } else if (!q && filterBy === 'this_week') {
       list = list.filter((app) => {
         const date = getComparableDate(app);
         return date && date >= startOfWeek && date < startOfNextWeek;
       });
-    } else if (filterBy === 'last_7_days') {
+    } else if (!q && filterBy === 'last_7_days') {
       list = list.filter((app) => {
         const date = getComparableDate(app);
         return date && date >= sevenDaysAgo && date < startOfTomorrow;
       });
-    } else if (filterBy === 'this_month') {
+    } else if (!q && filterBy === 'this_month') {
       list = list.filter((app) => {
         const date = getComparableDate(app);
         return date && date >= startOfMonth && date < startOfNextMonth;
       });
-    } else if (filterBy === 'last_month') {
+    } else if (!q && filterBy === 'last_month') {
       const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       list = list.filter((app) => {
         const date = getComparableDate(app);
         return date && date >= startOfLastMonth && date < startOfCurrentMonth;
       });
-    } else if (filterBy === 'this_year') {
+    } else if (!q && filterBy === 'this_year') {
       list = list.filter((app) => {
         const date = getComparableDate(app);
         return date && date >= startOfYear && date < startOfNextYear;
       });
-    } else if (filterBy === 'last_year') {
+    } else if (!q && filterBy === 'last_year') {
       const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
       list = list.filter((app) => {
         const date = getComparableDate(app);
         return date && date >= startOfLastYear && date < startOfYear;
       });
-    } else if (filterBy === 'custom' && customDateFrom && customDateTo) {
+    } else if (!q && filterBy === 'custom' && customDateFrom && customDateTo) {
       const customStart = new Date(`${customDateFrom}T00:00:00`);
       const customEndExclusive = new Date(`${customDateTo}T00:00:00`);
       customEndExclusive.setDate(customEndExclusive.getDate() + 1);
@@ -1585,7 +1588,7 @@ const ForInterview = () => {
     }
 
     return list;
-  }, [applications, query, filterBy, customDateFrom, customDateTo, sortBy]);
+  }, [applications, query, filterBy, customDateFrom, customDateTo, selectedJob, sortBy]);
 
 
   const totalItems = filteredApplications.length;

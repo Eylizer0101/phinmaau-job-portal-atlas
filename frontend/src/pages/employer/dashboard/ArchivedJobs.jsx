@@ -902,7 +902,7 @@ const ArchivedJobs = () => {
 
     let list = [...jobs];
 
-    if (jobFilter !== 'all') {
+    if (!query && jobFilter !== 'all') {
       list = list.filter((j) => j._id === jobFilter);
     }
 
@@ -951,47 +951,47 @@ const ArchivedJobs = () => {
       return safeDate(job.updatedAt);
     };
 
-    if (sortBy === 'today') {
+    if (!query && sortBy === 'today') {
       list = list.filter((job) => {
         const date = getComparableDate(job);
         return date >= startOfToday && date < startOfTomorrow;
       });
-    } else if (sortBy === 'yesterday') {
+    } else if (!query && sortBy === 'yesterday') {
       list = list.filter((job) => {
         const date = getComparableDate(job);
         return date >= startOfYesterday && date < startOfToday;
       });
-    } else if (sortBy === 'this_week') {
+    } else if (!query && sortBy === 'this_week') {
       list = list.filter((job) => {
         const date = getComparableDate(job);
         return date >= startOfWeek && date < startOfNextWeek;
       });
-    } else if (sortBy === 'last_7_days') {
+    } else if (!query && sortBy === 'last_7_days') {
       list = list.filter((job) => {
         const date = getComparableDate(job);
         return date >= sevenDaysAgo && date < startOfTomorrow;
       });
-    } else if (sortBy === 'this_month') {
+    } else if (!query && sortBy === 'this_month') {
       list = list.filter((job) => {
         const date = getComparableDate(job);
         return date >= startOfMonth && date < startOfNextMonth;
       });
-    } else if (sortBy === 'last_month') {
+    } else if (!query && sortBy === 'last_month') {
       list = list.filter((job) => {
         const date = getComparableDate(job);
         return date >= startOfLastMonth && date < startOfMonth;
       });
-    } else if (sortBy === 'this_year') {
+    } else if (!query && sortBy === 'this_year') {
       list = list.filter((job) => {
         const date = getComparableDate(job);
         return date >= startOfYear && date < startOfNextYear;
       });
-    } else if (sortBy === 'last_year') {
+    } else if (!query && sortBy === 'last_year') {
       list = list.filter((job) => {
         const date = getComparableDate(job);
         return date >= startOfLastYear && date < startOfYear;
       });
-    } else if (sortBy === 'custom' && customDateFrom && customDateTo) {
+    } else if (!query && sortBy === 'custom' && customDateFrom && customDateTo) {
       const customStart = new Date(`${customDateFrom}T00:00:00`);
       const customEndExclusive = new Date(`${customDateTo}T00:00:00`);
       customEndExclusive.setDate(customEndExclusive.getDate() + 1);
