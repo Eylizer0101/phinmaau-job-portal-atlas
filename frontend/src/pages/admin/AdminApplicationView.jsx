@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../layouts/AdminLayout";
 import api from "../../services/api";
-import { MyApplicationsSvgIcon } from "../../components/shared/JobseekerIcons";
+import { BuildingIcon, MyApplicationsSvgIcon } from "../../components/shared/JobseekerIcons";
 
 const UI = {
   page: "min-h-screen bg-transparent",
@@ -537,6 +537,7 @@ const AdminApplicationView = () => {
   const employerProfile = employer?.employerProfile || {};
   const jobseeker = application?.jobseeker || {};
   const companyName = job.companyName || employerProfile.companyName || employer.fullName || "Company";
+  const industry = String(employerProfile.industry || job?.employerDetails?.industry || job.category || "").trim() || "Industry not specified";
   const location = job.location || job.address || employerProfile.companyAddress || employer.companyAddress || "—";
   const requiredSkills = useMemo(() => getList(job.skillsRequired), [job.skillsRequired]);
   const perksAndBenefits = useMemo(() => {
@@ -699,8 +700,8 @@ const AdminApplicationView = () => {
                     </h1>
 
                     <div className="mt-2 inline-flex min-w-0 items-center gap-2 text-sm text-black/70">
-                      <Icon name="building" className="h-4 w-4 text-black/60" />
-                      <span className="min-w-0 truncate">{companyName}</span>
+                      <BuildingIcon className="h-4 w-4 text-black/60" />
+                      <span className="min-w-0 truncate">{industry}</span>
                     </div>
 
                     <div className="mt-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-black/50">

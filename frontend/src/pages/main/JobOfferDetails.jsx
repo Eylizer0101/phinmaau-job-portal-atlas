@@ -5,6 +5,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import MainNavbar from '../../components/shared/MainNavbar';
 import api from '../../services/api';
 import { isOpenJobListing } from '../../utils/jobVisibility';
+import { BuildingIcon } from '../../components/shared/JobseekerIcons';
 
 /**
  * UPDATED:
@@ -1216,10 +1217,10 @@ const JobOfferDetails = () => {
                       <div className="mt-2">
                         <div className={`inline-flex items-center gap-2 ${UI.meta} min-w-0`}>
                           <span className="text-black/60">
-                            <SvgIcon name="building" className="w-4 h-4" />
+                            <BuildingIcon className="w-4 h-4" />
                           </span>
-                          <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap" title={job.companyName}>
-                            {job.companyName}
+                          <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+                            {String(companyInfo?.industry || job?.employerDetails?.industry || job?.category || '').trim() || 'Industry not specified'}
                           </span>
                         </div>
                       </div>

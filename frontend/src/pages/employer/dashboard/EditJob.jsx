@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
+import { BuildingIcon } from '../../../components/shared/JobseekerIcons';
 import {
   JOB_TYPES,
   EXPERIENCE_LEVELS,
@@ -3089,10 +3090,8 @@ const EditJob = () => {
                             </h3>
 
                             <div className="mt-2 flex items-center gap-2 text-sm text-black/70">
-                              <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 21h18M6 21V5a2 2 0 012-2h8a2 2 0 012 2v16M9 7h.01M9 11h.01M9 15h.01M12 7h.01M12 11h.01M12 15h.01M15 7h.01M15 11h.01M15 15h.01" />
-                              </svg>
-                              <span className="truncate">{storedUser?.employerProfile?.companyName || 'Company name'}</span>
+                              <BuildingIcon className="h-4 w-4 flex-shrink-0" />
+                              <span className="truncate">{String(storedUser?.employerProfile?.industry || job?.category || '').trim() || 'Industry not specified'}</span>
                             </div>
 
                             <div className="mt-2 flex items-start gap-2 text-sm uppercase tracking-wide text-black/60">

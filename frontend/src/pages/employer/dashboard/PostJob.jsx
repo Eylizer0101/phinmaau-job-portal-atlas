@@ -2649,7 +2649,7 @@ const PostJob = () => {
 
                         <div className="mt-2 flex items-center gap-2 text-sm text-black/70">
                           <BuildingIcon className="h-4 w-4 flex-shrink-0" />
-                          <span className="truncate">{storedUser?.employerProfile?.companyName || 'Company name'}</span>
+                          <span className="truncate">{String(storedUser?.employerProfile?.industry || '').trim() || 'Industry not specified'}</span>
                         </div>
 
                         <div className="mt-2 flex items-start gap-2 text-sm uppercase tracking-wide text-black/60">
