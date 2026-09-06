@@ -308,7 +308,10 @@ const mapCompanyFromUser = (user, reviewerProfileImageMap = new Map()) => {
 };
 
 const mapSavedCompanyWithJobs = async (user) => {
-  const mappedCompany = mapCompanyFromUser(user);
+  const reviewerProfileImageMap = await getReviewerProfileImageMap(
+    user?.employerProfile?.reviews
+  );
+  const mappedCompany = mapCompanyFromUser(user, reviewerProfileImageMap);
 
   const jobs = await Job.find({
     employer: user._id,
