@@ -6,6 +6,7 @@ import JobSeekerLayout from '../../../layouts/JobSeekerLayout';
 import api from '../../../services/api';
 import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
 import ApplicationVerificationModal from '../../../components/jobseeker/ApplicationVerificationModal';
+import { BuildingIcon } from '../../../components/shared/JobseekerIcons';
 import { filterOpenJobListings, isOpenJobListing } from '../../../utils/jobVisibility';
 
 const DEFAULT_COMPANY_LOGO = '/images/companyicon.png';
@@ -2869,32 +2870,11 @@ const Bookmarks = () => {
                               <div className="mt-2">
                                 <div className="inline-flex min-w-0 items-center gap-2 text-sm text-black/70">
                                   <span className="text-black/60">
-                                    <SvgIcon name="building" className="h-4 w-4" />
+                                    <BuildingIcon className="h-4 w-4" />
                                   </span>
-                                  {selectedJobCompanyId ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const returnTo = `/jobseeker/bookmarks?tab=jobs&job=${encodeURIComponent(selectedJob._id)}`;
-                                        navigate(`/jobseeker/company-details/${selectedJobCompanyId}`, {
-                                          state: {
-                                            sourcePage: 'bookmarks',
-                                            returnTo,
-                                            selectedJobId: selectedJob._id,
-                                          },
-                                        });
-                                      }}
-                                      className={`min-w-0 overflow-hidden text-ellipsis whitespace-nowrap rounded-sm text-[#2e66a6] hover:text-[#1f4f86] ${UI.ring}`}
-                                      style={{ borderBottom: '1px solid currentColor', paddingBottom: '1px' }}
-                                      title={`View ${selectedJob.companyName || 'company'} details`}
-                                    >
-                                      {selectedJob.companyName}
-                                    </button>
-                                  ) : (
-                                    <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap" title={selectedJob.companyName}>
-                                      {selectedJob.companyName}
-                                    </span>
-                                  )}
+                                  <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+                                    {String(selectedJob?.employerDetails?.industry || selectedJob?.employer?.employerProfile?.industry || selectedJob?.category || '').trim() || 'Industry not specified'}
+                                  </span>
                                 </div>
                               </div>
 
