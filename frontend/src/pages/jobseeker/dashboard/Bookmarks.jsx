@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { FaClipboardCheck } from 'react-icons/fa';
 import JobSeekerLayout from '../../../layouts/JobSeekerLayout';
 import api from '../../../services/api';
 import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
@@ -1787,6 +1788,16 @@ const Bookmarks = () => {
   const [checkingApplied, setCheckingApplied] = useState(true);
 
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewStep, setReviewStep] = useState('privacy');
+  const [reviewAgreementAccepted, setReviewAgreementAccepted] = useState(false);
+  const [reviewEligible, setReviewEligible] = useState(false);
+  const [reviewEligibilityMessage, setReviewEligibilityMessage] = useState(
+    'You can write a review after applying to a job from this company.'
+  );
+  const [eligibleReviewApplications, setEligibleReviewApplications] = useState([]);
+  const [reviewLimitReached, setReviewLimitReached] = useState(false);
+  const [showReviewLimitModal, setShowReviewLimitModal] = useState(false);
+  const [reviewApplicationId, setReviewApplicationId] = useState('');
   const [reviewProcessRating, setReviewProcessRating] = useState(0);
   const [reviewRoleAppliedFor, setReviewRoleAppliedFor] = useState('');
   const [reviewDaysToFirstResponse, setReviewDaysToFirstResponse] = useState('');
@@ -1797,6 +1808,7 @@ const Bookmarks = () => {
   const [reviewerName, setReviewerName] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewError, setReviewError] = useState('');
+  const [showDiscardReviewModal, setShowDiscardReviewModal] = useState(false);
 
   const [savingJobId, setSavingJobId] = useState('');
   const [removeJobModal, setRemoveJobModal] = useState({
@@ -2144,6 +2156,47 @@ const Bookmarks = () => {
     [savedCompanies, selectedCompanyId]
   );
 
+  useEffect(() => {
+    const checkReviewEligibility = async () => {
+      const token = localStorage.getItem('token');
+      const user = getStoredUser();
+
+      if (!selectedCompany?._id || !token || user?.role !== 'jobseeker') {
+        setReviewEligible(false);
+        setEligibleReviewApplications([]);
+        setReviewLimitReached(false);
+        return;
+      }
+
+      try {
+        const response = await api.get(
+          `/companies/verified/${selectedCompany._id}/review-eligibility`
+        );
+        setReviewEligible(Boolean(response?.data?.eligible));
+        setEligibleReviewApplications(
+          Array.isArray(response?.data?.eligibleApplications)
+            ? response.data.eligibleApplications
+            : []
+        );
+        setReviewLimitReached(Boolean(response?.data?.reviewLimitReached));
+        setReviewEligibilityMessage(
+          response?.data?.message ||
+            'You can write a review after applying to a job from this company.'
+        );
+      } catch (error) {
+        setReviewEligible(false);
+        setEligibleReviewApplications([]);
+        setReviewLimitReached(false);
+        setReviewEligibilityMessage(
+          error?.response?.data?.message ||
+            'You can write a review after applying to a job from this company.'
+        );
+      }
+    };
+
+    checkReviewEligibility();
+  }, [selectedCompany?._id]);
+
   const companyWebsiteUrl = useMemo(() => getCompanyWebsiteUrl(selectedJob), [selectedJob]);
   const selectedJobCompanyId = useMemo(() => getJobCompanyId(selectedJob), [selectedJob]);
 
@@ -2417,6 +2470,7 @@ const Bookmarks = () => {
       .trim();
 
     setReviewProcessRating(0);
+    setReviewApplicationId('');
     setReviewRoleAppliedFor('');
     setReviewDaysToFirstResponse('');
     setReviewTotalProcessDays('');
@@ -2452,18 +2506,115 @@ const Bookmarks = () => {
       return;
     }
 
+    if (!reviewEligible) {
+      if (reviewLimitReached) setShowReviewLimitModal(true);
+      return;
+    }
+
     setReviewError('');
     resetReviewForm();
+    setReviewAgreementAccepted(false);
+    setShowDiscardReviewModal(false);
+    setReviewStep('privacy');
     setActiveCompanyTab('reviews');
     setShowReviewModal(true);
-  }, [navigate, resetReviewForm, selectedCompany, setToastMessage]);
+  }, [
+    navigate,
+    resetReviewForm,
+    reviewEligible,
+    reviewLimitReached,
+    selectedCompany,
+    setToastMessage,
+  ]);
+
+  const hasUnsavedReviewChanges = useMemo(() => {
+    return Boolean(
+      reviewApplicationId ||
+        reviewDaysToFirstResponse !== '' ||
+        reviewTotalProcessDays !== '' ||
+        reviewProcessRating > 0 ||
+        reviewOutcome !== 'still_in_process' ||
+        reviewWouldApplyAgain !== true ||
+        String(reviewMessage || '').trim()
+    );
+  }, [
+    reviewApplicationId,
+    reviewDaysToFirstResponse,
+    reviewTotalProcessDays,
+    reviewProcessRating,
+    reviewOutcome,
+    reviewWouldApplyAgain,
+    reviewMessage,
+  ]);
+
+  const discardAndCloseReviewModal = useCallback(() => {
+    if (reviewSubmitting) return;
+    setShowDiscardReviewModal(false);
+    setShowReviewModal(false);
+    setReviewError('');
+    setReviewStep('privacy');
+    setReviewAgreementAccepted(false);
+    resetReviewForm();
+  }, [reviewSubmitting, resetReviewForm]);
 
   const closeReviewModal = useCallback(() => {
     if (reviewSubmitting) return;
-    setShowReviewModal(false);
-    setReviewError('');
-    resetReviewForm();
-  }, [reviewSubmitting, resetReviewForm]);
+
+    if (reviewStep !== 'success' && hasUnsavedReviewChanges) {
+      setShowDiscardReviewModal(true);
+      return;
+    }
+
+    discardAndCloseReviewModal();
+  }, [discardAndCloseReviewModal, hasUnsavedReviewChanges, reviewStep, reviewSubmitting]);
+
+  const handleReviewFormBack = useCallback(() => {
+    if (reviewSubmitting) return;
+
+    if (hasUnsavedReviewChanges) {
+      setShowDiscardReviewModal(true);
+      return;
+    }
+
+    setReviewStep('privacy');
+  }, [hasUnsavedReviewChanges, reviewSubmitting]);
+
+  const validateReviewForm = useCallback(() => {
+    const trimmedRoleAppliedFor = String(reviewRoleAppliedFor || '').trim();
+    const trimmedMessage = String(reviewMessage || '').trim();
+    const daysToFirstResponse =
+      reviewDaysToFirstResponse === '' ? 0 : Number(reviewDaysToFirstResponse);
+    const totalProcessDays =
+      reviewTotalProcessDays === '' ? 0 : Number(reviewTotalProcessDays);
+
+    if (!reviewApplicationId || !trimmedRoleAppliedFor) {
+      return 'Please select the role you applied for.';
+    }
+    if (!reviewProcessRating || reviewProcessRating < 1 || reviewProcessRating > 5) {
+      return 'Please select an application process rating from 1 to 5.';
+    }
+    if (!Number.isFinite(daysToFirstResponse) || daysToFirstResponse < 0) {
+      return 'Days to first response must be 0 or higher.';
+    }
+    if (!Number.isFinite(totalProcessDays) || totalProcessDays < 0) {
+      return 'Total process length must be 0 or higher.';
+    }
+    if (!trimmedMessage) return 'Please enter your review.';
+    return '';
+  }, [
+    reviewApplicationId,
+    reviewDaysToFirstResponse,
+    reviewMessage,
+    reviewProcessRating,
+    reviewRoleAppliedFor,
+    reviewTotalProcessDays,
+  ]);
+
+  const handleReviewNext = useCallback(() => {
+    const validationError = validateReviewForm();
+    setReviewError(validationError);
+    if (!validationError) setReviewStep('confirm');
+  }, [validateReviewForm]);
 
   const handleSubmitReview = useCallback(async () => {
     const token = localStorage.getItem('token');
@@ -2492,8 +2643,8 @@ const Bookmarks = () => {
     const totalProcessDays =
       reviewTotalProcessDays === '' ? 0 : Number(reviewTotalProcessDays);
 
-    if (!trimmedRoleAppliedFor) {
-      setReviewError('Please enter the role you applied for.');
+    if (!reviewApplicationId || !trimmedRoleAppliedFor) {
+      setReviewError('Please select the role you applied for.');
       return;
     }
 
@@ -2522,6 +2673,10 @@ const Bookmarks = () => {
       setReviewError('');
 
       const response = await api.post(`/companies/verified/${selectedCompany._id}/reviews`, {
+        applicationId: reviewApplicationId,
+        jobId: eligibleReviewApplications.find(
+          (application) => application.applicationId === reviewApplicationId
+        )?.jobId,
         processRating: reviewProcessRating,
         roleAppliedFor: trimmedRoleAppliedFor,
         daysToFirstResponse,
@@ -2532,12 +2687,26 @@ const Bookmarks = () => {
       });
 
       if (response?.data?.success) {
+        if (response.data.company) {
+          const updatedCompany = normalizeCompanyFromAny(response.data.company);
+          setSavedCompanies((currentCompanies) =>
+            currentCompanies.map((savedCompany) =>
+              savedCompany._id === updatedCompany?._id ? updatedCompany : savedCompany
+            )
+          );
+        }
+
         await fetchSavedCompanies();
         setActiveCompanyTab('reviews');
-        setShowReviewModal(false);
+        setReviewStep('success');
         setReviewError('');
-        resetReviewForm();
-        setToastMessage('success', response.data.message || 'Review submitted successfully!');
+
+        const remainingApplications = eligibleReviewApplications.filter(
+          (application) => application.applicationId !== reviewApplicationId
+        );
+        setEligibleReviewApplications(remainingApplications);
+        setReviewEligible(remainingApplications.length > 0);
+        setReviewLimitReached(remainingApplications.length === 0);
       }
     } catch (err) {
       console.error('Error submitting review:', err);
@@ -2560,8 +2729,10 @@ const Bookmarks = () => {
     }
   }, [
     fetchSavedCompanies,
+    eligibleReviewApplications,
     navigate,
     resetReviewForm,
+    reviewApplicationId,
     reviewDaysToFirstResponse,
     reviewMessage,
     reviewOutcome,
@@ -2572,6 +2743,15 @@ const Bookmarks = () => {
     selectedCompany,
     setToastMessage,
   ]);
+
+  const handleWriteReview = useCallback(() => {
+    if (reviewEligible) {
+      handleOpenCompanyReviewModal();
+      return;
+    }
+
+    if (reviewLimitReached) setShowReviewLimitModal(true);
+  }, [handleOpenCompanyReviewModal, reviewEligible, reviewLimitReached]);
 
   const handleSaveJobFromCompanyTab = useCallback(
     async (job) => {
@@ -3308,12 +3488,12 @@ const Bookmarks = () => {
                             <div className="flex flex-col items-stretch xl:items-end gap-3">
                               <button
                                 type="button"
-                                onClick={selectedCompanyJobs.length > 0 ? handleOpenCompanyReviewModal : undefined}
-                                disabled={selectedCompanyJobs.length === 0}
-                                aria-disabled={selectedCompanyJobs.length === 0}
-                                title={selectedCompanyJobs.length === 0 ? 'Reviews are available when the company has an open position.' : 'Write a Review'}
+                                onClick={reviewEligible || reviewLimitReached ? handleWriteReview : undefined}
+                                disabled={!reviewEligible && !reviewLimitReached}
+                                aria-disabled={!reviewEligible && !reviewLimitReached}
+                                title={reviewEligibilityMessage}
                                 className={`${UI.btnBase} ${UI.btnMd} ${UI.ring} w-full xl:w-[210px] ${
-                                  selectedCompanyJobs.length > 0
+                                  reviewEligible || reviewLimitReached
                                     ? UI.btnPrimary
                                     : 'cursor-not-allowed border border-gray-200 bg-gray-100 text-gray-400'
                                 }`}
@@ -3827,20 +4007,55 @@ const Bookmarks = () => {
       {showReviewModal && (
         <div className="fixed inset-0 z-[85]">
           <div
-            className="absolute inset-0 bg-black/55 backdrop-blur-[1px]"
+            className={`absolute inset-0 ${reviewStep === "success" ? "bg-black/30" : "bg-black/55 backdrop-blur-[1px]"}`}
             onClick={closeReviewModal}
             aria-hidden="true"
           />
 
-          <div className="absolute inset-0 overflow-y-auto px-4 py-6 sm:py-10">
-            <div className="mx-auto w-full max-w-[760px] rounded-2xl border border-[#dfe6ee] bg-white shadow-2xl">
+          <div
+            className={
+              reviewStep === "privacy"
+                ? "absolute inset-0 flex items-center justify-center px-3 py-3 sm:px-4 sm:py-4"
+                : reviewStep === "confirm" || reviewStep === "success"
+                  ? "absolute inset-0 flex items-center justify-center overflow-y-auto px-4 py-6 sm:py-8"
+                  : "absolute inset-0 overflow-y-auto px-4 py-6 sm:py-10"
+            }
+          >
+            <div
+              className={
+                reviewStep === "privacy"
+                  ? "relative mx-auto w-full max-w-[860px] overflow-hidden rounded-[22px] border border-gray-200 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.12)]"
+                  : reviewStep === "success"
+                    ? "mx-auto w-full max-w-md overflow-hidden rounded-2xl bg-white text-center shadow-2xl"
+                    : reviewStep === "confirm"
+                      ? "mx-auto w-full max-w-[560px] overflow-hidden rounded-xl border border-[#dfe6ee] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.18)]"
+                      : "mx-auto w-full max-w-[760px] rounded-2xl border border-[#dfe6ee] bg-white shadow-2xl"
+              }
+            >
+              {reviewStep === "privacy" && (
+                <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+                  <div className="absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-[#2e66ff]/[0.07] blur-3xl" />
+                  <div className="absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-[#56b5dc]/[0.12] blur-3xl" />
+                  <div className="absolute -bottom-24 -right-20 h-56 w-56 rounded-full bg-[#1e4ba0]/[0.10] blur-3xl" />
+                </div>
+              )}
+
+              {reviewStep !== "privacy" && reviewStep !== "success" && reviewStep !== "confirm" && (
               <div className="flex items-start justify-between gap-4 border-b border-[#e7edf3] px-5 py-5 sm:px-7">
                 <div>
                   <h3 className="text-[22px] font-bold text-[#172033]">
-                    Rate a company's hiring process
+                    {reviewStep === "privacy"
+                      ? "Privacy Notice & Rating Agreement"
+                      : reviewStep === "confirm"
+                        ? "Ready to Post Your Review?"
+                        : reviewStep === "success"
+                          ? "Review Posted Successfully!"
+                          : "Rate a company's hiring process"}
                   </h3>
                   <p className="mt-1 text-sm text-black/55">
-                    Help other jobseekers know what to expect — especially how long it took.
+                    {reviewStep === "form"
+                      ? "Help other jobseekers know what to expect — especially how long it took."
+                      : ""}
                   </p>
                 </div>
 
@@ -3855,8 +4070,110 @@ const Bookmarks = () => {
                   <span className="text-2xl leading-none text-gray-600">×</span>
                 </button>
               </div>
+              )}
 
-              <div className="px-5 py-6 sm:px-7">
+              <div
+                className={
+                  reviewStep === "privacy"
+                    ? "relative z-10 px-5 pb-5 pt-4 sm:px-9 sm:pb-7 sm:pt-5 lg:px-12"
+                    : reviewStep === "success"
+                      ? "p-0"
+                      : reviewStep === "confirm"
+                        ? "p-0"
+                      : "px-5 py-6 sm:px-7"
+                }
+              >
+                {reviewStep === "privacy" && (
+                  <div>
+                    <button
+                      onClick={closeReviewModal}
+                      className="absolute right-4 top-4 h-10 w-10 rounded-full border border-slate-200 bg-white/90 text-[#0f2442] shadow-sm hover:bg-slate-50 flex items-center justify-center transition focus:outline-none focus:ring-2 focus:ring-offset-2 sm:right-6 sm:top-5"
+                      style={{ "--tw-ring-color": "#1e4ba0" }}
+                      aria-label="Close"
+                      title="Close"
+                      disabled={reviewSubmitting}
+                      type="button"
+                    >
+                      <span className="text-2xl leading-none" aria-hidden="true">×</span>
+                    </button>
+
+                    <div className="-mt-1 flex justify-center sm:-mt-2">
+                      <div className="relative flex h-20 w-20 items-center justify-center sm:h-24 sm:w-24" aria-hidden="true">
+                        <div className="absolute inset-0 rounded-full bg-[#1e4ba0]/[0.06]" />
+                        <div className="absolute inset-2 rounded-full border border-[#1e4ba0]/15" />
+                        <div className="absolute left-2 top-5 h-1.5 w-1.5 rounded-full bg-[#2e66ff]" />
+                        <div className="absolute right-3 top-9 h-1.5 w-1.5 rounded-full bg-[#2e66ff]" />
+                        <div className="absolute right-7 bottom-2 h-1.5 w-1.5 rounded-full bg-[#2e66ff]/70" />
+                        <img
+                          src="/images/lock.png"
+                          alt="Lock"
+                          className="relative h-16 w-16 object-contain sm:h-20 sm:w-20"
+                          draggable="false"
+                        />
+                      </div>
+                    </div>
+
+                    <h3
+                      className="mt-0 text-center font-extrabold text-[#071b3a] text-[22px] sm:text-[28px] lg:text-[32px] leading-tight"
+                      style={{ letterSpacing: "0.06em" }}
+                    >
+                      PRIVACY NOTICE &amp; RATING AGREEMENT
+                    </h3>
+
+                    <div className="mx-auto mt-3 flex items-center justify-center gap-3 text-[#1e4ba0]" aria-hidden="true">
+                      <span className="h-px w-12 bg-gradient-to-r from-transparent to-[#1e4ba0]" />
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4" />
+                      </svg>
+                      <span className="h-px w-12 bg-gradient-to-l from-transparent to-[#1e4ba0]" />
+                    </div>
+
+                    <div className="mt-4 sm:mt-5 mx-auto max-w-[760px] rounded-[18px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 py-4 shadow-[0_10px_30px_rgba(30,75,160,0.08)] sm:px-7 sm:py-5">
+                      <div className="text-[12px] sm:text-[13px] text-[#0f2442] leading-5 sm:leading-[1.45rem]">
+                        <p className="font-semibold">Before submitting your rating, please review the following:</p>
+                        <p className="mt-2">Your rating and review will help other jobseekers understand what to expect from a company’s hiring process. By submitting, you confirm that the information you provide is <strong>based on your personal experience and is accurate to the best of your knowledge.</strong></p>
+                        <p className="mt-2">Your <strong>company, role applied for, hiring timeline, application rating, outcome, and review</strong> may be displayed to other AGAPAY users. Your name may also be displayed with your review if you choose to provide it.</p>
+                        <p className="mt-2">Please do not include <strong>personal, confidential, or sensitive information</strong> about yourself, the company, employees, recruiters, or other applicants in your review.</p>
+                        <p className="mt-2">Your rating is intended to share your <strong>hiring experience</strong>, not to disclose confidential company information or personally identify individuals.</p>
+                        <p className="mt-2">By continuing, you acknowledge that your submission may be reviewed by <strong>AGAPAY</strong> and displayed on the platform in accordance with these guidelines.</p>
+                      </div>
+                    </div>
+
+                    <label className="mt-4 sm:mt-5 mx-auto flex max-w-[760px] cursor-pointer items-start gap-3 rounded-xl border border-[#d8e2ee] bg-white/80 px-4 py-3 text-sm text-[#0f2442] select-none">
+                      <input
+                        type="checkbox"
+                        checked={reviewAgreementAccepted}
+                        onChange={(event) => setReviewAgreementAccepted(event.target.checked)}
+                        className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 focus:ring-2 focus:ring-offset-2"
+                        style={{ accentColor: "#1e4ba0", "--tw-ring-color": "#1e4ba0" }}
+                      />
+                      <span className="leading-5">I understand and agree to the Privacy Notice &amp; Rating Agreement.</span>
+                    </label>
+
+                    <div className="mt-4 sm:mt-5 flex justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={closeReviewModal}
+                        className="h-11 min-w-[120px] rounded-xl border border-[#d8e2ee] bg-white px-6 text-sm font-semibold text-[#0f2442] transition hover:bg-slate-50"
+                      >
+                        Back
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!reviewAgreementAccepted}
+                        onClick={() => setReviewStep("form")}
+                        className="h-11 min-w-[190px] rounded-xl px-6 text-sm font-bold text-white transition shadow-[0_10px_22px_rgba(30,75,160,0.25)] disabled:cursor-not-allowed"
+                        style={{ backgroundColor: reviewAgreementAccepted ? "#1e4ba0" : "#93a6c9" }}
+                      >
+                        Continue to Rate
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {reviewStep === "form" && (
+                <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block mb-2 text-sm font-semibold text-gray-900">
@@ -3873,14 +4190,27 @@ const Bookmarks = () => {
                     <label className="block mb-2 text-sm font-semibold text-gray-900">
                       Role you applied for *
                     </label>
-                    <input
-                      value={reviewRoleAppliedFor}
-                      onChange={(e) => setReviewRoleAppliedFor(e.target.value)}
-                      placeholder="e.g. Frontend Engineer"
-                      maxLength={160}
+                    <select
+                      value={reviewApplicationId}
+                      onChange={(event) => {
+                        const applicationId = event.target.value;
+                        const selectedApplication = eligibleReviewApplications.find(
+                          (application) => application.applicationId === applicationId
+                        );
+                        setReviewApplicationId(applicationId);
+                        setReviewRoleAppliedFor(selectedApplication?.jobTitle || "");
+                        setReviewError("");
+                      }}
                       disabled={reviewSubmitting}
-                      className="w-full h-11 rounded-lg border border-gray-200 px-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
-                    />
+                      className="w-full h-11 rounded-lg border border-gray-200 bg-white px-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
+                    >
+                      <option value="">Select a role</option>
+                      {eligibleReviewApplications.map((application) => (
+                        <option key={application.applicationId} value={application.applicationId}>
+                          {application.jobTitle}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                 </div>
@@ -4022,23 +4352,197 @@ const Bookmarks = () => {
 
                 <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                   <button
-                    onClick={closeReviewModal}
+                    onClick={handleReviewFormBack}
                     className="h-11 rounded-lg px-6 text-sm font-semibold text-gray-800 hover:bg-gray-100 transition"
                     disabled={reviewSubmitting}
                     type="button"
                   >
-                    Cancel
+                    Back
                   </button>
 
                   <button
-                    onClick={handleSubmitReview}
+                    onClick={handleReviewNext}
                     disabled={reviewSubmitting}
                     className="h-11 rounded-lg bg-[#172033] px-6 text-sm font-semibold text-white transition hover:bg-[#0f1726] disabled:opacity-60"
                     type="button"
                   >
-                    {reviewSubmitting ? "Posting..." : "Post review"}
+                    Next
                   </button>
                 </div>
+                </>
+                )}
+
+                {reviewStep === "confirm" && (
+                  <div>
+                    <div className="relative flex items-start gap-4 px-5 py-6 pr-14 sm:gap-5 sm:px-7 sm:py-7 sm:pr-16">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#e8f1ff] sm:h-14 sm:w-14">
+                        <FaClipboardCheck className="text-[27px] text-[#2e66a6] sm:text-[31px]" aria-hidden="true" />
+                      </div>
+
+                      <div className="min-w-0 text-left">
+                        <h3 className="text-xl font-bold leading-7 text-[#172033]">
+                          Ready to Post Your Review?
+                        </h3>
+                        <p className="mt-2 text-sm leading-6 text-black/65">
+                          Before posting, please ensure that your feedback is <strong>accurate, complete, and based on your personal experience.</strong> By clicking <strong>Post Review</strong>, you confirm that the information provided is truthful and will be <strong>visible to other jobseekers.</strong>
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={closeReviewModal}
+                        disabled={reviewSubmitting}
+                        className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-gray-600 transition hover:bg-gray-100 disabled:opacity-50 sm:right-5 sm:top-5"
+                        aria-label="Close"
+                        title="Close"
+                      >
+                        <span className="text-2xl leading-none" aria-hidden="true">×</span>
+                      </button>
+                    </div>
+
+                    {reviewError && (
+                      <div className="mx-5 mb-5 rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700 sm:mx-7">
+                        {reviewError}
+                      </div>
+                    )}
+
+                    <div className="flex flex-col-reverse gap-3 border-t border-[#e7edf3] bg-[#fafbfd] px-5 py-4 sm:flex-row sm:justify-end sm:px-7">
+                      <button type="button" disabled={reviewSubmitting} onClick={() => setReviewStep("form")} className="h-11 rounded-lg border border-[#2e66a6] bg-white px-6 text-sm font-semibold text-[#2e66a6] transition hover:bg-[#f7faff] disabled:opacity-50">Go Back</button>
+                      <button type="button" disabled={reviewSubmitting} onClick={handleSubmitReview} className="h-11 rounded-lg bg-[#2e66a6] px-6 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(46,102,166,0.18)] transition hover:bg-[#245387] disabled:cursor-not-allowed disabled:opacity-50">{reviewSubmitting ? "Posting..." : "Post Review"}</button>
+                    </div>
+                  </div>
+                )}
+
+                {reviewStep === "success" && (
+                  <>
+                    <div className="px-8 pb-6 pt-8">
+                      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#2e66a6] text-white">
+                        <svg className="h-10 w-10" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3.25-3.25a1 1 0 111.414-1.414L8.75 11.836l6.543-6.543a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+
+                      <h2 className="text-xl font-bold text-gray-900">
+                        Review Posted Successfully!
+                      </h2>
+                      <p className="mt-2 text-sm text-gray-600">
+                        Your review has been posted and is now visible to other jobseekers.
+                      </p>
+                    </div>
+
+                    <div className="border-t border-gray-200 px-8 py-4">
+                      <button
+                        type="button"
+                        onClick={discardAndCloseReviewModal}
+                        className="w-full rounded-xl bg-[#2e66a6] px-5 py-3 text-sm font-semibold text-white hover:bg-[#23508a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                      >
+                        OK
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showReviewLimitModal && (
+        <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/35 px-4">
+          <div
+            className="w-full max-w-md overflow-hidden rounded-2xl bg-white text-center shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="review-limit-title"
+            aria-describedby="review-limit-description"
+          >
+            <div className="px-8 pb-6 pt-8">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#2e66a6] text-white">
+                <svg className="h-10 w-10" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3.25-3.25a1 1 0 111.414-1.414L8.75 11.836l6.543-6.543a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <h2 id="review-limit-title" className="text-xl font-bold text-gray-900">
+                Review Limit Reached!
+              </h2>
+              <p id="review-limit-description" className="mt-2 text-sm text-gray-600">
+                You’ve already reviewed all available job posts from this employer.
+              </p>
+            </div>
+            <div className="border-t border-gray-200 p-4">
+              <button
+                type="button"
+                onClick={() => setShowReviewLimitModal(false)}
+                className="h-11 w-full rounded-xl bg-[#2e66a6] px-6 text-sm font-semibold text-white transition hover:bg-[#245387]"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDiscardReviewModal && (
+        <div className="fixed inset-0 z-[10050] flex items-center justify-center bg-black/55 px-4 py-6">
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="discard-review-title"
+            aria-describedby="discard-review-description"
+            className="w-full max-w-[430px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl"
+          >
+            <div className="px-6 pb-5 pt-6 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-500">
+                <svg
+                  className="h-6 w-6"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 9v4m0 4h.01M10.3 3.8L2.7 17a2 2 0 001.73 3h15.14a2 2 0 001.73-3L13.7 3.8a2 2 0 00-3.4 0z"
+                  />
+                </svg>
+              </div>
+
+              <h3 id="discard-review-title" className="mt-4 text-lg font-bold text-[#172033]">
+                Discard Review
+              </h3>
+              <p
+                id="discard-review-description"
+                className="mx-auto mt-2 max-w-[350px] text-sm leading-6 text-gray-600"
+              >
+                Are you sure you want to leave? Your review hasn&apos;t been submitted yet, and any
+                information you&apos;ve entered will be lost.
+              </p>
+
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowDiscardReviewModal(false)}
+                  className="h-11 rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                >
+                  Keep Editing
+                </button>
+                <button
+                  type="button"
+                  onClick={discardAndCloseReviewModal}
+                  className="h-11 rounded-xl bg-red-600 px-4 text-sm font-semibold text-white transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2"
+                >
+                  Discard Review
+                </button>
               </div>
             </div>
           </div>
