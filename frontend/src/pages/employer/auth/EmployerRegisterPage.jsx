@@ -1890,7 +1890,7 @@ const EmployerRegisterPage = () => {
                     <p className="text-center text-sm text-gray-700">
                       Already have an account?{' '}
                       <Link to="/employer/login" className="font-semibold text-[#2e66a6] hover:text-[#255489] underline">
-                        Sign In
+                        Sign In here
                       </Link>
                     </p>
                   </div>
