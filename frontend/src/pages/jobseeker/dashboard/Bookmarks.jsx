@@ -10,6 +10,7 @@ import { BuildingIcon } from '../../../components/shared/JobseekerIcons';
 import { filterOpenJobListings, isOpenJobListing } from '../../../utils/jobVisibility';
 
 const DEFAULT_COMPANY_LOGO = '/images/companyicon.png';
+const DEFAULT_REVIEWER_PROFILE_IMAGE = '/images/profile.png';
 
 
 
@@ -175,6 +176,38 @@ const getRelocationDisplayLabel = (value) => {
 
 const getApiOrigin = () =>
   String(api?.defaults?.baseURL || process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
+
+const resolveReviewerProfileImage = (value) => {
+  const imagePath = String(value || '').trim();
+  if (!imagePath) return '';
+  if (/^https?:\/\//i.test(imagePath)) return imagePath;
+  if (imagePath.startsWith('/images/')) return imagePath;
+  if (imagePath.startsWith('/uploads')) return `${getApiOrigin()}${imagePath}`;
+  return `${getApiOrigin()}/${imagePath.replace(/^\/+/, '')}`;
+};
+
+const ReviewerAvatar = ({ src, name }) => {
+  const [imageSrc, setImageSrc] = useState(src || DEFAULT_REVIEWER_PROFILE_IMAGE);
+
+  useEffect(() => {
+    setImageSrc(src || DEFAULT_REVIEWER_PROFILE_IMAGE);
+  }, [src]);
+
+  return (
+    <div className="w-11 h-11 rounded-full border border-[#dfe6ee] bg-[#f7faff] overflow-hidden shrink-0">
+      <img
+        src={imageSrc}
+        alt={`${name || 'Reviewer'} profile`}
+        className="w-full h-full object-cover"
+        onError={() => {
+          if (imageSrc !== DEFAULT_REVIEWER_PROFILE_IMAGE) {
+            setImageSrc(DEFAULT_REVIEWER_PROFILE_IMAGE);
+          }
+        }}
+      />
+    </div>
+  );
+};
 
 const UI = {
   page: 'bg-[#FFFFFF] min-h-screen',
@@ -1182,6 +1215,9 @@ const normalizeCompanyFromAny = (company) => {
     ? company.reviews.map((review, index) => ({
         id: review?._id || review?.id || `review-${index}`,
         reviewerName: review?.reviewerName || 'Anonymous User',
+        reviewerProfileImage: resolveReviewerProfileImage(
+          review?.reviewerProfileImage || review?.profileImage || ''
+        ),
         date: formatReviewDate(review?.createdAt || review?.date),
         rating: Number(review?.processRating ?? review?.rating) || 0,
         processRating:
@@ -3536,9 +3572,10 @@ const Bookmarks = () => {
                                 >
                                   <div className="flex items-start justify-between gap-4 flex-wrap">
                                     <div className="flex items-start gap-3 min-w-0">
-                                      <div className="w-11 h-11 rounded-xl border border-[#dfe6ee] bg-[#f7faff] flex items-center justify-center shrink-0">
-                                        <SvgIcon name="industry" className="w-5 h-5 text-black/45" />
-                                      </div>
+                                      <ReviewerAvatar
+                                        src={review.reviewerProfileImage}
+                                        name={review.reviewerName || 'Anonymous User'}
+                                      />
 
                                       <div className="min-w-0">
                                         <h3 className="text-[16px] font-bold text-black">

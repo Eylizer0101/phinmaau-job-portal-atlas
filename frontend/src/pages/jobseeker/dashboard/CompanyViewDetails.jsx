@@ -606,35 +606,25 @@ const JobCardLogo = ({ src, name }) => {
 };
 
 const ReviewerAvatar = ({ src, name }) => {
-  const [failed, setFailed] = useState(false);
-  const hasImage = Boolean(src) && !failed;
+  const fallbackProfileImage = "/images/profile.png";
+  const [imageSrc, setImageSrc] = useState(src || fallbackProfileImage);
+
+  useEffect(() => {
+    setImageSrc(src || fallbackProfileImage);
+  }, [src]);
 
   return (
     <div className="w-11 h-11 rounded-full bg-[#f0f4f8] border border-[#e1e8f0] overflow-hidden flex items-center justify-center shrink-0">
-      {hasImage ? (
-        <img
-          src={src}
-          alt={`${name || "Reviewer"} profile`}
-          className="w-full h-full object-cover"
-          onError={() => setFailed(true)}
-        />
-      ) : (
-        <svg
-          className="w-6 h-6 text-[#60758a]"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.8"
-            d="M20 21a8 8 0 00-16 0"
-          />
-          <circle cx="12" cy="7" r="4" strokeWidth="1.8" />
-        </svg>
-      )}
+      <img
+        src={imageSrc}
+        alt={`${name || "Reviewer"} profile`}
+        className="w-full h-full object-cover"
+        onError={() => {
+          if (imageSrc !== fallbackProfileImage) {
+            setImageSrc(fallbackProfileImage);
+          }
+        }}
+      />
     </div>
   );
 };
