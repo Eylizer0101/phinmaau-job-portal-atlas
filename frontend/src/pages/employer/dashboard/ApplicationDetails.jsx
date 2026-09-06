@@ -74,6 +74,7 @@ const SvgIcon = ({ name, className = 'h-5 w-5' }) => {
     eye: 'M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z M15 12a3 3 0 11-6 0 3 3 0 016 0z',
     user: 'M16 7a4 4 0 11-8 0 4 4 0 018 0z M5 21a7 7 0 0114 0',
     userMinus: 'M16 7a4 4 0 11-8 0 4 4 0 018 0z M5 21a7 7 0 0114 0 M17 11h5',
+    edit: 'M15.232 5.232l3.536 3.536M16.732 3.732a2.5 2.5 0 113.536 3.536L8.5 19.036 4 20l.964-4.5L16.732 3.732z',
   };
   return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.9} d={paths[name] || paths.user} /></svg>;
 };
@@ -2180,21 +2181,80 @@ const MessagePopup = ({ open, onClose, applicant, application }) => {
   );
 };
 
-const EmploymentStatusModals = ({ mode, reason, requestReason, loading, result, onReasonChange, onModeChange, onReview, onUpdate }) => {
+const EmploymentStatusModals = ({ mode, reason, requestReason, loading, result, onReasonChange, onModeChange, onReview, onUpdate, onClose }) => {
   const choices = [
     { value: 'contract_ended', title: 'Contract Ended', description: 'Previous contract has finished' },
     { value: 'employment_ended', title: 'Employment Ended', description: 'No longer employed in this role' },
   ];
   const reasonLabel = (value) => value === 'contract_ended' ? 'Contract Ended' : 'Employment Ended';
+  const CloseButton = ({ label }) => (
+    <button
+      type="button"
+      onClick={onClose}
+      disabled={loading}
+      className="absolute right-4 top-4 rounded-lg p-1 text-gray-500 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+      aria-label={label}
+    >
+      <SvgIcon name="x" className="h-5 w-5" />
+    </button>
+  );
 
   return <>
-    {mode === 'review' ? <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4"><div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"><h2 className="text-lg font-bold text-gray-900">Approve Request?</h2><p className="mt-2 text-sm leading-6 text-gray-600">Are you sure you want to approve the job seeker's request to end their current employment? Their employment status will change from Active to Inactive.</p><p className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">Request reason: <strong className="text-gray-900">{reasonLabel(requestReason)}</strong></p><div className="mt-5 grid grid-cols-2 gap-3"><button type="button" onClick={() => onReview('declined')} disabled={loading} className="h-11 rounded-xl border border-red-200 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50">Decline Request</button><button type="button" onClick={() => onReview('approved')} disabled={loading} className="h-11 rounded-xl bg-[#2e66a6] text-sm font-semibold text-white disabled:opacity-50">{loading ? 'Processing...' : 'Approve Request'}</button></div></div></div> : null}
-    {mode === 'reason' ? <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4"><div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"><h2 className="text-lg font-bold text-gray-900">Why are you updating this job seeker's employment status?</h2><p className="mt-1 text-sm text-gray-500">Select the reason for ending this job seeker's current employment.</p><div className="mt-5 space-y-3">{choices.map((choice) => <button key={choice.value} type="button" onClick={() => onReasonChange(choice.value)} className={cn('w-full rounded-xl border px-4 py-3 text-left', reason === choice.value ? 'border-[#2e66a6] bg-[#2e66a6]/5 ring-2 ring-[#2e66a6]/10' : 'border-gray-200')}><span className="block text-sm font-semibold">{choice.title}</span><span className="block text-xs text-gray-500">{choice.description}</span></button>)}</div><button type="button" onClick={() => onModeChange('confirm')} disabled={!reason} className="mt-5 h-11 w-full rounded-xl bg-[#2e66a6] text-sm font-semibold text-white disabled:opacity-50">Continue</button></div></div> : null}
-    {mode === 'confirm' ? <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4"><div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"><h2 className="text-lg font-bold text-gray-900">End Employment?</h2><p className="mt-2 text-sm leading-6 text-gray-600">Are you sure you want to update the job seeker's employment status? Their current status will change from Active to Inactive. (<strong>{reasonLabel(reason)}</strong>)</p><div className="mt-5 grid grid-cols-2 gap-3"><button type="button" onClick={() => onModeChange('reason')} disabled={loading} className="h-11 rounded-xl border border-gray-300 text-sm font-semibold text-gray-700 disabled:opacity-50">Back</button><button type="button" onClick={onUpdate} disabled={loading} className="h-11 rounded-xl bg-[#2e66a6] text-sm font-semibold text-white disabled:opacity-50">{loading ? 'Updating...' : 'Update Status'}</button></div></div></div> : null}
-    {result ? <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/25 px-4" role="status"><div className="w-full max-w-sm rounded-2xl bg-white px-6 py-7 text-center shadow-2xl"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]"><SvgIcon name="check" className="h-8 w-8" /></div><h2 className="mt-4 text-xl font-bold">{result.title}</h2><p className="mt-2 text-sm text-gray-500">{result.description}</p></div></div> : null}
+    {mode === 'review' ? (
+      <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4">
+        <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+          <CloseButton label="Close approve request modal" />
+          <h2 className="pr-10 text-lg font-bold text-gray-900">Approve Request?</h2>
+          <p className="mt-2 text-sm leading-6 text-gray-600">Are you sure you want to approve the job seeker's request to end their current employment? Their employment status will change from Active to Inactive.</p>
+          <p className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">Request reason: <strong className="text-gray-900">{reasonLabel(requestReason)}</strong></p>
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <button type="button" onClick={() => onReview('declined')} disabled={loading} className="h-11 rounded-xl border border-red-200 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50">Decline Request</button>
+            <button type="button" onClick={() => onReview('approved')} disabled={loading} className="h-11 rounded-xl bg-[#2e66a6] text-sm font-semibold text-white disabled:opacity-50">{loading ? 'Processing...' : 'Approve Request'}</button>
+          </div>
+        </div>
+      </div>
+    ) : null}
+    {mode === 'reason' ? (
+      <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4">
+        <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+          <CloseButton label="Close update status modal" />
+          <h2 className="pr-10 text-lg font-bold text-gray-900">Why are you updating this job seeker's employment status?</h2>
+          <p className="mt-1 text-sm text-gray-500">Select the reason for ending this job seeker's current employment.</p>
+          <div className="mt-5 space-y-3">{choices.map((choice) => (
+            <button key={choice.value} type="button" onClick={() => onReasonChange(choice.value)} className={cn('w-full rounded-xl border px-4 py-3 text-left', reason === choice.value ? 'border-[#2e66a6] bg-[#2e66a6]/5 ring-2 ring-[#2e66a6]/10' : 'border-gray-200')}>
+              <span className="block text-sm font-semibold">{choice.title}</span>
+              <span className="block text-xs text-gray-500">{choice.description}</span>
+            </button>
+          ))}</div>
+          <button type="button" onClick={() => onModeChange('confirm')} disabled={!reason} className="mt-5 h-11 w-full rounded-xl bg-[#2e66a6] text-sm font-semibold text-white disabled:opacity-50">Continue</button>
+        </div>
+      </div>
+    ) : null}
+    {mode === 'confirm' ? (
+      <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4">
+        <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+          <CloseButton label="Close end employment modal" />
+          <h2 className="pr-10 text-lg font-bold text-gray-900">End Employment?</h2>
+          <p className="mt-2 text-sm leading-6 text-gray-600">Are you sure you want to update the job seeker's employment status? Their current status will change from Active to Inactive. (<strong>{reasonLabel(reason)}</strong>)</p>
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <button type="button" onClick={() => onModeChange('reason')} disabled={loading} className="h-11 rounded-xl border border-gray-300 text-sm font-semibold text-gray-700 disabled:opacity-50">Back</button>
+            <button type="button" onClick={onUpdate} disabled={loading} className="h-11 rounded-xl bg-[#2e66a6] text-sm font-semibold text-white disabled:opacity-50">{loading ? 'Updating...' : 'Update Status'}</button>
+          </div>
+        </div>
+      </div>
+    ) : null}
+    {result ? (
+      <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/25 px-4" role="status">
+        <div className="relative w-full max-w-sm rounded-2xl bg-white px-6 py-7 text-center shadow-2xl">
+          <CloseButton label="Close success message" />
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]"><SvgIcon name="check" className="h-8 w-8" /></div>
+          <h2 className="mt-4 text-xl font-bold">{result.title}</h2>
+          <p className="mt-2 text-sm text-gray-500">{result.description}</p>
+        </div>
+      </div>
+    ) : null}
   </>;
 };
-
 const ApplicationDetails = () => {
   const navigate = useNavigate();
   const { applicationId } = useParams();
@@ -2737,7 +2797,7 @@ const ApplicationDetails = () => {
               ) : null}
               {isActiveHiredEmployment && !hasPendingEmploymentRequest ? (
                 <button onClick={() => { setEmploymentReason(''); setEmploymentModal('reason'); }} disabled={employmentLoading} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91] hover:bg-blue-50 disabled:opacity-50">
-                  <SvgIcon name="userMinus" /> Update Status
+                  <SvgIcon name="edit" /> Update Status
                 </button>
               ) : null}
               {(isAlreadyEmployed || ['pending', 'for interview'].includes(currentStatus)) ? <button onClick={() => setDeclineOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400 px-4 py-3 text-sm font-semibold text-red-600"><SvgIcon name="x" /> Decline Application</button> : null}
@@ -3065,6 +3125,12 @@ const ApplicationDetails = () => {
         onModeChange={setEmploymentModal}
         onReview={reviewEmploymentRequest}
         onUpdate={updateEmploymentByEmployer}
+        onClose={() => {
+          if (employmentLoading) return;
+          setEmploymentModal('');
+          setEmploymentResult(null);
+          setEmploymentReason('');
+        }}
       />
       <DeclineReasonModal open={declineOpen} applicantName={name} reasons={declineReasons} selectedReason={declineReason} comment={declineComment} onReasonChange={setDeclineReason} onCommentChange={setDeclineComment} onClose={() => { setDeclineOpen(false); setDeclineReason(''); setDeclineComment(''); }} onConfirm={async () => { const from = currentStatus === 'for interview' ? 'forInterview' : 'applicants'; setDeclineOpen(false); await updateStatus('declined', { declineReason, declineComment, declinedFrom: from }); }} submitting={statusUpdating} />
       <StatusConfirmationModal
