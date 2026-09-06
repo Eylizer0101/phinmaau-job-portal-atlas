@@ -1478,14 +1478,7 @@ const ManageJobs = () => {
                 </svg>
                 <h3 className="mt-4 text-lg font-semibold text-gray-900">No matching jobs</h3>
                 
-                <div className="mt-6 flex items-center justify-center gap-2">
-                  <button
-                    type="button"
-                    onClick={clearControls}
-                    className="rounded-xl border border-gray-200 px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    Clear filters
-                  </button>
+                <div className="mt-6 flex items-center justify-center">
                   <button
                     onClick={() => navigate('/employer/post-job')}
                     className="inline-flex items-center gap-2 rounded-xl bg-[#2e66a6] px-5 py-3 text-sm font-semibold text-white hover:bg-[#25558a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
