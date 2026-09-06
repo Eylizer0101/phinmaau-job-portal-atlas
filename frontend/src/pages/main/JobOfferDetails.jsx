@@ -1217,7 +1217,14 @@ const JobOfferDetails = () => {
                       <div className="mt-2">
                         <div className={`inline-flex items-center gap-2 ${UI.meta} min-w-0`}>
                           <span className="text-black/60">
-                            <BuildingIcon className="w-4 h-4" />
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={1.6}
+                              d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3.75h1.5m-1.5 3.75h1.5m3-7.5H15m-1.5 3.75H15m-1.5 3.75H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"
+                            />
+                          </svg>
                           </span>
                           <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
                             {String(job?.companyName || job?.employerDetails?.companyName || '').trim() || 'Company not specified'}
