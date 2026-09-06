@@ -1446,8 +1446,8 @@ const selectBase =
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 id="update-employment-title" className="text-lg font-bold text-gray-900">Why are you updating this job seeker's employment status?</h2>
-                <p className="mt-1 text-sm text-gray-500">Select the reason for ending this job seeker's current employment.</p>
+                <h2 id="update-employment-title" className="text-lg font-bold text-gray-900">Update Work Status?</h2>
+                <p className="mt-1 text-sm text-gray-500">Select the reason for updating this job seeker's current work status.</p>
               </div>
               <button type="button" onClick={closeEmploymentUpdate} className="rounded-lg p-1 text-gray-500 hover:bg-gray-100" aria-label="Close update employment modal">
                 <Icon name="x" className="h-5 w-5" />

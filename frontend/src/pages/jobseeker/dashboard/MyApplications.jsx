@@ -1028,14 +1028,14 @@ const MyApplications = () => {
                     ? 'Application Withdrawn'
                     : actionMessage === 'reactivated'
                     ? 'Application Reactivated'
-                    : 'Status change request sent successfully!'}
+                    : 'Request Sent Successfully!'}
                 </h2>
                 <p className="mt-2 text-sm text-gray-500">
                   {actionMessage === 'withdrawn'
                     ? 'Your application has been successfully withdrawn.'
                     : actionMessage === 'reactivated'
                     ? 'Your application has been successfully reactivated.'
-                    : 'Your request has been sent to the Company / Employer for review.'}
+                    : 'Your request has been sent for review.'}
                 </p>
               </div>
             </div>
@@ -1534,7 +1534,7 @@ const MyApplications = () => {
                 </span>
                 <div>
                   <h2 id="status-request-title" className="text-lg font-bold text-gray-900">What would you like to request?</h2>
-                  <p className="mt-1 text-sm text-gray-500">The Company / Employer reviews and approves the status you request.</p>
+                  <p className="mt-1 text-sm text-gray-500">Select the reason for your request. The company or employer will review and approve it.</p>
                 </div>
               </div>
               <button

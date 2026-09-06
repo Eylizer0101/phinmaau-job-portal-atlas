@@ -2218,8 +2218,8 @@ const EmploymentStatusModals = ({ mode, reason, requestReason, loading, result, 
       <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4">
         <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
           <CloseButton label="Close update status modal" />
-          <h2 className="pr-10 text-lg font-bold text-gray-900">Why are you updating this job seeker's employment status?</h2>
-          <p className="mt-1 text-sm text-gray-500">Select the reason for ending this job seeker's current employment.</p>
+          <h2 className="pr-10 text-lg font-bold text-gray-900">Update Work Status?</h2>
+          <p className="mt-1 text-sm text-gray-500">Select the reason for updating this job seeker's current work status.</p>
           <div className="mt-5 space-y-3">{choices.map((choice) => (
             <button key={choice.value} type="button" onClick={() => onReasonChange(choice.value)} className={cn('w-full rounded-xl border px-4 py-3 text-left', reason === choice.value ? 'border-[#2e66a6] bg-[#2e66a6]/5 ring-2 ring-[#2e66a6]/10' : 'border-gray-200')}>
               <span className="block text-sm font-semibold">{choice.title}</span>
