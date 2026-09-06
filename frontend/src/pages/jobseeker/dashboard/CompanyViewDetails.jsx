@@ -2615,7 +2615,7 @@ const CompanyViewDetails = () => {
                       </div>
                     </div>
 
-                    <label className="mt-4 sm:mt-5 mx-auto flex max-w-[760px] cursor-pointer items-start gap-3 text-sm text-[#0f2442] select-none">
+                    <label className="mt-4 sm:mt-5 mx-auto flex max-w-[760px] cursor-pointer items-start gap-3 rounded-xl border border-[#d8e2ee] bg-white/80 px-4 py-3 text-sm text-[#0f2442] select-none">
                       <input
                         type="checkbox"
                         checked={reviewAgreementAccepted}

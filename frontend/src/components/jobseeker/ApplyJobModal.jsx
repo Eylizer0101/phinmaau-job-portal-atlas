@@ -554,7 +554,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
                           </p>
                         </div>
 
-                        <label className="mt-4 sm:mt-5 flex cursor-pointer items-start gap-3 text-[13px] text-black/70">
+                        <label className="mt-4 sm:mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-[#d8e2ee] bg-white px-4 py-3 text-[13px] text-black/70">
                           <input
                             type="checkbox"
                             checked={privacyAccepted}
