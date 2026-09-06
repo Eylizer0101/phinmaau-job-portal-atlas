@@ -56,6 +56,21 @@ export const hasMeaningfulResumeRows = (columns) =>
     )
   );
 
+export const formatResumeSalaryValue = (value) => {
+  const text = String(value ?? '').trim();
+  if (!text) return '';
+
+  const normalized = text.replace(/,/g, '');
+  if (!/^-?\d+(?:\.\d+)?$/.test(normalized)) return text;
+
+  const [integerPart, decimalPart] = normalized.split('.');
+  const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+  return decimalPart === undefined
+    ? formattedInteger
+    : `${formattedInteger}.${decimalPart}`;
+};
+
 export const getResumeSalaryDisplay = (profile = {}, viewerMode = 'jobseeker') => {
   const privacy = String(profile?.salaryPrivacy || 'only_me').trim().toLowerCase();
   const isEmployerViewer = viewerMode === 'employer';
@@ -66,6 +81,7 @@ export const getResumeSalaryDisplay = (profile = {}, viewerMode = 'jobseeker') =
 
   return [profile?.minimumSalary, profile?.maximumSalary]
     .filter(isMeaningfulResumeValue)
+    .map(formatResumeSalaryValue)
     .join(' - ');
 };
 

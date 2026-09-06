@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   filterMeaningfulResumeItems,
+  getResumeSalaryDisplay,
   hasMeaningfulResumeRows,
   isMeaningfulResumeValue,
   normalizeAddedResumeSections,
@@ -384,7 +385,7 @@ const ResumePreviewPage = () => {
       { label: 'Preferred Language', value: formData.preferredLanguage },
       { label: 'Educational Attainment', value: formData.educationalAttainment },
       { label: 'Double Degree', value: formData.studyField },
-      { label: 'Salary', value: [formData.minimumSalary, formData.maximumSalary].filter(isMeaningfulResumeValue).join(' - ') },
+      { label: 'Salary', value: getResumeSalaryDisplay(formData) },
       { label: 'Nationality', value: formData.nationality },
     ],
     [
