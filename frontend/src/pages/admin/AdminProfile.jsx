@@ -48,11 +48,27 @@ const AdminProfile = () => {
 
   const requirements = useMemo(() => [
     { label: "At least 8 characters", valid: passwords.newPassword.length >= 8 },
-    { label: "Starts with an uppercase letter", valid: /^[A-Z]/.test(passwords.newPassword) },
+    { label: "One uppercase letter", valid: /[A-Z]/.test(passwords.newPassword) },
     { label: "One lowercase letter", valid: /[a-z]/.test(passwords.newPassword) },
-    { label: "At least one number", valid: /\d/.test(passwords.newPassword) },
+    { label: "At least One number", valid: /\d/.test(passwords.newPassword) },
     { label: "One special character", valid: /[^A-Za-z0-9]/.test(passwords.newPassword) },
   ], [passwords.newPassword]);
+
+  const passwordStrength = useMemo(() => {
+    if (!passwords.newPassword) return null;
+
+    const score = requirements.filter((item) => item.valid).length;
+    const levels = [
+      { label: "Very Weak", color: "text-red-600" },
+      { label: "Weak", color: "text-red-600" },
+      { label: "Fair", color: "text-orange-500" },
+      { label: "Good", color: "text-amber-500" },
+      { label: "Strong", color: "text-green-600" },
+      { label: "Very Strong", color: "text-emerald-700" },
+    ];
+
+    return levels[score];
+  }, [passwords.newPassword, requirements]);
 
   const updateStoredAdmin = (nextProfile) => {
     try {
@@ -310,7 +326,7 @@ const AdminProfile = () => {
         <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm sm:p-9">
           <div className="flex items-center gap-3 border-b border-slate-200 pb-5"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-[#173b78]"><LockKeyhole size={20} /></span><h2 className="text-xl font-extrabold text-[#173b78]">Change Password</h2></div>
           <form onSubmit={updatePassword} className="mt-5 space-y-4">
-            {[['currentPassword', 'Current Password', 'Enter your current password'], ['newPassword', 'New Password', 'Enter your new password'], ['confirmNewPassword', 'Confirm New Password', 'Confirm your new password']].map(([name, label, placeholder]) => <label key={name} className="block text-sm font-semibold text-slate-800">{label}:<span className="relative mt-2 block"><input required placeholder={placeholder} type={visible[name] ? "text" : "password"} value={passwords[name]} onChange={(event) => setPasswords((previous) => ({ ...previous, [name]: event.target.value }))} className="h-11 w-full rounded-lg border border-slate-300 px-3 pr-11 font-normal outline-none transition focus:border-[#173b78] focus:ring-2 focus:ring-blue-100" /><button type="button" onClick={() => setVisible((previous) => ({ ...previous, [name]: !previous[name] }))} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" aria-label={`Show or hide ${label}`}>{visible[name] ? <FaEyeSlash /> : <FaEye />}</button></span></label>)}
+            {[['currentPassword', 'Current Password', 'Enter your current password'], ['newPassword', 'New Password', 'Enter your new password'], ['confirmNewPassword', 'Confirm New Password', 'Confirm your new password']].map(([name, label, placeholder]) => <label key={name} className="block text-sm font-semibold text-slate-800">{label}:<span className="relative mt-2 block"><input required placeholder={placeholder} type={visible[name] ? "text" : "password"} value={passwords[name]} onChange={(event) => setPasswords((previous) => ({ ...previous, [name]: event.target.value }))} className="h-11 w-full rounded-lg border border-slate-300 px-3 pr-11 font-normal outline-none transition focus:border-[#173b78] focus:ring-2 focus:ring-blue-100" /><button type="button" onClick={() => setVisible((previous) => ({ ...previous, [name]: !previous[name] }))} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" aria-label={`Show or hide ${label}`}>{visible[name] ? <FaEyeSlash /> : <FaEye />}</button></span>{name === 'newPassword' && passwordStrength ? <span className={`mt-2 block text-xs font-semibold ${passwordStrength.color}`}>{passwordStrength.label}</span> : null}</label>)}
             <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-5"><p className="font-bold text-[#173b78]">Password Requirements</p><div className="mt-3 space-y-2">{requirements.map((item) => <p key={item.label} className={`flex items-center gap-2 text-sm font-medium transition-colors ${item.valid ? "text-emerald-700" : "text-slate-500"}`}>{item.valid ? <CheckCircle2 size={18} className="shrink-0 fill-emerald-600 text-white" aria-label="Requirement met" /> : <Circle size={18} className="shrink-0 text-slate-400" aria-label="Requirement not met" />}{item.label}</p>)}</div></div>
             <button disabled={updatingPassword} className="flex h-11 w-full items-center 
             justify-center gap-2 rounded-lg bg-[#173b78] text-sm font-bold text-white transition
