@@ -883,8 +883,6 @@ const EmployerJobView = () => {
   const isRelocationMissing = !String(job.willingToRelocate || '').trim();
   const companyName =
     String(job.companyName || companyInfo?.companyName || '').trim() || 'Company not specified';
-  const companyIndustry =
-    String(companyInfo?.industry || job?.employerDetails?.industry || '').trim() || 'Industry not specified';
   const useSingleRowDraftPlaceholders =
     isDraftJob &&
     isJobTypeMissing &&
@@ -966,7 +964,7 @@ const EmployerJobView = () => {
                     </h1>
                     <div className="mt-2 flex items-center gap-2 text-sm text-black/70">
                       <BuildingIcon className="h-4 w-4 text-black/60" />
-                      <span className="font-medium">{companyIndustry}</span>
+                      <span className="font-medium">{companyName}</span>
                     </div>
                     <div className="mt-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-black/50">
                       <SvgIcon name="location" className="h-4 w-4 text-black/60" />

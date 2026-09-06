@@ -1220,7 +1220,7 @@ const JobOfferDetails = () => {
                             <BuildingIcon className="w-4 h-4" />
                           </span>
                           <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
-                            {String(companyInfo?.industry || job?.employerDetails?.industry || job?.category || '').trim() || 'Industry not specified'}
+                            {String(job?.companyName || job?.employerDetails?.companyName || '').trim() || 'Company not specified'}
                           </span>
                         </div>
                       </div>

@@ -3107,11 +3107,11 @@ const Bookmarks = () => {
                                       }}
                                       className={`min-w-0 overflow-hidden text-ellipsis whitespace-nowrap rounded-sm text-[#2e66a6] underline underline-offset-2 hover:text-[#1f4f86] ${UI.ring}`}
                                     >
-                                      {String(selectedJob?.companyName || selectedJob?.employerDetails?.companyName || selectedJob?.employer?.employerProfile?.companyName || '').trim() || 'Company not specified'}
+                                      {String(selectedJob?.employerDetails?.industry || selectedJob?.employer?.employerProfile?.industry || selectedJob?.category || '').trim() || 'Industry not specified'}
                                     </button>
                                   ) : (
                                     <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[#2e66a6] underline underline-offset-2">
-                                      {String(selectedJob?.companyName || selectedJob?.employerDetails?.companyName || selectedJob?.employer?.employerProfile?.companyName || '').trim() || 'Company not specified'}
+                                      {String(selectedJob?.employerDetails?.industry || selectedJob?.employer?.employerProfile?.industry || selectedJob?.category || '').trim() || 'Industry not specified'}
                                     </span>
                                   )}
                                 </div>

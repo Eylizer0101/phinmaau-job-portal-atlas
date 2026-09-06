@@ -1385,11 +1385,11 @@ const JobDetails = () => {
                             }
                             className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap rounded-sm text-[#2e66a6] underline underline-offset-2 hover:text-[#1f4f86] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
                           >
-                            {String(job?.companyName || job?.employerDetails?.companyName || job?.employer?.employerProfile?.companyName || '').trim() || 'Company not specified'}
+                            {String(companyInfo?.industry || job?.employerDetails?.industry || job?.category || '').trim() || 'Industry not specified'}
                           </button>
                         ) : (
                           <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[#2e66a6] underline underline-offset-2">
-                            {String(job?.companyName || job?.employerDetails?.companyName || job?.employer?.employerProfile?.companyName || '').trim() || 'Company not specified'}
+                            {String(companyInfo?.industry || job?.employerDetails?.industry || job?.category || '').trim() || 'Industry not specified'}
                           </span>
                         )}
                       </div>
