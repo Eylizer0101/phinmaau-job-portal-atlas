@@ -1121,7 +1121,18 @@ exports.getJobById = async (req, res) => {
     const requesterId = String(req.user?._id || req.user?.id || '');
     const requesterRole = String(req.user?.role || '').trim().toLowerCase();
     const isOwner = requesterRole === 'employer' && requesterId === String(job.employer || '');
-    const canViewUnavailableJob = isOwner || requesterRole === 'admin';
+    let canViewUnavailableJob = isOwner || requesterRole === 'admin';
+
+    if (!canViewUnavailableJob && requesterRole === 'jobseeker' && requesterId) {
+      const [existingApplication, requester] = await Promise.all([
+        Application.exists({ job: job._id, jobseeker: requesterId }),
+        User.findById(requesterId).select('savedJobs').lean()
+      ]);
+      const isSaved = (requester?.savedJobs || []).some(
+        savedJobId => String(savedJobId) === String(job._id)
+      );
+      canViewUnavailableJob = Boolean(existingApplication || isSaved);
+    }
 
     if (!isPublicJobOpen(job) && !canViewUnavailableJob) {
       return res.status(404).json({
@@ -1159,6 +1170,7 @@ exports.getJobById = async (req, res) => {
     }
 
     const jobResponse = job.toObject();
+    jobResponse.postingStatus = getStatusBeforeArchive(job);
 
     if (employerDetails) {
       if (!jobResponse.companyLogo && employerDetails.companyLogo) {
@@ -1872,15 +1884,6 @@ exports.getSavedJobs = async (req, res) => {
 
     const user = await User.findById(req.user._id).populate({
       path: 'savedJobs',
-      match: {
-        isPublished: true,
-        isActive: true,
-        status: 'published',
-        $or: [
-          { isArchived: false },
-          { isArchived: { $exists: false } }
-        ],
-      },
       populate: {
         path: 'employer',
         select: 'fullName email employerProfile.companyLogo employerProfile.companyAddress employerProfile.country employerProfile.regionCity employerProfile.companyWebsiteUrl'
@@ -1895,8 +1898,9 @@ exports.getSavedJobs = async (req, res) => {
       });
     }
 
-    const jobs = (user.savedJobs || []).filter((job) => isPublicJobOpen(job)).map(job => {
+    const jobs = (user.savedJobs || []).filter(Boolean).map(job => {
       const jobObj = job.toObject ? job.toObject() : job;
+      jobObj.postingStatus = getStatusBeforeArchive(jobObj);
 
       if (!jobObj.companyLogo && jobObj.employer?.employerProfile?.companyLogo) {
         jobObj.companyLogo = jobObj.employer.employerProfile.companyLogo;

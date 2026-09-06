@@ -1140,14 +1140,14 @@ exports.withdrawMyApplication = async (req, res) => {
 
     const currentStatus = String(application.status || '').toLowerCase();
 
-    if (!['pending', 'for interview'].includes(currentStatus)) {
+    if (!['pending', 'for interview', 'vacancy full'].includes(currentStatus)) {
       return res.status(400).json({
         success: false,
-        message: 'Only pending or for interview applications can be withdrawn'
+        message: 'Only pending, for interview, or position filled applications can be withdrawn'
       });
     }
 
-    application.lastActiveStatus = currentStatus;
+    application.lastActiveStatus = currentStatus === 'vacancy full' ? 'pending' : currentStatus;
 
     application.status = 'withdrawn';
     await application.save();

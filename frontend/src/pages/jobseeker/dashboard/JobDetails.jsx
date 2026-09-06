@@ -6,7 +6,7 @@ import api from '../../../services/api';
 import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
 import ApplicationVerificationModal from '../../../components/jobseeker/ApplicationVerificationModal';
 import { BuildingIcon } from '../../../components/shared/JobseekerIcons';
-import { isOpenJobListing } from '../../../utils/jobVisibility';
+import { getJobPostingStatus, isOpenJobListing } from '../../../utils/jobVisibility';
 
 /**
  * UPDATED:
@@ -917,12 +917,6 @@ const JobDetails = () => {
       if (response.data.success) {
         const jobData = response.data.job;
 
-        if (!isOpenJobListing(jobData)) {
-          setJob(null);
-          setError('This job is no longer available.');
-          return;
-        }
-
         const normalizedLoc = normalizeLocation(jobData);
         const patchedJob = {
           ...jobData,
@@ -1228,20 +1222,34 @@ const JobDetails = () => {
   }, [job?.perksAndBenefits, job?.otherBenefits]);
 
   const jobActive = isJobActive();
+  const jobPostingStatus = String(job?.postingStatus || getJobPostingStatus(job)).toLowerCase();
+  const unavailableStatusLabel = jobPostingStatus === 'filled'
+    ? 'Position Filled'
+    : jobPostingStatus === 'expired'
+    ? 'Job Post Expired'
+    : jobPostingStatus === 'closed'
+    ? 'Job Post Closed'
+    : 'Application Closed';
   const isApplyDisabled = hasApplied || (!jobActive && !hasApplied);
 
-  const primaryCtaLabel = hasApplied
+  const primaryCtaLabel = !jobActive
+    ? unavailableStatusLabel
+    : hasApplied
     ? 'Already Applied'
     : jobActive
     ? 'Apply Now'
-    : String(job?.status || '').toLowerCase() === 'filled'
-    ? 'Vacancy Full'
     : 'Application Closed';
 
-  const primaryCtaClassName = hasApplied
-    ? 'bg-[#eef4ff] text-[#2e66a6] border border-[#2e66a6]/25'
+  const primaryCtaClassName = hasApplied && jobActive
+    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
     : !jobActive && !hasApplied
     ? 'bg-black/5 text-black/50 border border-black/10'
+    : !jobActive
+    ? jobPostingStatus === 'expired'
+      ? 'bg-orange-50 text-orange-700 border border-orange-200'
+      : jobPostingStatus === 'closed'
+      ? 'bg-red-50 text-red-700 border border-red-200'
+      : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
     : UI.btnPrimary;
 
   const applyHelperText = hasApplied

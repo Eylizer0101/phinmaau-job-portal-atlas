@@ -69,5 +69,29 @@ export const isOpenJobListing = (job, now = new Date()) => {
   return true;
 };
 
+export const getJobPostingStatus = (job, now = new Date()) => {
+  if (!job) return "unavailable";
+
+  const status = normalizeStatus(job.status);
+  if (status === "filled") return "filled";
+  if (status === "draft" || isTrueValue(job.isArchived) || isTrueValue(job.isDeleted) || isTrueValue(job.deleted)) {
+    return "unavailable";
+  }
+
+  const deadlineExpiryTime = getDeadlineExpiryTime(job.applicationDeadline);
+  if (deadlineExpiryTime !== null && deadlineExpiryTime <= now.getTime()) return "expired";
+
+  if (
+    status === "closed" ||
+    isFalseValue(job.isPublished) ||
+    isFalseValue(job.isActive) ||
+    isFalseValue(job.isAvailable)
+  ) {
+    return "closed";
+  }
+
+  return isOpenJobListing(job, now) ? "open" : "unavailable";
+};
+
 export const filterOpenJobListings = (jobs, now = new Date()) =>
   (Array.isArray(jobs) ? jobs : []).filter((job) => isOpenJobListing(job, now));

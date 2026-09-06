@@ -8,7 +8,7 @@ import api from '../../../services/api';
 import ApplyJobModal from '../../../components/jobseeker/ApplyJobModal';
 import ApplicationVerificationModal from '../../../components/jobseeker/ApplicationVerificationModal';
 import { BuildingIcon } from '../../../components/shared/JobseekerIcons';
-import { filterOpenJobListings, isOpenJobListing } from '../../../utils/jobVisibility';
+import { getJobPostingStatus, isOpenJobListing } from '../../../utils/jobVisibility';
 
 const DEFAULT_COMPANY_LOGO = '/images/companyicon.png';
 const DEFAULT_REVIEWER_PROFILE_IMAGE = '/images/profile.png';
@@ -1855,7 +1855,7 @@ const Bookmarks = () => {
 
       if (response.data?.success) {
         const jobs = Array.isArray(response.data.jobs) ? response.data.jobs : [];
-        const normalizedJobs = filterOpenJobListings(jobs).map((job) => ({
+        const normalizedJobs = jobs.map((job) => ({
           ...job,
           location: normalizeLocation(job),
         }));
@@ -2797,10 +2797,20 @@ const Bookmarks = () => {
   );
 
   const mainActionLoading = Boolean(selectedJob) && (checkingApplied || !applicationStateReady);
+  const selectedJobPostingStatus = selectedJob
+    ? String(selectedJob.postingStatus || getJobPostingStatus(selectedJob)).toLowerCase()
+    : 'unavailable';
+  const selectedJobStatusLabel = selectedJobPostingStatus === 'filled'
+    ? 'Position Filled'
+    : selectedJobPostingStatus === 'expired'
+    ? 'Job Post Expired'
+    : selectedJobPostingStatus === 'closed'
+    ? 'Job Post Closed'
+    : 'Application Closed';
   const primaryCtaLabel = mainActionLoading
     ? 'Loading...'
-    : isFullyFilled
-    ? 'Positions Filled'
+    : selectedJob && !isJobActive(selectedJob)
+    ? selectedJobStatusLabel
     : hasApplied
     ? 'View Application'
     : selectedJob && isJobActive(selectedJob)
@@ -3168,7 +3178,7 @@ const Bookmarks = () => {
                             <button
                               type="button"
                               onClick={
-                                mainActionLoading || isFullyFilled
+                                mainActionLoading || !isJobActive(selectedJob)
                                   ? undefined
                                   : hasApplied
                                   ? () => navigate('/jobseeker/my-applications')
@@ -3176,18 +3186,22 @@ const Bookmarks = () => {
                                   ? handleApplyClick
                                   : undefined
                               }
-                              disabled={mainActionLoading || isFullyFilled || (!isJobActive(selectedJob) && !hasApplied)}
+                              disabled={mainActionLoading || !isJobActive(selectedJob)}
                               className={`${UI.btnBase} ${UI.btnLg} ${
-                                isFullyFilled
-                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 disabled:!pointer-events-auto disabled:cursor-not-allowed'
-                                  : mainActionLoading || (!isJobActive(selectedJob) && !hasApplied)
+                                !isJobActive(selectedJob)
+                                  ? selectedJobPostingStatus === 'expired'
+                                    ? 'bg-orange-50 text-orange-700 border border-orange-200 disabled:!pointer-events-auto disabled:cursor-not-allowed'
+                                    : selectedJobPostingStatus === 'closed'
+                                    ? 'bg-red-50 text-red-700 border border-red-200 disabled:!pointer-events-auto disabled:cursor-not-allowed'
+                                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200 disabled:!pointer-events-auto disabled:cursor-not-allowed'
+                                  : mainActionLoading
                                   ? 'bg-black/5 text-black/50 border border-black/10'
                                   : UI.btnPrimary
                               } ${UI.ring} w-full`}
                             >
                               {mainActionLoading ? (
                                 <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-black/20 border-t-black/60 motion-reduce:animate-none" />
-                              ) : isFullyFilled ? (
+                              ) : selectedJobPostingStatus === 'filled' ? (
                                 <SvgIcon name="checkCircle" className="h-4 w-4" />
                               ) : null}
                               {primaryCtaLabel}

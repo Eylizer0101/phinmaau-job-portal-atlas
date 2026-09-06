@@ -358,6 +358,12 @@ const MyApplications = () => {
   const tabRefs = useRef({});
   const subTabRefs = useRef({});
 
+  useEffect(() => {
+    if (!actionMessage) return undefined;
+    const timer = window.setTimeout(() => setActionMessage(''), 3000);
+    return () => window.clearTimeout(timer);
+  }, [actionMessage]);
+
   const apiOrigin = useMemo(() => {
     const base = api?.defaults?.baseURL || process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
     return String(base).replace(/\/api\/?$/, '');
@@ -818,7 +824,7 @@ const MyApplications = () => {
           prev.map((app) => (app._id === applicationId ? updatedApplication : app))
         );
         setLastUpdated(new Date());
-        setActionMessage('Application withdrawn successfully.');
+        setActionMessage('withdrawn');
       }
     } catch (err) {
       console.error('Error withdrawing application:', err);
@@ -842,7 +848,7 @@ const MyApplications = () => {
           prev.map((app) => (app._id === applicationId ? updatedApplication : app))
         );
         setLastUpdated(new Date());
-        setActionMessage('Application reactivated successfully.');
+        setActionMessage('reactivated');
       }
     } catch (err) {
       console.error('Error reactivating application:', err);
@@ -954,8 +960,20 @@ const MyApplications = () => {
           )}
 
           {actionMessage && !error && (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4" role="status" aria-live="polite">
-              <p className="text-emerald-800 font-semibold">{actionMessage}</p>
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/25 px-4" role="status" aria-live="polite">
+              <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white px-6 py-7 text-center shadow-2xl">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
+                  <SvgIcon name="checkCircle" className="h-8 w-8" />
+                </div>
+                <h2 className="mt-4 text-xl font-bold text-gray-900">
+                  {actionMessage === 'withdrawn' ? 'Application Withdrawn' : 'Application Reactivated'}
+                </h2>
+                <p className="mt-2 text-sm text-gray-500">
+                  {actionMessage === 'withdrawn'
+                    ? 'Your application has been successfully withdrawn.'
+                    : 'Your application has been successfully reactivated.'}
+                </p>
+              </div>
             </div>
           )}
 
@@ -1219,7 +1237,7 @@ const MyApplications = () => {
 
                   const isReactivatableCard = REACTIVATABLE_STATUSES.includes(statusValue);
                   const isDeclinedCard = statusValue === 'declined';
-                  const canWithdraw = ['pending', 'for interview'].includes(statusValue);
+                  const canWithdraw = ['pending', 'for interview', 'vacancy full'].includes(statusValue);
                   const showWithdraw = ['pending', 'for interview', 'hired', 'declined', 'vacancy full'].includes(statusValue);
                   const isActionLoading = actionLoadingId === application._id;
 
@@ -1384,11 +1402,6 @@ const MyApplications = () => {
                           </div>
                         )}
 
-                        {isActionLoading && (
-                          <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
-                            <p className="text-sm text-gray-600">Updating application status...</p>
-                          </div>
-                        )}
                       </div>
                     </div>
                   );
