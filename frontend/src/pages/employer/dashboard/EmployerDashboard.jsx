@@ -190,12 +190,29 @@ const EmployerDashboard = () => {
     const password = String(passwordForm.newPassword || '');
     return {
       minLength: password.length >= 8,
-      uppercase: /^[A-Z]/.test(password),
+      uppercase: /[A-Z]/.test(password),
       lowercase: /[a-z]/.test(password),
       number: /\d/.test(password),
       special: /[^A-Za-z0-9]/.test(password),
     };
   }, [passwordForm.newPassword]);
+
+  const passwordStrength = useMemo(() => {
+    const password = String(passwordForm.newPassword || '');
+    if (!password) return null;
+
+    const score = Object.values(passwordRuleChecks).filter(Boolean).length;
+    const levels = [
+      { label: 'Very Weak', color: 'text-red-600' },
+      { label: 'Weak', color: 'text-red-600' },
+      { label: 'Fair', color: 'text-orange-500' },
+      { label: 'Good', color: 'text-amber-500' },
+      { label: 'Strong', color: 'text-green-600' },
+      { label: 'Very Strong', color: 'text-emerald-700' },
+    ];
+
+    return levels[score];
+  }, [passwordForm.newPassword, passwordRuleChecks]);
 
   const syncMustChangePasswordState = () => {
     try {
@@ -855,7 +872,7 @@ const EmployerDashboard = () => {
     } else {
       const failedRules = [];
       if (!passwordRuleChecks.minLength) failedRules.push('at least 8 characters');
-      if (!passwordRuleChecks.uppercase) failedRules.push('an uppercase letter at the beginning');
+      if (!passwordRuleChecks.uppercase) failedRules.push('one uppercase letter');
       if (!passwordRuleChecks.lowercase) failedRules.push('one lowercase letter');
       if (!passwordRuleChecks.number) failedRules.push('one number');
       if (!passwordRuleChecks.special) failedRules.push('one special character');
@@ -1416,9 +1433,9 @@ const EmployerDashboard = () => {
 
                 <div className="mt-4 space-y-3 text-sm">
                   {passwordRequirementRow('At least 8 characters', passwordRuleChecks.minLength)}
-                  {passwordRequirementRow('Starts with an uppercase letter', passwordRuleChecks.uppercase)}
+                  {passwordRequirementRow('One uppercase letter', passwordRuleChecks.uppercase)}
                   {passwordRequirementRow('One lowercase letter', passwordRuleChecks.lowercase)}
-                  {passwordRequirementRow('One number', passwordRuleChecks.number)}
+                  {passwordRequirementRow('At least One number', passwordRuleChecks.number)}
                   {passwordRequirementRow('One special character', passwordRuleChecks.special)}
                 </div>
               </div>
@@ -1513,6 +1530,11 @@ const EmployerDashboard = () => {
                     {showPasswords.newPassword ? <FaEyeSlash /> : <FaEye />}
                   </button>
                 </div>
+                {passwordStrength ? (
+                  <p className={`mt-2 text-xs font-semibold ${passwordStrength.color}`}>
+                    {passwordStrength.label}
+                  </p>
+                ) : null}
                 <p className="mt-2 text-xs text-gray-500">Set a new, strong password.</p>
                 {passwordErrors.newPassword ? (
                   <p className="mt-1 text-xs text-red-600">{passwordErrors.newPassword}</p>
