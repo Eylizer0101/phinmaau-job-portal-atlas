@@ -138,7 +138,7 @@ const CompanyAllReviews = () => {
         <section className="rounded-[1.35rem] border border-[#e6edf5] bg-white p-5 shadow-[0_18px_45px_rgba(46,102,166,0.08)] sm:p-7 lg:p-8">
           <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_390px_420px] xl:items-center">
             <div>
-              <h1 className="text-2xl font-bold text-black sm:text-3xl">All Reviews for {company.companyName || "Company"}</h1>
+              <h1 className="text-xl font-bold text-black sm:text-[22px] xl:whitespace-nowrap">All Reviews for {company.companyName || "Company"}</h1>
               <p className="mt-1 text-black/60">{filtered.length} review{filtered.length === 1 ? "" : "s"}</p>
             </div>
 
