@@ -19,7 +19,13 @@ const VALID_DECLINE_REASONS = [
   'Position Requirements Have Changed',
   'Position Has Been Filled',
   'Educational Requirement Not Met',
-  'Too Many Qualified Applicants'
+  'Too Many Qualified Applicants',
+  'Interview performance did not meet expectations',
+  'Skills assessment below required level',
+  'Communication skills need improvement',
+  'Schedule or availability conflict',
+  'Position requirements not fully met',
+  'Failed to attend scheduled interview'
 ];
 
 const VALID_DECLINED_FROM = ['applicants', 'forInterview'];

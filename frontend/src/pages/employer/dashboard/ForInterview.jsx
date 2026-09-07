@@ -816,6 +816,62 @@ const DeclineReasonModal = ({
   );
 };
 
+const HiredConfirmationModal = ({ open, applicantName, onClose, onConfirm, isSubmitting = false }) => {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[120] flex items-center justify-center px-4 py-6">
+      <div className="absolute inset-0 bg-black/45" aria-hidden="true" />
+      <div role="dialog" aria-modal="true" aria-labelledby="confirm-hired-title" className="relative w-full max-w-[560px] overflow-hidden rounded-[28px] bg-white shadow-2xl">
+        <div className="flex items-start gap-4 px-7 py-7">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-blue-50 text-[#2e66a6]">
+            <Icon name="check" className="h-7 w-7" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 id="confirm-hired-title" className="text-2xl font-bold text-gray-900">Mark Applicant as Hired?</h2>
+            <p className="mt-3 text-base leading-7 text-gray-600">
+              Are you sure you want to mark <strong className="font-bold text-gray-900">{applicantName}</strong> as hired for this position?
+            </p>
+            <p className="mt-3 text-base leading-7 text-gray-600">Once confirmed, this applicant&apos;s status will be changed to Hired.</p>
+          </div>
+          <button type="button" onClick={onClose} disabled={isSubmitting} className="rounded-full p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-50" aria-label="Close hired confirmation">
+            <Icon name="x" className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="flex justify-end gap-3 border-t border-gray-200 px-7 py-5">
+          <Button variant="secondary" onClick={onClose} disabled={isSubmitting} className="min-w-[105px]">Cancel</Button>
+          <Button variant="success" onClick={onConfirm} disabled={isSubmitting} className="min-w-[165px]">
+            <Icon name="check" className="h-4 w-4" />
+            {isSubmitting ? 'Confirming...' : 'Confirm Hired'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const StatusSuccessModal = ({ result, onClose }) => {
+  if (!result) return null;
+
+  return (
+    <div className="fixed inset-0 z-[130] flex items-center justify-center px-4 py-6">
+      <div className="absolute inset-0 bg-black/45" aria-hidden="true" />
+      <div role="dialog" aria-modal="true" aria-labelledby="status-result-title" className="relative w-full max-w-[520px] overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="px-7 py-8 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#2e66a6] text-white">
+            <Icon name="check" className="h-8 w-8" />
+          </div>
+          <h2 id="status-result-title" className="mt-5 text-xl font-bold text-gray-900">{result.title}</h2>
+          <p className="mt-2 text-sm leading-6 text-gray-600">{result.message}</p>
+        </div>
+        <div className="border-t border-gray-200 px-7 py-5">
+          <Button variant="success" onClick={onClose} className="w-full">OK</Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const MessagePopup = ({ open, onClose, application }) => {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
@@ -1006,12 +1062,19 @@ const HiringStageModal = ({
       setLocalError('Enter a custom stage name.');
       return;
     }
+    const normalizedValue = normalizeHiringStageName(value);
+    if (!['hired', 'declined'].includes(normalizedValue) && stages.some((stage) => isSameHiringStage(stage, value))) {
+      setLocalError('This stage already exists for this applicant.');
+      return;
+    }
     setLocalError('');
     const added = await onAddCustom(value);
-    if (added) {
+    if (added === true) {
       setCustomStage('');
       setSelectedStage(value);
       await onSelect(value);
+    } else if (added === 'handled') {
+      setCustomStage('');
     }
   };
 
@@ -1107,7 +1170,7 @@ const HiringStageModal = ({
                     onClick={async () => {
                       setSelectedStage(stage);
                       const applied = await onSelect(stage);
-                      if (applied) onClose();
+                      if (!applied) setSelectedStage(String(application?.hiringStage || '').trim());
                     }}
                     className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6] disabled:cursor-not-allowed disabled:opacity-60"
                     aria-pressed={selected}
@@ -1354,6 +1417,8 @@ const ForInterview = () => {
   const [declineTarget, setDeclineTarget] = useState(null);
   const [declineReason, setDeclineReason] = useState('');
   const [declineComment, setDeclineComment] = useState('');
+  const [hiredConfirmationTarget, setHiredConfirmationTarget] = useState(null);
+  const [statusResult, setStatusResult] = useState(null);
 
   const getImageUrl = useCallback(
     (url) => {
@@ -1628,12 +1693,21 @@ const ForInterview = () => {
       const res = await api.put(`/applications/${applicationId}/status`, { status, ...extraPayload });
 
       if (res.data?.success) {
+        const targetApplication = applications.find((item) => item._id === applicationId);
+        const applicantName = buildApplicantName(targetApplication?.jobseeker);
         setApplications((prev) => prev.filter((item) => item._id !== applicationId));
-        setSuccess(
-          status === 'hired'
-            ? 'Applicant marked as Hired.'
-            : 'Applicant marked as Declined.'
-        );
+        setStageModalOpen(false);
+        setStageTarget(null);
+        setStatusResult(status === 'hired'
+          ? {
+              title: 'Applicant Hired Successfully',
+              message: `${applicantName} has been marked as Hired for this position.`,
+            }
+          : {
+              title: 'Applicant Declined Successfully',
+              message: `${applicantName} has been marked as Declined for this position.`,
+            });
+        return true;
       } else {
         setError('Failed to update application status.');
       }
@@ -1643,6 +1717,30 @@ const ForInterview = () => {
     } finally {
       setUpdatingId(null);
     }
+    return false;
+  };
+
+  const requestFinalStage = (stage) => {
+    const normalizedStage = normalizeHiringStageName(stage);
+    if (normalizedStage === 'hired') {
+      setHiredConfirmationTarget(stageTarget);
+      return true;
+    }
+    if (normalizedStage === 'declined') {
+      setDeclineTarget(stageTarget);
+      setDeclineReason('');
+      setDeclineComment('');
+      setDeclineModalOpen(true);
+      return true;
+    }
+    return false;
+  };
+
+  const handleConfirmHired = async () => {
+    if (!hiredConfirmationTarget?._id || updatingId) return;
+    const applicationId = hiredConfirmationTarget._id;
+    setHiredConfirmationTarget(null);
+    await handleStatusUpdate(applicationId, 'hired');
   };
 
   const handleConfirmDecline = async () => {
@@ -1768,6 +1866,8 @@ const ForInterview = () => {
   const handleSelectHiringStage = async (stage) => {
     if (!stageTarget?._id || stageBusy) return false;
 
+    if (requestFinalStage(stage)) return false;
+
     try {
       setStageBusy(true);
       setError('');
@@ -1789,7 +1889,6 @@ const ForInterview = () => {
       if (!responseData.application) {
         updateApplicationInState({ ...stageTarget, hiringStage: stage });
       }
-      setSuccess('Hiring stage updated Successfully');
       return true;
     } catch (stageError) {
       setError(stageError?.response?.data?.message || stageError?.message || 'Failed to update hiring stage.');
@@ -1801,6 +1900,8 @@ const ForInterview = () => {
 
   const handleAddCustomStage = async (stage) => {
     if (!stageTarget?._id || stageBusy) return false;
+
+    if (requestFinalStage(stage)) return 'handled';
 
     try {
       setStageBusy(true);
@@ -1815,7 +1916,6 @@ const ForInterview = () => {
       }
 
       applyHiringStageResponse(addResponseData, stage);
-      setSuccess('Hiring stage added.');
       return true;
     } catch (stageError) {
       setError(stageError?.response?.data?.message || stageError?.message || 'Failed to add custom hiring stage.');
@@ -2270,6 +2370,21 @@ const selectBase =
         onClose={resetDeclineState}
         onConfirm={handleConfirmDecline}
         isSubmitting={!!updatingId}
+      />
+
+      <HiredConfirmationModal
+        open={Boolean(hiredConfirmationTarget)}
+        applicantName={hiredConfirmationTarget ? buildApplicantName(hiredConfirmationTarget.jobseeker) : ''}
+        onClose={() => {
+          if (!updatingId) setHiredConfirmationTarget(null);
+        }}
+        onConfirm={handleConfirmHired}
+        isSubmitting={!!updatingId}
+      />
+
+      <StatusSuccessModal
+        result={statusResult}
+        onClose={() => setStatusResult(null)}
       />
 
       <EmployerCustomDateRangeModal
