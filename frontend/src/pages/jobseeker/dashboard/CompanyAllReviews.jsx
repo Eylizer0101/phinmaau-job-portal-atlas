@@ -136,43 +136,12 @@ const CompanyAllReviews = () => {
         </button>
 
         <section className="rounded-[1.35rem] border border-[#e6edf5] bg-white p-5 shadow-[0_18px_45px_rgba(46,102,166,0.08)] sm:p-7 lg:p-8">
-          <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_390px_420px] xl:items-center">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h1 className="text-xl font-bold text-black sm:text-[22px] xl:whitespace-nowrap">All Reviews for {company.companyName || "Company"}</h1>
               <p className="mt-1 text-black/60">{filtered.length} review{filtered.length === 1 ? "" : "s"}</p>
             </div>
-
-            <div className="w-full max-w-[390px]">
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-[125px_minmax(0,1fr)] sm:items-center">
-                <div className="text-center sm:border-r sm:border-[#dfe7f0] sm:pr-3">
-                  <p className="text-4xl font-bold leading-none text-[#27364a]">{reviewSummary.rating.toFixed(1)}</p>
-                  <div className="mt-1 flex justify-center gap-0.5" aria-label={`${reviewSummary.rating.toFixed(1)} out of 5 stars`}>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <span key={star} className={`text-lg ${star <= Math.round(reviewSummary.rating) ? "text-[#f2b313]" : "text-[#d9e0e8]"}`}>★</span>
-                    ))}
-                  </div>
-                  <p className="mt-1 text-[12px] text-black/65">{reviewSummary.count} ratings in total</p>
-                </div>
-
-                <div className="space-y-1.5">
-                  {[5, 4, 3, 2, 1].map((star) => {
-                    const count = reviewSummary.breakdown[star];
-                    const percent = reviewSummary.count > 0 ? Math.min(100, (count / reviewSummary.count) * 100) : 0;
-                    return (
-                      <div key={star} className="grid grid-cols-[14px_minmax(0,1fr)_24px] items-center gap-2">
-                        <span className="text-xs font-medium text-black/70">{star}</span>
-                        <div className="h-2 overflow-hidden rounded-full bg-[#e9edf2]">
-                          <div className="h-full rounded-full bg-[#f2b313]" style={{ width: `${percent}%` }} />
-                        </div>
-                        <span className="text-right text-xs text-black/65">{count}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <div className="w-full">
+            <div className="w-full lg:max-w-md">
               <div className="relative">
                 <svg
                   className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-black/40"
@@ -197,6 +166,36 @@ const CompanyAllReviews = () => {
                   aria-label="Search reviews"
                   className="h-12 w-full rounded-xl border border-[#d8e2ee] py-3 pl-12 pr-4 text-sm outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/15"
                 />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 w-full max-w-[390px]">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[125px_minmax(0,1fr)] sm:items-center">
+              <div className="text-center sm:border-r sm:border-[#dfe7f0] sm:pr-3">
+                <p className="text-4xl font-bold leading-none text-[#27364a]">{reviewSummary.rating.toFixed(1)}</p>
+                <div className="mt-1 flex justify-center gap-0.5" aria-label={`${reviewSummary.rating.toFixed(1)} out of 5 stars`}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <span key={star} className={`text-lg ${star <= Math.round(reviewSummary.rating) ? "text-[#f2b313]" : "text-[#d9e0e8]"}`}>★</span>
+                  ))}
+                </div>
+                <p className="mt-1 text-[12px] text-black/65">{reviewSummary.count} ratings in total</p>
+              </div>
+
+              <div className="space-y-1.5">
+                {[5, 4, 3, 2, 1].map((star) => {
+                  const count = reviewSummary.breakdown[star];
+                  const percent = reviewSummary.count > 0 ? Math.min(100, (count / reviewSummary.count) * 100) : 0;
+                  return (
+                    <div key={star} className="grid grid-cols-[14px_minmax(0,1fr)_24px] items-center gap-2">
+                      <span className="text-xs font-medium text-black/70">{star}</span>
+                      <div className="h-2 overflow-hidden rounded-full bg-[#e9edf2]">
+                        <div className="h-full rounded-full bg-[#f2b313]" style={{ width: `${percent}%` }} />
+                      </div>
+                      <span className="text-right text-xs text-black/65">{count}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
