@@ -737,7 +737,7 @@ const AdminEmployerJobEditRequestDetails = () => {
   const perks = Array.isArray(job.perksAndBenefits) ? job.perksAndBenefits.filter(Boolean) : [];
   const otherBenefit = String(job.otherBenefits || '').trim();
   const perksAndBenefits = otherBenefit ? [...perks, otherBenefit] : perks;
-  const vacancyText = job.vacancies ? `${job.vacancies} ${Number(job.vacancies) === 1 ? 'Vacancy' : 'Vacancies'}` : 'Number of vacancies not specified';
+  const vacancyText = job.vacancies ? `${job.vacancies} Vacancies` : 'Number of vacancies not specified';
 
   const infoCards = [
     { title: 'Salary', value: salary(job), icon: 'money', isPeso: true },

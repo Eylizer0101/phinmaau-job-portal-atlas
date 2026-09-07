@@ -3123,7 +3123,7 @@ const EditJob = () => {
                                 { value: formData.workMode, icon: 'building' },
                                 {
                                   value: formData.vacancies
-                                    ? `${formData.vacancies} ${Number(formData.vacancies) === 1 ? 'Vacancy' : 'Vacancies'}`
+                                    ? `${formData.vacancies} Vacancies`
                                     : '',
                                   icon: 'users',
                                 },

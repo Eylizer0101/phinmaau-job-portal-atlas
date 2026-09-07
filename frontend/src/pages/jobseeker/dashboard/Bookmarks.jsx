@@ -3196,7 +3196,7 @@ const Bookmarks = () => {
                                 {Number(selectedJob.vacancies) > 0 ? (
                                   <span className="inline-flex items-center gap-2 rounded-full border border-[#d8e2ee] bg-[#f7faff] px-3 py-1.5 text-xs font-semibold text-black/80">
                                     <span className="text-black/60"><SvgIcon name="users" className="h-3.5 w-3.5" /></span>
-                                    {`${selectedJob.vacancies} ${Number(selectedJob.vacancies) === 1 ? 'Vacancy' : 'Vacancies'}`}
+                                    {`${selectedJob.vacancies} Vacancies`}
                                   </span>
                                 ) : null}
 

@@ -2675,7 +2675,7 @@ const PostJob = () => {
                             { value: formData.workMode, icon: 'laptop' },
                             {
                               value: formData.vacancies
-                                ? `${formData.vacancies} ${Number(formData.vacancies) === 1 ? 'Vacancy' : 'Vacancies'}`
+                                ? `${formData.vacancies} Vacancies`
                                 : '',
                               icon: 'users',
                             },

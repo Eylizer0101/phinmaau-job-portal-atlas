@@ -1023,7 +1023,7 @@ const AdminJobView = () => {
                       <span className={isVacanciesMissing ? compactPlaceholderChipClass : UI.chip}>
                         <SvgIcon name="users" className={isVacanciesMissing ? 'h-3 w-3 text-black/60' : 'h-3.5 w-3.5 text-black/60'} />
                         {!isVacanciesMissing
-                          ? `${job.vacancies} ${Number(job.vacancies) === 1 ? 'Vacancy' : 'Vacancies'}`
+                          ? `${job.vacancies} Vacancies`
                           : 'Number of vacancies not specified'}
                       </span>
 

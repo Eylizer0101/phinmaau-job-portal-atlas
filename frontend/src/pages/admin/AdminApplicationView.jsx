@@ -729,7 +729,7 @@ const AdminApplicationView = () => {
                       <span className={UI.chip}>
                         <Icon name="users" className="h-3.5 w-3.5 text-black/60" />
                         {job.vacancies
-                          ? `${job.vacancies} ${Number(job.vacancies) === 1 ? "Vacancy" : "Vacancies"}`
+                          ? `${job.vacancies} Vacancies`
                           : "Number of vacancies not specified"}
                       </span>
 
