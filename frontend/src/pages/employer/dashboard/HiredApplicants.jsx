@@ -1542,13 +1542,40 @@ const selectBase =
       )}
 
       {reviewResult && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/25 px-4" role="status" aria-live="polite">
-          <div className="w-full max-w-sm rounded-2xl bg-white px-6 py-7 text-center shadow-2xl">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
-              <Icon name="check" className="h-8 w-8" />
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/25 px-4"
+          role="dialog"
+          aria-modal="true"
+          aria-live="polite"
+        >
+          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-gray-100 bg-white text-center shadow-2xl">
+            <div className="px-8 pb-6 pt-8">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#e8f1ff]">
+                <svg className="h-10 w-10 text-[#2e66a6]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" />
+                  <path
+                    d="M7.5 12.2l3 3 6-6"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">{reviewResult.title}</h2>
+              <p className="mt-2 text-sm text-gray-600">{reviewResult.description}</p>
             </div>
-            <h2 className="mt-4 text-xl font-bold text-gray-900">{reviewResult.title}</h2>
-            <p className="mt-2 text-sm text-gray-500">{reviewResult.description}</p>
+
+            <div className="border-t border-gray-200 px-8 py-4">
+              <button
+                type="button"
+                onClick={() => setReviewResult(null)}
+                className="w-full rounded-xl bg-[#2e66a6] px-5 py-3 text-sm font-semibold text-white hover:bg-[#23508a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+              >
+                OK
+              </button>
+            </div>
           </div>
         </div>
       )}
