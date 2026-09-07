@@ -895,9 +895,39 @@ const MyApplications = () => {
       if (response.data?.success) {
         const updatedApplication = response.data.application;
         setApplications((previous) =>
-          previous.map((application) =>
-            application._id === updatedApplication._id ? updatedApplication : application
-          )
+          previous.map((application) => {
+            if (String(application._id) !== String(updatedApplication._id)) {
+              return application;
+            }
+
+            return {
+              ...application,
+              ...updatedApplication,
+              job: updatedApplication.job
+                ? { ...(application.job || {}), ...updatedApplication.job }
+                : application.job,
+              employer: updatedApplication.employer
+                ? {
+                    ...(application.employer || {}),
+                    ...updatedApplication.employer,
+                    employerProfile: {
+                      ...(application.employer?.employerProfile || {}),
+                      ...(updatedApplication.employer?.employerProfile || {}),
+                    },
+                  }
+                : application.employer,
+              jobseeker: updatedApplication.jobseeker
+                ? {
+                    ...(application.jobseeker || {}),
+                    ...updatedApplication.jobseeker,
+                    jobSeekerProfile: {
+                      ...(application.jobseeker?.jobSeekerProfile || {}),
+                      ...(updatedApplication.jobseeker?.jobSeekerProfile || {}),
+                    },
+                  }
+                : application.jobseeker,
+            };
+          })
         );
         setStatusRequestApplication(null);
         setStatusRequestReason('');
