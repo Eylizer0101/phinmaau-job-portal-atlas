@@ -794,50 +794,57 @@ const EmployerLayout = ({ children }) => {
 
   const SidebarProfile = ({ mobile = false }) => (
     <div ref={mobile ? undefined : sidebarProfileRef} className="relative border-t border-gray-200 bg-white p-3">
-      <div className="flex w-full items-center gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            setSidebarProfileOpen(false);
-            setIsMobileNavOpen(false);
-            navigate("/employer/company-profile");
-          }}
-          className={`flex min-w-0 flex-1 items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-gray-100 ${focusRing}`}
-          aria-label="Open company profile"
-        >
-          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
-            {sidebarAvatar && !sidebarAvatarFailed ? (
-              <img src={sidebarAvatar} alt={`${sidebarCompanyName} profile`} className="h-full w-full object-cover" onError={() => setSidebarAvatarFailed(true)} />
-            ) : (
-              <img src="/images/profile.png" alt="Default profile" className="h-full w-full object-cover" />
-            )}
+      {sidebarProfileOpen ? (
+        <div className="absolute bottom-[calc(100%+8px)] left-3 right-3 z-50 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+          <button
+            type="button"
+            onClick={() => {
+              setSidebarProfileOpen(false);
+              setIsMobileNavOpen(false);
+              navigate("/employer/company-profile");
+            }}
+            className="flex min-h-[44px] w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+          >
+            <svg className="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" d="M3.75 21h16.5M5.25 21V3h13.5v18M9 7h1.5M9 11h1.5m3-4H15m-1.5 4H15M9 21v-4.5h6V21" /></svg>
+            Company Profile
+          </button>
+          <div className="border-t border-gray-100">
+            <button
+              type="button"
+              onClick={() => {
+                setSidebarProfileOpen(false);
+                setIsMobileNavOpen(false);
+                openLogoutModal();
+              }}
+              className="flex min-h-[44px] w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" d="M17 16l4-4m0 0l-4-4m4 4H9m4 8H7a2 2 0 01-2-2V6a2 2 0 012-2h6" /></svg>
+              Sign out
+            </button>
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-gray-900">{sidebarCompanyName}</p>
-            {sidebarEmail ? <p className="truncate text-xs text-gray-500">{sidebarEmail}</p> : null}
-          </div>
-        </button>
+        </div>
+      ) : null}
 
-        <button
-          type="button"
-          onClick={() => {
-            setSidebarProfileOpen(false);
-            setIsMobileNavOpen(false);
-            openLogoutModal();
-          }}
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[#173b70] transition hover:bg-gray-100 ${focusRing}`}
-          aria-label="Sign out"
-          title="Sign out"
-        >
-          <img
-            src="/images/error.png"
-            alt=""
-            className="h-8 w-8 object-contain"
-            aria-hidden="true"
-            draggable="false"
-          />
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={() => setSidebarProfileOpen((open) => !open)}
+        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-gray-100 ${focusRing}`}
+        aria-haspopup="menu"
+        aria-expanded={sidebarProfileOpen}
+      >
+        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
+          {sidebarAvatar && !sidebarAvatarFailed ? (
+            <img src={sidebarAvatar} alt={`${sidebarCompanyName} profile`} className="h-full w-full object-cover" onError={() => setSidebarAvatarFailed(true)} />
+          ) : (
+            <img src="/images/profile.png" alt="Default profile" className="h-full w-full object-cover" />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-gray-900">{sidebarCompanyName}</p>
+          {sidebarEmail ? <p className="truncate text-xs text-gray-500">{sidebarEmail}</p> : null}
+        </div>
+        <svg className={`h-4 w-4 shrink-0 text-gray-500 transition ${sidebarProfileOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+      </button>
     </div>
   );
 
@@ -885,11 +892,11 @@ const EmployerLayout = ({ children }) => {
             ].join(" ")}
           >
             <div className="p-6 sm:p-7">
-              {/* ✅ sign out icon */}
+              {/* ✅ warning icon */}
               <div className="mx-auto mb-4 w-14 h-14 rounded-full flex items-center justify-center">
                 <img
                   src="/images/error.png"
-                  alt="Sign out"
+                  alt="Error"
                   className="w-14 h-14 object-contain"
                   draggable="false"
                 />
@@ -906,12 +913,26 @@ const EmployerLayout = ({ children }) => {
                 id="logout-desc"
                 className="mt-2 text-sm sm:text-base text-gray-600 text-center"
               >
-                Are you sure you want to sign out of your account?
-                <br />
-                You can sign in again anytime.
+                You’ll be signed out of your account. You can sign in again anytime.
               </p>
 
               <div className="mt-6 flex items-center justify-center gap-3">
+                {/* ✅ Log out (red) */}
+                <button
+                  ref={logoutPrimaryBtnRef}
+                  type="button"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className={[
+                    "px-6 py-3 rounded-xl font-semibold",
+                    "bg-red-600 text-white hover:bg-red-700 transition-colors",
+                    focusRing,
+                    isLoggingOut ? "opacity-70 cursor-not-allowed" : "",
+                  ].join(" ")}
+                >
+                  {isLoggingOut ? "Logging out…" : "Log out"}
+                </button>
+
                 {/* ✅ Cancel (outline) */}
                 <button
                   ref={logoutCancelBtnRef}
@@ -926,22 +947,6 @@ const EmployerLayout = ({ children }) => {
                   ].join(" ")}
                 >
                   Cancel
-                </button>
-
-                {/* ✅ Sign out (red) */}
-                <button
-                  ref={logoutPrimaryBtnRef}
-                  type="button"
-                  onClick={handleLogout}
-                  disabled={isLoggingOut}
-                  className={[
-                    "px-6 py-3 rounded-xl font-semibold",
-                    "bg-red-600 text-white hover:bg-red-700 transition-colors",
-                    focusRing,
-                    isLoggingOut ? "opacity-70 cursor-not-allowed" : "",
-                  ].join(" ")}
-                >
-                  {isLoggingOut ? "Signing out…" : "Sign out"}
                 </button>
               </div>
             </div>
