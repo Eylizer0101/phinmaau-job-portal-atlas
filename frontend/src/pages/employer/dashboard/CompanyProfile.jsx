@@ -1431,7 +1431,11 @@ const CompanyProfile = () => {
         } catch (reviewsError) {
           console.error('Failed to load reviewer profile pictures:', reviewsError);
         }
-        setCompanyReviews(reviews);
+        setCompanyReviews([...reviews].sort((a, b) => {
+          const newerDate = new Date(b?.createdAt || b?.updatedAt || 0).getTime();
+          const olderDate = new Date(a?.createdAt || a?.updatedAt || 0).getTime();
+          return newerDate - olderDate;
+        }));
 
         setCompanyActivityLoading(true);
         try {

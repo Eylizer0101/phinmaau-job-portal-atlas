@@ -2676,6 +2676,14 @@ exports.updateApplicationHiringStage = async (req, res) => {
 
     await application.save();
 
+    if (nextStage && !sameHiringStage(previousStage, nextStage)) {
+      await notificationController.createHiringStageNotification(
+        application,
+        previousStage,
+        nextStage
+      );
+    }
+
     return res.status(200).json({
       success: true,
       message: action === 'reset' ? 'Hiring stage reset' : 'Hiring stage updated',

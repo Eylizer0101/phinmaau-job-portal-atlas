@@ -2973,7 +2973,7 @@ const PostJob = () => {
               </div>
 
               <div className="mx-auto mt-3 max-w-[760px] rounded-[16px] border border-[#d7e5ff] bg-gradient-to-br from-[#f9fbff] via-white to-[#eef5ff] px-5 py-4 shadow-[0_10px_30px_rgba(30,75,160,0.08)] sm:px-6 sm:py-4">
-                <div className="space-y-2.5 text-justify text-[13px] leading-6 text-[#0f2442] sm:text-sm">
+                <div className="space-y-2.5 text-justify text-[13px] font-bold leading-6 text-[#0f2442] sm:text-sm">
                   <p>By publishing this job post, you confirm that the information provided is <strong>accurate, complete, and intended for legitimate hiring purposes.</strong></p>
                   <p>Once published, your job post will be <strong>visible to eligible job seekers.</strong> Applicants may view the information you provide, including the job title, job description, qualifications, work location, salary (if disclosed), and other hiring details.</p>
                   <p>Any applicant information you receive through <strong>AGAPAY</strong> must be used only for recruitment purposes and handled with appropriate confidentiality. You are responsible for protecting applicants&apos; personal information and must <strong>keep it confidential and use it only for legitimate recruitment purposes.</strong></p>

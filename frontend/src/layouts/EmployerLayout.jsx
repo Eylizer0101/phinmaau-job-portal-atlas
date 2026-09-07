@@ -12,6 +12,16 @@ const EmployerLayout = ({ children }) => {
 
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [sidebarProfileOpen, setSidebarProfileOpen] = useState(false);
+  const [sidebarUser, setSidebarUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+      return null;
+    }
+  });
+  const [sidebarAvatarFailed, setSidebarAvatarFailed] = useState(false);
+  const sidebarProfileRef = useRef(null);
   const [openDropdowns, setOpenDropdowns] = useState({
     Jobs: true,
     Applications: true,
@@ -92,6 +102,8 @@ const EmployerLayout = ({ children }) => {
 
       // Keep the stored user flag in sync without changing any unrelated fields.
       if (user) {
+        setSidebarUser(user);
+        setSidebarAvatarFailed(false);
         try {
           const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
           localStorage.setItem(
@@ -225,6 +237,33 @@ const EmployerLayout = ({ children }) => {
 
   const focusRing =
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2";
+
+  const sidebarProfile = sidebarUser?.employerProfile || {};
+  const sidebarCompanyName =
+    sidebarProfile.companyName || sidebarUser?.companyName || sidebarUser?.fullName || "Employer";
+  const sidebarEmail = sidebarUser?.email || sidebarProfile.businessEmail || "";
+  const rawSidebarAvatar = String(
+    sidebarProfile.companyLogo || sidebarUser?.profileImage || ""
+  ).trim();
+  const apiOrigin = String(
+    api?.defaults?.baseURL || process.env.REACT_APP_API_URL || ""
+  ).replace(/\/api\/?$/, "");
+  const sidebarAvatar = !rawSidebarAvatar
+    ? ""
+    : /^https?:\/\//i.test(rawSidebarAvatar)
+      ? rawSidebarAvatar
+      : `${apiOrigin}/${rawSidebarAvatar.replace(/^\/+/, "")}`;
+
+  useEffect(() => {
+    if (!sidebarProfileOpen) return undefined;
+    const closeOnOutsideClick = (event) => {
+      if (sidebarProfileRef.current && !sidebarProfileRef.current.contains(event.target)) {
+        setSidebarProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+  }, [sidebarProfileOpen]);
 
   // ✅ Verify modal a11y + focus management
   const verifyDialogRef = useRef(null);
@@ -753,6 +792,62 @@ const EmployerLayout = ({ children }) => {
     </nav>
   );
 
+  const SidebarProfile = ({ mobile = false }) => (
+    <div ref={mobile ? undefined : sidebarProfileRef} className="relative border-t border-gray-200 bg-white p-3">
+      {sidebarProfileOpen ? (
+        <div className="absolute bottom-[calc(100%+8px)] left-3 right-3 z-50 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+          <button
+            type="button"
+            onClick={() => {
+              setSidebarProfileOpen(false);
+              setIsMobileNavOpen(false);
+              navigate("/employer/company-profile");
+            }}
+            className="flex min-h-[44px] w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+          >
+            <svg className="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" d="M3.75 21h16.5M5.25 21V3h13.5v18M9 7h1.5M9 11h1.5m3-4H15m-1.5 4H15M9 21v-4.5h6V21" /></svg>
+            Company Profile
+          </button>
+          <div className="border-t border-gray-100">
+            <button
+              type="button"
+              onClick={() => {
+                setSidebarProfileOpen(false);
+                setIsMobileNavOpen(false);
+                openLogoutModal();
+              }}
+              className="flex min-h-[44px] w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" d="M17 16l4-4m0 0l-4-4m4 4H9m4 8H7a2 2 0 01-2-2V6a2 2 0 012-2h6" /></svg>
+              Sign out
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={() => setSidebarProfileOpen((open) => !open)}
+        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-gray-100 ${focusRing}`}
+        aria-haspopup="menu"
+        aria-expanded={sidebarProfileOpen}
+      >
+        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
+          {sidebarAvatar && !sidebarAvatarFailed ? (
+            <img src={sidebarAvatar} alt={`${sidebarCompanyName} profile`} className="h-full w-full object-cover" onError={() => setSidebarAvatarFailed(true)} />
+          ) : (
+            <img src="/images/profile.png" alt="Default profile" className="h-full w-full object-cover" />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-gray-900">{sidebarCompanyName}</p>
+          {sidebarEmail ? <p className="truncate text-xs text-gray-500">{sidebarEmail}</p> : null}
+        </div>
+        <svg className={`h-4 w-4 shrink-0 text-gray-500 transition ${sidebarProfileOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+      </button>
+    </div>
+  );
+
   const logoSrc = "/images/phinma-logo.png";
 
   return (
@@ -934,23 +1029,7 @@ const EmployerLayout = ({ children }) => {
         <div className="h-[calc(100%-72px)] overflow-y-auto">
           <NavList onItemClick={() => setIsMobileNavOpen(false)} />
 
-          <div className="border-t border-gray-200 p-4">
-            <button
-              type="button"
-              onClick={openLogoutModal}
-              disabled={isLoggingOut}
-              className={[
-                "flex w-full items-center justify-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors",
-                "border border-gray-200",
-                focusRing,
-                isLoggingOut
-                  ? "cursor-not-allowed bg-gray-100 text-gray-400"
-                  : "text-gray-700 hover:bg-gray-900 hover:text-white",
-              ].join(" ")}
-            >
-              <span>{isLoggingOut ? "Logging out…" : "Sign out"}</span>
-            </button>
-          </div>
+          <SidebarProfile mobile />
         </div>
       </aside>
 
@@ -994,8 +1073,7 @@ const EmployerLayout = ({ children }) => {
         <div className="flex-1 overflow-y-auto">
           <NavList />
         </div>
-
-      
+        <SidebarProfile />
       </aside>
 
       {/* Main content */}

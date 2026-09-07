@@ -527,6 +527,41 @@ exports.createApplicationStatusNotification = async (application, oldStatus, new
     }
 };
 
+// Notify the jobseeker only when the employer actually changes the selected
+// interview stage. Re-saving the same stage is ignored by the controller.
+exports.createHiringStageNotification = async (application, previousStage, newStage) => {
+    try {
+        if (!application?.jobseeker || !newStage) return null;
+
+        const jobseekerId = application.jobseeker?._id || application.jobseeker;
+        const jobId = application.job?._id || application.job;
+        const jobTitle = application.job?.title || 'the job';
+        const companyName = application.job?.companyName || 'the company';
+
+        const notification = new Notification({
+            user: jobseekerId,
+            type: 'interview',
+            title: 'Interview Stage Updated',
+            message: `Your interview stage for "${jobTitle}" at ${companyName} has been updated to ${newStage}.`,
+            relatedId: application._id,
+            relatedModel: 'Application',
+            link: '/jobseeker/my-applications',
+            metadata: {
+                applicationId: application._id,
+                jobId,
+                previousStage: previousStage || '',
+                hiringStage: newStage
+            }
+        });
+
+        await notification.save();
+        return notification;
+    } catch (error) {
+        console.error('Error creating hiring stage notification:', error);
+        return null;
+    }
+};
+
 
 
 exports.createVacancyFullNotification = async (application, job) => {

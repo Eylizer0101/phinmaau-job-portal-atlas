@@ -1230,7 +1230,7 @@ const StatusConfirmationModal = ({
   if (!open || !action) return null;
 
   const isInterview = action === 'for interview';
-  const title = isInterview ? 'Move applicant to For Interview?' : 'Mark applicant as hired?';
+  const title = isInterview ? 'Move Applicant to For Interview?' : 'Mark Applicant as Hired?';
   const confirmLabel = isInterview ? 'Move to For Interview' : 'Confirm Hired';
   const iconName = isInterview ? 'calendar' : 'check';
 
@@ -1258,8 +1258,13 @@ const StatusConfirmationModal = ({
                 {isInterview ? (
                   <>Are you sure you want to move <strong className="font-bold text-gray-900">{applicantName}</strong> to the For Interview stage?</>
                 ) : (
-                  <>Are you sure you want to mark <strong className="font-bold text-gray-900">{applicantName}</strong> as hired?</>
+                  <>Are you sure you want to mark <strong className="font-bold text-gray-900">{applicantName}</strong> as hired for this position?</>
                 )}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-gray-500">
+                {isInterview
+                  ? "Once confirmed, the applicant's application status will be updated to For Interview."
+                  : "Once confirmed, this applicant's status will be changed to Hired."}
               </p>
             </div>
           </div>
@@ -1295,6 +1300,25 @@ const StatusConfirmationModal = ({
             {submitting ? 'Updating...' : confirmLabel}
           </button>
         </div>
+      </div>
+    </div>
+  );
+};
+
+const StatusSuccessModal = ({ result, onClose }) => {
+  if (!result) return null;
+
+  return (
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="status-success-title">
+      <div className="w-full max-w-md rounded-[24px] bg-white px-7 py-7 text-center shadow-2xl">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
+          <SvgIcon name="check" className="h-8 w-8" />
+        </div>
+        <h2 id="status-success-title" className="mt-4 text-xl font-bold text-gray-900">{result.title}</h2>
+        <p className="mt-2 text-sm leading-6 text-gray-600">{result.message}</p>
+        <button type="button" onClick={onClose} className="mt-6 h-11 min-w-[120px] rounded-xl bg-[#102a78] px-6 text-sm font-semibold text-white transition hover:bg-[#0d2365]">
+          OK
+        </button>
       </div>
     </div>
   );
@@ -2263,6 +2287,7 @@ const ApplicationDetails = () => {
   const [application, setApplication] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [statusResult, setStatusResult] = useState(null);
   const [activeTab, setActiveTab] = useState('resume');
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [declineOpen, setDeclineOpen] = useState(false);
@@ -2299,8 +2324,23 @@ const ApplicationDetails = () => {
         jobseeker: prev.jobseeker,
         employer: prev.employer,
       }));
-      setSuccess(res.data?.message || 'Application status updated.');
-      setTimeout(() => setSuccess(''), 3000);
+      const normalizedStatus = String(status || '').toLowerCase();
+      if (normalizedStatus === 'declined') {
+        setStatusResult({
+          title: 'Applicant Declined Successfully',
+          message: `${name} has been marked as Declined for this position.`,
+        });
+      } else if (normalizedStatus === 'hired') {
+        setStatusResult({
+          title: 'Applicant Hired Successfully',
+          message: `${name} has been marked as Hired for this position.`,
+        });
+      } else if (normalizedStatus === 'for interview') {
+        setStatusResult({
+          title: 'Applicant Moved Successfully',
+          message: `${name} has been moved to the For Interview stage.`,
+        });
+      }
       return true;
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update application status.');
@@ -2610,7 +2650,7 @@ const ApplicationDetails = () => {
                     </p>
                   ) : null}
 
-                  <p className="mt-1 text-[10px] italic">
+                  <p className="mt-1 text-[10px] not-italic">
                     {[profile.campus, profile.course, profile.yearGraduated ? `Class of ${profile.yearGraduated}` : '']
                       .filter(Boolean)
                       .join(', ')}
@@ -2788,7 +2828,7 @@ const ApplicationDetails = () => {
             {isAlreadyEmployed ? <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">This applicant is already employed through another job application.</p> : null}
             <div className="mt-5 space-y-3">
               {!isAlreadyEmployed && currentStatus === 'pending' ? <button onClick={() => setConfirmationAction('for interview')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="calendar" /> Move to For Interview</button> : null}
-              {!isAlreadyEmployed && currentStatus === 'for interview' ? <button onClick={() => setConfirmationAction('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#159447] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#117a3a] disabled:opacity-50"><SvgIcon name="check" /> Hired</button> : null}
+              {!isAlreadyEmployed && currentStatus === 'for interview' ? <button onClick={() => setConfirmationAction('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#159447] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#117a3a] disabled:opacity-50"><SvgIcon name="check" /> Mark as Hired</button> : null}
               {!isAlreadyEmployed ? <button onClick={() => setMessageOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91]"><SvgIcon name="message" /> Send Message</button> : null}
               {hasPendingEmploymentRequest ? (
                 <button onClick={() => setEmploymentModal('review')} disabled={employmentLoading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-4 py-3 text-sm font-semibold text-white hover:bg-[#25558c] disabled:opacity-50">
@@ -3145,6 +3185,14 @@ const ApplicationDetails = () => {
           if (!confirmationAction || statusUpdating) return;
           const updated = await updateStatus(confirmationAction);
           if (updated) setConfirmationAction('');
+        }}
+      />
+      <StatusSuccessModal
+        result={statusResult}
+        onClose={() => {
+          setStatusResult(null);
+          setDeclineReason('');
+          setDeclineComment('');
         }}
       />
       <MessagePopup open={messageOpen} onClose={() => setMessageOpen(false)} applicant={user} application={application} />

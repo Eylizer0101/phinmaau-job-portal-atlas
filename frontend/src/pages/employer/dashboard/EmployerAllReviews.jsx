@@ -95,11 +95,17 @@ const EmployerAllReviews = () => {
     return { breakdown, count, rating: count ? points / count : 0 };
   }, [reviews]);
 
+  const sortedReviews = useMemo(() => [...reviews].sort((a, b) => {
+    const newerDate = new Date(b?.createdAt || b?.updatedAt || 0).getTime();
+    const olderDate = new Date(a?.createdAt || a?.updatedAt || 0).getTime();
+    return newerDate - olderDate;
+  }), [reviews]);
+
   const filteredReviews = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return reviews;
-    return reviews.filter((review) => [review?.reviewerName, review?.message].some((value) => String(value || '').toLowerCase().includes(query)));
-  }, [reviews, search]);
+    if (!query) return sortedReviews;
+    return sortedReviews.filter((review) => [review?.reviewerName, review?.message].some((value) => String(value || '').toLowerCase().includes(query)));
+  }, [sortedReviews, search]);
   const numericPageSize = pageSize === 'all' ? Math.max(filteredReviews.length, 1) : Number(pageSize);
   const totalPages = pageSize === 'all' ? 1 : Math.max(1, Math.ceil(filteredReviews.length / numericPageSize));
   const safePage = Math.min(page, totalPages);
