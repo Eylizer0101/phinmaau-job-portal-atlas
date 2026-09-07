@@ -498,6 +498,18 @@ const JobSeekerDashboard = () => {
     return `Up to ${formattedMax}`;
   };
 
+  const isSalaryHidden = (job = {}) =>
+    normalizeBoolean(
+      job?.hideSalary ??
+      job?.salaryHidden ??
+      job?.isSalaryHidden
+    );
+
+  const getSalaryDisplayWithoutCurrency = (job = {}) => {
+    if (isSalaryHidden(job)) return 'Salary not specified';
+    return formatSalaryWithoutCurrency(job?.salaryMin, job?.salaryMax);
+  };
+
   const normalizeWorkModeLabel = (value) => {
     const v = String(value || '').trim().toLowerCase();
 
@@ -1711,6 +1723,7 @@ const JobSeekerDashboard = () => {
                       app.job?.companyVerified == null;
                     const recentWorkMode = normalizeWorkModeLabel(app.job?.workMode);
                     const recentEmploymentType = normalizeEmploymentTypeLabel(app.job?.jobType);
+                    const recentSalaryText = getSalaryDisplayWithoutCurrency(app.job || {});
                     const recentApplicationJobData = {
                       ...(app?.jobSnapshot || {}),
                       ...(app?.jobDetails || {}),
@@ -1829,20 +1842,20 @@ const JobSeekerDashboard = () => {
                                 </div>
                               )}
 
-                              {(app.job?.salaryMin || app.job?.salaryMax || recentEmploymentType) && (
+                              {(recentSalaryText || recentEmploymentType) && (
                                 <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2 text-sm text-gray-700">
-                                  {(app.job?.salaryMin || app.job?.salaryMax) && (
+                                  {recentSalaryText && (
                                     <div className="flex min-w-0 items-center gap-2">
                                       <span className="flex h-4 w-4 shrink-0 items-center justify-center text-[14px] font-extrabold leading-none text-gray-600">
                                         ₱
                                       </span>
                                       <span className="truncate">
-                                        {formatSalaryWithoutCurrency(app.job?.salaryMin, app.job?.salaryMax)}
+                                        {recentSalaryText}
                                       </span>
                                     </div>
                                   )}
 
-                                  {(app.job?.salaryMin || app.job?.salaryMax) && recentEmploymentType && (
+                                  {recentSalaryText && recentEmploymentType && (
                                     <span className="h-5 w-px shrink-0 bg-gray-300" aria-hidden="true" />
                                   )}
 

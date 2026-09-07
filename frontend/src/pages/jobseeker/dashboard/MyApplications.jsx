@@ -459,6 +459,22 @@ const MyApplications = () => {
     return `Up to ₱${fmt(maxN)}`;
   };
 
+  const isSalaryHidden = (job = {}) => {
+    const value =
+      job?.hideSalary ??
+      job?.salaryHidden ??
+      job?.isSalaryHidden;
+
+    if (typeof value === 'boolean') return value;
+    const normalized = String(value || '').trim().toLowerCase();
+    return normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'on';
+  };
+
+  const getSalaryDisplayText = (job = {}) => {
+    if (isSalaryHidden(job)) return 'Salary not specified';
+    return formatPesoRange(job?.salaryMin, job?.salaryMax) || 'Salary not specified';
+  };
+
   const getPendingDisplayState = (application) => {
     const statusValue = String(application?.status || '').toLowerCase();
 
@@ -709,7 +725,7 @@ const MyApplications = () => {
 
     return applications.filter((application) => {
       const statusText = getStatusText(application);
-      const salaryText = formatPesoRange(application.job?.salaryMin, application.job?.salaryMax) || '';
+      const salaryText = getSalaryDisplayText(application.job || {});
       const appliedDateText = formatAppliedDateTime(application.appliedAt);
       const searchableValues = [
         application.job?.title,
@@ -1340,7 +1356,7 @@ const MyApplications = () => {
                     application.employer?.employerProfile?.companyAddress ||
                     null;
                   const workModeText = application.job?.workMode || null;
-                  const salaryText = formatPesoRange(application.job?.salaryMin, application.job?.salaryMax);
+                  const salaryText = getSalaryDisplayText(application.job || {});
                   const jobTypeText = application.job?.jobType || null;
 
                   const resumeUrl = application.jobseeker?.jobSeekerProfile?.resumeUrl || '';
