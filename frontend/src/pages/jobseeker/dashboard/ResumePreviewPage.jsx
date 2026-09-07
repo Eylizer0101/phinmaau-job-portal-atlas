@@ -466,7 +466,7 @@ const ResumePreviewPage = () => {
           background: #eef0f4;
           border-bottom: 1px solid #d8dbe2;
           color: #111827;
-          font-family: 'Inter', sans-serif;
+          font-family: Arial, Helvetica, sans-serif;
           font-size: 14px;
           font-weight: 700;
         }
@@ -493,7 +493,7 @@ const ResumePreviewPage = () => {
           margin: 0;
           background: #ffffff;
           color: #111111;
-          font-family: 'Inter', sans-serif;
+          font-family: Georgia, 'Times New Roman', serif;
           font-size: 9.2px;
           line-height: 1.18;
           box-shadow: 0 18px 50px rgba(15, 23, 42, 0.18);
@@ -576,7 +576,7 @@ const ResumePreviewPage = () => {
           justify-content: center;
           background: #343434;
           color: #ffffff;
-          font-family: 'Inter', sans-serif;
+          font-family: Arial, Helvetica, sans-serif;
           font-size: 27px;
           font-weight: 500;
           letter-spacing: 0.8px;
