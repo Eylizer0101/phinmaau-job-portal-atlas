@@ -1403,7 +1403,7 @@ const JobDetails = () => {
                     </div>
 
                     <div className="mt-1">
-                      <div className={`inline-flex items-center gap-2 ${UI.caption}`}>
+                      <div className={`inline-flex items-center gap-2 ${UI.meta}`}>
                         <span className="text-black/60">
                           <SvgIcon name="location" className="w-4 h-4" />
                         </span>
