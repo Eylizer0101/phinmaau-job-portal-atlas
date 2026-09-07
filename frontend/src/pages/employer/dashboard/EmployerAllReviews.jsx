@@ -171,7 +171,7 @@ const EmployerAllReviews = () => {
                 </div>
               ) : <div />}
 
-              <div className="relative w-full lg:w-[360px] lg:justify-self-end">
+              <div className="relative w-full lg:w-[320px] lg:justify-self-end">
                 <svg className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-black/40" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="m21 21-4.35-4.35m1.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" />
                 </svg>
