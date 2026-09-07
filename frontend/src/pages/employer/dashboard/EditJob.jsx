@@ -2266,12 +2266,14 @@ const EditJob = () => {
 
       setSuccess('Job posted successfully!');
       await new Promise((resolve) => setTimeout(resolve, 1200));
-      navigate('/employer/manage-jobs', {
+      navigate(`/employer/manage-jobs/${publishedJobId}/view`, {
         replace: true,
         state: {
-          jobEditSuccess: true,
-          successType: 'edit-publish',
+          jobPostSuccess: true,
+          successType: 'post',
           highlightedJobId: publishedJobId,
+          backPath: '/employer/manage-jobs',
+          backLabel: 'Manage Jobs',
         },
       });
     } catch (err) {
@@ -2306,7 +2308,13 @@ const EditJob = () => {
       const response = await persist(payload);
       const savedId = response.data?.job?._id || response.data?.job?.id || id;
       navigate(`/employer/manage-jobs/${savedId}/view`, {
-        state: { jobEditSuccess: true, successType: 'edit' },
+        state: {
+          jobEditSuccess: true,
+          successType: 'edit',
+          highlightedJobId: savedId,
+          backPath: '/employer/manage-jobs',
+          backLabel: 'Manage Jobs',
+        },
       });
     } catch (err) {
       console.error(err);

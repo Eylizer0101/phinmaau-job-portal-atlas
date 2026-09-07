@@ -655,6 +655,7 @@ const ManageJobs = () => {
 
   useEffect(() => {
     const successType = location.state?.successType;
+    const highlightedJobId = String(location.state?.highlightedJobId || '');
     const draftWasSaved =
       location.state?.jobDraftSaved ||
       successType === 'post-draft' ||
@@ -664,12 +665,15 @@ const ManageJobs = () => {
       !location.state?.jobPostSuccess &&
       !location.state?.jobEditSuccess &&
       !successType &&
-      !draftWasSaved
+      !draftWasSaved &&
+      !highlightedJobId
     ) {
       return;
     }
 
-    if (draftWasSaved) {
+    if (highlightedJobId && !location.state?.jobPostSuccess && !location.state?.jobEditSuccess && !successType) {
+      setRecentlyHighlightedJobId(highlightedJobId);
+    } else if (draftWasSaved) {
       const savedJobTitle = String(location.state?.savedJobTitle || 'Your job').trim();
 
       setRecentlyHighlightedJobId(String(location.state?.savedJobId || ''));
@@ -1840,7 +1844,7 @@ const ManageJobs = () => {
                                     backPath: '/employer/manage-jobs',
                                     backLabel: 'Manage Jobs',
                                   }}
-                                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white p-0 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                                   aria-label={`View ${title}`}
                                   title="View"
                                 >
@@ -1860,7 +1864,7 @@ const ManageJobs = () => {
                                   type="button"
                                   onClick={() => handleEditAction(job)}
                                   className={cn(
-                                    'inline-flex h-10 shrink-0 items-center justify-center rounded-lg border px-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+                                    'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border p-0 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
                                     'border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:ring-[#2e66a6]'
                                   )}
                                   aria-label={`${derivedStatus === 'filled' ? 'Editing unavailable for' : isJobEditLocked(job) ? 'Request edit access for' : 'Edit'} ${title}`}
@@ -1909,7 +1913,7 @@ const ManageJobs = () => {
                                     onClick={() => handlePublish(job._id)}
                                     disabled={busyThisRow || !isEmployerVerified}
                                     title={!isEmployerVerified ? 'Verify your company to publish jobs.' : 'Publish'}
-                                    className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white p-0 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                     aria-label={`Publish ${title}`}
                                   >
                                     {busyThisRow && action.type === 'publish' ? (
@@ -1938,7 +1942,7 @@ const ManageJobs = () => {
                                     setShowDeleteModal(true);
                                   }}
                                   disabled={busyThisRow}
-                                  className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 p-0 text-sm font-semibold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                   aria-label={`Archive ${title}`}
                                   title="Archive"
                                 >

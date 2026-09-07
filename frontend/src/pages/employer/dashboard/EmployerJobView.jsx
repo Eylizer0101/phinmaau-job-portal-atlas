@@ -626,9 +626,12 @@ const EmployerJobView = () => {
 
   const backPath = location.state?.backPath || '/employer/manage-jobs';
   const backLabel = location.state?.backLabel || 'Manage Jobs';
+  const [highlightedJobId] = useState(() => String(location.state?.highlightedJobId || ''));
 
   const handleBack = () => {
-    navigate(backPath);
+    navigate(backPath, {
+      state: highlightedJobId ? { highlightedJobId } : undefined,
+    });
   };
 
   const [job, setJob] = useState(null);
@@ -638,10 +641,16 @@ const EmployerJobView = () => {
   const [error, setError] = useState('');
   const [successIndicator] = useState(() => ({
     visible: Boolean(location.state?.jobPostSuccess || location.state?.jobEditSuccess),
-    message: location.state?.jobPostSuccess
-      ? 'Job published successfully.'
+    type: location.state?.jobPostSuccess ? 'post' : location.state?.jobEditSuccess ? 'edit' : '',
+    title: location.state?.jobPostSuccess
+      ? 'Job Posted Successfully!'
       : location.state?.jobEditSuccess
-        ? 'Job updated successfully.'
+        ? 'Job Updated Successfully!'
+        : '',
+    message: location.state?.jobPostSuccess
+      ? 'Your job post is now live and ready to receive applications.'
+      : location.state?.jobEditSuccess
+        ? 'Your changes have been saved successfully.'
         : '',
   }));
   const [showSuccessIndicator, setShowSuccessIndicator] = useState(successIndicator.visible);
@@ -789,12 +798,14 @@ const EmployerJobView = () => {
       state: nextState,
     });
 
-    const timeoutId = window.setTimeout(() => {
-      setShowSuccessIndicator(false);
-    }, 5000);
+    const timeoutId = successIndicator.type === 'edit'
+      ? window.setTimeout(() => setShowSuccessIndicator(false), 5000)
+      : undefined;
 
-    return () => window.clearTimeout(timeoutId);
-  }, [navigate, location.pathname, successIndicator.visible]);
+    return () => {
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, [navigate, location.pathname, successIndicator.type, successIndicator.visible]);
 
   const requiredSkills = useMemo(() => {
     if (Array.isArray(job?.skillsRequired)) return job.skillsRequired.filter(Boolean);
@@ -934,7 +945,8 @@ const EmployerJobView = () => {
               aria-modal="true"
               aria-live="polite"
             >
-              <div className="w-full max-w-sm rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-2xl">
+              <div className="w-full max-w-md overflow-hidden rounded-2xl border border-gray-100 bg-white text-center shadow-2xl">
+                <div className="px-8 pb-6 pt-8">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#e8f1ff]">
                   <svg className="h-10 w-10 text-[#2e66a6]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                     <circle cx="12" cy="12" r="10" />
@@ -948,7 +960,20 @@ const EmployerJobView = () => {
                     />
                   </svg>
                 </div>
-                <div className="text-xl font-bold text-gray-900">{successIndicator.message}</div>
+                <div className="text-xl font-bold text-gray-900">{successIndicator.title}</div>
+                <p className="mt-2 text-sm text-gray-600">{successIndicator.message}</p>
+                </div>
+                {successIndicator.type === 'post' && (
+                  <div className="border-t border-gray-200 px-8 py-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowSuccessIndicator(false)}
+                      className="w-full rounded-xl bg-[#2e66a6] px-5 py-3 text-sm font-semibold text-white hover:bg-[#23508a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                    >
+                      OK
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}

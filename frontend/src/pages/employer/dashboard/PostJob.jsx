@@ -1883,12 +1883,14 @@ const PostJob = () => {
         setSuccess('Job posted successfully!');
         await new Promise((resolve) => setTimeout(resolve, 1200));
         allowNavigationRef.current = true;
-        navigate('/employer/manage-jobs', {
+        navigate(`/employer/manage-jobs/${publishedJobId}/view`, {
           replace: true,
           state: {
             jobPostSuccess: true,
             successType: 'post',
             highlightedJobId: publishedJobId,
+            backPath: '/employer/manage-jobs',
+            backLabel: 'Manage Jobs',
           },
         });
       } else {
