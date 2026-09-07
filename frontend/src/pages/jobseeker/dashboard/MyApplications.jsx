@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import api from '../../../services/api';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Pagination from '../../../components/shared/Pagination';
+import { FaCheckCircle } from 'react-icons/fa';
 
 const UI = {
   pageBg: 'bg-gray-50',
@@ -1051,7 +1052,7 @@ const MyApplications = () => {
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/25 px-4" role="status" aria-live="polite">
               <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white px-6 py-7 text-center shadow-2xl">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf2fb] text-[#2e66a6]">
-                  <SvgIcon name="checkCircle" className="h-8 w-8" />
+                  <FaCheckCircle className="h-8 w-8 text-[#2e66a6]" />
                 </div>
                 <h2 className="mt-4 text-xl font-bold text-gray-900">
                   {actionMessage === 'withdrawn'
