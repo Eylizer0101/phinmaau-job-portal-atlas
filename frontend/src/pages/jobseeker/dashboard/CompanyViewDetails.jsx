@@ -435,7 +435,7 @@ const getOutcomeLabel = (value) => {
 };
 
 const getOutcomeBadgeClass = () =>
-  "bg-blue-50 text-blue-700 border-blue-200";
+  "bg-transparent text-black/60 border-[#dfe7f0]";
 
 const getStoredUser = () => {
   try {

@@ -142,7 +142,7 @@ const CompanyAllReviews = () => {
               <p className="mt-1 text-black/60">{filtered.length} review{filtered.length === 1 ? "" : "s"}</p>
             </div>
 
-            <div className="w-full max-w-[390px] lg:justify-self-center">
+            <div className="w-full max-w-[390px] lg:justify-self-center lg:translate-x-10">
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-[125px_minmax(0,1fr)] sm:items-center">
                 <div className="text-center sm:border-r sm:border-[#dfe7f0] sm:pr-3">
                   <p className="text-4xl font-bold leading-none text-[#27364a]">{reviewSummary.rating.toFixed(1)}</p>

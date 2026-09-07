@@ -140,7 +140,7 @@ const EmployerAllReviews = () => {
               </div>
 
               {!loading && !error ? (
-                <div className="w-full max-w-[340px] lg:justify-self-center">
+                <div className="w-full max-w-[340px] lg:justify-self-center lg:translate-x-10">
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-[115px_minmax(0,1fr)] sm:items-center">
                     <div className="text-center sm:border-r sm:border-[#dfe7f0] sm:pr-3">
                       <p className="text-4xl font-bold leading-none text-[#27364a]">{summary.rating.toFixed(1)}</p>
