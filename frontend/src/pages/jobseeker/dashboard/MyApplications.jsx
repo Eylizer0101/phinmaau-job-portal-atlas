@@ -1446,7 +1446,8 @@ const MyApplications = () => {
                             )}
                             {salaryText && (
                               <span className={`${UI.chipBase} bg-[#2e66a6]/10 text-[#2e66a6] border-[#2e66a6]/20`}>
-                                {salaryText}
+                                <span className="font-semibold" aria-hidden="true">₱</span>
+                                <span>{salaryText.replace(/^₱/, '')}</span>
                               </span>
                             )}
                             <span className={`${UI.chipBase} bg-gray-50 text-gray-700 border-gray-200`}>
