@@ -3167,13 +3167,11 @@ const Bookmarks = () => {
 
                               {hasValidDisplayValue(selectedJob.location) ? (
                                 <div className="mt-1">
-                                  <div className="inline-flex items-start gap-2 text-xs font-semibold uppercase tracking-wide text-black/50">
-                                    <span className="mt-0.5 text-black/60">
-                                      <SvgIcon name="location" className="h-4 w-4" />
+                                  <div className={`inline-flex items-center gap-2 ${UI.meta}`}>
+                                    <span className="text-black/60">
+                                      <SvgIcon name="location" className="w-4 h-4" />
                                     </span>
-                                    <span className="break-words normal-case tracking-normal text-black/65">
-                                      {formatLocationDisplay(selectedJob.location)}
-                                    </span>
+                                    <span>{formatLocationDisplay(selectedJob.location)}</span>
                                   </div>
                                 </div>
                               ) : null}
