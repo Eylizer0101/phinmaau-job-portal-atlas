@@ -832,7 +832,7 @@ const EmployerLayout = ({ children }) => {
           <img
             src="/images/error.png"
             alt=""
-            className="h-6 w-6 object-contain"
+            className="h-8 w-8 object-contain"
             aria-hidden="true"
             draggable="false"
           />
