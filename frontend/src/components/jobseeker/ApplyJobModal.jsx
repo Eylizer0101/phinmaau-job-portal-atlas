@@ -145,8 +145,13 @@ const IconLock = ({ className = 'w-7 h-7' }) => (
 
 const IconBuilding = ({ className = 'w-4 h-4' }) => (
   <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-    <path d="M4 20V6.8A.8.8 0 0 1 4.8 6H12v14M12 20h8V10.8a.8.8 0 0 0-.8-.8H12" stroke="currentColor" strokeWidth="1.6" />
-    <path d="M7 9h2M7 12h2M7 15h2M15 13h2M15 16h2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={1.6}
+      d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3.75h1.5m-1.5 3.75h1.5m3-7.5H15m-1.5 3.75H15m-1.5 3.75H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"
+      stroke="currentColor"
+    />
   </svg>
 );
 
