@@ -415,12 +415,9 @@ const EmployerDashboard = () => {
       const url = String(typeof item === 'string' ? item : item?.url || '').trim();
       return Boolean(url) && !/^(blob:|data:)/i.test(url);
     });
-    const hasSocialMedia = [p.facebookUrl, p.instagramUrl, p.youtubeUrl, p.xUrl]
-      .some((value) => /^https?:\/\/\S+$/i.test(String(value || '').trim()));
-
     const requiredFields = [
       p.companyName,
-      p.businessEmail || user?.email,
+      p.businessEmail,
       p.mobileNumber,
       p.regionCity,
       p.industry,
@@ -428,7 +425,6 @@ const EmployerDashboard = () => {
       p.companyDescription,
       p.companyLogo,
       p.coverPhoto,
-      p.companyWebsiteUrl,
     ];
 
     const locationParts = String(p.regionCity || '')
@@ -438,8 +434,7 @@ const EmployerDashboard = () => {
 
     return requiredFields.every((value) => String(value || '').trim())
       && locationParts.length >= 3
-      && hasSavedGalleryPhoto
-      && hasSocialMedia;
+      && hasSavedGalleryPhoto;
   };
 
   const applyUserData = (user) => {
