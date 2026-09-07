@@ -899,27 +899,13 @@ const EmployerLayout = ({ children }) => {
           >
             <div className="p-6 sm:p-7">
               {/* ✅ sign out icon */}
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center text-[#173b70]">
-                <svg
-                  className="h-12 w-12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="1.8"
-                    d="M14 8V5.5A2.5 2.5 0 0011.5 3h-5A2.5 2.5 0 004 5.5v13A2.5 2.5 0 006.5 21h5a2.5 2.5 0 002.5-2.5V16"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="1.8"
-                    d="M10 12h10m0 0l-3.5-3.5M20 12l-3.5 3.5"
-                  />
-                </svg>
+              <div className="mx-auto mb-4 w-14 h-14 rounded-full flex items-center justify-center">
+                <img
+                  src="/images/error.png"
+                  alt="Sign out"
+                  className="w-14 h-14 object-contain"
+                  draggable="false"
+                />
               </div>
 
               <h2
