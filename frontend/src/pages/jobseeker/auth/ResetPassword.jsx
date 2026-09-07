@@ -322,7 +322,7 @@ const ResetPassword = () => {
               onChange={handleChange}
               placeholder="Enter 6-digit OTP"
               disabled={loading || resendLoading || !!successMessage || !recoveryEmail}
-              className={`${fieldClass(!!fieldErrors.otp)} text-center font-mono tracking-[0.3em]`}
+              className={`${fieldClass(!!fieldErrors.otp)} text-center font-sans tracking-[0.3em]`}
             />
             {fieldErrors.otp ? <p className="text-xs text-red-600">{fieldErrors.otp}</p> : null}
           </div>

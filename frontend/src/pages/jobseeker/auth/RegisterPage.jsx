@@ -1561,7 +1561,7 @@ If you don’t receive a confirmation email within 48 hours or have any question
               inputMode="numeric"
               autoComplete="one-time-code"
               placeholder="000000"
-              className="mt-6 h-12 w-full rounded-xl border border-gray-300 text-center font-mono text-xl tracking-[0.35em] focus:border-[#2e66a6] focus:outline-none"
+              className="mt-6 h-12 w-full rounded-xl border border-gray-300 text-center font-sans text-xl tracking-[0.35em] focus:border-[#2e66a6] focus:outline-none"
             />
             {emailOtpError && <p className="mt-2 text-center text-sm text-red-600" role="alert">{emailOtpError}</p>}
             <button type="button" onClick={verifyRegistrationEmail} disabled={loading} className="mt-5 h-12 w-full rounded-xl bg-[#2e66a6] text-sm font-semibold text-white disabled:opacity-50">
