@@ -5,6 +5,9 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+      },
       colors: {
         'job-yellow': '#F1C40F',
         'job-green': '#27AE60',
