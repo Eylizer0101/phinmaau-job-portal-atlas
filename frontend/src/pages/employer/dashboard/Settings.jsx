@@ -742,9 +742,18 @@ const Settings = () => {
                         inputMode="numeric"
                         maxLength={6}
                       />
-                      <InlineActionButton onClick={handleEmailResend} disabled={saving.email || emailResendSeconds > 0}>
-                        {emailResendSeconds > 0 ? `Resend verification in ${formatCountdown(emailResendSeconds)}` : "Didn't get the code? Resend verification email"}
-                      </InlineActionButton>
+                      <div className="flex flex-wrap items-center gap-1 text-xs">
+                        <span className="text-black/70">Didn't get the code?</span>
+                        {emailResendSeconds > 0 ? (
+                          <span className="text-black/50">
+                            {`Resend verification in ${formatCountdown(emailResendSeconds)}`}
+                          </span>
+                        ) : (
+                          <InlineActionButton onClick={handleEmailResend} disabled={saving.email}>
+                            Resend verification email
+                          </InlineActionButton>
+                        )}
+                      </div>
                       <div className="flex justify-end">
                         <button
                           type="button"
