@@ -2946,7 +2946,7 @@ const CompanyProfile = () => {
                       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_390px_auto] xl:items-center">
                         <div><h2 className="text-[24px] font-bold text-black">Applications Process at {companyData.companyName || 'Company'}</h2><p className="mt-1 text-[16px] text-black/65">{companyReviews.length} Total Application{companyReviews.length === 1 ? '' : 's'}</p></div>
 
-                        <div className="w-full max-w-[390px]">
+                        <div className="w-full max-w-[390px] xl:-translate-x-8">
                           <div className="grid grid-cols-1 gap-2 sm:grid-cols-[125px_minmax(0,1fr)] sm:items-center">
                             <div className="text-center sm:border-r sm:border-[#dfe7f0] sm:pr-3">
                               <p className="text-4xl font-bold leading-none text-[#27364a]">{companyReviewSummary.rating.toFixed(1)}</p>
