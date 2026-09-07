@@ -39,6 +39,19 @@ const CompanyAllReviews = () => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const apiOrigin = useMemo(() => {
+    const base = api?.defaults?.baseURL || process.env.REACT_APP_API_URL || "https://phinmaau-job-portal-atlas.onrender.com/api";
+    return String(base).replace(/\/api\/?$/, "");
+  }, []);
+
+  const resolveAssetUrl = (value) => {
+    if (!value) return "";
+    const normalizedValue = String(value).trim();
+    if (!normalizedValue) return "";
+    if (/^https?:\/\//i.test(normalizedValue)) return normalizedValue;
+    if (normalizedValue.startsWith("/uploads")) return `${apiOrigin}${normalizedValue}`;
+    return `${apiOrigin}/${normalizedValue.replace(/^\/+/, "")}`;
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -123,12 +136,43 @@ const CompanyAllReviews = () => {
         </button>
 
         <section className="rounded-[1.35rem] border border-[#e6edf5] bg-white p-5 shadow-[0_18px_45px_rgba(46,102,166,0.08)] sm:p-7 lg:p-8">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_390px_420px] xl:items-center">
             <div>
               <h1 className="text-2xl font-bold text-black sm:text-3xl">All Reviews for {company.companyName || "Company"}</h1>
               <p className="mt-1 text-black/60">{filtered.length} review{filtered.length === 1 ? "" : "s"}</p>
             </div>
-            <div className="w-full lg:max-w-md">
+
+            <div className="w-full max-w-[390px]">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-[125px_minmax(0,1fr)] sm:items-center">
+                <div className="text-center sm:border-r sm:border-[#dfe7f0] sm:pr-3">
+                  <p className="text-4xl font-bold leading-none text-[#27364a]">{reviewSummary.rating.toFixed(1)}</p>
+                  <div className="mt-1 flex justify-center gap-0.5" aria-label={`${reviewSummary.rating.toFixed(1)} out of 5 stars`}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <span key={star} className={`text-lg ${star <= Math.round(reviewSummary.rating) ? "text-[#f2b313]" : "text-[#d9e0e8]"}`}>★</span>
+                    ))}
+                  </div>
+                  <p className="mt-1 text-[12px] text-black/65">{reviewSummary.count} ratings in total</p>
+                </div>
+
+                <div className="space-y-1.5">
+                  {[5, 4, 3, 2, 1].map((star) => {
+                    const count = reviewSummary.breakdown[star];
+                    const percent = reviewSummary.count > 0 ? Math.min(100, (count / reviewSummary.count) * 100) : 0;
+                    return (
+                      <div key={star} className="grid grid-cols-[14px_minmax(0,1fr)_24px] items-center gap-2">
+                        <span className="text-xs font-medium text-black/70">{star}</span>
+                        <div className="h-2 overflow-hidden rounded-full bg-[#e9edf2]">
+                          <div className="h-full rounded-full bg-[#f2b313]" style={{ width: `${percent}%` }} />
+                        </div>
+                        <span className="text-right text-xs text-black/65">{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="w-full">
               <div className="relative">
                 <svg
                   className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-black/40"
@@ -157,34 +201,6 @@ const CompanyAllReviews = () => {
             </div>
           </div>
 
-          <div className="mt-7 grid grid-cols-1 gap-5 rounded-2xl border border-[#dfe7f0] bg-[#fbfcfe] p-5 sm:grid-cols-[150px_minmax(0,1fr)] sm:items-center sm:p-6">
-            <div className="text-center sm:border-r sm:border-[#dfe7f0] sm:pr-5">
-              <p className="text-4xl font-bold leading-none text-[#27364a]">{reviewSummary.rating.toFixed(1)}</p>
-              <div className="mt-2 flex justify-center gap-0.5" aria-label={`${reviewSummary.rating.toFixed(1)} out of 5 stars`}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <span key={star} className={`text-lg ${star <= Math.round(reviewSummary.rating) ? "text-[#f2b313]" : "text-[#d9e0e8]"}`}>★</span>
-                ))}
-              </div>
-              <p className="mt-1 text-sm text-black/65">{reviewSummary.count} ratings in total</p>
-            </div>
-
-            <div className="space-y-2">
-              {[5, 4, 3, 2, 1].map((star) => {
-                const count = reviewSummary.breakdown[star];
-                const percent = reviewSummary.count > 0 ? (count / reviewSummary.count) * 100 : 0;
-                return (
-                  <div key={star} className="grid grid-cols-[18px_minmax(0,1fr)_28px] items-center gap-2">
-                    <span className="text-sm font-medium text-black/70">{star}</span>
-                    <div className="h-2 overflow-hidden rounded-full bg-[#e9edf2]">
-                      <div className="h-full rounded-full bg-[#f2b313]" style={{ width: `${percent}%` }} />
-                    </div>
-                    <span className="text-right text-sm text-black/65">{count}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
           <div className="mt-7 space-y-5">
             {visibleReviews.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-[#d8e2ee] px-6 py-14 text-center text-black/55">No reviews found.</div>
@@ -192,7 +208,10 @@ const CompanyAllReviews = () => {
               <article key={review?._id || `${safePage}-${index}`} className="rounded-2xl border border-[#dfe7f0] bg-white px-5 py-5 shadow-[0_10px_28px_rgba(46,102,166,0.06)] sm:px-6 sm:py-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#e1e8f0] bg-[#f0f4f8] text-[#60758a]">▥</div>
+                    <ReviewerAvatar
+                      src={resolveAssetUrl(review?.reviewerProfileImage || review?.profileImage || "")}
+                      name={review?.reviewerName || "Anonymous User"}
+                    />
                     <div>
                       <h2 className="text-[17px] font-bold text-black">{review?.reviewerName || "Anonymous User"}</h2>
                       <p className="mt-0.5 text-sm text-black/55">
@@ -235,5 +254,29 @@ const Metric = ({ label, value }) => (
     <p className="mt-1 text-lg font-bold text-black">{value}</p>
   </div>
 );
+
+const ReviewerAvatar = ({ src, name }) => {
+  const fallbackProfileImage = "/images/profile.png";
+  const [imageSrc, setImageSrc] = useState(src || fallbackProfileImage);
+
+  useEffect(() => {
+    setImageSrc(src || fallbackProfileImage);
+  }, [src]);
+
+  return (
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#e1e8f0] bg-[#f0f4f8]">
+      <img
+        src={imageSrc}
+        alt={`${name || "Reviewer"} profile`}
+        className="h-full w-full object-cover"
+        onError={() => {
+          if (imageSrc !== fallbackProfileImage) {
+            setImageSrc(fallbackProfileImage);
+          }
+        }}
+      />
+    </div>
+  );
+};
 
 export default CompanyAllReviews;
