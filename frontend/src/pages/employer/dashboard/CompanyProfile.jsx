@@ -4233,15 +4233,6 @@ const CompanyProfile = () => {
                 <div className="text-xl font-bold text-gray-900">Changes Saved!</div>
                 <div className="mt-2 text-sm text-gray-600">Your company profile has been updated successfully.</div>
               </div>
-              <div className="border-t border-gray-200 px-8 py-4">
-                <button
-                  type="button"
-                  onClick={() => setShowSaveSuccess(false)}
-                  className="w-full rounded-xl bg-[#2e66a6] px-5 py-3 text-sm font-semibold text-white hover:bg-[#23508a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-                >
-                  OK
-                </button>
-              </div>
             </div>
           </div>
         ) : null}

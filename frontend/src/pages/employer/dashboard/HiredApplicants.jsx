@@ -1567,15 +1567,6 @@ const selectBase =
               <p className="mt-2 text-sm text-gray-600">{reviewResult.description}</p>
             </div>
 
-            <div className="border-t border-gray-200 px-8 py-4">
-              <button
-                type="button"
-                onClick={() => setReviewResult(null)}
-                className="w-full rounded-xl bg-[#2e66a6] px-5 py-3 text-sm font-semibold text-white hover:bg-[#23508a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-              >
-                OK
-              </button>
-            </div>
           </div>
         </div>
       )}
