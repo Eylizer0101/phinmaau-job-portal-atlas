@@ -798,13 +798,7 @@ const EmployerJobView = () => {
       state: nextState,
     });
 
-    const timeoutId = successIndicator.type === 'edit'
-      ? window.setTimeout(() => setShowSuccessIndicator(false), 5000)
-      : undefined;
-
-    return () => {
-      if (timeoutId) window.clearTimeout(timeoutId);
-    };
+    return undefined;
   }, [navigate, location.pathname, successIndicator.type, successIndicator.visible]);
 
   const requiredSkills = useMemo(() => {
@@ -963,7 +957,7 @@ const EmployerJobView = () => {
                 <div className="text-xl font-bold text-gray-900">{successIndicator.title}</div>
                 <p className="mt-2 text-sm text-gray-600">{successIndicator.message}</p>
                 </div>
-                {successIndicator.type === 'post' && (
+                {successIndicator.type && (
                   <div className="border-t border-gray-200 px-8 py-4">
                     <button
                       type="button"
