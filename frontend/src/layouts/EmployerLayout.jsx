@@ -808,6 +808,20 @@ const EmployerLayout = ({ children }) => {
             <svg className="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" d="M3.75 21h16.5M5.25 21V3h13.5v18M9 7h1.5M9 11h1.5m3-4H15m-1.5 4H15M9 21v-4.5h6V21" /></svg>
             Company Profile
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSidebarProfileOpen(false);
+              setIsMobileNavOpen(false);
+              navigate("/employer/settings");
+            }}
+            className="flex min-h-[44px] w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+          >
+            <svg className="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" d="M12 8.25a3.75 3.75 0 100 7.5 3.75 3.75 0 000-7.5zm8.25 3.75a8.22 8.22 0 00-.12-1.38l2.03-1.58-2.25-3.9-2.53 1.02a8.36 8.36 0 00-2.38-1.38L14.62 2h-4.5l-.38 2.78a8.36 8.36 0 00-2.38 1.38L4.83 5.14l-2.25 3.9 2.03 1.58a8.22 8.22 0 000 2.76l-2.03 1.58 2.25 3.9 2.53-1.02a8.36 8.36 0 002.38 1.38l.38 2.78h4.5l.38-2.78a8.36 8.36 0 002.38-1.38l2.53 1.02 2.25-3.9-2.03-1.58c.08-.45.12-.91.12-1.38z" />
+            </svg>
+            Account Settings
+          </button>
           <div className="border-t border-gray-100">
             <button
               type="button"
