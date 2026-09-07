@@ -1243,6 +1243,25 @@ const CompanyProfile = () => {
   const [companyReviews, setCompanyReviews] = useState([]);
   const [companyActivityLoading, setCompanyActivityLoading] = useState(false);
 
+  const companyReviewSummary = useMemo(() => {
+    const breakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    let points = 0;
+
+    companyReviews.forEach((review) => {
+      const rating = Number(review?.processRating ?? review?.rating);
+      if (!Number.isFinite(rating) || rating < 1 || rating > 5) return;
+      breakdown[Math.max(1, Math.min(5, Math.round(rating)))] += 1;
+      points += rating;
+    });
+
+    const count = Object.values(breakdown).reduce((sum, value) => sum + value, 0);
+    return {
+      breakdown,
+      count,
+      rating: count ? points / count : 0,
+    };
+  }, [companyReviews]);
+
   const [docUploading, setDocUploading] = useState({
     secRegistration: false,
     birRegistration: false,
@@ -2924,8 +2943,42 @@ const CompanyProfile = () => {
 
                   {activeTab === 'reviews' && (
                     <div className="rounded-[18px] border border-[#d1d5db] bg-white p-7 shadow-[0_2px_6px_rgba(15,23,42,0.05)]">
-                      <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_390px_auto] xl:items-center">
                         <div><h2 className="text-[24px] font-bold text-black">Applications Process at {companyData.companyName || 'Company'}</h2><p className="mt-1 text-[16px] text-black/65">{companyReviews.length} Total Application{companyReviews.length === 1 ? '' : 's'}</p></div>
+
+                        <div className="w-full max-w-[390px]">
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-[125px_minmax(0,1fr)] sm:items-center">
+                            <div className="text-center sm:border-r sm:border-[#dfe7f0] sm:pr-3">
+                              <p className="text-4xl font-bold leading-none text-[#27364a]">{companyReviewSummary.rating.toFixed(1)}</p>
+                              <div className="mt-1 flex justify-center gap-0.5" aria-label={`${companyReviewSummary.rating.toFixed(1)} out of 5 stars`}>
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <span key={star} className={`text-lg ${star <= Math.round(companyReviewSummary.rating) ? 'text-[#f2b313]' : 'text-[#d9e0e8]'}`}>★</span>
+                                ))}
+                              </div>
+                              <p className="mt-1 text-[12px] text-black/65">{companyReviewSummary.count} ratings in total</p>
+                            </div>
+
+                            <div className="space-y-1.5">
+                              {[5, 4, 3, 2, 1].map((star) => {
+                                const count = companyReviewSummary.breakdown[star];
+                                const percent = companyReviewSummary.count
+                                  ? Math.min(100, (count / companyReviewSummary.count) * 100)
+                                  : 0;
+
+                                return (
+                                  <div key={star} className="grid grid-cols-[14px_minmax(0,1fr)_24px] items-center gap-2">
+                                    <span className="text-xs font-medium text-black/70">{star}</span>
+                                    <div className="h-2 overflow-hidden rounded-full bg-[#e9edf2]">
+                                      <div className="h-full rounded-full bg-[#f2b313]" style={{ width: `${percent}%` }} />
+                                    </div>
+                                    <span className="text-right text-xs text-black/65">{count}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+
                         {companyReviews.length > COMPANY_ACTIVITY_PREVIEW_LIMIT ? <button type="button" onClick={() => navigate('/employer/company-profile/reviews')} 
                         className="inline-flex items-center gap-2 text-[15px] font-medium text-[#2e66a6] 
                         hover:text-[#25578f]">See all reviews<svg
