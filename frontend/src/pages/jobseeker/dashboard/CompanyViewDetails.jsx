@@ -434,17 +434,8 @@ const getOutcomeLabel = (value) => {
   return labels[String(value || "").trim()] || "Still in process";
 };
 
-const getOutcomeBadgeClass = (value) => {
-  const classes = {
-    received_offer: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    rejected: "bg-red-50 text-red-700 border-red-200",
-    ghosted: "bg-amber-50 text-amber-700 border-amber-200",
-    withdrew: "bg-gray-100 text-gray-700 border-gray-200",
-    still_in_process: "bg-blue-50 text-blue-700 border-blue-200",
-  };
-
-  return classes[String(value || "").trim()] || classes.still_in_process;
-};
+const getOutcomeBadgeClass = () =>
+  "bg-blue-50 text-blue-700 border-blue-200";
 
 const getStoredUser = () => {
   try {
