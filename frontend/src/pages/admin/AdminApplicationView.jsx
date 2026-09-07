@@ -710,7 +710,7 @@ const AdminApplicationView = () => {
                       <span className="min-w-0 truncate">{companyName}</span>
                     </div>
 
-                    <div className="mt-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-black/50">
+                    <div className="mt-1 flex items-center gap-2 text-sm text-black/70">
                       <Icon name="mapPin" className="h-4 w-4 shrink-0 text-black/60" />
                       <span>{location}</span>
                     </div>

@@ -992,7 +992,7 @@ const EmployerJobView = () => {
                           </svg>
                       <span className="font-medium">{companyName}</span>
                     </div>
-                    <div className="mt-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-black/50">
+                    <div className="mt-1 flex items-center gap-2 text-sm text-black/70">
                       <SvgIcon name="location" className="h-4 w-4 text-black/60" />
                       <span className={isDraftJob && isLocationMissing ? 'text-[11px]' : ''}>{formatLocationDisplay(job.location)}</span>
                     </div>
