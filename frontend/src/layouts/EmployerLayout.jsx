@@ -829,26 +829,13 @@ const EmployerLayout = ({ children }) => {
           aria-label="Sign out"
           title="Sign out"
         >
-          <svg
-            className="h-6 w-6"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
+          <img
+            src="/images/error.png"
+            alt=""
+            className="h-6 w-6 object-contain"
             aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.8"
-              d="M14 8V5.5A2.5 2.5 0 0011.5 3h-5A2.5 2.5 0 004 5.5v13A2.5 2.5 0 006.5 21h5a2.5 2.5 0 002.5-2.5V16"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.8"
-              d="M10 12h10m0 0l-3.5-3.5M20 12l-3.5 3.5"
-            />
-          </svg>
+            draggable="false"
+          />
         </button>
       </div>
     </div>
