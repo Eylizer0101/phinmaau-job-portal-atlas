@@ -737,7 +737,7 @@ const AutoFitProfileName = ({ children, maxFontSize = 34, minFontSize = 18 }) =>
     <div ref={containerRef} className="w-full min-w-0 overflow-hidden">
       <h1
         ref={textRef}
-        className="whitespace-nowrap font-serif leading-tight font-bold tracking-[0.22em] uppercase text-[#111827]"
+        className="whitespace-nowrap font-sans leading-tight font-bold tracking-[0.22em] uppercase text-[#111827]"
         style={{ fontSize: `${fontSize}px` }}
       >
         {children}
@@ -6736,15 +6736,15 @@ const MyProfile = () => {
           <div className="flex items-start justify-center gap-5">
             <div className="flex-1 min-w-0">
               <AutoFitProfileName>{fullName || 'YOUR NAME'}</AutoFitProfileName>
-              <div className="mt-2 font-serif text-[16px] leading-7 text-gray-900">
+              <div className="mt-2 font-sans text-[16px] leading-7 text-gray-900">
                 {buildAddressString(formData) || 'Complete your basic information to get started.'}
               </div>
               {(formData.email || formData.phoneNumber) ? (
-                <div className="mt-1 font-serif text-[16px] leading-7 text-gray-900">
+                <div className="mt-1 font-sans text-[16px] leading-7 text-gray-900">
                   {[formData.email, formData.phoneNumber].filter(Boolean).join(' • ')}
                 </div>
               ) : null}
-              <div className="mt-2 font-serif text-[16px] leading-7 text-gray-900">
+              <div className="mt-2 font-sans text-[16px] leading-7 text-gray-900">
                 {[
                   formData.campus,
                   formData.course,
@@ -6753,7 +6753,7 @@ const MyProfile = () => {
               </div>
             </div>
 
-            <div className="hidden sm:flex w-[124px] h-[124px] mr-6 bg-white text-white items-center justify-center font-serif text-[32px] font-bold shrink-0 overflow-hidden">
+            <div className="hidden sm:flex w-[124px] h-[124px] mr-6 bg-white text-white items-center justify-center font-sans text-[32px] font-bold shrink-0 overflow-hidden">
               <img
                 src={profileImageUrl || '/images/profile.png'}
                 alt={fullName || 'Profile photo'}
@@ -6774,7 +6774,7 @@ const MyProfile = () => {
       return formData.aboutMe ? (
         <RichTextDisplay
           value={formData.aboutMe}
-          className="px-0 pb-5 pt-2 font-serif text-[13px] leading-5 text-gray-900 text-justify"
+          className="px-0 pb-5 pt-2 font-sans text-[13px] leading-5 text-gray-900 text-justify"
         />
       ) : renderEmptyLine(EMPTY_SECTION_MESSAGES.about);
     }
@@ -6802,7 +6802,7 @@ const MyProfile = () => {
       if (!hasCareerData) return renderEmptyLine(EMPTY_SECTION_MESSAGES.career);
 
       return (
-        <div className="px-0 pb-5 pt-2 grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-4 font-serif text-[13px] leading-5 text-gray-900">
+        <div className="px-0 pb-5 pt-2 grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-4 font-sans text-[13px] leading-5 text-gray-900">
           <div className="space-y-1">
             <div><b>Preferred Work Mode:</b> {textOrEmpty(formData.preferredWorkMode, 'Not provided')}</div>
             <div><b>Employment Type:</b> {textOrEmpty(formData.employmentType, 'Not provided')}</div>
@@ -6834,7 +6834,7 @@ const MyProfile = () => {
       if (workExperienceLoading) return <div className="pb-5"><Spinner size="small" /></div>;
       if (!workExperiences.length) return renderEmptyLine(EMPTY_SECTION_MESSAGES.work);
       return (
-        <div className="px-0 pb-5 pt-2 space-y-4 font-serif text-[13px] leading-5 text-gray-900">
+        <div className="px-0 pb-5 pt-2 space-y-4 font-sans text-[13px] leading-5 text-gray-900">
           {workExperiences.map((item, index) => {
             const startDateText = formatWorkExperienceMonthYear(item.startDate);
             const endDateText = item.isPresent
@@ -6899,7 +6899,7 @@ const MyProfile = () => {
         .map((item) => String(item || '').trim())
         .filter(Boolean);
       return allSkills.length ? (
-        <div className="px-0 pb-5 pt-2 font-serif text-[13px] leading-5 text-gray-900">
+        <div className="px-0 pb-5 pt-2 font-sans text-[13px] leading-5 text-gray-900">
           <div className="flex flex-wrap items-center gap-2">
             {allSkills.map((item, index) => {
               const parsedSkill = parseSkillWithProficiency(item);
@@ -6925,7 +6925,7 @@ const MyProfile = () => {
       const hasAny = items.some((item) => item.school || item.campus || item.level || item.educationalAttainment || item.startMonth || item.startYear || item.endMonth || item.endYear || item.description);
       if (!hasAny) return renderEmptyLine(EMPTY_SECTION_MESSAGES.education);
       return (
-        <div className="px-0 pb-5 pt-2 space-y-3 font-serif text-[13px] leading-5 text-gray-900">
+        <div className="px-0 pb-5 pt-2 space-y-3 font-sans text-[13px] leading-5 text-gray-900">
           {items.map((item, index) => (
             <div
               key={item._id || `education-${index}`}
@@ -7007,8 +7007,8 @@ const MyProfile = () => {
         <div
           className={
             sectionKey === 'references'
-              ? 'grid grid-cols-1 gap-x-6 gap-y-5 px-0 pb-5 pt-2 font-serif text-[13px] leading-5 text-gray-900 sm:grid-cols-2 lg:grid-cols-3'
-              : 'px-0 pb-5 pt-2 space-y-3 font-serif text-[13px] leading-5 text-gray-900'
+              ? 'grid grid-cols-1 gap-x-6 gap-y-5 px-0 pb-5 pt-2 font-sans text-[13px] leading-5 text-gray-900 sm:grid-cols-2 lg:grid-cols-3'
+              : 'px-0 pb-5 pt-2 space-y-3 font-sans text-[13px] leading-5 text-gray-900'
           }
         >
           {items.map((item, index) => {
@@ -7500,7 +7500,7 @@ const MyProfile = () => {
                                 </svg>
                               </span>
                               <span className="min-w-0">
-                                <span className="block font-serif text-[16px] font-bold uppercase tracking-wide text-gray-900 truncate">{section.label}</span>
+                                <span className="block font-sans text-[16px] font-bold uppercase tracking-wide text-gray-900 truncate">{section.label}</span>
                                 {sectionReminders[section.key] ? (
                                   <span className="mt-0.5 block text-[12px] font-medium normal-case tracking-normal text-amber-700">
                                     {sectionReminders[section.key]}
