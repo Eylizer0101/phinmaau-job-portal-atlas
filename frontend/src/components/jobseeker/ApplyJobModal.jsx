@@ -212,6 +212,8 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [employmentChecking, setEmploymentChecking] = useState(false);
+  const [employmentBlock, setEmploymentBlock] = useState(null);
 
   const [userData, setUserData] = useState(null);
 
@@ -228,6 +230,8 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
     setSubmitError('');
     setPrivacyAccepted(false);
     setProfileError('');
+    setEmploymentBlock(null);
+    checkEmploymentStatus();
     fetchProfile();
 
     const t = setTimeout(() => {
@@ -254,6 +258,22 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
+  const checkEmploymentStatus = async () => {
+    try {
+      setEmploymentChecking(true);
+      const response = await api.get('/applications/employment-status/current');
+      if (response.data?.employed && response.data?.employment) {
+        setEmploymentBlock(response.data.employment);
+      }
+    } catch (error) {
+      // The submit endpoint also enforces the employment rule.
+      // Keep the existing apply flow available if this pre-check cannot load.
+      console.error('Unable to pre-check employment status:', error);
+    } finally {
+      setEmploymentChecking(false);
+    }
+  };
+
   const fetchProfile = async () => {
     try {
       setProfileLoading(true);
@@ -278,6 +298,8 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
     setSubmitError('');
     setPrivacyAccepted(false);
     setProfileError('');
+    setEmploymentChecking(false);
+    setEmploymentBlock(null);
     onClose?.();
   };
 
@@ -302,6 +324,17 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
     navigate('/jobseeker/my-profile', {
       state: pendingApplyFlow,
     });
+  };
+
+  const handleEmploymentTakeMeThere = () => {
+    const applicationId = employmentBlock?.applicationId;
+    const requestPending = String(employmentBlock?.requestStatus || '').toLowerCase() === 'pending';
+    closeAndReset();
+    navigate(
+      applicationId && !requestPending
+        ? `/jobseeker/my-applications?status=hired&employmentRequest=${applicationId}`
+        : '/jobseeker/my-applications?status=hired'
+    );
   };
 
   const handleContinueToPrivacy = () => {
@@ -348,13 +381,103 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
         setSubmitError(response.data?.message || 'Failed to submit application.');
       }
     } catch (error) {
-      setSubmitError(error.response?.data?.message || 'Failed to submit application.');
+      if (
+        error.response?.data?.code === 'ACTIVE_EMPLOYMENT_CONFIRMATION_REQUIRED' &&
+        error.response?.data?.employment
+      ) {
+        setEmploymentBlock(error.response.data.employment);
+        setSubmitError('');
+      } else {
+        setSubmitError(error.response?.data?.message || 'Failed to submit application.');
+      }
     } finally {
       setSubmitLoading(false);
     }
   };
 
   if (!isOpen || !job) return null;
+
+  if (employmentChecking && !employmentBlock) {
+    return (
+      <div className="fixed inset-0 z-[10080] flex items-center justify-center bg-black/45 px-4">
+        <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#d8e2ee] border-t-[#2e66a6]" />
+          <p className="mt-4 text-sm font-semibold text-gray-700">Checking your employment status...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (employmentBlock) {
+    const lastCheckedText = employmentBlock.lastCheckedAt
+      ? formatDisplayDate(employmentBlock.lastCheckedAt)
+      : 'Not checked yet';
+
+    return (
+      <div className="fixed inset-0 z-[10080] flex items-center justify-center bg-black/45 px-4 py-6">
+        <div className="w-full max-w-[520px] overflow-hidden rounded-[22px] border border-[#d8e2ee] bg-white shadow-2xl">
+          <div className="border-b border-[#e6edf5] bg-[#f7faff] px-6 py-5 sm:px-7">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#2e66a6]">
+                  Employment Status Check
+                </div>
+                <h2 className="mt-2 text-[24px] font-bold leading-tight text-gray-900">
+                  Is your Employment Status still up to date?
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-gray-600">
+                  Your previous employment record is still active. Please update it before applying for a new job.
+                </p>
+              </div>
+              <button
+                ref={closeButtonRef}
+                type="button"
+                onClick={closeAndReset}
+                className="rounded-lg p-1.5 text-gray-500 transition hover:bg-white hover:text-gray-800"
+                aria-label="Close employment status check"
+              >
+                <IconClose className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="px-6 py-5 sm:px-7">
+            <div className="rounded-2xl border border-[#d8e2ee] bg-white p-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <PreviewField label="Job Title" value={employmentBlock.jobTitle} />
+                <PreviewField label="Company" value={employmentBlock.companyName} />
+                <PreviewField label="Hired Date" value={formatDisplayDate(employmentBlock.hiredDate)} />
+                <PreviewField label="Applied Date" value={formatDisplayDate(employmentBlock.appliedDate)} />
+              </div>
+            </div>
+
+            {employmentBlock.reminderDue ? (
+              <div className="mt-4 rounded-xl border border-[#cfe0f5] bg-[#f1f7fd] px-4 py-3 text-sm leading-6 text-[#25578f]">
+                We check your employment status every 60 days to help keep your profile up to date.
+              </div>
+            ) : (
+              <div className="mt-4 text-xs text-gray-500">
+                Last employment status check: {lastCheckedText}
+              </div>
+            )}
+
+            <div className="mt-5 rounded-xl bg-gray-50 px-4 py-3 text-sm leading-6 text-gray-600">
+              If this employment has ended, submit an update request to your previous employer.
+              You can apply for another job after the employer approves the change.
+            </div>
+
+            <button
+              type="button"
+              onClick={handleEmploymentTakeMeThere}
+              className="mt-5 h-[48px] w-full rounded-xl bg-[#2e66a6] px-5 text-[15px] font-bold text-white transition hover:bg-[#25578f] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+            >
+              Take Me There →
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const renderHeader = (titleSize = 'large') => (
     <div className="max-w-[620px] mx-auto">

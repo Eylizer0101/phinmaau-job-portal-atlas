@@ -22,6 +22,8 @@ const {
   getJobseekerStatus,
   withdrawMyApplication,
   reactivateMyApplication,
+  getCurrentEmploymentStatus,
+  confirmEmploymentStatus,
   requestEmploymentStatusChange,
   reviewEmploymentStatusChange,
   updateEmploymentStatusByEmployer,
@@ -48,6 +50,8 @@ router.get('/jobseeker/all', protect, authorize('jobseeker'), getJobseekerApplic
 router.get('/job/:jobId/check', protect, authorize('jobseeker'), checkIfApplied);
 router.put('/:applicationId/withdraw', protect, authorize('jobseeker'), withdrawMyApplication);
 router.put('/:applicationId/reactivate', protect, authorize('jobseeker'), reactivateMyApplication);
+router.get('/employment-status/current', protect, authorize('jobseeker'), getCurrentEmploymentStatus);
+router.put('/:applicationId/employment-status/check', protect, authorize('jobseeker'), confirmEmploymentStatus);
 router.post('/:applicationId/employment-status-request', protect, authorize('jobseeker'), requestEmploymentStatusChange);
 
 // Admin routes

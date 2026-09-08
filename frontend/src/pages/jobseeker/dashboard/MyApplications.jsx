@@ -361,12 +361,15 @@ const MyApplications = () => {
   const [statusRequestApplication, setStatusRequestApplication] = useState(null);
   const [statusRequestReason, setStatusRequestReason] = useState('');
   const [statusRequestLoading, setStatusRequestLoading] = useState(false);
+  const [employmentCheckApplication, setEmploymentCheckApplication] = useState(null);
+  const [employmentCheckLoading, setEmploymentCheckLoading] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
   const highlightedApplicationId = new URLSearchParams(location.search).get('application') || '';
 
   const inFlightRef = useRef(false);
+  const employmentReminderShownRef = useRef(false);
   const tabRefs = useRef({});
   const subTabRefs = useRef({});
 
@@ -614,6 +617,103 @@ const MyApplications = () => {
     setStatusFilter(params.tab === 'inactive' ? (params.status === 'declined' ? 'declined' : 'all') : params.status);
     fetchApplications();
   }, [getQueryParams, fetchApplications]);
+
+  const getEmploymentReferenceDate = (application) =>
+    application?.employmentStatusCheckedAt ||
+    application?.hiredAt ||
+    application?.reviewedAt ||
+    application?.updatedAt ||
+    application?.createdAt ||
+    application?.appliedAt ||
+    null;
+
+  const getEmploymentDaysSinceCheck = (application) => {
+    const value = getEmploymentReferenceDate(application);
+    if (!value) return Number.POSITIVE_INFINITY;
+    const time = new Date(value).getTime();
+    if (!Number.isFinite(time)) return Number.POSITIVE_INFINITY;
+    return Math.max(0, Math.floor((Date.now() - time) / (24 * 60 * 60 * 1000)));
+  };
+
+  useEffect(() => {
+    if (loading || !applications.length) return;
+
+    const params = new URLSearchParams(location.search);
+    const requestedEmploymentId = params.get('employmentRequest');
+
+    if (requestedEmploymentId) {
+      const target = applications.find(
+        (application) => String(application._id) === String(requestedEmploymentId)
+      );
+
+      if (
+        target &&
+        String(target.status || '').toLowerCase() === 'hired' &&
+        String(target.employmentStatus || 'active').toLowerCase() !== 'inactive' &&
+        String(target.employmentStatusRequest?.status || 'none').toLowerCase() !== 'pending'
+      ) {
+        setStatusRequestApplication(target);
+      }
+
+      params.delete('employmentRequest');
+      const nextQuery = params.toString();
+      navigate(`/jobseeker/my-applications${nextQuery ? `?${nextQuery}` : ''}`, { replace: true });
+      return;
+    }
+
+    if (employmentReminderShownRef.current || statusRequestApplication) return;
+
+    const dueEmployment = applications.find(
+      (application) =>
+        String(application.status || '').toLowerCase() === 'hired' &&
+        String(application.employmentStatus || 'active').toLowerCase() !== 'inactive' &&
+        String(application.employmentStatusRequest?.status || 'none').toLowerCase() !== 'pending' &&
+        getEmploymentDaysSinceCheck(application) >= 60
+    );
+
+    if (dueEmployment) {
+      employmentReminderShownRef.current = true;
+      setEmploymentCheckApplication(dueEmployment);
+    }
+  }, [applications, loading, location.search, navigate, statusRequestApplication]);
+
+  const handleConfirmEmploymentStatus = async () => {
+    if (!employmentCheckApplication?._id || employmentCheckLoading) return;
+
+    try {
+      setEmploymentCheckLoading(true);
+      setError('');
+
+      const response = await api.put(
+        `/applications/${employmentCheckApplication._id}/employment-status/check`
+      );
+
+      if (response.data?.success) {
+        const updatedApplication = response.data.application;
+        setApplications((previous) =>
+          previous.map((application) =>
+            String(application._id) === String(updatedApplication._id)
+              ? { ...application, ...updatedApplication }
+              : application
+          )
+        );
+        setEmploymentCheckApplication(null);
+        setLastUpdated(new Date());
+        setActionMessage('employment-confirmed');
+      }
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Failed to confirm employment status.');
+    } finally {
+      setEmploymentCheckLoading(false);
+    }
+  };
+
+  const handleEmploymentTakeMeThere = () => {
+    if (!employmentCheckApplication) return;
+    setStatusRequestApplication(employmentCheckApplication);
+    setStatusRequestReason('');
+    setEmploymentCheckApplication(null);
+  };
 
   const updateUrl = (tabValue, statusValue) => {
     const params = new URLSearchParams();
@@ -1075,6 +1175,8 @@ const MyApplications = () => {
                     ? 'Application Withdrawn'
                     : actionMessage === 'reactivated'
                     ? 'Application Reactivated'
+                    : actionMessage === 'employment-confirmed'
+                    ? 'Employment Status Confirmed'
                     : 'Request Sent Successfully!'}
                 </h2>
                 <p className="mt-2 text-sm text-gray-500">
@@ -1082,6 +1184,8 @@ const MyApplications = () => {
                     ? 'Your application has been successfully withdrawn.'
                     : actionMessage === 'reactivated'
                     ? 'Your application has been successfully reactivated.'
+                    : actionMessage === 'employment-confirmed'
+                    ? 'Your employment status is still active and has been checked today.'
                     : 'Your request has been sent for review.'}
                 </p>
               </div>
@@ -1573,6 +1677,106 @@ const MyApplications = () => {
           )}
         </div>
       </div>
+
+      {employmentCheckApplication && (
+        <div
+          className="fixed inset-0 z-[115] flex items-center justify-center bg-black/50 px-4 py-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="employment-check-title"
+        >
+          <div className="w-full max-w-[520px] overflow-hidden rounded-[22px] border border-[#cfe0f5] bg-white shadow-2xl">
+            <div className="border-b border-[#dce9f7] bg-[#f1f7fd] px-6 py-5 sm:px-7">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#2e66a6]">
+                    Employment Status Reminder
+                  </p>
+                  <h2 id="employment-check-title" className="mt-2 text-2xl font-bold leading-tight text-gray-900">
+                    Is your Employment Status still up to date?
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-gray-600">
+                    Last updated {formatAppliedDateTime(getEmploymentReferenceDate(employmentCheckApplication))}
+                    {' '}• {getEmploymentDaysSinceCheck(employmentCheckApplication)} days ago.
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-gray-600">
+                    We check in every 60 days to help keep your profile up to date.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!employmentCheckLoading) setEmploymentCheckApplication(null);
+                  }}
+                  className="rounded-lg p-1.5 text-gray-500 hover:bg-white hover:text-gray-800"
+                  aria-label="Close employment status reminder"
+                >
+                  <SvgIcon name="timesCircle" className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="px-6 py-5 sm:px-7">
+              <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">Job Title</p>
+                    <p className="mt-1 text-sm font-semibold text-gray-900">
+                      {employmentCheckApplication.job?.title || 'Current position'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">Company</p>
+                    <p className="mt-1 text-sm font-semibold text-gray-900">
+                      {employmentCheckApplication.job?.companyName ||
+                        employmentCheckApplication.employer?.employerProfile?.companyName ||
+                        'Current employer'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">Hired Date</p>
+                    <p className="mt-1 text-sm font-semibold text-gray-900">
+                      {formatAppliedDateTime(
+                        employmentCheckApplication.hiredAt ||
+                        employmentCheckApplication.reviewedAt
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">Applied Date</p>
+                    <p className="mt-1 text-sm font-semibold text-gray-900">
+                      {formatAppliedDateTime(employmentCheckApplication.appliedAt)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-xl bg-[#f7faff] px-4 py-3 text-sm leading-6 text-gray-600">
+                If your employment has changed, please update your information as soon as possible.
+              </div>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={handleConfirmEmploymentStatus}
+                  disabled={employmentCheckLoading}
+                  className={`${UI.btnBase} ${UI.btnLg} ${UI.btnSecondary} ${UI.ring} w-full`}
+                >
+                  {employmentCheckLoading ? 'Confirming...' : 'Still Employed'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleEmploymentTakeMeThere}
+                  disabled={employmentCheckLoading}
+                  className={`${UI.btnBase} ${UI.btnLg} ${UI.btnPrimary} ${UI.ring} w-full`}
+                >
+                  Take Me There →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {statusRequestApplication && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4" role="dialog" aria-modal="true" aria-labelledby="status-request-title">

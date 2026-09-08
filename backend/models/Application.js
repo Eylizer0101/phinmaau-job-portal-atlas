@@ -171,6 +171,14 @@ const applicationSchema = new mongoose.Schema({
         enum: ['active', 'inactive'],
         default: 'active'
     },
+    hiredAt: {
+        type: Date,
+        default: null
+    },
+    employmentStatusCheckedAt: {
+        type: Date,
+        default: null
+    },
     employmentEndReason: {
         type: String,
         enum: ['contract_ended', 'employment_ended', ''],

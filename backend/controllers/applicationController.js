@@ -130,6 +130,66 @@ const attachEmploymentStatus = async (applications = []) => {
   });
 };
 
+
+const getEmploymentReferenceDate = (application = {}) => {
+  return (
+    application.employmentStatusCheckedAt ||
+    application.hiredAt ||
+    application.reviewedAt ||
+    application.updatedAt ||
+    application.createdAt ||
+    null
+  );
+};
+
+const buildCurrentEmploymentPayload = (application = {}) => {
+  if (!application) return null;
+
+  const referenceDate = getEmploymentReferenceDate(application);
+  const referenceTime = referenceDate ? new Date(referenceDate).getTime() : NaN;
+  const now = Date.now();
+  const daysSinceLastCheck = Number.isFinite(referenceTime)
+    ? Math.max(0, Math.floor((now - referenceTime) / (24 * 60 * 60 * 1000)))
+    : null;
+
+  return {
+    applicationId: application._id,
+    jobId: application.job?._id || application.job || null,
+    jobTitle: application.job?.title || 'Current position',
+    companyName:
+      application.job?.companyName ||
+      application.employer?.employerProfile?.companyName ||
+      'Current employer',
+    companyLogo:
+      application.job?.companyLogo ||
+      application.employer?.employerProfile?.companyLogo ||
+      '',
+    hiredDate: application.hiredAt || application.reviewedAt || null,
+    appliedDate: application.appliedAt || null,
+    lastCheckedAt: referenceDate,
+    daysSinceLastCheck,
+    reminderDue: daysSinceLastCheck === null ? true : daysSinceLastCheck >= 60,
+    requestStatus: application.employmentStatusRequest?.status || 'none'
+  };
+};
+
+const findActiveEmployment = async (jobseekerId) => {
+  return Application.findOne({
+    jobseeker: jobseekerId,
+    status: 'hired',
+    employmentStatus: { $ne: 'inactive' }
+  })
+    .populate({
+      path: 'job',
+      select: 'title companyName companyLogo employer'
+    })
+    .populate({
+      path: 'employer',
+      select: 'fullName employerProfile.companyName employerProfile.companyLogo'
+    })
+    .sort({ hiredAt: -1, reviewedAt: -1, updatedAt: -1 });
+};
+
 const protectApplicantSalaryForEmployer = (application) => {
   const plain = application?.toObject ? application.toObject() : application;
   if (!plain || typeof plain !== 'object') return plain;
@@ -879,6 +939,16 @@ exports.applyForJob = async (req, res) => {
       return res.status(400).json({ success: false, message: 'You have already applied for this job' });
     }
 
+    const activeEmployment = await findActiveEmployment(req.user._id);
+    if (activeEmployment) {
+      return res.status(409).json({
+        success: false,
+        code: 'ACTIVE_EMPLOYMENT_CONFIRMATION_REQUIRED',
+        message: 'Your previous employment record is still active. Please update it before applying for a new job.',
+        employment: buildCurrentEmploymentPayload(activeEmployment)
+      });
+    }
+
     const storedFilename = profileCv?.url
       ? String(profileCv.url).split('/').pop()
       : '';
@@ -1269,6 +1339,70 @@ exports.reactivateMyApplication = async (req, res) => {
   }
 };
 
+
+exports.getCurrentEmploymentStatus = async (req, res) => {
+  try {
+    const activeEmployment = await findActiveEmployment(req.user._id);
+
+    return res.status(200).json({
+      success: true,
+      employed: Boolean(activeEmployment),
+      employment: activeEmployment ? buildCurrentEmploymentPayload(activeEmployment) : null
+    });
+  } catch (error) {
+    console.error('Error checking current employment status:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error checking current employment status.'
+    });
+  }
+};
+
+exports.confirmEmploymentStatus = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const checkedAt = new Date();
+
+    const application = await Application.findOneAndUpdate(
+      {
+        _id: applicationId,
+        jobseeker: req.user._id,
+        status: 'hired',
+        employmentStatus: { $ne: 'inactive' }
+      },
+      {
+        $set: {
+          employmentStatus: 'active',
+          employmentStatusCheckedAt: checkedAt
+        }
+      },
+      { new: true, runValidators: true }
+    )
+      .populate('job', 'title companyName companyLogo')
+      .populate('employer', 'fullName employerProfile.companyName employerProfile.companyLogo');
+
+    if (!application) {
+      return res.status(409).json({
+        success: false,
+        message: 'This employment is no longer active.'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Employment status confirmed as up to date.',
+      application,
+      employment: buildCurrentEmploymentPayload(application)
+    });
+  } catch (error) {
+    console.error('Error confirming employment status:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error confirming employment status.'
+    });
+  }
+};
+
 exports.requestEmploymentStatusChange = async (req, res) => {
   try {
     const { applicationId } = req.params;
@@ -1293,6 +1427,7 @@ exports.requestEmploymentStatusChange = async (req, res) => {
       {
         $set: {
           employmentStatus: 'active',
+          employmentStatusCheckedAt: requestedAt,
           employmentStatusRequest: {
             reason,
             status: 'pending',
@@ -1353,8 +1488,10 @@ exports.reviewEmploymentStatusChange = async (req, res) => {
       update.employmentStatus = 'inactive';
       update.employmentEndedAt = reviewedAt;
       update.employmentUpdatedBy = 'jobseeker';
+    } else {
+      update.employmentStatus = 'active';
+      update.employmentStatusCheckedAt = reviewedAt;
     }
-    else update.employmentStatus = 'active';
 
     const application = await Application.findOneAndUpdate(
       {
@@ -2632,6 +2769,11 @@ exports.updateApplicationHiringStage = async (req, res) => {
       application.status = finalStatus;
       application.hiringStage = finalStatus === 'hired' ? 'Hired' : 'Declined';
       application.reviewedAt = new Date();
+      if (finalStatus === 'hired') {
+        application.hiredAt = application.hiredAt || application.reviewedAt;
+        application.employmentStatus = 'active';
+        application.employmentStatusCheckedAt = application.reviewedAt;
+      }
       application.lastActiveStatus = finalStatus === 'hired' ? 'hired' : application.lastActiveStatus;
       application.isDeclinedArchived = false;
       application.declinedArchivedAt = null;
@@ -2799,6 +2941,9 @@ exports.updateApplicationStatus = async (req, res) => {
 
     if (nextStatus === 'hired') {
       application.hiringStage = 'Hired';
+      application.hiredAt = application.hiredAt || application.reviewedAt;
+      application.employmentStatus = 'active';
+      application.employmentStatusCheckedAt = application.reviewedAt;
     } else if (nextStatus === 'declined') {
       application.hiringStage = 'Declined';
     }
