@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { FontAwesomeIcon, faCheckCircle, faCalendarAlt } from '../shared/JobseekerIcons';
+import { FontAwesomeIcon, faBriefcase, faCalendarAlt } from '../shared/JobseekerIcons';
 
 const COLORS = {
   primary: '#2e66a6',
@@ -484,11 +484,11 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
 
                   <div className="mt-4 space-y-2 text-[13px] font-semibold text-[#38536f]">
                     <div className="flex items-center gap-2.5">
-                      <FontAwesomeIcon icon={faCheckCircle} className="h-4 w-4 text-[#2e66a6]" />
+                      <FontAwesomeIcon icon={faCalendarAlt} className="h-4 w-4 text-[#2e66a6]" />
                       <span>Hired: {formatDisplayDate(employmentBlock.hiredDate)}</span>
                     </div>
                     <div className="flex items-center gap-2.5">
-                      <FontAwesomeIcon icon={faCalendarAlt} className="h-4 w-4 text-[#2e66a6]" />
+                      <FontAwesomeIcon icon={faBriefcase} className="h-4 w-4 text-[#2e66a6]" />
                       <span>Applied: {formatDisplayDate(employmentBlock.appliedDate)}</span>
                     </div>
                   </div>
