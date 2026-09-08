@@ -3,7 +3,7 @@ import api from '../../../services/api';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Pagination from '../../../components/shared/Pagination';
 import { FaCheckCircle } from 'react-icons/fa';
-import { FontAwesomeIcon, faBriefcase, faCalendarAlt, FaInfoCircle } from '../../../components/shared/JobseekerIcons';
+import { FontAwesomeIcon, faBriefcase, faCalendarAlt, FaInfoCircle, WarningIcon, CheckCircleIcon } from '../../../components/shared/JobseekerIcons';
 
 const UI = {
   pageBg: 'bg-gray-50',
@@ -1698,31 +1698,55 @@ const MyApplications = () => {
 
       {withdrawConfirmApplication && (
         <div
-          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 px-4 py-6"
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="withdraw-confirm-title"
+          aria-describedby="withdraw-confirm-description"
+          onMouseDown={(event) => {
+            if (
+              event.target === event.currentTarget &&
+              actionLoadingId !== withdrawConfirmApplication._id
+            ) {
+              setWithdrawConfirmApplication(null);
+            }
+          }}
         >
-          <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl">
-            <h2 id="withdraw-confirm-title" className="text-xl font-bold text-gray-900">Withdraw Application?</h2>
-            <p className="mt-3 text-sm leading-6 text-gray-600">
-              Your withdrawal will be permanently recorded and counted in your application history with this company. You can reactivate it while the job is still available, but your withdrawal record will remain.
-            </p>
-            <div className="mt-6 flex justify-end gap-3">
+          <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-start gap-5 px-6 py-6">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-red-100 text-red-600">
+                <WarningIcon className="h-6 w-6" />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <h2 id="withdraw-confirm-title" className="text-xl font-bold text-gray-900">
+                  Withdraw Application?
+                </h2>
+                <p id="withdraw-confirm-description" className="mt-2 text-sm leading-6 text-gray-600">
+                  Your withdrawal will be permanently recorded and counted in your application history with this company. You can reactivate it while the job is still available, but your withdrawal record will remain.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 border-t border-gray-200 px-6 py-4 sm:flex-row sm:justify-end">
               <button
                 type="button"
                 onClick={() => setWithdrawConfirmApplication(null)}
                 disabled={actionLoadingId === withdrawConfirmApplication._id}
-                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSecondary} ${UI.ring}`}
+                className="rounded-md border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Cancel
               </button>
+
               <button
                 type="button"
                 onClick={() => handleWithdraw(withdrawConfirmApplication._id)}
                 disabled={actionLoadingId === withdrawConfirmApplication._id}
-                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnDangerSoft} ${UI.ring}`}
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-red-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
               >
+                {actionLoadingId === withdrawConfirmApplication._id && (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                )}
                 {actionLoadingId === withdrawConfirmApplication._id ? 'Withdrawing...' : 'Withdraw'}
               </button>
             </div>
@@ -1732,31 +1756,55 @@ const MyApplications = () => {
 
       {reactivateConfirmApplication && (
         <div
-          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 px-4 py-6"
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="reactivate-confirm-title"
+          aria-describedby="reactivate-confirm-description"
+          onMouseDown={(event) => {
+            if (
+              event.target === event.currentTarget &&
+              actionLoadingId !== reactivateConfirmApplication._id
+            ) {
+              setReactivateConfirmApplication(null);
+            }
+          }}
         >
-          <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl">
-            <h2 id="reactivate-confirm-title" className="text-xl font-bold text-gray-900">Reactivate Application?</h2>
-            <p className="mt-3 text-sm leading-6 text-gray-600">
-              Your application will be visible to the company again. Your previous withdrawal will remain recorded.
-            </p>
-            <div className="mt-6 flex justify-end gap-3">
+          <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-start gap-5 px-6 py-6">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+                <CheckCircleIcon className="h-6 w-6" />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <h2 id="reactivate-confirm-title" className="text-xl font-bold text-gray-900">
+                  Reactivate Application?
+                </h2>
+                <p id="reactivate-confirm-description" className="mt-2 text-sm leading-6 text-gray-600">
+                  Your application will be visible to the company again. Your previous withdrawal will remain recorded.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 border-t border-gray-200 px-6 py-4 sm:flex-row sm:justify-end">
               <button
                 type="button"
                 onClick={() => setReactivateConfirmApplication(null)}
                 disabled={actionLoadingId === reactivateConfirmApplication._id}
-                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSecondary} ${UI.ring}`}
+                className="rounded-md border border-[#2e66a6] px-5 py-2.5 text-sm font-semibold text-[#2e66a6] transition hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Cancel
               </button>
+
               <button
                 type="button"
                 onClick={() => handleReactivate(reactivateConfirmApplication._id)}
                 disabled={actionLoadingId === reactivateConfirmApplication._id}
-                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnSuccessSoft} ${UI.ring}`}
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-[#2e66a6] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#255487] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
               >
+                {actionLoadingId === reactivateConfirmApplication._id && (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                )}
                 {actionLoadingId === reactivateConfirmApplication._id ? 'Reactivating...' : 'Reactivate'}
               </button>
             </div>
