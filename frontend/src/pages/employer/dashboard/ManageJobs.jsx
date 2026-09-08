@@ -1463,9 +1463,7 @@ const ManageJobs = () => {
               </div>
             </div>
 
-            <p className="mt-3 text-xs text-gray-500">
-              Showing <span className="font-semibold text-gray-700">{filteredJobs.length}</span> result(s).
-            </p>
+            
           </div>
         </div>
 
