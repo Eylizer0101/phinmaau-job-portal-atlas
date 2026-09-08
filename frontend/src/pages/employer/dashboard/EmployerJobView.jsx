@@ -546,14 +546,14 @@ const CompanyLogo = ({ src, name }) => {
 
   if (!src || failed) {
     return (
-      <div className="flex h-[58px] w-[58px] flex-shrink-0 items-center justify-center rounded-2xl border border-[#d8e2ee] bg-white sm:h-[72px] sm:w-[72px]">
+      <div className="flex h-[58px] w-[58px] flex-shrink-0 items-center justify-center rounded-2xl bg-white sm:h-[72px] sm:w-[72px]">
         <span className="text-lg font-bold text-[#374151] sm:text-xl">{initial}</span>
       </div>
     );
   }
 
   return (
-    <div className="h-[58px] w-[58px] flex-shrink-0 overflow-hidden rounded-2xl border border-[#d8e2ee] bg-white p-1 sm:h-[72px] sm:w-[72px]">
+    <div className="h-[58px] w-[58px] flex-shrink-0 overflow-hidden rounded-2xl bg-white p-1 sm:h-[72px] sm:w-[72px]">
       <img
         src={src}
         alt={`${name || 'Company'} logo`}
