@@ -1373,6 +1373,10 @@ const MyApplications = () => {
 
                   const declineReason = String(application.declineReason || '').trim();
                   const declineComment = String(application.declineComment || '').trim();
+                  const displayedDeclineReason =
+                    declineReason === 'Other Not Listed Above' && !declineComment
+                      ? ''
+                      : declineReason;
 
                   return (
                     <div
@@ -1527,7 +1531,7 @@ const MyApplications = () => {
                                   Reason
                                 </p>
                                 <p className={`mt-1 text-sm leading-relaxed ${UI.textSecondary}`}>
-                                  {declineReason || 'No Decline reason was provided.'}
+                                  {displayedDeclineReason || 'No Decline reason was provided.'}
                                 </p>
                               </div>
 

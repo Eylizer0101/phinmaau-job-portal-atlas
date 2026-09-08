@@ -666,11 +666,11 @@ const getApplicantContact = (jobseeker) =>
   ).trim() || '—';
 
 const FOR_INTERVIEW_DECLINE_REASONS = [
-  'Interview performance did not meet expectations',
-  'Skills assessment below required level',
-  'Communication skills need improvement',
-  'Schedule or availability conflict',
-  'Position requirements not fully met',
+  'Did not meet minimum qualifications',
+  'Does not meet screening criteria',
+  'Insufficient relevant experience',
+  'Skills not aligned with job requirements',
+  'Position Requirements Have Changed',
   'Other Not Listed Above',
 ];
 

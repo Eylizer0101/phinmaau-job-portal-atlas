@@ -15,16 +15,7 @@ const VALID_DECLINE_REASONS = [
   'Does not meet screening criteria',
   'Insufficient relevant experience',
   'Skills not aligned with job requirements',
-  'Incomplete application information',
   'Position Requirements Have Changed',
-  'Position Has Been Filled',
-  'Educational Requirement Not Met',
-  'Too Many Qualified Applicants',
-  'Interview performance did not meet expectations',
-  'Skills assessment below required level',
-  'Communication skills need improvement',
-  'Schedule or availability conflict',
-  'Position requirements not fully met',
   'Other Not Listed Above'
 ];
 

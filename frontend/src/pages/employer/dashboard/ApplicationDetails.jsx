@@ -22,11 +22,11 @@ const API_HOST = process.env.REACT_APP_API_URL
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
 const FOR_INTERVIEW_DECLINE_REASONS = [
-  'Interview performance did not meet expectations',
-  'Skills assessment below required level',
-  'Communication skills need improvement',
-  'Schedule or availability conflict',
-  'Position requirements not fully met',
+  'Did not meet minimum qualifications',
+  'Does not meet screening criteria',
+  'Insufficient relevant experience',
+  'Skills not aligned with job requirements',
+  'Position Requirements Have Changed',
   'Other Not Listed Above',
 ];
 
@@ -35,11 +35,8 @@ const APPLICANTS_DECLINE_REASONS = [
   'Does not meet screening criteria',
   'Insufficient relevant experience',
   'Skills not aligned with job requirements',
-  'Incomplete application information',
   'Position Requirements Have Changed',
-  'Position Has Been Filled',
-  'Educational Requirement Not Met',
-  'Too Many Qualified Applicants',
+  'Other Not Listed Above',
 ];
 
 const PROFICIENCY_STYLES = {
