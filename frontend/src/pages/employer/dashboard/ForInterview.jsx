@@ -2278,7 +2278,7 @@ const selectBase =
                               </button>
                             </td>
 
-                            <td className="px-2 py-5 align-middle">
+                            <td className="px-2 py-5 text-center align-middle">
                               <ActionMenu
                                 app={app}
                                 name={name}

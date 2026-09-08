@@ -2445,6 +2445,11 @@ const ApplicationDetails = () => {
   };
 
 
+  const isFromForInterviewPage = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get('from') === 'for-interview';
+  }, [location.search]);
+
   const backDestination = useMemo(() => {
     const params = new URLSearchParams(location.search);
     const source = params.get('from');
@@ -2865,7 +2870,7 @@ const ApplicationDetails = () => {
             {isAlreadyEmployed ? <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">This applicant is already employed through another job application.</p> : null}
             <div className="mt-5 space-y-3">
               {!isAlreadyEmployed && currentStatus === 'pending' ? <button onClick={() => setConfirmationAction('for interview')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="calendar" /> Move to For Interview</button> : null}
-              {!isAlreadyEmployed && currentStatus === 'for interview' && isAtFinalHiringStage ? <button onClick={() => setConfirmationAction('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#159447] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#117a3a] disabled:opacity-50"><SvgIcon name="check" /> Mark as Hired</button> : null}
+              {!isAlreadyEmployed && isFromForInterviewPage && currentStatus === 'for interview' && isAtFinalHiringStage ? <button onClick={() => setConfirmationAction('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#159447] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#117a3a] disabled:opacity-50"><SvgIcon name="check" /> Mark as Hired</button> : null}
               {!isAlreadyEmployed ? <button onClick={() => setMessageOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91]"><SvgIcon name="message" /> Send Message</button> : null}
               {hasPendingEmploymentRequest ? (
                 <button onClick={() => setEmploymentModal('review')} disabled={employmentLoading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-4 py-3 text-sm font-semibold text-white hover:bg-[#25558c] disabled:opacity-50">
