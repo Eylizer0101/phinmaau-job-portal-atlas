@@ -1162,7 +1162,7 @@ const MyApplications = () => {
                   <h3 className={`text-lg font-bold tracking-tight ${UI.textPrimary}`}>Understanding Application Status</h3>
                   <p className={`mt-0.5 text-sm ${UI.textSecondary}`}>Quick guide for what each status means.</p>
                 </div>
-                <div className={`inline-flex items-center gap-3 whitespace-nowrap  px-4 py-2.5 ${isCurrentlyEmployed ? 'border-emerald-200 bg-emerald-50' : 'border-gray-200 bg-gray-50'}`}>
+                <div className="inline-flex items-center gap-2 whitespace-nowrap">
                   <span className={isCurrentlyEmployed ? 'text-emerald-700' : 'text-gray-500'}>
                     <SvgIcon name={isCurrentlyEmployed ? 'search' : 'briefcase'} className="h-5 w-5" />
                   </span>
