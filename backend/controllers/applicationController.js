@@ -131,6 +131,79 @@ const attachEmploymentStatus = async (applications = []) => {
 };
 
 
+const attachApplicationHistorySummary = async (applications = []) => {
+  const list = Array.isArray(applications) ? applications : [applications];
+  const jobseekerIds = [
+    ...new Set(
+      list
+        .map((application) => String(application?.jobseeker?._id || application?.jobseeker || ''))
+        .filter(Boolean)
+    ),
+  ];
+
+  if (!jobseekerIds.length) {
+    return list.map((application) => {
+      const plain = application?.toObject ? application.toObject() : application;
+      return {
+        ...plain,
+        applicationHistorySummary: {
+          previousApplications: 0,
+          hired: 0,
+          withdrawn: 0,
+        },
+      };
+    });
+  }
+
+  const historyApplications = await Application.find({
+    jobseeker: { $in: jobseekerIds },
+  })
+    .select('jobseeker status')
+    .lean();
+
+  const historyByJobseeker = new Map();
+
+  historyApplications.forEach((historyApplication) => {
+    const key = String(historyApplication?.jobseeker || '');
+    if (!key) return;
+
+    if (!historyByJobseeker.has(key)) {
+      historyByJobseeker.set(key, {
+        total: 0,
+        hired: 0,
+        withdrawn: 0,
+      });
+    }
+
+    const summary = historyByJobseeker.get(key);
+    const status = String(historyApplication?.status || '').toLowerCase();
+
+    summary.total += 1;
+    if (status === 'hired') summary.hired += 1;
+    if (status === 'withdrawn') summary.withdrawn += 1;
+  });
+
+  return list.map((application) => {
+    const plain = application?.toObject ? application.toObject() : application;
+    const jobseekerId = String(plain?.jobseeker?._id || plain?.jobseeker || '');
+    const summary = historyByJobseeker.get(jobseekerId) || {
+      total: 0,
+      hired: 0,
+      withdrawn: 0,
+    };
+
+    return {
+      ...plain,
+      applicationHistorySummary: {
+        previousApplications: Math.max(summary.total - 1, 0),
+        hired: summary.hired,
+        withdrawn: summary.withdrawn,
+      },
+    };
+  });
+};
+
+
 const getEmploymentReferenceDate = (application = {}) => {
   return (
     application.employmentStatusCheckedAt ||
@@ -1725,11 +1798,14 @@ exports.getEmployerApplications = async (req, res) => {
       needsReview: applications.filter((app) => ['pending', 'for interview'].includes(app.status)).length,
     };
 
+    const applicationsWithEmploymentStatus = await attachEmploymentStatus(applications);
+    const applicationsWithHistory = await attachApplicationHistorySummary(applicationsWithEmploymentStatus);
+
     res.status(200).json({
       success: true,
       count: applications.length,
       stats,
-      applications: (await attachEmploymentStatus(applications)).map(protectApplicantSalaryForEmployer)
+      applications: applicationsWithHistory.map(protectApplicantSalaryForEmployer)
     });
 
   } catch (error) {
@@ -2553,6 +2629,9 @@ exports.getJobApplications = async (req, res) => {
       })
       .sort({ appliedAt: -1 });
 
+    const applicationsWithEmploymentStatus = await attachEmploymentStatus(applications);
+    const applicationsWithHistory = await attachApplicationHistorySummary(applicationsWithEmploymentStatus);
+
     res.status(200).json({
       success: true,
       count: applications.length,
@@ -2570,7 +2649,7 @@ exports.getJobApplications = async (req, res) => {
         description: job.description,
         requirements: job.requirements,
       },
-      applications: (await attachEmploymentStatus(applications)).map(protectApplicantSalaryForEmployer)
+      applications: applicationsWithHistory.map(protectApplicantSalaryForEmployer)
     });
 
   } catch (error) {

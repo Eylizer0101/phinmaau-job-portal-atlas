@@ -20,6 +20,9 @@ const SvgIcon = ({ name, className = 'h-4 w-4' }) => {
     x: 'M6 18L18 6M6 6l12 12',
     chevronLeft: 'M15 19l-7-7 7-7',
     chevronRight: 'M9 5l7 7-7 7',
+    history: 'M4 5h16v14H4z M8 3v4M16 3v4M7 11h10M7 15h6',
+    hired: 'M5 13l4 4L19 7',
+    withdrawn: 'M6 18L18 6M6 6l12 12',
   };
 
   return (
@@ -654,7 +657,13 @@ const JobApplicants = () => {
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-3"><h2 className="text-xl font-bold text-[#111827]">{name}</h2><span className={`rounded-full px-3 py-1 text-xs font-semibold ${application.alreadyEmployed ? 'bg-amber-100 text-amber-800' : statusStyle(application.status)}`}>{application.alreadyEmployed ? 'Already Employed' : statusLabel(application.status)}</span></div>
                           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#7b8190]"><span className="inline-flex items-center gap-1.5"><SvgIcon name="mail" />{user.email || 'Not provided'}</span><span className="hidden text-[#c2c5ce] sm:inline">|</span><span className="inline-flex items-center gap-1.5"><SvgIcon name="phone" />{phone}</span></div>
-                          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm"><span className={`rounded-full px-3 py-1 text-xs font-semibold ${levelStyle(level)}`}>★ {level}</span><span className="inline-flex items-center gap-1.5 text-[#7b8190]"><SvgIcon name="calendar" />Applied {formatRelativeTime(application.appliedAt || application.createdAt)}</span></div>
+                          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+                            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${levelStyle(level)}`}>★ {level}</span>
+                            <span className="inline-flex items-center gap-1.5 text-[#7b8190]"><SvgIcon name="calendar" />Applied {formatRelativeTime(application.appliedAt || application.createdAt)}</span>
+                            <span className="inline-flex items-center gap-1.5 text-[#6b7280]"><SvgIcon name="history" className="h-4 w-4 text-[#2e66a6]" />Previous Applications: <span className="font-semibold text-[#374151]">{application.applicationHistorySummary?.previousApplications ?? 0}</span></span>
+                            <span className="inline-flex items-center gap-1.5 text-[#6b7280]"><SvgIcon name="hired" className="h-4 w-4 text-emerald-600" />Hired: <span className="font-semibold text-[#374151]">{application.applicationHistorySummary?.hired ?? 0}</span></span>
+                            <span className="inline-flex items-center gap-1.5 text-[#6b7280]"><SvgIcon name="withdrawn" className="h-4 w-4 text-[#7b8190]" />Withdrawn: <span className="font-semibold text-[#374151]">{application.applicationHistorySummary?.withdrawn ?? 0}</span></span>
+                          </div>
                         </div>
                       </div>
                       <div className="flex flex-row items-center gap-3 md:flex-col md:items-stretch">
