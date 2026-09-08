@@ -3,6 +3,7 @@ import api from '../../../services/api';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Pagination from '../../../components/shared/Pagination';
 import { FaCheckCircle } from 'react-icons/fa';
+import { FontAwesomeIcon, faBriefcase, faCalendarAlt, FaInfoCircle } from '../../../components/shared/JobseekerIcons';
 
 const UI = {
   pageBg: 'bg-gray-50',
@@ -290,13 +291,13 @@ const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
   }
 };
 
-const CompanyLogo = ({ logoUrl, companyName }) => {
+const CompanyLogo = ({ logoUrl, companyName, sizeClass = 'w-14 h-14' }) => {
   const [failed, setFailed] = useState(false);
   const initial = (companyName?.trim()?.[0] || 'C').toUpperCase();
 
   if (!logoUrl || failed) {
     return (
-      <div className="w-14 h-14 rounded-xl border border-gray-200 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center flex-shrink-0">
+      <div className={`${sizeClass} rounded-xl border border-gray-200 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center flex-shrink-0`}>
         <span className="font-bold text-lg text-gray-700" aria-hidden="true">
           {initial}
         </span>
@@ -306,7 +307,7 @@ const CompanyLogo = ({ logoUrl, companyName }) => {
   }
 
   return (
-    <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-200 bg-white flex-shrink-0">
+    <div className={`${sizeClass} rounded-xl overflow-hidden border border-gray-200 bg-white flex-shrink-0`}>
       <img
         src={logoUrl}
         alt={`${companyName || 'Company'} logo`}
@@ -421,6 +422,19 @@ const MyApplications = () => {
           : 'all',
     };
   }, [location.search]);
+
+  const formatDateOnly = (dateString) => {
+    if (!dateString) return 'N/A';
+
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return 'N/A';
+
+    return date.toLocaleDateString('en-PH', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
 
   const formatAppliedDateTime = (dateString) => {
     if (!dateString) return 'N/A';
@@ -1685,94 +1699,119 @@ const MyApplications = () => {
           aria-modal="true"
           aria-labelledby="employment-check-title"
         >
-          <div className="w-full max-w-[520px] overflow-hidden rounded-[22px] border border-[#cfe0f5] bg-white shadow-2xl">
-            <div className="border-b border-[#dce9f7] bg-[#f1f7fd] px-6 py-5 sm:px-7">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#2e66a6]">
-                    Employment Status Reminder
-                  </p>
-                  <h2 id="employment-check-title" className="mt-2 text-2xl font-bold leading-tight text-gray-900">
+          <div className="w-full max-w-[520px] overflow-hidden rounded-[18px] border border-[#bdd5f1] bg-white shadow-2xl">
+            <div className="relative bg-[#eef6ff] px-6 pb-5 pt-6 sm:px-7">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!employmentCheckLoading) setEmploymentCheckApplication(null);
+                }}
+                className="absolute right-4 top-4 rounded-lg p-1.5 text-[#4f6784] hover:bg-white/70 hover:text-[#183b66]"
+                aria-label="Close employment status reminder"
+              >
+                <SvgIcon name="timesCircle" className="h-5 w-5" />
+              </button>
+
+              <div className="flex items-start gap-4 pr-[118px]">
+                <span className="mt-0.5 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[#2e66a6] text-white">
+                  <FaInfoCircle className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <h2 id="employment-check-title" className="text-[23px] font-bold leading-[1.1] text-[#0d4f91]">
                     Is your Employment Status still up to date?
                   </h2>
-                  <p className="mt-2 text-sm leading-6 text-gray-600">
-                    Last updated {formatAppliedDateTime(getEmploymentReferenceDate(employmentCheckApplication))}
-                    {' '}• {getEmploymentDaysSinceCheck(employmentCheckApplication)} days ago.
-                  </p>
-                  <p className="mt-1 text-sm leading-6 text-gray-600">
-                    We check in every 60 days to help keep your profile up to date.
-                  </p>
+                  <div className="mt-5 space-y-3 text-[14px] leading-5 text-[#244b77]">
+                    <div className="flex items-start gap-3">
+                      <FontAwesomeIcon icon={faCalendarAlt} className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#2e66a6]" />
+                      <span>
+                        Last updated {formatDateOnly(getEmploymentReferenceDate(employmentCheckApplication))}
+                        {' '}• {getEmploymentDaysSinceCheck(employmentCheckApplication)} days ago.
+                      </span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <span className="mt-[2px] h-4 w-4 flex-shrink-0 rounded-full border-[3px] border-[#416c9c]" aria-hidden="true" />
+                      <span>We check in every 60 days to help keep your profile up to date.</span>
+                    </div>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!employmentCheckLoading) setEmploymentCheckApplication(null);
-                  }}
-                  className="rounded-lg p-1.5 text-gray-500 hover:bg-white hover:text-gray-800"
-                  aria-label="Close employment status reminder"
-                >
-                  <SvgIcon name="timesCircle" className="h-5 w-5" />
-                </button>
               </div>
+
+              <img
+                src="/images/chelseadayne.png"
+                alt=""
+                aria-hidden="true"
+                className="pointer-events-none absolute right-8 top-7 h-[92px] w-[108px] object-contain"
+              />
             </div>
 
-            <div className="px-6 py-5 sm:px-7">
-              <div className="rounded-2xl border border-gray-200 bg-white p-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">Job Title</p>
-                    <p className="mt-1 text-sm font-semibold text-gray-900">
+            <div className="space-y-4 px-5 py-4 sm:px-6 sm:py-5">
+              <div className="rounded-xl bg-[#f0f7ff] px-4 py-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex min-w-[122px] items-center justify-center border-r border-[#c9dbef] pr-4">
+                    <CompanyLogo
+                      logoUrl={getCompanyLogo(employmentCheckApplication)}
+                      companyName={
+                        employmentCheckApplication.job?.companyName ||
+                        employmentCheckApplication.employer?.employerProfile?.companyName ||
+                        'Current employer'
+                      }
+                      sizeClass="h-[96px] w-[96px]"
+                    />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[16px] font-bold text-[#173f70]">
                       {employmentCheckApplication.job?.title || 'Current position'}
                     </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">Company</p>
-                    <p className="mt-1 text-sm font-semibold text-gray-900">
+                    <p className="mt-0.5 truncate text-[13px] text-[#4e6680]">
                       {employmentCheckApplication.job?.companyName ||
                         employmentCheckApplication.employer?.employerProfile?.companyName ||
                         'Current employer'}
                     </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">Hired Date</p>
-                    <p className="mt-1 text-sm font-semibold text-gray-900">
-                      {formatAppliedDateTime(
-                        employmentCheckApplication.hiredAt ||
-                        employmentCheckApplication.reviewedAt
-                      )}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">Applied Date</p>
-                    <p className="mt-1 text-sm font-semibold text-gray-900">
-                      {formatAppliedDateTime(employmentCheckApplication.appliedAt)}
-                    </p>
+
+                    <div className="mt-3 space-y-2 text-[13px] font-medium text-[#294d76]">
+                      <div className="flex items-center gap-2">
+                        <FontAwesomeIcon icon={faCalendarAlt} className="h-4 w-4 flex-shrink-0 text-[#2e66a6]" />
+                        <span>Applied on: {formatAppliedDateTime(employmentCheckApplication.appliedAt)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <FontAwesomeIcon icon={faBriefcase} className="h-4 w-4 flex-shrink-0 text-[#2e66a6]" />
+                        <span>
+                          Hired: {formatDateOnly(
+                            employmentCheckApplication.hiredAt ||
+                            employmentCheckApplication.reviewedAt
+                          )}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-4 rounded-xl bg-[#f7faff] px-4 py-3 text-sm leading-6 text-gray-600">
-                If your employment has changed, please update your information as soon as possible.
+              <div className="flex items-start gap-3 rounded-xl bg-[#f0f7ff] px-4 py-3 text-[13px] leading-5 text-[#4a6580]">
+                <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#69aef1] text-white">
+                  <FaInfoCircle className="h-3 w-3" aria-hidden="true" />
+                </span>
+                <span>If your employment has changed, please update your information as soon as possible.</span>
               </div>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={handleConfirmEmploymentStatus}
-                  disabled={employmentCheckLoading}
-                  className={`${UI.btnBase} ${UI.btnLg} ${UI.btnSecondary} ${UI.ring} w-full`}
-                >
-                  {employmentCheckLoading ? 'Confirming...' : 'Still Employed'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleEmploymentTakeMeThere}
-                  disabled={employmentCheckLoading}
-                  className={`${UI.btnBase} ${UI.btnLg} ${UI.btnPrimary} ${UI.ring} w-full`}
-                >
-                  Take Me There →
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleEmploymentTakeMeThere}
+                disabled={employmentCheckLoading}
+                className={`${UI.btnBase} ${UI.ring} h-12 w-full rounded-lg bg-[#14569b] px-5 text-base font-bold text-white hover:bg-[#104a86]`}
+              >
+                Take Me There <span className="ml-2 text-[22px] font-bold leading-none">→</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmEmploymentStatus}
+                disabled={employmentCheckLoading}
+                className="mx-auto block text-sm font-semibold text-[#2e66a6] underline-offset-4 hover:underline disabled:pointer-events-none disabled:opacity-60"
+              >
+                {employmentCheckLoading ? 'Confirming...' : 'Still Employed'}
+              </button>
             </div>
           </div>
         </div>
