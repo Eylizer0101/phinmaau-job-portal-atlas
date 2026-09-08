@@ -825,30 +825,69 @@ const HiredConfirmationModal = ({ open, applicantName, onClose, onConfirm, isSub
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center px-4 py-6">
-      <div className="absolute inset-0 bg-black/45" aria-hidden="true" />
-      <div role="dialog" aria-modal="true" aria-labelledby="confirm-hired-title" className="relative w-full max-w-[560px] overflow-hidden rounded-[28px] bg-white shadow-2xl">
-        <div className="flex items-start gap-4 px-7 py-7">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-blue-50 text-[#2e66a6]">
-            <Icon name="check" className="h-7 w-7" />
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-hired-title"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !isSubmitting) onClose();
+      }}
+    >
+      <div className="w-full max-w-md overflow-hidden rounded-[24px] bg-white shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#eef5fc] text-[#174b91]">
+              <Icon name="check" className="h-6 w-6" />
+            </div>
+
+            <div>
+              <h2 id="confirm-hired-title" className="text-xl font-bold text-gray-900">
+                Mark Applicant as Hired?
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-gray-500">
+                Are you sure you want to mark <strong className="font-bold text-gray-900">{applicantName}</strong> as hired for this position?
+              </p>
+              <p className="mt-2 text-sm leading-6 text-gray-500">
+                Once confirmed, this applicant&apos;s status will be changed to Hired.
+              </p>
+            </div>
           </div>
-          <div className="min-w-0 flex-1">
-            <h2 id="confirm-hired-title" className="text-2xl font-bold text-gray-900">Mark Applicant as Hired?</h2>
-            <p className="mt-3 text-base leading-7 text-gray-600">
-              Are you sure you want to mark <strong className="font-bold text-gray-900">{applicantName}</strong> as hired for this position?
-            </p>
-            <p className="mt-3 text-base leading-7 text-gray-600">Once confirmed, this applicant&apos;s status will be changed to Hired.</p>
-          </div>
-          <button type="button" onClick={onClose} disabled={isSubmitting} className="rounded-full p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-50" aria-label="Close hired confirmation">
+
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="Close hired confirmation"
+          >
             <Icon name="x" className="h-5 w-5" />
           </button>
         </div>
-        <div className="flex justify-end gap-3 border-t border-gray-200 px-7 py-5">
-          <Button variant="secondary" onClick={onClose} disabled={isSubmitting} className="min-w-[105px]">Cancel</Button>
-          <Button variant="success" onClick={onConfirm} disabled={isSubmitting} className="min-w-[165px]">
-            <Icon name="check" className="h-4 w-4" />
-            {isSubmitting ? 'Confirming...' : 'Confirm Hired'}
-          </Button>
+
+        <div className="flex flex-col-reverse gap-3 px-6 py-5 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="h-11 rounded-xl border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isSubmitting}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#102a78] px-5 text-sm font-semibold text-white transition hover:bg-[#0d2365] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSubmitting ? (
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-r-transparent" />
+            ) : (
+              <Icon name="check" className="h-5 w-5" />
+            )}
+            {isSubmitting ? 'Updating...' : 'Confirm Hired'}
+          </button>
         </div>
       </div>
     </div>
@@ -1742,7 +1781,7 @@ const ForInterview = () => {
     const normalizedStage = normalizeHiringStageName(stage);
     if (normalizedStage === 'hired') {
       if (stageTarget?._id && !updatingId) {
-        handleStatusUpdate(stageTarget._id, 'hired');
+        setHiredConfirmationTarget(stageTarget);
       }
       return true;
     }
