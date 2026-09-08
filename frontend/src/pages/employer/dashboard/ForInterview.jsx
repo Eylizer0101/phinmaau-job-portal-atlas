@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import Pagination from '../../../components/shared/Pagination';
 import CenteredIndicator from '../../../components/shared/CenteredIndicator';
@@ -1145,7 +1145,7 @@ const HiringStageModal = ({
 
         <div className="px-6 pb-5">
           <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <p className="text-sm font-bold text-gray-900">Reminder / Instructions</p>
+            <p className="text-sm font-bold text-gray-900">Reminder</p>
             <ul className="mt-2 space-y-1.5 text-xs leading-5 text-gray-600">
               <li>• Type the stage directly, such as <strong>Initial Interview, Assessment, Final Interview,</strong> or <strong>Job Offer</strong>.</li>
               <li>• If accepted, type <strong className="text-green-600">Hired</strong>. If not, type <strong className="text-red-600">Declined</strong>.</li>
@@ -1440,8 +1440,10 @@ const ActionMenu = ({
 
 const ForInterview = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const API_BASE = (process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
   const [brokenAvatars, setBrokenAvatars] = useState(() => new Set());
+  const [recentlyHighlightedApplicationId, setRecentlyHighlightedApplicationId] = useState('');
 
   const [applications, setApplications] = useState([]);
   const [jobs, setJobs] = useState([]);
@@ -1584,6 +1586,24 @@ const ForInterview = () => {
   useEffect(() => {
     fetchForInterviewApplications();
   }, [fetchForInterviewApplications]);
+
+  useEffect(() => {
+    const highlightedApplicationId = String(location.state?.highlightedApplicationId || '');
+    if (!highlightedApplicationId) return;
+
+    setRecentlyHighlightedApplicationId(highlightedApplicationId);
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.pathname, location.state, navigate]);
+
+  useEffect(() => {
+    if (!recentlyHighlightedApplicationId) return undefined;
+
+    const timer = window.setTimeout(() => {
+      setRecentlyHighlightedApplicationId('');
+    }, 3000);
+
+    return () => window.clearTimeout(timer);
+  }, [recentlyHighlightedApplicationId]);
 
   const filteredApplications = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -2252,7 +2272,12 @@ const selectBase =
                               event.preventDefault();
                               navigate(`/employer/application/${app._id}?from=for-interview`);
                             }}
-                            className="group cursor-pointer transition-colors hover:bg-[#2e66a6]/[0.06] focus-visible:bg-[#2e66a6]/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]"
+                            className={cn(
+                              'group cursor-pointer transition-colors hover:bg-[#2e66a6]/[0.06] focus-visible:bg-[#2e66a6]/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2e66a6]',
+                              String(app._id) === recentlyHighlightedApplicationId
+                                ? 'bg-[#2e66a6]/10 ring-2 ring-inset ring-[#173f8a]'
+                                : ''
+                            )}
                           >
                             <td className="whitespace-nowrap px-3 py-5 align-middle text-sm text-gray-700">
                               {formatDate(app.appliedAt)}
@@ -2341,7 +2366,15 @@ const selectBase =
                     const rowBusy = updatingId === app._id;
 
                     return (
-                      <div key={app._id} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                      <div
+                        key={app._id}
+                        className={cn(
+                          'rounded-2xl border bg-white p-4 shadow-sm transition',
+                          String(app._id) === recentlyHighlightedApplicationId
+                            ? 'border-[#173f8a] bg-[#2e66a6]/10 ring-2 ring-[#173f8a]'
+                            : 'border-gray-200'
+                        )}
+                      >
                         <div className="flex items-center gap-3">
                           <Avatar img={app.jobseeker?.profileImage} name={name} size={44} altKey={`for_interview_mobile_${app._id}`} />
                           <div className="min-w-0">

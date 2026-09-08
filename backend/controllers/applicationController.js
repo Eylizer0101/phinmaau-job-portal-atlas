@@ -3034,15 +3034,11 @@ exports.updateApplicationStatus = async (req, res) => {
     }
 
     if (nextStatus === 'for interview' && oldStatus !== 'for interview') {
-      application.hiringStage = 'For Interview';
-      application.hiringStages = [
-        'For Interview',
-        ...new Set(
-          (application.hiringStages || [])
-            .map(normalizeHiringStage)
-            .filter((stage) => stage && !sameHiringStage(stage, 'For Interview'))
-        )
-      ].slice(0, 30);
+      application.hiringStage = '';
+      application.hiringStages = (application.hiringStages || [])
+        .map(normalizeHiringStage)
+        .filter((stage) => stage && !sameHiringStage(stage, 'For Interview'))
+        .slice(0, 30);
     }
 
     if (ACTIVE_APPLICATION_STATUSES.includes(nextStatus)) {

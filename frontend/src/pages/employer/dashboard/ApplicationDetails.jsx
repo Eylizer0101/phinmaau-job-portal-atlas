@@ -2362,9 +2362,10 @@ const ApplicationDetails = () => {
           message: `${name} has been marked as Hired for this position.`,
         });
       } else if (normalizedStatus === 'for interview') {
-        setStatusResult({
-          title: 'Applicant Moved Successfully',
-          message: `${name} has been moved to the For Interview stage.`,
+        navigate('/employer/for-interview', {
+          state: {
+            highlightedApplicationId: applicationId,
+          },
         });
       }
       return true;
@@ -2455,6 +2456,7 @@ const ApplicationDetails = () => {
     if (source === 'for-interview') return '/employer/for-interview';
     if (source === 'hired') return '/employer/hired';
     if (source === 'declined') return '/employer/declined';
+    if (source === 'applicants') return '/employer/applicants?status=pending';
     if (source === 'job-applicants' && sourceJobId) {
       return `/employer/job/${sourceJobId}/applicants`;
     }
