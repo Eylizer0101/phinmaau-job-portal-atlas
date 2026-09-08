@@ -1482,28 +1482,15 @@ const JobDetails = () => {
                     className={`${UI.btnBase} ${isApplyDisabled ? primaryCtaClassName : UI.btnPrimary} ${UI.ring} ${UI.btnLg} w-full`}
                     type="button"
                     aria-disabled={isApplyDisabled || applyChecking}
-                    aria-busy={applyChecking}
                     title={
-                      applyChecking
-                        ? 'Checking your employment status'
-                        : hasApplied
+                      hasApplied
                         ? 'You already applied for this job'
                         : !jobActive
                         ? 'This job is no longer accepting applications'
                         : 'Apply now'
                     }
                   >
-                    {applyChecking ? (
-                      <>
-                        <span
-                          className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-white/40 border-t-white motion-reduce:animate-none"
-                          aria-hidden="true"
-                        />
-                        <span>Checking...</span>
-                      </>
-                    ) : (
-                      primaryCtaLabel
-                    )}
+                    {primaryCtaLabel}
                   </button>
 
                   {applyHelperText ? (
@@ -1684,6 +1671,30 @@ const JobDetails = () => {
           open={showContactVerificationNotice}
           onClose={() => setShowContactVerificationNotice(false)}
         />
+
+        {applyChecking && !showApplyModal && (
+          <div className="fixed inset-0 z-[10070] flex items-center justify-center bg-black/45 px-4 py-6">
+            <div
+              role="status"
+              aria-live="polite"
+              className="w-full max-w-[560px] rounded-[20px] border border-[#e6edf5] bg-white px-8 py-10 shadow-[0_24px_70px_rgba(15,23,42,0.22)]"
+            >
+              <div className="flex min-h-[190px] flex-col items-center justify-center text-center">
+                <div
+                  className="h-11 w-11 animate-spin rounded-full border-4 border-[#d8e2ee] border-t-[#2e66a6] motion-reduce:animate-none"
+                  aria-hidden="true"
+                />
+                <p className="mt-5 text-[17px] font-bold text-[#1f2937]">
+                  Checking your employment status...
+                </p>
+                <p className="mt-2 text-sm leading-6 text-black/55">
+                  Please wait while we verify your current employment record.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <ApplyJobModal
           isOpen={showApplyModal}
           initialStep={applyModalInitialStep}

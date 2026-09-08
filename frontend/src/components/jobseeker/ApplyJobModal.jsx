@@ -418,9 +418,32 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
 
   if (!isOpen || !job) return null;
 
-  // Do not render the regular Apply modal while the employment status pre-check is still running.
-  // This prevents the Reminder/Continue to Apply screen from flashing before the employment modal appears.
-  if (!employmentCheckReady) return null;
+  // While the employment status pre-check is running, show the loading state inside a modal card
+  // instead of showing a spinner/loading state on the Apply Now button.
+  if (!employmentCheckReady) {
+    return (
+      <div className="fixed inset-0 z-[10080] flex items-center justify-center bg-black/45 px-4 py-6">
+        <div
+          role="status"
+          aria-live="polite"
+          className="w-full max-w-[560px] rounded-[20px] border border-[#e6edf5] bg-white px-8 py-10 shadow-[0_24px_70px_rgba(15,23,42,0.22)]"
+        >
+          <div className="flex min-h-[190px] flex-col items-center justify-center text-center">
+            <div
+              className="h-11 w-11 animate-spin rounded-full border-4 border-[#d8e2ee] border-t-[#2e66a6] motion-reduce:animate-none"
+              aria-hidden="true"
+            />
+            <p className="mt-5 text-[17px] font-bold text-[#1f2937]">
+              Checking your employment status...
+            </p>
+            <p className="mt-2 text-sm leading-6 text-black/55">
+              Please wait while we verify your current employment record.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (employmentBlock) {
     const companyLogoUrl = resolveCompanyLogo(employmentBlock.companyLogo);
