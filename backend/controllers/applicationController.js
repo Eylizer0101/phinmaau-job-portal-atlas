@@ -158,7 +158,7 @@ const attachApplicationHistorySummary = async (applications = []) => {
   const historyApplications = await Application.find({
     jobseeker: { $in: jobseekerIds },
   })
-    .select('jobseeker status')
+    .select('jobseeker status withdrawalCount')
     .lean();
 
   const historyByJobseeker = new Map();
@@ -180,7 +180,13 @@ const attachApplicationHistorySummary = async (applications = []) => {
 
     summary.total += 1;
     if (status === 'hired') summary.hired += 1;
-    if (status === 'withdrawn') summary.withdrawn += 1;
+
+    const storedWithdrawalCount = Number(historyApplication?.withdrawalCount || 0);
+    summary.withdrawn += storedWithdrawalCount > 0
+      ? storedWithdrawalCount
+      : status === 'withdrawn'
+        ? 1
+        : 0;
   });
 
   return list.map((application) => {
@@ -1281,15 +1287,15 @@ exports.withdrawMyApplication = async (req, res) => {
 
     const currentStatus = String(application.status || '').toLowerCase();
 
-    if (!['pending', 'for interview', 'vacancy full'].includes(currentStatus)) {
+    if (currentStatus !== 'pending') {
       return res.status(400).json({
         success: false,
-        message: 'Only pending, for interview, or position filled applications can be withdrawn'
+        message: 'Only pending applications can be withdrawn'
       });
     }
 
-    application.lastActiveStatus = currentStatus === 'vacancy full' ? 'pending' : currentStatus;
-
+    application.lastActiveStatus = 'pending';
+    application.withdrawalCount = Number(application.withdrawalCount || 0) + 1;
     application.status = 'withdrawn';
     await application.save();
 
@@ -1355,10 +1361,10 @@ exports.reactivateMyApplication = async (req, res) => {
 
     const currentStatus = String(application.status || '').toLowerCase();
 
-    if (!INACTIVE_APPLICATION_STATUSES.includes(currentStatus)) {
+    if (currentStatus !== 'withdrawn') {
       return res.status(400).json({
         success: false,
-        message: 'Only inactive applications can be reactivated'
+        message: 'Only withdrawn applications can be reactivated'
       });
     }
 

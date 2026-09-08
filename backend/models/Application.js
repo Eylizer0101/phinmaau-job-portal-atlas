@@ -139,6 +139,11 @@ const applicationSchema = new mongoose.Schema({
         enum: ['pending', 'for interview', 'hired'],
         default: 'pending'
     },
+    withdrawalCount: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
     coverLetter: {
         type: String,
         default: ''
