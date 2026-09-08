@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import { FontAwesomeIcon, faCheckCircle, faCalendarAlt } from '../shared/JobseekerIcons';
 
 const COLORS = {
   primary: '#2e66a6',
@@ -418,70 +419,76 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
 
     return (
       <div className="fixed inset-0 z-[10080] flex items-center justify-center bg-black/45 px-4 py-6">
-        <div className="w-full max-w-[470px] overflow-hidden rounded-[18px] border border-[#f0d79b] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.22)]">
-          <div className="bg-[#fffaf0] px-6 pb-5 pt-6 sm:px-7">
-            <div className="flex items-start gap-4">
-              <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f5ad21] text-white">
-                <span className="text-[26px] font-black leading-none">!</span>
+        <div className="w-full max-w-[560px] overflow-hidden rounded-[20px] border border-[#f0d79b] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.22)]">
+          <div className="relative bg-[#fffaf0] px-7 pb-6 pt-7 sm:px-8">
+            <div className="flex items-start gap-4 pr-[105px]">
+              <div className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f5ad21] text-white">
+                <span className="text-[28px] font-black leading-none">!</span>
               </div>
 
               <div className="min-w-0 flex-1">
-                <h2 className="text-[23px] font-extrabold leading-[1.15] text-[#0f4f92]">
+                <h2 className="text-[26px] font-extrabold leading-[1.15] text-[#0f4f92]">
                   Is your Employment
                   <br className="hidden sm:block" /> Status still up to date?
                 </h2>
               </div>
-
-              <button
-                ref={closeButtonRef}
-                type="button"
-                onClick={closeAndReset}
-                className="-mr-1 -mt-1 rounded-lg p-1.5 text-[#6b7280] transition hover:bg-white/70 hover:text-gray-900"
-                aria-label="Close employment status check"
-              >
-                <IconClose className="h-5 w-5" />
-              </button>
             </div>
 
-            <p className="mt-5 text-[15px] font-medium leading-6 text-[#23466d]">
+            <img
+              src="/images/chelsea.png"
+              alt="Employment status reminder"
+              className="pointer-events-none absolute right-10 top-5 h-[88px] w-[108px] object-contain"
+            />
+
+            <button
+              ref={closeButtonRef}
+              type="button"
+              onClick={closeAndReset}
+              className="absolute right-3 top-3 rounded-lg p-1.5 text-[#6b7280] transition hover:bg-white/70 hover:text-gray-900"
+              aria-label="Close employment status check"
+            >
+              <IconClose className="h-5 w-5" />
+            </button>
+
+            <p className="mt-6 text-[16px] font-medium leading-7 text-[#23466d]">
               Your previous employment record is still active.
               <br />
               Please update it before applying for a new job.
             </p>
           </div>
 
-          <div className="px-5 pb-5 pt-4 sm:px-6">
-            <div className="rounded-[14px] bg-[#eef6ff] px-4 py-4">
-              <div className="flex items-center gap-4">
-                <div className="flex h-[92px] w-[105px] shrink-0 items-center justify-center border-r border-[#d8e6f5] pr-4">
+          <div className="px-6 pb-6 pt-5 sm:px-7">
+            <div className="rounded-[16px] bg-[#eef6ff] px-5 py-5">
+              <div className="flex items-center gap-5">
+                <div className="flex h-[112px] w-[122px] shrink-0 items-center justify-center border-r border-[#d8e6f5] pr-5">
                   {companyLogoUrl ? (
                     <img
                       src={companyLogoUrl}
                       alt={`${employmentBlock.companyName || 'Company'} logo`}
-                      className="max-h-[72px] max-w-[82px] object-contain"
+                      className="max-h-[82px] max-w-[92px] object-contain"
                     />
                   ) : (
-                    <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white text-[24px] font-extrabold text-[#2e66a6] shadow-sm">
+                    <div className="flex h-[74px] w-[74px] items-center justify-center rounded-xl bg-white text-[26px] font-extrabold text-[#2e66a6] shadow-sm">
                       {(employmentBlock.companyName || 'C').charAt(0).toUpperCase()}
                     </div>
                   )}
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <div className="text-[16px] font-extrabold leading-5 text-[#183b66]">
+                  <div className="text-[18px] font-extrabold leading-6 text-[#183b66]">
                     {employmentBlock.jobTitle || 'Current position'}
                   </div>
-                  <div className="mt-1 text-[13px] font-medium text-[#52677f]">
+                  <div className="mt-1 text-[14px] font-medium text-[#52677f]">
                     {employmentBlock.companyName || 'Current employer'}
                   </div>
 
-                  <div className="mt-3 space-y-1.5 text-[12px] font-semibold text-[#38536f]">
-                    <div className="flex items-center gap-2">
-                      <span aria-hidden="true">▣</span>
+                  <div className="mt-4 space-y-2 text-[13px] font-semibold text-[#38536f]">
+                    <div className="flex items-center gap-2.5">
+                      <FontAwesomeIcon icon={faCheckCircle} className="h-4 w-4 text-[#2e66a6]" />
                       <span>Hired: {formatDisplayDate(employmentBlock.hiredDate)}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span aria-hidden="true">▣</span>
+                    <div className="flex items-center gap-2.5">
+                      <FontAwesomeIcon icon={faCalendarAlt} className="h-4 w-4 text-[#2e66a6]" />
                       <span>Applied: {formatDisplayDate(employmentBlock.appliedDate)}</span>
                     </div>
                   </div>
@@ -489,7 +496,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
               </div>
             </div>
 
-            <div className="mt-4 flex items-start gap-3 text-[13px] leading-5 text-[#4f647a]">
+            <div className="mt-5 flex items-start gap-3 text-[14px] leading-6 text-[#4f647a]">
               <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#6eb5f4] text-[12px] font-bold text-white">
                 i
               </div>
@@ -503,7 +510,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
             <button
               type="button"
               onClick={handleEmploymentTakeMeThere}
-              className="mt-5 h-[48px] w-full rounded-[6px] bg-[#0f559c] px-5 text-[15px] font-extrabold text-white shadow-sm transition hover:bg-[#0c4a88] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+              className="mt-6 h-[52px] w-full rounded-[7px] bg-[#0f559c] px-5 text-[16px] font-extrabold text-white shadow-sm transition hover:bg-[#0c4a88] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
             >
               Take Me There <span className="ml-2">→</span>
             </button>
