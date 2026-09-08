@@ -1525,21 +1525,21 @@ const MyApplications = () => {
                           <div className={`mt-4 pt-4 ${UI.divider}`}>
                             <h4 className={`text-sm font-semibold ${UI.textPrimary}`}>Decline Feedback</h4>
 
-                            <div className="mt-2 space-y-3">
-                              <div className={`${UI.inset} p-3`}>
-                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2">
+                              <div className="rounded-lg border border-[#d7e6f7] bg-[#f3f8fe] px-4 py-3">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-[#5d6f84]">
                                   Reason
                                 </p>
-                                <p className={`mt-1 text-sm leading-relaxed ${UI.textSecondary}`}>
+                                <p className="mt-1 text-sm font-medium leading-relaxed text-gray-800">
                                   {displayedDeclineReason || 'No Decline reason was provided.'}
                                 </p>
                               </div>
 
-                              <div className={`${UI.inset} p-3`}>
-                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                              <div className="rounded-lg border border-[#f3e4bc] bg-[#fffaf0] px-4 py-3">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-[#7b6b48]">
                                   Additional Comment
                                 </p>
-                                <p className={`mt-1 text-sm leading-relaxed ${UI.textSecondary}`}>
+                                <p className="mt-1 text-sm font-medium leading-relaxed text-gray-800">
                                   {declineComment || 'No additional comment provided.'}
                                 </p>
                               </div>
