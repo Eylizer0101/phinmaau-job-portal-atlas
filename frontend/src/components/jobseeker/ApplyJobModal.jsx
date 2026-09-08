@@ -437,7 +437,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
             <img
               src="/images/chelsea.png"
               alt="Employment status reminder"
-              className="pointer-events-none absolute right-10 top-5 h-[88px] w-[108px] object-contain"
+              className="pointer-events-none absolute right-10 top-5 h-[100px] w-[125px] object-contain"
             />
 
             <button
