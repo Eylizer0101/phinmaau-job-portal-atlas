@@ -3,6 +3,7 @@ import api from '../../../services/api';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Pagination from '../../../components/shared/Pagination';
 import { FaCheckCircle } from 'react-icons/fa';
+import { FontAwesomeIcon, faBriefcase, faSearch } from '../../../components/shared/JobseekerIcons';
 
 const UI = {
   pageBg: 'bg-gray-50',
@@ -1162,19 +1163,15 @@ const MyApplications = () => {
                   <h3 className={`text-lg font-bold tracking-tight ${UI.textPrimary}`}>Understanding Application Status</h3>
                   <p className={`mt-0.5 text-sm ${UI.textSecondary}`}>Quick guide for what each status means.</p>
                 </div>
-                <div className={`inline-flex items-center gap-3 whitespace-nowrap rounded-xl border px-4 py-2.5 ${isCurrentlyEmployed ? 'border-emerald-200 bg-emerald-50' : 'border-gray-200 bg-gray-50'}`}>
-                  <span className={isCurrentlyEmployed ? 'text-emerald-700' : 'text-gray-500'}>
-                    <SvgIcon name={isCurrentlyEmployed ? 'checkCircle' : 'briefcase'} className="h-5 w-5" />
+                <div className="inline-flex items-center gap-2 whitespace-nowrap">
+                  <FontAwesomeIcon
+                    icon={isCurrentlyEmployed ? faBriefcase : faSearch}
+                    className={`h-5 w-5 ${isCurrentlyEmployed ? 'text-emerald-700' : 'text-gray-500'}`}
+                    aria-hidden="true"
+                  />
+                  <span className={`text-sm font-semibold ${isCurrentlyEmployed ? 'text-emerald-800' : 'text-gray-800'}`}>
+                    {isCurrentlyEmployed ? 'Employed' : 'Unemployed'}
                   </span>
-                  <p className="text-left text-sm">
-                    <span className={`font-semibold ${isCurrentlyEmployed ? 'text-emerald-800' : 'text-gray-800'}`}>
-                      {isCurrentlyEmployed ? 'Employed' : 'Unemployed'}
-                    </span>
-                    <span className="mx-2 text-gray-300" aria-hidden="true">|</span>
-                    <span className="text-gray-500">
-                      {isCurrentlyEmployed ? 'Currently working in a role' : 'Not working at the moment'}
-                    </span>
-                  </p>
                 </div>
               </div>
 
