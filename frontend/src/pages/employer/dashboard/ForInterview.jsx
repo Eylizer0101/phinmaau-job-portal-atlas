@@ -1741,13 +1741,9 @@ const ForInterview = () => {
   const requestFinalStage = (stage) => {
     const normalizedStage = normalizeHiringStageName(stage);
     if (normalizedStage === 'hired') {
-      const currentStage = String(stageTarget?.hiringStage || '').trim();
-      const finalStage = hiringStageOrder[hiringStageOrder.length - 1] || '';
-      if (finalStage && !isSameHiringStage(currentStage, finalStage)) {
-        setError(`Complete the final hiring stage (${finalStage}) before marking this applicant as Hired.`);
-        return true;
+      if (stageTarget?._id && !updatingId) {
+        handleStatusUpdate(stageTarget._id, 'hired');
       }
-      setHiredConfirmationTarget(stageTarget);
       return true;
     }
     if (normalizedStage === 'declined') {

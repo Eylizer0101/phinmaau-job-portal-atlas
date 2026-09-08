@@ -2870,21 +2870,6 @@ exports.updateApplicationStatus = async (req, res) => {
     }
 
     if (nextStatus === 'hired' && oldStatus !== 'hired') {
-      if (oldStatus === 'for interview') {
-        const orderedHiringStages = (application.hiringStages || [])
-          .map(normalizeHiringStage)
-          .filter(Boolean);
-        const finalHiringStage = orderedHiringStages[orderedHiringStages.length - 1] || '';
-        const currentHiringStage = normalizeHiringStage(application.hiringStage);
-
-        if (finalHiringStage && !sameHiringStage(currentHiringStage, finalHiringStage)) {
-          return res.status(400).json({
-            success: false,
-            message: `Complete the final hiring stage (${finalHiringStage}) before marking this applicant as Hired.`
-          });
-        }
-      }
-
       const vacancyLimit = Number(application.job?.vacancies || 0);
       if (Number.isFinite(vacancyLimit) && vacancyLimit > 0) {
         const currentHiredCount = await Application.countDocuments({
