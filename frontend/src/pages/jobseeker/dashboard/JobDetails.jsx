@@ -789,6 +789,7 @@ const JobDetails = () => {
   const [showContactVerificationNotice, setShowContactVerificationNotice] = useState(false);
   const [applyingJob, setApplyingJob] = useState(null);
   const [applyModalInitialStep, setApplyModalInitialStep] = useState(1);
+  const [applyChecking, setApplyChecking] = useState(false);
 
   const [hasApplied, setHasApplied] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState('');
@@ -1166,6 +1167,9 @@ const JobDetails = () => {
       return;
     }
 
+    let keepCheckingUntilApplyModalIsReady = false;
+    setApplyChecking(true);
+
     try {
       const storedUser = JSON.parse(userStr);
       const response = await api.get('/auth/me');
@@ -1198,7 +1202,12 @@ const JobDetails = () => {
       }
 
       if (!isJobActive()) {
-        setToastWithAutoClear('error', String(job?.status || '').toLowerCase() === 'filled' ? 'The vacancy is already full.' : 'This job is no longer accepting applications.');
+        setToastWithAutoClear(
+          'error',
+          String(job?.status || '').toLowerCase() === 'filled'
+            ? 'The vacancy is already full.'
+            : 'This job is no longer accepting applications.'
+        );
         return;
       }
 
@@ -1207,11 +1216,16 @@ const JobDetails = () => {
         return;
       }
 
+      keepCheckingUntilApplyModalIsReady = true;
       setApplyModalInitialStep(1);
       setApplyingJob(job);
       setShowApplyModal(true);
     } catch {
       setToastWithAutoClear('error', 'Error checking user information.');
+    } finally {
+      if (!keepCheckingUntilApplyModalIsReady) {
+        setApplyChecking(false);
+      }
     }
   }, [navigate, isJobActive, hasApplied, job, setToastWithAutoClear]);
 
@@ -1464,13 +1478,32 @@ const JobDetails = () => {
                 <div className="flex flex-col gap-2 w-full lg:w-[260px] shrink-0">
                   <button
                     onClick={handleApplyClick}
-                    disabled={isApplyDisabled}
+                    disabled={isApplyDisabled || applyChecking}
                     className={`${UI.btnBase} ${isApplyDisabled ? primaryCtaClassName : UI.btnPrimary} ${UI.ring} ${UI.btnLg} w-full`}
                     type="button"
-                    aria-disabled={isApplyDisabled}
-                    title={hasApplied ? 'You already applied for this job' : !jobActive ? 'This job is no longer accepting applications' : 'Apply now'}
+                    aria-disabled={isApplyDisabled || applyChecking}
+                    aria-busy={applyChecking}
+                    title={
+                      applyChecking
+                        ? 'Checking your employment status'
+                        : hasApplied
+                        ? 'You already applied for this job'
+                        : !jobActive
+                        ? 'This job is no longer accepting applications'
+                        : 'Apply now'
+                    }
                   >
-                    {primaryCtaLabel}
+                    {applyChecking ? (
+                      <>
+                        <span
+                          className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-white/40 border-t-white motion-reduce:animate-none"
+                          aria-hidden="true"
+                        />
+                        <span>Checking...</span>
+                      </>
+                    ) : (
+                      primaryCtaLabel
+                    )}
                   </button>
 
                   {applyHelperText ? (
@@ -1654,7 +1687,9 @@ const JobDetails = () => {
         <ApplyJobModal
           isOpen={showApplyModal}
           initialStep={applyModalInitialStep}
+          onEmploymentCheckReady={() => setApplyChecking(false)}
           onClose={() => {
+            setApplyChecking(false);
             setShowApplyModal(false);
             setApplyingJob(null);
             setApplyModalInitialStep(1);

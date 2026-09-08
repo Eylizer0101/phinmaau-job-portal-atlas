@@ -217,7 +217,7 @@ const PreviewField = ({ label, value }) => {
   );
 };
 
-const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialStep = 1 }) => {
+const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialStep = 1, onEmploymentCheckReady }) => {
   const navigate = useNavigate();
   const modalRef = useRef(null);
   const closeButtonRef = useRef(null);
@@ -290,6 +290,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
     } finally {
       setEmploymentChecking(false);
       setEmploymentCheckReady(true);
+      onEmploymentCheckReady?.();
     }
   };
 
