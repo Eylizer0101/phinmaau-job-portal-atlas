@@ -512,7 +512,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
               onClick={handleEmploymentTakeMeThere}
               className="mt-6 h-[52px] w-full rounded-[7px] bg-[#0f559c] px-5 text-[16px] font-extrabold text-white shadow-sm transition hover:bg-[#0c4a88] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
             >
-              Take Me There <span className="ml-2">→</span>
+              Take Me There <span className="ml-3 inline-block text-[24px] font-black leading-none">→</span>
             </button>
           </div>
         </div>
