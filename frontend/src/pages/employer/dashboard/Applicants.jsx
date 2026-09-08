@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import Pagination from '../../../components/shared/Pagination';
+import { FileIcon, CheckCircleIcon, BookmarksSvgIcon } from '../../../components/shared/JobseekerIcons';
 
 /* =======================
    Small UI helpers
@@ -81,24 +82,6 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
       return (
         <svg {...common}>
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3M5 11h14M6 5h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2z" />
-        </svg>
-      );
-    case 'history':
-      return (
-        <svg {...common}>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 5h16v14H4z M8 3v4M16 3v4M7 11h10M7 15h6" />
-        </svg>
-      );
-    case 'hired':
-      return (
-        <svg {...common}>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 13l4 4L19 7" />
-        </svg>
-      );
-    case 'withdrawn':
-      return (
-        <svg {...common}>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
         </svg>
       );
     case 'arrow':
@@ -2332,15 +2315,15 @@ const Applicants = () => {
                               Applied {formatDate(app.appliedAt || app.createdAt)}
                             </span>
                             <span className="inline-flex items-center gap-1.5 text-[#6b7280]">
-                              <Icon name="history" className="h-4 w-4 text-[#2e66a6]" />
+                              <FileIcon className="h-4 w-4 text-[#2e66a6]" />
                               Previous Applications: <span className="font-semibold text-[#374151]">{app.applicationHistorySummary?.previousApplications ?? 0}</span>
                             </span>
                             <span className="inline-flex items-center gap-1.5 text-[#6b7280]">
-                              <Icon name="hired" className="h-4 w-4 text-emerald-600" />
+                              <CheckCircleIcon className="h-4 w-4 text-emerald-600" />
                               Hired: <span className="font-semibold text-[#374151]">{app.applicationHistorySummary?.hired ?? 0}</span>
                             </span>
                             <span className="inline-flex items-center gap-1.5 text-[#6b7280]">
-                              <Icon name="withdrawn" className="h-4 w-4 text-[#7b8190]" />
+                              <BookmarksSvgIcon name="minusCircle" className="h-4 w-4 text-[#7b8190]" />
                               Withdrawn: <span className="font-semibold text-[#374151]">{app.applicationHistorySummary?.withdrawn ?? 0}</span>
                             </span>
                           </div>

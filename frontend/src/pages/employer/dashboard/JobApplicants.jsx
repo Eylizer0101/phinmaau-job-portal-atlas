@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import Pagination from '../../../components/shared/Pagination';
+import { FileIcon, CheckCircleIcon, BookmarksSvgIcon } from '../../../components/shared/JobseekerIcons';
 
 const API_HOST = process.env.REACT_APP_API_URL
   ? process.env.REACT_APP_API_URL.replace(/\/api\/?$/, '')
@@ -20,9 +21,6 @@ const SvgIcon = ({ name, className = 'h-4 w-4' }) => {
     x: 'M6 18L18 6M6 6l12 12',
     chevronLeft: 'M15 19l-7-7 7-7',
     chevronRight: 'M9 5l7 7-7 7',
-    history: 'M4 5h16v14H4z M8 3v4M16 3v4M7 11h10M7 15h6',
-    hired: 'M5 13l4 4L19 7',
-    withdrawn: 'M6 18L18 6M6 6l12 12',
   };
 
   return (
@@ -660,9 +658,9 @@ const JobApplicants = () => {
                           <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
                             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${levelStyle(level)}`}>★ {level}</span>
                             <span className="inline-flex items-center gap-1.5 text-[#7b8190]"><SvgIcon name="calendar" />Applied {formatRelativeTime(application.appliedAt || application.createdAt)}</span>
-                            <span className="inline-flex items-center gap-1.5 text-[#6b7280]"><SvgIcon name="history" className="h-4 w-4 text-[#2e66a6]" />Previous Applications: <span className="font-semibold text-[#374151]">{application.applicationHistorySummary?.previousApplications ?? 0}</span></span>
-                            <span className="inline-flex items-center gap-1.5 text-[#6b7280]"><SvgIcon name="hired" className="h-4 w-4 text-emerald-600" />Hired: <span className="font-semibold text-[#374151]">{application.applicationHistorySummary?.hired ?? 0}</span></span>
-                            <span className="inline-flex items-center gap-1.5 text-[#6b7280]"><SvgIcon name="withdrawn" className="h-4 w-4 text-[#7b8190]" />Withdrawn: <span className="font-semibold text-[#374151]">{application.applicationHistorySummary?.withdrawn ?? 0}</span></span>
+                            <span className="inline-flex items-center gap-1.5 text-[#6b7280]"><FileIcon className="h-4 w-4 text-[#2e66a6]" />Previous Applications: <span className="font-semibold text-[#374151]">{application.applicationHistorySummary?.previousApplications ?? 0}</span></span>
+                            <span className="inline-flex items-center gap-1.5 text-[#6b7280]"><CheckCircleIcon className="h-4 w-4 text-emerald-600" />Hired: <span className="font-semibold text-[#374151]">{application.applicationHistorySummary?.hired ?? 0}</span></span>
+                            <span className="inline-flex items-center gap-1.5 text-[#6b7280]"><BookmarksSvgIcon name="minusCircle" className="h-4 w-4 text-[#7b8190]" />Withdrawn: <span className="font-semibold text-[#374151]">{application.applicationHistorySummary?.withdrawn ?? 0}</span></span>
                           </div>
                         </div>
                       </div>
