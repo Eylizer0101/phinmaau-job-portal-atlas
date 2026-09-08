@@ -3347,16 +3347,6 @@ exports.requestEmailChangeVerification = async (req, res) => {
       expiresInMinutes: SETTINGS_OTP_EXPIRES_MINUTES,
     });
 
-    const previousEmail = normalizeEmail(user.email);
-    user.email = emailLower;
-    if (normalizeEmail(user.username) === previousEmail) {
-      user.username = emailLower;
-    }
-    if (user.role === 'employer') {
-      if (!user.employerProfile) user.employerProfile = {};
-      user.employerProfile.businessEmail = emailLower;
-    }
-
     user.settingsVerification = {
       ...(user.settingsVerification?.toObject?.() || user.settingsVerification || {}),
       emailVerified: false,
@@ -3449,7 +3439,13 @@ exports.verifyEmailChangeCode = async (req, res) => {
     if (verification.pendingEmail) {
       const existing = await User.findOne({ email: nextEmail, _id: { $ne: user._id } });
       if (existing) return res.status(400).json({ success: false, message: 'Email is already used by another account.' });
+
+      const previousEmail = normalizeEmail(user.email);
       user.email = nextEmail;
+      if (normalizeEmail(user.username) === previousEmail) {
+        user.username = nextEmail;
+      }
+
       if (user.role === 'employer') {
         if (!user.employerProfile) user.employerProfile = {};
         user.employerProfile.businessEmail = nextEmail;
