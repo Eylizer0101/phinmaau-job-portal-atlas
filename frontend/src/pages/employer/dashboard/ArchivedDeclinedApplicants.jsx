@@ -824,7 +824,7 @@ const ArchivedDeclinedApplicants = () => {
 
   const jobOptions = useMemo(() => {
     return [
-      { value: 'all', label: 'All Jobs' },
+      { value: 'all', label: 'All Job Title' },
       ...jobs.map((j) => ({
         value: j._id,
         label: j.title || 'Untitled Job',
@@ -1159,10 +1159,6 @@ const ArchivedDeclinedApplicants = () => {
                   </Button>
                 </div>
               )}
-            </div>
-
-            <div className="mt-3 text-xs text-gray-500">
-              Showing <span className="font-semibold text-gray-700">{filteredApplications.length}</span> result(s).
             </div>
           </div>
         </div>

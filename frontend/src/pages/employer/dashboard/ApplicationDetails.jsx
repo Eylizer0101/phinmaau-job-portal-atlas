@@ -2632,6 +2632,10 @@ const ApplicationDetails = () => {
                   {application.job?._id || application.job ? (
                     <Link
                       to={`/employer/manage-jobs/${application.job?._id || application.job}/view`}
+                      state={{
+                        backPath: `/employer/application/${applicationId}${location.search || ''}`,
+                        backLabel: 'Application Details',
+                      }}
                       className="font-semibold text-[#174b91] underline underline-offset-2 transition hover:text-[#2e66a6] focus:outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-[#2e66a6]/30"
                     >
                       {application.job?.title || 'Job Position'}

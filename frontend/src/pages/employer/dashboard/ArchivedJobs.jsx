@@ -1077,7 +1077,7 @@ const ArchivedJobs = () => {
                   onChange={(e) => setJobFilter(e.target.value)}
                   className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                 >
-                  <option value="all">All Jobs</option>
+                  <option value="all">All Job Title</option>
                   {jobOptions.map((job) => (
                     <option key={job.id} value={job.id}>
                       {job.title}
@@ -1117,10 +1117,6 @@ const ArchivedJobs = () => {
                 </div>
               )}
             </div>
-
-            <p className="mt-3 text-xs text-gray-500">
-              Showing <span className="font-semibold text-gray-700">{filteredJobs.length}</span> result(s).
-            </p>
           </div>
         </div>
 

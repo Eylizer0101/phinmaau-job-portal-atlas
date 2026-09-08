@@ -46,8 +46,8 @@ const UI = {
   spinner: 'animate-spin motion-reduce:animate-none',
 };
 
-const ACTIVE_STATUSES = ['pending', 'for interview', 'hired', 'vacancy full'];
-const INACTIVE_STATUSES = ['declined', 'withdrawn', 'cancelled'];
+const ACTIVE_STATUSES = ['pending', 'for interview', 'hired', 'declined', 'vacancy full'];
+const INACTIVE_STATUSES = ['withdrawn', 'cancelled'];
 const REACTIVATABLE_STATUSES = ['withdrawn'];
 
 const SvgIcon = ({ name, className = 'w-4 h-4' }) => {
@@ -630,7 +630,7 @@ const MyApplications = () => {
   useEffect(() => {
     const params = getQueryParams();
     setMainTab(params.tab);
-    setStatusFilter(params.tab === 'inactive' ? (params.status === 'declined' ? 'declined' : 'all') : params.status);
+    setStatusFilter(params.tab === 'inactive' ? 'all' : params.status);
     fetchApplications();
   }, [getQueryParams, fetchApplications]);
 
@@ -751,16 +751,12 @@ const MyApplications = () => {
     setActionMessage('');
 
     if (nextTab === 'inactive') {
-      if (statusFilter !== 'declined') {
-        setStatusFilter('all');
-        updateUrl('inactive', 'all');
-      } else {
-        updateUrl('inactive', 'declined');
-      }
+      setStatusFilter('all');
+      updateUrl('inactive', 'all');
       return;
     }
 
-    const nextStatus = ['pending', 'for interview', 'hired'].includes(statusFilter) ? statusFilter : 'all';
+    const nextStatus = ['pending', 'for interview', 'hired', 'declined'].includes(statusFilter) ? statusFilter : 'all';
     setStatusFilter(nextStatus);
     updateUrl('active', nextStatus);
   };
@@ -769,9 +765,9 @@ const MyApplications = () => {
     setActionMessage('');
 
     if (nextStatus === 'declined') {
-      setMainTab('inactive');
+      setMainTab('active');
       setStatusFilter('declined');
-      updateUrl('inactive', 'declined');
+      updateUrl('active', 'declined');
       return;
     }
 
@@ -794,7 +790,7 @@ const MyApplications = () => {
       pending: activeApps.filter((app) => ['pending', 'vacancy full'].includes((app.status || '').toLowerCase())).length,
       forInterview: activeApps.filter((app) => (app.status || '').toLowerCase() === 'for interview').length,
       hired: activeApps.filter((app) => (app.status || '').toLowerCase() === 'hired').length,
-      declined: inactiveApps.filter((app) => (app.status || '').toLowerCase() === 'declined').length,
+      declined: activeApps.filter((app) => (app.status || '').toLowerCase() === 'declined').length,
     };
   }, [applications]);
 
