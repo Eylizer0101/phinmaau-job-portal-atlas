@@ -229,6 +229,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
   const [submitError, setSubmitError] = useState('');
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [employmentChecking, setEmploymentChecking] = useState(false);
+  const [employmentCheckReady, setEmploymentCheckReady] = useState(false);
   const [employmentBlock, setEmploymentBlock] = useState(null);
 
   const [userData, setUserData] = useState(null);
@@ -246,6 +247,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
     setSubmitError('');
     setPrivacyAccepted(false);
     setProfileError('');
+    setEmploymentCheckReady(false);
     setEmploymentBlock(null);
     checkEmploymentStatus();
     fetchProfile();
@@ -287,6 +289,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
       console.error('Unable to pre-check employment status:', error);
     } finally {
       setEmploymentChecking(false);
+      setEmploymentCheckReady(true);
     }
   };
 
@@ -315,6 +318,7 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
     setPrivacyAccepted(false);
     setProfileError('');
     setEmploymentChecking(false);
+    setEmploymentCheckReady(false);
     setEmploymentBlock(null);
     onClose?.();
   };
@@ -412,6 +416,10 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
   };
 
   if (!isOpen || !job) return null;
+
+  // Do not render the regular Apply modal while the employment status pre-check is still running.
+  // This prevents the Reminder/Continue to Apply screen from flashing before the employment modal appears.
+  if (!employmentCheckReady) return null;
 
   if (employmentBlock) {
     const companyLogoUrl = resolveCompanyLogo(employmentBlock.companyLogo);
