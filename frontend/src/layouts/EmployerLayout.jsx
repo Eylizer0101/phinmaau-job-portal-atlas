@@ -489,7 +489,7 @@ const EmployerLayout = ({ children }) => {
             name: "Hired",
             path: "/employer/hired",
             icon:
-              "M9 12l2 2 4-4m5-2a9 9 0 11-18 0 9 9 0 0118 0z",
+              "M12 2a10 10 0 100 20 10 10 0 000-20z M8 12l3 3 5-6",
           },
           {
             name: "Declined",

@@ -41,7 +41,7 @@ const Icon = ({ name, className = 'h-5 w-5', ...props }) => {
     case 'closeJob':
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M7 11V8a5 5 0 0110 0v3m-10 0h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg>;
     case 'hired':
-      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 12l2 2 4-4m5-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+      return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2a10 10 0 100 20 10 10 0 000-20z M8 12l3 3 5-6" /></svg>;
     case 'filled':
       return <svg {...common}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m-11 0h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2zm5 6 1.5 1.5L15 11" /></svg>;
     case 'more':
@@ -1391,8 +1391,8 @@ const ManageJobs = () => {
                 className={cn(
                   'grid grid-cols-1 gap-2 sm:grid-cols-2',
                   hasActiveFilters
-                    ? 'lg:grid-cols-5 xl:grid-cols-[minmax(130px,1fr)_minmax(105px,0.72fr)_minmax(115px,0.76fr)_minmax(145px,0.9fr)_minmax(100px,0.62fr)]'
-                    : 'lg:grid-cols-4 xl:grid-cols-[minmax(140px,1fr)_minmax(120px,0.75fr)_minmax(130px,0.8fr)_minmax(170px,1fr)]'
+                    ? 'lg:grid-cols-5 xl:grid-cols-[minmax(130px,1fr)_minmax(105px,0.72fr)_minmax(115px,0.76fr)_minmax(115px,0.76fr)_minmax(100px,0.62fr)]'
+                    : 'lg:grid-cols-4 xl:grid-cols-[minmax(140px,1fr)_minmax(120px,0.75fr)_minmax(130px,0.8fr)_minmax(130px,0.8fr)]'
                 )}
               >
                 <select
