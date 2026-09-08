@@ -432,7 +432,7 @@ const CompanyLogo = ({ src, name }) => {
   const initial = String(name || "C").charAt(0).toUpperCase();
 
   return (
-    <div className="flex h-[58px] w-[58px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#d8e2ee] bg-white p-1 text-lg font-bold text-[#374151] sm:h-[72px] sm:w-[72px] sm:text-xl">
+    <div className="flex h-[58px] w-[58px] shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1 text-lg font-bold text-[#374151] sm:h-[72px] sm:w-[72px] sm:text-xl">
       {url ? <img src={url} alt={name || "Company"} className="h-full w-full object-contain" /> : initial}
     </div>
   );

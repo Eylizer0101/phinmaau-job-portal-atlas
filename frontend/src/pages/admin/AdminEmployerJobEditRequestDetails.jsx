@@ -785,7 +785,7 @@ const AdminEmployerJobEditRequestDetails = () => {
             <img
               src={assetUrl(job.companyLogo, '/images/default-company-logo.png')}
               alt={company}
-              className="h-[58px] w-[58px] shrink-0 rounded-2xl border border-[#d8e2ee] bg-white object-contain p-1 sm:h-[72px] sm:w-[72px]"
+              className="h-[58px] w-[58px] shrink-0 rounded-2xl bg-white object-contain p-1 sm:h-[72px] sm:w-[72px]"
               onError={(event) => {
                 event.currentTarget.onerror = null;
                 event.currentTarget.src = '/images/default-company-logo.png';
@@ -986,7 +986,7 @@ const AdminEmployerJobEditRequestDetails = () => {
                   <img
                     src={assetUrl(job.companyLogo, '/images/default-company-logo.png')}
                     alt=""
-                    className="h-11 w-11 rounded-xl border border-[#d7e6f5] bg-white object-contain p-1"
+                    className="h-11 w-11 rounded-xl bg-white object-contain p-1"
                   />
 
                   <div className="min-w-0">
