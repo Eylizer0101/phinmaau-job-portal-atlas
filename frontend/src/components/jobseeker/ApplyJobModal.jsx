@@ -35,6 +35,21 @@ const formatDisplayDate = (value) => {
   });
 };
 
+const getApiOrigin = () => {
+  const base = api?.defaults?.baseURL || process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
+  return String(base).replace(/\/api\/?$/, '');
+};
+
+const resolveCompanyLogo = (logo) => {
+  const value = String(logo || '').trim();
+  if (!value) return '';
+  if (/^https?:\/\//i.test(value)) return value;
+
+  const origin = getApiOrigin();
+  if (value.startsWith('/')) return `${origin}${value}`;
+  return `${origin}/uploads/logos/${value}`;
+};
+
 const getFullName = (user) => {
   return [
     user?.firstName,
@@ -397,81 +412,100 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
 
   if (!isOpen || !job) return null;
 
-  if (employmentChecking && !employmentBlock) {
-    return (
-      <div className="fixed inset-0 z-[10080] flex items-center justify-center bg-black/45 px-4">
-        <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#d8e2ee] border-t-[#2e66a6]" />
-          <p className="mt-4 text-sm font-semibold text-gray-700">Checking your employment status...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (employmentBlock) {
-    const lastCheckedText = employmentBlock.lastCheckedAt
-      ? formatDisplayDate(employmentBlock.lastCheckedAt)
-      : 'Not checked yet';
+    const companyLogoUrl = resolveCompanyLogo(employmentBlock.companyLogo);
+    const requestPending = String(employmentBlock.requestStatus || '').toLowerCase() === 'pending';
 
     return (
       <div className="fixed inset-0 z-[10080] flex items-center justify-center bg-black/45 px-4 py-6">
-        <div className="w-full max-w-[520px] overflow-hidden rounded-[22px] border border-[#d8e2ee] bg-white shadow-2xl">
-          <div className="border-b border-[#e6edf5] bg-[#f7faff] px-6 py-5 sm:px-7">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#2e66a6]">
-                  Employment Status Check
-                </div>
-                <h2 className="mt-2 text-[24px] font-bold leading-tight text-gray-900">
-                  Is your Employment Status still up to date?
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-gray-600">
-                  Your previous employment record is still active. Please update it before applying for a new job.
-                </p>
+        <div className="w-full max-w-[470px] overflow-hidden rounded-[18px] border border-[#f0d79b] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.22)]">
+          <div className="bg-[#fffaf0] px-6 pb-5 pt-6 sm:px-7">
+            <div className="flex items-start gap-4">
+              <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f5ad21] text-white">
+                <span className="text-[26px] font-black leading-none">!</span>
               </div>
+
+              <div className="min-w-0 flex-1">
+                <h2 className="text-[23px] font-extrabold leading-[1.15] text-[#0f4f92]">
+                  Is your Employment
+                  <br className="hidden sm:block" /> Status still up to date?
+                </h2>
+              </div>
+
               <button
                 ref={closeButtonRef}
                 type="button"
                 onClick={closeAndReset}
-                className="rounded-lg p-1.5 text-gray-500 transition hover:bg-white hover:text-gray-800"
+                className="-mr-1 -mt-1 rounded-lg p-1.5 text-[#6b7280] transition hover:bg-white/70 hover:text-gray-900"
                 aria-label="Close employment status check"
               >
                 <IconClose className="h-5 w-5" />
               </button>
             </div>
+
+            <p className="mt-5 text-[15px] font-medium leading-6 text-[#23466d]">
+              Your previous employment record is still active.
+              <br />
+              Please update it before applying for a new job.
+            </p>
           </div>
 
-          <div className="px-6 py-5 sm:px-7">
-            <div className="rounded-2xl border border-[#d8e2ee] bg-white p-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <PreviewField label="Job Title" value={employmentBlock.jobTitle} />
-                <PreviewField label="Company" value={employmentBlock.companyName} />
-                <PreviewField label="Hired Date" value={formatDisplayDate(employmentBlock.hiredDate)} />
-                <PreviewField label="Applied Date" value={formatDisplayDate(employmentBlock.appliedDate)} />
+          <div className="px-5 pb-5 pt-4 sm:px-6">
+            <div className="rounded-[14px] bg-[#eef6ff] px-4 py-4">
+              <div className="flex items-center gap-4">
+                <div className="flex h-[92px] w-[105px] shrink-0 items-center justify-center border-r border-[#d8e6f5] pr-4">
+                  {companyLogoUrl ? (
+                    <img
+                      src={companyLogoUrl}
+                      alt={`${employmentBlock.companyName || 'Company'} logo`}
+                      className="max-h-[72px] max-w-[82px] object-contain"
+                    />
+                  ) : (
+                    <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white text-[24px] font-extrabold text-[#2e66a6] shadow-sm">
+                      {(employmentBlock.companyName || 'C').charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="text-[16px] font-extrabold leading-5 text-[#183b66]">
+                    {employmentBlock.jobTitle || 'Current position'}
+                  </div>
+                  <div className="mt-1 text-[13px] font-medium text-[#52677f]">
+                    {employmentBlock.companyName || 'Current employer'}
+                  </div>
+
+                  <div className="mt-3 space-y-1.5 text-[12px] font-semibold text-[#38536f]">
+                    <div className="flex items-center gap-2">
+                      <span aria-hidden="true">▣</span>
+                      <span>Hired: {formatDisplayDate(employmentBlock.hiredDate)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span aria-hidden="true">▣</span>
+                      <span>Applied: {formatDisplayDate(employmentBlock.appliedDate)}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {employmentBlock.reminderDue ? (
-              <div className="mt-4 rounded-xl border border-[#cfe0f5] bg-[#f1f7fd] px-4 py-3 text-sm leading-6 text-[#25578f]">
-                We check your employment status every 60 days to help keep your profile up to date.
+            <div className="mt-4 flex items-start gap-3 text-[13px] leading-5 text-[#4f647a]">
+              <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#6eb5f4] text-[12px] font-bold text-white">
+                i
               </div>
-            ) : (
-              <div className="mt-4 text-xs text-gray-500">
-                Last employment status check: {lastCheckedText}
-              </div>
-            )}
-
-            <div className="mt-5 rounded-xl bg-gray-50 px-4 py-3 text-sm leading-6 text-gray-600">
-              If this employment has ended, submit an update request to your previous employer.
-              You can apply for another job after the employer approves the change.
+              <p>
+                {requestPending
+                  ? 'Your employment status update request is pending review by your previous employer.'
+                  : 'If this employment has ended, submit an update request to your previous employer.'}
+              </p>
             </div>
 
             <button
               type="button"
               onClick={handleEmploymentTakeMeThere}
-              className="mt-5 h-[48px] w-full rounded-xl bg-[#2e66a6] px-5 text-[15px] font-bold text-white transition hover:bg-[#25578f] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+              className="mt-5 h-[48px] w-full rounded-[6px] bg-[#0f559c] px-5 text-[15px] font-extrabold text-white shadow-sm transition hover:bg-[#0c4a88] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
             >
-              Take Me There →
+              Take Me There <span className="ml-2">→</span>
             </button>
           </div>
         </div>
