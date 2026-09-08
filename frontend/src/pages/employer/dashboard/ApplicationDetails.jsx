@@ -22,15 +22,12 @@ const API_HOST = process.env.REACT_APP_API_URL
 const cn = (...classes) => classes.filter(Boolean).join(' ');
 
 const FOR_INTERVIEW_DECLINE_REASONS = [
-  'Did not meet minimum qualifications',
-  'Does not meet screening criteria',
-  'Insufficient relevant experience',
-  'Skills not aligned with job requirements',
-  'Incomplete application information',
-  'Position Requirements Have Changed',
-  'Position Has Been Filled',
-  'Educational Requirement Not Met',
-  'Too Many Qualified Applicants',
+  'Interview performance did not meet expectations',
+  'Skills assessment below required level',
+  'Communication skills need improvement',
+  'Schedule or availability conflict',
+  'Position requirements not fully met',
+  'Other Not Listed Above',
 ];
 
 const APPLICANTS_DECLINE_REASONS = [
@@ -1110,7 +1107,7 @@ const DeclineReasonModal = ({ open, applicantName, reasons, selectedReason, comm
   if (!open) return null;
 
   const commentLength = String(comment || '').length;
-  const canSubmit = Boolean(String(selectedReason || '').trim() || String(comment || '').trim()) && !submitting;
+  const canSubmit = !submitting;
 
   return (
     <div
@@ -1167,15 +1164,15 @@ const DeclineReasonModal = ({ open, applicantName, reasons, selectedReason, comm
           <div className="relative mt-3">
             <textarea
               value={comment}
-              onChange={(event) => onCommentChange(event.target.value.slice(0, 500))}
+              onChange={(event) => onCommentChange(event.target.value.slice(0, 30))}
               rows={4}
-              maxLength={500}
+              maxLength={30}
               disabled={submitting}
               className="min-h-[125px] w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-3 pb-8 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#2f67e8] focus:ring-2 focus:ring-[#2f67e8]/10 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-70"
               placeholder="Leave a comment for the applicant..."
             />
             <span className="pointer-events-none absolute bottom-2.5 right-3 text-[10px] text-gray-400">
-              {commentLength}/500
+              {commentLength}/30
             </span>
           </div>
 
@@ -2479,6 +2476,14 @@ const ApplicationDetails = () => {
   const profile = user.jobSeekerProfile || {};
   const name = user.fullName || [user.firstName, user.middleName, user.lastName, user.extensionName].filter(Boolean).join(' ') || 'Applicant';
   const currentStatus = String(application.status || 'pending').toLowerCase();
+  const currentHiringStage = String(application.hiringStage || '').replace(/\s+/g, ' ').trim();
+  const hiringStages = Array.isArray(application.hiringStages)
+    ? application.hiringStages.map((stage) => String(stage || '').replace(/\s+/g, ' ').trim()).filter(Boolean)
+    : [];
+  const finalHiringStage = hiringStages[hiringStages.length - 1] || '';
+  const isAtFinalHiringStage =
+    !finalHiringStage ||
+    currentHiringStage.toLowerCase() === finalHiringStage.toLowerCase();
   const employmentStatus = String(application.employmentStatus || 'active').toLowerCase();
   const employmentRequestStatus = String(application.employmentStatusRequest?.status || 'none').toLowerCase();
   const isActiveHiredEmployment = currentStatus === 'hired' && employmentStatus === 'active';
@@ -2860,7 +2865,7 @@ const ApplicationDetails = () => {
             {isAlreadyEmployed ? <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">This applicant is already employed through another job application.</p> : null}
             <div className="mt-5 space-y-3">
               {!isAlreadyEmployed && currentStatus === 'pending' ? <button onClick={() => setConfirmationAction('for interview')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#102a78] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><SvgIcon name="calendar" /> Move to For Interview</button> : null}
-              {!isAlreadyEmployed && currentStatus === 'for interview' ? <button onClick={() => setConfirmationAction('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#159447] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#117a3a] disabled:opacity-50"><SvgIcon name="check" /> Mark as Hired</button> : null}
+              {!isAlreadyEmployed && currentStatus === 'for interview' && isAtFinalHiringStage ? <button onClick={() => setConfirmationAction('hired')} disabled={statusUpdating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#159447] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#117a3a] disabled:opacity-50"><SvgIcon name="check" /> Mark as Hired</button> : null}
               {!isAlreadyEmployed ? <button onClick={() => setMessageOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#174b91] px-4 py-3 text-sm font-semibold text-[#174b91]"><SvgIcon name="message" /> Send Message</button> : null}
               {hasPendingEmploymentRequest ? (
                 <button onClick={() => setEmploymentModal('review')} disabled={employmentLoading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2e66a6] px-4 py-3 text-sm font-semibold text-white hover:bg-[#25558c] disabled:opacity-50">

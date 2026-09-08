@@ -25,7 +25,7 @@ const VALID_DECLINE_REASONS = [
   'Communication skills need improvement',
   'Schedule or availability conflict',
   'Position requirements not fully met',
-  'Failed to attend scheduled interview'
+  'Other Not Listed Above'
 ];
 
 const VALID_DECLINED_FROM = ['applicants', 'forInterview'];
@@ -2503,6 +2503,10 @@ exports.updateApplicationHiringStage = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Hiring stage is required' });
       }
 
+      if (!['hired', 'declined'].includes(requestedStage.toLowerCase()) && application.hiringStages.length >= 30) {
+        return res.status(400).json({ success: false, message: 'Maximum of 30 hiring stages only' });
+      }
+
       if (application.hiringStages.some((stage) => sameHiringStage(stage, requestedStage))) {
         return res.status(400).json({ success: false, message: 'This stage already exists for this applicant' });
       }
@@ -2757,15 +2761,12 @@ exports.updateApplicationStatus = async (req, res) => {
     }
 
     if (nextStatus === 'declined') {
-      const normalizedDeclineReason = String(declineReason || '').trim();
-      const normalizedDeclineComment = String(declineComment || '').trim();
+      let normalizedDeclineReason = String(declineReason || '').trim();
+      const normalizedDeclineComment = String(declineComment || '').trim().slice(0, 30);
       const normalizedDeclinedFrom = String(declinedFrom || '').trim();
 
-      if (!normalizedDeclineReason && !normalizedDeclineComment) {
-        return res.status(400).json({
-          success: false,
-          message: 'A decline reason or comment is required when declining an application'
-        });
+      if (normalizedDeclineReason === 'Other Not Listed Above' && !normalizedDeclineComment) {
+        normalizedDeclineReason = '';
       }
 
       if (normalizedDeclineReason && !VALID_DECLINE_REASONS.includes(normalizedDeclineReason)) {
@@ -2805,8 +2806,22 @@ exports.updateApplicationStatus = async (req, res) => {
     application.status = nextStatus;
     application.reviewedAt = Date.now();
 
+    if (nextStatus === 'hired') {
+      application.hiringStage = 'Hired';
+    } else if (nextStatus === 'declined') {
+      application.hiringStage = 'Declined';
+    }
+
     if (nextStatus === 'for interview' && oldStatus !== 'for interview') {
-      application.hiringStage = '';
+      application.hiringStage = 'For Interview';
+      application.hiringStages = [
+        'For Interview',
+        ...new Set(
+          (application.hiringStages || [])
+            .map(normalizeHiringStage)
+            .filter((stage) => stage && !sameHiringStage(stage, 'For Interview'))
+        )
+      ].slice(0, 30);
     }
 
     if (ACTIVE_APPLICATION_STATUSES.includes(nextStatus)) {
@@ -2855,6 +2870,21 @@ exports.updateApplicationStatus = async (req, res) => {
     }
 
     if (nextStatus === 'hired' && oldStatus !== 'hired') {
+      if (oldStatus === 'for interview') {
+        const orderedHiringStages = (application.hiringStages || [])
+          .map(normalizeHiringStage)
+          .filter(Boolean);
+        const finalHiringStage = orderedHiringStages[orderedHiringStages.length - 1] || '';
+        const currentHiringStage = normalizeHiringStage(application.hiringStage);
+
+        if (finalHiringStage && !sameHiringStage(currentHiringStage, finalHiringStage)) {
+          return res.status(400).json({
+            success: false,
+            message: `Complete the final hiring stage (${finalHiringStage}) before marking this applicant as Hired.`
+          });
+        }
+      }
+
       const vacancyLimit = Number(application.job?.vacancies || 0);
       if (Number.isFinite(vacancyLimit) && vacancyLimit > 0) {
         const currentHiredCount = await Application.countDocuments({

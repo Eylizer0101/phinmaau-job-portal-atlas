@@ -671,7 +671,7 @@ const FOR_INTERVIEW_DECLINE_REASONS = [
   'Communication skills need improvement',
   'Schedule or availability conflict',
   'Position requirements not fully met',
-  'Failed to attend scheduled interview',
+  'Other Not Listed Above',
 ];
 
 const DeclineReasonModal = ({
@@ -713,7 +713,7 @@ const DeclineReasonModal = ({
 
   if (!open) return null;
 
-  const canSubmit = Boolean(String(selectedReason || '').trim() || String(comment || '').trim()) && !isSubmitting;
+  const canSubmit = !isSubmitting;
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center px-4 py-6">
@@ -729,19 +729,15 @@ const DeclineReasonModal = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="for-interview-decline-title"
-        className="relative w-full max-w-5xl rounded-[28px] border border-gray-200 bg-white shadow-2xl"
+        className="relative w-full max-w-[720px] overflow-hidden rounded-[22px] bg-white shadow-2xl"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5 sm:px-8">
+        <div className="flex items-start justify-between gap-5 px-7 pb-4 pt-6">
           <div>
-            <h2 id="for-interview-decline-title" className="text-2xl font-bold text-gray-900">
+            <h2 id="for-interview-decline-title" className="text-[22px] font-bold text-gray-900 sm:text-[24px]">
               Do you want to decline this application?
             </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-7 text-gray-500">
-              If yes, please choose one of the following reasons or leave a comment.
-            </p>
-            <p className="text-sm leading-7 text-gray-500">
-              so the applicant receives feedback.
-              {applicantName ? ` Applicant: ${applicantName}.` : ''}
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-500">
+              If yes, please choose one of the following reasons or leave a comment so the applicant receives feedback.
             </p>
           </div>
 
@@ -750,15 +746,15 @@ const DeclineReasonModal = ({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Close decline modal"
           >
             <Icon name="x" className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="border-b border-gray-200 px-6 py-6 sm:px-8">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="px-7 pb-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             {FOR_INTERVIEW_DECLINE_REASONS.map((reason) => {
               const isSelected = selectedReason === reason;
 
@@ -769,10 +765,10 @@ const DeclineReasonModal = ({
                   onClick={() => onReasonChange(isSelected ? '' : reason)}
                   disabled={isSubmitting}
                   className={cn(
-                    'min-h-[84px] rounded-2xl border px-4 py-4 text-center text-sm font-medium leading-7 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60',
+                    'min-h-[56px] rounded-lg border px-4 py-3 text-center text-[13px] font-medium leading-[18px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60',
                     isSelected
-                      ? 'border-[#9db9df] bg-[#f4f8fd] text-gray-900 shadow-sm'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                      ? 'border-[#2f67e8] bg-[#2f67e8] text-white shadow-sm'
+                      : 'border-gray-200 bg-[#f7f7f8] text-gray-800 hover:border-[#bfd0f8] hover:bg-[#f2f6ff]'
                   )}
                 >
                   {reason}
@@ -782,23 +778,32 @@ const DeclineReasonModal = ({
           </div>
         </div>
 
-        <div className="px-6 py-6 sm:px-8">
+        <div className="px-7 pb-5 pt-3">
           <label htmlFor="forInterviewDeclineComment" className="sr-only">
             Leave a comment for the applicant
           </label>
           <textarea
             id="forInterviewDeclineComment"
             value={comment}
-            onChange={(e) => onCommentChange(e.target.value)}
+            onChange={(e) => onCommentChange(e.target.value.slice(0, 30))}
             disabled={isSubmitting}
-            rows={5}
+            rows={4}
+            maxLength={30}
             placeholder="Leave a comment for the applicant..."
-            className="w-full rounded-2xl border border-gray-200 px-4 py-4 text-sm text-gray-900 placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60"
+            className="min-h-[125px] w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#2f67e8] focus:ring-2 focus:ring-[#2f67e8]/10 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-70"
           />
+          <div className="mt-1 flex items-center justify-between gap-3">
+            <p className="text-[11px] leading-4 text-gray-500">
+              * This feedback will be shared directly with the applicant to help their professional growth.
+            </p>
+            <span className="shrink-0 text-[11px] font-medium text-gray-400">
+              {String(comment || '').length}/30
+            </span>
+          </div>
 
         </div>
 
-        <div className="flex items-center justify-end gap-3 px-6 pb-6 sm:px-8">
+        <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-7 py-4">
           <Button variant="secondary" onClick={onClose} disabled={isSubmitting} className="min-w-[110px]">
             Cancel
           </Button>
@@ -1063,6 +1068,10 @@ const HiringStageModal = ({
       return;
     }
     const normalizedValue = normalizeHiringStageName(value);
+    if (!['hired', 'declined'].includes(normalizedValue) && stages.length >= 30) {
+      setLocalError('Maximum of 30 hiring stages only.');
+      return;
+    }
     if (!['hired', 'declined'].includes(normalizedValue) && stages.some((stage) => isSameHiringStage(stage, value))) {
       setLocalError('This stage already exists for this applicant.');
       return;
@@ -1080,7 +1089,7 @@ const HiringStageModal = ({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-4 py-6" role="dialog" aria-modal="true" aria-label="Update hiring stage">
-      <div className="w-full max-w-[520px] overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <div className="w-full max-w-[640px] overflow-hidden rounded-2xl bg-white shadow-2xl">
         <div className="flex items-start justify-between px-6 pb-3 pt-5">
           <div>
             <h2 className="text-xl font-bold text-gray-900">
@@ -1096,6 +1105,14 @@ const HiringStageModal = ({
         </div>
 
         <div className="px-6 pb-5">
+          <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <p className="text-sm font-bold text-gray-900">Reminder / Instructions</p>
+            <ul className="mt-2 space-y-1.5 text-xs leading-5 text-gray-600">
+              <li>• Type the stage directly, such as <strong>Initial Interview, Assessment, Final Interview,</strong> or <strong>Job Offer</strong>.</li>
+              <li>• If accepted, type <strong className="text-green-600">Hired</strong>. If not, type <strong className="text-red-600">Declined</strong>.</li>
+              <li>• The newest stage added will become the applicant&apos;s current stage.</li>
+            </ul>
+          </div>
           <div>
             <label htmlFor="customHiringStage" className="text-sm font-semibold text-gray-800">
               Type the stage this applicant is currently in
@@ -1145,7 +1162,7 @@ const HiringStageModal = ({
             <span className="text-gray-500">{stages.length} stage(s)</span>
           </div>
 
-          <div className="max-h-[330px] space-y-2 overflow-y-auto pr-1">
+          <div className={cn('space-y-2 pr-1', stages.length > 5 && 'max-h-[330px] overflow-y-auto')}>
             {!stages.length ? (
               <div className="rounded-xl border border-dashed border-gray-300 px-4 py-6 text-center text-sm text-gray-500">
                 No hiring stages added yet.
@@ -1724,6 +1741,12 @@ const ForInterview = () => {
   const requestFinalStage = (stage) => {
     const normalizedStage = normalizeHiringStageName(stage);
     if (normalizedStage === 'hired') {
+      const currentStage = String(stageTarget?.hiringStage || '').trim();
+      const finalStage = hiringStageOrder[hiringStageOrder.length - 1] || '';
+      if (finalStage && !isSameHiringStage(currentStage, finalStage)) {
+        setError(`Complete the final hiring stage (${finalStage}) before marking this applicant as Hired.`);
+        return true;
+      }
       setHiredConfirmationTarget(stageTarget);
       return true;
     }
@@ -1749,11 +1772,6 @@ const ForInterview = () => {
 
     const selectedReason = declineReason.trim();
     const comment = declineComment.trim();
-
-    if (!selectedReason && !comment) {
-      setError('Please select a decline reason or enter a comment before declining the application.');
-      return;
-    }
 
     const applicationId = declineTarget._id;
     resetDeclineState();

@@ -1527,20 +1527,18 @@ const MyApplications = () => {
                                   Reason
                                 </p>
                                 <p className={`mt-1 text-sm leading-relaxed ${UI.textSecondary}`}>
-                                  {declineReason || 'No decline reason was provided.'}
+                                  {declineReason || 'No Decline reason was provided.'}
                                 </p>
                               </div>
 
-                              {declineComment && (
-                                <div className={`${UI.inset} p-3`}>
-                                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                    Additional Comment
-                                  </p>
-                                  <p className={`mt-1 text-sm leading-relaxed ${UI.textSecondary}`}>
-                                    {declineComment}
-                                  </p>
-                                </div>
-                              )}
+                              <div className={`${UI.inset} p-3`}>
+                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                  Additional Comment
+                                </p>
+                                <p className={`mt-1 text-sm leading-relaxed ${UI.textSecondary}`}>
+                                  {declineComment || 'No additional comment provided.'}
+                                </p>
+                              </div>
                             </div>
                           </div>
                         )}
