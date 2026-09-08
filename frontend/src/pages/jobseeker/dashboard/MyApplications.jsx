@@ -700,7 +700,7 @@ const MyApplications = () => {
     if (mainTab === 'inactive') {
       return applications.filter((app) => {
         const status = (app.status || '').toLowerCase();
-        return status === 'withdrawn' || status === 'cancelled';
+        return INACTIVE_STATUSES.includes(status);
       });
     }
 
@@ -785,7 +785,7 @@ const MyApplications = () => {
 
   const filterLabel = useMemo(() => {
     if (statusFilter === 'declined') return 'Declined Applications';
-    if (mainTab === 'inactive') return 'Withdrawn / Cancelled Applications';
+    if (mainTab === 'inactive') return 'Inactive Applications';
     if (statusFilter === 'pending') return 'Pending Applications';
     if (statusFilter === 'for interview') return 'For Interview Applications';
     if (statusFilter === 'hired') return 'Hired Applications';

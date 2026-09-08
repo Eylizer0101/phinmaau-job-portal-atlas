@@ -662,6 +662,7 @@ exports.createJob = async (req, res) => {
       skillsRequired,
       experienceLevel,
       status,
+      draftProgress,
       location,
       locationProvince,
       locationCity,
@@ -789,6 +790,11 @@ exports.createJob = async (req, res) => {
       companyName: employer.employerProfile?.companyName || employer.fullName,
       companyLogo: companyLogo,
       status: isDraft ? 'draft' : 'published',
+      draftProgress: isDraft
+        ? ['step-1', 'step-2', 'step-3', 'step-4', 'preview', 'privacy'].includes(String(draftProgress || '').trim().toLowerCase())
+          ? String(draftProgress || '').trim().toLowerCase()
+          : ''
+        : '',
       isPublished: !isDraft,
       publishedAt: isDraft ? null : new Date(),
       editUnlockedUntil: null,
@@ -1528,6 +1534,7 @@ exports.updateJob = async (req, res) => {
         job.isActive = false;
       } else if (req.body.status === 'published') {
         job.status = 'published';
+        job.draftProgress = '';
         job.isPublished = true;
         if (req.body.isActive === undefined) job.isActive = true;
       }
@@ -1581,6 +1588,15 @@ exports.updateJob = async (req, res) => {
 
       if (key === 'title') {
         job.title = normalizeSingleLine(req.body.title);
+        return;
+      }
+
+      if (key === 'draftProgress') {
+        const normalizedDraftProgress = String(req.body.draftProgress || '').trim().toLowerCase();
+        const allowedDraftProgress = ['', 'step-1', 'step-2', 'step-3', 'step-4', 'preview', 'privacy'];
+        job.draftProgress = allowedDraftProgress.includes(normalizedDraftProgress)
+          ? normalizedDraftProgress
+          : '';
         return;
       }
 

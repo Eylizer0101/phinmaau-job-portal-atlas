@@ -22,6 +22,13 @@ const jobSchema = new mongoose.Schema({
         default: 'published'
     },
 
+    draftProgress: {
+        type: String,
+        enum: ['', 'step-1', 'step-2', 'step-3', 'step-4', 'preview', 'privacy'],
+        default: '',
+        trim: true
+    },
+
     title: {
         type: String,
         required: function () { return this.isPublished === true; },

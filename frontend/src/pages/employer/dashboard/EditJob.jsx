@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
-import { BuildingIcon } from '../../../components/shared/JobseekerIcons';
+import { BuildingIcon, JobDetailsSvgIcon } from '../../../components/shared/JobseekerIcons';
 import {
   JOB_TYPES,
   EXPERIENCE_LEVELS,
@@ -1819,10 +1819,17 @@ const EditJob = () => {
     }
 
     if (mode === 'draft') {
+      const draftProgress = showPrivacyModal
+        ? 'privacy'
+        : showPreviewModal
+          ? 'preview'
+          : `step-${activeStep}`;
+      payload.append('draftProgress', draftProgress);
       payload.append('status', 'draft');
       payload.append('isPublished', 'false');
       payload.append('isActive', 'false');
     } else if (mode === 'publish') {
+      payload.append('draftProgress', '');
       payload.append('status', 'published');
       payload.append('isPublished', 'true');
       payload.append('isActive', 'true');
@@ -1991,6 +1998,17 @@ const EditJob = () => {
         setFormData(nextForm);
         initialFormRef.current = nextForm;
         hasLoadedInitialRef.current = true;
+
+        if (jobData.isPublished === false || String(jobData.status || '').toLowerCase() === 'draft') {
+          const savedDraftProgress = String(jobData.draftProgress || '').trim().toLowerCase();
+          const savedStepMatch = savedDraftProgress.match(/^step-([1-4])$/);
+
+          if (savedDraftProgress === 'privacy' || savedDraftProgress === 'preview') {
+            setActiveStep(JOB_FORM_STEPS.length);
+          } else if (savedStepMatch) {
+            setActiveStep(Number(savedStepMatch[1]));
+          }
+        }
 
         if (jobData.locationImage) {
           setLocationImagePreview(
@@ -3099,14 +3117,9 @@ const EditJob = () => {
 
                             <div className="mt-2 flex items-center gap-2 text-sm text-black/70">
                               <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={1.6}
-                              d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3.75h1.5m-1.5 3.75h1.5m3-7.5H15m-1.5 3.75H15m-1.5 3.75H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"
-                            />
-                          </svg>
-                              <span className="truncate">{String(storedUser?.employerProfile?.companyName || job?.companyName || '').trim() || 'Company not specified'}</span>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 21h18M5 21V7l7-4v18M19 21V11l-6-4M9 9h.01M9 13h.01M9 17h.01M15 13h.01M15 17h.01" />
+                            </svg>
+                            <span className="truncate">{companyCategoryDefault || 'Industry not specified'}</span>
                             </div>
 
                             <div className="mt-2 flex items-start gap-2 text-sm uppercase tracking-wide text-black/60">
@@ -3120,7 +3133,7 @@ const EditJob = () => {
                             <div className="mt-5 flex flex-wrap gap-2">
                               {[
                                 { value: formData.jobType, icon: 'briefcase' },
-                                { value: formData.workMode, icon: 'building' },
+                                { value: formData.workMode, icon: 'laptop' },
                                 {
                                   value: formData.vacancies
                                     ? `${formData.vacancies} Vacancies`
@@ -3140,10 +3153,8 @@ const EditJob = () => {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m-3 0h14a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2zM3 13h18" />
                                       </svg>
                                     )}
-                                    {item.icon === 'building' && (
-                                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 21h18M6 21V5a2 2 0 012-2h8a2 2 0 012 2v16M9 7h.01M12 7h.01M15 7h.01M9 11h.01M12 11h.01M15 11h.01" />
-                                      </svg>
+                                    {item.icon === 'laptop' && (
+                                      <JobDetailsSvgIcon name="laptop" className="h-4 w-4" />
                                     )}
                                     {item.icon === 'users' && (
                                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3194,7 +3205,7 @@ const EditJob = () => {
                         {
                           title: 'Website / Company URL',
                           value: companyWebsite || 'N/A',
-                          icon: 'external',
+                          icon: 'globe',
                         },
                       ].map((metric) => (
                         <div
@@ -3210,13 +3221,9 @@ const EditJob = () => {
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                               ) : metric.icon === 'graduation' ? (
-                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 3L2.5 8 12 13l7-3.684V15m-14-5v6.5L12 21l7-4.5V10" />
-                                </svg>
+                                <JobDetailsSvgIcon name="graduation" className="h-5 w-5" />
                               ) : (
-                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M14 3h7v7M10 14L21 3M21 14v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6" />
-                                </svg>
+                                <JobDetailsSvgIcon name="globe" className="h-5 w-5" />
                               )}
                             </div>
                             <div className="min-w-0 pt-0.5">

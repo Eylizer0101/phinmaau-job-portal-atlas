@@ -888,6 +888,9 @@ const EmployerJobView = () => {
   const isRelocationMissing = !String(job.willingToRelocate || '').trim();
   const companyName =
     String(job.companyName || companyInfo?.companyName || '').trim() || 'Company not specified';
+  const industryName =
+    String(job?.employerDetails?.industry || job?.category || companyInfo?.industry || '').trim() ||
+    'Industry not specified';
   const useSingleRowDraftPlaceholders =
     isDraftJob &&
     isJobTypeMissing &&
@@ -983,14 +986,9 @@ const EmployerJobView = () => {
                     </h1>
                     <div className="mt-2 flex items-center gap-2 text-sm text-black/70">
                       <svg className="h-4 w-4 text-black/60" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={1.6}
-                              d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3.75h1.5m-1.5 3.75h1.5m3-7.5H15m-1.5 3.75H15m-1.5 3.75H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"
-                            />
-                          </svg>
-                      <span className="font-medium">{companyName}</span>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 21h18M5 21V7l7-4v18M19 21V11l-6-4M9 9h.01M9 13h.01M9 17h.01M15 13h.01M15 17h.01" />
+                    </svg>
+                    <span className="font-medium">{industryName}</span>
                     </div>
                     <div className="mt-1 flex items-center gap-2 text-sm text-black/70">
                       <SvgIcon name="location" className="h-4 w-4 text-black/60" />

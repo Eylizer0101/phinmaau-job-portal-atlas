@@ -1372,11 +1372,12 @@ const ActionMenu = ({
   return (
     <Link
       to={`/employer/application/${app._id}?from=for-interview`}
-      className="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-xl border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
       aria-label={`View application of ${name}`}
+      title="View application"
     >
-      <Icon name="eye" className="mr-2 h-4 w-4" />
-      Application
+      <Icon name="eye" className="h-4 w-4" />
+      <span className="sr-only">View application</span>
     </Link>
   );
 };
@@ -2129,9 +2130,6 @@ const selectBase =
               )}
             </div>
 
-            <div className="mt-3 text-xs text-gray-500">
-              Showing <span className="font-semibold text-gray-700">{filteredApplications.length}</span> result(s).
-            </div>
           </div>
         </div>
 

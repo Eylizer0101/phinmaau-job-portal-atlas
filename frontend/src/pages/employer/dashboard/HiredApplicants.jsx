@@ -489,7 +489,7 @@ const HiredApplicants = () => {
 
   const [query, setQuery] = useState('');
   const [selectedJob, setSelectedJob] = useState('all');
-  const [employmentFilter, setEmploymentFilter] = useState('all');
+  const [employmentFilter, setEmploymentFilter] = useState('active');
   const [dateFilter, setDateFilter] = useState('all');
   const [customDateFrom, setCustomDateFrom] = useState('');
   const [customDateTo, setCustomDateTo] = useState('');
@@ -846,7 +846,7 @@ const HiredApplicants = () => {
   const clearFilters = () => {
     setQuery('');
     setSelectedJob('all');
-    setEmploymentFilter('all');
+    setEmploymentFilter('active');
     setDateFilter('all');
     setCustomDateFrom('');
     setCustomDateTo('');
@@ -872,7 +872,7 @@ const HiredApplicants = () => {
   ];
 
   const hasActiveFilters =
-    query.trim() || selectedJob !== 'all' || employmentFilter !== 'all' || dateFilter !== 'all' || sortBy !== 'recent';
+    query.trim() || selectedJob !== 'all' || employmentFilter !== 'active' || dateFilter !== 'all' || sortBy !== 'recent';
 
   const openEmploymentUpdate = (application) => {
     setUpdateApplication(application);
@@ -1056,7 +1056,7 @@ const selectBase =
         <div className="relative z-20 mb-6 overflow-visible rounded-[22px] border border-gray-300 bg-[#ffffff] shadow-sm">
           <div className="overflow-visible p-5">
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
-              <div className={hasActiveFilters ? 'lg:col-span-2' : 'lg:col-span-3'}>
+              <div className={hasActiveFilters ? 'lg:col-span-3' : 'lg:col-span-4'}>
                 <div className="relative">
                   <span className="pointer-events-none absolute left-4 top-3.5 text-gray-400">
                     <Icon name="search" className="h-5 w-5" />
@@ -1144,7 +1144,7 @@ const selectBase =
                 />
               </div>
 
-              <div className="lg:col-span-3">
+              <div className="lg:col-span-2">
                 <DropdownFilter
                   id="sortFilter"
                   label="Sort By"
@@ -1168,9 +1168,6 @@ const selectBase =
               )}
             </div>
 
-            <div className="mt-4 text-sm text-gray-600">
-              Showing <span className="font-semibold text-gray-800">{filteredApplications.length}</span> result(s).
-            </div>
           </div>
         </div>
 
@@ -1293,11 +1290,12 @@ const selectBase =
                             <div className="flex flex-nowrap items-center justify-center gap-2 whitespace-nowrap">
                               <Link
                                 to={`/employer/application/${app._id}?from=hired`}
-                                className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
                                 aria-label={`View details of ${name}`}
+                                title="View application"
                               >
                                 <Icon name="eye" className="h-4 w-4" />
-                                <span>Application</span>
+                                <span className="sr-only">View application</span>
                               </Link>
                               {String(app.employmentStatusRequest?.status || '').toLowerCase() === 'pending' && (
                                 <button
@@ -1411,10 +1409,12 @@ const selectBase =
                       <div className="mt-3">
                         <Link
                           to={`/employer/application/${app._id}?from=hired`}
-                          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                          aria-label={`View details of ${name}`}
+                          title="View application"
                         >
                           <Icon name="eye" className="h-4 w-4" />
-                          <span>Application</span>
+                          <span className="sr-only">View application</span>
                         </Link>
                         {String(app.employmentStatusRequest?.status || '').toLowerCase() === 'pending' && (
                           <button
