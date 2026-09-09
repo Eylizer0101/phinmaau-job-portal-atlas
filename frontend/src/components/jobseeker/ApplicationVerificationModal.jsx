@@ -1,14 +1,7 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { FaInfoCircle } from 'react-icons/fa';
 
-const ApplicationVerificationModal = ({ open, onClose }) => {
-  useEffect(() => {
-    if (!open) return undefined;
-
-    const timer = setTimeout(() => onClose?.(), 3000);
-    return () => clearTimeout(timer);
-  }, [open, onClose]);
-
+const ApplicationVerificationModal = ({ open, onClose, onTakeMeThere }) => {
   if (!open) return null;
 
   return (
@@ -29,6 +22,14 @@ const ApplicationVerificationModal = ({ open, onClose }) => {
         <div className="mt-2 text-sm leading-6 text-gray-500">
           Looks like your email or contact number isn&apos;t verified yet. Please verify it first to continue. You can&apos;t apply for these job posts until its verified.
         </div>
+
+        <button
+          type="button"
+          onClick={onTakeMeThere}
+          className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-xl bg-[#2e66a6] px-5 text-sm font-bold text-white shadow-[0_10px_22px_rgba(46,102,166,0.22)] transition hover:bg-[#25578f] active:bg-[#1f4b7c] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+        >
+          Take me there
+        </button>
       </div>
     </div>
   );

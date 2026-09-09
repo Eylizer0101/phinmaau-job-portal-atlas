@@ -787,6 +787,7 @@ const JobDetails = () => {
 
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [showContactVerificationNotice, setShowContactVerificationNotice] = useState(false);
+  const [contactVerificationTarget, setContactVerificationTarget] = useState('email');
   const [applyingJob, setApplyingJob] = useState(null);
   const [applyModalInitialStep, setApplyModalInitialStep] = useState(1);
   const [applyChecking, setApplyChecking] = useState(false);
@@ -1197,6 +1198,9 @@ const JobDetails = () => {
       }
 
       if (!user.settingsVerification?.emailVerified || !user.settingsVerification?.phoneVerified) {
+        setContactVerificationTarget(
+          !user.settingsVerification?.emailVerified ? 'email' : 'mobile'
+        );
         setShowContactVerificationNotice(true);
         return;
       }
@@ -1228,6 +1232,12 @@ const JobDetails = () => {
       }
     }
   }, [navigate, isJobActive, hasApplied, job, setToastWithAutoClear]);
+
+  const handleContactVerificationRedirect = useCallback(() => {
+    setShowContactVerificationNotice(false);
+    const section = contactVerificationTarget === 'mobile' ? 'mobile' : 'email';
+    navigate(`/jobseeker/settings?section=${section}&verify=1&resend=1`);
+  }, [contactVerificationTarget, navigate]);
 
   const perksAndBenefitsList = useMemo(() => {
     const perks = Array.isArray(job?.perksAndBenefits) ? job.perksAndBenefits.filter(Boolean) : [];
@@ -1670,6 +1680,7 @@ const JobDetails = () => {
         <ApplicationVerificationModal
           open={showContactVerificationNotice}
           onClose={() => setShowContactVerificationNotice(false)}
+          onTakeMeThere={handleContactVerificationRedirect}
         />
 
         {applyChecking && !showApplyModal && (

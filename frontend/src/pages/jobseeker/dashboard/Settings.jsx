@@ -207,6 +207,7 @@ const Settings = () => {
   const mobileSectionRef = useRef(null);
   const emailVerificationRef = useRef(null);
   const mobileVerificationRef = useRef(null);
+  const autoVerificationRequestRef = useRef('');
 
   const closeSuccessPopup = useCallback(() => {
     setSuccessPopup((current) => ({ ...current, open: false }));
@@ -265,14 +266,6 @@ const Settings = () => {
     fetchMe();
   }, [fetchMe]);
 
-  useEffect(() => {
-    if (loadingUser) return;
-
-    const section = new URLSearchParams(window.location.search).get('section');
-    const target = section === 'mobile' ? mobileSectionRef.current : section === 'email' ? emailSectionRef.current : null;
-    if (target) window.requestAnimationFrame(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }));
-  }, [loadingUser]);
-
   const verification = me?.settingsVerification || {};
   const displayEmail = me?.email || '—';
   const displayMobile = me?.jobSeekerProfile?.phoneNumber || '—';
@@ -280,6 +273,98 @@ const Settings = () => {
   const phoneVerified = Boolean(verification.phoneVerified);
   const pendingEmail = verification.pendingEmail || '';
   const pendingPhone = verification.pendingPhoneNumber || '';
+
+  useEffect(() => {
+    if (loadingUser || !me) return undefined;
+
+    const params = new URLSearchParams(window.location.search);
+    const section = params.get('section');
+    const shouldVerify = params.get('verify') === '1';
+    const shouldResend = params.get('resend') === '1';
+
+    if (section === 'email') {
+      const needsEmailVerification = !emailVerified || Boolean(pendingEmail);
+      if (shouldVerify && needsEmailVerification) {
+        setShowEmailVerification(true);
+      }
+
+      const frame = window.requestAnimationFrame(() => {
+        const target = shouldVerify && needsEmailVerification
+          ? emailVerificationRef.current
+          : emailSectionRef.current;
+        target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+
+      if (shouldVerify && shouldResend && needsEmailVerification && autoVerificationRequestRef.current !== 'email') {
+        autoVerificationRequestRef.current = 'email';
+        api.post('/auth/settings/resend-email-verification')
+          .then(() => {
+            setEmailResendSeconds(180);
+            showSuccessPopup(
+              'Verification Email Sent!',
+              'A verification code has been sent to your email address. Enter the code below to verify your email.',
+              'info'
+            );
+            return fetchMe();
+          })
+          .catch((err) => {
+            setEmailVerifyMessage({
+              type: 'error',
+              text: err.response?.data?.message || 'Failed to send email verification code.',
+            });
+          });
+      }
+
+      return () => window.cancelAnimationFrame(frame);
+    }
+
+    if (section === 'mobile') {
+      const needsPhoneVerification = !phoneVerified || Boolean(pendingPhone);
+      if (shouldVerify && needsPhoneVerification) {
+        setShowMobileVerification(true);
+      }
+
+      const frame = window.requestAnimationFrame(() => {
+        const target = shouldVerify && needsPhoneVerification
+          ? mobileVerificationRef.current
+          : mobileSectionRef.current;
+        target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+
+      if (shouldVerify && shouldResend && needsPhoneVerification && autoVerificationRequestRef.current !== 'mobile') {
+        autoVerificationRequestRef.current = 'mobile';
+        api.post('/auth/settings/resend-phone-verification')
+          .then(() => {
+            setMobileResendSeconds(180);
+            showSuccessPopup(
+              'Verification Code Sent!',
+              'A verification code has been sent to your mobile number. Enter the code below to verify your number.',
+              'info'
+            );
+            return fetchMe();
+          })
+          .catch((err) => {
+            setMobileVerifyMessage({
+              type: 'error',
+              text: err.response?.data?.message || 'Failed to send mobile verification code.',
+            });
+          });
+      }
+
+      return () => window.cancelAnimationFrame(frame);
+    }
+
+    return undefined;
+  }, [
+    emailVerified,
+    fetchMe,
+    loadingUser,
+    me,
+    pendingEmail,
+    pendingPhone,
+    phoneVerified,
+    showSuccessPopup,
+  ]);
 
   useEffect(() => {
     const requestedAt = verification.emailOtpRequestedAt ? new Date(verification.emailOtpRequestedAt).getTime() : 0;
@@ -304,20 +389,20 @@ const Settings = () => {
   }, [mobileResendSeconds > 0]);
 
   useEffect(() => {
-    if (!showEmailVerification || !pendingEmail) return undefined;
+    if (!showEmailVerification || (emailVerified && !pendingEmail)) return undefined;
     const frame = window.requestAnimationFrame(() => {
       emailVerificationRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [showEmailVerification, pendingEmail]);
+  }, [showEmailVerification, emailVerified, pendingEmail]);
 
   useEffect(() => {
-    if (!showMobileVerification || !pendingPhone) return undefined;
+    if (!showMobileVerification || (phoneVerified && !pendingPhone)) return undefined;
     const frame = window.requestAnimationFrame(() => {
       mobileVerificationRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [showMobileVerification, pendingPhone]);
+  }, [showMobileVerification, phoneVerified, pendingPhone]);
 
   const formatCountdown = (seconds) => {
     const minutes = Math.floor(seconds / 60);
@@ -609,7 +694,7 @@ const Settings = () => {
         </Panel>
         </div>
 
-        {showEmailVerification && pendingEmail ? <div ref={emailVerificationRef} className="scroll-mt-24">
+        {showEmailVerification && (pendingEmail || !emailVerified) ? <div ref={emailVerificationRef} className="scroll-mt-24">
         <Panel title="Verify Email" blue>
           <form onSubmit={handleVerifyEmail}>
             <InlineMessage message={emailVerifyMessage} />
@@ -701,7 +786,7 @@ const Settings = () => {
         </Panel>
         </div>
 
-        {showMobileVerification && pendingPhone ? <div ref={mobileVerificationRef} className="scroll-mt-24">
+        {showMobileVerification && (pendingPhone || !phoneVerified) ? <div ref={mobileVerificationRef} className="scroll-mt-24">
         <Panel title="Verify Mobile Number" blue>
           <form onSubmit={handleVerifyMobile}>
             <InlineMessage message={mobileVerifyMessage} />
