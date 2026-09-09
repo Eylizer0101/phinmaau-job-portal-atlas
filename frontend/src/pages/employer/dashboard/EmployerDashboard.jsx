@@ -2414,12 +2414,10 @@ const EmployerDashboard = () => {
                           ))}
                         </div>
 
-                        <div className="mt-auto pt-5">
-                          <div className="border-t border-gray-300/80 pt-4">
-                            <span className="flex h-10 w-full items-center justify-center rounded-xl bg-[#1e4ba0] px-5 text-sm font-semibold text-white transition group-hover:bg-[#1b4290]">
-                              View Job
-                            </span>
-                          </div>
+                        <div className="mt-3 border-t border-gray-300/80 pt-3">
+                          <span className="flex h-10 w-full items-center justify-center rounded-xl bg-[#1e4ba0] px-5 text-sm font-semibold text-white transition group-hover:bg-[#1b4290]">
+                            View Job
+                          </span>
                         </div>
                       </Link>
                     );
