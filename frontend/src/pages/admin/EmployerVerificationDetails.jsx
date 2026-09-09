@@ -1387,7 +1387,7 @@ const EmployerVerificationDetails = () => {
 
       {verifyCredential && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-4">
-          <div className="relative w-full max-w-[520px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="approve-employer-credential-title">
+          <div className="relative w-full max-w-[470px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="approve-employer-credential-title">
             <div className="flex items-start gap-4 px-6 pb-5 pt-6">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#EEF6FF] text-[#2e66a6]">
                 <SvgIcon name="check" className="h-5 w-5" />

@@ -1761,7 +1761,7 @@ const JobseekerVerificationDetails = () => {
       {verifyCredential && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-4">
           <div
-            className="relative w-full max-w-[520px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+            className="relative w-full max-w-[470px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="verify-credential-title"
