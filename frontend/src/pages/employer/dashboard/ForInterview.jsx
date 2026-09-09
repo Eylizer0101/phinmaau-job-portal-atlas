@@ -2223,17 +2223,16 @@ const selectBase =
                 <div className="hidden md:block">
                   <table className="w-full table-fixed divide-y divide-gray-200">
                     <colgroup>
-                      <col className="w-[11%]" />
+                      <col className="w-[12%]" />
+                      <col className="w-[25%]" />
+                      <col className="w-[15%]" />
+                      <col className="w-[16%]" />
                       <col className="w-[17%]" />
-                      <col className="w-[17%]" />
-                      <col className="w-[13%]" />
-                      <col className="w-[14%]" />
-                      <col className="w-[14%]" />
-                      <col className="w-[14%]" />
+                      <col className="w-[15%]" />
                     </colgroup>
                     <thead className="bg-gray-50">
                       <tr>
-                        {['Applied Date', 'Applicant', 'Email', 'Contact Number', 'Job Applied', 'Hiring Stage', 'Actions'].map((heading) => (
+                        {['Applied Date', 'Applicant', 'Contact Number', 'Job Applied', 'Hiring Stage', 'Actions'].map((heading) => (
                           <th
                             key={heading}
                             className={cn(
@@ -2290,12 +2289,11 @@ const selectBase =
                                   <div className="truncate text-sm font-semibold text-gray-900" title={name}>
                                     {name}
                                   </div>
+                                  <div className="mt-1 truncate text-xs text-gray-500" title={email}>
+                                    {email}
+                                  </div>
                                 </div>
                               </div>
-                            </td>
-
-                            <td className="px-3 py-5 align-middle text-sm text-gray-600">
-                              <span className="block break-all" title={email}>{email}</span>
                             </td>
 
                             <td className="px-3 py-5 align-middle text-sm text-gray-600">

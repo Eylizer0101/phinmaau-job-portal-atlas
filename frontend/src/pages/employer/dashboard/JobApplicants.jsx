@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import EmployerLayout from '../../../layouts/EmployerLayout';
 import Pagination from '../../../components/shared/Pagination';
-import { FileIcon, CheckCircleIcon, BookmarksSvgIcon } from '../../../components/shared/JobseekerIcons';
+import { CheckCircleIcon, BookmarksSvgIcon } from '../../../components/shared/JobseekerIcons';
 
 const API_HOST = process.env.REACT_APP_API_URL
   ? process.env.REACT_APP_API_URL.replace(/\/api\/?$/, '')
@@ -658,9 +658,11 @@ const JobApplicants = () => {
                           <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
                             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${levelStyle(level)}`}>★ {level}</span>
                             <span className="inline-flex items-center gap-1.5 text-[#7b8190]"><SvgIcon name="calendar" />Applied {formatRelativeTime(application.appliedAt || application.createdAt)}</span>
-                            <span className="inline-flex items-center gap-1.5 text-[#6b7280]"><FileIcon className="h-4 w-4 text-[#2e66a6]" />Previous Applications: <span className="font-semibold text-[#374151]">{application.applicationHistorySummary?.previousApplications ?? 0}</span></span>
-                            <span className="inline-flex items-center gap-1.5 text-[#6b7280]"><CheckCircleIcon className="h-4 w-4 text-emerald-600" />Hired: <span className="font-semibold text-[#374151]">{application.applicationHistorySummary?.hired ?? 0}</span></span>
-                            <span className="inline-flex items-center gap-1.5 text-[#6b7280]"><BookmarksSvgIcon name="minusCircle" className="h-4 w-4 text-[#7b8190]" />Withdrawn: <span className="font-semibold text-[#374151]">{application.applicationHistorySummary?.withdrawn ?? 0}</span></span>
+                            <span className="inline-flex overflow-hidden rounded-full border border-[#dbe3ee] bg-white text-xs font-semibold text-[#5f6b7a]">
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1"><CheckCircleIcon className="h-4 w-4 text-emerald-600" />Previously Hired: <span className="font-bold text-[#374151]">{application.applicationHistorySummary?.hired ?? 0}</span></span>
+                              <span className="h-auto w-px bg-[#dbe3ee]" aria-hidden="true" />
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1"><BookmarksSvgIcon name="minusCircle" className="h-4 w-4 text-[#7b8190]" />Total Withdrawals: <span className="font-bold text-[#374151]">{application.applicationHistorySummary?.withdrawn ?? 0}</span></span>
+                            </span>
                           </div>
                         </div>
                       </div>
