@@ -1444,6 +1444,10 @@ const ForInterview = () => {
   const API_BASE = (process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api').replace(/\/api\/?$/, '');
   const [brokenAvatars, setBrokenAvatars] = useState(() => new Set());
   const [recentlyHighlightedApplicationId, setRecentlyHighlightedApplicationId] = useState('');
+  const [returnNavigation, setReturnNavigation] = useState(() => ({
+    returnTo: String(location.state?.returnTo || ''),
+    returnLabel: String(location.state?.returnLabel || 'Back to Applicants'),
+  }));
 
   const [applications, setApplications] = useState([]);
   const [jobs, setJobs] = useState([]);
@@ -1589,9 +1593,19 @@ const ForInterview = () => {
 
   useEffect(() => {
     const highlightedApplicationId = String(location.state?.highlightedApplicationId || '');
-    if (!highlightedApplicationId) return;
+    const returnTo = String(location.state?.returnTo || '');
+    const returnLabel = String(location.state?.returnLabel || 'Back to Applicants');
 
-    setRecentlyHighlightedApplicationId(highlightedApplicationId);
+    if (returnTo) {
+      setReturnNavigation({ returnTo, returnLabel });
+    }
+
+    if (!highlightedApplicationId && !returnTo) return;
+
+    if (highlightedApplicationId) {
+      setRecentlyHighlightedApplicationId(highlightedApplicationId);
+    }
+
     navigate(location.pathname, { replace: true, state: {} });
   }, [location.pathname, location.state, navigate]);
 
@@ -2085,6 +2099,17 @@ const selectBase =
   return (
     <EmployerLayout>
       <div className="mx-auto max-w-7xl px-1 py-8">
+        {returnNavigation.returnTo ? (
+          <button
+            type="button"
+            onClick={() => navigate(returnNavigation.returnTo)}
+            className="mb-5 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-[#174b91] shadow-sm ring-1 ring-gray-200 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
+          >
+            <Icon name="chevron-left" className="h-4 w-4" />
+            {returnNavigation.returnLabel}
+          </button>
+        ) : null}
+
         <div className="mb-6">
           <h1 className="text-[33px] leading-[40px] font-semibold text-gray-900">For Interview</h1>
           <p className="mt-1 text-sm text-gray-600">

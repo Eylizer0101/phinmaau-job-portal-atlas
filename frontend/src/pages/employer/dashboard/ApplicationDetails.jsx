@@ -2362,9 +2362,14 @@ const ApplicationDetails = () => {
           message: `${name} has been marked as Hired for this position.`,
         });
       } else if (normalizedStatus === 'for interview') {
+        const params = new URLSearchParams(location.search);
+        const source = params.get('from');
+
         navigate('/employer/for-interview', {
           state: {
             highlightedApplicationId: applicationId,
+            returnTo: backDestination,
+            returnLabel: source === 'job-applicants' ? 'Back to Job Applicants' : 'Back to Applicants',
           },
         });
       }
