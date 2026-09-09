@@ -2332,8 +2332,8 @@ const UserManagementDetails = () => {
                 <div className="absolute inset-0 bg-black/5" />
               </div>
 
-              <div className="rounded-b-[16px] border border-t-0 border-[#d1d5db] bg-[#f8f9f9] px-3 pb-0 pt-0">
-                <div className="flex flex-col gap-5 px-2 pb-0 pt-0 lg:flex-row lg:items-start lg:justify-between">
+              <div className="min-h-[205px] rounded-b-[16px] border border-t-0 border-[#d1d5db] bg-[#f8f9f9] px-3 pb-5 pt-0">
+                <div className="flex flex-col gap-5 px-2 pb-2 pt-0 lg:flex-row lg:items-start lg:justify-between">
                   <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
                    <div className="mt-2 flex h-[86px] w-[86px] shrink-0 items-center justify-center overflow-hidden rounded-[14px] border border-[#d1d5db] bg-[#f3f4f6] text-[#2e66a6] shadow-sm sm:mt-3">
                       {logoUrl && !brokenAvatar ? (
