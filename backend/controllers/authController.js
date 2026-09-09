@@ -1382,6 +1382,39 @@ exports.registerEmployer = async (req, res) => {
 // ---------------------------
 // REGISTRATION EMAIL VERIFICATION
 // ---------------------------
+exports.checkRegistrationEmail = async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body?.email);
+    const role = getRegistrationRole(req.body?.role);
+
+    if (!email || !role) {
+      return res.status(400).json({ message: 'A valid email and registration role are required.' });
+    }
+    if (role === 'jobseeker' && !isGmailAddress(email)) {
+      return res.status(400).json({ message: 'Gmail account required to continue.' });
+    }
+    if (role === 'employer' && !isValidBusinessEmail(email)) {
+      return res.status(400).json({ message: 'Please enter a valid business email address.' });
+    }
+
+    const existingUser = await findExistingUserByEmail(email);
+    if (existingUser) {
+      return res.status(409).json({
+        code: 'EMAIL_ALREADY_REGISTERED',
+        message: 'Email address is already registered.',
+      });
+    }
+
+    return res.status(200).json({
+      available: true,
+      message: 'Email address is available.',
+    });
+  } catch (error) {
+    console.error('Check registration email error:', error);
+    return res.status(500).json({ message: 'Unable to check the email right now. Please try again.' });
+  }
+};
+
 exports.requestRegistrationEmailOtp = async (req, res) => {
   try {
     const email = normalizeEmail(req.body?.email);

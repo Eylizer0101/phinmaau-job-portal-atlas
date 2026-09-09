@@ -67,6 +67,7 @@ router.post(
 
 router.post('/employer/login', loginLimiter, authController.loginEmployer);
 
+router.post('/check-registration-email', passwordRecoveryLimiter, authController.checkRegistrationEmail);
 router.post('/request-registration-email-otp', passwordRecoveryLimiter, authController.requestRegistrationEmailOtp);
 router.post('/verify-registration-email', passwordRecoveryLimiter, authController.verifyRegistrationEmail);
 router.post('/resend-registration-email-otp', passwordRecoveryLimiter, authController.resendRegistrationEmailOtp);

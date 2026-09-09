@@ -66,6 +66,7 @@ const RegisterPage = () => {
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
   const API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/register`;
+  const CHECK_EMAIL_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/check-registration-email`;
   const REQUEST_EMAIL_OTP_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/request-registration-email-otp`;
   const VERIFY_EMAIL_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/verify-registration-email`;
   const RESEND_EMAIL_OTP_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/resend-registration-email-otp`;
@@ -1144,18 +1145,49 @@ const RegisterPage = () => {
     }
   };
 
+  const checkEmailAvailability = async () => {
+    const email = String(formData.email || '').trim();
+
+    try {
+      await axios.post(CHECK_EMAIL_API_URL, {
+        email,
+        role: 'jobseeker',
+      });
+      return true;
+    } catch (err) {
+      if (err.response?.status === 409 || err.response?.data?.code === 'EMAIL_ALREADY_REGISTERED') {
+        setFormErrors((prev) => ({
+          ...prev,
+          email: 'Email address is already registered.',
+        }));
+        setServerError('');
+        document.getElementById('email')?.focus?.();
+        return false;
+      }
+
+      setServerError(err.response?.data?.message || 'Unable to check the email right now. Please try again.');
+      return false;
+    }
+  };
+
   // ✅ FORM submit handler:
   // - Step 1: validate -> step2 (substep resets to 0)
   // - Step 2: main->skills subsection, then skills subsection->step3
   // - Step 3: show modal
-  const onFormSubmit = (e) => {
+  const onFormSubmit = async (e) => {
     e.preventDefault();
 
     if (loading) return;
 
     if (currentStep === 1) {
       if (validateStep1()) {
-        setCurrentStep(2);
+        setLoading(true);
+        const emailAvailable = await checkEmailAvailability();
+        setLoading(false);
+
+        if (emailAvailable) {
+          setCurrentStep(2);
+        }
       }
       return;
     }

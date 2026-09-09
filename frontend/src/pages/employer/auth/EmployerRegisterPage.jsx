@@ -77,6 +77,7 @@ const EmployerRegisterPage = () => {
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://phinmaau-job-portal-atlas.onrender.com/api';
   const API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/employer/register`;
+  const CHECK_EMAIL_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/check-registration-email`;
   const REQUEST_EMAIL_OTP_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/request-registration-email-otp`;
   const VERIFY_EMAIL_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/verify-registration-email`;
   const RESEND_EMAIL_OTP_API_URL = `${API_BASE_URL.replace(/\/$/, '')}/auth/resend-registration-email-otp`;
@@ -853,13 +854,46 @@ const EmployerRegisterPage = () => {
     );
   };
 
-  const onFormSubmit = (e) => {
+  const checkEmailAvailability = async () => {
+    const email = normalizeEmail(formData.businessEmail);
+
+    try {
+      await axios.post(CHECK_EMAIL_API_URL, {
+        email,
+        role: 'employer',
+      });
+      return true;
+    } catch (err) {
+      if (err.response?.status === 409 || err.response?.data?.code === 'EMAIL_ALREADY_REGISTERED') {
+        setFieldErrors((prev) => ({
+          ...prev,
+          businessEmail: 'Email address is already registered.',
+        }));
+        setServerError('');
+        focusField('businessEmail');
+        return false;
+      }
+
+      setServerError(err.response?.data?.message || 'Unable to check the email right now. Please try again.');
+      return false;
+    }
+  };
+
+  const onFormSubmit = async (e) => {
     e.preventDefault();
 
     const ok = validate(STEP_FIELDS[step]);
     if (!ok) return;
 
     if (step < 3) {
+      if (step === 2) {
+        setLoading(true);
+        const emailAvailable = await checkEmailAvailability();
+        setLoading(false);
+
+        if (!emailAvailable) return;
+      }
+
       setStep((s) => Math.min(3, s + 1));
       return;
     }
