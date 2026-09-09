@@ -2255,7 +2255,7 @@ const EmployerDashboard = () => {
                     const wmLabel = normalizeWorkModeLabel(job?.workMode);
 
                     const badgeClass =
-                      'px-2.5 py-1 rounded-full text-[10px] font-semibold whitespace-nowrap bg-white text-[#2e66a6] border border-[#2e66a6]/30 shadow-sm';
+                      'min-w-0 rounded-full border border-[#2e66a6]/30 bg-white px-1.5 py-1 text-center text-[8px] font-semibold leading-none whitespace-nowrap text-[#2e66a6] shadow-sm';
 
                     const recentJobBadges = [
                       expBadge || 'Experience not provided',
@@ -2271,16 +2271,10 @@ const EmployerDashboard = () => {
                     const jobViewPath = jobId ? `/employer/manage-jobs/${jobId}/view` : '/employer/manage-jobs';
 
                     return (
-                      <Link
+                      <article
                         key={jobId || job?.title || 'recent-job'}
-                        to={jobViewPath}
-                        state={{
-                          backPath: '/employer/dashboard',
-                          backLabel: 'Dashboard',
-                        }}
-                        className="group rounded-2xl p-7 bg-white shadow-sm hover:shadow-md transition flex flex-col min-h-[280px] focus:outline-none focus:ring-2 focus:ring-[#2e66a6] focus:ring-offset-2"
+                        className="group rounded-2xl p-7 bg-white shadow-sm hover:shadow-md transition flex flex-col min-h-[280px]"
                         style={{ border: '1px solid #E5E7EB' }}
-                        aria-label={`View job details for ${String(job?.title || 'Job Title').replaceAll('"', '')}`}
                       >
                         <div className="flex items-start gap-4">
                           <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border border-gray-200 bg-white">
@@ -2406,16 +2400,31 @@ const EmployerDashboard = () => {
                           <span className="truncate">{formatApplicationDeadline(job?.applicationDeadline)}</span>
                         </div>
 
-                        <div className="mt-4 flex flex-wrap items-center gap-2 min-h-[28px]">
+                        <div className="mt-4 grid min-h-[28px] grid-cols-3 items-center gap-1">
                           {recentJobBadges.map((badge) => (
-                            <span key={badge} className={badgeClass}>
+                            <span key={badge} className={badgeClass} title={badge}>
                               {badge}
                             </span>
                           ))}
                         </div>
 
-                        <div className="mt-4 w-full h-px bg-gray-300/80" />
-                      </Link>
+                        <div className="mt-auto border-t border-gray-300/80 pt-4">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigate(jobViewPath, {
+                                state: {
+                                  backPath: '/employer/dashboard',
+                                  backLabel: 'Dashboard',
+                                },
+                              })
+                            }
+                            className="h-10 w-full rounded-xl bg-[#1e4ba0] px-5 text-sm font-semibold text-white transition hover:bg-[#1b4290] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                          >
+                            View Job
+                          </button>
+                        </div>
+                      </article>
                     );
                   })}                </div>
               </div>
