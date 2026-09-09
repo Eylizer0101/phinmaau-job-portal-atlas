@@ -1964,54 +1964,44 @@ const JobseekerVerificationDetails = () => {
             />
 
             <div
-              className="relative w-full max-w-[460px] overflow-hidden rounded-2xl border border-[#D8E0EA] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
+              className="relative w-full max-w-[520px] overflow-hidden rounded-xl border border-[#D8E0EA] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="confirm-approval-title"
               aria-describedby="confirm-approval-description"
             >
-              <button
-                type="button"
-                onClick={() => !actionLoading && setShowApproveModal(false)}
-                disabled={actionLoading}
-                className="absolute right-4 top-4 rounded p-1 text-[#667085] hover:bg-black/5"
-                aria-label="Close approval modal"
-              >
-                <SvgIcon name="x" className="h-4 w-4" />
-              </button>
-              <div className="px-5 pb-5 pt-7 sm:px-6">
-                <div className="mx-auto text-center">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#EEF6FF] text-[#2e66a6]">
-                    <SvgIcon name="check" className="h-5 w-5" />
-                  </div>
+              <div className="flex items-start gap-4 px-6 py-6 sm:px-7">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#EEF6FF] text-[#2e66a6]">
+                  <SvgIcon name="check" className="h-5 w-5" />
+                </div>
 
+                <div className="min-w-0 flex-1 pr-1">
                   <h3
                     id="confirm-approval-title"
-                    className="mt-4 text-[25px] font-bold leading-tight tracking-[-0.03em] text-black"
+                    className="text-[20px] font-bold leading-6 tracking-[-0.02em] text-black"
                   >
                     Approve {fullName}?
                   </h3>
 
                   <div
                     id="confirm-approval-description"
-                    className="mt-3 text-sm leading-6 text-[#667085]"
+                    className="mt-2 text-sm leading-6 text-[#667085]"
                   >
-                    <p>Are you sure you want to approve this Job Seeker?</p>
                     <p>
-                      This will confirm that{" "}
-                      <span className="font-bold text-black">{fullName}</span>{" "}
+                      Are you sure you want to approve this Job Seeker? This will
+                      confirm that <span className="font-bold text-black">{fullName}</span>{" "}
                       has been reviewed and verified as a PHINMA AU graduate.
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="border-t border-[#D8E0EA] bg-[#F8FAFC] px-5 py-4">
-                <div className="grid grid-cols-2 gap-4">
+              <div className="border-t border-[#D8E0EA] bg-white px-6 py-4 sm:px-7">
+                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                   <Button
                     variant="secondary"
                     size="lg"
-                    className="w-full !h-10 rounded-lg text-sm"
+                    className="w-full sm:w-auto min-w-[145px] !h-11 rounded-lg text-sm"
                     onClick={() => setShowApproveModal(false)}
                     disabled={actionLoading}
                   >
@@ -2021,7 +2011,7 @@ const JobseekerVerificationDetails = () => {
                   <Button
                     variant="primary"
                     size="lg"
-                    className="w-full !h-10 rounded-lg text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
+                    className="w-full sm:w-auto min-w-[185px] !h-11 rounded-lg text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
                     onClick={() =>
                       handleStatusUpdate("verified", "Approved by admin")
                     }

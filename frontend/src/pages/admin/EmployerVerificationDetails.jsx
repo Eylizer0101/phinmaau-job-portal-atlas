@@ -311,52 +311,44 @@ const Modal = ({ open, companyName, onClose, onConfirm, loading, disabled }) => 
         />
 
         <div
-          className="relative w-full max-w-[505px] overflow-hidden rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.22)]"
+          className="relative w-full max-w-[520px] overflow-hidden rounded-xl border border-[#D8E0EA] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.22)]"
           role="dialog"
           aria-modal="true"
           aria-labelledby="confirm-approval-title"
           aria-describedby="confirm-approval-description"
         >
-          <button
-            type="button"
-            onClick={() => !loading && onClose()}
-            disabled={loading}
-            className="absolute right-4 top-4 z-10 rounded p-1 text-[#667085] hover:bg-black/5 disabled:opacity-50"
-            aria-label="Close approval modal"
-          >
-            <SvgIcon name="x" className="h-4 w-4" />
-          </button>
+          <div className="flex items-start gap-4 px-6 py-6 sm:px-7">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#EEF6FF] text-[#2e66a6]">
+              <SvgIcon name="check" className="w-5 h-5" />
+            </div>
 
-          <div className="px-7 pb-7 pt-9 sm:px-10">
-            <div className="mx-auto text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EEF6FF] text-[#2e66a6]">
-                <SvgIcon name="check" className="w-6 h-6" />
-              </div>
-
+            <div className="min-w-0 flex-1 pr-1">
               <h3
                 id="confirm-approval-title"
-                className="mt-4 text-[24px] sm:text-[28px] leading-tight font-bold tracking-[-0.02em] text-black"
+                className="text-[20px] font-bold leading-6 tracking-[-0.02em] text-black"
               >
-                Verified {companyName}?
+                Approve {companyName}?
               </h3>
 
               <div
                 id="confirm-approval-description"
-                className="mx-auto mt-3 max-w-[420px] space-y-3 text-[15px] leading-7 text-[#667085]"
+                className="mt-2 text-sm leading-6 text-[#667085]"
               >
                 <p>
-                  Are you sure you want to verified this Employer? This will confirm that <span className="font-bold text-black">{companyName}</span> has been reviewed and verified all PHINMA AU requirements.
+                  Are you sure you want to approve this Employer? This will confirm
+                  that <span className="font-bold text-black">{companyName}</span>{" "}
+                  has been reviewed and verified for all PHINMA AU requirements.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="border-t border-[#D8E0EA] bg-[#F8FAFC] px-7 py-5 sm:px-10">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="border-t border-[#D8E0EA] bg-white px-6 py-4 sm:px-7">
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <Button
                 variant="secondary"
                 size="lg"
-                className="w-full !h-11 rounded-lg border-[#D6DEE8] bg-white text-base font-semibold"
+                className="w-full sm:w-auto min-w-[145px] !h-11 rounded-lg border-[#D6DEE8] bg-white text-sm font-semibold"
                 onClick={onClose}
                 disabled={loading}
               >
@@ -366,12 +358,12 @@ const Modal = ({ open, companyName, onClose, onConfirm, loading, disabled }) => 
               <Button
                 variant="primary"
                 size="lg"
-                className="w-full !h-11 rounded-lg text-base font-semibold !bg-[#2e66a6] hover:!bg-[#255587]"
+                className="w-full sm:w-auto min-w-[185px] !h-11 rounded-lg text-sm font-semibold !bg-[#2e66a6] hover:!bg-[#255587]"
                 onClick={onConfirm}
                 loading={loading}
                 disabled={disabled || loading}
               >
-                Verified
+                Approve
               </Button>
             </div>
           </div>
