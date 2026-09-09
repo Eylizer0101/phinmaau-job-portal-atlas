@@ -1424,7 +1424,7 @@ const JobseekerVerificationDetails = () => {
                   <>
                 <button
                   type="button"
-                  onClick={() => firstSubmittedDocument && requestCredentialAccess("approveAccount", firstSubmittedDocument.key, "approve this Job Seeker")}
+                  onClick={() => firstSubmittedDocument && requestCredentialAccess("approveAccount", firstSubmittedDocument.key, "this Job Seeker")}
                   disabled={actionLoading}
                   className={cn(
                     "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white shadow-sm hover:bg-[#255587] disabled:opacity-50",
@@ -1494,7 +1494,7 @@ const JobseekerVerificationDetails = () => {
                     <>
                   <button
                     type="button"
-                    onClick={() => firstSubmittedDocument && requestCredentialAccess("approveAccount", firstSubmittedDocument.key, "approve this Job Seeker")}
+                    onClick={() => firstSubmittedDocument && requestCredentialAccess("approveAccount", firstSubmittedDocument.key, "this Job Seeker")}
                     disabled={actionLoading}
                     className={cn(
                       "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white hover:bg-[#255587] disabled:opacity-50",
@@ -1588,8 +1588,12 @@ const JobseekerVerificationDetails = () => {
                     className="h-28 w-28 rounded-full bg-[#F1F5F9] object-cover"
                   />
                 ) : (
-                  <div className="flex h-28 w-28 items-center justify-center rounded-full bg-[#F1F5F9] text-[#667085]">
-                    <SvgIcon name="user" className="h-14 w-14" />
+                  <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-white shadow-sm">
+                    <img
+                      src="/images/profile.png"
+                      alt="Default profile placeholder"
+                      className="h-full w-full object-cover bg-white"
+                    />
                   </div>
                 )}
 
@@ -1755,42 +1759,42 @@ const JobseekerVerificationDetails = () => {
       )}
 
       {verifyCredential && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-4">
           <div
-            className="w-full max-w-md overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl"
+            className="relative w-full max-w-[520px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="verify-credential-title"
           >
-            <div className="flex items-start justify-between px-5 pt-5">
-              <div>
-                <h3
-                  id="verify-credential-title"
-                  className="text-lg font-bold text-black"
-                >
+            <div className="flex items-start gap-4 px-6 pb-5 pt-6">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#EEF6FF] text-[#2e66a6]">
+                <SvgIcon name="check" className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1 pr-7">
+                <h3 id="verify-credential-title" className="text-lg font-bold leading-6 text-black">
                   Approve {verifyCredential.label} Credential?
                 </h3>
-                <p className="mt-1 text-sm text-[#2e66a6]">
-                  This will confirm that the <strong>{verifyCredential.label}</strong> credential has been reviewed and verified.
+                <p className="mt-1 text-sm leading-5 text-[#667085]">
+                  This will confirm that the <strong className="text-black">{verifyCredential.label}</strong> credential has been reviewed and verified.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setVerifyCredential(null)}
                 disabled={Boolean(checkingDoc)}
-                className="rounded p-1 text-black/60 hover:bg-black/5"
+                className="absolute right-5 top-5 rounded-lg p-1.5 text-[#667085] transition hover:bg-slate-100"
                 aria-label="Close"
               >
                 <SvgIcon name="x" className="h-4 w-4" />
               </button>
             </div>
-            <div className="mt-5 flex justify-end gap-2 border-t border-slate-100 bg-slate-50 px-5 py-4">
+            <div className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50 px-6 py-4">
               <button
                 type="button"
                 onClick={() => setVerifyCredential(null)}
                 disabled={Boolean(checkingDoc)}
                 className={cn(
-                  "h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-black shadow-sm",
+                  "h-10 rounded-lg border border-slate-300 bg-white px-5 text-sm font-semibold text-black shadow-sm",
                   UI.ring,
                 )}
               >
@@ -1805,10 +1809,11 @@ const JobseekerVerificationDetails = () => {
                   setVerifyCredential(null);
                 }}
                 className={cn(
-                  "inline-flex h-10 items-center justify-center rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white shadow-sm hover:bg-[#255587] disabled:opacity-50",
+                  "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-5 text-sm font-bold text-white shadow-sm hover:bg-[#255587] disabled:opacity-50",
                   UI.ring,
                 )}
               >
+                <SvgIcon name="check" className="h-4 w-4" />
                 {checkingDoc ? "Approving..." : "Approve"}
               </button>
             </div>
@@ -1959,7 +1964,7 @@ const JobseekerVerificationDetails = () => {
             />
 
             <div
-              className="relative w-full max-w-[375px] overflow-hidden rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
+              className="relative w-full max-w-[460px] overflow-hidden rounded-2xl border border-[#D8E0EA] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="confirm-approval-title"
@@ -1984,14 +1989,14 @@ const JobseekerVerificationDetails = () => {
                     id="confirm-approval-title"
                     className="mt-4 text-[25px] font-bold leading-tight tracking-[-0.03em] text-black"
                   >
-                    Verified {fullName}?
+                    Approve {fullName}?
                   </h3>
 
                   <div
                     id="confirm-approval-description"
                     className="mt-3 text-sm leading-6 text-[#667085]"
                   >
-                    <p>Are you sure you want to verified this Job Seeker?</p>
+                    <p>Are you sure you want to approve this Job Seeker?</p>
                     <p>
                       This will confirm that{" "}
                       <span className="font-bold text-black">{fullName}</span>{" "}
@@ -2023,7 +2028,7 @@ const JobseekerVerificationDetails = () => {
                     loading={actionLoading}
                     disabled={actionLoading}
                   >
-                    Verified
+                    Approve
                   </Button>
                 </div>
               </div>
@@ -2042,7 +2047,7 @@ const JobseekerVerificationDetails = () => {
             />
 
             <div
-              className="relative w-full max-w-[480px] overflow-visible rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
+              className="relative w-full max-w-[560px] overflow-visible rounded-2xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="hold-modal-title"

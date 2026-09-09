@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Bell, Check, Circle, RefreshCw, Trash2, UserRound } from "lucide-react";
+import { Bell, Check, RefreshCw, Search, Trash2, UserRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import Pagination from "../../components/shared/Pagination";
@@ -85,6 +85,7 @@ const AdminNotificationsPage = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [activeFilter, setActiveFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
@@ -111,10 +112,19 @@ const AdminNotificationsPage = () => {
   }, []);
 
   const filteredNotifications = useMemo(() => {
-    if (activeFilter === "unread") return notifications.filter((item) => !item.isRead);
-    if (activeFilter === "read") return notifications.filter((item) => item.isRead);
-    return notifications;
-  }, [activeFilter, notifications]);
+    const query = searchQuery.trim().toLowerCase();
+
+    return notifications.filter((item) => {
+      const matchesFilter =
+        activeFilter === "unread" ? !item.isRead : activeFilter === "read" ? item.isRead : true;
+
+      if (!matchesFilter) return false;
+      if (!query) return true;
+
+      return [item.title, item.message, item.type, item.metadata?.companyName, item.metadata?.jobTitle]
+        .some((value) => String(value || "").toLowerCase().includes(query));
+    });
+  }, [activeFilter, notifications, searchQuery]);
 
   const numericPageSize = pageSize === "all" ? Math.max(filteredNotifications.length, 1) : Number(pageSize);
   const totalPages = pageSize === "all" ? 1 : Math.max(1, Math.ceil(filteredNotifications.length / numericPageSize));
@@ -127,7 +137,7 @@ const AdminNotificationsPage = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeFilter]);
+  }, [activeFilter, searchQuery, pageSize]);
 
   useEffect(() => {
     setCurrentPage((page) => Math.min(page, totalPages));
@@ -203,45 +213,37 @@ const AdminNotificationsPage = () => {
 
   return (
     <div className="mx-auto max-w-7xl px-1 py-8">
-      <div className="space-y-5">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-black/5 sm:p-6">
+      <div className="space-y-6">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#2e66a6]/10 text-[#2e66a6]">
+            <div className="flex min-w-0 items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#2e66a6] text-white">
                 <Bell size={24} />
               </div>
-              <div>
-                <h1 className="text-2xl font-bold tracking-[-0.02em] text-slate-900">Notifications</h1>
-                <p className="mt-1 text-sm leading-6 text-slate-500">
+              <div className="min-w-0">
+                <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Notifications</h1>
+                <p className="mt-1 text-sm text-gray-600">
                   Review admin notifications, system activity, and account updates.
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              {unreadCount > 0 ? (
-                <span className="inline-flex items-center rounded-full border border-[#2e66a6]/20 bg-[#2e66a6]/10 px-3 py-1 text-xs font-semibold text-[#2e66a6]">
-                  {unreadCount} unread
-                </span>
-              ) : null}
-
-          
-
-              <button
-                type="button"
-                onClick={handleMarkAllAsRead}
-                disabled={unreadCount === 0 || actionLoading}
-                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#2e66a6] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#255487] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/30 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <Check size={16} />
-                Mark all as read
-              </button>
+            <div className="relative w-full sm:max-w-md">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search notifications..."
+                className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-11 pr-4 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/25"
+                aria-label="Search admin notifications"
+              />
             </div>
           </div>
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="inline-flex w-fit rounded-2xl border border-slate-200 bg-white p-1 shadow-sm ring-1 ring-black/5">
+          <div className="inline-flex w-fit items-center rounded-2xl border border-gray-200 bg-white p-1 shadow-sm">
             {[
               { key: "all", label: "All" },
               { key: "unread", label: "Unread" },
@@ -253,41 +255,58 @@ const AdminNotificationsPage = () => {
                 onClick={() => setActiveFilter(filter.key)}
                 className={`h-9 rounded-xl px-4 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20 ${
                   activeFilter === filter.key
-                    ? "bg-[#2e66a6] text-white shadow-sm"
-                    : "text-slate-600 hover:bg-slate-100"
+                    ? "bg-[#2e66a6] text-white"
+                    : "bg-transparent text-gray-700 hover:bg-gray-100"
                 }`}
               >
                 {filter.label}
+                {filter.key === "unread" && unreadCount > 0 ? (
+                  <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-xs">
+                    {unreadCount}
+                  </span>
+                ) : null}
               </button>
             ))}
           </div>
 
-          {notifications.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={handleClearAll}
-              disabled={actionLoading}
-              className="inline-flex h-10 w-fit items-center gap-2 rounded-xl px-4 text-sm font-semibold text-red-600 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={handleMarkAllAsRead}
+              disabled={unreadCount === 0 || actionLoading}
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 text-sm font-semibold text-[#2e66a6] transition hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Trash2 size={16} />
-              Clear all
+              <Check size={16} />
+              Mark all as read
             </button>
-          ) : null}
+
+            {notifications.length > 0 ? (
+              <button
+                type="button"
+                onClick={handleClearAll}
+                disabled={actionLoading}
+                className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-red-600 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Trash2 size={16} />
+                Clear all
+              </button>
+            ) : null}
+          </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-black/5">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
           {loading ? (
-            <div className="flex h-64 flex-col items-center justify-center text-sm font-medium text-slate-500">
+            <div className="flex h-64 flex-col items-center justify-center text-sm font-medium text-gray-500">
               <RefreshCw size={22} className="mb-3 animate-spin" />
               Loading notifications...
             </div>
           ) : filteredNotifications.length === 0 ? (
             <div className="flex h-64 flex-col items-center justify-center px-4 text-center">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-[#2e66a6]">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-gray-400">
                 <Bell size={28} />
               </div>
-              <h2 className="text-lg font-semibold text-slate-900">No notifications</h2>
-              <p className="mt-1 text-sm leading-6 text-slate-500">
+              <h2 className="text-lg font-semibold text-gray-900">No notifications</h2>
+              <p className="mt-1 text-sm leading-6 text-gray-500">
                 {activeFilter === "all"
                   ? "There are no notifications yet."
                   : activeFilter === "unread"
@@ -296,12 +315,12 @@ const AdminNotificationsPage = () => {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-gray-100">
               {paginatedNotifications.map((notification) => (
                 <div
                   key={notification._id}
-                  className={`group flex items-start gap-4 px-5 py-4 transition hover:bg-slate-50 ${
-                    !notification.isRead ? "bg-[#2e66a6]/10/40" : "bg-white"
+                  className={`group flex items-start gap-4 px-5 py-5 transition hover:bg-gray-50 ${
+                    !notification.isRead ? "bg-blue-50/70" : "bg-white"
                   }`}
                 >
                   <button
@@ -309,25 +328,26 @@ const AdminNotificationsPage = () => {
                     onClick={() => handleOpenNotification(notification)}
                     className="flex min-w-0 flex-1 items-start gap-4 text-left"
                   >
-                    <span className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-[#2e66a6]">
+                    <span className={`mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+                      !notification.isRead ? "bg-blue-100 text-[#2e66a6]" : "bg-gray-100 text-gray-600"
+                    }`}>
                       <UserRound size={22} />
                     </span>
 
                     <span className="min-w-0 flex-1">
-                      <span className="block text-sm leading-6 text-slate-700">
-                        <span className="font-semibold text-slate-900">{notification.title}</span>{" "}
+                      <span className="block text-sm font-semibold leading-5 text-gray-900">
+                        {notification.title}
+                      </span>
+                      <span className="mt-1 block break-words text-sm leading-5 text-gray-700">
                         {notification.message}
                       </span>
-                      <span className="mt-1 block text-xs font-medium text-slate-500">
+                      <span className="mt-2 block text-xs font-medium text-gray-500">
                         {formatNotificationTime(notification.createdAt)}
                       </span>
                     </span>
 
                     {!notification.isRead ? (
-                      <span className="mt-4 flex shrink-0 items-center gap-1 rounded-full bg-[#2e66a6]/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#2e66a6]">
-                        <Circle size={8} fill="currentColor" />
-                        New
-                      </span>
+                      <span className="mt-4 h-2.5 w-2.5 shrink-0 rounded-full bg-[#2e66a6]" aria-label="Unread" />
                     ) : null}
                   </button>
 
@@ -335,7 +355,7 @@ const AdminNotificationsPage = () => {
                     type="button"
                     onClick={() => handleDeleteNotification(notification)}
                     disabled={actionLoading}
-                    className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 opacity-100 transition hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 disabled:cursor-not-allowed disabled:opacity-50 sm:opacity-0 sm:group-hover:opacity-100"
+                    className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-400 opacity-100 transition hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 disabled:cursor-not-allowed disabled:opacity-50 sm:opacity-0 sm:group-hover:opacity-100"
                     aria-label="Delete notification"
                   >
                     <Trash2 size={16} />
