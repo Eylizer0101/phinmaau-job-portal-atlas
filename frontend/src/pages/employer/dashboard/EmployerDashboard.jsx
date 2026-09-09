@@ -2254,8 +2254,16 @@ const EmployerDashboard = () => {
                     const expBadge = formatExperienceBadge(job?.experienceLevel);
                     const wmLabel = normalizeWorkModeLabel(job?.workMode);
 
-                    const badgeClass =
-                      'min-w-0 rounded-full border border-[#2e66a6]/30 bg-white px-1.5 py-1 text-center text-[8px] font-semibold leading-none whitespace-nowrap text-[#2e66a6] shadow-sm';
+                    const fallbackBadgeLabels = new Set([
+                      'Experience not provided',
+                      'Work mode not specified',
+                      'Availability not provided',
+                    ]);
+
+                    const getBadgeClass = (badge) =>
+                      fallbackBadgeLabels.has(badge)
+                        ? 'min-w-0 rounded-full border border-[#2e66a6]/30 bg-white px-1.5 py-1 text-center text-[8px] font-semibold leading-none whitespace-nowrap text-[#2e66a6] shadow-sm'
+                        : 'min-w-0 rounded-full border border-[#2e66a6]/30 bg-white px-2.5 py-1 text-center text-[10px] font-semibold leading-none whitespace-nowrap text-[#2e66a6] shadow-sm';
 
                     const recentJobBadges = [
                       expBadge || 'Experience not provided',
@@ -2402,7 +2410,7 @@ const EmployerDashboard = () => {
 
                         <div className="mt-4 grid min-h-[28px] grid-cols-3 items-center gap-1">
                           {recentJobBadges.map((badge) => (
-                            <span key={badge} className={badgeClass} title={badge}>
+                            <span key={badge} className={getBadgeClass(badge)} title={badge}>
                               {badge}
                             </span>
                           ))}
