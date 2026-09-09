@@ -10,6 +10,23 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
+const JobCardIcon = ({ name, className = "w-4 h-4" }) => {
+  if (name === "contract") {
+    return (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+          d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m3 0H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2z"
+        />
+      </svg>
+    );
+  }
+
+  return null;
+};
+
 const Icon = ({ name, className = "h-4 w-4", ...props }) => {
   const common = {
     className,
@@ -1900,7 +1917,7 @@ const UserManagementDetails = () => {
                     </div>
 
                     <div className="mt-2 flex items-center gap-2 text-sm text-gray-700">
-                      <Icon name="contract" className="h-4 w-4 shrink-0 text-gray-600" />
+                      <JobCardIcon name="contract" className="h-4 w-4 shrink-0 text-gray-600" />
                       <span className="truncate">{job?.jobType || "Type not specified"}</span>
                     </div>
                   </div>
