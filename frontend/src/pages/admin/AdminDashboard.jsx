@@ -1320,6 +1320,20 @@ const formatNotificationTime = (value) => {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
 
+const getNotificationGroupLabel = (dateString) => {
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return "Last Week";
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfNotificationDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.floor((startOfToday - startOfNotificationDay) / 86400000);
+
+  if (diffDays <= 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  return "Last Week";
+};
+
 const getNotificationId = (value) => {
   const resolvedValue = value?._id || value;
   return resolvedValue ? String(resolvedValue) : "";
@@ -1387,6 +1401,22 @@ const AdminTopActions = () => {
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const [isSignOutModalVisible, setIsSignOutModalVisible] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const groupedDropdownNotifications = useMemo(() => {
+    const groups = {
+      Today: [],
+      Yesterday: [],
+      "Last Week": [],
+    };
+
+    notifications.slice(0, 10).forEach((notification) => {
+      groups[getNotificationGroupLabel(notification.createdAt)].push(notification);
+    });
+
+    return ["Today", "Yesterday", "Last Week"]
+      .map((label) => ({ label, items: groups[label] }))
+      .filter((group) => group.items.length > 0);
+  }, [notifications]);
 
   const adminName = getAdminName(admin);
   const adminImage = admin?.organizationLogo || admin?.profileImage || admin?.avatar || admin?.image || "/images/phinma-logo.png";
@@ -1553,35 +1583,45 @@ const AdminTopActions = () => {
 
             <div className="max-h-[430px] overflow-y-auto px-1 py-2">
               {notifications.length ? (
-                <div className="space-y-1">
-                  {notifications.slice(0, 10).map((notification) => (
-                    <button
-                      type="button"
-                      key={notification._id}
-                      onClick={() => openNotification(notification)}
-                      className={`flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left outline-none transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-[#2e66a6]/20 ${
-                        !notification.isRead ? "bg-blue-50" : "bg-white"
-                      }`}
-                    >
-                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
-                        !notification.isRead ? "bg-blue-100 text-[#2e66a6]" : "bg-gray-100 text-gray-600"
-                      }`}>
-                        <UserRound size={20} />
+                <div className="space-y-3">
+                  {groupedDropdownNotifications.map((group) => (
+                    <div key={group.label}>
+                      <div className="px-3 pb-1 pt-1 text-[11px] font-bold uppercase tracking-[0.08em] text-gray-500">
+                        {group.label}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-3">
-                          <h5 className="min-w-0 flex-1 break-words text-sm font-semibold leading-5 text-gray-900">
-                            {notification.title}
-                          </h5>
-                          <span className="shrink-0 text-xs text-gray-500">
-                            {formatNotificationTime(notification.createdAt)}
-                          </span>
-                        </div>
-                        <p className="mt-1 line-clamp-2 break-words text-sm leading-5 text-gray-700">
-                          {notification.message}
-                        </p>
+
+                      <div className="space-y-1">
+                        {group.items.map((notification) => (
+                          <button
+                            type="button"
+                            key={notification._id}
+                            onClick={() => openNotification(notification)}
+                            className={`flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left outline-none transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-[#2e66a6]/20 ${
+                              !notification.isRead ? "bg-blue-50" : "bg-white"
+                            }`}
+                          >
+                            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
+                              !notification.isRead ? "bg-blue-100 text-[#2e66a6]" : "bg-gray-100 text-gray-600"
+                            }`}>
+                              <UserRound size={20} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start justify-between gap-3">
+                                <h5 className="min-w-0 flex-1 break-words text-sm font-semibold leading-5 text-gray-900">
+                                  {notification.title}
+                                </h5>
+                                <span className="shrink-0 text-xs text-gray-500">
+                                  {formatNotificationTime(notification.createdAt)}
+                                </span>
+                              </div>
+                              <p className="mt-1 line-clamp-2 break-words text-sm leading-5 text-gray-700">
+                                {notification.message}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
                       </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               ) : (

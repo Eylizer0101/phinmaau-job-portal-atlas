@@ -23,6 +23,21 @@ const formatNotificationTime = (value) => {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
 
+
+const getNotificationGroupLabel = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Last Week";
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfNotificationDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.floor((startOfToday - startOfNotificationDay) / (24 * 60 * 60 * 1000));
+
+  if (diffDays <= 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  return "Last Week";
+};
+
 const getNotificationId = (value) => {
   const resolvedValue = value?._id || value;
   return resolvedValue ? String(resolvedValue) : "";
@@ -134,6 +149,23 @@ const AdminNotificationsPage = () => {
     const startIndex = (currentPage - 1) * numericPageSize;
     return filteredNotifications.slice(startIndex, startIndex + numericPageSize);
   }, [currentPage, filteredNotifications, numericPageSize, pageSize]);
+
+
+  const groupedPaginatedNotifications = useMemo(() => {
+    const groups = {
+      Today: [],
+      Yesterday: [],
+      "Last Week": [],
+    };
+
+    paginatedNotifications.forEach((notification) => {
+      groups[getNotificationGroupLabel(notification.createdAt)].push(notification);
+    });
+
+    return ["Today", "Yesterday", "Last Week"]
+      .map((label) => ({ label, items: groups[label] }))
+      .filter((group) => group.items.length > 0);
+  }, [paginatedNotifications]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -315,52 +347,62 @@ const AdminNotificationsPage = () => {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
-              {paginatedNotifications.map((notification) => (
-                <div
-                  key={notification._id}
-                  className={`group flex items-start gap-4 px-5 py-5 transition hover:bg-gray-50 ${
-                    !notification.isRead ? "bg-blue-50/70" : "bg-white"
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleOpenNotification(notification)}
-                    className="flex min-w-0 flex-1 items-start gap-4 text-left"
-                  >
-                    <span className={`mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
-                      !notification.isRead ? "bg-blue-100 text-[#2e66a6]" : "bg-gray-100 text-gray-600"
-                    }`}>
-                      <UserRound size={22} />
-                    </span>
+            <div>
+              {groupedPaginatedNotifications.map((group) => (
+                <section key={group.label}>
+                  <div className="border-b border-gray-100 bg-white px-5 pb-2 pt-5 text-xs font-bold uppercase tracking-[0.12em] text-gray-500">
+                    {group.label}
+                  </div>
 
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-semibold leading-5 text-gray-900">
-                        {notification.title}
-                      </span>
-                      <span className="mt-1 block break-words text-sm leading-5 text-gray-700">
-                        {notification.message}
-                      </span>
-                      <span className="mt-2 block text-xs font-medium text-gray-500">
-                        {formatNotificationTime(notification.createdAt)}
-                      </span>
-                    </span>
+                  <div className="divide-y divide-gray-100">
+                    {group.items.map((notification) => (
+                      <div
+                        key={notification._id}
+                        className={`group flex items-start gap-4 px-5 py-5 transition hover:bg-gray-50 ${
+                          !notification.isRead ? "bg-blue-50/70" : "bg-white"
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleOpenNotification(notification)}
+                          className="flex min-w-0 flex-1 items-start gap-4 text-left"
+                        >
+                          <span className={`mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+                            !notification.isRead ? "bg-blue-100 text-[#2e66a6]" : "bg-gray-100 text-gray-600"
+                          }`}>
+                            <UserRound size={22} />
+                          </span>
 
-                    {!notification.isRead ? (
-                      <span className="mt-4 h-2.5 w-2.5 shrink-0 rounded-full bg-[#2e66a6]" aria-label="Unread" />
-                    ) : null}
-                  </button>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-semibold leading-5 text-gray-900">
+                              {notification.title}
+                            </span>
+                            <span className="mt-1 block break-words text-sm leading-5 text-gray-700">
+                              {notification.message}
+                            </span>
+                            <span className="mt-2 block text-xs font-medium text-gray-500">
+                              {formatNotificationTime(notification.createdAt)}
+                            </span>
+                          </span>
 
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteNotification(notification)}
-                    disabled={actionLoading}
-                    className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-400 opacity-100 transition hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 disabled:cursor-not-allowed disabled:opacity-50 sm:opacity-0 sm:group-hover:opacity-100"
-                    aria-label="Delete notification"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
+                          {!notification.isRead ? (
+                            <span className="mt-4 h-2.5 w-2.5 shrink-0 rounded-full bg-[#2e66a6]" aria-label="Unread" />
+                          ) : null}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteNotification(notification)}
+                          disabled={actionLoading}
+                          className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-400 opacity-100 transition hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/20 disabled:cursor-not-allowed disabled:opacity-50 sm:opacity-0 sm:group-hover:opacity-100"
+                          aria-label="Delete notification"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </section>
               ))}
             </div>
           )}
