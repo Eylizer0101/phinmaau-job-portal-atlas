@@ -602,11 +602,21 @@ const EmployerDashboard = () => {
       if (jobsResponse.data.success) {
         const allJobs = jobsResponse.data.jobs || [];
         const jobsStats = jobsResponse.data.stats || {};
-        const activeJobs = allJobs.filter((job) => {
+        const postedJobs = allJobs.filter((job) => {
+          const explicitStatus = String(job?.status || '').trim().toLowerCase();
+
+          if (job?.isArchived === true) return false;
+          if (explicitStatus === 'draft' || job?.isPublished === false) return false;
+
+          return true;
+        });
+
+        const openJobs = allJobs.filter((job) => {
           const explicitStatus = String(job?.status || '').trim().toLowerCase();
           const deadline = job?.applicationDeadline ? new Date(job.applicationDeadline) : null;
           const isExpired = deadline && !Number.isNaN(deadline.getTime()) ? deadline < now : false;
 
+          if (job?.isArchived === true) return false;
           if (explicitStatus === 'draft' || job?.isPublished === false) return false;
           if (explicitStatus === 'filled' || explicitStatus === 'closed') return false;
           if (isExpired) return false;
@@ -617,7 +627,7 @@ const EmployerDashboard = () => {
         const expiringSoon =
           typeof jobsStats.expiringSoon === 'number'
             ? jobsStats.expiringSoon
-            : activeJobs.filter((job) => withinNextDays(job.applicationDeadline, 3)).length;
+            : openJobs.filter((job) => withinNextDays(job.applicationDeadline, 3)).length;
 
         if (appsResponse.data.success) {
           const allApplications = appsResponse.data.applications || [];
@@ -646,11 +656,11 @@ const EmployerDashboard = () => {
           setDashboardData({
             jobs: {
               total: typeof jobsStats.total === 'number' ? jobsStats.total : allJobs.length,
-              active: typeof jobsStats.active === 'number' ? jobsStats.active : activeJobs.length,
+              active: postedJobs.length,
               closed:
                 typeof jobsStats.closed === 'number'
                   ? jobsStats.closed
-                  : allJobs.length - activeJobs.length,
+                  : allJobs.length - postedJobs.length,
               expiringSoon,
             },
             applications: {
@@ -687,11 +697,11 @@ const EmployerDashboard = () => {
             ...prev,
             jobs: {
               total: typeof jobsStats.total === 'number' ? jobsStats.total : allJobs.length,
-              active: typeof jobsStats.active === 'number' ? jobsStats.active : activeJobs.length,
+              active: postedJobs.length,
               closed:
                 typeof jobsStats.closed === 'number'
                   ? jobsStats.closed
-                  : allJobs.length - activeJobs.length,
+                  : allJobs.length - postedJobs.length,
               expiringSoon,
             },
             messages: {
