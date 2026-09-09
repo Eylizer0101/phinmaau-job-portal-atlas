@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
-  Building2,
   CalendarClock,
   Check,
   Clock3,
@@ -13,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
+import { BookmarksSvgIcon, JobDetailsSvgIcon } from '../../components/shared/JobseekerIcons';
 
 const API_ORIGIN = 'https://phinmaau-job-portal-atlas.onrender.com';
 
@@ -189,11 +189,11 @@ const AdminEmployerJobEditRequestReview = () => {
   return (
     <div className="min-h-screen bg-transparent">
       <div className="mx-auto max-w-7xl px-1 py-8">
-        <header className="mb-6 flex flex-col gap-4 rounded-2xl border border-[#e6edf5] bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] sm:flex-row sm:items-center sm:p-6">
+        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
           <button
             type="button"
             onClick={() => navigate(`/admin/employer-job-edit-requests/${requestId}`)}
-            className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 text-sm font-semibold text-black shadow-sm transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
+            className="inline-flex h-11 w-fit shrink-0 items-center justify-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 text-sm font-semibold text-black shadow-sm transition hover:border-[#2e66a6]/40 hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
           >
             <ArrowLeft size={17} /> Back
           </button>
@@ -201,7 +201,7 @@ const AdminEmployerJobEditRequestReview = () => {
           <img
             src={assetUrl(job.companyLogo || employerProfile.companyLogo || employerProfile.logo)}
             alt={`${companyName} logo`}
-            className="h-16 w-16 shrink-0 rounded-full border border-[#e6edf5] bg-white object-contain p-1"
+            className="h-14 w-14 shrink-0 rounded-full border border-[#e6edf5] bg-white object-contain p-1"
             onError={(event) => {
               event.currentTarget.onerror = null;
               event.currentTarget.src = '/images/default-company-logo.png';
@@ -209,9 +209,12 @@ const AdminEmployerJobEditRequestReview = () => {
           />
 
           <div className="min-w-0">
-            <h1 className="truncate text-2xl font-semibold text-black sm:text-3xl">{companyName}</h1>
-            <p className="mt-1 flex items-center gap-2 text-sm text-[#55708f] sm:text-base">
-              <Building2 size={16} className="shrink-0" />
+            <h1 className="flex min-w-0 items-center gap-2 text-xl font-semibold text-black sm:text-2xl">
+              <JobDetailsSvgIcon name="building" className="h-5 w-5 shrink-0 text-[#55708f]" />
+              <span className="truncate">{companyName}</span>
+            </h1>
+            <p className="mt-1 flex items-center gap-2 text-sm text-[#55708f]">
+              <BookmarksSvgIcon name="industry" className="h-4 w-4 shrink-0" />
               <span className="truncate">{industry}</span>
             </p>
           </div>
