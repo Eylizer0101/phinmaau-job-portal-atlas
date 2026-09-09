@@ -814,7 +814,7 @@ const ConfirmModal = ({
 
   return (
     <div className="fixed inset-0 z-[10020] flex items-center justify-center bg-black/45 px-4" role="dialog" aria-modal="true">
-      <div className={`w-full ${hasLongActions ? 'max-w-[560px]' : 'max-w-[420px]'} overflow-hidden rounded-[6px] bg-white shadow-[0_18px_55px_rgba(0,0,0,0.35)]`}>
+      <div className={`w-full ${hasLongActions ? 'max-w-[520px]' : 'max-w-[420px]'} overflow-hidden rounded-[6px] bg-white shadow-[0_18px_55px_rgba(0,0,0,0.35)]`}>
         <div className="flex items-start gap-4 px-6 py-6">
           <div className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center">
             <FaExclamationTriangle className="text-[42px] text-[#f4c21b]" />
