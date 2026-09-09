@@ -80,6 +80,23 @@ const ReviewStars = ({ rating }) => {
   );
 };
 
+const formatReviewAge = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const days = Math.max(0, Math.floor((Date.now() - date.getTime()) / 86400000));
+  if (days === 0) return "Today";
+  if (days < 30) return `${days} day${days === 1 ? "" : "s"} ago`;
+  const months = Math.floor(days / 30);
+  return `${months} month${months === 1 ? "" : "s"} ago`;
+};
+
+const getReviewOutcome = (value) => ({
+  still_in_process: "Still in process",
+  offered: "Offered",
+  not_offered: "Not offered",
+  withdrew: "Withdrew",
+}[String(value || "").toLowerCase()] || value || "Outcome not provided");
+
 const EMPLOYER_DOC_LABELS = {
   secRegistration: "SEC Registration",
   birRegistration: "BIR Registration",
@@ -1687,28 +1704,6 @@ const UserManagementDetails = () => {
       return result;
     }, {});
 
-    const getOutcomeLabel = (value) => {
-      const labels = {
-        received_offer: "Received offer",
-        rejected: "Rejected",
-        ghosted: "Ghosted",
-        withdrew: "Withdrew",
-        still_in_process: "Still in process",
-      };
-      return labels[String(value || "").trim()] || "Outcome not provided";
-    };
-
-    const getOutcomeBadgeClass = (value) => {
-      const classes = {
-        received_offer: "border-emerald-200 bg-emerald-50 text-emerald-700",
-        rejected: "border-red-200 bg-red-50 text-red-700",
-        ghosted: "border-amber-200 bg-amber-50 text-amber-700",
-        withdrew: "border-gray-200 bg-gray-100 text-gray-700",
-        still_in_process: "border-blue-200 bg-blue-50 text-blue-700",
-      };
-      return classes[String(value || "").trim()] || classes.still_in_process;
-    };
-
     const EmployerEmptyState = ({ icon = "document", title, subtitle }) => (
       <div className="mt-5 flex min-h-[220px] flex-col items-center justify-center rounded-[16px] border border-dashed border-[#d1d5db] bg-[#f9fafb] px-6 py-10 text-center">
         <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[#d1d5db] bg-white text-[#6b7280]">
@@ -2189,7 +2184,7 @@ const UserManagementDetails = () => {
                   key={review?._id || index}
                   className="rounded-2xl border border-[#dfe7f0] bg-white px-5 py-5 shadow-[0_10px_28px_rgba(46,102,166,0.06)] sm:px-6 sm:py-6"
                 >
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex min-w-0 items-start gap-3">
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#e1e8f0] bg-[#f0f4f8]">
                         {review?.reviewerProfileImage ? (
@@ -2208,66 +2203,50 @@ const UserManagementDetails = () => {
                       </div>
                       <div className="min-w-0">
                         <h4 className="text-[17px] font-bold text-black">{review?.reviewerName || "Anonymous User"}</h4>
-                        <p className="mt-0.5 text-sm text-black/55">
-                          {review?.roleAppliedFor || "Role not provided"} · {formatDate(review?.createdAt)}
+                        <p className="mt-1 text-sm text-black/55">
+                          {review?.roleAppliedFor || "Role not provided"}
+                          {formatReviewAge(review?.createdAt) ? ` · ${formatReviewAge(review.createdAt)}` : ""}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex shrink-0 flex-col items-end gap-3">
-                      <span className={cn(
-                        "inline-flex w-fit items-center rounded-full border px-3 py-1 text-xs font-semibold",
-                        getOutcomeBadgeClass(review?.outcome)
-                      )}>
-                        {getOutcomeLabel(review?.outcome)}
-                      </span>
-
-                      <ReviewStars rating={review?.processRating ?? review?.rating} />
-                    </div>
+                    <span className="rounded-full border border-[#dfe7f0] bg-transparent px-3 py-1 text-xs font-semibold text-black/60">
+                      {getReviewOutcome(review?.outcome)}
+                    </span>
                   </div>
 
-                  <p className="mt-5 whitespace-pre-line text-base leading-7 text-black/80">
-                    {review?.message || review?.review || review?.comment || "No written feedback provided."}
-                  </p>
+                  {review?.message || review?.review || review?.comment ? (
+                    <p className="mt-5 whitespace-pre-line text-[16px] leading-7 text-black/80">
+                      {review?.message || review?.review || review?.comment}
+                    </p>
+                  ) : null}
 
-                  <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     <div className="rounded-xl border border-[#dfe7f0] bg-[#fbfcfe] px-4 py-3">
-                      <div className="flex items-center gap-2 text-black/50">
-                        <Icon name="clock" className="h-5 w-5" />
-                        <span className="text-sm">First reply</span>
-                      </div>
-                      <p className="mt-1 text-lg font-bold text-black">
+                      <p className="text-sm text-black/50">First reply</p>
+                      <p className="mt-1 text-[18px] font-bold text-black">
                         {review?.daysToFirstResponse == null ? "Not provided" : `${Number(review.daysToFirstResponse) || 0}d`}
                       </p>
                     </div>
 
                     <div className="rounded-xl border border-[#dfe7f0] bg-[#fbfcfe] px-4 py-3">
-                      <div className="flex items-center gap-2 text-black/50">
-                        <Icon name="clock" className="h-5 w-5" />
-                        <span className="text-sm">Total length</span>
-                      </div>
-                      <p className="mt-1 text-lg font-bold text-black">
+                      <p className="text-sm text-black/50">Total length</p>
+                      <p className="mt-1 text-[18px] font-bold text-black">
                         {review?.totalProcessDays == null ? "Not provided" : `${Number(review.totalProcessDays) || 0}d`}
                       </p>
                     </div>
 
                     <div className="rounded-xl border border-[#dfe7f0] bg-[#fbfcfe] px-4 py-3">
-                      <div className="flex items-center gap-2 text-black/50">
-                        <Icon name="starOutline" className="h-5 w-5" />
-                        <span className="text-sm">Process</span>
-                      </div>
-                      <p className="mt-1 text-lg font-bold text-black">
+                      <p className="text-sm text-black/50">Process</p>
+                      <p className="mt-1 text-[18px] font-bold text-black">
                         {review?.processRating == null ? "Not provided" : `${Number(review.processRating) || 0}/5`}
                       </p>
                     </div>
 
                     <div className="rounded-xl border border-[#dfe7f0] bg-[#fbfcfe] px-4 py-3">
-                      <div className="flex items-center gap-2 text-black/50">
-                        <span className="text-lg leading-none">♧</span>
-                        <span className="text-sm">Apply again?</span>
-                      </div>
-                      <p className="mt-1 text-lg font-bold text-black">
-                        {review?.wouldApplyAgain == null ? "Not provided" : review.wouldApplyAgain ? "Yes" : "No"}
+                      <p className="text-sm text-black/50">Rating</p>
+                      <p className="mt-1 text-[18px] font-bold text-black">
+                        {`${Number(review?.rating ?? review?.processRating) || 0}/5`}
                       </p>
                     </div>
                   </div>
