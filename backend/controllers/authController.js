@@ -3382,18 +3382,10 @@ exports.requestEmailChangeVerification = async (req, res) => {
 
     user.settingsVerification = {
       ...(user.settingsVerification?.toObject?.() || user.settingsVerification || {}),
-      emailVerified: false,
       pendingEmail: emailLower,
       emailOtpHash: hashToken(code),
       emailOtpExpiresAt: expiresAt,
       emailOtpRequestedAt: new Date(),
-    };
-
-    user.emailVerification = {
-      ...(user.emailVerification?.toObject?.() || user.emailVerification || {}),
-      tokenHash: '',
-      expiresAt: null,
-      verifiedAt: null,
     };
 
     await user.save();
