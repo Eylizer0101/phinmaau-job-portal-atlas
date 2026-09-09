@@ -305,3 +305,49 @@ exports.approveRequest = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Unable to approve this request.' });
   }
 };
+
+exports.declineRequest = async (req, res) => {
+  try {
+    const request = await JobEditRequest.findById(req.params.requestId).populate('job');
+
+    if (!request) {
+      return res.status(404).json({ success: false, message: 'Edit request not found.' });
+    }
+
+    if (request.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: `This request has already been ${request.status}.`,
+      });
+    }
+
+    request.status = 'rejected';
+    request.reviewedBy = req.user._id;
+    request.reviewedAt = new Date();
+    request.unlockUntil = null;
+    await request.save();
+
+    await Notification.create({
+      user: request.employer,
+      type: 'system',
+      title: 'Edit Request Cancelled',
+      message: `Your request to edit “${request.job.title || 'Untitled Job'}” was declined.`,
+      relatedId: request.job._id,
+      relatedModel: 'Job',
+      link: `/employer/manage-jobs`,
+      metadata: {
+        requestId: request._id,
+        jobId: request.job._id,
+      },
+    });
+
+    return res.json({
+      success: true,
+      message: 'The employer’s edit request was cancelled.',
+      request: serializeRequest(request),
+    });
+  } catch (error) {
+    console.error('Decline job edit request error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to decline this request.' });
+  }
+};

@@ -12,5 +12,6 @@ router.post('/job/:jobId', authorize('employer'), controller.createRequest);
 router.get('/admin', authorize('admin'), controller.getAdminRequests);
 router.get('/admin/:requestId', authorize('admin'), controller.getAdminRequestDetails);
 router.patch('/admin/:requestId/approve', authorize('admin'), controller.approveRequest);
+router.patch('/admin/:requestId/decline', authorize('admin'), controller.declineRequest);
 
 module.exports = router;

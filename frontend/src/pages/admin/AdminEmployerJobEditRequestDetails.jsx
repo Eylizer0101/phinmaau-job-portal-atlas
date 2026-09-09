@@ -689,13 +689,7 @@ const AdminEmployerJobEditRequestDetails = () => {
   }, [modalSearch, modalStatus, modalTime, modalDateFrom, modalDateTo, request, sections]);
 
   const openReviewModal = () => {
-    setModalSearch('');
-    setModalStatus('pending');
-    setModalTime('all');
-    setModalSort('');
-    setModalDateFrom('');
-    setModalDateTo('');
-    setModalOpen(true);
+    navigate(`/admin/employer-job-edit-requests/${requestId}/review`);
   };
 
   const changeModalTime = (value) => {
