@@ -576,6 +576,23 @@ const UserManagementDetails = () => {
     });
   };
 
+  const getLatestDateEvent = (events = []) => {
+    const validEvents = events
+      .map((event) => {
+        const date = new Date(event?.value || "");
+        return {
+          ...event,
+          timestamp: date.getTime(),
+        };
+      })
+      .filter((event) => Number.isFinite(event.timestamp));
+
+    if (!validEvents.length) return null;
+    return validEvents.reduce((latest, event) =>
+      event.timestamp > latest.timestamp ? event : latest
+    );
+  };
+
   const formatYearRange = (item) => {
     const start = item?.startYear || (item?.startDate ? new Date(item.startDate).getFullYear() : "");
     const end = item?.yearGraduated || item?.endYear || (item?.isPresent ? "Present" : item?.endDate ? new Date(item.endDate).getFullYear() : "");
@@ -1059,6 +1076,11 @@ const UserManagementDetails = () => {
     navigate(`/admin/users/${userId}/resume-preview`);
   };
 
+  const jobseekerLatestDateEvent = getLatestDateEvent([
+    { label: "Registered On", value: user?.createdAt },
+    { label: "Last profile update", value: user?.lastProfileUpdateAt },
+  ]);
+
   const HeaderProfile = () => (
     <section className="overflow-hidden rounded-[20px] border border-[#d8e2ee] bg-white shadow-sm">
       <div className="flex flex-col gap-3 px-5 sm:px-7 lg:flex-row lg:items-center lg:gap-8">
@@ -1093,10 +1115,11 @@ const UserManagementDetails = () => {
 
           <div className="flex items-start gap-2 text-sm font-semibold text-gray-500 sm:text-[15px]">
             <Icon name="clock" className="h-4 w-4 shrink-0" />
-            <span className="space-y-1">
-              <span className="block whitespace-nowrap">Registered On: {formatDate(user?.createdAt, true)}</span>
-              <span className="block whitespace-nowrap">Last profile update: {user?.lastProfileUpdateAt ? formatDate(user.lastProfileUpdateAt, true) : "N/A"}</span>
-            </span>
+            {jobseekerLatestDateEvent ? (
+              <span className="whitespace-nowrap">
+                {jobseekerLatestDateEvent.label}: {formatDate(jobseekerLatestDateEvent.value, true)}
+              </span>
+            ) : null}
           </div>
         </div>
       </div>
@@ -1601,6 +1624,11 @@ const UserManagementDetails = () => {
     const coverUrl = getFileUrl(employerProfile.coverPhoto);
     const employerVerified =
       String(employerDocs.overallStatus || "").toLowerCase() === "verified" || user?.isVerified;
+    const employerLatestDateEvent = getLatestDateEvent([
+      { label: "Registered On", value: user.createdAt },
+      { label: "Last profile update", value: user.lastProfileUpdateAt },
+      { label: "Last edit request", value: user.latestEditRequestAt },
+    ]);
 
     const socialLinks = [
       { key: "facebookUrl", label: "Facebook", icon: "facebook", url: employerProfile.facebookUrl },
@@ -2388,11 +2416,14 @@ const UserManagementDetails = () => {
                     </button>
 
                     {!isArchiveView ? (
-                      <div className="w-full space-y-1 px-1 text-center text-xs text-black/60">
-                        <div className="whitespace-nowrap"><span className="font-semibold text-black">Registered On:</span>{" "}{formatDate(user.createdAt, true)}</div>
-                        <div className="whitespace-nowrap"><span className="font-semibold text-black">Last profile update:</span>{" "}{user.lastProfileUpdateAt ? formatDate(user.lastProfileUpdateAt, true) : "N/A"}</div>
-                        <div className="whitespace-nowrap"><span className="font-semibold text-black">Last edit request:</span>{" "}{user.latestEditRequestAt ? formatDate(user.latestEditRequestAt, true) : "N/A"}</div>
-                      </div>
+                      employerLatestDateEvent ? (
+                        <div className="w-full px-1 text-center text-xs text-black/60">
+                          <div className="whitespace-nowrap">
+                            <span className="font-semibold text-black">{employerLatestDateEvent.label}:</span>{" "}
+                            {formatDate(employerLatestDateEvent.value, true)}
+                          </div>
+                        </div>
+                      ) : null
                     ) : null}
                   </div>
                 </div>
