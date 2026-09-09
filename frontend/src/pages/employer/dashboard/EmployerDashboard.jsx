@@ -2259,7 +2259,7 @@ const EmployerDashboard = () => {
 
                     const recentJobBadges = [
                       expBadge || 'Experience not provided',
-                      wmLabel || 'Employment type not specified',
+                      wmLabel || 'Work mode not specified',
                       isOpenToFreshGraduate(job) ? 'Open fresh grad' : 'Availability not provided',
                     ]
                       .map((badge) => String(badge || '').trim())
