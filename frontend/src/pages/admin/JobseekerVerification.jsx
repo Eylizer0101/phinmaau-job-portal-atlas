@@ -999,12 +999,7 @@ const JobseekerVerification = () => {
 
         <Card className="overflow-hidden" padding={false}>
           <div className="border-t border-gray-100">
-            {loading ? (
-              <div className="py-16 text-center">
-                <div className="mx-auto inline-block h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-[#2e66a6]" />
-                <p className="mt-4 text-sm text-gray-600">Loading jobseekers...</p>
-              </div>
-            ) : visibleRows.length === 0 ? (
+            {loading ? null : visibleRows.length === 0 ? (
               <div className="py-14 text-center">
                 <h3 className="text-lg font-semibold text-gray-900">No jobseekers found</h3>
                 <p className="mt-2 text-sm text-gray-600">Try changing filters or search.</p>

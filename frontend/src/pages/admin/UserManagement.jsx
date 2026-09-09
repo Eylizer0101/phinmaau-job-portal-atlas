@@ -1731,15 +1731,7 @@ const UserManagement = () => {
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
           <div className="p-4 sm:p-6">
 
-            {loading && users.length === 0 ? (
-              <div className="py-14 text-center" role="status" aria-live="polite">
-                <div
-                  className="inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-[#2e66a6]"
-                  aria-hidden="true"
-                />
-                <p className="mt-4 text-sm text-gray-600">Loading users...</p>
-              </div>
-            ) : filteredUsers.length === 0 ? (
+            {loading && users.length === 0 ? null : filteredUsers.length === 0 ? (
               <div className="py-14 text-center">
                 <div
                   className="mx-auto mb-4 h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-gray-100 flex items-center justify-center"

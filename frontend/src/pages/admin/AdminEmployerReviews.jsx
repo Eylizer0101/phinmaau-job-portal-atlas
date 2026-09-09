@@ -215,11 +215,7 @@ const AdminEmployerReviews = () => {
               </div>
             </div>
 
-            {loading ? (
-              <div className="mt-8 rounded-2xl border border-dashed border-[#d8e2ee] bg-[#f8fbff] px-6 py-14 text-center text-sm text-black/50">
-                Loading reviews...
-              </div>
-            ) : error ? (
+            {loading ? null : error ? (
               <div className="mt-8 rounded-2xl border border-red-100 bg-red-50 px-6 py-5 text-sm text-red-700">
                 {error}
               </div>

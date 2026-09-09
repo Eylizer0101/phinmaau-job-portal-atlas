@@ -887,12 +887,7 @@ const AdminApplications = () => {
         </div>
 
         <div className="mt-7 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.06)]">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-600">
-              <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
-              <p className="mt-4 text-sm">Loading applications...</p>
-            </div>
-          ) : error ? (
+          {loading ? null : error ? (
             <div className="p-6 text-sm font-semibold text-red-600">{error}</div>
           ) : (
             <>

@@ -842,11 +842,7 @@ const AdminArchive = () => {
                 <span className="text-center">Actions</span>
               </div>
 
-              {loading ? (
-                <div className="flex min-h-[260px] items-center justify-center px-6 text-sm text-slate-500">
-                  Loading archived records...
-                </div>
-              ) : errorMessage ? (
+              {loading ? null : errorMessage ? (
                 <div className="flex min-h-[260px] items-center justify-center px-6 text-center text-sm font-medium text-red-600">
                   {errorMessage}
                 </div>

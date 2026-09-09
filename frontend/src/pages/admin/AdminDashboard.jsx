@@ -2029,11 +2029,7 @@ const AdminDashboard = () => {
           ))}
         </div>
 
-        {loading && !useSampleData ? (
-          <div className="flex h-80 items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-500">
-            <RefreshCw size={18} className="mr-2 animate-spin" /> Loading dashboard data...
-          </div>
-        ) : activeTab === "overview" ? (
+        {loading && !useSampleData ? null : activeTab === "overview" ? (
           <div className="grid gap-5 lg:grid-cols-2">
             <ChartCard title="Applications Trend" subtitle="Last records by campus">
               <LineChart data={charts.applicationTrends || []} keys={campusKeys} />

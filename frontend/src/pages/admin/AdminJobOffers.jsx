@@ -653,14 +653,7 @@ const AdminJobOffers = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
-                  {loading ? (
-                    <tr>
-                      <td colSpan="8" className="px-6 py-12 text-center text-sm text-gray-500">
-                        <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-[#2e66a6]" />
-                        <p className="mt-3">Loading job offers...</p>
-                      </td>
-                    </tr>
-                  ) : error ? (
+                  {loading ? null : error ? (
                     <tr>
                       <td colSpan="8" className="px-6 py-10">
                         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-700">

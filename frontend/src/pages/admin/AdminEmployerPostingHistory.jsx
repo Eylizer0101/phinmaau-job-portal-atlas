@@ -674,22 +674,7 @@ const AdminEmployerPostingHistory = () => {
     ? filteredJobs
     : filteredJobs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  if (loading) {
-    return (
-      <AdminLayout>
-        <div className="min-h-screen bg-[#f7f9fc] py-8">
-          <div className="flex min-h-[420px] items-center justify-center rounded-2xl border border-gray-200 bg-white">
-            <div className="text-center">
-              <div className="mx-auto h-11 w-11 animate-spin rounded-full border-4 border-gray-200 border-t-[#2e66a6]" />
-              <p className="mt-4 text-sm text-gray-500">
-                Loading posting history...
-              </p>
-            </div>
-          </div>
-        </div>
-      </AdminLayout>
-    );
-  }
+  if (loading) return null;
 
   return (
     <AdminLayout>

@@ -714,7 +714,7 @@ const AdminEmployerJobEditRequestDetails = () => {
     finally { setApproving(false); }
   };
 
-  if (loading) return <div className="flex min-h-[60vh] items-center justify-center"><RefreshCw className="animate-spin text-blue-700" /></div>;
+  if (loading) return null;
   if (error || !request) return <div className="mx-auto mt-10 max-w-xl rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-red-700">{error || 'Edit request not found.'}</div>;
 
   const employerProfile = request?.employer?.employerProfile || {};

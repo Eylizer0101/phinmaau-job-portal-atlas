@@ -1202,11 +1202,7 @@ const AdminJobApplicants = () => {
           </div>
 
           <div className={`${UI.card} mt-5 overflow-hidden`}>
-            {loading ? (
-              <div className="px-6 py-16 text-center text-sm text-[#6b7280]">
-                Loading applicants...
-              </div>
-            ) : error ? (
+            {loading ? null : error ? (
               <div className="px-6 py-16 text-center">
                 <p className="text-sm font-semibold text-red-600">{error}</p>
                 <button

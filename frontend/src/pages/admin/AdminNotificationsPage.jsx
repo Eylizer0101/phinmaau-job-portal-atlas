@@ -293,12 +293,7 @@ const AdminNotificationsPage = () => {
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          {loading ? (
-            <div className="flex h-64 flex-col items-center justify-center text-sm font-medium text-gray-500">
-              <RefreshCw size={22} className="mb-3 animate-spin" />
-              Loading notifications...
-            </div>
-          ) : filteredNotifications.length === 0 ? (
+          {loading ? null : filteredNotifications.length === 0 ? (
             <div className="flex h-64 flex-col items-center justify-center px-4 text-center">
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-gray-400">
                 <Bell size={28} />
