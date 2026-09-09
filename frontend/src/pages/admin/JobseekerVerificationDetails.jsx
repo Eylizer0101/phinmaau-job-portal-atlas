@@ -585,13 +585,13 @@ const ReasonDropdown = ({ value, onChange, options, placeholder = "Add a clear r
         aria-expanded={isOpen}
         className={cn(
           "flex h-10 w-full items-center justify-between rounded-lg border bg-white px-3 text-left text-[13px] font-normal leading-5 shadow-sm transition",
-          "border-[#CBD5E1] text-[#475467] hover:border-[#94A3B8]",
+          "border-[#CBD5E1] text-[#344054] hover:border-[#94A3B8]",
           "focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20",
           isOpen && "border-[#2e66a6] ring-2 ring-[#2e66a6]/10",
         )}
       >
-        <span className={cn("truncate", !value && "text-[#98A2B3]")}>{value || placeholder}</span>
-        <svg className={cn("ml-3 h-4 w-4 shrink-0 text-[#98A2B3] transition-transform", isOpen && "rotate-180")} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <span className={cn("truncate", !value && "text-[#667085]")}>{value || placeholder}</span>
+        <svg className={cn("ml-3 h-4 w-4 shrink-0 text-[#667085] transition-transform", isOpen && "rotate-180")} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="m6 9 6 6 6-6" />
         </svg>
       </button>
@@ -1985,7 +1985,7 @@ const JobseekerVerificationDetails = () => {
 
                   <div
                     id="confirm-approval-description"
-                    className="mt-2 text-sm leading-6 text-[#667085]"
+                    className="mt-2 text-sm leading-6 text-[#344054]"
                   >
                     <p>
                       Are you sure you want to approve this Job Seeker? This will
@@ -2046,7 +2046,7 @@ const JobseekerVerificationDetails = () => {
                 type="button"
                 onClick={() => !actionLoading && resetHoldModal()}
                 disabled={actionLoading}
-                className="absolute right-4 top-4 z-10 rounded p-1 text-[#667085] hover:bg-black/5"
+                className="absolute right-4 top-4 z-10 rounded p-1 text-[#475467] hover:bg-black/5"
                 aria-label="Close resubmission modal"
               >
                 <SvgIcon name="x" className="h-4 w-4" />
@@ -2065,7 +2065,7 @@ const JobseekerVerificationDetails = () => {
                         Request Resubmission
                       </h3>
 
-                      <p className="mt-2 text-sm leading-5 text-[#667085]">
+                      <p className="mt-2 text-sm leading-5 text-[#344054]">
                         Select the documents that need to be resubmitted and
                         choose at least one reason or write message for{" "}
                         <span className="font-bold text-black">{fullName}</span>
@@ -2075,7 +2075,7 @@ const JobseekerVerificationDetails = () => {
                   </div>
 
                   <div className="mt-5">
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#475467]">
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#344054]">
                       Documents needed
                     </p>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -2111,9 +2111,9 @@ const JobseekerVerificationDetails = () => {
                   </div>
 
                   <div className="mt-4">
-                    <label className="mb-1 block text-xs font-medium text-[#475467]">
+                    <label className="mb-1 block text-xs font-medium text-[#344054]">
                       Reason for Resubmission (Select at least one reason){" "}
-                      <span className="text-[#667085]">(Optional)</span>
+                      <span className="text-[#475467]">(Optional)</span>
                     </label>
                     <ReasonDropdown
                       value={holdSelectedReason}
@@ -2180,7 +2180,7 @@ const JobseekerVerificationDetails = () => {
             />
 
             <div
-              className="relative w-full max-w-[430px] overflow-visible rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
+              className="relative w-full max-w-[500px] overflow-visible rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="decline-modal-title"
@@ -2189,12 +2189,12 @@ const JobseekerVerificationDetails = () => {
                 type="button"
                 onClick={() => !actionLoading && resetDeclineModal()}
                 disabled={actionLoading}
-                className="absolute right-4 top-4 rounded p-1 text-[#667085] hover:bg-black/5"
+                className="absolute right-4 top-4 rounded p-1 text-[#475467] hover:bg-black/5"
                 aria-label="Close decline modal"
               >
                 <SvgIcon name="x" className="h-4 w-4" />
               </button>
-              <div className="px-5 pb-4 pt-5 sm:px-6">
+              <div className="px-6 pb-5 pt-6 sm:px-7">
                 <div className="flex items-start gap-3 pr-6">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FEE4E2] text-[#D92D20]">
                     <SvgIcon
@@ -2211,7 +2211,7 @@ const JobseekerVerificationDetails = () => {
                       Decline Verification
                     </h3>
 
-                    <p className="mt-2 text-sm leading-5 text-[#667085]">
+                    <p className="mt-2 text-sm leading-5 text-[#344054]">
                       Are you sure you want to decline{" "}
                       <span className="font-bold text-black">{fullName}</span>?
                       The Job Seeker will be notified that they do not meet the
@@ -2221,11 +2221,11 @@ const JobseekerVerificationDetails = () => {
                 </div>
 
                 <div className="mt-5">
-                  <label className="mb-1 block text-xs font-medium leading-5 text-[#475467]">
+                  <label className="mb-1 block text-[13px] font-medium leading-5 text-[#344054]">
                     Reason for Declining{" "}
                     <span className="font-semibold text-black">{fullName}</span>{" "}
                     (Select at least one reason){" "}
-                    <span className="text-[#667085]">(Optional)</span>
+                    <span className="text-[#475467]">(Optional)</span>
                   </label>
                   <ReasonDropdown
                     value={declineReason}
@@ -2241,14 +2241,14 @@ const JobseekerVerificationDetails = () => {
                   <textarea
                     value={declineMessage}
                     onChange={(e) => setDeclineMessage(e.target.value)}
-                    rows={4}
+                    rows={5}
                     placeholder="Add a clear reason why the credential was not verified and what the Job Seeker needs to do next."
-                    className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm leading-5 text-black placeholder:text-black/45 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
+                    className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm leading-5 text-black placeholder:text-[#667085] focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
                   />
                 </div>
               </div>
 
-              <div className="border-t border-[#E2E8F0] bg-[#F8FAFC] px-5 py-3 sm:px-6">
+              <div className="border-t border-[#E2E8F0] bg-[#F8FAFC] px-6 py-4 sm:px-7">
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="secondary"

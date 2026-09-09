@@ -332,7 +332,7 @@ const Modal = ({ open, companyName, onClose, onConfirm, loading, disabled }) => 
 
               <div
                 id="confirm-approval-description"
-                className="mt-2 text-sm leading-6 text-[#667085]"
+                className="mt-2 text-sm leading-6 text-[#344054]"
               >
                 <p>
                   Are you sure you want to approve this Employer? This will confirm
@@ -435,14 +435,14 @@ const ReasonDropdown = ({ value, onChange, options, placeholder = "Add a clear r
         aria-expanded={isOpen}
         className={cn(
           "flex h-11 w-full items-center justify-between rounded-lg border bg-white px-3 text-left text-[15px] font-normal leading-5 shadow-sm transition",
-          "border-[#CBD5E1] text-[#475467] hover:border-[#94A3B8]",
+          "border-[#CBD5E1] text-[#344054] hover:border-[#94A3B8]",
           "focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20",
           isOpen && "border-[#2e66a6] ring-2 ring-[#2e66a6]/10"
         )}
       >
-        <span className={cn("truncate", !value && "text-[#98A2B3]")}>{value || placeholder}</span>
+        <span className={cn("truncate", !value && "text-[#667085]")}>{value || placeholder}</span>
         <svg
-          className={cn("ml-3 h-4 w-4 shrink-0 text-[#98A2B3] transition-transform", isOpen && "rotate-180")}
+          className={cn("ml-3 h-4 w-4 shrink-0 text-[#667085] transition-transform", isOpen && "rotate-180")}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -1574,7 +1574,7 @@ const EmployerVerificationDetails = () => {
                 type="button"
                 onClick={() => !action && resetHoldModal()}
                 disabled={!!action}
-                className="absolute right-4 top-4 z-10 rounded p-1 text-[#667085] hover:bg-black/5"
+                className="absolute right-4 top-4 z-10 rounded p-1 text-[#475467] hover:bg-black/5"
                 aria-label="Close resubmission modal"
               >
                 <SvgIcon name="x" className="h-4 w-4" />
@@ -1590,7 +1590,7 @@ const EmployerVerificationDetails = () => {
                       <h3 id="hold-modal-title" className="text-2xl font-bold leading-tight tracking-[-0.02em] text-black">
                         Request Resubmission
                       </h3>
-                      <p className="mt-2 text-[15px] leading-6 text-[#667085]">
+                      <p className="mt-2 text-[15px] leading-6 text-[#344054]">
                         Select the documents that need to be resubmitted and choose at least one reason or write a message for{" "}
                         <span className="font-bold text-black">{companyName}</span>.
                       </p>
@@ -1598,7 +1598,7 @@ const EmployerVerificationDetails = () => {
                   </div>
 
                   <div className="mt-5">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.04em] text-[#475467]">Documents needed</p>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.04em] text-[#344054]">Documents needed</p>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {DOC_TYPES.map((doc) => {
                         const checked = holdDocTypes.includes(doc.key);
@@ -1627,8 +1627,8 @@ const EmployerVerificationDetails = () => {
                   </div>
 
                   <div className="mt-4">
-                    <label className="mb-1 block text-[15px] font-medium text-[#475467]">
-                      Reason for Resubmission (Select at least one reason) <span className="text-[#667085]">(Optional)</span>
+                    <label className="mb-1 block text-[15px] font-medium text-[#344054]">
+                      Reason for Resubmission (Select at least one reason) <span className="text-[#475467]">(Optional)</span>
                     </label>
                     <ReasonDropdown
                       value={holdSelectedReason}
@@ -1644,14 +1644,14 @@ const EmployerVerificationDetails = () => {
                       onChange={(e) => setHoldReason(e.target.value)}
                       rows={5}
                       placeholder="Explain what needs to be corrected or re-uploaded."
-                      className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-3 text-[15px] leading-6 text-black placeholder:text-[#667085] focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
+                      className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-3 text-[15px] leading-6 text-black placeholder:text-[#475467] focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
                     />
                   </div>
 
                 </div>
               </div>
 
-              <div className="bg-[#F8FAFC] px-7 pb-6 pt-2 sm:px-9">
+              <div className="bg-[#F8FAFC] px-8 pb-7 pt-3 sm:px-10">
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="secondary"
@@ -1690,7 +1690,7 @@ const EmployerVerificationDetails = () => {
             />
 
             <div
-              className="relative w-full max-w-[540px] overflow-visible rounded-2xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
+              className="relative w-full max-w-[570px] overflow-visible rounded-2xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="decline-modal-title"
@@ -1699,13 +1699,13 @@ const EmployerVerificationDetails = () => {
                 type="button"
                 onClick={() => !action && resetRejectModal()}
                 disabled={action === "reject"}
-                className="absolute right-4 top-4 z-10 rounded p-1 text-[#667085] hover:bg-black/5"
+                className="absolute right-4 top-4 z-10 rounded p-1 text-[#475467] hover:bg-black/5"
                 aria-label="Close decline modal"
               >
                 <SvgIcon name="x" className="h-4 w-4" />
               </button>
 
-              <div className="px-7 pb-5 pt-7 sm:px-9">
+              <div className="px-8 pb-6 pt-8 sm:px-10">
                 <div className="flex items-start gap-3 pr-6">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
                     <SvgIcon name="warning" className="h-5 w-5" />
@@ -1715,7 +1715,7 @@ const EmployerVerificationDetails = () => {
                     <h3 id="decline-modal-title" className="text-2xl font-bold leading-tight tracking-[-0.02em] text-black">
                       Decline Verification
                     </h3>
-                    <p className="mt-2 text-[15px] leading-6 text-[#667085]">
+                    <p className="mt-2 text-[15px] leading-6 text-[#344054]">
                       Are you sure you want to decline <span className="font-bold">{companyName}</span>? The Employer will be notified that they do not meet the PHINMA AU requirements.
                     </p>
                   </div>
@@ -1724,7 +1724,7 @@ const EmployerVerificationDetails = () => {
                 <div className="mt-5">
                   <label className="mb-1 block text-[15px] font-medium leading-5 text-[#475467]">
                     Reason for Declining <span className="font-semibold text-black">{companyName}</span>{" "}
-                    (Select at least one reason) <span className="text-[#667085]">(Optional)</span>
+                    (Select at least one reason) <span className="text-[#475467]">(Optional)</span>
                   </label>
                   <ReasonDropdown
                     value={rejectionReasons[0] || ""}
@@ -1740,12 +1740,12 @@ const EmployerVerificationDetails = () => {
                     onChange={(e) => setRejectionMessage(e.target.value)}
                     rows={5}
                     placeholder="Add a clear reason why the credential was not verified and what the Employer needs to do next."
-                    className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-3 text-[15px] leading-6 text-black placeholder:text-[#667085] focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
+                    className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-3 text-[15px] leading-6 text-black placeholder:text-[#475467] focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
                   />
                 </div>
               </div>
 
-              <div className="bg-[#F8FAFC] px-7 pb-6 pt-2 sm:px-9">
+              <div className="bg-[#F8FAFC] px-8 pb-7 pt-3 sm:px-10">
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="secondary"
