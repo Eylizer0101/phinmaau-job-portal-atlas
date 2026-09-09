@@ -650,7 +650,7 @@ const EmployerDashboard = () => {
               ? appStats.needsReview
               : allApplications.filter((app) => ['pending', 'for interview'].includes(app.status)).length;
 
-          const sortedJobs = [...allJobs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          const sortedJobs = [...postedJobs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
           const recentJobs = sortedJobs.slice(0, 3);
 
           setDashboardData({
@@ -709,7 +709,7 @@ const EmployerDashboard = () => {
               unread: finalUnread,
               interviews7d: prev?.messages?.interviews7d ?? 0,
             },
-            recentJobs: [...allJobs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 3),
+            recentJobs: [...postedJobs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 3),
             recentApplications: [],
             recentMessages: [],
           }));
@@ -2414,7 +2414,11 @@ const EmployerDashboard = () => {
                           ))}
                         </div>
 
-                        <div className="mt-4 w-full h-px bg-gray-300/80" />
+                        <div className="mt-auto border-t border-gray-300/80 pt-4">
+                          <span className="flex h-10 w-full items-center justify-center rounded-xl bg-[#1e4ba0] px-5 text-sm font-semibold text-white transition group-hover:bg-[#1b4290]">
+                            View Job
+                          </span>
+                        </div>
                       </Link>
                     );
                   })}                </div>
