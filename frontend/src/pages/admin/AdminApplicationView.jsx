@@ -537,6 +537,7 @@ const AdminApplicationView = () => {
   const employerProfile = employer?.employerProfile || {};
   const jobseeker = application?.jobseeker || {};
   const companyName = job.companyName || employerProfile.companyName || employer.fullName || "Company";
+  const industryName = job.industry || employerProfile.industry || "Industry not specified";
   const location = job.location || job.address || employerProfile.companyAddress || employer.companyAddress || "—";
   const requiredSkills = useMemo(() => getList(job.skillsRequired), [job.skillsRequired]);
   const perksAndBenefits = useMemo(() => {
@@ -699,15 +700,8 @@ const AdminApplicationView = () => {
                     </h1>
 
                     <div className="mt-2 inline-flex min-w-0 items-center gap-2 text-sm text-black/70">
-                      <svg className="h-4 w-4 text-black/60" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={1.6}
-                              d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3.75h1.5m-1.5 3.75h1.5m3-7.5H15m-1.5 3.75H15m-1.5 3.75H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"
-                            />
-                          </svg>
-                      <span className="min-w-0 truncate">{companyName}</span>
+                      <BuildingIcon className="h-4 w-4 shrink-0 text-black/60" />
+                      <span className="min-w-0 truncate">{industryName}</span>
                     </div>
 
                     <div className="mt-1 flex items-center gap-2 text-sm text-black/70">

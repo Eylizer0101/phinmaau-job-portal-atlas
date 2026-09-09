@@ -5,6 +5,7 @@ const Application = require('../models/Application');
 const SystemLog = require('../models/SystemLog');
 const CommunityPost = require('../models/CommunityPost');
 const Notification = require('../models/Notification');
+const JobEditRequest = require('../models/JobEditRequest');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { v2: cloudinary } = require('cloudinary');
@@ -1391,6 +1392,71 @@ exports.getUserById = async (req, res) => {
           .lean()
       : [];
 
+    const userData = user.toObject();
+
+    let latestEditRequestAt = null;
+    if (user.role === 'employer') {
+      const latestEditRequest = await JobEditRequest.findOne({ employer: user._id })
+        .select('createdAt')
+        .sort({ createdAt: -1 })
+        .lean();
+      latestEditRequestAt = latestEditRequest?.createdAt || null;
+
+      const reviews = Array.isArray(userData?.employerProfile?.reviews)
+        ? userData.employerProfile.reviews
+        : [];
+      const reviewerIds = [...new Set(
+        reviews
+          .map((review) => String(review?.reviewer || '').trim())
+          .filter(Boolean)
+      )];
+
+      if (reviewerIds.length) {
+        const reviewers = await User.find({ _id: { $in: reviewerIds } })
+          .select('_id profileImage')
+          .lean();
+        const reviewerImageMap = new Map(
+          reviewers.map((reviewer) => [
+            String(reviewer._id),
+            String(reviewer.profileImage || '').trim(),
+          ])
+        );
+
+        const reviewsWithoutImage = reviews.filter(
+          (review) =>
+            !reviewerImageMap.get(String(review?.reviewer || '')) &&
+            review?.application
+        );
+
+        if (reviewsWithoutImage.length) {
+          const applicationIds = reviewsWithoutImage.map((review) => review.application);
+          const reviewApplications = await Application.find({ _id: { $in: applicationIds } })
+            .select('_id jobseeker resumeSnapshot.user.profileImage')
+            .lean();
+          const applicationMap = new Map(
+            reviewApplications.map((application) => [String(application._id), application])
+          );
+
+          reviewsWithoutImage.forEach((review) => {
+            const application = applicationMap.get(String(review.application));
+            const reviewerId = String(review?.reviewer || application?.jobseeker || '');
+            const snapshotImage = String(
+              application?.resumeSnapshot?.user?.profileImage || ''
+            ).trim();
+            if (reviewerId && snapshotImage && !reviewerImageMap.get(reviewerId)) {
+              reviewerImageMap.set(reviewerId, snapshotImage);
+            }
+          });
+        }
+
+        userData.employerProfile.reviews = reviews.map((review) => ({
+          ...review,
+          reviewerProfileImage:
+            reviewerImageMap.get(String(review?.reviewer || '')) || '',
+        }));
+      }
+    }
+
     const applicationCount = applications.length;
     const jobPosts =
       user.role === 'employer'
@@ -1426,9 +1492,10 @@ exports.getUserById = async (req, res) => {
     res.status(200).json({
       success: true,
       user: {
-        ...user.toObject(),
+        ...userData,
         applicationCount,
         jobPostCount,
+        latestEditRequestAt,
         activityLogs,
       },
       applications,

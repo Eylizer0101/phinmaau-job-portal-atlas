@@ -5,7 +5,7 @@ import api from "../../services/api";
 import { normalizeUserToResumeData } from "../../components/shared/resumePrintTemplate";
 import Pagination from "../../components/shared/Pagination";
 import ApplicationHistoryCard from "../../components/admin/ApplicationHistoryCard";
-import { CompanyViewSvgIcon } from "../../components/shared/JobseekerIcons";
+import { CompanyViewSvgIcon, ExternalIcon, GlobeIcon } from "../../components/shared/JobseekerIcons";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
@@ -24,6 +24,7 @@ const Icon = ({ name, className = "h-4 w-4", ...props }) => {
     arrowLeft: <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />,
     user: <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />,
     briefcase: <path strokeLinecap="round" strokeLinejoin="round" d="M10 6h4a2 2 0 012 2v1h3a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2v-7a2 2 0 012-2h3V8a2 2 0 012-2zm0 3h4V8h-4v1z" />,
+    contract: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m3 0H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2z" />,
     shield: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.031 9-11.622 0-1.042-.133-2.052-.382-3.016z" />,
     academic: <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />,
     history: <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-2.64-6.36M21 3v6h-6" />,
@@ -40,6 +41,7 @@ const Icon = ({ name, className = "h-4 w-4", ...props }) => {
     external: <><path strokeLinecap="round" strokeLinejoin="round" d="M14 3h7v7" /><path strokeLinecap="round" strokeLinejoin="round" d="M10 14L21 3" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 14v6a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6" /></>,
     clock: <><circle cx="12" cy="12" r="9" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 7v5l3 2" /></>,
     starOutline: <path strokeLinecap="round" strokeLinejoin="round" d="M12 3.5l2.65 5.37 5.93.86-4.29 4.18 1.01 5.9L12 17.02 6.7 19.81l1.01-5.9-4.29-4.18 5.93-.86L12 3.5z" />,
+    image: <><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="8.5" cy="9" r="1.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 15l-5-5L5 20" /></>,
     facebook: <path fill="currentColor" stroke="none" d="M13.5 21v-7h2.4l.4-3h-2.8V9.1c0-.9.3-1.5 1.6-1.5H16V4.9c-.2 0-.9-.1-1.8-.1-1.8 0-3.1 1.1-3.1 3.2V11H9v3h2.3v7h2.2z" />,
     instagram: <><rect x="3.5" y="3.5" width="17" height="17" rx="4.5" /><circle cx="12" cy="12" r="3.75" /><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none" /></>,
     youtube: <path fill="currentColor" stroke="none" d="M21.58 7.19a2.9 2.9 0 00-2.04-2.05C17.74 4.65 12 4.65 12 4.65s-5.74 0-7.54.49A2.9 2.9 0 002.42 7.2C1.94 9 1.94 12 1.94 12s0 3 .48 4.81a2.9 2.9 0 002.04 2.05c1.8.49 7.54.49 7.54.49s5.74 0 7.54-.49a2.9 2.9 0 002.04-2.05C22.02 15 22.02 12 22.02 12s0-3-.44-4.81zM9.95 15.13V8.87L15.18 12l-5.23 3.13z" />,
@@ -1055,10 +1057,11 @@ const UserManagementDetails = () => {
         <div className="flex min-w-0 flex-1 flex-col items-start gap-1 py-1 lg:flex-row lg:items-center lg:justify-end lg:gap-6">
           <JobSeekerLevelBadgeCard currentRank={jobSeekerLevel} />
 
-          <div className="inline-flex items-center gap-2 whitespace-nowrap text-sm font-semibold text-gray-500 sm:text-[15px]">
+          <div className="flex items-start gap-2 text-sm font-semibold text-gray-500 sm:text-[15px]">
             <Icon name="clock" className="h-4 w-4 shrink-0" />
-            <span>
-              {user?.lastProfileUpdateAt ? "Last profile update" : "Registered On"}: {formatDate(user?.lastProfileUpdateAt || user?.createdAt, true)}
+            <span className="space-y-1">
+              <span className="block whitespace-nowrap">Registered On: {formatDate(user?.createdAt, true)}</span>
+              <span className="block whitespace-nowrap">Last profile update: {user?.lastProfileUpdateAt ? formatDate(user.lastProfileUpdateAt, true) : "N/A"}</span>
             </span>
           </div>
         </div>
@@ -1611,9 +1614,9 @@ const UserManagementDetails = () => {
       const hasMin = Number.isFinite(min) && min > 0;
       const hasMax = Number.isFinite(max) && max > 0;
 
-      if (hasMin && hasMax) return `₱${min.toLocaleString()} - ₱${max.toLocaleString()}`;
-      if (hasMin) return `From ₱${min.toLocaleString()}`;
-      if (hasMax) return `Up to ₱${max.toLocaleString()}`;
+      if (hasMin && hasMax) return `${min.toLocaleString("en-PH")} - ${max.toLocaleString("en-PH")}`;
+      if (hasMin) return `From ${min.toLocaleString("en-PH")}`;
+      if (hasMax) return `Up to ${max.toLocaleString("en-PH")}`;
       return "Salary not specified";
     };
 
@@ -1676,6 +1679,13 @@ const UserManagementDetails = () => {
             0
           ) / reviewItems.length
         : 0;
+
+    const reviewBreakdown = [5, 4, 3, 2, 1].reduce((result, star) => {
+      result[star] = reviewItems.filter(
+        (review) => Math.round(Number(review?.processRating ?? review?.rating) || 0) === star
+      ).length;
+      return result;
+    }, {});
 
     const getOutcomeLabel = (value) => {
       const labels = {
@@ -1775,32 +1785,29 @@ const UserManagementDetails = () => {
         <div className="flex flex-col gap-3 border-b border-[#edf2f7] pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
     
-            <h3 className="text-2xl font-bold text-black">Jobs at {companyName}</h3>
+            <h3 className="text-2xl font-bold text-black">Your Job Post at {companyName}</h3>
             <p className="mt-1 text-base text-black/65">
               {activeJobs.length} Open position{activeJobs.length === 1 ? "" : "s"}
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => navigate(`/admin/users/${userId}/posting-history`)}
-            className="inline-flex w-fit items-center gap-2 rounded-lg px-2 py-2 text-sm font-semibold text-black/70 transition hover:bg-[#f7faff] hover:text-[#2e66a6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-          >
-            View all jobs
-            <span
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10"
-              aria-hidden="true"
+          {activeJobs.length > 6 ? (
+            <button
+              type="button"
+              onClick={() => navigate(`/admin/users/${userId}/posting-history`)}
+              className="inline-flex w-fit items-center gap-2 text-[15px] font-medium text-[#2e66a6] transition hover:text-[#25578f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
             >
-              <span className="relative left-[2px] flex items-center justify-center text-[28px] font-extrabold leading-none">
-                →
-              </span>
-            </span>
-          </button>
+              View all jobs
+              <svg className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          ) : null}
         </div>
 
         {activeJobs.length ? (
           <div className="mt-5 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {activeJobs.map((job) => {
+            {activeJobs.slice(0, 6).map((job) => {
               const experienceBadge = formatExperienceBadge(job?.experienceLevel);
               const workModeBadge = normalizeWorkModeLabel(job?.workMode);
               const badges = [
@@ -1821,11 +1828,11 @@ const UserManagementDetails = () => {
               return (
                 <article
                   key={job._id}
-                  className="group flex min-h-[320px] flex-col rounded-2xl border border-[#e5e7eb] bg-white p-7 shadow-sm transition hover:shadow-md"
+                  className="group flex min-h-[350px] flex-col rounded-[22px] border border-[#e5e7eb] bg-white p-5 shadow-[0_6px_18px_rgba(0,0,0,0.045)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(33,44,97,0.13)]"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-start gap-4">
-                      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border border-gray-200 bg-white">
+                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-white">
                         {jobLogo ? (
                           <img
                             src={jobLogo}
@@ -1870,7 +1877,6 @@ const UserManagementDetails = () => {
                       </div>
                     </div>
 
-                    <JobStatusBadge status="open" />
                   </div>
 
                   <div
@@ -1899,8 +1905,8 @@ const UserManagementDetails = () => {
                     </div>
 
                     <div className="mt-2 flex items-center gap-2 text-sm text-gray-700">
-                      <Icon name="briefcase" className="h-4 w-4 shrink-0 text-gray-600" />
-                      <span className="truncate">{job?.jobType || "Full-time"}</span>
+                      <Icon name="contract" className="h-4 w-4 shrink-0 text-gray-600" />
+                      <span className="truncate">{job?.jobType || "Type not specified"}</span>
                     </div>
                   </div>
 
@@ -2132,46 +2138,83 @@ const UserManagementDetails = () => {
             </div>
           ) : (
             <div className="mt-6">
-              <EmployerEmptyState icon="document" title="No company photos added yet" />
+              <EmployerEmptyState icon="image" title="No company photos added yet" />
             </div>
           )}
         </section>
       ),
       reviews: (
         <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-7">
-          <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_390px_auto] xl:items-center">
             <div>
-              <h3 className="text-2xl font-bold text-black">Application process at {companyName}</h3>
+              <h3 className="text-2xl font-bold text-black">Application Process at {companyName}</h3>
               <p className="mt-1 text-base text-black/65">
                 {reviewItems.length} review{reviewItems.length === 1 ? "" : "s"}
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => navigate(`/admin/users/${userId}/reviews`)}
-              className="inline-flex items-center gap-2 rounded-lg px-2 py-2 text-[15px] font-medium text-[#2e66a6] transition hover:bg-[#f7faff] hover:text-[#25578f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
-            >
-              See all reviews <span
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-[28px] font-extrabold leading-none"
-              aria-hidden="true"
-            >
-              →
-            </span>
-            </button>
+            <div className="w-full max-w-[390px] xl:-translate-x-8">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-[125px_minmax(0,1fr)] sm:items-center">
+                <div className="text-center sm:border-r sm:border-[#dfe7f0] sm:pr-3">
+                  <p className="text-4xl font-bold leading-none text-[#27364a]">{averageReview.toFixed(1)}</p>
+                  <div className="mt-1 flex justify-center"><ReviewStars rating={averageReview} /></div>
+                  <p className="mt-1 text-xs text-black/65">{reviewItems.length} ratings in total</p>
+                </div>
+                <div className="space-y-1.5">
+                  {[5, 4, 3, 2, 1].map((star) => {
+                    const count = reviewBreakdown[star] || 0;
+                    const percent = reviewItems.length ? Math.min(100, (count / reviewItems.length) * 100) : 0;
+                    return (
+                      <div key={star} className="grid grid-cols-[14px_minmax(0,1fr)_24px] items-center gap-2">
+                        <span className="text-xs font-medium text-black/70">{star}</span>
+                        <div className="h-2 overflow-hidden rounded-full bg-[#e9edf2]">
+                          <div className="h-full rounded-full bg-[#f2b313]" style={{ width: `${percent}%` }} />
+                        </div>
+                        <span className="text-right text-xs text-black/65">{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {reviewItems.length > 6 ? (
+              <button
+                type="button"
+                onClick={() => navigate(`/admin/users/${userId}/reviews`)}
+                className="inline-flex items-center gap-2 text-[15px] font-medium text-[#2e66a6] transition hover:text-[#25578f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+              >
+                See all reviews
+                <svg className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            ) : null}
           </div>
 
           {reviewItems.length ? (
             <div className="mt-6 space-y-5">
-              {reviewItems.slice(0, 3).map((review, index) => (
+              {reviewItems.slice(0, 6).map((review, index) => (
                 <article
                   key={review?._id || index}
                   className="rounded-2xl border border-[#dfe7f0] bg-white px-5 py-5 shadow-[0_10px_28px_rgba(46,102,166,0.06)] sm:px-6 sm:py-6"
                 >
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex min-w-0 items-start gap-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#e1e8f0] bg-[#f0f4f8]">
-                        <Icon name="building" className="h-5 w-5 text-[#60758a]" />
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#e1e8f0] bg-[#f0f4f8]">
+                        {review?.reviewerProfileImage ? (
+                          <img
+                            src={getFileUrl(review.reviewerProfileImage)}
+                            alt={review?.reviewerName || "Reviewer"}
+                            className="h-full w-full object-cover"
+                            onError={(event) => {
+                              event.currentTarget.onerror = null;
+                              event.currentTarget.src = "/images/profile.png";
+                            }}
+                          />
+                        ) : (
+                          <img src="/images/profile.png" alt="Default reviewer" className="h-full w-full object-cover" />
+                        )}
                       </div>
                       <div className="min-w-0">
                         <h4 className="text-[17px] font-bold text-black">{review?.reviewerName || "Anonymous User"}</h4>
@@ -2243,7 +2286,7 @@ const UserManagementDetails = () => {
             </div>
           ) : (
             <div className="mt-6">
-              <EmployerEmptyState icon="document" title="No reviews yet" subtitle="Candidate feedback will appear here once submitted." />
+              <EmployerEmptyState icon="starOutline" title="No reviews yet" subtitle="Candidate feedback will appear here once submitted." />
             </div>
           )}
         </section>
@@ -2304,17 +2347,22 @@ const UserManagementDetails = () => {
                           <Icon name="mapPin" className="mt-0.5 h-4 w-4 shrink-0 text-[#2e66a6]" />
                           <span>{employerProfile.companyAddress || employerProfile.regionCity || "Location not provided"}</span>
                         </p>
-                        {employerProfile.companyWebsiteUrl && (
-                          <a
-                            href={normalizeUrl(employerProfile.companyWebsiteUrl)}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex min-w-0 items-center gap-2 font-medium text-[#2e66a6] hover:underline"
-                          >
-                            <Icon name="link" className="h-4 w-4 shrink-0" />
-                            <span className="truncate">{employerProfile.companyWebsiteUrl}</span>
-                          </a>
-                        )}
+                        <div className="flex min-w-0 items-center gap-2">
+                          <GlobeIcon className="h-4 w-4 shrink-0 text-[#2e66a6]" />
+                          {employerProfile.companyWebsiteUrl ? (
+                            <a
+                              href={normalizeUrl(employerProfile.companyWebsiteUrl)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex min-w-0 items-center gap-1.5 font-medium text-[#2e66a6] hover:underline"
+                            >
+                              <span className="truncate">{employerProfile.companyWebsiteUrl}</span>
+                              <ExternalIcon className="h-3.5 w-3.5 shrink-0" />
+                            </a>
+                          ) : (
+                            <span className="text-black/45">No website added yet.</span>
+                          )}
+                        </div>
 
                         <div className="flex flex-wrap items-center gap-2 pt-1">
                           <ReviewStars rating={averageReview} />
@@ -2332,10 +2380,16 @@ const UserManagementDetails = () => {
                   <div className="mt-5 flex w-full flex-col items-center gap-3 lg:mt-7 lg:w-[290px]">
                     <button
                       type="button"
+                      disabled={!jobPosts.length}
                       onClick={() => navigate(`/admin/users/${userId}/posting-history`)}
-                      className="group flex w-full items-center gap-3 rounded-2xl bg-[#2e66a6] px-4 py-3 text-left text-white shadow-sm transition hover:bg-[#285c96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+                      className={cn(
+                        "group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2",
+                        jobPosts.length
+                          ? "bg-[#2e66a6] text-white hover:bg-[#285c96]"
+                          : "cursor-not-allowed bg-gray-200 text-gray-500 shadow-none"
+                      )}
                     >
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/95 text-[#2e66a6]">
+                      <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", jobPosts.length ? "bg-white/95 text-[#2e66a6]" : "bg-white/70 text-gray-400")}>
                         <Icon name="history" className="h-5 w-5" />
                       </span>
 
@@ -2343,12 +2397,12 @@ const UserManagementDetails = () => {
                         <span className="block whitespace-nowrap text-[15px] font-semibold leading-tight">
                           Posting History
                         </span>
-                        <span className="mt-0.5 block whitespace-nowrap text-xs text-white/75">
-                          View job postings
+                        <span className={cn("mt-0.5 block whitespace-nowrap text-xs", jobPosts.length ? "text-white/75" : "text-gray-400")}>
+                          {jobPosts.length ? "View job postings" : "NO POSTING HISTORY"}
                         </span>
                       </span>
 
-                     <span className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-white transition group-hover:translate-x-0.5">
+                     <span className={cn("ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition", jobPosts.length ? "bg-white/15 text-white group-hover:translate-x-0.5" : "bg-white/50 text-gray-400")}>
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 5l7 7-7 7" />
                       </svg>
@@ -2356,11 +2410,10 @@ const UserManagementDetails = () => {
                     </button>
 
                     {!isArchiveView ? (
-                      <div className="w-full whitespace-nowrap px-1 text-center text-xs text-black/60">
-                        <span className="font-semibold text-black">
-                          {user.lastProfileUpdateAt ? "Last profile update:" : "Registered On:"}
-                        </span>{" "}
-                        {formatDate(user.lastProfileUpdateAt || user.createdAt, true)}
+                      <div className="w-full space-y-1 px-1 text-center text-xs text-black/60">
+                        <div className="whitespace-nowrap"><span className="font-semibold text-black">Registered On:</span>{" "}{formatDate(user.createdAt, true)}</div>
+                        <div className="whitespace-nowrap"><span className="font-semibold text-black">Last profile update:</span>{" "}{user.lastProfileUpdateAt ? formatDate(user.lastProfileUpdateAt, true) : "N/A"}</div>
+                        <div className="whitespace-nowrap"><span className="font-semibold text-black">Last edit request:</span>{" "}{user.latestEditRequestAt ? formatDate(user.latestEditRequestAt, true) : "N/A"}</div>
                       </div>
                     ) : null}
                   </div>
@@ -2373,11 +2426,11 @@ const UserManagementDetails = () => {
                 <div className="flex gap-5 overflow-x-auto">
                   {[
                     { key: "about", label: "About" },
-                    { key: "jobs", label: "Jobs" },
+                    { key: "jobs", label: `Jobs (${activeJobs.length})` },
                     { key: "credentials", label: "Credentials" },
                     { key: "social", label: "Social Media" },
                     { key: "gallery", label: "Gallery" },
-                    { key: "reviews", label: "Reviews" },
+                    { key: "reviews", label: `Reviews (${reviewItems.length})` },
                   ].map((tab) => (
                     <button
                       key={tab.key}

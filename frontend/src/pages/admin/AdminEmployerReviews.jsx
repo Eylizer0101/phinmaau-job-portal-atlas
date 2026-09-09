@@ -6,6 +6,16 @@ import Pagination from "../../components/shared/Pagination";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
+const API_ORIGIN = (process.env.REACT_APP_API_URL || "https://phinmaau-job-portal-atlas.onrender.com/api")
+  .replace(/\/api\/?$/, "");
+
+const getProfileImageUrl = (value) => {
+  const source = String(value || "").trim();
+  if (!source) return "/images/profile.png";
+  if (/^(https?:|data:|blob:)/i.test(source)) return source;
+  return `${API_ORIGIN}${source.startsWith("/") ? "" : "/"}${source}`;
+};
+
 const Icon = ({ name, className = "h-5 w-5" }) => {
   const common = {
     className,
@@ -160,7 +170,7 @@ const AdminEmployerReviews = () => {
 
           <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-7">
             <div>
-              <h1 className="text-3xl font-bold text-black">Application process at {companyName}</h1>
+              <h1 className="text-3xl font-bold text-black">Application Process at {companyName}</h1>
               <p className="mt-1 text-base text-black/60">
                 {reviews.length} review{reviews.length === 1 ? "" : "s"}
               </p>
@@ -176,7 +186,10 @@ const AdminEmployerReviews = () => {
               </div>
             ) : reviews.length === 0 ? (
               <div className="mt-8 rounded-2xl border border-dashed border-[#d8e2ee] bg-[#f8fbff] px-6 py-14 text-center">
-                <p className="font-semibold text-black">No reviews yet</p>
+                <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#2e66a6] shadow-sm ring-1 ring-[#d8e2ee]">
+                  <Icon name="starOutline" className="h-5 w-5" />
+                </span>
+                <p className="mt-4 font-semibold text-black">No reviews yet</p>
                 <p className="mt-1 text-sm text-black/50">Candidate feedback will appear here once submitted.</p>
               </div>
             ) : (
@@ -188,8 +201,16 @@ const AdminEmployerReviews = () => {
                   >
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div className="flex min-w-0 items-start gap-3">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#e1e8f0] bg-[#f0f4f8]">
-                          <Icon name="building" className="h-5 w-5 text-[#60758a]" />
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#e1e8f0] bg-[#f0f4f8]">
+                          <img
+                            src={getProfileImageUrl(review?.reviewerProfileImage)}
+                            alt={review?.reviewerName || "Reviewer"}
+                            className="h-full w-full object-cover"
+                            onError={(event) => {
+                              event.currentTarget.onerror = null;
+                              event.currentTarget.src = "/images/profile.png";
+                            }}
+                          />
                         </div>
                         <div className="min-w-0">
                           <h2 className="text-[17px] font-bold text-black">{review?.reviewerName || "Anonymous User"}</h2>
