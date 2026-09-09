@@ -460,8 +460,8 @@ const ApplyJobModal = ({ isOpen, onClose, job, onApplicationSubmitted, initialSt
 
               <div className="min-w-0 flex-1">
                 <h2 className="text-[26px] font-extrabold leading-[1.15] text-[#0f4f92]">
-                  Is your Employment
-                  <br className="hidden sm:block" /> Status still up to date?
+                  You’re Currently Listed
+                  <br className="hidden sm:block" /> as Employed
                 </h2>
               </div>
             </div>

@@ -1604,22 +1604,6 @@ const MyApplications = () => {
                               </button>
                             )}
 
-                            {jobId ? (
-                              <Link
-                                to={`/jobseeker/job-details/${jobId}`}
-                                state={{ sourcePage: 'myapplications' }}
-                                className={`${UI.btnBase} ${UI.btnMd} ${UI.btnInfo} ${UI.ring}`}
-                              >
-                                <SvgIcon name="eye" className="w-4 h-4" />
-                                Job
-                              </Link>
-                            ) : (
-                              <span className={`${UI.btnBase} ${UI.btnMd} ${UI.btnInfo} opacity-60 cursor-not-allowed`} aria-disabled="true">
-                                <SvgIcon name="eye" className="w-4 h-4" />
-                                Job
-                              </span>
-                            )}
-
                             {canRequestEmploymentChange && (
                               <button
                                 type="button"
@@ -1629,21 +1613,35 @@ const MyApplications = () => {
                                   setStatusRequestReason('');
                                 }}
                                 disabled={employmentRequestStatus === 'pending'}
-                                className={`${UI.btnBase} ${UI.btnMd} border border-[#2e66a6]/25 bg-white text-[#2e66a6] hover:bg-[#2e66a6]/5 ${UI.ring}`}
+                                className={`${UI.btnBase} ${UI.btnMd} w-[140px] border border-[#2e66a6]/25 bg-white text-[#2e66a6] hover:bg-[#2e66a6]/5 ${UI.ring}`}
                                 title={employmentRequestStatus === 'pending' ? 'Your request is awaiting employer review' : 'Request an employment status change'}
                               >
                                 <SvgIcon name="statusRequest" className="h-4 w-4" />
                                 {employmentRequestStatus === 'pending' ? 'Request Pending' : 'Status Request'}
                               </button>
                             )}
+
+                            {jobId ? (
+                              <Link
+                                to={`/jobseeker/job-details/${jobId}`}
+                                state={{ sourcePage: 'myapplications' }}
+                                className={`${UI.btnBase} ${UI.btnMd} w-[140px] ${UI.btnInfo} ${UI.ring}`}
+                              >
+                                <SvgIcon name="eye" className="w-4 h-4" />
+                                Job
+                              </Link>
+                            ) : (
+                              <span className={`${UI.btnBase} ${UI.btnMd} w-[140px] ${UI.btnInfo} opacity-60 cursor-not-allowed`} aria-disabled="true">
+                                <SvgIcon name="eye" className="w-4 h-4" />
+                                Job
+                              </span>
+                            )}
                           </div>
                         </div>
 
                         {isDeclinedCard && (
-                          <div className={`mt-4 pt-4 ${UI.divider}`}>
-                            <h4 className={`text-sm font-semibold ${UI.textPrimary}`}>Decline Feedback</h4>
-
-                            <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2">
+                          <div className={`mt-3 pt-3 ${UI.divider}`}>
+                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                               <div className="rounded-lg border border-[#d7e6f7] bg-[#f3f8fe] px-4 py-3">
                                 <p className="text-xs font-semibold uppercase tracking-wide text-[#5d6f84]">
                                   Reason
@@ -1653,8 +1651,8 @@ const MyApplications = () => {
                                 </p>
                               </div>
 
-                              <div className="rounded-lg border border-[#f3e4bc] bg-[#fffaf0] px-4 py-3">
-                                <p className="text-xs font-semibold uppercase tracking-wide text-[#7b6b48]">
+                              <div className="rounded-lg border border-[#d7e6f7] bg-[#f3f8fe] px-4 py-3">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-[#5d6f84]">
                                   Additional Comment
                                 </p>
                                 <p className="mt-1 text-sm font-medium leading-relaxed text-gray-800">
