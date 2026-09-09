@@ -1284,9 +1284,15 @@ exports.getEmployerJobs = async (req, res) => {
         .sort({ createdAt: -1 }),
       Job.countDocuments({
         ...baseQuery,
-        $or: [
-          { isArchived: false },
-          { isArchived: { $exists: false } }
+        $and: [
+          {
+            $or: [
+              { isArchived: false },
+              { isArchived: { $exists: false } }
+            ]
+          },
+          { status: { $ne: 'draft' } },
+          { isPublished: { $ne: false } }
         ]
       }),
       Job.countDocuments({ ...baseQuery, isArchived: true }),
