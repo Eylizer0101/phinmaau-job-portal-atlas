@@ -2258,9 +2258,9 @@ const EmployerDashboard = () => {
                       'px-2.5 py-1 rounded-full text-[10px] font-semibold whitespace-nowrap bg-white text-[#2e66a6] border border-[#2e66a6]/30 shadow-sm';
 
                     const recentJobBadges = [
-                      expBadge,
-                      wmLabel,
-                      isOpenToFreshGraduate(job) ? 'Open fresh grad' : '',
+                      expBadge || 'Experience not provided',
+                      wmLabel || 'Employment type not specified',
+                      isOpenToFreshGraduate(job) ? 'Open fresh grad' : 'Availability not provided',
                     ]
                       .map((badge) => String(badge || '').trim())
                       .filter(Boolean)
@@ -2384,7 +2384,7 @@ const EmployerDashboard = () => {
                                 d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                               />
                             </svg>
-                            <span className="truncate">{job?.jobType || 'Full Time Work'}</span>
+                            <span className="truncate">{String(job?.jobType || '').trim() || 'Employment type not specified'}</span>
                           </div>
                         </div>
 
