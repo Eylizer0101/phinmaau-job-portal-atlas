@@ -1749,13 +1749,13 @@ const UserManagementDetails = () => {
       return result;
     }, {});
 
-    const EmployerEmptyState = ({ icon = "document", title, subtitle }) => (
-      <div className="mt-5 flex min-h-[220px] flex-col items-center justify-center rounded-[16px] border border-dashed border-[#d1d5db] bg-[#f9fafb] px-6 py-10 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[#d1d5db] bg-white text-[#6b7280]">
-          <Icon name={icon} className="h-6 w-6" />
+    const EmployerEmptyState = ({ icon = "image", title, subtitle }) => (
+      <div className="mt-6 flex min-h-[260px] flex-col items-center justify-center rounded-[22px] border border-[#e6edf5] bg-[#fdfefe] px-6 py-12 text-center">
+        <div className="mb-4 text-black/45">
+          <CompanyViewSvgIcon name={icon} className="h-14 w-14" />
         </div>
-        <p className="mt-4 text-[15px] font-semibold text-black">{title}</p>
-        {subtitle && <p className="mt-1 max-w-md text-[13px] leading-relaxed text-[#6b7280]">{subtitle}</p>}
+        <p className="text-[16px] font-bold text-black/70">{title}</p>
+        {subtitle ? <p className="mt-2 text-[14px] text-black/60">{subtitle}</p> : null}
       </div>
     );
 
@@ -1825,7 +1825,7 @@ const UserManagementDetails = () => {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
     
-            <h3 className="text-[24px] font-bold text-black">Your Job Post at {companyName}</h3>
+            <h3 className="text-[24px] font-bold text-black">Jobs at {companyName}</h3>
             <p className="mt-1 text-[16px] text-black/65">
               {activeJobs.length} Active Position{activeJobs.length === 1 ? "" : "s"}
             </p>
@@ -1991,8 +1991,8 @@ const UserManagementDetails = () => {
           <div className="mt-5">
             <EmployerEmptyState
               icon="briefcase"
-              title="No active jobs yet."
-              subtitle="This company's current and previous job posts remain available through Posting History."
+              title="No open positions available."
+              subtitle="New opportunities from this company will appear here when available."
             />
           </div>
         )}
@@ -2081,7 +2081,7 @@ const UserManagementDetails = () => {
     const employerActiveContent = {
       about: (
         <section className="rounded-[18px] border border-[#d1d5db] bg-white p-8 shadow-[0_2px_6px_rgba(15,23,42,0.05)]">
-          <h3 className="text-[28px] font-semibold text-black">About</h3>
+          <h3 className="text-[24px] font-bold text-black">About {companyName}</h3>
 
           {String(
             employerProfile.companyDescription ||
@@ -2098,7 +2098,11 @@ const UserManagementDetails = () => {
 
             </div>
           ) : (
-            <EmployerEmptyState icon="document" title="No description added yet." />
+            <EmployerEmptyState
+              icon="file"
+              title="No company story yet."
+              subtitle="This company hasn’t added an About section yet."
+            />
           )}
         </section>
       ),
@@ -2107,7 +2111,10 @@ const UserManagementDetails = () => {
       social: (
         <section className="rounded-[18px] border border-[#d1d5db] bg-white p-7 shadow-[0_2px_6px_rgba(15,23,42,0.05)]">
           <div>
-            <h3 className="text-[30px] font-semibold text-black">Linked Accounts</h3>
+            <h3 className="text-[24px] font-bold text-black">Social Media</h3>
+            {!socialLinks.length ? (
+              <p className="mt-1 text-[16px] text-black/65">Official company links and online presence</p>
+            ) : null}
           </div>
 
           {socialLinks.length ? (
@@ -2132,15 +2139,21 @@ const UserManagementDetails = () => {
               ))}
             </div>
           ) : (
-            <EmployerEmptyState icon="link" title="No social accounts linked yet." />
+            <EmployerEmptyState
+              icon="link"
+              title="No social media accounts linked yet."
+              subtitle="This company has not linked any social media accounts yet."
+            />
           )}
         </section>
       ),
       gallery: (
         <section className="rounded-[18px] border border-[#d1d5db] bg-white p-7 shadow-[0_2px_6px_rgba(15,23,42,0.05)]">
           <div>
-            <h3 className="text-[30px] font-semibold text-black">Gallery</h3>
-            {galleryItems.length ? <p className="mt-1 text-[13px] text-[#6b7280]">Company photos and visual highlights</p> : null}
+            <h3 className="text-[24px] font-bold text-black">Gallery</h3>
+            <p className="mt-1 text-[16px] text-black/65">
+              Photos and visual highlights from {companyName}
+            </p>
           </div>
 
           {galleryItems.length ? (
@@ -2169,7 +2182,11 @@ const UserManagementDetails = () => {
               })}
             </div>
           ) : (
-            <EmployerEmptyState icon="image" title="No photos added yet." />
+            <EmployerEmptyState
+              icon="image"
+              title="No company photos available yet."
+              subtitle="Photos from this company will appear here once added."
+            />
           )}
         </section>
       ),
@@ -2177,7 +2194,7 @@ const UserManagementDetails = () => {
         <section className="rounded-[18px] border border-[#d1d5db] bg-white p-7 shadow-[0_2px_6px_rgba(15,23,42,0.05)]">
           <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_390px_auto] xl:items-center">
             <div>
-              <h3 className="text-[24px] font-bold text-black">Applications Process at {companyName}</h3>
+              <h3 className="text-[24px] font-bold text-black">Application Process at {companyName}</h3>
               <p className="mt-1 text-[16px] text-black/65">
                 {reviewItems.length} Total Application{reviewItems.length === 1 ? "" : "s"}
               </p>
@@ -2300,7 +2317,7 @@ const UserManagementDetails = () => {
             </div>
           ) : (
             <div className="mt-6">
-              <EmployerEmptyState icon="starOutline" title="No reviews yet" subtitle="Candidate feedback will appear here once submitted." />
+              <EmployerEmptyState icon="starOutline" title="No reviews yet." subtitle="Be the first to share your hiring process experience with this company." />
             </div>
           )}
         </section>
