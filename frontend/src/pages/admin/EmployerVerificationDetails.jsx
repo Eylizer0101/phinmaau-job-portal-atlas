@@ -311,7 +311,7 @@ const Modal = ({ open, companyName, onClose, onConfirm, loading, disabled }) => 
         />
 
         <div
-          className="relative w-full max-w-[520px] overflow-hidden rounded-xl border border-[#D8E0EA] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.22)]"
+          className="relative w-full max-w-[470px] overflow-hidden rounded-xl border border-[#D8E0EA] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.22)]"
           role="dialog"
           aria-modal="true"
           aria-labelledby="confirm-approval-title"
