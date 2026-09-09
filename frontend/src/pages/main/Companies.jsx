@@ -378,9 +378,13 @@ const Companies = () => {
       const loc = String(opts.location ?? selectedLocation).trim();
       const ind = String(opts.industry ?? selectedIndustry).trim();
 
-      if (s) params.search = s;
-      if (loc) params.location = loc;
-      if (ind) params.industry = ind;
+      if (s) {
+        // Main search has priority: search the full company dataset even when filters are selected.
+        params.search = s;
+      } else {
+        if (loc) params.location = loc;
+        if (ind) params.industry = ind;
+      }
 
       const res = await api.get("/companies/verified", { params });
       const list = res?.data?.companies || [];

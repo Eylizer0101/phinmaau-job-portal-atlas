@@ -1059,44 +1059,46 @@ const JobOffers = () => {
     const compareByTitle = (a, b) =>
       String(a?.title || "").localeCompare(String(b?.title || ""));
 
-    const filtered = (allJobs || [])
-      .filter((job) => jobMatchesSearch(job, debouncedSearch))
-      .filter((job) => jobMatchesSelectedLocations(job, selectedLocations))
-      .filter((job) =>
-        selectedJobTitles.length ? selectedJobTitles.includes(String(job.title || "").replaceAll('"', "").trim()) : true
-      )
-      .filter((job) =>
-        selectedEmploymentTypes.length ? selectedEmploymentTypes.includes(String(job.jobType || "").trim()) : true
-      )
-      .filter((job) =>
-        selectedEducationLevels.length ? selectedEducationLevels.includes(String(job.educationLevel || "").trim()) : true
-      )
-      .filter((job) =>
-        selectedCompanies.length ? selectedCompanies.includes(String(job.companyName || "").trim()) : true
-      )
-      .filter((job) =>
-        selectedWorkModes.length ? selectedWorkModes[0] === normalizeWorkModeLabel(job.workMode) : true
-      )
-      .filter((job) => {
-        if (!salaryMinInput.trim() || Number.isNaN(salaryMinValue)) return true;
-        if (job?.hideSalary) return false;
+    const hasSearchTerm = Boolean(String(debouncedSearch || '').trim());
 
-        const jobMin = toSalaryNumber(job?.salaryMin);
-        return jobMin !== null && jobMin >= salaryMinValue;
-      })
-      .filter((job) => {
-        if (!freshGraduate && !noExperience) return true;
+    const filtered = hasSearchTerm
+      ? (allJobs || []).filter((job) => jobMatchesSearch(job, debouncedSearch))
+      : (allJobs || [])
+          .filter((job) => jobMatchesSelectedLocations(job, selectedLocations))
+          .filter((job) =>
+            selectedJobTitles.length ? selectedJobTitles.includes(String(job.title || "").replaceAll('"', "").trim()) : true
+          )
+          .filter((job) =>
+            selectedEmploymentTypes.length ? selectedEmploymentTypes.includes(String(job.jobType || "").trim()) : true
+          )
+          .filter((job) =>
+            selectedEducationLevels.length ? selectedEducationLevels.includes(String(job.educationLevel || "").trim()) : true
+          )
+          .filter((job) =>
+            selectedCompanies.length ? selectedCompanies.includes(String(job.companyName || "").trim()) : true
+          )
+          .filter((job) =>
+            selectedWorkModes.length ? selectedWorkModes[0] === normalizeWorkModeLabel(job.workMode) : true
+          )
+          .filter((job) => {
+            if (!salaryMinInput.trim() || Number.isNaN(salaryMinValue)) return true;
+            if (job?.hideSalary) return false;
 
-        const matchesFreshGraduate = freshGraduate ? isFreshGraduateJob(job) : false;
-        const matchesNoExperience = noExperience ? isNoExperienceJob(job?.experienceLevel) : false;
+            const jobMin = toSalaryNumber(job?.salaryMin);
+            return jobMin !== null && jobMin >= salaryMinValue;
+          })
+          .filter((job) => {
+            if (!freshGraduate && !noExperience) return true;
 
-        if (freshGraduate && noExperience) return matchesFreshGraduate && matchesNoExperience;
-        if (freshGraduate) return matchesFreshGraduate;
-        return matchesNoExperience;
-      });
+            const matchesFreshGraduate = freshGraduate ? isFreshGraduateJob(job) : false;
+            const matchesNoExperience = noExperience ? isNoExperienceJob(job?.experienceLevel) : false;
+
+            if (freshGraduate && noExperience) return matchesFreshGraduate && matchesNoExperience;
+            if (freshGraduate) return matchesFreshGraduate;
+            return matchesNoExperience;
+          });
 
     const sorted = [...filtered];
-    const hasSearchTerm = Boolean(String(debouncedSearch || '').trim());
 
     if (hasSearchTerm && !sortBy) {
       sorted.sort((a, b) => {
