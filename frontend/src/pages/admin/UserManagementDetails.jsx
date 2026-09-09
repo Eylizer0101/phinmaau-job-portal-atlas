@@ -1710,12 +1710,12 @@ const UserManagementDetails = () => {
     };
 
     const EmployerEmptyState = ({ icon = "document", title, subtitle }) => (
-      <div className="flex min-h-[180px] flex-col items-center justify-center rounded-2xl border border-dashed border-[#d8e2ee] bg-[#f8fbff] px-6 py-10 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#2e66a6] shadow-sm ring-1 ring-[#d8e2ee]">
-          <Icon name={icon} className="h-5 w-5" />
+      <div className="mt-5 flex min-h-[220px] flex-col items-center justify-center rounded-[16px] border border-dashed border-[#d1d5db] bg-[#f9fafb] px-6 py-10 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[#d1d5db] bg-white text-[#6b7280]">
+          <Icon name={icon} className="h-6 w-6" />
         </div>
-        <p className="mt-4 text-sm font-bold text-black">{title}</p>
-        {subtitle && <p className="mt-1 max-w-md text-xs leading-relaxed text-black/50">{subtitle}</p>}
+        <p className="mt-4 text-[15px] font-semibold text-black">{title}</p>
+        {subtitle && <p className="mt-1 max-w-md text-[13px] leading-relaxed text-[#6b7280]">{subtitle}</p>}
       </div>
     );
 
@@ -1781,13 +1781,13 @@ const UserManagementDetails = () => {
     };
 
     const EmployerJobs = () => (
-      <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6">
-        <div className="flex flex-col gap-3 border-b border-[#edf2f7] pb-5 sm:flex-row sm:items-end sm:justify-between">
+      <section className="rounded-[18px] border border-[#d1d5db] bg-white p-7 shadow-[0_2px_6px_rgba(15,23,42,0.05)]">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
     
-            <h3 className="text-2xl font-bold text-black">Your Job Post at {companyName}</h3>
-            <p className="mt-1 text-base text-black/65">
-              {activeJobs.length} Open position{activeJobs.length === 1 ? "" : "s"}
+            <h3 className="text-[24px] font-bold text-black">Your Job Post at {companyName}</h3>
+            <p className="mt-1 text-[16px] text-black/65">
+              {activeJobs.length} Active Position{activeJobs.length === 1 ? "" : "s"}
             </p>
           </div>
 
@@ -1806,7 +1806,7 @@ const UserManagementDetails = () => {
         </div>
 
         {activeJobs.length ? (
-          <div className="mt-5 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             {activeJobs.slice(0, 6).map((job) => {
               const experienceBadge = formatExperienceBadge(job?.experienceLevel);
               const workModeBadge = normalizeWorkModeLabel(job?.workMode);
@@ -1951,7 +1951,7 @@ const UserManagementDetails = () => {
           <div className="mt-5">
             <EmployerEmptyState
               icon="briefcase"
-              title="No active job openings"
+              title="No active jobs yet."
               subtitle="This company's current and previous job posts remain available through Posting History."
             />
           </div>
@@ -2040,11 +2040,8 @@ const UserManagementDetails = () => {
 
     const employerActiveContent = {
       about: (
-        <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-6">
-          <div className="border-b border-[#edf2f7] pb-5">
-         
-            <h3 className="mt-1 text-xl font-bold text-black">About {companyName}</h3>
-          </div>
+        <section className="rounded-[18px] border border-[#d1d5db] bg-white p-8 shadow-[0_2px_6px_rgba(15,23,42,0.05)]">
+          <h3 className="text-[28px] font-semibold text-black">About</h3>
 
           {String(
             employerProfile.companyDescription ||
@@ -2053,7 +2050,7 @@ const UserManagementDetails = () => {
               ""
           ).trim() ? (
             <div className="mt-5 space-y-5">
-              <p className="whitespace-pre-line text-sm leading-7 text-black/65">
+              <p className="whitespace-pre-line text-[15px] leading-8 text-[#4b5563]">
                 {employerProfile.companyDescription ||
                   employerProfile.aboutCompany ||
                   employerProfile.description}
@@ -2061,58 +2058,53 @@ const UserManagementDetails = () => {
 
             </div>
           ) : (
-            <div className="mt-5">
-              <EmployerEmptyState title="No company description added yet" />
-            </div>
+            <EmployerEmptyState icon="document" title="No description added yet." />
           )}
         </section>
       ),
       jobs: <EmployerJobs />,
       credentials: <EmployerCredentials />,
       social: (
-        <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-7">
+        <section className="rounded-[18px] border border-[#d1d5db] bg-white p-7 shadow-[0_2px_6px_rgba(15,23,42,0.05)]">
           <div>
-            <h3 className="text-2xl font-bold text-black">Social Media of {companyName}</h3>
-            <p className="mt-1 text-base text-black/65">Official company links and online presence</p>
+            <h3 className="text-[30px] font-semibold text-black">Linked Accounts</h3>
           </div>
 
           {socialLinks.length ? (
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
               {socialLinks.map((item) => (
                 <a
                   key={item.key}
                   href={normalizeUrl(item.url)}
                   target="_blank"
                   rel="noreferrer"
-                  className="group flex min-w-0 items-center gap-4 rounded-2xl border border-[#dfe7f0] bg-white p-4 transition hover:border-[#2e66a6]/35 hover:bg-[#f8fbff]"
+                  className="group flex min-w-0 items-center gap-4 rounded-[14px] border border-[#d1d5db] bg-white px-4 py-4 transition"
                 >
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#dfe7f0] bg-[#f8fbff] text-[#2e66a6]">
-                    <Icon name={item.icon} className="h-5 w-5" />
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#d1d5db] bg-white text-[#6b7280]">
+                    <Icon name={item.icon} className="h-4 w-4" />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-base font-semibold text-black">{item.label}</span>
-                    <span className="mt-0.5 block truncate text-sm text-black/55">{item.url}</span>
+                    <span className="block text-sm font-semibold text-black">{item.label}</span>
+                    <span className="block truncate text-xs text-[#6b7280]">{item.url}</span>
                   </span>
                   <Icon name="external" className="h-5 w-5 shrink-0 text-[#2e66a6]" />
                 </a>
               ))}
             </div>
           ) : (
-            <div className="mt-6">
-              <EmployerEmptyState icon="link" title="No social accounts linked yet" />
-            </div>
+            <EmployerEmptyState icon="link" title="No social accounts linked yet." />
           )}
         </section>
       ),
       gallery: (
-        <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-7">
+        <section className="rounded-[18px] border border-[#d1d5db] bg-white p-7 shadow-[0_2px_6px_rgba(15,23,42,0.05)]">
           <div>
-            <h3 className="text-2xl font-bold text-black">Gallery of {companyName}</h3>
-            <p className="mt-1 text-base text-black/65">Photos and visual highlights from {companyName}</p>
+            <h3 className="text-[30px] font-semibold text-black">Gallery</h3>
+            {galleryItems.length ? <p className="mt-1 text-[13px] text-[#6b7280]">Company photos and visual highlights</p> : null}
           </div>
 
           {galleryItems.length ? (
-            <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {galleryItems.map((item, index) => {
                 const imgUrl = getFileUrl(item?.url || item?.imageUrl || item?.path || item);
                 if (!imgUrl) return null;
@@ -2120,15 +2112,15 @@ const UserManagementDetails = () => {
                 return (
                   <figure
                     key={item?._id || index}
-                    className="group overflow-hidden rounded-2xl border border-[#e2e8f0] bg-[#f8fbff]"
+                    className="group overflow-hidden rounded-[16px] border border-[#d1d5db] bg-white"
                   >
                     <img
                       src={imgUrl}
                       alt={item?.caption || `Company gallery ${index + 1}`}
-                      className="h-56 w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                      className="h-[220px] w-full object-cover"
                     />
                     {item?.caption && (
-                      <figcaption className="border-t border-[#edf2f7] bg-white px-4 py-3 text-sm text-black/60">
+                      <figcaption className="border-t border-[#d1d5db] bg-white px-4 py-3 text-[13px] text-[#4b5563]">
                         {item.caption}
                       </figcaption>
                     )}
@@ -2137,19 +2129,17 @@ const UserManagementDetails = () => {
               })}
             </div>
           ) : (
-            <div className="mt-6">
-              <EmployerEmptyState icon="image" title="No company photos added yet" />
-            </div>
+            <EmployerEmptyState icon="image" title="No photos added yet." />
           )}
         </section>
       ),
       reviews: (
-        <section className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm sm:p-7">
+        <section className="rounded-[18px] border border-[#d1d5db] bg-white p-7 shadow-[0_2px_6px_rgba(15,23,42,0.05)]">
           <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_390px_auto] xl:items-center">
             <div>
-              <h3 className="text-2xl font-bold text-black">Application Process at {companyName}</h3>
-              <p className="mt-1 text-base text-black/65">
-                {reviewItems.length} review{reviewItems.length === 1 ? "" : "s"}
+              <h3 className="text-[24px] font-bold text-black">Applications Process at {companyName}</h3>
+              <p className="mt-1 text-[16px] text-black/65">
+                {reviewItems.length} Total Application{reviewItems.length === 1 ? "" : "s"}
               </p>
             </div>
 
@@ -2295,12 +2285,12 @@ const UserManagementDetails = () => {
 
     return (
       <AdminLayout>
-        <div className="min-h-screen bg-[#f7f9fc] px-0 py-8">
-          <div className="w-full space-y-5">
+        <div className="min-h-screen">
+          <div className="mx-auto max-w-7xl space-y-5 px-1 py-8">
             <button
               type="button"
               onClick={handleBack}
-              className="inline-flex w-fit items-center gap-2 rounded-xl border border-[#d8e2ee] bg-white px-4 py-2.5 text-sm font-semibold text-black shadow-sm transition hover:border-[#2e66a6]/35 hover:bg-[#f7faff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
+              className="inline-flex w-fit items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2"
             >
               <Icon name="arrowLeft" className="h-4 w-4" />
               {isArchiveView ? "Back to Archive" : detailsBackLabel}
@@ -2308,19 +2298,20 @@ const UserManagementDetails = () => {
 
             {archiveBanner}
 
-            <section className="overflow-hidden rounded-2xl border border-[#dfe7f0] bg-white shadow-[0_16px_40px_rgba(46,102,166,0.08)]">
-              <div className="h-44 overflow-hidden bg-[#eaf2fb] sm:h-56 lg:h-64">
+            <section className="overflow-hidden rounded-[16px]">
+              <div className="relative h-[220px] overflow-hidden rounded-t-[16px] border border-b-0 border-[#d1d5db] bg-white sm:h-[260px] lg:h-[300px]">
                 {coverUrl ? (
                   <img src={coverUrl} alt={`${companyName} cover`} className="h-full w-full object-cover" />
                 ) : (
                   <img src="/images/company_9.png" alt="Company cover" className="h-full w-full object-cover" />
                 )}
+                <div className="absolute inset-0 bg-black/5" />
               </div>
 
-              <div className="px-5 pb-5 sm:px-7">
-                <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                  <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end">
-                   <div className="relative z-10 -translate-y-10 flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white bg-white text-[#2e66a6] shadow-md sm:-translate-y-12 sm:h-28 sm:w-28">
+              <div className="rounded-b-[16px] border border-t-0 border-[#d1d5db] bg-[#f8f9f9] px-3 pb-0 pt-0">
+                <div className="flex flex-col gap-5 px-2 pb-0 pt-0 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
+                   <div className="mt-2 flex h-[86px] w-[86px] shrink-0 items-center justify-center overflow-hidden rounded-[14px] border border-[#d1d5db] bg-[#f3f4f6] text-[#2e66a6] shadow-sm sm:mt-3">
                       {logoUrl && !brokenAvatar ? (
                         <img
                           src={logoUrl}
@@ -2333,18 +2324,18 @@ const UserManagementDetails = () => {
                       )}
                     </div>
 
-                    <div className="min-w-0 pb-1">
+                    <div className="mt-4 min-w-0 pt-2">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h1 className="break-words text-2xl font-bold leading-tight text-black sm:text-3xl">{companyName}</h1>
+                        <h1 className="break-words text-[28px] font-bold leading-[1.15] text-black">{companyName}</h1>
                       </div>
 
-                      <div className="mt-3 space-y-2 text-sm text-black/60">
-                        <p className="flex items-start gap-2">
-                          <CompanyViewSvgIcon name="industry" className="mt-0.5 h-4 w-4 shrink-0 text-[#2e66a6]" />
+                      <div className="mt-2 space-y-2">
+                        <p className="flex items-start gap-2 text-[13px] font-medium text-[#2e66a6]">
+                          <CompanyViewSvgIcon name="industry" className="mt-0.5 h-4 w-4 shrink-0 text-black" />
                           <span>{employerProfile.industry || "Industry not specified"}</span>
                         </p>
-                        <p className="flex items-start gap-2">
-                          <Icon name="mapPin" className="mt-0.5 h-4 w-4 shrink-0 text-[#2e66a6]" />
+                        <p className="flex items-start gap-2 text-[15px] text-[#374151]">
+                          <Icon name="mapPin" className="mt-0.5 h-4 w-4 shrink-0 text-black" />
                           <span>{employerProfile.companyAddress || employerProfile.regionCity || "Location not provided"}</span>
                         </p>
                         <div className="flex min-w-0 items-center gap-2">
@@ -2354,30 +2345,21 @@ const UserManagementDetails = () => {
                               href={normalizeUrl(employerProfile.companyWebsiteUrl)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex min-w-0 items-center gap-1.5 font-medium text-[#2e66a6] hover:underline"
+                              className="inline-flex min-w-0 items-center gap-1.5 text-[15px] text-[#2e66a6] hover:underline"
                             >
                               <span className="truncate">{employerProfile.companyWebsiteUrl}</span>
                               <ExternalIcon className="h-3.5 w-3.5 shrink-0" />
                             </a>
                           ) : (
-                            <span className="text-black/45">No website added yet.</span>
+                            <span className="text-[15px] text-[#6b7280]">No website added yet.</span>
                           )}
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2 pt-1">
-                          <ReviewStars rating={averageReview} />
-                          <span className="text-sm font-medium text-black/70">
-                            {averageReview.toFixed(1)}
-                          </span>
-                          <span className="text-sm text-black/45">
-                            ({reviewItems.length} review{reviewItems.length === 1 ? "" : "s"})
-                          </span>
-                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-5 flex w-full flex-col items-center gap-3 lg:mt-7 lg:w-[290px]">
+                  <div className="mt-5 flex w-full flex-col items-center gap-3 pb-4 lg:mt-6 lg:w-[290px] lg:pb-0">
                     <button
                       type="button"
                       disabled={!jobPosts.length}
@@ -2422,8 +2404,8 @@ const UserManagementDetails = () => {
 
               </div>
 
-              <div className="border-t border-[#e2e8f0] px-4 sm:px-6">
-                <div className="flex gap-5 overflow-x-auto">
+              <div className="mt-6 border-b border-[#d1d5db] px-4">
+                <div className="flex gap-8 overflow-x-auto">
                   {[
                     { key: "about", label: "About" },
                     { key: "jobs", label: `Jobs (${activeJobs.length})` },
@@ -2437,10 +2419,10 @@ const UserManagementDetails = () => {
                       type="button"
                       onClick={() => setActiveEmployerTab(tab.key)}
                       className={cn(
-                        "shrink-0 border-b-2 px-1 py-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2",
+                        "shrink-0 border-b-2 px-0 pb-3 pt-0 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2",
                         activeEmployerTab === tab.key
                           ? "border-[#2e66a6] text-[#2e66a6]"
-                          : "border-transparent text-black/50 hover:text-black"
+                          : "border-transparent text-[#6b7280] hover:text-black"
                       )}
                     >
                       {tab.label}
@@ -2450,7 +2432,7 @@ const UserManagementDetails = () => {
               </div>
             </section>
 
-            <div className="pb-4">
+            <div className="px-2 pb-4 pt-3">
               {activeEmployerTab === "postingHistory" ? <EmployerPostingHistory /> : employerActiveContent}
             </div>
 
