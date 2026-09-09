@@ -1613,7 +1613,7 @@ const MyApplications = () => {
                                   setStatusRequestReason('');
                                 }}
                                 disabled={employmentRequestStatus === 'pending'}
-                                className={`${UI.btnBase} ${UI.btnMd} w-[140px] border border-[#2e66a6]/25 bg-white text-[#2e66a6] hover:bg-[#2e66a6]/5 ${UI.ring}`}
+                                className={`${UI.btnBase} ${UI.btnMd} w-[140px] whitespace-nowrap text-[13px] border border-[#2e66a6]/25 bg-white text-[#2e66a6] hover:bg-[#2e66a6]/5 ${UI.ring}`}
                                 title={employmentRequestStatus === 'pending' ? 'Your request is awaiting employer review' : 'Request an employment status change'}
                               >
                                 <SvgIcon name="statusRequest" className="h-4 w-4" />

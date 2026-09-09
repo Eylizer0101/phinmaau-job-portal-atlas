@@ -1236,7 +1236,7 @@ const JobDetails = () => {
   const handleContactVerificationRedirect = useCallback(() => {
     setShowContactVerificationNotice(false);
     const section = contactVerificationTarget === 'mobile' ? 'mobile' : 'email';
-    navigate(`/jobseeker/settings?section=${section}&verify=1&resend=1`);
+    navigate(`/jobseeker/settings?section=${section}&verify=1`);
   }, [contactVerificationTarget, navigate]);
 
   const perksAndBenefitsList = useMemo(() => {

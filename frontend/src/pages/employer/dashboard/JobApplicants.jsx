@@ -656,8 +656,8 @@ const JobApplicants = () => {
                           <div className="flex flex-wrap items-center gap-3"><h2 className="text-xl font-bold text-[#111827]">{name}</h2><span className={`rounded-full px-3 py-1 text-xs font-semibold ${application.alreadyEmployed ? 'bg-amber-100 text-amber-800' : statusStyle(application.status)}`}>{application.alreadyEmployed ? 'Already Employed' : statusLabel(application.status)}</span></div>
                           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#7b8190]"><span className="inline-flex items-center gap-1.5"><SvgIcon name="mail" />{user.email || 'Not provided'}</span><span className="hidden text-[#c2c5ce] sm:inline">|</span><span className="inline-flex items-center gap-1.5"><SvgIcon name="phone" />{phone}</span></div>
                           <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
-                            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${levelStyle(level)}`}>★ {level}</span>
                             <span className="inline-flex items-center gap-1.5 text-[#7b8190]"><SvgIcon name="calendar" />Applied {formatRelativeTime(application.appliedAt || application.createdAt)}</span>
+                            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${levelStyle(level)}`}>★ {level}</span>
                             <span className="inline-flex overflow-hidden rounded-full border border-[#dbe3ee] bg-white text-xs font-semibold text-[#5f6b7a]">
                               <span className="inline-flex items-center gap-1.5 px-3 py-1"><CheckCircleIcon className="h-4 w-4 text-emerald-600" />Previously Hired: <span className="font-bold text-[#374151]">{application.applicationHistorySummary?.hired ?? 0}</span></span>
                               <span className="h-auto w-px bg-[#dbe3ee]" aria-hidden="true" />

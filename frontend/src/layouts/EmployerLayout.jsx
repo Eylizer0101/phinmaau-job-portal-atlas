@@ -884,7 +884,7 @@ const EmployerLayout = ({ children }) => {
         <div
           className={[
             "fixed inset-0 z-[70] flex items-center justify-center px-4",
-            "bg-black/50",
+            "bg-black/10",
             "transition-opacity duration-200",
             isLogoutModalVisible ? "opacity-100" : "opacity-0",
           ].join(" ")}
@@ -927,27 +927,11 @@ const EmployerLayout = ({ children }) => {
                 id="logout-desc"
                 className="mt-2 text-sm sm:text-base text-gray-600 text-center"
               >
-                You’ll be signed out of your account. You can sign in again anytime.
+                <span className="block">Are you sure you want to sign out of your account?</span>
+                <span className="block">You can sign in again anytime.</span>
               </p>
 
               <div className="mt-6 flex items-center justify-center gap-3">
-                {/* ✅ Log out (red) */}
-                <button
-                  ref={logoutPrimaryBtnRef}
-                  type="button"
-                  onClick={handleLogout}
-                  disabled={isLoggingOut}
-                  className={[
-                    "px-6 py-3 rounded-xl font-semibold",
-                    "bg-red-600 text-white hover:bg-red-700 transition-colors",
-                    focusRing,
-                    isLoggingOut ? "opacity-70 cursor-not-allowed" : "",
-                  ].join(" ")}
-                >
-                  {isLoggingOut ? "Logging out…" : "Log out"}
-                </button>
-
-                {/* ✅ Cancel (outline) */}
                 <button
                   ref={logoutCancelBtnRef}
                   type="button"
@@ -956,11 +940,26 @@ const EmployerLayout = ({ children }) => {
                   className={[
                     "px-6 py-3 rounded-xl font-semibold",
                     "bg-white text-gray-800 border border-gray-300 hover:bg-gray-50 transition-colors",
-                    focusRing,
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2",
                     isLoggingOut ? "opacity-70 cursor-not-allowed" : "",
                   ].join(" ")}
                 >
                   Cancel
+                </button>
+
+                <button
+                  ref={logoutPrimaryBtnRef}
+                  type="button"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className={[
+                    "px-6 py-3 rounded-xl font-semibold",
+                    "bg-red-600 text-white hover:bg-red-700 transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2",
+                    isLoggingOut ? "opacity-70 cursor-not-allowed" : "",
+                  ].join(" ")}
+                >
+                  {isLoggingOut ? "Logging out…" : "Sign out"}
                 </button>
               </div>
             </div>

@@ -207,7 +207,6 @@ const Settings = () => {
   const mobileSectionRef = useRef(null);
   const emailVerificationRef = useRef(null);
   const mobileVerificationRef = useRef(null);
-  const autoVerificationRequestRef = useRef('');
 
   const closeSuccessPopup = useCallback(() => {
     setSuccessPopup((current) => ({ ...current, open: false }));
@@ -275,12 +274,18 @@ const Settings = () => {
   const pendingPhone = verification.pendingPhoneNumber || '';
 
   useEffect(() => {
+    if (loadingUser || !me) return;
+    if (!emailVerified || pendingEmail) {
+      setShowEmailVerification(true);
+    }
+  }, [emailVerified, loadingUser, me, pendingEmail]);
+
+  useEffect(() => {
     if (loadingUser || !me) return undefined;
 
     const params = new URLSearchParams(window.location.search);
     const section = params.get('section');
     const shouldVerify = params.get('verify') === '1';
-    const shouldResend = params.get('resend') === '1';
 
     if (section === 'email') {
       const needsEmailVerification = !emailVerified || Boolean(pendingEmail);
@@ -294,26 +299,6 @@ const Settings = () => {
           : emailSectionRef.current;
         target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
-
-      if (shouldVerify && shouldResend && needsEmailVerification && autoVerificationRequestRef.current !== 'email') {
-        autoVerificationRequestRef.current = 'email';
-        api.post('/auth/settings/resend-email-verification')
-          .then(() => {
-            setEmailResendSeconds(180);
-            showSuccessPopup(
-              'Verification Email Sent!',
-              'A verification code has been sent to your email address. Enter the code below to verify your email.',
-              'info'
-            );
-            return fetchMe();
-          })
-          .catch((err) => {
-            setEmailVerifyMessage({
-              type: 'error',
-              text: err.response?.data?.message || 'Failed to send email verification code.',
-            });
-          });
-      }
 
       return () => window.cancelAnimationFrame(frame);
     }
@@ -331,39 +316,17 @@ const Settings = () => {
         target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
 
-      if (shouldVerify && shouldResend && needsPhoneVerification && autoVerificationRequestRef.current !== 'mobile') {
-        autoVerificationRequestRef.current = 'mobile';
-        api.post('/auth/settings/resend-phone-verification')
-          .then(() => {
-            setMobileResendSeconds(180);
-            showSuccessPopup(
-              'Verification Code Sent!',
-              'A verification code has been sent to your mobile number. Enter the code below to verify your number.',
-              'info'
-            );
-            return fetchMe();
-          })
-          .catch((err) => {
-            setMobileVerifyMessage({
-              type: 'error',
-              text: err.response?.data?.message || 'Failed to send mobile verification code.',
-            });
-          });
-      }
-
       return () => window.cancelAnimationFrame(frame);
     }
 
     return undefined;
   }, [
     emailVerified,
-    fetchMe,
     loadingUser,
     me,
     pendingEmail,
     pendingPhone,
     phoneVerified,
-    showSuccessPopup,
   ]);
 
   useEffect(() => {

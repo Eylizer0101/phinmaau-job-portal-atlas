@@ -2307,12 +2307,12 @@ const Applicants = () => {
                           </div>
 
                           <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
-                            <span className="rounded-full bg-[#e8edff] px-3 py-1 text-xs font-semibold text-[#2e66a6]">
-                              ★ {level}
-                            </span>
                             <span className="inline-flex items-center gap-1.5 text-[#7b8190]">
                               <Icon name="calendar" className="h-4 w-4" />
                               Applied {formatDate(app.appliedAt || app.createdAt)}
+                            </span>
+                            <span className="rounded-full bg-[#e8edff] px-3 py-1 text-xs font-semibold text-[#2e66a6]">
+                              ★ {level}
                             </span>
                             <span className="inline-flex overflow-hidden rounded-full border border-[#dbe3ee] bg-white text-xs font-semibold text-[#5f6b7a]">
                               <span className="inline-flex items-center gap-1.5 px-3 py-1">
