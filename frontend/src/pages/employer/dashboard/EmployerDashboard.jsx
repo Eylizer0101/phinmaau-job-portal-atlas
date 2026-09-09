@@ -602,7 +602,17 @@ const EmployerDashboard = () => {
       if (jobsResponse.data.success) {
         const allJobs = jobsResponse.data.jobs || [];
         const jobsStats = jobsResponse.data.stats || {};
-        const activeJobs = allJobs.filter((job) => job.isActive && job.isPublished);
+        const activeJobs = allJobs.filter((job) => {
+          const explicitStatus = String(job?.status || '').trim().toLowerCase();
+          const deadline = job?.applicationDeadline ? new Date(job.applicationDeadline) : null;
+          const isExpired = deadline && !Number.isNaN(deadline.getTime()) ? deadline < now : false;
+
+          if (explicitStatus === 'draft' || job?.isPublished === false) return false;
+          if (explicitStatus === 'filled' || explicitStatus === 'closed') return false;
+          if (isExpired) return false;
+
+          return job?.isActive === true;
+        });
 
         const expiringSoon =
           typeof jobsStats.expiringSoon === 'number'
