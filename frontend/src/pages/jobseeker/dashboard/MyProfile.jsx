@@ -810,10 +810,11 @@ const ConfirmModal = ({
   if (!open) return null;
 
   const confirmBg = tone === 'danger' ? COLORS.primary : COLORS.primary;
+  const hasLongActions = confirmText.length > 12 || cancelText.length > 12;
 
   return (
     <div className="fixed inset-0 z-[10020] flex items-center justify-center bg-black/45 px-4" role="dialog" aria-modal="true">
-      <div className="w-full max-w-[420px] overflow-hidden rounded-[6px] bg-white shadow-[0_18px_55px_rgba(0,0,0,0.35)]">
+      <div className={`w-full ${hasLongActions ? 'max-w-[560px]' : 'max-w-[420px]'} overflow-hidden rounded-[6px] bg-white shadow-[0_18px_55px_rgba(0,0,0,0.35)]`}>
         <div className="flex items-start gap-4 px-6 py-6">
           <div className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center">
             <FaExclamationTriangle className="text-[42px] text-[#f4c21b]" />
@@ -825,18 +826,18 @@ const ConfirmModal = ({
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-gray-200 bg-white px-5 py-4">
+        <div className="flex flex-col justify-end gap-2 border-t border-gray-200 bg-white px-5 py-4 sm:flex-row">
           <button
             type="button"
             onClick={onCancel}
-            className="h-11 min-w-[92px] rounded-[4px] border border-[#0b80ff] bg-white px-5 text-[16px] font-semibold text-[#0b80ff] transition hover:bg-blue-50"
+            className="h-11 min-w-[92px] whitespace-nowrap rounded-[4px] border border-[#0b80ff] bg-white px-5 text-[16px] font-semibold text-[#0b80ff] transition hover:bg-blue-50"
           >
             {cancelText}
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="h-11 min-w-[92px] rounded-[4px] px-5 text-[16px] font-semibold text-white transition hover:opacity-90"
+            className="h-11 min-w-[92px] whitespace-nowrap rounded-[4px] px-5 text-[16px] font-semibold text-white transition hover:opacity-90"
             style={{ backgroundColor: confirmBg }}
           >
             {confirmText}
@@ -6293,7 +6294,10 @@ const MyProfile = () => {
           },
         }));
         const submittedLabel = documentConfig.find((item) => item.type === docType)?.title || 'Credential';
-        showSuccess('Credential Submitted', `The “${submittedLabel}” credential has been submitted successfully!`);
+        showSuccess(
+          'Credential Submitted',
+          <>The <strong>“{submittedLabel}”</strong> credential has been submitted successfully!</>
+        );
       }
     } catch (err) {
       console.error(err);
@@ -6309,7 +6313,9 @@ const MyProfile = () => {
   const handleCredentialRemove = (docType, title) => {
     openCredentialConfirmation({
       title: 'Remove Credential?',
-      message: `Are you sure you want to remove your “${title}” credential? You can upload the credential again anytime.`,
+      message: (
+        <>Are you sure you want to remove your <strong>“{title}”</strong> credential? You can upload the credential again anytime.</>
+      ),
       confirmText: 'Yes, Remove Credential',
       cancelText: 'Keep Credential',
       tone: 'danger',
@@ -6327,7 +6333,10 @@ const MyProfile = () => {
               [docType]: { status: 'not_submitted', url: '', filename: '', fileSize: 0, uploadedAt: null },
             }));
             closeConfirmModal();
-            showSuccess('Credential Removed', `Your “${title}” credential has been removed successfully.`);
+            showSuccess(
+              'Credential Removed',
+              <>Your <strong>“{title}”</strong> credential has been removed successfully.</>
+            );
           }
         } catch (err) {
           closeConfirmModal();
@@ -6345,7 +6354,9 @@ const MyProfile = () => {
   const handleCredentialReplace = (title, openFilePicker) => {
     openCredentialConfirmation({
       title: 'Replace Credential?',
-      message: `Are you sure you want to replace your current “${title}” credential? Your new file will replace the existing credential.`,
+      message: (
+        <>Are you sure you want to replace your current <strong>“{title}”</strong> credential? Your new file will replace the existing credential.</>
+      ),
       confirmText: 'Yes, Replace Credential',
       cancelText: 'Keep Current',
       onConfirm: () => {
