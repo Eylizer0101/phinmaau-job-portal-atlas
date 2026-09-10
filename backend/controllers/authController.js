@@ -1992,7 +1992,7 @@ exports.updateProfile = async (req, res) => {
       const cleanRequiredValue = (value) => String(value ?? '').trim();
       const basicProfileKeys = ['phoneNumber', 'address', 'campus', 'course', 'yearGraduated'];
       const personalProfileKeys = [
-        'preferredWorkMode', 'employmentType', 'employmentStatus', 'willingToRelocate', 'howSoonCanYouStart',
+        'preferredWorkMode', 'employmentType', 'willingToRelocate', 'howSoonCanYouStart',
         'experience', 'preferredLanguage', 'educationalAttainment', 'studyField',
         'minimumSalary', 'maximumSalary', 'height', 'weight', 'nationality',
         'gender', 'civilStatus', 'birthday',
@@ -3717,25 +3717,12 @@ exports.validateResubmitDocumentToken = async (req, res) => {
 
     const { accountType, resubmitRequest, labels } = found;
 
-    const requestedDocTypes = [...new Set(
-      (Array.isArray(resubmitRequest.docTypes) && resubmitRequest.docTypes.length
-        ? resubmitRequest.docTypes
-        : [resubmitRequest.docType])
-        .map((value) => String(value || '').trim())
-        .filter((value) => labels[value])
-    )];
-    const completedDocTypes = [...new Set(
-      (Array.isArray(resubmitRequest.completedDocTypes) ? resubmitRequest.completedDocTypes : [])
-        .map((value) => String(value || '').trim())
-        .filter((value) => requestedDocTypes.includes(value))
-    )];
-    const remainingDocTypes = requestedDocTypes.filter((value) => !completedDocTypes.includes(value));
-    const docType = remainingDocTypes[0] || requestedDocTypes[0] || '';
+    const docType = String(resubmitRequest.docType || '').trim();
     const reasonMessage = String(resubmitRequest.reasonMessage || '').trim();
     const expiresAt = resubmitRequest.expiresAt ? new Date(resubmitRequest.expiresAt) : null;
     const usedAt = resubmitRequest.usedAt ? new Date(resubmitRequest.usedAt) : null;
 
-    if (!docType || !labels[docType] || !remainingDocTypes.length) {
+    if (!docType || !labels[docType]) {
       return res.status(400).json({
         success: false,
         message: 'This resubmit link is invalid or expired.',
@@ -3760,11 +3747,7 @@ exports.validateResubmitDocumentToken = async (req, res) => {
       success: true,
       accountType,
       docType,
-      docTypes: requestedDocTypes,
-      completedDocTypes,
-      remainingDocTypes,
       docLabel: labels[docType] || docType,
-      docLabels: requestedDocTypes.map((value) => labels[value] || value),
       reasonMessage,
       expiresAt,
     });
@@ -3810,24 +3793,11 @@ exports.resubmitDocument = async (req, res) => {
 
     const { accountType, user, resubmitRequest, labels } = found;
 
-    const requestedDocTypes = [...new Set(
-      (Array.isArray(resubmitRequest.docTypes) && resubmitRequest.docTypes.length
-        ? resubmitRequest.docTypes
-        : [resubmitRequest.docType])
-        .map((value) => String(value || '').trim())
-        .filter((value) => labels[value])
-    )];
-    const completedDocTypes = [...new Set(
-      (Array.isArray(resubmitRequest.completedDocTypes) ? resubmitRequest.completedDocTypes : [])
-        .map((value) => String(value || '').trim())
-        .filter((value) => requestedDocTypes.includes(value))
-    )];
-    const requestedBodyDocType = String(req.body?.docType || '').trim();
-    const docType = requestedBodyDocType || requestedDocTypes.find((value) => !completedDocTypes.includes(value)) || '';
+    const docType = String(resubmitRequest.docType || '').trim();
     const expiresAt = resubmitRequest.expiresAt ? new Date(resubmitRequest.expiresAt) : null;
     const usedAt = resubmitRequest.usedAt ? new Date(resubmitRequest.usedAt) : null;
 
-    if (!docType || !labels[docType] || !requestedDocTypes.includes(docType) || completedDocTypes.includes(docType)) {
+    if (!docType || !labels[docType]) {
       return res.status(400).json({
         success: false,
         message: 'This resubmit link is invalid or expired.',
@@ -3868,22 +3838,15 @@ exports.resubmitDocument = async (req, res) => {
         format: req.file.format || '',
       };
 
-      const nextCompletedDocTypes = [...new Set([...completedDocTypes, docType])];
-      const remainingDocTypes = requestedDocTypes.filter((value) => !nextCompletedDocTypes.includes(value));
-      const allRequestedDocumentsSubmitted = remainingDocTypes.length === 0;
-
-      verificationDocs.overallStatus = allRequestedDocumentsSubmitted ? 'pending' : 'hold';
-      if (allRequestedDocumentsSubmitted) verificationDocs.adminRemarks = '';
+      verificationDocs.overallStatus = 'pending';
+      verificationDocs.adminRemarks = '';
       if (user.isVerified !== true) {
         verificationDocs.verifiedBy = null;
         verificationDocs.verifiedAt = null;
       }
       verificationDocs.resubmitRequest = {
         ...resubmitRequest,
-        docType: remainingDocTypes[0] || docType,
-        docTypes: requestedDocTypes,
-        completedDocTypes: nextCompletedDocTypes,
-        usedAt: allRequestedDocumentsSubmitted ? new Date() : null,
+        usedAt: new Date(),
       };
 
       const accountWasVerified = isApprovedJobseekerAccount(user);
@@ -3906,8 +3869,6 @@ exports.resubmitDocument = async (req, res) => {
         accountType: 'jobseeker',
         docType,
         docLabel: labels[docType] || docType,
-        remainingDocTypes,
-        allRequestedDocumentsSubmitted,
       });
     }
 
@@ -3939,18 +3900,11 @@ exports.resubmitDocument = async (req, res) => {
         format: req.file.format || '',
       };
 
-      const nextCompletedDocTypes = [...new Set([...completedDocTypes, docType])];
-      const remainingDocTypes = requestedDocTypes.filter((value) => !nextCompletedDocTypes.includes(value));
-      const allRequestedDocumentsSubmitted = remainingDocTypes.length === 0;
-
-      verificationDocs.overallStatus = allRequestedDocumentsSubmitted ? 'pending' : 'hold';
-      if (allRequestedDocumentsSubmitted) verificationDocs.remarks = '';
+      verificationDocs.overallStatus = 'pending';
+      verificationDocs.remarks = '';
       verificationDocs.resubmitRequest = {
         ...resubmitRequest,
-        docType: remainingDocTypes[0] || docType,
-        docTypes: requestedDocTypes,
-        completedDocTypes: nextCompletedDocTypes,
-        usedAt: allRequestedDocumentsSubmitted ? new Date() : null,
+        usedAt: new Date(),
       };
 
       user.employerProfile.verificationDocs = verificationDocs;
@@ -3970,8 +3924,6 @@ exports.resubmitDocument = async (req, res) => {
         accountType: 'employer',
         docType,
         docLabel: labels[docType] || docType,
-        remainingDocTypes,
-        allRequestedDocumentsSubmitted,
       });
     }
 

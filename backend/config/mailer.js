@@ -294,15 +294,11 @@ const sendPasswordResetOtpEmail = async ({ to, fullName, otp, expiresInMinutes }
   });
 };
 
-const sendResubmitDocumentEmail = async ({ to, fullName, docLabel, docLabels = [], reasonMessage, resubmitUrl }) => {
+const sendResubmitDocumentEmail = async ({ to, fullName, docLabel, reasonMessage, resubmitUrl }) => {
   if (!to) throw new Error('Recipient email missing');
 
   const safeName = escapeHtml(fullName || 'User');
-  const normalizedDocLabels = (Array.isArray(docLabels) && docLabels.length ? docLabels : [docLabel || 'Document'])
-    .map((label) => escapeHtml(label))
-    .filter(Boolean);
-  const safeDocLabel = normalizedDocLabels[0] || 'Document';
-  const safeDocList = normalizedDocLabels.map((label) => `<li style="margin:4px 0;">${label}</li>`).join('');
+  const safeDocLabel = escapeHtml(docLabel || 'Document');
   const safeReason = escapeHtml(reasonMessage || 'Please upload a clearer and valid document.');
   const safeResubmitUrl = escapeHtml(resubmitUrl);
 
@@ -322,18 +318,13 @@ const sendResubmitDocumentEmail = async ({ to, fullName, docLabel, docLabels = [
           </p>
 
           <p style="font-size:14px; color:#374151; line-height:1.6;">
-            ${normalizedDocLabels.length > 1
-              ? 'Some of your verification documents need to be resubmitted.'
-              : 'One of your verification documents needs to be resubmitted.'}
+            One of your verification documents needs to be resubmitted.
           </p>
 
           <div style="margin-top:20px; padding:15px; background:#fff8eb; border:1px solid #f5d7a1; border-radius:6px;">
             <p style="margin:0 0 10px 0; font-size:14px; color:#111827;">
-              <strong>${normalizedDocLabels.length > 1 ? 'Documents to resubmit:' : 'Document to resubmit:'}</strong>
+              <strong>Document to resubmit:</strong> ${safeDocLabel}
             </p>
-            ${normalizedDocLabels.length > 1
-              ? `<ul style="margin:0 0 10px 18px; padding:0; font-size:14px; color:#111827;">${safeDocList}</ul>`
-              : `<p style="margin:0 0 10px 0; font-size:14px; color:#111827;">${safeDocLabel}</p>`}
 
             <p style="margin:0; font-size:14px; color:#6b4b00; line-height:1.6;">
               <strong>Reason:</strong> ${safeReason}
