@@ -1639,6 +1639,53 @@ const UserManagementDetails = () => {
     </div>
   ) : null;
 
+  const JobseekerCredentials = () => {
+    const verificationDocs = profile?.verificationDocs || {};
+    const credentialItems = Object.entries(JOBSEEKER_CREDENTIAL_LABELS).map(([key, label]) => ({
+      key,
+      label,
+      description: JOBSEEKER_CREDENTIAL_DESCRIPTIONS[key],
+      verification: verificationDocs[key] || {},
+    }));
+
+    return (
+      <section className="rounded-[18px] border border-[#d1d5db] bg-white p-5 shadow-[0_2px_6px_rgba(15,23,42,0.05)] sm:p-7">
+        <h2 className="text-[30px] font-semibold text-black">Jobseeker Credentials</h2>
+        <p className="mt-1 text-[13px] text-[#6b7280]">Submitted verification credentials</p>
+
+        <div className="mt-5 space-y-3">
+          {credentialItems.map((item) => {
+            const hasFile = Boolean(item.verification?.url || item.verification?.fileUrl);
+            return (
+              <div key={item.key} className="flex min-h-[90px] items-center gap-4 rounded-[14px] border border-[#d1d5db] bg-[#f3f4f6] px-5 py-4">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#d1d5db] bg-white text-[#6b7280]">
+                  <Icon name="document" className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-black">{item.label}</p>
+                  <p className="mt-1 text-xs text-[#6b7280]">{item.description}</p>
+                </div>
+                {hasFile ? (
+                  <button
+                    type="button"
+                    onClick={() => handleViewCredential(item.key)}
+                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#d1d5db] bg-white text-[#2e66a6] transition hover:bg-[#f8fbff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
+                    title={`View ${item.label}`}
+                    aria-label={`View ${item.label}`}
+                  >
+                    <Icon name="eye" className="h-4 w-4" />
+                  </button>
+                ) : (
+                  <span className="text-xs font-medium text-[#6b7280]">Not submitted</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    );
+  };
+
   if (!isJobseeker) {
     const employerProfile = user.employerProfile || {};
     const employerDocs = employerProfile.verificationDocs || {};
@@ -1771,53 +1818,6 @@ const UserManagementDetails = () => {
       ).length;
       return result;
     }, {});
-
-    const JobseekerCredentials = () => {
-      const verificationDocs = profile?.verificationDocs || {};
-      const credentialItems = Object.entries(JOBSEEKER_CREDENTIAL_LABELS).map(([key, label]) => ({
-        key,
-        label,
-        description: JOBSEEKER_CREDENTIAL_DESCRIPTIONS[key],
-        verification: verificationDocs[key] || {},
-      }));
-
-      return (
-        <section className="rounded-[18px] border border-[#d1d5db] bg-white p-5 shadow-[0_2px_6px_rgba(15,23,42,0.05)] sm:p-7">
-          <h2 className="text-[30px] font-semibold text-black">Jobseeker Credentials</h2>
-          <p className="mt-1 text-[13px] text-[#6b7280]">Submitted verification credentials</p>
-
-          <div className="mt-5 space-y-3">
-            {credentialItems.map((item) => {
-              const hasFile = Boolean(item.verification?.url || item.verification?.fileUrl);
-              return (
-                <div key={item.key} className="flex min-h-[90px] items-center gap-4 rounded-[14px] border border-[#d1d5db] bg-[#f3f4f6] px-5 py-4">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#d1d5db] bg-white text-[#6b7280]">
-                    <Icon name="document" className="h-4 w-4" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-black">{item.label}</p>
-                    <p className="mt-1 text-xs text-[#6b7280]">{item.description}</p>
-                  </div>
-                  {hasFile ? (
-                    <button
-                      type="button"
-                      onClick={() => handleViewCredential(item.key)}
-                      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#d1d5db] bg-white text-[#2e66a6] transition hover:bg-[#f8fbff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6]"
-                      title={`View ${item.label}`}
-                      aria-label={`View ${item.label}`}
-                    >
-                      <Icon name="eye" className="h-4 w-4" />
-                    </button>
-                  ) : (
-                    <span className="text-xs font-medium text-[#6b7280]">Not submitted</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      );
-    };
 
     const EmployerEmptyState = ({ icon = "image", title, subtitle }) => (
       <div className="mt-6 flex min-h-[260px] flex-col items-center justify-center rounded-[22px] border border-[#e6edf5] bg-[#fdfefe] px-6 py-12 text-center">
