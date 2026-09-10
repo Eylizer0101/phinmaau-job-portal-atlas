@@ -1611,16 +1611,30 @@ const UserManagementDetails = () => {
     );
   }
 
-  const archiveLastActive = location.state?.lastActive || user.lastLogin || user.updatedAt || user.createdAt;
-  const archiveDate = location.state?.archivedAt || user.updatedAt || user.createdAt;
+  const archiveLastActive =
+    location.state?.lastActive ||
+    user.lastLogin ||
+    user.createdAt;
+  const archiveDate =
+    location.state?.archivedAt ||
+    user.inactiveAt ||
+    user.updatedAt ||
+    user.createdAt;
   const archiveInactivityDays = Number.isFinite(Number(location.state?.inactivityDays))
     ? Number(location.state.inactivityDays)
     : Math.max(
         0,
         Math.floor((Date.now() - new Date(archiveLastActive || Date.now()).getTime()) / 86400000)
       );
+  const isInactiveEmployerArchive =
+    isArchiveView &&
+    !isJobseeker &&
+    (location.state?.inactiveAccountView === true ||
+      (user.inactiveBySystem === true &&
+        String(user.status || "").toLowerCase() === "inactive" &&
+        user.isActive === false));
 
-  const archiveBanner = isArchiveView ? (
+  const archiveBanner = isInactiveEmployerArchive ? (
     <div className="flex flex-col gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-700 shadow-sm sm:flex-row sm:items-center sm:justify-between">
       <div>
         <p className="text-sm font-bold">Account marked as inactive</p>

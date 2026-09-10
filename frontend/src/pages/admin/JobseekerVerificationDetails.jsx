@@ -1436,7 +1436,7 @@ const JobseekerVerificationDetails = () => {
                   onClick={() => firstSubmittedDocument && requestCredentialAccess("approveAccount", firstSubmittedDocument.key, "this Job Seeker")}
                   disabled={actionLoading || !allRequiredCredentialsApproved}
                   className={cn(
-                    "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white shadow-sm hover:bg-[#255587] disabled:opacity-50",
+                    "inline-flex h-10 min-w-[112px] items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white shadow-sm hover:bg-[#255587] disabled:opacity-50",
                     UI.ring,
                   )}
                 >
@@ -1448,7 +1448,7 @@ const JobseekerVerificationDetails = () => {
                   onClick={() => setShowDeclineModal(true)}
                   disabled={actionLoading}
                   className={cn(
-                    "inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-bold text-black shadow-sm hover:bg-black/5 disabled:opacity-50",
+                    "inline-flex h-10 min-w-[112px] items-center justify-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-bold text-black shadow-sm hover:bg-black/5 disabled:opacity-50",
                     UI.ring,
                   )}
                 >
@@ -1462,7 +1462,7 @@ const JobseekerVerificationDetails = () => {
                   onClick={() => setShowHoldModal(true)}
                   disabled={actionLoading}
                   className={cn(
-                    "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-black px-4 text-sm font-bold text-white shadow-sm hover:bg-black/90 disabled:opacity-50",
+                    "inline-flex h-10 min-w-[112px] items-center justify-center gap-2 rounded-lg bg-black px-4 text-sm font-bold text-white shadow-sm hover:bg-black/90 disabled:opacity-50",
                     UI.ring,
                   )}
                 >
@@ -1506,7 +1506,7 @@ const JobseekerVerificationDetails = () => {
                     onClick={() => firstSubmittedDocument && requestCredentialAccess("approveAccount", firstSubmittedDocument.key, "this Job Seeker")}
                     disabled={actionLoading || !allRequiredCredentialsApproved}
                     className={cn(
-                      "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white hover:bg-[#255587] disabled:opacity-50",
+                      "inline-flex h-10 min-w-[112px] items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white hover:bg-[#255587] disabled:opacity-50",
                       UI.ring,
                     )}
                   >
@@ -1518,7 +1518,7 @@ const JobseekerVerificationDetails = () => {
                     onClick={() => setShowDeclineModal(true)}
                     disabled={actionLoading}
                     className={cn(
-                      "inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#2e66a6] bg-white px-4 text-sm font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:opacity-50",
+                      "inline-flex h-10 min-w-[112px] items-center justify-center gap-2 rounded-lg border border-[#2e66a6] bg-white px-4 text-sm font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:opacity-50",
                       UI.ring,
                     )}
                   >
@@ -1532,7 +1532,7 @@ const JobseekerVerificationDetails = () => {
                     onClick={() => setShowHoldModal(true)}
                     disabled={actionLoading}
                     className={cn(
-                      "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-black px-4 text-sm font-bold text-white hover:bg-black/90 disabled:opacity-50",
+                      "inline-flex h-10 min-w-[112px] items-center justify-center gap-2 rounded-lg bg-black px-4 text-sm font-bold text-white hover:bg-black/90 disabled:opacity-50",
                       UI.ring,
                     )}
                   >
@@ -1753,15 +1753,21 @@ const JobseekerVerificationDetails = () => {
 
       {showRestoreModal && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-4">
-          <div className="w-full max-w-md overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="restore-jobseeker-title">
-            <div className="px-6 pt-6">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#2e66a6]/10 text-[#2e66a6]"><SvgIcon name="restore" className="h-6 w-6" /></div>
-              <h3 id="restore-jobseeker-title" className="mt-4 text-center text-xl font-bold text-black">Restore {jobseeker?.fullName || "Job Seeker"}</h3>
-              <p className="mt-2 text-center text-sm leading-6 text-black/65">Are you sure you want to restore <strong>{jobseeker?.fullName || "this Job Seeker"}</strong>? This action will allow the Job Seeker to proceed with verification and review process again.</p>
+          <div className="w-full max-w-[430px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="restore-jobseeker-title">
+            <div className="flex items-start gap-3 px-5 pb-4 pt-5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                <SvgIcon name="restore" className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 id="restore-jobseeker-title" className="text-base font-bold leading-5 text-black">Restore {jobseeker?.fullName || "Job Seeker"}?</h3>
+                <p className="mt-1.5 text-sm leading-5 text-[#667085]">
+                  Are you sure you want to restore <strong className="text-black">{jobseeker?.fullName || "this Job Seeker"}</strong>? The Job Seeker will return to the active verification list for review.
+                </p>
+              </div>
             </div>
-            <div className="mt-6 grid grid-cols-2 gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4">
-              <button type="button" onClick={() => setShowRestoreModal(false)} disabled={actionLoading} className={cn("h-10 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-black", UI.ring)}>Cancel</button>
-              <button type="button" onClick={restoreJobseeker} disabled={actionLoading} className={cn("h-10 rounded-lg bg-[#2e66a6] text-sm font-bold text-white disabled:opacity-50", UI.ring)}>{actionLoading ? "Restoring..." : "Restore"}</button>
+            <div className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50 px-5 py-3.5">
+              <button type="button" onClick={() => setShowRestoreModal(false)} disabled={actionLoading} className={cn("h-9 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-black", UI.ring)}>Cancel</button>
+              <button type="button" onClick={restoreJobseeker} disabled={actionLoading} className={cn("h-9 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white disabled:opacity-50", UI.ring)}>{actionLoading ? "Restoring..." : "Restore"}</button>
             </div>
           </div>
         </div>

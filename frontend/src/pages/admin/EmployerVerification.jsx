@@ -739,7 +739,7 @@ const RestoreConfirmationModal = ({ open, name, loading, onCancel, onConfirm }) 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 px-4 py-6">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/45 px-4 py-6">
       <button
         type="button"
         className="absolute inset-0 cursor-default"
@@ -748,40 +748,31 @@ const RestoreConfirmationModal = ({ open, name, loading, onCancel, onConfirm }) 
       />
 
       <div
-        className="relative w-full max-w-[460px] rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl sm:p-7"
+        className="relative w-full max-w-[430px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl"
         role="dialog"
         aria-modal="true"
         aria-labelledby="restore-employer-title"
       >
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={loading}
-          className={cn("absolute right-4 top-4 rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-800", focusRing)}
-          aria-label="Close"
-        >
-          <Icon name="x" className="h-5 w-5" />
-        </button>
-
-        <div className="flex items-start gap-4 pr-8">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#2e66a6]/10 text-[#2e66a6]">
-            <Icon name="refresh" className="h-5 w-5" />
+        <div className="flex items-start gap-3 px-5 pb-4 pt-5">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+            <Icon name="restore" className="h-5 w-5" />
           </div>
-          <div>
-            <h2 id="restore-employer-title" className="text-xl font-bold text-gray-900">
-              Restore {name}
+
+          <div className="min-w-0 flex-1">
+            <h2 id="restore-employer-title" className="text-base font-bold leading-5 text-gray-900">
+              Restore {name}?
             </h2>
-            <p className="mt-2 text-sm leading-6 text-gray-600">
-              Are you sure you want to restore <strong className="font-semibold text-gray-900">{name}</strong>? This action will allow the Employer to proceed with the verification and review process again.
+            <p className="mt-1.5 text-sm leading-5 text-gray-600">
+              Are you sure you want to restore <strong className="font-semibold text-gray-900">{name}</strong>? The Employer will return to the active verification list for review.
             </p>
           </div>
         </div>
 
-        <div className="mt-7 flex justify-end gap-3">
-          <Button variant="secondary" onClick={onCancel} disabled={loading}>
+        <div className="flex justify-end gap-2 border-t border-gray-100 bg-gray-50 px-5 py-3.5">
+          <Button variant="secondary" size="sm" onClick={onCancel} disabled={loading}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={onConfirm} loading={loading}>
+          <Button variant="primary" size="sm" onClick={onConfirm} loading={loading}>
             Restore
           </Button>
         </div>

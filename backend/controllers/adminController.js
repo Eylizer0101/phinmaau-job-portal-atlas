@@ -3698,15 +3698,15 @@ exports.getAdminArchive = async (req, res) => {
     const getSecondaryText = (user = {}) => user?.email || '';
 
     const typeDefinitions = {
-      'job-post': { key: 'job-post', label: 'Job Post', order: 1 },
-      'declined-applicants': {
-        key: 'declined-applicants',
-        label: 'Declined Applicants',
-        order: 2,
-      },
       'inactive-account': {
         key: 'inactive-account',
         label: 'Inactive Account',
+        order: 1,
+      },
+      'job-post': { key: 'job-post', label: 'Job Post', order: 2 },
+      'declined-applicants': {
+        key: 'declined-applicants',
+        label: 'Declined Applicants',
         order: 3,
       },
     };
@@ -3839,7 +3839,11 @@ exports.getAdminArchive = async (req, res) => {
 
     let archiveGroups = Array.from(grouped.values()).map((group) => {
       const archivedTypeKeys = [...new Set(group.records.map((record) => record.archiveType))];
-      const archivedTypes = archivedTypeKeys
+      const hasInactiveAccount = archivedTypeKeys.includes('inactive-account');
+      const visibleArchivedTypeKeys = hasInactiveAccount
+        ? ['inactive-account']
+        : archivedTypeKeys;
+      const archivedTypes = visibleArchivedTypeKeys
         .map((key) => typeDefinitions[key])
         .filter(Boolean)
         .sort((first, second) => first.order - second.order)

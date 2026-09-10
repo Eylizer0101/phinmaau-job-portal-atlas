@@ -651,6 +651,41 @@ const AdminArchive = () => {
 
   const openDetails = (entry) => {
     if (!entry?.accountId) return;
+
+    const isInactiveEmployer = (entry.archivedTypes || []).some(
+      (type) => type?.key === "inactive-account"
+    );
+
+    if (isInactiveEmployer) {
+      const lastActive =
+        entry.account?.lastLogin ||
+        entry.account?.createdAt ||
+        null;
+      const archivedAt =
+        entry.account?.inactiveAt ||
+        entry.latestArchivedAt ||
+        null;
+      const lastActiveDate = new Date(lastActive || 0);
+      const inactivityDays = Number.isNaN(lastActiveDate.getTime())
+        ? 0
+        : Math.max(
+            0,
+            Math.floor((Date.now() - lastActiveDate.getTime()) / 86400000)
+          );
+
+      navigate(`/admin/users/${entry.accountId}?archive=1`, {
+        state: {
+          fromArchive: true,
+          inactiveAccountView: true,
+          archiveBackPath: "/admin/archive",
+          archivedAt,
+          lastActive,
+          inactivityDays,
+        },
+      });
+      return;
+    }
+
     navigate(`/admin/archive/account/${entry.accountId}`);
   };
 
