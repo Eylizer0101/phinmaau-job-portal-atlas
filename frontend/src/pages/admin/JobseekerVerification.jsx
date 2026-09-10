@@ -27,12 +27,7 @@ const Icon = ({ name, className = "h-5 w-5", ...props }) => {
         <path strokeLinecap="round" strokeLinejoin="round" d="M20 9A8 8 0 006.3 5.3L4 10M4 15a8 8 0 0013.7 3.7L20 14" />
       </>
     ),
-    restore: (
-      <>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h6V4" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4.93 19.07A9 9 0 1012 3a9 9 0 00-7.07 3.43L3 10" />
-      </>
-    ),
+
     eye: (
       <>
         <path
@@ -53,6 +48,17 @@ const Icon = ({ name, className = "h-5 w-5", ...props }) => {
     chevronRight: <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />,
     user: <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />,
   };
+
+  if (name === "restore") {
+    return (
+      <img
+        src="/images/restorist.png"
+        alt=""
+        className={`${className} scale-125 object-contain`}
+        aria-hidden="true"
+      />
+    );
+  }
 
   return <svg {...common}>{icons[name] || null}</svg>;
 };

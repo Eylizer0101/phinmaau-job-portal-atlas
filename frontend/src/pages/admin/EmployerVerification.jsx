@@ -1,1423 +1,2300 @@
-// src/pages/admin/EmployerVerification.jsx
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+// src/pages/admin/JobseekerVerificationDetails.jsx
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useParams, Link } from "react-router-dom";
 import api from "../../services/api";
 import AdminLayout from "../../layouts/AdminLayout";
-import Pagination from "../../components/shared/Pagination";
+import CenteredIndicator from "../../components/shared/CenteredIndicator";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const cn = (...classes) => classes.filter(Boolean).join(" ");
 
-const Icon = ({ name, className = "h-5 w-5", ...props }) => {
-  const common = {
-    className,
-    fill: "none",
-    stroke: "currentColor",
-    viewBox: "0 0 24 24",
-    strokeWidth: 2,
-    ...props,
-  };
+// ======================= UI TOKENS =======================
+const UI = {
+  // 60/30/10 palette rule:
+  // 60% = #FFFFFF canvas/paper, 30% = soft structural surfaces, 10% = #2e66a6 highlights/actions. Cards use soft off-white to reduce eye strain.
+  page: "mx-auto max-w-7xl px-1 py-8",
+  section: "space-y-6",
 
+  // Surfaces
+  card: "bg-[#F8FAFC] border border-[#E2E8F0] rounded-3xl shadow-[0_8px_24px_rgba(15,23,42,0.05)]",
+  cardSoft:
+    "bg-[#F8FAFC] border border-[#E2E8F0] rounded-3xl shadow-[0_10px_28px_rgba(15,23,42,0.06)]",
+  inset:
+    "bg-[#FFFFFF]/85 border border-[#E2E8F0] rounded-2xl shadow-[0_1px_0_rgba(15,23,42,0.03)]",
+  panel: "bg-[#EEF2F6] border border-[#E2E8F0] rounded-2xl",
+  divider: "border-t border-[#E2E8F0]",
+
+  // Text
+  h1: "text-2xl sm:text-3xl font-bold tracking-[-0.02em] text-[#000000]",
+  h2: "text-lg font-bold tracking-[-0.01em] text-[#000000]",
+  h3: "text-base font-bold text-[#000000]",
+  body: "text-sm leading-6 text-[#475467]",
+  label: "text-xs font-semibold uppercase tracking-[0.08em] text-[#64748B]",
+  value: "text-sm sm:text-[15px] font-semibold leading-6 text-[#111827]",
+
+  // Focus
+  ring: "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2 focus-visible:ring-offset-white",
+
+  // Buttons
+  btnBase:
+    "inline-flex items-center justify-center gap-2 rounded-2xl font-semibold transition duration-150 active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none",
+  btnSm: "min-h-9 px-3 text-sm",
+  btnMd: "min-h-10 px-4 text-sm",
+  btnLg: "min-h-12 px-5 text-sm sm:text-base",
+
+  btnPrimary:
+    "bg-[#2e66a6] text-white shadow-[0_8px_18px_rgba(46,102,166,0.22)] hover:bg-[#255587]",
+  btnSecondary:
+    "bg-[#FFFFFF] text-black border border-[#CBD5E1] hover:bg-[#F1F5F9]",
+  btnDanger:
+    "bg-[#FFFFFF] text-black border border-[#CBD5E1] hover:bg-[#F1F5F9]",
+  btnSoft:
+    "bg-[#EEF4FB] text-[#2e66a6] border border-[#BFD3EA] hover:bg-[#E2EDF8]",
+
+  // Badges
+  badgeBase:
+    "inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold border",
+};
+
+// ======================= ICONS =======================
+const SvgIcon = ({ name, className = "w-5 h-5" }) => {
   const icons = {
-    search: (
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.3-4.3m1.3-5.2a7 7 0 11-14 0 7 7 0 0114 0z" />
-    ),
-    refresh: (
-      <>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v6h6M20 20v-6h-6" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M20 9A8 8 0 006.3 5.3L4 10M4 15a8 8 0 0013.7 3.7L20 14" />
-      </>
-    ),
-    restore: (
-      <>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h6V4" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4.93 19.07A9 9 0 1012 3a9 9 0 00-7.07 3.43L3 10" />
-      </>
-    ),
-    eye: (
-      <>
+    back: (
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
+          strokeWidth={2}
+          d="M10 19l-7-7m0 0l7-7m-7 7h18"
+        />
+      </svg>
+    ),
+    eye: (
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
           d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
         />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      </>
-    ),
-    trash: (
-      <>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M10 11v6M14 11v6" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16" />
-      </>
-    ),
-    x: <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />,
-    calendar: (
-      <>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10m-13 9h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v11a2 2 0 002 2z" />
-      </>
-    ),
-    chevronLeft: <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />,
-    chevronRight: <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />,
-    building: (
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-      />
-    ),
-  };
-
-  return <svg {...common}>{icons[name] || null}</svg>;
-};
-
-const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2e66a6] focus-visible:ring-offset-2";
-
-const inputBase =
-  "h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-900 placeholder-gray-400 shadow-sm " +
-  focusRing +
-  " disabled:bg-gray-50 disabled:opacity-60";
-
-const Button = ({
-  variant = "secondary",
-  size = "md",
-  leftIcon,
-  rightIcon,
-  children,
-  className,
-  disabled,
-  loading,
-  ...props
-}) => {
-  const base =
-    "inline-flex items-center justify-center gap-2 font-semibold transition-all duration-200 " +
-    focusRing +
-    " disabled:cursor-not-allowed";
-
-  const sizes = {
-    sm: "px-3.5 py-2 text-sm rounded-xl",
-    md: "px-4 py-2.5 text-sm rounded-xl",
-  };
-
-  const variants = {
-    primary:
-      "bg-[#2e66a6] text-white hover:bg-[#255487] shadow-sm disabled:bg-gray-200 disabled:text-gray-500 disabled:hover:bg-gray-200",
-    secondary:
-      "border border-gray-200 bg-white text-gray-800 hover:bg-gray-50 shadow-sm disabled:hover:bg-white disabled:shadow-none",
-    danger:
-      "bg-red-600 text-white hover:bg-red-700 shadow-sm disabled:bg-red-200 disabled:text-red-800 disabled:hover:bg-red-200",
-  };
-
-  return (
-    <button
-      type="button"
-      className={cn(base, sizes[size], variants[variant], className, loading && "opacity-70 cursor-wait")}
-      disabled={disabled || loading}
-      {...props}
-    >
-      {loading ? (
-        <svg className="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-        </svg>
-      ) : (
-        leftIcon
-      )}
-      <span>{children}</span>
-      {!loading && rightIcon}
-    </button>
-  );
-};
-
-const IconButton = ({ label, children, className, ...props }) => (
-  <button
-    type="button"
-    className={cn(
-      "inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed",
-      focusRing,
-      className
-    )}
-    aria-label={label}
-    {...props}
-  >
-    {children}
-  </button>
-);
-
-const Alert = ({ type = "error", title, children, onClose }) => {
-  const styles = {
-    error: "border-red-200 bg-red-50 text-red-900",
-    success: "border-green-200 bg-green-50 text-green-900",
-  };
-
-  return (
-    <div className={cn("mb-5 flex items-start gap-3 rounded-2xl border p-4", styles[type])}>
-      <div className="flex-1 min-w-0">
-        {title ? <div className="font-semibold mb-1">{title}</div> : null}
-        <div className="text-sm">{children}</div>
-      </div>
-      {onClose ? (
-        <button type="button" onClick={onClose} className={cn("rounded-lg p-1 hover:bg-black/5", focusRing)} aria-label="Dismiss">
-          <Icon name="x" className="h-4 w-4" />
-        </button>
-      ) : null}
-    </div>
-  );
-};
-
-const Card = ({ children, className, padding = true }) => (
-  <div className={cn("rounded-2xl bg-white border border-gray-200 shadow-sm ring-1 ring-black/5", padding && "p-5", className)}>{children}</div>
-);
-
-const SummaryCard = ({ label, value, image }) => (
-  <div className="relative rounded-2xl overflow-hidden group">
-    <div className="pointer-events-none absolute inset-0 z-0">
-      <div
-        className="absolute w-[70px] h-[70px] rounded-full blur-[35px] top-[38%] right-[22%] transition-all duration-700 ease-out
-        group-hover:scale-110 group-hover:blur-[45px] group-hover:opacity-80"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(46,102,166,0.25) 0%, rgba(46,102,166,0.14) 45%, transparent 75%)",
-        }}
-      />
-    </div>
-
-    <div
-      className="relative z-10 h-full p-6 rounded-2xl overflow-hidden text-white
-      bg-gradient-to-br from-[#072258] via-[#2d63a0] to-[#52b2db]
-      shadow-[0_10px_24px_rgba(46,102,166,0.18)] transition-all duration-300 ease-out
-      group-hover:shadow-[0_16px_34px_rgba(46,102,166,0.24)] group-hover:-translate-y-0.5 group-active:scale-[0.99]
-      group-hover:brightness-[1.03] min-h-[118px]"
-    >
-      {image ? (
-        <img
-          src={image}
-          alt=""
-          className="pointer-events-none absolute right-[-18px] top-1/2 -translate-y-1/2 w-20 h-20 md:w-22 md:h-22 object-contain opacity-50 mix-blend-soft-light saturate-150
-          transition-all duration-700 ease-out group-hover:opacity-50 group-hover:saturate-180 group-hover:scale-105 group-hover:right-[-15px]"
-          style={{
-            WebkitMaskImage:
-              "radial-gradient(circle at 35% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 55%, rgba(0,0,0,0) 80%)",
-            maskImage:
-              "radial-gradient(circle at 35% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.6) 55%, rgba(0,0,0,0) 80%)",
-          }}
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
         />
-      ) : null}
+      </svg>
+    ),
+    eyeOff: (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 3l18 18M10.58 10.58a2 2 0 002.83 2.83M9.88 4.24A10.8 10.8 0 0112 4c5.5 0 9.5 4.5 10.5 8a13.7 13.7 0 01-2.08 3.87M6.61 6.61C3.9 8.32 2.25 10.67 1.5 12c1 3.5 5 8 10.5 8 1.5 0 2.88-.33 4.12-.9" />
+      </svg>
+    ),
+    check: (
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+    ),
+    restore: (
+      <img
+        src="/images/restorist.png"
+        alt=""
+        className={`${className} scale-125 object-contain`}
+        aria-hidden="true"
+      />
+    ),
+    x: (
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M15 9l-6 6m0-6l6 6"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+    ),
+    user: (
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+        />
+      </svg>
+    ),
+    document: (
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+        />
+      </svg>
+    ),
+    graduation: (
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M12 14l9-5-9-5-9 5 9 5zm0 0v6m0-6l-9 5m9-5l9 5"
+        />
+      </svg>
+    ),
+    mail: (
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M3 8l7.89-4.26a2 2 0 012.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+        />
+      </svg>
+    ),
+    phone: (
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+        />
+      </svg>
+    ),
+    calendar: (
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+        />
+      </svg>
+    ),
+    briefcase: (
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m-3 0h14a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M3 13h18"
+        />
+      </svg>
+    ),
+    download: (
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M12 3v12m0 0l4-4m-4 4l-4-4m-5 8h18"
+        />
+      </svg>
+    ),
+    info: (
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M13 16h-1v-4h-1m1-4h.01"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+    ),
+    pause: (
+      <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M10 9v6m4-6v6"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.8}
+          d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+    ),
+    warning: (
+      <svg className={className} viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" fill="#EEF2FF" />
+        <path
+          d="M12 7v5"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
+        <circle cx="12" cy="15.5" r="1" fill="currentColor" />
+      </svg>
+    ),
+    dangerTriangle: (
+      <svg className={className} viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" fill="#FEE4E2" />
+        <path
+          d="M12 8v5"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
+        <circle cx="12" cy="16" r="1" fill="currentColor" />
+      </svg>
+    ),
+  };
 
-      <div className="relative z-10">
-        <p className="text-3xl font-semibold leading-none transition-all duration-400 ease-out group-hover:text-[32px]">
-          {Number(value || 0).toLocaleString()}
-        </p>
+  return icons[name] || null;
+};
 
-        <div className="flex items-center justify-between mt-2 gap-2">
-          <p className="text-sm text-white/90 flex items-center gap-1 transition-all duration-400 group-hover:text-white whitespace-nowrap">
-            <span className="whitespace-nowrap">{label}</span>
-          </p>
-        </div>
-      </div>
-
-      <div className="absolute inset-0 bg-gradient-to-t from-transparent to-transparent opacity-0 group-hover:opacity-5 group-hover:to-white/10 transition-all duration-500 ease-out" />
-    </div>
-
-    <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-white/20 transition-all duration-500 ease-out pointer-events-none" />
-  </div>
+const Spinner = ({ className = "w-4 h-4" }) => (
+  <svg
+    className={`${className} animate-spin`}
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+  >
+    <circle
+      className="opacity-25"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      strokeWidth="4"
+      fill="none"
+    />
+    <path
+      className="opacity-75"
+      fill="currentColor"
+      d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z"
+    />
+  </svg>
 );
 
+// ======================= COMPONENTS =======================
 const Badge = ({ children, variant = "neutral" }) => {
   const variants = {
-    neutral: "bg-gray-100 text-gray-700",
-    success: "bg-green-100 text-green-700",
-    warning: "bg-amber-100 text-amber-700",
-    danger: "bg-red-100 text-red-700",
-    hold: "bg-[#2e66a6]/10 text-[#2e66a6]",
+    neutral: "bg-white text-black border-[#CBD5E1]",
+    success: "bg-[#2e66a6]/10 text-[#2e66a6] border-[#2e66a6]/25",
+    warning: "bg-[#F1F5F9] text-black border-[#CBD5E1]",
+    danger: "bg-white text-black border-[#CBD5E1]",
+    info: "bg-[#2e66a6]/10 text-[#2e66a6] border-[#2e66a6]/25",
+  };
+
+  const dots = {
+    neutral: "bg-black/40",
+    success: "bg-[#2e66a6]",
+    warning: "bg-black/55",
+    danger: "bg-black/70",
+    info: "bg-[#2e66a6]",
   };
 
   return (
-    <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold", variants[variant])}>
+    <span className={cn(UI.badgeBase, variants[variant])}>
+      <span className={cn("w-2 h-2 rounded-full", dots[variant])} />
       {children}
     </span>
   );
 };
 
-const statusBadge = (status) => {
-  const normalized = String(status || "unverified").toLowerCase();
-  if (normalized === "verified") return <Badge variant="success">Verified</Badge>;
-  if (normalized === "pending") return <Badge variant="warning">Pending</Badge>;
-  if (normalized === "hold") return <Badge variant="hold">Hold</Badge>;
-  if (normalized === "rejected" || normalized === "declined") return <Badge variant="danger">Declined</Badge>;
-  return <Badge variant="neutral">Unverified</Badge>;
+const Button = ({
+  children,
+  variant = "secondary",
+  size = "md",
+  leftIcon,
+  rightIcon,
+  onClick,
+  disabled = false,
+  loading = false,
+  className = "",
+  ...props
+}) => {
+  const sizes = {
+    sm: UI.btnSm,
+    md: UI.btnMd,
+    lg: UI.btnLg,
+  };
+
+  const variants = {
+    primary: UI.btnPrimary,
+    secondary: UI.btnSecondary,
+    danger: UI.btnDanger,
+    soft: UI.btnSoft,
+  };
+
+  return (
+    <button
+      type="button"
+      className={cn(
+        UI.btnBase,
+        sizes[size],
+        variants[variant],
+        UI.ring,
+        className,
+        loading && "opacity-70 cursor-wait",
+      )}
+      onClick={onClick}
+      disabled={disabled || loading}
+      {...props}
+    >
+      {loading ? <Spinner /> : leftIcon}
+      {children}
+      {!loading && rightIcon}
+    </button>
+  );
 };
 
-const formatDate = (dateString) => {
+const Alert = ({ type = "error", children, onClose }) => {
+  const styles = {
+    error: "bg-white border-[#CBD5E1] text-black",
+    success: "bg-[#2e66a6]/10 border-[#2e66a6]/25 text-[#2e66a6]",
+    warning: "bg-white border-[#CBD5E1] text-black",
+    info: "bg-[#2e66a6]/10 border-[#2e66a6]/25 text-[#2e66a6]",
+  };
+
+  const icons = {
+    error: <SvgIcon name="x" className="w-5 h-5 text-black/70" />,
+    success: <SvgIcon name="check" className="w-5 h-5 text-[#2e66a6]" />,
+    warning: <SvgIcon name="pause" className="w-5 h-5 text-black/70" />,
+    info: <SvgIcon name="check" className="w-5 h-5 text-[#2e66a6]" />,
+  };
+
+  return (
+    <div
+      className={cn("border rounded-2xl p-4", styles[type])}
+      role="alert"
+      aria-live="polite"
+    >
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5">{icons[type]}</div>
+        <div className="flex-1 text-sm font-medium">{children}</div>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className={cn(
+              UI.btnBase,
+              UI.btnSm,
+              UI.btnSecondary,
+              UI.ring,
+              "!h-8 !px-2",
+            )}
+            aria-label="Close alert"
+          >
+            <span className="text-black/70">✕</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const InfoCard = ({ icon, label, value, className }) => (
+  <div
+    className={cn(
+      UI.inset,
+      "p-4 transition hover:border-black/20 hover:shadow-[0_8px_18px_rgba(0,0,0,0.05)]",
+      className,
+    )}
+  >
+    <div className="flex items-start gap-3">
+      {icon && (
+        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F1F5F9] text-black/55">
+          {icon}
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className={UI.label}>{label}</p>
+        <p className={cn(UI.value, "mt-1 break-words")}>{value || "—"}</p>
+      </div>
+    </div>
+  </div>
+);
+
+// ======================= HELPERS =======================
+const formatDate = (dateString, includeTime = true) => {
   if (!dateString) return "—";
   const d = new Date(dateString);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-PH", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
+
+  const options = {
     timeZone: "Asia/Manila",
-  });
-};
-
-const buildLocationDisplay = (item) => {
-  const profile = item?.employerProfile || {};
-  const rawAddress = String(item?.address || profile?.regionCity || "").trim();
-
-  const region =
-    item?.region ||
-    profile?.region ||
-    profile?.companyRegion ||
-    rawAddress.split(" - ")[0]?.trim() ||
-    "—";
-
-  const city =
-    item?.city ||
-    item?.municipality ||
-    profile?.city ||
-    profile?.municipality ||
-    profile?.companyCity ||
-    "";
-
-  const province =
-    item?.province ||
-    profile?.province ||
-    profile?.companyProvince ||
-    "";
-
-  const addressParts = rawAddress
-    .split(" - ")
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  const fallbackProvince = addressParts[1] || "";
-  const fallbackCity = addressParts[2] || "";
-
-  const cityProvince =
-    [city || fallbackCity, province || fallbackProvince]
-      .filter(Boolean)
-      .filter((value, index, values) => values.indexOf(value) === index)
-      .join(", ") ||
-    fallbackProvince ||
-    "—";
-
-  return { region, cityProvince };
-};
-
-const buildAvatar = (item) => {
-  const companyName = item?.companyName || item?.employerProfile?.companyName || "";
-  return (companyName.trim().charAt(0) || "?").toUpperCase();
-};
-
-const dateOptions = [
-  { value: "all", label: "All Time" },
-  { value: "today", label: "Today" },
-  { value: "yesterday", label: "Yesterday" },
-  { value: "thisWeek", label: "This Week" },
-  { value: "7days", label: "Last 7 Days" },
-  { value: "thisMonth", label: "This Month" },
-  { value: "lastMonth", label: "Last Month" },
-  { value: "thisYear", label: "This Year" },
-  { value: "lastYear", label: "Last Year" },
-  { value: "custom", label: "Custom Range" },
-];
-
-const formatDateInput = (date) => {
-  if (!date) return "";
-  const d = new Date(date);
-  if (Number.isNaN(d.getTime())) return "";
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-};
-
-const getPresetDateRange = (value) => {
-  const today = new Date();
-  const current = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-
-  if (value === "today") {
-    return { dateFrom: formatDateInput(current), dateTo: formatDateInput(current) };
-  }
-
-  if (value === "yesterday") {
-    const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
-    return { dateFrom: formatDateInput(yesterday), dateTo: formatDateInput(yesterday) };
-  }
-
-  if (value === "thisWeek") {
-    const dayOfWeek = today.getDay();
-    const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    return {
-      dateFrom: formatDateInput(
-        new Date(today.getFullYear(), today.getMonth(), today.getDate() - mondayOffset)
-      ),
-      dateTo: formatDateInput(current),
-    };
-  }
-
-  if (value === "7days") {
-    return {
-      dateFrom: formatDateInput(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6)),
-      dateTo: formatDateInput(current),
-    };
-  }
-
-  if (value === "thisMonth") {
-    return {
-      dateFrom: formatDateInput(new Date(today.getFullYear(), today.getMonth(), 1)),
-      dateTo: formatDateInput(current),
-    };
-  }
-
-  if (value === "lastMonth") {
-    return {
-      dateFrom: formatDateInput(new Date(today.getFullYear(), today.getMonth() - 1, 1)),
-      dateTo: formatDateInput(new Date(today.getFullYear(), today.getMonth(), 0)),
-    };
-  }
-
-  if (value === "thisYear") {
-    return {
-      dateFrom: formatDateInput(new Date(today.getFullYear(), 0, 1)),
-      dateTo: formatDateInput(current),
-    };
-  }
-
-  if (value === "lastYear") {
-    return {
-      dateFrom: formatDateInput(new Date(today.getFullYear() - 1, 0, 1)),
-      dateTo: formatDateInput(new Date(today.getFullYear() - 1, 11, 31)),
-    };
-  }
-
-  return { dateFrom: "", dateTo: "" };
-};
-
-const formatDateLabel = (value) => {
-  if (!value) return "Select date";
-  const date = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return "Select date";
-  return date.toLocaleDateString("en-PH", { month: "short", day: "2-digit", year: "numeric" });
-};
-
-const getDateOptionLabel = (value, startDate, endDate) => {
-  if (value === "custom" && startDate && endDate) {
-    return `${formatDateLabel(startDate)} - ${formatDateLabel(endDate)}`;
-  }
-
-  return dateOptions.find((option) => option.value === value)?.label || "All Time";
-};
-
-const addCalendarMonths = (date, amount) => {
-  const next = new Date(date);
-  next.setMonth(next.getMonth() + amount);
-  return next;
-};
-
-const monthNames = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
-const getYearOptions = () => {
-  const startYear = 1950;
-  const endYear = new Date().getFullYear();
-  return Array.from({ length: endYear - startYear + 1 }, (_, index) => startYear + index);
-};
-
-const CalendarMonth = ({ monthDate, startDate, endDate, onPickDate, onChangeMonth }) => {
-  const year = monthDate.getFullYear();
-  const month = monthDate.getMonth();
-  const firstDay = new Date(year, month, 1);
-  const firstWeekday = firstDay.getDay();
-  const gridStart = new Date(year, month, 1 - firstWeekday);
-  const start = startDate ? new Date(`${startDate}T00:00:00`) : null;
-  const end = endDate ? new Date(`${endDate}T00:00:00`) : null;
-
-  const days = Array.from({ length: 42 }, (_, index) => {
-    const d = new Date(gridStart);
-    d.setDate(gridStart.getDate() + index);
-    return d;
-  });
-
-  const isSameDay = (a, b) => a && b && a.toDateString() === b.toDateString();
-  const inRange = (d) => start && end && d >= start && d <= end;
-  const changeByMonth = (amount) => onChangeMonth(addCalendarMonths(monthDate, amount));
-  const changeMonthSelect = (nextMonth) => onChangeMonth(new Date(year, Number(nextMonth), 1));
-  const changeYearSelect = (nextYear) => onChangeMonth(new Date(Number(nextYear), month, 1));
-
-  return (
-    <div className="min-w-0 flex-1">
-      <div className="mb-4 grid grid-cols-[32px_1fr_32px] items-center gap-2">
-        <button type="button" onClick={() => changeByMonth(-1)} className="flex h-8 w-8 items-center justify-center rounded-lg text-2xl leading-none text-slate-700 transition hover:bg-slate-100" aria-label="Previous month">‹</button>
-
-        <div className="grid grid-cols-[1fr_86px] gap-2">
-          <select value={month} onChange={(event) => changeMonthSelect(event.target.value)} className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20" aria-label="Select month">
-            {monthNames.map((name, index) => (
-              <option key={name} value={index}>{name}</option>
-            ))}
-          </select>
-
-          <select value={year} onChange={(event) => changeYearSelect(event.target.value)} className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-center text-sm font-extrabold text-[#2e66a6] outline-none focus:border-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]/20" aria-label="Select year">
-            {getYearOptions().map((yearOption) => (
-              <option key={yearOption} value={yearOption}>{yearOption}</option>
-            ))}
-          </select>
-        </div>
-
-        <button type="button" onClick={() => changeByMonth(1)} className="flex h-8 w-8 items-center justify-center rounded-lg text-2xl leading-none text-slate-700 transition hover:bg-slate-100" aria-label="Next month">›</button>
-      </div>
-
-      <div className="grid grid-cols-7 gap-y-2 text-center text-xs font-bold text-slate-500">
-        {["SU", "MO", "TU", "WE", "TH", "FR", "SA"].map((day) => <div key={day}>{day}</div>)}
-      </div>
-
-      <div className="mt-3 grid grid-cols-7 gap-y-1 text-center text-sm text-slate-600">
-        {days.map((day) => {
-          const value = formatDateInput(day);
-          const outside = day.getMonth() !== month;
-          const selected = isSameDay(day, start) || isSameDay(day, end);
-          const ranged = inRange(day);
-          return (
-            <button type="button" key={value} onClick={() => onPickDate(value)} className={cn("mx-auto flex h-9 w-full items-center justify-center transition", outside ? "text-slate-300" : "text-slate-700", ranged ? "bg-[#2e66a6]/10 text-[#2e66a6]" : "", selected ? "rounded-lg bg-[#2e66a6] font-extrabold text-white shadow-md" : "hover:bg-[#2e66a6]/10")}>{day.getDate()}</button>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-const CustomDateRangeModal = ({ open, startDate, endDate, onCancel, onApply }) => {
-  const today = new Date();
-  const initialStart = startDate || formatDateInput(today);
-  const initialEnd = endDate || formatDateInput(today);
-  const [draftStart, setDraftStart] = useState(initialStart);
-  const [draftEnd, setDraftEnd] = useState(initialEnd);
-  const [leftMonth, setLeftMonth] = useState(new Date(`${initialStart}T00:00:00`));
-  const [rightMonth, setRightMonth] = useState(addCalendarMonths(new Date(`${initialEnd}T00:00:00`), 0));
-
-  useEffect(() => {
-    if (!open) return;
-    const nextStart = startDate || formatDateInput(today);
-    const nextEnd = endDate || formatDateInput(today);
-    setDraftStart(nextStart);
-    setDraftEnd(nextEnd);
-    setLeftMonth(new Date(`${nextStart}T00:00:00`));
-    setRightMonth(addCalendarMonths(new Date(`${nextEnd}T00:00:00`), 0));
-  }, [open, startDate, endDate]);
-
-  if (!open) return null;
-
-  const pickDate = (value) => {
-    if (!draftStart || (draftStart && draftEnd)) {
-      setDraftStart(value);
-      setDraftEnd("");
-      return;
-    }
-    if (new Date(`${value}T00:00:00`) < new Date(`${draftStart}T00:00:00`)) {
-      setDraftEnd(draftStart);
-      setDraftStart(value);
-    } else {
-      setDraftEnd(value);
-    }
+    month: "short",
+    day: "numeric",
+    year: "numeric",
   };
 
-  const apply = () => {
-    if (!draftStart || !draftEnd) return;
-    onApply(draftStart, draftEnd);
+  if (includeTime) {
+    options.hour = "numeric";
+    options.minute = "2-digit";
+    options.hour12 = true;
+    return d.toLocaleString("en-US", options);
+  }
+
+  return d.toLocaleDateString("en-US", options);
+};
+
+const formatFileSize = (bytes) => {
+  if (!bytes) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1048576).toFixed(1)} MB`;
+};
+
+const formatSkills = (technicalSkills, softSkills) => {
+  const normalize = (value) => {
+    if (Array.isArray(value)) {
+      return value.map((item) => String(item || "").trim()).filter(Boolean);
+    }
+    if (typeof value === "string") {
+      return value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+    return [];
   };
 
-  return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 px-4 py-6">
-      <div className="w-full max-w-4xl overflow-hidden rounded-xl bg-white shadow-2xl">
-        <div className="grid gap-5 px-6 pb-5 pt-5 md:grid-cols-[1fr_auto_1fr] md:items-end">
-          <div>
-            <div className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">Start Date</div>
-            <div className="flex h-12 items-center gap-3 rounded-xl bg-slate-100 px-4 text-lg font-bold text-[#2e66a6]"><Icon name="calendar" className="h-5 w-5" /> {formatDateLabel(draftStart)}</div>
-          </div>
-          <div className="hidden pb-3 text-3xl text-slate-500 md:block">→</div>
-          <div>
-            <div className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">End Date</div>
-            <div className="flex h-12 items-center gap-3 rounded-xl bg-slate-100 px-4 text-lg font-bold text-[#2e66a6]"><Icon name="calendar" className="h-5 w-5" /> {formatDateLabel(draftEnd)}</div>
-          </div>
-        </div>
-
-        <div className="grid gap-8 px-6 pb-5 md:grid-cols-2">
-          <CalendarMonth monthDate={leftMonth} startDate={draftStart} endDate={draftEnd} onPickDate={pickDate} onChangeMonth={setLeftMonth} />
-          <CalendarMonth monthDate={rightMonth} startDate={draftStart} endDate={draftEnd} onPickDate={pickDate} onChangeMonth={setRightMonth} />
-        </div>
-
-        <div className="flex items-center justify-end gap-5 border-t border-slate-100 px-6 py-5">
-          <button type="button" onClick={onCancel} className="text-base font-bold text-slate-600">Cancel</button>
-          <button type="button" onClick={apply} disabled={!draftStart || !draftEnd} className="h-11 rounded-xl bg-[#2e66a6] px-8 text-base font-extrabold text-white shadow-lg shadow-[#2e66a6]/25 transition hover:bg-[#255487] disabled:opacity-60">Apply Range</button>
-        </div>
-      </div>
-    </div>
-  );
+  const merged = [...normalize(technicalSkills), ...normalize(softSkills)];
+  return [...new Set(merged)].join(", ");
 };
 
-const DEFAULT_FILTERS = {
-  search: "",
-  company: "all",
-  industry: "all",
-  status: "all",
-  date: "all",
-  dateFrom: "",
-  dateTo: "",
-  sort: "newest",
-  page: 1,
-  limit: 10,
-};
+const documentTypes = [
+  { key: "validId", label: "Valid ID", icon: "document" },
+  { key: "cv", label: "Resume", icon: "document" },
+  { key: "diploma", label: "Diploma", icon: "document" },
+  { key: "tor", label: "TOR", icon: "document" },
+  { key: "sss", label: "SSS", icon: "document" },
+  { key: "philhealth", label: "PhilHealth", icon: "document" },
+  { key: "pagibig", label: "Pag-IBIG", icon: "document" },
+  { key: "tin", label: "TIN", icon: "document" },
+];
 
-const DateFilterDropdown = ({ value, startDate, endDate, disabled, onSelect }) => {
-  const [open, setOpen] = useState(false);
+const RESUBMISSION_REASONS = [
+  "Blurry or unreadable document",
+  "Incomplete document",
+  "Incorrect document upload",
+  "Information does not match your profile",
+  "Expired Credential",
+  "Missing required pages",
+  "Low-quality image",
+  "Other",
+];
 
-  useEffect(() => {
-    if (!open) return undefined;
+const DECLINE_REASONS = [...RESUBMISSION_REASONS];
 
-    const close = () => setOpen(false);
-    window.addEventListener("click", close);
-
-    return () => window.removeEventListener("click", close);
-  }, [open]);
+const ReasonDropdown = ({ value, onChange, options, placeholder = "Add a clear reason..." }) => {
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div className="relative">
       <button
         type="button"
-        disabled={disabled}
-        onClick={(event) => {
-          event.stopPropagation();
-          setOpen((prev) => !prev);
-        }}
+        onClick={() => setIsOpen((open) => !open)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
         className={cn(
-          "flex h-11 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50",
-          focusRing,
-          "disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60"
+          "flex h-10 w-full items-center justify-between rounded-lg border bg-white px-3 text-left text-[13px] font-normal leading-5 shadow-sm transition",
+          "border-[#CBD5E1] text-[#344054] hover:border-[#94A3B8]",
+          "focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20",
+          isOpen && "border-[#2e66a6] ring-2 ring-[#2e66a6]/10",
         )}
       >
-        <span className="truncate">{getDateOptionLabel(value, startDate, endDate)}</span>
-        <Icon name="calendar" className="h-4 w-4 text-slate-500" />
+        <span className={cn("truncate", !value && "text-[#667085]")}>{value || placeholder}</span>
+        <svg className={cn("ml-3 h-4 w-4 shrink-0 text-[#667085] transition-transform", isOpen && "rotate-180")} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="m6 9 6 6 6-6" />
+        </svg>
       </button>
 
-      {open ? (
+      {isOpen ? (
         <div
-          onClick={(event) => event.stopPropagation()}
-          className="absolute left-0 top-[68px] z-50 w-56 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl ring-1 ring-black/5"
+          className="absolute left-0 right-0 top-full z-[80] mt-1 max-h-[220px] overflow-y-auto rounded-lg border border-[#D0D5DD] bg-white py-1 shadow-[0_12px_30px_rgba(15,23,42,0.18)]"
+          role="listbox"
         >
-          <div className="space-y-1">
-            {dateOptions.map((option) => (
-              <button
-                type="button"
-                key={option.value}
-                onClick={() => {
-                  setOpen(false);
-                  onSelect(option.value);
-                }}
-                className={cn(
-                  "w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition",
-                  value === option.value ? "bg-[#2e66a6]/10 text-[#2e66a6]" : "text-slate-600 hover:bg-slate-50"
-                )}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+          {options.map((option) => (
+            <button
+              key={option}
+              type="button"
+              role="option"
+              aria-selected={value === option}
+              onClick={() => {
+                onChange(option);
+                setIsOpen(false);
+              }}
+              className={cn(
+                "block w-full px-3 py-2 text-left text-[13px] font-normal leading-5 transition",
+                value === option
+                  ? "bg-[#EEF4FB] text-[#245487]"
+                  : "text-[#344054] hover:bg-[#F2F4F7] hover:text-[#1D2939]",
+              )}
+            >
+              {option}
+            </button>
+          ))}
         </div>
       ) : null}
     </div>
   );
 };
 
-const Modal = ({ open, title, description, children, onClose, size = "md" }) => {
-  const panelRef = useRef(null);
+// ======================= MAIN PAGE =======================
+const JobseekerVerificationDetails = () => {
+  const { id } = useParams();
 
-  useEffect(() => {
-    if (!open) return;
+  const [jobseeker, setJobseeker] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
 
-    const prevActive = document.activeElement;
-    const onKey = (e) => {
-      if (e.key === "Escape") onClose?.();
-    };
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showDeclineModal, setShowDeclineModal] = useState(false);
+  const [showHoldModal, setShowHoldModal] = useState(false);
 
-    document.addEventListener("keydown", onKey);
+  const [declineMessage, setDeclineMessage] = useState("");
+  const [declineReason, setDeclineReason] = useState("");
 
-    setTimeout(() => {
-      const focusable = panelRef.current?.querySelector(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-      focusable?.focus?.();
-    }, 0);
+  const [holdDocTypes, setHoldDocTypes] = useState([]);
+  const [holdReason, setHoldReason] = useState("");
+  const [holdSelectedReason, setHoldSelectedReason] = useState("");
+  const [reviewNotes, setReviewNotes] = useState("");
 
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      prevActive?.focus?.();
-    };
-  }, [open, onClose]);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [credentialPassword, setCredentialPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [pendingCredentialAction, setPendingCredentialAction] = useState(null);
+  const [showCredentialPassword, setShowCredentialPassword] = useState(false);
+  const [checkingDoc, setCheckingDoc] = useState("");
+  const [verifyCredential, setVerifyCredential] = useState(null);
+  const [approvalPassword, setApprovalPassword] = useState("");
+  const approvalPasswordRef = useRef("");
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
 
-  if (!open) return null;
+  const API_BASE = api?.defaults?.baseURL || "";
+  const DEFAULT_DECLINE_MESSAGE =
+    "Your verification request was rejected. Please contact support.";
+  const DEFAULT_DECLINE_REASON = "Verification requirements were not met.";
 
-  const sizes = {
-    md: "max-w-lg",
-    lg: "max-w-2xl",
+  const buildFileUrl = (url) => {
+    if (!url) return "";
+    if (/^https?:\/\//i.test(url)) return url;
+    return `${API_BASE}${url}`;
   };
 
-  const trapFocus = (e) => {
-    if (e.key !== "Tab") return;
+  const getFileNameFromUrl = (url, fallback = "document") => {
+    if (!url) return fallback;
 
-    const focusables = panelRef.current?.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-
-    if (!focusables || focusables.length === 0) return;
-
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
+    try {
+      const cleanUrl = url.split("?")[0];
+      const fileName = cleanUrl.split("/").filter(Boolean).pop();
+      return fileName || fallback;
+    } catch {
+      return fallback;
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-[70]">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
-      <div className="absolute inset-0 flex items-center justify-center p-4">
-        <div
-          ref={panelRef}
-          onKeyDown={trapFocus}
-          className={cn("w-full rounded-3xl bg-white shadow-xl border border-gray-200", sizes[size])}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="p-5 sm:p-6 border-b border-gray-100">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-                {description ? <p className="mt-1 text-sm text-gray-600">{description}</p> : null}
-              </div>
+  const getDownloadFileName = (
+    contentDisposition,
+    fallbackName = "document",
+    contentType = "",
+  ) => {
+    const disposition = String(contentDisposition || "");
+    const utfMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+    const normalMatch = disposition.match(/filename="?([^";]+)"?/i);
 
-              <button type="button" onClick={onClose} className={cn("rounded-xl p-2 hover:bg-gray-50", focusRing)} aria-label="Close dialog">
-                <Icon name="x" className="h-5 w-5 text-gray-700" />
-              </button>
-            </div>
-          </div>
-
-          <div className="p-5 sm:p-6">{children}</div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const RestoreConfirmationModal = ({ open, name, loading, onCancel, onConfirm }) => {
-  useEffect(() => {
-    if (!open) return undefined;
-
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape" && !loading) onCancel();
+    const extensionByContentType = {
+      "application/pdf": "pdf",
+      "image/png": "png",
+      "image/jpeg": "jpg",
+      "image/jpg": "jpg",
+      "image/gif": "gif",
+      "image/webp": "webp",
     };
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [open, loading, onCancel]);
+    const ensureExtension = (fileName) => {
+      const cleanFileName = String(fileName || fallbackName).trim() || fallbackName;
+      if (/\.[a-z0-9]{1,10}$/i.test(cleanFileName)) return cleanFileName;
 
-  if (!open) return null;
+      const cleanContentType = String(contentType || "")
+        .split(";")[0]
+        .trim()
+        .toLowerCase();
+      const extension = extensionByContentType[cleanContentType];
 
-  return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/45 px-4 py-6">
-      <button
-        type="button"
-        className="absolute inset-0 cursor-default"
-        onClick={loading ? undefined : onCancel}
-        aria-label="Close restore confirmation"
-      />
+      return extension ? `${cleanFileName}.${extension}` : cleanFileName;
+    };
 
-      <div
-        className="relative w-full max-w-[430px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="restore-employer-title"
-      >
-        <div className="flex items-start gap-3 px-5 pb-4 pt-5">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-            <Icon name="restore" className="h-5 w-5" />
-          </div>
+    try {
+      if (utfMatch?.[1]) return ensureExtension(decodeURIComponent(utfMatch[1]));
+      if (normalMatch?.[1]) return ensureExtension(normalMatch[1]);
+    } catch {
+      return ensureExtension(fallbackName);
+    }
 
-          <div className="min-w-0 flex-1">
-            <h2 id="restore-employer-title" className="text-base font-bold leading-5 text-gray-900">
-              Restore {name}?
-            </h2>
-            <p className="mt-1.5 text-sm leading-5 text-gray-600">
-              Are you sure you want to restore <strong className="font-semibold text-gray-900">{name}</strong>? The Employer will return to the active verification list for review.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-2 border-t border-gray-100 bg-gray-50 px-5 py-3.5">
-          <Button variant="secondary" size="sm" onClick={onCancel} disabled={loading}>
-            Cancel
-          </Button>
-          <Button variant="primary" size="sm" onClick={onConfirm} loading={loading}>
-            Restore
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const EmployerVerification = () => {
-  const navigate = useNavigate();
-
-  const [rows, setRows] = useState([]);
-  const [stats, setStats] = useState({
-    total: 0,
-    pending: 0,
-    verified: 0,
-    rejected: 0,
-    hold: 0,
-    unverified: 0,
-  });
-
-  const [filterOptions, setFilterOptions] = useState({
-    companies: [],
-    industries: [],
-    statuses: [],
-  });
-
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
-  const [searchDraft, setSearchDraft] = useState("");
-
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    totalItems: 0,
-    totalPages: 1,
-    hasPrevPage: false,
-    hasNextPage: false,
-  });
-
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [showCustomDateModal, setShowCustomDateModal] = useState(false);
-  const [archiveMode, setArchiveMode] = useState(false);
-  const [restoringId, setRestoringId] = useState("");
-  const [restoreTarget, setRestoreTarget] = useState(null);
-
-  const clearMessages = useCallback(() => {
-    setError("");
-    setSuccess("");
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setFilters((prev) => ({
-        ...prev,
-        search: searchDraft.trim(),
-        page: 1,
-      }));
-    }, 350);
-
-    return () => clearTimeout(timer);
-  }, [searchDraft]);
-
-  const fetchEmployers = useCallback(
-    async ({ silent = false } = {}) => {
-      try {
-        clearMessages();
-        if (silent) setRefreshing(true);
-        else setLoading(true);
-
-        const params = {
-          page: filters.page,
-          limit: filters.limit === "all" ? 100000 : filters.limit,
-          sort: filters.sort,
-        };
-
-        const hasSearch = Boolean(filters.search);
-        if (hasSearch) params.search = filters.search;
-        if (!hasSearch && filters.company !== "all") params.company = filters.company;
-        if (!hasSearch && filters.industry !== "all") params.industry = filters.industry;
-        if (archiveMode) params.status = "rejected";
-        else if (!hasSearch && filters.status !== "all") params.status = filters.status;
-        if (!hasSearch && filters.dateFrom) params.dateFrom = filters.dateFrom;
-        if (!hasSearch && filters.dateTo) params.dateTo = filters.dateTo;
-
-        const res = await api.get("/admin/employers/verification", { params });
-        const payload = res?.data || {};
-
-        if (!payload.success) {
-          throw new Error(payload.message || "Failed to load employers.");
-        }
-
-        setRows(payload.employers || []);
-        setStats(
-          payload.stats || {
-            total: 0,
-            pending: 0,
-            verified: 0,
-            rejected: 0,
-            hold: 0,
-            unverified: 0,
-          }
-        );
-        setFilterOptions(
-          payload.filters || {
-            companies: [],
-            industries: [],
-            statuses: [],
-          }
-        );
-        setPagination(
-          payload.pagination || {
-            page: 1,
-            limit: 10,
-            totalItems: 0,
-            totalPages: 1,
-            hasPrevPage: false,
-            hasNextPage: false,
-          }
-        );
-      } catch (err) {
-        setRows([]);
-        setError(err?.response?.data?.message || err.message || "Failed to load employers.");
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    },
-    [filters, archiveMode, clearMessages]
-  );
-
-  useEffect(() => {
-    fetchEmployers();
-  }, [fetchEmployers]);
-
-  const onChangeFilter = (key, value) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: value,
-      page: key === "page" ? value : 1,
-    }));
+    return ensureExtension(fallbackName);
   };
 
-  const onChangeDateFilter = (value) => {
-    if (value === "custom") {
-      setShowCustomDateModal(true);
+  const fetchDocumentBlob = async (
+    docType,
+    disposition = "inline",
+    password = "",
+  ) => {
+    const response = await api.get(
+      `/admin/jobseekers/verification/${id}/docs/${docType}`,
+      {
+        params: { disposition },
+        responseType: "blob",
+        headers: {
+          "x-admin-password": password,
+        },
+      },
+    );
+
+    const contentType =
+      response.headers?.["content-type"] || "application/octet-stream";
+    const fileName = getDownloadFileName(
+      response.headers?.["content-disposition"],
+      docType,
+      contentType,
+    );
+    const blob = new Blob([response.data], { type: contentType });
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const startsWith = (...signature) =>
+      signature.every((value, index) => bytes[index] === value);
+    const cleanContentType = String(contentType).split(";")[0].trim().toLowerCase();
+
+    if (cleanContentType === "application/pdf") {
+      const header = new TextDecoder("ascii").decode(bytes.slice(0, 5));
+      const tail = new TextDecoder("latin1").decode(
+        bytes.slice(Math.max(0, bytes.length - 2048)),
+      );
+      if (header !== "%PDF-" || !tail.includes("%%EOF")) {
+        throw new Error(
+          "The stored PDF is invalid or corrupted. Please ask the user to resubmit a valid PDF file.",
+        );
+      }
+    } else if (
+      cleanContentType === "image/jpeg" &&
+      !startsWith(0xff, 0xd8, 0xff)
+    ) {
+      throw new Error(
+        "The stored image is invalid or corrupted. Please ask the user to resubmit a valid image.",
+      );
+    } else if (
+      cleanContentType === "image/png" &&
+      !startsWith(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)
+    ) {
+      throw new Error(
+        "The stored image is invalid or corrupted. Please ask the user to resubmit a valid image.",
+      );
+    }
+
+    return { blob, fileName, contentType };
+  };
+
+  const closePasswordModal = () => {
+    if (passwordLoading) return;
+    setShowPasswordModal(false);
+    setShowCredentialPassword(false);
+    setCredentialPassword("");
+    setPasswordError("");
+    setPendingCredentialAction(null);
+  };
+
+  const requestCredentialAccess = (action, docType, label = "credential") => {
+    setPendingCredentialAction({ action, docType, label });
+    setCredentialPassword("");
+    setShowCredentialPassword(false);
+    setPasswordError("");
+    setShowPasswordModal(true);
+  };
+
+  const performViewFile = async (docType, password) => {
+    const previewWindow = window.open("", "_blank");
+
+    if (!previewWindow) {
+      throw new Error("Please allow pop-ups to view this credential.");
+    }
+
+    try {
+      const { blob, fileName, contentType } = await fetchDocumentBlob(
+        docType,
+        "inline",
+        password,
+      );
+      const blobUrl = window.URL.createObjectURL(blob);
+      const previewDocument = previewWindow.document;
+
+      previewDocument.title = fileName || docType;
+      previewDocument.body.innerHTML = "";
+      previewDocument.body.style.margin = "0";
+      previewDocument.body.style.background = "#f1f5f9";
+      previewDocument.body.style.fontFamily = "Arial, sans-serif";
+
+      const toolbar = previewDocument.createElement("div");
+      toolbar.style.display = "flex";
+      toolbar.style.alignItems = "center";
+      toolbar.style.justifyContent = "space-between";
+      toolbar.style.gap = "16px";
+      toolbar.style.padding = "12px 18px";
+      toolbar.style.background = "#ffffff";
+      toolbar.style.borderBottom = "1px solid #cbd5e1";
+
+      const title = previewDocument.createElement("strong");
+      title.textContent = fileName || docType;
+      title.style.overflow = "hidden";
+      title.style.textOverflow = "ellipsis";
+      title.style.whiteSpace = "nowrap";
+
+      const downloadButton = previewDocument.createElement("a");
+      downloadButton.href = blobUrl;
+      downloadButton.download = fileName || docType;
+      downloadButton.textContent = "Download";
+      downloadButton.style.flexShrink = "0";
+      downloadButton.style.padding = "9px 16px";
+      downloadButton.style.borderRadius = "8px";
+      downloadButton.style.background = "#2e66a6";
+      downloadButton.style.color = "#ffffff";
+      downloadButton.style.fontSize = "14px";
+      downloadButton.style.fontWeight = "700";
+      downloadButton.style.textDecoration = "none";
+
+      toolbar.appendChild(title);
+      toolbar.appendChild(downloadButton);
+      previewDocument.body.appendChild(toolbar);
+
+      const previewContentType = String(blob.type || contentType || "").toLowerCase();
+      if (previewContentType.startsWith("image/")) {
+        const image = previewDocument.createElement("img");
+        image.src = blobUrl;
+        image.alt = fileName || docType;
+        image.style.display = "block";
+        image.style.maxWidth = "calc(100% - 32px)";
+        image.style.maxHeight = "calc(100vh - 90px)";
+        image.style.margin = "16px auto";
+        image.style.objectFit = "contain";
+        previewDocument.body.appendChild(image);
+      } else {
+        const embeddedDocument = previewDocument.createElement("embed");
+        embeddedDocument.src = blobUrl;
+        embeddedDocument.type = previewContentType || "application/pdf";
+        embeddedDocument.title = fileName || docType;
+        embeddedDocument.style.display = "block";
+        embeddedDocument.style.width = "100%";
+        embeddedDocument.style.height = "calc(100vh - 62px)";
+        embeddedDocument.style.border = "0";
+        previewDocument.body.appendChild(embeddedDocument);
+      }
+
+      previewWindow.addEventListener(
+        "beforeunload",
+        () => window.URL.revokeObjectURL(blobUrl),
+        { once: true },
+      );
+      window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 10 * 60 * 1000);
+    } catch (viewError) {
+      previewWindow.close();
+      throw viewError;
+    }
+  };
+
+  const performDownloadFile = async (docType, fallbackName, password) => {
+    const { blob, fileName } = await fetchDocumentBlob(
+      docType,
+      "attachment",
+      password,
+    );
+    const blobUrl = window.URL.createObjectURL(blob);
+    const downloadLink = document.createElement("a");
+
+    downloadLink.href = blobUrl;
+    downloadLink.download = fileName || fallbackName;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    downloadLink.remove();
+
+    window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+  };
+
+  const confirmCredentialAccess = async () => {
+    if (!credentialPassword.trim()) {
+      setPasswordError("Please enter your password.");
       return;
     }
 
-    const range = getPresetDateRange(value);
-
-    setFilters((prev) => ({
-      ...prev,
-      date: value,
-      dateFrom: range.dateFrom,
-      dateTo: range.dateTo,
-      page: 1,
-    }));
-  };
-
-  const applyCustomDateRange = (dateFrom, dateTo) => {
-    setFilters((prev) => ({
-      ...prev,
-      date: "custom",
-      dateFrom,
-      dateTo,
-      page: 1,
-    }));
-    setShowCustomDateModal(false);
-  };
-
-  const clearAllFilters = () => {
-    setSearchDraft("");
-    setFilters(DEFAULT_FILTERS);
-  };
-
-  const onDeleteEmployer = async () => {
-    if (!deleteTarget?._id) return;
+    if (!pendingCredentialAction) return;
 
     try {
-      setDeleteLoading(true);
-      clearMessages();
+      setPasswordLoading(true);
+      setPasswordError("");
 
-      const res = await api.delete(`/admin/users/${deleteTarget._id}`);
-
-      if (!res.data?.success) {
-        throw new Error(res.data?.message || "Failed to delete employer.");
-      }
-
-      setSuccess("Employer deleted successfully.");
-      setDeleteTarget(null);
-
-      const isOnlyItemOnPage = visibleRows.length === 1 && pagination.page > 1;
-      if (isOnlyItemOnPage) {
-        setFilters((prev) => ({ ...prev, page: prev.page - 1 }));
+      if (pendingCredentialAction.action === "view") {
+        await performViewFile(
+          pendingCredentialAction.docType,
+          credentialPassword,
+        );
+      } else if (pendingCredentialAction.action === "download") {
+        await performDownloadFile(
+          pendingCredentialAction.docType,
+          pendingCredentialAction.label,
+          credentialPassword,
+        );
       } else {
-        fetchEmployers({ silent: true });
+        await fetchDocumentBlob(
+          pendingCredentialAction.docType,
+          "inline",
+          credentialPassword,
+        );
+
+        setApprovalPassword(credentialPassword);
+        approvalPasswordRef.current = credentialPassword;
+        if (pendingCredentialAction.action === "approveAccount") {
+          setShowApproveModal(true);
+        } else if (pendingCredentialAction.action === "approveCredential") {
+          setVerifyCredential({
+            key: pendingCredentialAction.docType,
+            label: pendingCredentialAction.label,
+          });
+        }
       }
-    } catch (err) {
-      setError(err?.response?.data?.message || err.message || "Failed to delete employer.");
+
+      setShowPasswordModal(false);
+      setCredentialPassword("");
+      setPendingCredentialAction(null);
+    } catch (credentialError) {
+      console.error("Credential access error:", credentialError);
+
+      let serverMessage = "";
+
+      if (credentialError.response?.data instanceof Blob) {
+        try {
+          const errorText = await credentialError.response.data.text();
+          const parsedError = JSON.parse(errorText);
+          serverMessage = parsedError?.message || "";
+        } catch {
+          serverMessage = "";
+        }
+      } else {
+        serverMessage =
+          credentialError.response?.data?.message ||
+          credentialError.message ||
+          "";
+      }
+
+      if (credentialError.response?.status === 401) {
+        setPasswordError(
+          serverMessage || "Incorrect password. Please try again.",
+        );
+      } else {
+        setPasswordError(
+          serverMessage ||
+            "Unable to access this credential. Please try again.",
+        );
+      }
     } finally {
-      setDeleteLoading(false);
+      setPasswordLoading(false);
     }
   };
 
-  const restoreEmployer = async (item) => {
-    if (!item?._id) return;
+  const handleViewFile = (docType, label = "credential") => {
+    requestCredentialAccess("view", docType, label);
+  };
+
+  const handleDownloadFile = (docType, fallbackName = "document") => {
+    requestCredentialAccess("download", docType, fallbackName);
+  };
+
+  const handleCheckFile = async (docType) => {
     try {
-      setRestoringId(item._id);
-      const response = await api.patch(`/admin/employers/verification/${item._id}/restore`);
-      setSuccess(response.data?.message || "Employer restored successfully.");
-      setRestoreTarget(null);
-      await fetchEmployers({ silent: true });
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to restore employer.");
+      setCheckingDoc(docType);
+      setError("");
+      const response = await api.patch(
+        `/admin/jobseekers/verification/${id}/docs/${docType}/check`,
+        {},
+      );
+      setSuccess(response.data?.message || "Document marked as checked.");
+      await fetchJobseekerDetails();
+    } catch (checkError) {
+      setError(
+        checkError.response?.data?.message || "Unable to check this document.",
+      );
     } finally {
-      setRestoringId("");
+      setCheckingDoc("");
     }
   };
 
-  const visibleRows = useMemo(() => {
-    return rows.filter((item) => {
-      const status = String(item?.overallStatus || "unverified").toLowerCase();
-      return archiveMode
-        ? status === "rejected" || status === "declined"
-        : status !== "verified" && status !== "rejected" && status !== "declined";
+  const restoreJobseeker = async () => {
+    try {
+      setActionLoading(true);
+      const response = await api.patch(
+        `/admin/jobseekers/verification/${id}/restore`,
+      );
+      setSuccess(response.data?.message || "Jobseeker restored successfully.");
+      setShowRestoreModal(false);
+      await fetchJobseekerDetails();
+    } catch (restoreError) {
+      setError(
+        restoreError.response?.data?.message || "Unable to restore jobseeker.",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const fetchJobseekerDetails = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const res = await api.get(`/admin/jobseekers/verification/${id}`);
+
+      if (res.data?.success) {
+        setJobseeker(res.data.jobseeker);
+        setReviewNotes(
+          res.data.jobseeker?.verificationSummary?.adminRemarks || "",
+        );
+      } else {
+        setError("Jobseeker not found");
+      }
+    } catch (e) {
+      console.error("Error fetching jobseeker details:", e);
+      setError(
+        e.response?.data?.message || "Failed to load jobseeker details.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchJobseekerDetails();
+  }, [fetchJobseekerDetails]);
+
+  useEffect(() => {
+    if (!success) return undefined;
+
+    const successTimer = window.setTimeout(() => {
+      setSuccess("");
+    }, 3000);
+
+    return () => window.clearTimeout(successTimer);
+  }, [success]);
+
+  const resetDeclineModal = () => {
+    setShowDeclineModal(false);
+    setDeclineMessage("");
+    setDeclineReason("");
+  };
+
+  const resetHoldModal = () => {
+    setShowHoldModal(false);
+    setHoldDocTypes([]);
+    setHoldReason("");
+    setHoldSelectedReason("");
+  };
+
+  const toggleHoldDocType = (docKey) => {
+    setHoldDocTypes((prev) => (prev.includes(docKey) ? [] : [docKey]));
+  };
+
+  const handleStatusUpdate = async (
+    newStatus,
+    remarks = "",
+    extraPayload = {},
+  ) => {
+    try {
+      setActionLoading(true);
+      setError("");
+      setSuccess("");
+
+      const res = await api.put(`/admin/jobseekers/verification/${id}/status`, {
+        overallStatus: newStatus,
+        adminRemarks: remarks,
+        ...(newStatus === "verified"
+          ? { adminPassword: approvalPasswordRef.current || approvalPassword }
+          : {}),
+        ...extraPayload,
+      });
+
+      if (res.data?.success) {
+        const successLabel =
+          newStatus === "verified"
+            ? "approved"
+            : newStatus === "rejected"
+              ? "declined"
+              : newStatus;
+
+        setSuccess(`Jobseeker ${successLabel} successfully.`);
+        await fetchJobseekerDetails();
+        setShowApproveModal(false);
+        setApprovalPassword("");
+        approvalPasswordRef.current = "";
+        resetDeclineModal();
+      } else {
+        setError("Failed to update status.");
+      }
+    } catch (e) {
+      console.error("Error updating status:", e);
+      setError(
+        e.response?.data?.message || "Failed to update verification status.",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleHoldSubmit = async () => {
+    if (holdDocTypes.length === 0) {
+      setError("Please select at least one document that needs resubmission.");
+      return;
+    }
+
+    if (!holdSelectedReason && !holdReason.trim()) {
+      setError("Please select a reason or write a message for the user.");
+      return;
+    }
+
+    const selectedDocs = documentTypes
+      .filter((doc) => holdDocTypes.includes(doc.key))
+      .map((doc) => ({ key: doc.key, label: doc.label }));
+
+    try {
+      setActionLoading(true);
+      setError("");
+      setSuccess("");
+
+      const finalHoldMessage = [holdSelectedReason, holdReason.trim()]
+        .filter(Boolean)
+        .join(" — ");
+      const res = await api.put(`/admin/jobseekers/verification/${id}/hold`, {
+        docType: holdDocTypes[0],
+        docTypes: holdDocTypes,
+        requestedDocuments: selectedDocs,
+        reasonMessage: finalHoldMessage,
+      });
+
+      if (res.data?.success) {
+        setSuccess("Jobseeker placed on hold successfully.");
+        await fetchJobseekerDetails();
+        resetHoldModal();
+      } else {
+        setError("Failed to place jobseeker on hold.");
+      }
+    } catch (e) {
+      console.error("Error placing jobseeker on hold:", e);
+      setError(
+        e.response?.data?.message || "Failed to place jobseeker on hold.",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeclineSubmit = async () => {
+    const finalDeclineMessage =
+      declineMessage.trim() || declineReason || DEFAULT_DECLINE_MESSAGE;
+    const remarks = `Declined verification request. Message to user: ${finalDeclineMessage}`;
+
+    await handleStatusUpdate("rejected", remarks, {
+      rejectionReasons: [declineReason || DEFAULT_DECLINE_REASON],
+      declineMessage: finalDeclineMessage,
+      rejectionMessage: finalDeclineMessage,
     });
-  }, [rows, archiveMode]);
+  };
 
-  const visibleStatusOptions = useMemo(() => {
-    return (filterOptions.statuses || []).filter((status) => {
-      const value = String(status?.value || "").toLowerCase();
-      return value !== "unverified" && value !== "verified" && value !== "rejected" && value !== "declined";
-    });
-  }, [filterOptions.statuses]);
+  const getStatusBadge = (status) => {
+    const s = (status || "not_submitted").toLowerCase();
+    if (s === "verified") return <Badge variant="success">Approved</Badge>;
+    if (s === "pending") return <Badge variant="warning">Pending</Badge>;
+    if (s === "rejected") return <Badge variant="danger">Declined</Badge>;
+    if (s === "hold") return <Badge variant="warning">On Hold</Badge>;
+    return <Badge variant="neutral">Not Submitted</Badge>;
+  };
 
-  const desktopRows = visibleRows;
-  const mobileRows = visibleRows;
+  const getCredentialStatusBadge = (status) => {
+    const normalizedStatus = String(status || "not_submitted").toLowerCase();
+    const badgeClass =
+      "inline-flex max-w-full items-center justify-center rounded-full border px-3 py-1 text-center text-xs font-semibold leading-4 whitespace-nowrap";
 
-  const hasActiveFilters =
-    searchDraft.trim() !== "" ||
-    filters.company !== "all" ||
-    filters.industry !== "all" ||
-    filters.status !== "all" ||
-    filters.date !== "all" ||
-    filters.dateFrom !== "" ||
-    filters.dateTo !== "";
+    if (normalizedStatus === "approved") {
+      return (
+        <span className={cn(badgeClass, "border-emerald-200 bg-emerald-50 text-emerald-700")}>
+          Approved
+        </span>
+      );
+    }
+
+    if (["pending", "submitted"].includes(normalizedStatus)) {
+      return (
+        <span className={cn(badgeClass, "border-amber-200 bg-amber-50 text-amber-700")}>
+          Pending
+        </span>
+      );
+    }
+
+    if (["rejected", "action_needed"].includes(normalizedStatus)) {
+      return (
+        <span className={cn(badgeClass, "border-red-200 bg-red-50 text-red-700")}>
+          Declined
+        </span>
+      );
+    }
+
+    if (normalizedStatus === "hold") {
+      return (
+        <span className={cn(badgeClass, "border-amber-200 bg-amber-50 text-amber-700")}>
+          On Hold
+        </span>
+      );
+    }
+
+    return (
+      <span className={cn(badgeClass, "border-gray-200 bg-gray-50 text-gray-700")}>
+        Not Submitted
+      </span>
+    );
+  };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className={UI.page}>
+          <div className={cn(UI.card, "p-10")}>
+            <div className="flex flex-col items-center justify-center gap-3">
+              <Spinner className="w-10 h-10 text-[#2e66a6]" />
+              <p className="text-sm text-black/70">
+                Loading jobseeker details…
+              </p>
+            </div>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (error && !jobseeker) {
+    return (
+      <AdminLayout>
+        <div className={UI.page}>
+          <div className={cn(UI.card, "p-10 text-center")}>
+            <div className="mx-auto w-14 h-14 rounded-2xl bg-[#FDF2F2] border border-[#F3D1D1] flex items-center justify-center text-[#B42318]">
+              <SvgIcon name="x" className="w-7 h-7" />
+            </div>
+            <h3 className="mt-4 text-lg font-bold text-black">Error</h3>
+            <p className="mt-2 text-sm text-black/70">{error}</p>
+            <div className="mt-6">
+              <Link
+                to="/admin/jobseeker-verification"
+                className={cn(UI.btnBase, UI.btnLg, UI.btnPrimary, UI.ring)}
+              >
+                <SvgIcon name="back" className="w-4 h-4" />
+                Back to List
+              </Link>
+            </div>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (!jobseeker) {
+    return (
+      <AdminLayout>
+        <div className={UI.page}>
+          <div className={cn(UI.card, "p-10 text-center")}>
+            <div className="mx-auto w-14 h-14 rounded-2xl bg-[#F5F7FA] border border-[#E2E8F0] flex items-center justify-center text-black/50">
+              <SvgIcon name="user" className="w-7 h-7" />
+            </div>
+            <h3 className="mt-4 text-lg font-bold text-black">Not Found</h3>
+            <p className="mt-2 text-sm text-black/70">
+              The jobseeker you're looking for doesn't exist or has been
+              removed.
+            </p>
+            <div className="mt-6">
+              <Link
+                to="/admin/jobseeker-verification"
+                className={cn(UI.btnBase, UI.btnLg, UI.btnSecondary, UI.ring)}
+              >
+                <SvgIcon name="back" className="w-4 h-4" />
+                Back to List
+              </Link>
+            </div>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  const profile = jobseeker.jobSeekerProfile || {};
+  const verificationSummary = jobseeker.verificationSummary || {};
+  const documentDetails = jobseeker.documentDetails || {};
+  const firstSubmittedDocument = documentTypes.find(
+    (docType) => Boolean(documentDetails[docType.key]?.url),
+  );
+
+  const requiredCredentialKeys = ["cv", "tor", "diploma", "validId"];
+  const allRequiredCredentialsApproved = requiredCredentialKeys.every((docType) => {
+    const document = documentDetails[docType] || {};
+    const status = String(document.status || "").toLowerCase();
+    return Boolean(document.url) && (document.checked === true || status === "approved");
+  });
+
+  const overallStatus = verificationSummary.overallStatus || "not_submitted";
+  const isApproved = overallStatus === "verified";
+  const isRejected = overallStatus === "rejected";
+  const followUpDocumentTypes = ["sss", "philhealth", "pagibig", "tin"];
+  const hasPendingFollowUpCredential = followUpDocumentTypes.some((docType) => {
+    const document = documentDetails[docType] || {};
+    const status = String(document.status || "").toLowerCase();
+    return Boolean(document.url) && ["pending", "submitted", "hold", "action_needed"].includes(status);
+  });
+  const isFollowUpReview = jobseeker.isVerified === true && hasPendingFollowUpCredential;
+  const canShowActionButtons = !isApproved && !isRejected;
+  const fullName =
+    `${jobseeker.firstName || ""} ${jobseeker.middleName || ""} ${jobseeker.lastName || ""}`
+      .replace(/\s+/g, " ")
+      .trim();
+  const displayPhone = profile.phoneNumber || profile.mobileNumber || "—";
+  const submittedCount = verificationSummary.submittedCount || 0;
+  const totalDocs = verificationSummary.totalDocs || 8;
+  const combinedSkills = formatSkills(
+    profile.technicalSkills,
+    profile.softSkills,
+  );
+
+  const registrationId =
+    jobseeker.registrationId ||
+    `JS-${new Date(jobseeker.createdAt || Date.now()).getFullYear()}-${String(
+      jobseeker._id || "",
+    )
+      .slice(-6)
+      .toUpperCase()}`;
+
+  const completeName = [
+    jobseeker.firstName,
+    jobseeker.middleName,
+    jobseeker.lastName,
+    jobseeker.extensionName,
+  ]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean)
+    .join(" ");
+
+  const infoRowsLeft = [
+    ["Full Name", completeName],
+    ["Campus", profile.campus],
+    ["Course", profile.course],
+    ["Year Graduated", profile.yearGraduated],
+  ];
+
+  const infoRowsRight = [
+    ["Preferred Work Mode", profile.preferredWorkMode],
+    ["Email", jobseeker.email],
+    ["Contact Number", displayPhone],
+    ["Date Registered", formatDate(jobseeker.createdAt, true)],
+  ];
 
   return (
     <AdminLayout>
       <div className="mx-auto max-w-7xl px-1 py-8">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-[33px] font-semibold leading-[40px] text-gray-900">Employer Verification</h1>
-            <p className="mt-1 text-sm text-gray-600">Review, filter, and manage employer verification requests</p>
-          </div>
-          <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
-            <button type="button" onClick={() => { setArchiveMode(false); setFilters((prev) => ({ ...prev, status: "all", page: 1 })); }} className={cn("rounded-lg px-4 py-2 text-sm font-semibold", !archiveMode ? "bg-[#2e66a6]/10 text-[#2e66a6]" : "text-gray-600")}>Active <span className="ml-1 rounded-full bg-white px-2 py-0.5">{Math.max(0, stats.total - stats.rejected - stats.verified)}</span></button>
-            <button type="button" onClick={() => { setArchiveMode(true); setFilters((prev) => ({ ...prev, status: "all", page: 1 })); }} className={cn("rounded-lg px-4 py-2 text-sm font-semibold", archiveMode ? "bg-[#2e66a6]/10 text-[#2e66a6]" : "text-gray-600")}>Archived <span className="ml-1 rounded-full bg-white px-2 py-0.5">{stats.rejected}</span></button>
-          </div>
+        <div className="mb-5">
+          <h1 className="text-2xl font-bold text-black sm:text-3xl">
+            Account Review
+          </h1>
+          <p className="mt-1 text-sm text-black/60">
+            Review and verify job seeker account registrations and submitted
+            documents.
+          </p>
         </div>
 
-        {error ? (
-          <Alert type="error" title="Error" onClose={() => setError("")}>
+        {error && (
+          <Alert type="error" onClose={() => setError("")}>
             {error}
           </Alert>
-        ) : null}
+        )}
 
         {success ? (
-          <Alert type="success" title="Success" onClose={() => setSuccess("")}>
-            {success}
-          </Alert>
+          <CenteredIndicator
+            type="success"
+            title={success}
+            message={success}
+            hideMessage
+            onClose={() => setSuccess("")}
+          />
         ) : null}
 
-        <Card className="relative z-20 mb-6 overflow-visible" padding={false}>
-          <div className="p-4 sm:p-5">
-            <div
+        <div className="rounded-2xl border border-[#D9E2EC] bg-white p-5 shadow-[0_2px_6px_rgba(15,23,42,0.08)] sm:p-6">
+          <div className="mb-5 flex flex-col gap-4 border-b border-[#D9E2EC] pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <Link
+              to="/admin/jobseeker-verification"
               className={cn(
-                "grid grid-cols-1 gap-3 xl:items-end",
-                hasActiveFilters ? "xl:grid-cols-6" : "xl:grid-cols-5"
+                "inline-flex w-fit items-center gap-2 text-sm font-semibold text-[#2e66a6] hover:text-[#245487]",
+                UI.ring,
               )}
             >
-              <div className={archiveMode ? "xl:col-span-2" : ""}>
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                    <Icon name="search" className="h-5 w-5" />
-                  </span>
+              <SvgIcon name="back" className="h-4 w-4" />
+              Back to List
+            </Link>
+            {canShowActionButtons ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {!isFollowUpReview ? (
+                  <>
+                <button
+                  type="button"
+                  onClick={() => firstSubmittedDocument && requestCredentialAccess("approveAccount", firstSubmittedDocument.key, "this Job Seeker")}
+                  disabled={actionLoading || !allRequiredCredentialsApproved}
+                  className={cn(
+                    "inline-flex h-10 min-w-[112px] items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white shadow-sm hover:bg-[#255587] disabled:opacity-50",
+                    UI.ring,
+                  )}
+                >
+                  <SvgIcon name="check" className="h-4 w-4" />
+                  Approve
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeclineModal(true)}
+                  disabled={actionLoading}
+                  className={cn(
+                    "inline-flex h-10 min-w-[112px] items-center justify-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-bold text-black shadow-sm hover:bg-black/5 disabled:opacity-50",
+                    UI.ring,
+                  )}
+                >
+                  <SvgIcon name="x" className="h-4 w-4" />
+                  Decline
+                </button>
+                  </>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => setShowHoldModal(true)}
+                  disabled={actionLoading}
+                  className={cn(
+                    "inline-flex h-10 min-w-[112px] items-center justify-center gap-2 rounded-lg bg-black px-4 text-sm font-bold text-white shadow-sm hover:bg-black/90 disabled:opacity-50",
+                    UI.ring,
+                  )}
+                >
+                  <SvgIcon name="pause" className="h-4 w-4" />
+                  Hold
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                {getStatusBadge(overallStatus)}
+                {isRejected ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowRestoreModal(true)}
+                    disabled={actionLoading}
+                    className={cn(
+                      "inline-flex h-10 items-center justify-center rounded-lg border border-[#2e66a6] px-4 text-sm font-bold text-[#2e66a6]",
+                      UI.ring,
+                    )}
+                  >
+                    Restore
+                  </button>
+                ) : null}
+              </div>
+            )}
+          </div>
 
-                  <input
-                    value={searchDraft}
-                    onChange={(e) => setSearchDraft(e.target.value)}
-                    className={cn(inputBase, "pl-11 pr-10")}
-                    placeholder="Search company, email..."
-                    disabled={loading}
-                  />
+          <section className="rounded-2xl border border-[#D9E2EC] bg-white p-5 sm:p-6">
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2 text-[#2e66a6]">
+                <SvgIcon name="user" className="h-5 w-5" />
+                <h2 className="text-base font-bold">Job Seeker Information</h2>
+              </div>
 
-                  {searchDraft ? (
+              {canShowActionButtons ? (
+                <div className="hidden flex-wrap items-center gap-2">
+                  {!isFollowUpReview ? (
+                    <>
+                  <button
+                    type="button"
+                    onClick={() => firstSubmittedDocument && requestCredentialAccess("approveAccount", firstSubmittedDocument.key, "this Job Seeker")}
+                    disabled={actionLoading || !allRequiredCredentialsApproved}
+                    className={cn(
+                      "inline-flex h-10 min-w-[112px] items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white hover:bg-[#255587] disabled:opacity-50",
+                      UI.ring,
+                    )}
+                  >
+                    <SvgIcon name="check" className="h-4 w-4" />
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowDeclineModal(true)}
+                    disabled={actionLoading}
+                    className={cn(
+                      "inline-flex h-10 min-w-[112px] items-center justify-center gap-2 rounded-lg border border-[#2e66a6] bg-white px-4 text-sm font-bold text-[#2e66a6] hover:bg-[#2e66a6]/10 disabled:opacity-50",
+                      UI.ring,
+                    )}
+                  >
+                    <SvgIcon name="x" className="h-4 w-4" />
+                    Decline
+                  </button>
+                    </>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => setShowHoldModal(true)}
+                    disabled={actionLoading}
+                    className={cn(
+                      "inline-flex h-10 min-w-[112px] items-center justify-center gap-2 rounded-lg bg-black px-4 text-sm font-bold text-white hover:bg-black/90 disabled:opacity-50",
+                      UI.ring,
+                    )}
+                  >
+                    <SvgIcon name="pause" className="h-4 w-4" />
+                    Hold
+                  </button>
+                </div>
+              ) : (
+                <div className="hidden items-center gap-2">
+                  {getStatusBadge(overallStatus)}
+                  {isRejected ? (
                     <button
                       type="button"
-                      onClick={() => setSearchDraft("")}
-                      className={cn("absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-gray-500 hover:bg-gray-100", focusRing)}
-                      aria-label="Clear search"
+                      onClick={() => setShowRestoreModal(true)}
+                      disabled={actionLoading}
+                      className={cn(
+                        "inline-flex h-10 items-center justify-center rounded-lg border border-[#2e66a6] px-4 text-sm font-bold text-[#2e66a6]",
+                        UI.ring,
+                      )}
                     >
-                      <Icon name="x" className="h-4 w-4" />
+                      Restore
                     </button>
+                  ) : null}
+                </div>
+              )}
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-[1fr_1fr_190px] lg:items-center">
+              <div className="space-y-3">
+                {infoRowsLeft.map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="grid grid-cols-[145px_1fr] gap-4 text-sm"
+                  >
+                    <span className="text-[#5B6472]">{label}:</span>
+                    <span className="font-semibold text-black">
+                      {value || "—"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-3 border-[#D9E2EC] lg:border-l lg:pl-7">
+                {infoRowsRight.map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="grid grid-cols-[150px_1fr] gap-4 text-sm"
+                  >
+                    <span className="text-[#5B6472]">{label}:</span>
+                    <span className="font-semibold text-black">
+                      {value || "—"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col items-center justify-center">
+                {jobseeker.profileImage ? (
+                  <img
+                    src={buildFileUrl(jobseeker.profileImage)}
+                    alt={`${fullName} registration`}
+                    className="h-28 w-28 rounded-full bg-[#F1F5F9] object-cover"
+                  />
+                ) : (
+                  <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-white shadow-sm">
+                    <img
+                      src="/images/profile.png"
+                      alt="Default profile placeholder"
+                      className="h-full w-full object-cover bg-white"
+                    />
+                  </div>
+                )}
+
+                <span
+                  className={cn(
+                    "mt-3 rounded-full px-3 py-1 text-xs font-semibold",
+                    jobseeker.profileImage
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "border border-[#D9E2EC] bg-white text-black/60",
+                  )}
+                >
+                  {jobseeker.profileImage
+                    ? "ID Photo Submitted"
+                    : "No Photo Submitted"}
+                </span>
+              </div>
+            </div>
+          </section>
+
+          <section className="mt-5 rounded-2xl border border-[#D9E2EC] bg-white p-5 sm:p-6">
+            <div className="mb-5 flex flex-wrap items-center gap-2">
+              <SvgIcon name="document" className="h-5 w-5 text-[#2e66a6]" />
+              <h2 className="text-base font-bold text-[#2e66a6]">
+                Credentials
+              </h2>
+              <span className="text-sm text-[#5B6472]">
+                ({submittedCount}/{totalDocs} Submitted)
+              </span>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
+              {documentTypes.map((docType, index) => {
+                const doc = documentDetails[docType.key] || {};
+                const hasFile = Boolean(doc.url);
+                const credentialStatus = String(
+                  doc.status || (doc.checked ? "approved" : hasFile ? "pending" : "not_submitted"),
+                ).toLowerCase();
+                const credentialApproved = credentialStatus === "approved" || doc.checked;
+                const credentialNeedsAction = ["hold", "rejected", "action_needed"].includes(credentialStatus);
+                const fileName =
+                  doc.filename || getFileNameFromUrl(doc.url, docType.label);
+                const fileSize = formatFileSize(doc.fileSize);
+
+                return (
+                  <article
+                    key={docType.key}
+                    className="flex min-h-[165px] flex-col rounded-xl border border-[#D9E2EC] bg-white p-3"
+                  >
+                    <div className="flex items-start gap-2">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#F1F5F9] text-[11px] font-semibold text-[#526273]">
+                        {index + 1}
+                      </span>
+                      <h3 className="min-w-0 text-xs font-bold leading-5 text-black">
+                        {docType.label}
+                      </h3>
+                    </div>
+
+                    <div className="mt-3 min-h-[54px] flex flex-1 items-start gap-2">
+                      <div
+                        className={cn(
+                          "flex h-10 w-9 shrink-0 items-center justify-center rounded",
+                          hasFile
+                            ? "bg-red-50 text-red-600"
+                            : "bg-black/5 text-black/45",
+                        )}
+                      >
+                        <SvgIcon name="document" className="h-5 w-5" />
+                      </div>
+
+                      <div className="min-w-0">
+                        <p
+                          className="truncate text-[11px] font-semibold text-black"
+                          title={fileName}
+                        >
+                          {hasFile ? fileName : "No file"}
+                        </p>
+                        {fileSize ? (
+                          <p className="mt-1 text-[10px] text-[#7A8492]">
+                            ({fileSize})
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div
+                      className={cn(
+                        "flex min-h-[26px] w-full items-center justify-center overflow-hidden",
+                        "mt-2",
+                        credentialStatus === "not_submitted" && "-translate-y-4",
+                      )}
+                    >
+                      {getCredentialStatusBadge(credentialStatus)}
+                    </div>
+
+                    {hasFile ? (
+                      <div className="mt-3 grid grid-cols-2 gap-2 border-t border-[#E1E7EF] pt-3">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleViewFile(docType.key, docType.label)
+                          }
+                          className={cn(
+                            "flex h-9 items-center justify-center rounded-lg border border-[#D9E2EC] bg-[#F8FAFC] text-[#667085] shadow-sm hover:bg-[#F1F5F9]",
+                            UI.ring,
+                          )}
+                          aria-label={`View ${docType.label}`}
+                          title={`View ${docType.label}`}
+                        >
+                          <SvgIcon name="eye" className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => requestCredentialAccess("approveCredential", docType.key, docType.label)}
+                          disabled={
+                            checkingDoc === docType.key ||
+                            credentialApproved ||
+                            !["pending", "submitted"].includes(credentialStatus)
+                          }
+                          className={cn(
+                            "flex h-9 items-center justify-center rounded-lg border border-[#D9E2EC] text-[#667085] shadow-sm",
+                            credentialApproved
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-600"
+                              : "bg-[#F8FAFC] hover:bg-[#F1F5F9]",
+                            UI.ring,
+                          )}
+                          aria-label={`Check ${docType.label}`}
+                          title={
+                            credentialApproved
+                              ? `${docType.label} checked`
+                              : `Check ${docType.label}`
+                          }
+                        >
+                          <SvgIcon name="check" className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="mt-3 flex h-9 items-center justify-center rounded-lg border border-[#D9E2EC] bg-white text-[11px] font-medium text-[#667085]">
+                        No file uploaded
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+      </div>
+
+      {showRestoreModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-4">
+          <div className="w-full max-w-[430px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="restore-jobseeker-title">
+            <div className="flex items-start gap-3 px-5 pb-4 pt-5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                <SvgIcon name="restore" className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 id="restore-jobseeker-title" className="text-base font-bold leading-5 text-black">Restore {jobseeker?.fullName || "Job Seeker"}?</h3>
+                <p className="mt-1.5 text-sm leading-5 text-[#667085]">
+                  Are you sure you want to restore <strong className="text-black">{jobseeker?.fullName || "this Job Seeker"}</strong>? The Job Seeker will return to the active verification list for review.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50 px-5 py-3.5">
+              <button type="button" onClick={() => setShowRestoreModal(false)} disabled={actionLoading} className={cn("h-9 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-black", UI.ring)}>Cancel</button>
+              <button type="button" onClick={restoreJobseeker} disabled={actionLoading} className={cn("h-9 rounded-lg bg-[#2e66a6] px-4 text-sm font-bold text-white disabled:opacity-50", UI.ring)}>{actionLoading ? "Restoring..." : "Restore"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {verifyCredential && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-4">
+          <div
+            className="relative w-full max-w-[470px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="verify-credential-title"
+          >
+            <div className="flex items-start gap-4 px-6 pb-5 pt-6">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#EEF6FF] text-[#2e66a6]">
+                <SvgIcon name="check" className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1 pr-7">
+                <h3 id="verify-credential-title" className="text-lg font-bold leading-6 text-black">
+                  Approve {verifyCredential.label} Credential?
+                </h3>
+                <p className="mt-1 text-sm leading-5 text-[#667085]">
+                  This will confirm that the <strong className="text-black">{verifyCredential.label}</strong> credential has been reviewed and verified.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setVerifyCredential(null)}
+                disabled={Boolean(checkingDoc)}
+                className="absolute right-5 top-5 rounded-lg p-1.5 text-[#667085] transition hover:bg-slate-100"
+                aria-label="Close"
+              >
+                <SvgIcon name="x" className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50 px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setVerifyCredential(null)}
+                disabled={Boolean(checkingDoc)}
+                className={cn(
+                  "h-10 rounded-lg border border-slate-300 bg-white px-5 text-sm font-semibold text-black shadow-sm",
+                  UI.ring,
+                )}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={Boolean(checkingDoc)}
+                onClick={async () => {
+                  const target = verifyCredential;
+                  await handleCheckFile(target.key);
+                  setVerifyCredential(null);
+                }}
+                className={cn(
+                  "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e66a6] px-5 text-sm font-bold text-white shadow-sm hover:bg-[#255587] disabled:opacity-50",
+                  UI.ring,
+                )}
+              >
+                <SvgIcon name="check" className="h-4 w-4" />
+                {checkingDoc ? "Approving..." : "Approve"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-[60] overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div
+              className="fixed inset-0 bg-black/45"
+              onClick={closePasswordModal}
+              aria-hidden="true"
+            />
+
+            <div
+              className="relative w-full max-w-md overflow-hidden rounded-2xl border border-black/15 bg-white shadow-2xl"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="credential-password-title"
+            >
+              <div className="p-6 sm:p-7">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#2e66a6]/10 text-[#2e66a6]">
+                  <SvgIcon
+                    name={
+                      pendingCredentialAction?.action === "download"
+                        ? "download"
+                        : "eye"
+                    }
+                    className="h-6 w-6"
+                  />
+                </div>
+
+                <h3
+                  id="credential-password-title"
+                  className="mt-4 text-center text-2xl font-bold text-black"
+                >
+                  Enter Password
+                </h3>
+
+                <p className="mt-2 text-center text-sm leading-6 text-black/65">
+                  Enter your admin password to{" "}
+                  {pendingCredentialAction?.action === "download"
+                    ? "download"
+                    : pendingCredentialAction?.action === "view"
+                      ? "view"
+                      : "approve"}{" "}
+                  {pendingCredentialAction?.label || "this credential"}.
+                </p>
+
+                <div className="mt-5">
+                  <label
+                    htmlFor="credentialPassword"
+                    className="block text-sm font-semibold text-black"
+                  >
+                    Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="credentialPassword"
+                      type={showCredentialPassword ? "text" : "password"}
+                      value={credentialPassword}
+                      onChange={(event) => {
+                        setCredentialPassword(event.target.value);
+                        setPasswordError("");
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          confirmCredentialAccess();
+                        }
+                      }}
+                      autoFocus
+                      disabled={passwordLoading}
+                      className={cn(
+                        "mt-2 h-11 w-full rounded-xl border bg-white px-4 pr-12 text-sm text-black placeholder-black/35",
+                        passwordError ? "border-black" : "border-black/20",
+                        UI.ring,
+                      )}
+                      placeholder="Enter your password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowCredentialPassword((value) => !value)
+                      }
+                      className="absolute right-3 top-1/2 mt-1 -translate-y-1/2 text-black/55"
+                      aria-label={
+                        showCredentialPassword
+                          ? "Hide password"
+                          : "Show password"
+                      }
+                    >
+                      {showCredentialPassword ? <FaEyeSlash /> : <FaEye />}
+                    </button>
+                  </div>
+
+                  {passwordError ? (
+                    <p
+                      className="mt-2 text-sm font-medium text-black"
+                      role="alert"
+                    >
+                      {passwordError}
+                    </p>
                   ) : null}
                 </div>
               </div>
 
-              <div>
-                <select
-                  value={filters.company}
-                  onChange={(e) => onChangeFilter("company", e.target.value)}
-                  className={inputBase}
-                  disabled={loading}
+              <div className="grid grid-cols-2 gap-3 border-t border-black/10 bg-white px-6 py-4">
+                <button
+                  type="button"
+                  onClick={closePasswordModal}
+                  disabled={passwordLoading}
+                  className={cn(
+                    "h-11 rounded-xl border border-black/20 bg-white text-sm font-semibold text-black hover:bg-black/5 disabled:opacity-50",
+                    UI.ring,
+                  )}
                 >
-                  <option value="all">All Company</option>
-                  {(filterOptions.companies || []).map((company) => (
-                    <option key={company} value={company}>
-                      {company}
-                    </option>
-                  ))}
-                </select>
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={confirmCredentialAccess}
+                  disabled={passwordLoading}
+                  className={cn(
+                    "flex h-11 items-center justify-center gap-2 rounded-xl bg-[#2e66a6] text-sm font-semibold text-white hover:bg-[#2e66a6]/90 disabled:opacity-50",
+                    UI.ring,
+                  )}
+                >
+                  {passwordLoading ? <Spinner /> : null}
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showApproveModal && !isApproved && !isRejected && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4 sm:p-6">
+            <div
+              className="fixed inset-0 bg-black/45 backdrop-blur-[1px]"
+              onClick={() => !actionLoading && setShowApproveModal(false)}
+              aria-hidden="true"
+            />
+
+            <div
+              className="relative w-full max-w-[470px] overflow-hidden rounded-xl border border-[#D8E0EA] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="confirm-approval-title"
+              aria-describedby="confirm-approval-description"
+            >
+              <div className="flex items-start gap-4 px-6 py-6 sm:px-7">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#EEF6FF] text-[#2e66a6]">
+                  <SvgIcon name="check" className="h-5 w-5" />
+                </div>
+
+                <div className="min-w-0 flex-1 pr-1">
+                  <h3
+                    id="confirm-approval-title"
+                    className="text-[20px] font-bold leading-6 tracking-[-0.02em] text-black"
+                  >
+                    Approve {fullName}?
+                  </h3>
+
+                  <div
+                    id="confirm-approval-description"
+                    className="mt-2 text-sm leading-6 text-[#344054]"
+                  >
+                    <p>
+                      Are you sure you want to approve this Job Seeker? This will
+                      confirm that <span className="font-bold text-black">{fullName}</span>{" "}
+                      has been reviewed and verified as a PHINMA AU graduate.
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <select
-                  value={filters.industry}
-                  onChange={(e) => onChangeFilter("industry", e.target.value)}
-                  className={inputBase}
-                  disabled={loading}
-                >
-                  <option value="all">All Industries</option>
-                  {filterOptions.industries.map((industry) => (
-                    <option key={industry} value={industry}>
-                      {industry}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <div className="border-t border-[#D8E0EA] bg-white px-6 py-4 sm:px-7">
+                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    className="w-full sm:w-auto min-w-[145px] !h-11 rounded-lg text-sm"
+                    onClick={() => setShowApproveModal(false)}
+                    disabled={actionLoading}
+                  >
+                    Cancel
+                  </Button>
 
-              {!archiveMode ? <div>
-                <select
-                  value={filters.status}
-                  onChange={(e) => onChangeFilter("status", e.target.value)}
-                  className={inputBase}
-                  disabled={loading}
-                >
-                  <option value="all">All Status</option>
-                  {visibleStatusOptions.map((status) => (
-                    <option key={status.value} value={status.value}>
-                      {status.label === "Rejected" ? "Declined" : status.label}
-                    </option>
-                  ))}
-                </select>
-              </div> : null}
-
-              <div>
-                <DateFilterDropdown
-                  value={filters.date}
-                  startDate={filters.dateFrom}
-                  endDate={filters.dateTo}
-                  disabled={loading}
-                  onSelect={onChangeDateFilter}
-                />
-              </div>
-
-              {hasActiveFilters ? (
-                <div>
-                  <Button variant="secondary" className="h-11 w-full" onClick={clearAllFilters} disabled={loading}>
-                    Clear All
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    className="w-full sm:w-auto min-w-[185px] !h-11 rounded-lg text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
+                    onClick={() =>
+                      handleStatusUpdate("verified", "Approved by admin")
+                    }
+                    loading={actionLoading}
+                    disabled={actionLoading}
+                  >
+                    Approve
                   </Button>
                 </div>
-              ) : null}
-            </div>
-
-          </div>
-        </Card>
-
-        <Card className="overflow-hidden" padding={false}>
-          <div>
-            {loading ? null : visibleRows.length === 0 ? (
-              <div className="py-14 text-center">
-                <h3 className="text-lg font-semibold text-gray-900">No employers found</h3>
-                <p className="mt-2 text-sm text-gray-600">Try changing filters or search.</p>
               </div>
-            ) : (
-              <>
-                <div className="hidden lg:block overflow-x-hidden">
-                  <table className="w-full table-fixed">
-                    <thead className="bg-slate-50 border-b border-gray-100">
-                      <tr>
-                        <th className="w-[13%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Registered</th>
-                        <th className="w-[24%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Name</th>
-                        <th className="w-[20%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Company</th>
-                        <th className="w-[18%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Industry</th>
-                        <th className="w-[12%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Status</th>
-                        {archiveMode ? <th className="w-[13%] px-4 py-4 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Date Declined</th> : null}
-                        <th className="w-[10%] px-4 py-4 text-right text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Actions</th>
-                      </tr>
-                    </thead>
+            </div>
+          </div>
+        </div>
+      )}
 
-                    <tbody className="divide-y divide-gray-100 bg-white">
-                      {desktopRows.map((item) => {
-                        const companyName = item.companyName || item.employerProfile?.companyName || "No Company";
-                        const contactName =
-                          item.fullName ||
-                          [item.firstName, item.middleName, item.lastName].filter(Boolean).join(" ") ||
-                          companyName;
-                        const companyEmail = item.businessEmail || item.email || "—";
-                        const industry = item.industry || item.employerProfile?.industry || "—";
-                        const status = item.overallStatus || "unverified";
+      {showHoldModal && !isApproved && !isRejected && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4 sm:p-6">
+            <div
+              className="fixed inset-0 bg-black/45 backdrop-blur-[1px]"
+              onClick={() => !actionLoading && resetHoldModal()}
+              aria-hidden="true"
+            />
+
+            <div
+              className="relative w-full max-w-[560px] overflow-visible rounded-2xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="hold-modal-title"
+            >
+              <button
+                type="button"
+                onClick={() => !actionLoading && resetHoldModal()}
+                disabled={actionLoading}
+                className="absolute right-4 top-4 z-10 rounded p-1 text-[#475467] hover:bg-black/5"
+                aria-label="Close resubmission modal"
+              >
+                <SvgIcon name="x" className="h-4 w-4" />
+              </button>
+              <div className="max-h-[82vh] overflow-y-auto px-5 pb-4 pt-5 sm:px-6">
+                <div>
+                  <div className="flex items-start gap-3 pr-6">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EEF6FF] text-[#2e66a6]">
+                      <SvgIcon name="pause" className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3
+                        id="hold-modal-title"
+                        className="text-xl font-bold leading-tight tracking-[-0.02em] text-black"
+                      >
+                        Request Resubmission
+                      </h3>
+
+                      <p className="mt-2 text-sm leading-5 text-[#344054]">
+                        Select the documents that need to be resubmitted and
+                        choose at least one reason or write message for{" "}
+                        <span className="font-bold text-black">{fullName}</span>
+                        .
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-5">
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#344054]">
+                      Documents needed
+                    </p>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {documentTypes.filter((doc) => {
+                        const status = String(documentDetails[doc.key]?.status || "").toLowerCase();
+                        return ["pending", "submitted", "hold"].includes(status);
+                      }).map((doc) => {
+                        const checked = holdDocTypes.includes(doc.key);
 
                         return (
-                          <tr
-                            key={item._id}
-                            role="link"
-                            tabIndex={0}
-                            onClick={(event) => {
-                              if (event.target.closest("button, a, input, select, textarea, label")) return;
-                              navigate(`/admin/employer-verification/${item._id}`);
-                            }}
-                            onKeyDown={(event) => {
-                              if (event.target !== event.currentTarget) return;
-                              if (event.key === "Enter" || event.key === " ") {
-                                event.preventDefault();
-                                navigate(`/admin/employer-verification/${item._id}`);
-                              }
-                            }}
-                            className="cursor-pointer transition-colors hover:bg-[#2e66a6]/10 focus:bg-[#2e66a6]/10 focus:outline-none"
+                          <label
+                            key={doc.key}
+                            className={cn(
+                              "flex min-h-9 cursor-pointer select-none items-center gap-3 rounded-lg border px-3 py-2 transition",
+                              checked
+                                ? "border-[#2e66a6]/50 bg-[#2e66a6]/[0.08]"
+                                : "border-[#D8E0EA] bg-white/85 hover:border-[#2e66a6]/30 hover:bg-[#2e66a6]/[0.04]",
+                            )}
                           >
-                            <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-700">
-                              {formatDate(item.createdAt)}
-                            </td>
-
-                            <td className="px-4 py-4">
-                              <div className="flex items-center gap-3 min-w-0">
-                                <img
-                                  src={item.companyLogo || "/images/default-company.svg"}
-                                  alt={companyName}
-                                  className="h-11 w-11 rounded-xl object-cover border border-gray-200 bg-white"
-                                  onError={(e) => {
-                                    e.currentTarget.onerror = null;
-                                    e.currentTarget.src = "/images/default-company.svg";
-                                  }}
-                                />
-
-                                <div className="min-w-0">
-                                  <div className="text-sm font-semibold text-gray-900 leading-5 truncate">{contactName}</div>
-                                  <div className="text-xs text-gray-500 truncate">{companyEmail}</div>
-                                </div>
-                              </div>
-                            </td>
-
-                            <td className="px-4 py-4 text-sm text-gray-700">
-                              <div className="truncate whitespace-nowrap" title={companyName}>{companyName}</div>
-                            </td>
-
-                            <td className="px-4 py-4 text-sm text-gray-700">
-                              <div className="truncate whitespace-nowrap" title={industry}>{industry}</div>
-                            </td>
-
-                            <td className="px-4 py-4">{statusBadge(status)}</td>
-                            {archiveMode ? (
-                              <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-700">
-                                {formatDate(item.rejectedAt)}
-                              </td>
-                            ) : null}
-                            <td className="px-4 py-4">
-                              <div className="flex items-center justify-end gap-2">
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  leftIcon={<Icon name="eye" className="h-4 w-4" />}
-                                  onClick={() => navigate(`/admin/employer-verification/${item._id}${archiveMode ? "?archived=1" : ""}`)}
-                                  title="View"
-                                >
-                                
-                                </Button>
-                                {archiveMode ? (
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    leftIcon={<Icon name="restore" className="h-4 w-4" />}
-                                    onClick={() => setRestoreTarget(item)}
-                                    disabled={restoringId === item._id}
-                                    title="Restore"
-                                    aria-label={`Restore ${companyName}`}
-                                  />
-                                ) : null}
-                              </div>
-                            </td>
-                          </tr>
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleHoldDocType(doc.key)}
+                              className="h-4 w-4 rounded border border-[#94A3B8] text-[#2e66a6] focus:ring-2 focus:ring-[#2e66a6]"
+                            />
+                            <span className="text-sm sm:text-[15px] font-medium text-black/75">
+                              {doc.label}
+                            </span>
+                          </label>
                         );
                       })}
-                    </tbody>
-                  </table>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="mb-1 block text-xs font-medium text-[#344054]">
+                      Reason for Resubmission (Select at least one reason){" "}
+                      <span className="text-[#475467]">(Optional)</span>
+                    </label>
+                    <ReasonDropdown
+                      value={holdSelectedReason}
+                      onChange={setHoldSelectedReason}
+                      options={RESUBMISSION_REASONS}
+                    />
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="mb-1 block text-sm font-semibold text-black">
+                      Message to {fullName}
+                    </label>
+                    <textarea
+                      value={holdReason}
+                      onChange={(e) => setHoldReason(e.target.value)}
+                      rows={4}
+                      placeholder="Explain what needs to be corrected or re-uploaded."
+                      className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm leading-5 text-black placeholder:text-black/35 focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
+                    />
+                  </div>
                 </div>
+              </div>
 
-                <div className="space-y-3 p-4 lg:hidden">
-                  {mobileRows.map((item) => {
-                    const companyName = item.companyName || item.employerProfile?.companyName || "No Company";
-                    const companyEmail = item.businessEmail || item.email || "—";
-                    const industry = item.industry || item.employerProfile?.industry || "—";
-                    const { region, cityProvince } = buildLocationDisplay(item);
-                    const status = item.overallStatus || "unverified";
+              <div className="border-t border-[#D8E0EA] bg-[#F8FAFC] px-5 py-3 sm:px-6">
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    className="!h-10 rounded-lg border-[#CBD5E1] px-5 text-sm"
+                    onClick={resetHoldModal}
+                    disabled={actionLoading}
+                  >
+                    Cancel
+                  </Button>
 
-                    return (
-                      <Card key={item._id} className="p-4">
-                        <div className="flex items-start gap-3">
-                          <img
-                            src={item.companyLogo || "/images/default-company.svg"}
-                            alt={companyName}
-                            className="h-11 w-11 shrink-0 rounded-xl object-cover border border-gray-200 bg-white"
-                            onError={(e) => {
-                              e.currentTarget.onerror = null;
-                              e.currentTarget.src = "/images/default-company.svg";
-                            }}
-                          />
-
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm font-semibold text-gray-900">{companyName}</div>
-                            <div className="text-xs text-gray-500 truncate">{companyEmail}</div>
-
-                            <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-600">
-                              <div>
-                                <span className="font-semibold text-gray-800">Industry:</span> {industry}
-                              </div>
-                              <div>
-                                <span className="font-semibold text-gray-800">Registered:</span> {formatDate(item.createdAt)}
-                              </div>
-                              <div className="min-w-0">
-                                <span className="font-semibold text-gray-800">Region:</span>
-                                <span className="ml-1 block truncate whitespace-nowrap" title={region}>{region}</span>
-                              </div>
-                              <div className="min-w-0">
-                                <span className="font-semibold text-gray-800">City / Province:</span>
-                                <span className="ml-1 block truncate whitespace-nowrap" title={cityProvince}>{cityProvince}</span>
-                              </div>
-                              <div className="col-span-2">{statusBadge(status)}</div>
-                              {archiveMode ? (
-                                <div className="col-span-2">
-                                  <span className="font-semibold text-gray-800">Declined:</span> {formatDate(item.rejectedAt)}
-                                </div>
-                              ) : null}
-                            </div>
-
-                            <div className="mt-4 flex justify-end gap-2">
-                              <IconButton label={`View ${companyName}`} onClick={() => navigate(`/admin/employer-verification/${item._id}`)}>
-                                <Icon name="eye" className="h-4 w-4" />
-                              </IconButton>
-
-                              {archiveMode ? (
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  leftIcon={<Icon name="restore" className="h-4 w-4" />}
-                                  onClick={() => setRestoreTarget(item)}
-                                  disabled={restoringId === item._id}
-                                  title="Restore"
-                                  aria-label={`Restore ${companyName}`}
-                                />
-                              ) : null}
-
-                              {!archiveMode ? <IconButton
-                                label={`Delete ${companyName}`}
-                                onClick={() => setDeleteTarget(item)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Icon name="trash" className="h-4 w-4" />
-                              </IconButton> : null}
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    );
-                  })}
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    className="!h-10 rounded-lg px-5 text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
+                    onClick={handleHoldSubmit}
+                    disabled={
+                      !holdDocTypes.length ||
+                      (!holdSelectedReason && !holdReason.trim()) ||
+                      actionLoading
+                    }
+                    loading={actionLoading}
+                  >
+                    Send
+                  </Button>
                 </div>
-
-                <Pagination
-                  currentPage={filters.page}
-                  totalItems={pagination.totalItems}
-                  pageSize={filters.limit}
-                  onPageChange={(page) => onChangeFilter("page", page)}
-                  onPageSizeChange={(limit) => onChangeFilter("limit", limit)}
-                />
-              </>
-            )}
+              </div>
+            </div>
           </div>
-        </Card>
-      </div>
-
-      <Modal
-        open={!!deleteTarget}
-        title="Delete employer?"
-        description={
-          deleteTarget
-            ? `This will soft delete "${deleteTarget.companyName || deleteTarget.employerProfile?.companyName || deleteTarget.email}". The record will be marked as deleted.`
-            : ""
-        }
-        onClose={() => {
-          if (deleteLoading) return;
-          setDeleteTarget(null);
-        }}
-      >
-        <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-800">
-          This action uses your existing delete user backend endpoint.
         </div>
+      )}
 
-        <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button variant="secondary" onClick={() => setDeleteTarget(null)} disabled={deleteLoading}>
-            Cancel
-          </Button>
-          <Button variant="danger" loading={deleteLoading} onClick={onDeleteEmployer}>
-            Confirm Delete
-          </Button>
+      {showDeclineModal && !isApproved && !isRejected && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4 sm:p-6">
+            <div
+              className="fixed inset-0 bg-black/45 backdrop-blur-[1px]"
+              onClick={() => !actionLoading && resetDeclineModal()}
+              aria-hidden="true"
+            />
+
+            <div
+              className="relative w-full max-w-[500px] overflow-visible rounded-xl border border-[#D8E0EA] bg-[#F8FAFC] shadow-[0_18px_50px_rgba(15,23,42,0.24)]"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="decline-modal-title"
+            >
+              <button
+                type="button"
+                onClick={() => !actionLoading && resetDeclineModal()}
+                disabled={actionLoading}
+                className="absolute right-4 top-4 rounded p-1 text-[#475467] hover:bg-black/5"
+                aria-label="Close decline modal"
+              >
+                <SvgIcon name="x" className="h-4 w-4" />
+              </button>
+              <div className="px-6 pb-5 pt-6 sm:px-7">
+                <div className="flex items-start gap-3 pr-6">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FEE4E2] text-[#D92D20]">
+                    <SvgIcon
+                      name="dangerTriangle"
+                      className="h-5 w-5 text-[#D92D20]"
+                    />
+                  </div>
+
+                  <div className="min-w-0">
+                    <h3
+                      id="decline-modal-title"
+                      className="text-xl font-bold leading-tight tracking-[-0.02em] text-black"
+                    >
+                      Decline Verification
+                    </h3>
+
+                    <p className="mt-2 text-sm leading-5 text-[#344054]">
+                      Are you sure you want to decline{" "}
+                      <span className="font-bold text-black">{fullName}</span>?
+                      The Job Seeker will be notified that they do not meet the
+                      PHINMA AU Graduate requirements.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5">
+                  <label className="mb-1 block text-[13px] font-medium leading-5 text-[#344054]">
+                    Reason for Declining{" "}
+                    <span className="font-semibold text-black">{fullName}</span>{" "}
+                    (Select at least one reason){" "}
+                    <span className="text-[#475467]">(Optional)</span>
+                  </label>
+                  <ReasonDropdown
+                    value={declineReason}
+                    onChange={setDeclineReason}
+                    options={DECLINE_REASONS}
+                  />
+                </div>
+
+                <div className="mt-4">
+                  <label className="mb-1 block text-sm font-semibold text-black">
+                    Message to {fullName}
+                  </label>
+                  <textarea
+                    value={declineMessage}
+                    onChange={(e) => setDeclineMessage(e.target.value)}
+                    rows={5}
+                    placeholder="Add a clear reason why the credential was not verified and what the Job Seeker needs to do next."
+                    className="w-full resize-none rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-sm leading-5 text-black placeholder:text-[#667085] focus:border-[#2e66a6] focus:outline-none focus:ring-2 focus:ring-[#2e66a6]/20"
+                  />
+                </div>
+              </div>
+
+              <div className="border-t border-[#E2E8F0] bg-[#F8FAFC] px-6 py-4 sm:px-7">
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    className="!h-10 rounded-lg border-[#CBD5E1] px-5 text-sm"
+                    onClick={resetDeclineModal}
+                    disabled={actionLoading}
+                  >
+                    Cancel
+                  </Button>
+
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    className="!h-10 rounded-lg px-5 text-sm !bg-[#2e66a6] hover:!bg-[#255587]"
+                    onClick={handleDeclineSubmit}
+                    disabled={actionLoading}
+                    loading={actionLoading}
+                  >
+                    Decline
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </Modal>
-
-      <CustomDateRangeModal
-        open={showCustomDateModal}
-        startDate={filters.dateFrom}
-        endDate={filters.dateTo}
-        onCancel={() => setShowCustomDateModal(false)}
-        onApply={applyCustomDateRange}
-      />
-
-      <RestoreConfirmationModal
-        open={!!restoreTarget}
-        name={restoreTarget?.companyName || restoreTarget?.employerProfile?.companyName || "this Employer"}
-        loading={!!restoreTarget && restoringId === restoreTarget._id}
-        onCancel={() => {
-          if (restoringId) return;
-          setRestoreTarget(null);
-        }}
-        onConfirm={() => restoreEmployer(restoreTarget)}
-      />
+      )}
     </AdminLayout>
   );
 };
 
-export default EmployerVerification;
+export default JobseekerVerificationDetails;

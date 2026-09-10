@@ -116,10 +116,12 @@ const SvgIcon = ({ name, className = "w-5 h-5" }) => {
       </svg>
     ),
     restore: (
-      <>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h6V4" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4.93 19.07A9 9 0 1012 3a9 9 0 00-7.07 3.43L3 10" />
-      </>
+      <img
+        src="/images/restorist.png"
+        alt=""
+        className={`${className} scale-125 object-contain`}
+        aria-hidden="true"
+      />
     ),
     x: (
       <svg
